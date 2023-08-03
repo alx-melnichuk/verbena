@@ -1,0 +1,71 @@
+/*# sourceURL=app.component.scss */
+
+@use "../styles-variables.scss" as variable;
+
+app-root {
+  --footer-hg: 20px;
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  outline: 1px solid green;
+  position: relative;
+
+  & > header {
+    border-bottom: 1px solid lightgrey; // #var(--accent-darker-color);
+    box-sizing: border-box; // Prevents the frame from expanding the page.
+    flex: 0 0 var(--header-hg);
+  }
+  & > main {
+    flex: 1 1 auto;
+  }
+  & > footer {
+    align-items: center;
+    border-top: 1px solid lightgrey; // #var(--accent-darker-color);
+    box-sizing: border-box; // Prevents the frame from expanding the page.
+    display: flex;
+    flex: 0 0 var(--footer-hg);
+    padding-left: 0.8em;
+  }
+
+  .main {
+    // height: fit-content; // IMPORTANT for scrolling in safari
+    height: calc(100% - var(--header-hg) - var(--footer-hg));
+    overflow-y: hidden;
+    position: relative;
+  }
+  // ** **
+
+  @media screen and (width <= variable.$mobile-480) {
+    & > header {
+      --header-hg: min(18vh, 80px);
+    }
+  }
+  @media screen and (variable.$mobile-480 < width <= variable.$tablet-768) {
+    & > header {
+      --header-hg: 74px;
+    }
+  }
+  @media screen and (variable.$tablet-768 < width <= variable.$laptop-992) {
+    & > header {
+      --header-hg: 68px;
+    }
+  }
+  @media screen and (variable.$laptop-992 < width <= variable.$desktop-1024) {
+    & > header {
+      --header-hg: 64px;
+    }
+  }
+  @media screen and (variable.$desktop-1024 < width) {
+    & > header {
+      --header-hg: 62px;
+    }
+  }
+
+  // ** temp **
+  .tmp-routes {
+    position: absolute;
+    left: 0;
+    top: 40px;
+  }
+}
