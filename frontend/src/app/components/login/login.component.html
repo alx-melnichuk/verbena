@@ -1,0 +1,46 @@
+<div class="lg-stand">
+  <form
+    class="lg-form"
+    [formGroup]="formGroup"
+    novalidate
+  >
+    <div class="lg-title">{{ 'login.title' | translate }}{{ 'app_name' | translate }}</div>
+
+    <app-field-nickname
+      class="lg-field"
+      formControlName="nickname"
+      [isRequired]="true"
+      label="login.email_or_nickname"
+      [minLen]="0"
+      [maxLen]="0"
+      [pattern]="''"
+      (input)="updateErrMsg()"
+    >
+    </app-field-nickname>
+
+    <app-field-password
+      class="lg-field"
+      formControlName="password"
+      [isRequired]="true"
+      [minLen]="0"
+      [maxLen]="0"
+      [pattern]="''"
+      (input)="updateErrMsg()"
+    ></app-field-password>
+
+    <button
+      type="button"
+      indent
+      mat-raised-button
+      class="lg-field mat-primary"
+      [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
+      (click)="doLogin()"
+    >
+      {{ 'login.button_ok' | translate }}
+    </button>
+
+    <ng-container *ngFor="let errMsg of errMsgList">
+      <mat-error>{{ errMsg }}</mat-error>
+    </ng-container>
+  </form>
+</div>

@@ -1,1 +1,6 @@
-<p>pg-signup works!</p>
+<app-signup
+  [isDisabledSubmit]="isDisabledSubmit"
+  [errMsgList]="errMsgList"
+  (signup)="doSignup($event)"
+>
+</app-signup>

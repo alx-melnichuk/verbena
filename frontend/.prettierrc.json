@@ -1,0 +1,20 @@
+{
+  "bracketSpacing": true,
+  "semi": true,
+  "printWidth": 140,
+  "tabWidth": 2,
+  "endOfLine": "auto",
+  "singleQuote": true,
+  "quoteProps": "consistent",
+  "trailingComma": "es5",
+  "arrowParens": "always",
+  "singleAttributePerLine": true,
+  "overrides": [
+    {
+      "files": ["*.md", "*.json", "*.js"],
+      "options": {
+        "tabWidth": 2
+      }
+    }
+  ]
+}

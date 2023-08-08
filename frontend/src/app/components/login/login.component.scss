@@ -1,0 +1,37 @@
+/*# sourceURL=login.component.scss */
+
+app-login {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+
+  .lg-stand {
+    border: 1px solid var(--app-site-border-cl);
+    border-radius: 1em;
+    box-sizing: border-box;
+    margin: 0 auto 7em auto;
+    padding: 1em;
+    width: 30em;
+  }
+
+  .lg-form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .lg-field {
+    margin: 0.5em 0;
+    width: 100%;
+  }
+
+  .lg-title {
+    font-size: large;
+    margin: 1em 0;
+  }
+
+  .btn-login {
+    display: flex;
+    justify-content: space-between;
+  }
+}

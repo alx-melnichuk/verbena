@@ -1,0 +1,31 @@
+/*# sourceURL=styles-mat.scss */
+/* Library for Styling Material Design (extension) */
+
+.stl-mat-ext {
+  --sme-field-min-hg: 48px;
+  --sme-field-ln-hg: 24px;
+
+  --sme-field-pd-tp: calc((var(--sme-field-min-hg) - var(--sme-field-ln-hg)) / 2);
+  --sme-field-pd-bt: var(--sme-field-pd-tp);
+  --sme-field-tp: calc(var(--sme-field-ln-hg) / 2 + var(--sme-field-pd-tp));
+
+  // ** Mat-Form-Field **
+
+  // -- "label" --
+
+  --mdc-typography-body1-line-height: var(--sme-field-ln-hg);
+  // font-size: var(--mdc-typography-body1-font-size, 16px);
+  // line-height: var(--mdc-typography-body1-line-height, 24px);
+  label.mat-mdc-floating-label:not(.mdc-floating-label--float-above) {
+    line-height: unset;
+    top: var(--sme-field-tp);
+  }
+  // --"wrapper input" --
+  .mat-mdc-text-field-wrapper.mdc-text-field--outlined .mat-mdc-form-field-infix {
+    padding-top: var(--sme-field-pd-tp);
+    padding-bottom: var(--sme-field-pd-bt);
+  }
+  .mat-mdc-form-field-infix {
+    min-height: var(--sme-field-min-hg);
+  }
+}

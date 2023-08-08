@@ -1,0 +1,37 @@
+/*# sourceURL=signup.component.scss */
+
+app-signup {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+
+  .su-stand {
+    border: 1px solid var(--app-site-border-cl);
+    border-radius: 1em;
+    box-sizing: border-box;
+    margin: 0 auto 7em auto;
+    padding: 1em;
+    width: 30em;
+  }
+
+  .su-form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .su-field {
+    margin: 0.5em 0;
+    width: 100%;
+  }
+
+  .su-title {
+    font-size: large;
+    margin: 1em 0;
+  }
+
+  .su-btn {
+    display: flex;
+    justify-content: space-between;
+  }
+}

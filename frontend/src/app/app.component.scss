@@ -1,6 +1,6 @@
 /*# sourceURL=app.component.scss */
 
-@use "../styles-variables.scss" as variable;
+@use '../styles-variables.scss' as variable;
 
 app-root {
   --footer-hg: 20px;
@@ -62,10 +62,15 @@ app-root {
     }
   }
 
+  --app-site-footer-bg: var(--green-050);
+  --app-site-header-bg: var(--green-050);
+  --app-site-border-cl: var(--green-500);
+  --app-site-border-warn-cl: var(--red-500);
+
   // ** temp **
   .tmp-routes {
     position: absolute;
-    left: 0;
-    top: 40px;
+    left: 60px;
+    top: 43px;
   }
 }

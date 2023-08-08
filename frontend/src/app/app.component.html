@@ -1,12 +1,28 @@
-<header>app-header</header>
+<header>
+  <app-header></app-header>
+</header>
 <main>
   <router-outlet></router-outlet>
 </main>
 <footer>
-  <span>{{ "APP_NAME" | translate }}</span>
+  <span>{{ 'app_name' | translate }}</span>
 </footer>
 
 <section class="tmp-routes">
   <button routerLink="login">login</button>
   <button routerLink="signup">signup</button>
+  <span>
+    <select
+      #langSelect
+      (change)="translate.use(langSelect.value)"
+    >
+      <option
+        *ngFor="let lang of translate.getLangs()"
+        [value]="lang"
+        [selected]="lang === translate.currentLang"
+      >
+        {{ lang }}
+      </option>
+    </select>
+  </span>
 </section>

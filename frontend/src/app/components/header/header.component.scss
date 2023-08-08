@@ -1,0 +1,59 @@
+/*# sourceURL=header.component.scss */
+
+app-header {
+  background-color: var(--app-site-header-bg);
+  display: flex;
+  justify-content: space-between;
+  height: 100%;
+
+  & > div {
+    align-items: center;
+    display: flex;
+    padding: 0 0.5em 0 0.5em;
+  }
+  & > .hd-box-logo {
+    flex: 0 0 auto; // #255px;
+  }
+  & > .hd-box-search {
+    flex: 1 1 auto;
+  }
+  & > .hd-box-actions {
+    flex: 0 0 auto; // #270px;
+  }
+  & > .hd-box-user {
+    flex: 0 0 auto; // #255px;
+  }
+
+  // Section: "box-logo"
+  .hd-logo-link {
+    align-items: center;
+    color: inherit;
+    display: flex;
+  }
+  .hd-logo-text {
+    font-size: x-large;
+    font-weight: 500;
+    margin-left: 0.5em;
+  }
+  // Section: "box-search"
+  .hd-box-search {
+    // font-size: 14px;
+    margin-top: 3px;
+    max-width: 400px;
+    min-width: 200px;
+  }
+
+  // -- --
+  .hd-icon {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    // &.hd-my-profile { width: 21px; height: 21px; }
+    // &.hd-create-stream { width: 24px; height: 24px; }
+  }
+  .hd-logo-mini {
+    background-image: url('../../../assets/images/logo_mini.png');
+    height: 53px;
+    width: 53px;
+  }
+}
