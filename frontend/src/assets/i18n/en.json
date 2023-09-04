@@ -32,6 +32,7 @@
   },
   "signup": {
     "title": "Sign up to ",
-    "button_ok": "Sign up"
+    "button_ok": "Sign up",
+    "err_unique_users_nickname_key": "The nickname \"{{nickname}}\" value is not unique."
   }
 }

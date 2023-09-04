@@ -13,6 +13,7 @@
       [attr.maxlength]="maxLen > 0 ? maxLen + 1 : undefined"
       [pattern]="pattern"
       autocomplete="off"
+      (input)="onChange(formControl.value)"
     />
     <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
   </mat-form-field>

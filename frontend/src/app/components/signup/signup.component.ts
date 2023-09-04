@@ -69,13 +69,13 @@ export class SignupComponent {
   @HostListener('document:keypress', ['$event'])
   public keyEvent(event: KeyboardEvent): void {
     if (event.code === 'Enter') {
-      this.doLogin();
+      this.doSignup();
     }
   }
 
   // ** Public API **
 
-  public doLogin(): void {
+  public doSignup(): void {
     if (this.formGroup.invalid || this.isDisabledSubmit) {
       return;
     }
