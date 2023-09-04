@@ -1,135 +1,55 @@
-// use std::{convert::Infallible, io};
+use std::{env, io};
 
-use actix_files::{Files, NamedFile};
-// use actix_session::{storage::CookieSessionStore, Session, SessionMiddleware};
-// use actix_web::{
-//     error, get,
-//     http::{
-//         header::{self, ContentType},
-//         Method, StatusCode,
-//     },
-//     middleware, web, App, Either, HttpRequest, HttpResponse, HttpServer, Responder, Result,
-// };
-// use async_stream::stream;
+use actix_web::web;
+use actix_web::{App, HttpServer};
+use dotenv;
+use env_logger;
+use log;
 
-use actix_web::{
-    App, // Either, 
-    Error, get, HttpRequest, HttpResponse, HttpServer, 
-    http::{
-        // header::{self, ContentType},
-        // Method, 
-        StatusCode,
-    },
-    middleware::Logger, Responder, Result, // web
-};
-use serde_json::json;
+mod dbase;
+mod schema;
+mod static_controller;
+mod users;
+mod utils;
 
-#[get("/api/healthchecker")]
-async fn health_checker_handler() -> impl Responder {
-    const MESSAGE: &str = "Build Simple CRUD API Actix Web";
+use crate::dbase::db;
+use crate::users::users_controller;
 
-    HttpResponse::Ok().json(json!({"status": "success","message": MESSAGE}))
-}
-
-
-/// simple index handler
-#[get("/404")]
-async fn welcome(req: HttpRequest/*, session: Session*/) -> Result<HttpResponse> {
-    println!("{req:?}");
-
-    // // session
-    // let mut counter = 1;
-    // if let Some(count) = session.get::<i32>("counter")? {
-    //     println!("SESSION value: {count}");
-    //     counter = count + 1;
-    // }
-
-    // // set counter to session
-    // session.insert("counter", counter)?;
-
-    // response
-    // Ok(HttpResponse::build(StatusCode::OK)
-    //     .content_type(ContentType::plaintext())
-    //     .body(include_str!("../static/welcome.html")))
-    Ok(HttpResponse::build(StatusCode::OK)
-        .content_type("text/html; charset=utf-8")
-        .body(include_str!("../static/404.html")))
-}  
-
-// async fn default_handler(req_method: Method) -> Result<impl Responder> {
-//     match req_method {
-//         Method::GET => {
-//             let file = NamedFile::open("static/404.html")?
-//                 .customize()
-//                 .with_status(StatusCode::NOT_FOUND);
-//             Ok(Either::Left(file))
-//         }
-//         _ => Ok(Either::Right(HttpResponse::MethodNotAllowed().finish())),
-//     }
-// }
-
-// async fn angular_index() -> Result<actix_files::NamedFile> {
-//     println!("redirect to Anfular front-end");
-//     Ok(service(web::resource("/something").route(web::get().to(do_something)))::NamedFile::open("../static/index.html")?)
-// }
-// |index|index.html
-
-#[get("/{filename:.(.+).js|(.+).css|favicon|favicon.ico}")]
-async fn index_root_js(req: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    let path: std::path::PathBuf = req.match_info().query("filename").parse().unwrap();
-    println!("path: '{}'", path.display());
-
-    let pathstr  = path.to_str().unwrap();
-    let pathstr2: &str = if pathstr == "favicon" { "favicon.ico" } else { pathstr };
-    // let pathstr2: &str = match pathstr {  "favicon" => "favicon.ico",    "index" => "index.html",  _ => pathstr  };
-    let path2: std::path::PathBuf = ["static", pathstr2].iter().collect();
-    println!("path2: '{}'", path2.display());
-   
-    let file = actix_files::NamedFile::open(path2)?;
-    Ok(file.use_last_modified(true))
-}
-
-#[get("/")] // index.html
-async fn index_root_angular(req: HttpRequest) -> Result<HttpResponse> {
-    println!("{req:?}");
-
-    Ok(HttpResponse::build(StatusCode::OK)
-        .content_type("text/html; charset=utf-8")
-        .body(include_str!("../static/index.html")))
-}  
-
-//
 // ** Funcion Main **
-//
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    if std::env::var_os("RUST_LOG").is_none() {
-        std::env::set_var("RUST_LOG", "actix_web=info");
-    }
+async fn main() -> io::Result<()> {
+    dotenv::dotenv().expect("Failed to read .env file");
+    env::set_var(
+        "RUST_LOG",
+        "verbena_backend=debug,actix_web=info,actix_server=info",
+    );
+
     env_logger::init();
 
-    println!("🚀 Server started successfully");
-    // log::info!("starting HTTP server at http://localhost:8080");  
+    let app_host = env::var("APP_HOST").expect("APP_HOST not found.");
+    let app_port = env::var("APP_PORT").expect("APP_PORT not found.");
+    let app_url = format!("{}:{}", &app_host, &app_port);
+    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL not found.");
+
+    // let domain: String = env::var("DOMAIN").unwrap_or_else(|_| "localhost".to_string());
+
+    let pool: db::DbPool = db::init_db_pool(&db_url);
+    db::run_migration(&mut pool.get().unwrap());
+
+    println!("🚀 Server started successfully {}", &app_url);
+    log::info!("starting HTTP server at http://{}", &app_url);
 
     HttpServer::new(move || {
         App::new()
-            .wrap(Logger::default())
-            // "healthchecker"
-            .service(health_checker_handler)
-            // static files
-            .service(Files::new("/static", "static").show_files_listing())
-            // assets files
-            .service(Files::new("/assets", "static/assets").show_files_listing())
-            // register simple route, handle all methods
-            .service(welcome)
-            // // default
-            // .default_service(web::to(default_handler))
-            .service(index_root_js)
-            // default
-            .service(index_root_angular)
-            // service(web::resource("/something").route(web::get().to(do_something)))
+            .app_data(web::Data::new(pool.clone()))
+            // enable logger
+            .wrap(actix_web::middleware::Logger::default())
+            // .service(Files::new("/static", "static").show_files_listing())
+            // .service(Files::new("/assets", "static/assets").show_files_listing())
+            .configure(static_controller::configure)
+            .configure(users_controller::configure)
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(&app_url)?
     .run()
     .await
 }
