@@ -78,9 +78,16 @@ pub async fn post_user(
     pool: web::Data<db::DbPool>,
     json_user_dto: web::Json<UserDTO>,
 ) -> actix_web::Result<HttpResponse, AError> {
+    let new_user: UserDTO = json_user_dto.0;
+    if new_user.nickname.clone().unwrap_or("".to_string()).len() < 3 {
+        let msg = "The nickname should have 3 characters or more.".to_string();
+        let obj = [("value", "3"), ("field", "nickname")];
+        return Err(AError::InvalidData(msg, HashMap::from(obj)));
+    }
+
     let user_dto = web::block(move || {
         let mut conn = pool.get()?;
-        let new_user: UserDTO = json_user_dto.0;
+
         // Create a new entity (user).
         users_service::create_user(&mut conn, new_user)
     })
