@@ -10,7 +10,7 @@ use crate::users::{
     users_models::UserDTO,
     users_service,
 };
-use crate::utils::{errors::AppError as AError, strings::msg};
+use crate::utils::{errors::AppError, strings::msg};
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(get_user_by_id)
@@ -25,13 +25,13 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 pub async fn get_user_by_id(
     pool: web::Data<db::DbPool>,
     request: actix_web::HttpRequest,
-) -> actix_web::Result<HttpResponse, AError> {
+) -> actix_web::Result<HttpResponse, AppError> {
     let id_str = request.match_info().query("id").to_string();
     log::debug!("@@ id_str={}", id_str.to_string()); // #
 
     let id = id_str
         .parse::<i32>()
-        .map_err(|_| AError::BadRequest(msg(ERR_CASTING_TO_TYPE, &[&id_str, "i32"])))?;
+        .map_err(|_| AppError::BadRequest(msg(ERR_CASTING_TO_TYPE, &[&id_str, "i32"])))?;
 
     let result_user = web::block(move || {
         let mut conn = pool.get()?;
@@ -43,7 +43,7 @@ pub async fn get_user_by_id(
 
     match result_user {
         Some(user_dto) => Ok(HttpResponse::Ok().json(user_dto)),
-        None => Err(AError::NotFound(msg(ERR_NOT_FOUND_BY_ID, &[&id_]))),
+        None => Err(AppError::NotFound(msg(ERR_NOT_FOUND_BY_ID, &[&id_]))),
     }
 }
 
@@ -51,7 +51,7 @@ pub async fn get_user_by_id(
 pub async fn get_user_by_nickname(
     pool: web::Data<db::DbPool>,
     request: actix_web::HttpRequest,
-) -> actix_web::Result<HttpResponse, AError> {
+) -> actix_web::Result<HttpResponse, AppError> {
     let params = web::Query::<HashMap<String, String>>::from_query(request.query_string()).unwrap();
     let empty_line = "".to_string();
     let value = params.get("nickname").unwrap_or(&empty_line);
@@ -60,7 +60,10 @@ pub async fn get_user_by_nickname(
     log::debug!("@@ nickname={}", nickname.to_string()); // #
     eprintln!("@@ nickname={}", nickname.to_string());
     if nickname.len() == 0 {
-        return Err(AError::BadRequest(msg(ERR_INCORRECT_VALUE, &["nickname"])));
+        return Err(AppError::BadRequest(msg(
+            ERR_INCORRECT_VALUE,
+            &["nickname"],
+        )));
     }
 
     let user_list = web::block(move || {
@@ -77,12 +80,13 @@ pub async fn get_user_by_nickname(
 pub async fn post_user(
     pool: web::Data<db::DbPool>,
     json_user_dto: web::Json<UserDTO>,
-) -> actix_web::Result<HttpResponse, AError> {
-    let new_user: UserDTO = json_user_dto.0;
-    if new_user.nickname.clone().unwrap_or("".to_string()).len() < 3 {
-        let msg = "The nickname should have 3 characters or more.".to_string();
-        let obj = [("value", "3"), ("field", "nickname")];
-        return Err(AError::InvalidData(msg, HashMap::from(obj)));
+) -> actix_web::Result<HttpResponse, AppError> {
+    let mut new_user: UserDTO = json_user_dto.0.clone();
+    UserDTO::clear_optional(&mut new_user);
+
+    let err_res1: Vec<AppError> = UserDTO::validation_for_add(&new_user);
+    if err_res1.len() > 0 {
+        return Ok(AppError::get_http_response(&err_res1));
     }
 
     let user_dto = web::block(move || {
@@ -101,18 +105,18 @@ pub async fn put_user(
     pool: web::Data<db::DbPool>,
     request: actix_web::HttpRequest,
     json_user_dto: web::Json<UserDTO>,
-) -> actix_web::Result<HttpResponse, AError> {
+) -> actix_web::Result<HttpResponse, AppError> {
     let id_str = request.match_info().query("id").to_string();
     let id = id_str
         .parse::<i32>()
-        .map_err(|_| AError::BadRequest(msg(ERR_CASTING_TO_TYPE, &[&id_str, "i32"])))?;
+        .map_err(|_| AppError::BadRequest(msg(ERR_CASTING_TO_TYPE, &[&id_str, "i32"])))?;
 
     let mut new_user: UserDTO = json_user_dto.0.clone();
     UserDTO::clear_optional(&mut new_user);
 
-    if UserDTO::is_empty(&new_user) {
-        let msg = "The data model does not contain information to update.";
-        return Err(AError::BadRequest(msg.to_string()));
+    let err_res1: Vec<AppError> = UserDTO::validation_for_add(&new_user);
+    if err_res1.len() > 0 {
+        return Ok(AppError::get_http_response(&err_res1));
     }
 
     let user_dto = web::block(move || {
@@ -131,18 +135,18 @@ pub async fn patch_user(
     pool: web::Data<db::DbPool>,
     request: actix_web::HttpRequest,
     json_user_dto: web::Json<UserDTO>,
-) -> actix_web::Result<HttpResponse, AError> {
+) -> actix_web::Result<HttpResponse, AppError> {
     let id_str = request.match_info().query("id").to_string();
     let id = id_str
         .parse::<i32>()
-        .map_err(|_| AError::BadRequest(msg(ERR_CASTING_TO_TYPE, &[&id_str, "i32"])))?;
+        .map_err(|_| AppError::BadRequest(msg(ERR_CASTING_TO_TYPE, &[&id_str, "i32"])))?;
 
     let mut new_user: UserDTO = json_user_dto.0.clone();
     UserDTO::clear_optional(&mut new_user);
 
-    if UserDTO::is_empty(&new_user) {
-        let msg = "The data model does not contain information to update.";
-        return Err(AError::BadRequest(msg.to_string()));
+    let err_res1: Vec<AppError> = UserDTO::validation_for_edit(&new_user);
+    if err_res1.len() > 0 {
+        return Ok(AppError::get_http_response(&err_res1));
     }
 
     let user_dto = web::block(move || {
@@ -160,11 +164,11 @@ pub async fn patch_user(
 pub async fn delete_user(
     pool: web::Data<db::DbPool>,
     request: actix_web::HttpRequest,
-) -> actix_web::Result<HttpResponse, AError> {
+) -> actix_web::Result<HttpResponse, AppError> {
     let id_str = request.match_info().query("id").to_string();
     let id = id_str
         .parse::<i32>()
-        .map_err(|_| AError::BadRequest(msg(ERR_CASTING_TO_TYPE, &[&id_str, "i32"])))?;
+        .map_err(|_| AppError::BadRequest(msg(ERR_CASTING_TO_TYPE, &[&id_str, "i32"])))?;
 
     let count = web::block(move || {
         let mut conn = pool.get()?;
@@ -175,7 +179,7 @@ pub async fn delete_user(
 
     if 0 == count {
         let id_ = id.to_string();
-        Err(AError::NotFound(msg(ERR_NOT_FOUND_BY_ID, &[&id_])))
+        Err(AppError::NotFound(msg(ERR_NOT_FOUND_BY_ID, &[&id_])))
     } else {
         Ok(HttpResponse::Ok().finish())
     }

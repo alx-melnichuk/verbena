@@ -3,10 +3,10 @@ use diesel::prelude::*;
 use crate::dbase::db;
 use crate::schema::users;
 use crate::users::users_models::{self, UserDTO};
-use crate::utils::errors::AppError as AError;
+use crate::utils::errors::AppError;
 
 /// Run query using Diesel to find user by id and return it.
-pub fn find_user_by_id(conn: &mut db::Connection, id: i32) -> Result<Option<UserDTO>, AError> {
+pub fn find_user_by_id(conn: &mut db::Connection, id: i32) -> Result<Option<UserDTO>, AppError> {
     // Run query using Diesel to find user by id.
     let opt_user_dto: Option<UserDTO> = users::table
         .filter(users::dsl::id.eq(id))
@@ -21,7 +21,7 @@ pub fn find_user_by_id(conn: &mut db::Connection, id: i32) -> Result<Option<User
 pub fn find_user_by_nickname(
     conn: &mut db::Connection,
     nickname: &str,
-) -> Result<Vec<UserDTO>, AError> {
+) -> Result<Vec<UserDTO>, AppError> {
     let res_users: Vec<users_models::User> = if nickname.contains("%") {
         users::table
             .filter(users::dsl::nickname.like(nickname))
@@ -36,23 +36,15 @@ pub fn find_user_by_nickname(
             .load(conn)?
     };
 
-    let result: Vec<UserDTO> = res_users
-        .iter()
-        .map(|user| UserDTO::from(user.clone()))
-        .collect();
+    let result: Vec<UserDTO> = res_users.iter().map(|user| UserDTO::from(user.clone())).collect();
 
     Ok(result)
 }
 
 /// Run query using Diesel to add a new user entry.
-pub fn create_user(conn: &mut db::Connection, new_user_dto: UserDTO) -> Result<UserDTO, AError> {
+pub fn create_user(conn: &mut db::Connection, new_user_dto: UserDTO) -> Result<UserDTO, AppError> {
     let mut new_user: UserDTO = new_user_dto.clone();
     UserDTO::clear_optional(&mut new_user);
-
-    if UserDTO::is_empty(&new_user) {
-        let msg = "The data model does not contain information to update.";
-        return Err(AError::BadRequest(msg.to_string()));
-    }
 
     let user: users_models::User = diesel::insert_into(users::table)
         .values(new_user)
@@ -67,7 +59,7 @@ pub fn modify_user(
     conn: &mut db::Connection,
     id: i32,
     new_user_dto: UserDTO,
-) -> Result<UserDTO, AError> {
+) -> Result<UserDTO, AppError> {
     let mut new_user: UserDTO = new_user_dto.clone();
     UserDTO::clear_optional(&mut new_user);
 
@@ -80,7 +72,7 @@ pub fn modify_user(
 }
 
 /// Run query using Diesel to delete a user entry.
-pub fn delete_user(conn: &mut db::Connection, id: i32) -> Result<usize, AError> {
+pub fn delete_user(conn: &mut db::Connection, id: i32) -> Result<usize, AppError> {
     let count: usize = diesel::delete(users::dsl::users.find(id)).execute(conn)?;
 
     Ok(count)
