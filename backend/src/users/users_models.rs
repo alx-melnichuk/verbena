@@ -88,7 +88,61 @@ impl UserDTO {
         user_dto.created_at = None;
         user_dto.updated_at = None;
     }
-    pub fn validation_for_add(user_dto: &UserDTO) -> Vec<AppError> {
+    // pub fn validation_for_add(user_dto: &UserDTO) -> Vec<AppError> {
+    //     let mut result = vec![];
+
+    //     let nickname = user_dto.nickname.clone().unwrap_or("".to_string());
+    //     let res1 = Validations::required(&nickname, NICKNAME_NAME);
+    //     if res1.len() > 0 {
+    //         result.extend(res1);
+    //     } else {
+    //         result.extend(Validations::min_len(&nickname, NICKNAME_MIN, NICKNAME_NAME));
+    //         result.extend(Validations::max_len(&nickname, NICKNAME_MAX, NICKNAME_NAME));
+    //     }
+
+    //     let email = user_dto.email.clone().unwrap_or("".to_string());
+    //     let res2 = Validations::required(&email, EMAIL_NAME);
+    //     if res2.len() > 0 {
+    //         result.extend(res2);
+    //     } else {
+    //         result.extend(Validations::min_len(&email, EMAIL_MIN, EMAIL_NAME));
+    //         result.extend(Validations::max_len(&email, EMAIL_MAX, EMAIL_NAME));
+    //     }
+
+    //     let password = user_dto.password.clone().unwrap_or("".to_string());
+    //     let res3 = Validations::required(&password, PASSWORD_NAME);
+    //     if res3.len() > 0 {
+    //         result.extend(res3);
+    //     } else {
+    //         result.extend(Validations::min_len(&password, PASSWORD_MIN, PASSWORD_NAME));
+    //         result.extend(Validations::max_len(&password, PASSWORD_MAX, PASSWORD_NAME));
+    //     }
+
+    //     result
+    // }
+    pub fn validation_for_edit(user_dto: &UserDTO) -> Vec<AppError> {
+        let mut result = vec![];
+
+        if let Some(nickname) = &user_dto.nickname {
+            result.extend(Validations::min_len(&nickname, NICKNAME_MIN, NICKNAME_NAME));
+            result.extend(Validations::max_len(&nickname, NICKNAME_MAX, NICKNAME_NAME));
+        } else if let Some(email) = &user_dto.email {
+            result.extend(Validations::min_len(&email, EMAIL_MIN, EMAIL_NAME));
+            result.extend(Validations::max_len(&email, EMAIL_MAX, EMAIL_NAME));
+        } else if let Some(password) = &user_dto.password {
+            result.extend(Validations::min_len(&password, PASSWORD_MIN, PASSWORD_NAME));
+            result.extend(Validations::max_len(&password, PASSWORD_MAX, PASSWORD_NAME));
+        } else {
+            result.push(AppError::InvalidField(
+                ERR_CODE_MODEL_IS_EMPTY.to_string(),
+                ERR_MSG_MODEL_IS_EMPTY.to_string(),
+                HashMap::from([]),
+            ));
+        }
+
+        result
+    }
+    pub fn validation_for_login(user_dto: &UserDTO) -> Vec<AppError> {
         let mut result = vec![];
 
         let nickname = user_dto.nickname.clone().unwrap_or("".to_string());
@@ -120,26 +174,69 @@ impl UserDTO {
 
         result
     }
-    pub fn validation_for_edit(user_dto: &UserDTO) -> Vec<AppError> {
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
+#[diesel(table_name = schema::users)]
+pub struct CreateUserDTO {
+    pub nickname: String,
+    pub email: String,
+    pub password: String,
+}
+
+impl CreateUserDTO {
+    pub fn validation(create_user_dto: &CreateUserDTO) -> Vec<AppError> {
         let mut result = vec![];
 
-        if let Some(nickname) = &user_dto.nickname {
+        let nickname = create_user_dto.nickname;
+        let res1 = Validations::required(&nickname, NICKNAME_NAME);
+        if res1.len() > 0 {
+            result.extend(res1);
+        } else {
             result.extend(Validations::min_len(&nickname, NICKNAME_MIN, NICKNAME_NAME));
             result.extend(Validations::max_len(&nickname, NICKNAME_MAX, NICKNAME_NAME));
-        } else if let Some(email) = &user_dto.email {
+        }
+
+        let email = create_user_dto.email;
+        let res2 = Validations::required(&email, EMAIL_NAME);
+        if res2.len() > 0 {
+            result.extend(res2);
+        } else {
             result.extend(Validations::min_len(&email, EMAIL_MIN, EMAIL_NAME));
             result.extend(Validations::max_len(&email, EMAIL_MAX, EMAIL_NAME));
-        } else if let Some(password) = &user_dto.password {
+        }
+
+        let password = create_user_dto.password;
+        let res3 = Validations::required(&password, PASSWORD_NAME);
+        if res3.len() > 0 {
+            result.extend(res3);
+        } else {
             result.extend(Validations::min_len(&password, PASSWORD_MIN, PASSWORD_NAME));
             result.extend(Validations::max_len(&password, PASSWORD_MAX, PASSWORD_NAME));
-        } else {
-            result.push(AppError::InvalidField(
-                ERR_CODE_MODEL_IS_EMPTY.to_string(),
-                ERR_MSG_MODEL_IS_EMPTY.to_string(),
-                HashMap::from([]),
-            ));
         }
 
         result
     }
+}
+
+impl From<UserDTO> for CreateUserDTO {
+    fn from(user_dto: UserDTO) -> CreateUserDTO {
+        CreateUserDTO {
+            nickname: user_dto.nickname.clone().unwrap_or("".to_string()),
+            email: user_dto.email.clone().unwrap_or("".to_string()),
+            password: user_dto.password.clone().unwrap_or("".to_string()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoginUserDTO {
+    pub nickname: String,
+    pub password: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoginInfoDTO {
+    pub username: String,
+    pub login_session: String,
 }

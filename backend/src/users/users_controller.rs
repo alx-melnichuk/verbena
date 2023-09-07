@@ -5,6 +5,7 @@ use log;
 
 use crate::dbase::db;
 use crate::users::users_consts::ERR_INCORRECT_VALUE;
+use crate::users::users_models::{CreateUserDTO, LoginInfoDTO, LoginUserDTO};
 use crate::users::{
     users_consts::{ERR_CASTING_TO_TYPE, ERR_NOT_FOUND_BY_ID},
     users_models::UserDTO,
@@ -13,9 +14,9 @@ use crate::users::{
 use crate::utils::{errors::AppError, strings::msg};
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
-    cfg.service(get_user_by_id)
+    cfg.service(web::scope("/auth").service(signup).service(login))
+        .service(get_user_by_id)
         .service(get_user_by_nickname)
-        .service(post_user)
         .service(put_user)
         .service(patch_user)
         .service(delete_user);
@@ -69,15 +70,15 @@ pub async fn get_user_by_nickname(
     let user_list = web::block(move || {
         let mut conn = pool.get()?;
         // Find user by nickname.
-        users_service::find_user_by_nickname(&mut conn, &nickname)
+        users_service::find_users_by_nickname(&mut conn, &nickname)
     })
     .await??;
 
     Ok(HttpResponse::Ok().json(user_list))
 }
 
-#[post("/user")]
-pub async fn post_user(
+//#[post("/user")]
+/*pub async fn post_user(
     pool: web::Data<db::DbPool>,
     json_user_dto: web::Json<UserDTO>,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -98,7 +99,7 @@ pub async fn post_user(
     .await??;
 
     Ok(HttpResponse::Ok().json(user_dto))
-}
+}*/
 
 #[put("/user/{id}")]
 pub async fn put_user(
@@ -114,7 +115,8 @@ pub async fn put_user(
     let mut new_user: UserDTO = json_user_dto.0.clone();
     UserDTO::clear_optional(&mut new_user);
 
-    let err_res1: Vec<AppError> = UserDTO::validation_for_add(&new_user);
+    let create_user_dto = CreateUserDTO::from(new_user.clone());
+    let err_res1: Vec<AppError> = CreateUserDTO::validation(&create_user_dto);
     if err_res1.len() > 0 {
         return Ok(AppError::get_http_response(&err_res1));
     }
@@ -183,4 +185,83 @@ pub async fn delete_user(
     } else {
         Ok(HttpResponse::Ok().finish())
     }
+}
+
+// POST api/auth/signup
+#[post("/signup")]
+pub async fn signup(
+    pool: web::Data<db::DbPool>,
+    json_create_user_dto: web::Json<CreateUserDTO>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let create_user_dto: CreateUserDTO = json_create_user_dto.0.clone();
+
+    let err_res1: Vec<AppError> = CreateUserDTO::validation(&create_user_dto);
+    if err_res1.len() > 0 {
+        return Ok(AppError::get_http_response(&err_res1));
+    }
+
+    let user_dto = web::block(move || {
+        let mut conn = pool.get()?;
+
+        let nickname = create_user_dto.nickname.clone();
+        let email = create_user_dto.email.clone();
+        // find user by nickname or email
+        let search_results =
+            users_service::find_user_by_nickname_or_email(&mut conn, &nickname, &email)?;
+        if search_results.is_some() {
+            return Err(AppError::BadRequest(
+                "A user with the same name or email is already registered.".to_string(),
+            ));
+        }
+
+        // Create a new entity (user).
+        users_service::create_user(&mut conn, &create_user_dto)
+    })
+    .await??;
+
+    Ok(HttpResponse::Ok().json(user_dto))
+}
+
+// POST api/auth/login
+#[post("/login")]
+pub async fn login(
+    pool: web::Data<db::DbPool>,
+    json_login_user_dto: web::Json<LoginUserDTO>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let mut login_user_dto: LoginUserDTO = json_login_user_dto.0.clone();
+
+    let nickname = login_user_dto.nickname.clone();
+    let email = login_user_dto.nickname.clone();
+    // let password = login_user_dto.password.clone();
+
+    let user_dto = web::block(move || {
+        let mut conn = pool.get()?;
+
+        // find user by nickname or email
+        let user_to_verify =
+            users_service::find_user_by_nickname_or_email(&mut conn, &nickname, &email)?;
+
+        if user_to_verify.is_none() {
+            return Err(AppError::BadRequest(
+                "The username or password is incorrect.".to_string(),
+            ));
+        }
+
+        // Some(LoginInfoDTO {
+        //     username: "user_to_verify.username".to_string(),
+        //     login_session: String::new(),
+        // });
+        user_to_verify
+    })
+    .await??;
+    /*
+    match account_service::login(login_dto.0, &pool) {
+        Ok(token_res) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+            constants::MESSAGE_LOGIN_SUCCESS,
+            token_res,
+        ))),
+        Err(err) => Err(err),
+    }
+    */
+    Ok(HttpResponse::Ok().json("user_dto"))
 }

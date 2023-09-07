@@ -5,6 +5,8 @@ use crate::schema::users;
 use crate::users::users_models::{self, UserDTO};
 use crate::utils::errors::AppError;
 
+use super::users_models::CreateUserDTO;
+
 /// Run query using Diesel to find user by id and return it.
 pub fn find_user_by_id(conn: &mut db::Connection, id: i32) -> Result<Option<UserDTO>, AppError> {
     // Run query using Diesel to find user by id.
@@ -17,8 +19,26 @@ pub fn find_user_by_id(conn: &mut db::Connection, id: i32) -> Result<Option<User
     Ok(opt_user_dto)
 }
 
+/// Run query using Diesel to find user by nickname or email and return it.
+pub fn find_user_by_nickname_or_email(
+    conn: &mut db::Connection,
+    nickname: &str,
+    email: &str,
+) -> Result<Option<UserDTO>, AppError> {
+    // Run query using Diesel to find user by nickname or email.
+    let opt_user_dto: Option<UserDTO> = users::table
+        // .filter(users::dsl::nickname.eq(nickname).or(users::dsl::email.eq(email)))
+        .filter(users::dsl::nickname.eq(nickname))
+        .or_filter(users::dsl::email.eq(email))
+        .first::<users_models::User>(conn)
+        .optional()?
+        .and_then(|user| Some(UserDTO::from(user)));
+
+    Ok(opt_user_dto)
+}
+
 /// Run query using Diesel to find user by nickname and return it.
-pub fn find_user_by_nickname(
+pub fn find_users_by_nickname(
     conn: &mut db::Connection,
     nickname: &str,
 ) -> Result<Vec<UserDTO>, AppError> {
@@ -42,12 +62,12 @@ pub fn find_user_by_nickname(
 }
 
 /// Run query using Diesel to add a new user entry.
-pub fn create_user(conn: &mut db::Connection, new_user_dto: UserDTO) -> Result<UserDTO, AppError> {
-    let mut new_user: UserDTO = new_user_dto.clone();
-    UserDTO::clear_optional(&mut new_user);
-
+pub fn create_user(
+    conn: &mut db::Connection,
+    create_user_dto: &CreateUserDTO,
+) -> Result<UserDTO, AppError> {
     let user: users_models::User = diesel::insert_into(users::table)
-        .values(new_user)
+        .values(create_user_dto)
         .returning(users_models::User::as_returning())
         .get_result(conn)?;
 

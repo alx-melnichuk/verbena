@@ -1,5 +1,6 @@
 use std::{env, io};
 
+use actix_files::Files;
 use actix_web::web;
 use actix_web::{App, HttpServer};
 use dotenv;
@@ -44,10 +45,10 @@ async fn main() -> io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             // enable logger
             .wrap(actix_web::middleware::Logger::default())
-            // .service(Files::new("/static", "static").show_files_listing())
-            // .service(Files::new("/assets", "static/assets").show_files_listing())
+            .service(Files::new("/static", "static").show_files_listing())
+            .service(Files::new("/assets", "static/assets").show_files_listing())
             .configure(static_controller::configure)
-            .configure(users_controller::configure)
+            .service(web::scope("/api").configure(users_controller::configure))
     })
     .bind(&app_url)?
     .run()
