@@ -8,16 +8,15 @@ pub type Connection = PgConnection;
 
 pub type DbPool = r2d2::Pool<r2d2::ConnectionManager<Connection>>;
 
+#[cfg(not(feature = "mockdata"))]
+pub type DbPooledConnection = r2d2::PooledConnection<r2d2::ConnectionManager<Connection>>;
+
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 pub fn init_db_pool(db_url: &str) -> DbPool {
-    use log::info;
-
-    info!("Configuring database...");
+    log::info!("Configuring database...");
     let manager = r2d2::ConnectionManager::<Connection>::new(db_url);
-    let pool = r2d2::Pool::builder()
-        .build(manager)
-        .expect("Failed to create pool.");
+    let pool = r2d2::Pool::builder().build(manager).expect("Failed to create pool.");
 
     pool
 }
