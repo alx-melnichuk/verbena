@@ -3,13 +3,18 @@ use actix_web::error::{ErrorForbidden, ErrorInternalServerError, ErrorUnauthoriz
 use actix_web::{http, web, FromRequest, HttpMessage};
 use futures_util::future::{ready, LocalBoxFuture, Ready};
 use futures_util::FutureExt;
+use log;
 use std::rc::Rc;
 use std::task::{Context, Poll};
 
 use crate::errors::AppError;
-use crate::sessions::tokens;
+use crate::sessions::{config_jwt::ConfigJwt, tokens};
 use crate::users::user_models::{User, /*UserDto,*/ UserRole};
-use crate::users::user_orm::UserOrm;
+#[cfg(feature = "mockdata")]
+use crate::users::user_orm::tests::UserOrmApp;
+#[cfg(not(feature = "mockdata"))]
+use crate::users::user_orm::UserOrmApp;
+use crate::users::user_orm::{UserOrm, CD_DATA_BASE};
 
 pub struct Authenticated(User);
 
@@ -36,6 +41,7 @@ impl FromRequest for Authenticated {
 impl std::ops::Deref for Authenticated {
     type Target = User;
 
+    /// Implement the deref method to access the inner User value of Authenticated.
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -61,12 +67,19 @@ where
             Error = actix_web::Error,
         > + 'static,
 {
+    /// The response type produced by the service.
     type Response = ServiceResponse<actix_web::body::BoxBody>;
+    /// The error type produced by the service.
     type Error = actix_web::Error;
+    /// The `TransformService` value created by this factory.
     type Transform = AuthMiddleware<S>;
+    /// Errors produced while building a transform service.
     type InitError = ();
+    /// The future type representing the asynchronous response.
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
+    /// Creates and returns a new Transform component asynchronously.
+    /// A `Self::Future` representing the asynchronous transformation process.
     fn new_transform(&self, service: S) -> Self::Future {
         ready(Ok(AuthMiddleware {
             service: Rc::new(service),
@@ -88,33 +101,36 @@ where
             Error = actix_web::Error,
         > + 'static,
 {
+    /// The response type produced by the service.
     type Response = ServiceResponse<actix_web::body::BoxBody>;
+    /// The error type that can be produced by the service.
     type Error = actix_web::Error;
+    /// The future type representing the asynchronous response.
     type Future = LocalBoxFuture<'static, Result<Self::Response, actix_web::Error>>;
 
+    /// Returns `Ready` when the service is able to process requests.
     fn poll_ready(&self, ctx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.service.poll_ready(ctx)
     }
-
+    /// The future type representing the asynchronous response.
     fn call(&self, req: ServiceRequest) -> Self::Future {
+        // Attempt to extract token from cookie or authorization header
         let token = req.cookie("token").map(|c| c.value().to_string()).or_else(|| {
             req.headers()
                 .get(http::header::AUTHORIZATION)
                 .map(|h| h.to_str().unwrap().split_at(7).1.to_string())
         });
-
+        // If token is missing, return unauthorized error
         if token.is_none() {
-            // let json_error = ErrorResponse {
-            //     status: "fail".to_string(),
-            //     message: ErrorMessage::TokenNotProvided.to_string(),
-            // };
+            // let json_error = ErrorResponse { status: "fail".to_string(), message: ErrorMessage::TokenNotProvided.to_string()};
             let err_msg = "You are not logged in, please provide token2";
-            let json_error = AppError::new("Authentication1", err_msg);
+            let json_error = AppError::new("TokenNotProvided", err_msg);
+            log::warn!("{}: {}", "TokenNotProvided", err_msg);
             return Box::pin(ready(Err(ErrorUnauthorized(json_error))));
         }
 
         let config_jwt = req.app_data::<web::Data<ConfigJwt>>().unwrap();
-
+        // Decode token and handle errors
         let user_id = match tokens::decode_token(&token.unwrap(), config_jwt.jwt_secret.as_bytes())
         {
             Ok(token_claims) => token_claims.sub,
@@ -126,42 +142,47 @@ where
             }
         };
 
-        let cloned_app_state = app_state.clone();
+        // let cloned_app_state = app_state.clone();
         let allowed_roles = self.allowed_roles.clone();
         let srv = Rc::clone(&self.service);
 
+        // Handle user extraction and request processing
         async move {
             // let user_id = uuid::Uuid::parse_str(user_id.as_str()).unwrap();
             let user_id = user_id.parse::<i32>().unwrap();
 
-            // let result = cloned_app_state
-            //     .db_client
-            //     .get_user(Some(user_id.clone()), None, None)
-            //     .await
+            // let result = cloned_app_state.db_client.get_user(Some(user_id.clone()), None, None).await
             //     .map_err(|e| ErrorInternalServerError(HttpError::server_error(e.to_string())))?;
 
             let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap();
 
-            let result = user_orm.find_user_by_id(user_id).map_err(|e| {
-                ErrorInternalServerError(AppError::new("Authentication4", &e.to_string()))
+            let result = user_orm.find_user_by_id(user_id.clone()).map_err(|e| {
+                log::warn!("{}: {}", CD_DATA_BASE, e.to_string());
+                ErrorInternalServerError(
+                    AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500),
+                )
+                // #-OLD ErrorInternalServerError(AppError::new("Authentication4", &e.to_string()))
             })?;
 
             let err_msg = "User belonging to this token no longer exists";
             let user = result.ok_or(ErrorUnauthorized(
                 // ErrorResponse { status: "fail".to_string(), message: ErrorMessage::UserNoLongerExist.to_string(), }
-                AppError::new("Authentication5", err_msg),
+                AppError::new("UserNoLongerExist", err_msg),
             ))?;
 
             // Check if user's role matches the required role
             // # if allowed_roles.contains(&user.role) {
             let user_role = allowed_roles.get(0).unwrap();
             if allowed_roles.contains(user_role) {
+                // Insert user information into request extensions
                 req.extensions_mut().insert::<User>(user);
+                // Call the wrapped service to handle the request
                 let res = srv.call(req).await?;
                 Ok(res)
             } else {
                 // let json_error = ErrorResponse {
-                //     status: "fail".to_string(), message: ErrorMessage::PermissionDenied.to_string(),
+                //     status: "fail".to_string(),
+                //     message: ErrorMessage::PermissionDenied.to_string(),
                 // };
                 let err_msg = "You are not allowed to perform this action";
                 let json_error = AppError::new("Authentication6", err_msg);

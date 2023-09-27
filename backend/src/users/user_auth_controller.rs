@@ -2,17 +2,20 @@ use actix_web::{
     cookie::time::Duration as ActixWebDuration, cookie::Cookie, post, web, HttpResponse, Responder,
 };
 use serde_json::json;
+use validator::Validate;
 
-use crate::errors::AppError;
+// use crate::errors::AppError; //,ERR_CN_VALIDATION
+use crate::errors::{AppError, ERR_CN_VALIDATION};
 use crate::extractors::authentication::RequireAuth;
-use crate::sessions::{hash_tools, tokens};
-use crate::users::{user_models, user_orm::UserOrm};
-
-use super::user_models::UserRole;
+use crate::sessions::{config_jwt::ConfigJwt, hash_tools, tokens};
+use crate::users::user_models::{self, UserRole};
+#[cfg(feature = "mockdata")]
+use crate::users::user_orm::tests::UserOrmApp;
+#[cfg(not(feature = "mockdata"))]
+use crate::users::user_orm::UserOrmApp;
+use crate::users::user_orm::{UserOrm, CD_BLOCKING, CD_DATA_BASE};
 
 pub const CD_HASHING: &str = "Hashing";
-pub const CD_BLOCKING: &str = "Blocking";
-pub const CD_DATA_BASE: &str = "DataBase";
 pub const CD_UNAUTHORIZED: &str = "UnAuthorized";
 pub const CD_USER_EXISTS: &str = "NicknameOrEmailExist";
 pub const MSG_USER_EXISTS: &str = "A user with the same nickname or email already exists.";
@@ -20,28 +23,24 @@ pub const MSG_WRONG_CREDENTIALS: &str = "Email or password is wrong";
 pub const CD_JSONWEBTOKEN: &str = "jsonwebtoken";
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::scope("/auth")
-            //signup
-            .service(register)
-            // login
-            .service(login),
-    )
-    .service(
-        web::scope("/auth")
-            // logout
+    //     POST api/signup
+    cfg.service(signup)
+        // POST api/login
+        .service(login)
+        // POST api/logout
+        // .service(web::scope("")
             .service(logout)
-            .wrap(RequireAuth::allowed_roles(vec![
-                UserRole::User,
-                UserRole::Moderator,
-                UserRole::Admin,
-            ])),
-    );
+        //     .wrap(RequireAuth::allowed_roles(
+        //         // List of allowed roles.
+        //         vec![UserRole::Admin],
+        //     )),
+        // )
+        ;
 }
 
-// POST api/auth/signup
+// POST api/signup
 #[post("/signup")]
-pub async fn register(
+pub async fn signup(
     user_orm: web::Data<UserOrmApp>,
     body: web::Json<user_models::CreateUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -89,16 +88,20 @@ pub async fn register(
     Ok(HttpResponse::Created().json(user_models::UserDto::from(result_user)))
 }
 
-// POST api/auth/login
+// POST api/login
 #[post("/login")]
 pub async fn login(
     config_jwt: web::Data<ConfigJwt>,
     user_orm: web::Data<UserOrmApp>,
-    body: web::Json<user_models::LoginUserDto>,
+    json_user_dto: web::Json<user_models::LoginUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    // body.validate().map_err(|e| HttpError::bad_request(e.to_string()))?;
+    // Checking the validity of the data model.
+    json_user_dto.validate().map_err(|errors| {
+        log::warn!("{}: {}", ERR_CN_VALIDATION, errors.to_string());
+        AppError::from(errors)
+    })?;
 
-    let login_user_dto: user_models::LoginUserDto = body.0.clone();
+    let login_user_dto: user_models::LoginUserDto = json_user_dto.0.clone();
 
     let nickname = login_user_dto.nickname.clone();
     let email = login_user_dto.nickname.clone();
@@ -160,7 +163,7 @@ pub async fn login(
     Ok(HttpResponse::Ok().cookie(cookie).json(response))
 }
 
-// POST api/auth/logout
+// POST api/logout
 #[post("/logout")]
 pub async fn logout() -> impl Responder {
     let cookie = Cookie::build("token", "")

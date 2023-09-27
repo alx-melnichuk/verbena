@@ -8,7 +8,7 @@ use log;
 
 mod dbase;
 mod errors;
-// #! mod extractors;
+mod extractors;
 mod schema;
 mod sessions;
 mod static_controller;
@@ -16,12 +16,11 @@ mod users;
 mod utils;
 
 use crate::sessions::config_jwt::ConfigJwt;
-// use crate::users::{user_auth_controller, user_controller};
-use crate::users::user_controller;
+#[cfg(feature = "mockdata")]
+use crate::users::user_orm::tests::UserOrmApp;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::UserOrmApp;
-#[cfg(feature = "mockdata")]
-use crate::users::user_orm_mock::UserOrmApp;
+use crate::users::{user_auth_controller, user_controller};
 
 // ** Funcion Main **
 #[actix_web::main]
@@ -44,10 +43,10 @@ async fn main() -> io::Result<()> {
 
     let config_jwt = web::Data::new(ConfigJwt::init_by_env());
 
-    #[cfg(not(feature = "mockdata"))]
-    let user_orm: UserOrmApp = UserOrmApp::new(pool.clone());
     #[cfg(feature = "mockdata")]
     let user_orm: UserOrmApp = UserOrmApp::new();
+    #[cfg(not(feature = "mockdata"))]
+    let user_orm: UserOrmApp = UserOrmApp::new(pool.clone());
     let data_user_orm = web::Data::new(user_orm);
 
     println!("🚀 Server started successfully {}", &app_url);
@@ -65,7 +64,7 @@ async fn main() -> io::Result<()> {
             .configure(static_controller::configure)
             .service(
                 web::scope("/api")
-                    // .configure(user_auth_controller::configure)
+                    .configure(user_auth_controller::configure)
                     .configure(user_controller::configure),
             )
     })

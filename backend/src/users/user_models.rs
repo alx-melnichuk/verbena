@@ -86,7 +86,8 @@ pub struct ModifyUserDto {
     pub nickname: Option<String>,
     #[validate(
         length(min = 5, message = "must be more than 5 characters"),
-        length(max = 255, message = "must be less than 255 characters")
+        length(max = 255, message = "must be less than 255 characters"),
+        // email
     )]
     pub email: Option<String>,
     #[validate(
@@ -105,9 +106,19 @@ pub struct CreateUserDto {
     pub password: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+// #[derive(Debug, Validate, Serialize, Deserialize, Clone)]
+#[derive(Debug, Validate, Serialize, Deserialize, Clone, AsChangeset)]
+#[diesel(table_name = schema::users)]
 pub struct LoginUserDto {
+    #[validate(
+        length(min = 3, message = "must be more than 3 characters"),
+        length(max = 64, message = "must be less than 64 characters")
+    )]
     pub nickname: String,
+    #[validate(
+        length(min = 6, message = "must be more than 6 characters"),
+        length(max = 64, message = "must be less than 64 characters")
+    )]
     pub password: String,
 }
 

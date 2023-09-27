@@ -16,7 +16,8 @@ impl ConfigJwt {
     }
 }
 
-#[allow(dead_code)]
+// #[allow(dead_code)]
+#[cfg(feature = "mockdata")]
 pub fn get_test_config() -> ConfigJwt {
     ConfigJwt {
         jwt_secret: "my-jwt-secret".to_string(),

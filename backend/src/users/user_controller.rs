@@ -1,39 +1,55 @@
 use actix_web::{delete, get, put, web, HttpResponse};
 use log;
+use std::ops::Deref;
 use validator::Validate;
 
 use crate::errors::{AppError, ERR_CN_VALIDATION};
+use crate::extractors::authentication::{Authenticated, RequireAuth};
+use crate::users::user_models;
+#[cfg(feature = "mockdata")]
+use crate::users::user_orm::tests::UserOrmApp;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::UserOrmApp;
-#[cfg(feature = "mockdata")]
-use crate::users::user_orm_mock::UserOrmApp;
+use crate::users::user_orm::{UserOrm, CD_BLOCKING, CD_DATA_BASE};
+use crate::utils::parse_err::{msg_parse_err, CD_PARSE_INT_ERROR, MSG_PARSE_INT_ERROR};
 
-use crate::users::{user_models, user_orm::UserOrm};
-
-pub const CD_BLOCKING: &str = "Blocking";
-pub const CD_DATA_BASE: &str = "DataBase"; // ?
-
-pub const CN_CASTING_TO_TYPE: &str = "CastingToType";
-
-// #-pub const CN_INCORRECT_PARAM: &str = "IncorrectParameter";
-// #-pub const MSG_INCORRECT_PARAM: &str = "Incorrect value of the parameter";
-
-pub const CN_NOT_FOUND: &str = "NotFound";
+pub const CD_NOT_FOUND: &str = "NotFound";
 pub const MSG_NOT_FOUND: &str = "The user with the specified ID was not found.";
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
+    //     GET api/users/{id}
     cfg.service(get_user_by_id)
+        // GET api/users/nickname/{nickname}
         .service(get_user_by_nickname)
-        // .service(get_user_me)
-        // .service(get_user_test)
-    .service(put_user)
-    // .service(patch_user)
-    // .service(delete_user)
-    ;
+        // GET api/user_me
+        // .service(web::scope("")
+        .service(get_user_me)
+        // .wrap(RequireAuth::allowed_roles(
+        //         // List of allowed roles.
+        //         vec![UserRole::User, UserRole::Moderator, UserRole::Admin],
+        //     )),
+        // )
+        // PUT api/users/{id}
+        // .service(            web::scope("")
+        .service(put_user)
+        // .wrap(RequireAuth::allowed_roles(
+        //     // List of allowed roles.
+        //     vec![UserRole::User, UserRole::Moderator, UserRole::Admin],
+        // )),
+        // )
+        // DELETE api/users/{id}
+        // .service( web::scope("")
+        .service(delete_user)
+        // .wrap(RequireAuth::allowed_roles(
+        //         // List of allowed roles.
+        //         vec![UserRole::Admin],
+        //     )),
+        // )
+        ;
 }
 
-// GET api/user/{id}
-#[get("/user/{id}")]
+// GET api/users/{id}
+#[get("/users/{id}")]
 pub async fn get_user_by_id(
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
@@ -41,8 +57,9 @@ pub async fn get_user_by_id(
     let id_str = request.match_info().query("id").to_string();
 
     let id = id_str.parse::<i32>().map_err(|e| {
-        log::warn!("{}: {}", CN_CASTING_TO_TYPE, e.to_string());
-        AppError::new(CN_CASTING_TO_TYPE, &e.to_string()).set_status(400)
+        let msg = msg_parse_err("id", MSG_PARSE_INT_ERROR, &id_str, &e.to_string());
+        log::warn!("{}: {}", CD_PARSE_INT_ERROR, msg);
+        AppError::new(CD_PARSE_INT_ERROR, &msg.to_string()).set_status(400)
     })?;
 
     let result_user = web::block(move || {
@@ -70,8 +87,8 @@ pub async fn get_user_by_id(
     }
 }
 
-// GET api/user/nickname/demo2d
-#[get("/user/nickname/{nickname}")]
+// GET api/users/nickname/{nickname}
+#[get("/users/nickname/{nickname}")]
 pub async fn get_user_by_nickname(
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
@@ -103,19 +120,19 @@ pub async fn get_user_by_nickname(
     }
 }
 
-/*
-// GET api/user/me
-#[get("/user/me")]
-pub async fn get_user_me(authenticated: Authenticated) -> impl Responder {
-    // let filtered_user = FilterUserDto::filter_user(&user);
+// GET api/user_me
+#[get("/user_me")]
+pub async fn get_user_me(
+    authenticated: Authenticated,
+) -> actix_web::Result<HttpResponse, AppError> {
     let user = authenticated.deref();
     let user_dto = user_models::UserDto::from(user.clone());
 
-    HttpResponse::Ok().json(user_dto)
+    Ok(HttpResponse::Ok().json(user_dto))
 }
-*/
-// PUT api/user/{id}
-#[put("/user/{id}")]
+
+// PUT api/users/{id}
+#[put("/users/{id}")]
 pub async fn put_user(
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
@@ -124,10 +141,12 @@ pub async fn put_user(
     let id_str = request.match_info().query("id").to_string();
 
     let id = id_str.parse::<i32>().map_err(|e| {
-        log::warn!("{}: {}", CN_CASTING_TO_TYPE, e.to_string());
-        AppError::new(CN_CASTING_TO_TYPE, &e.to_string()).set_status(400)
+        let msg = msg_parse_err("id", MSG_PARSE_INT_ERROR, &id_str, &e.to_string());
+        log::warn!("{}: {}", CD_PARSE_INT_ERROR, msg);
+        AppError::new(CD_PARSE_INT_ERROR, &msg.to_string()).set_status(400)
     })?;
 
+    // Checking the validity of the data model.
     json_user_dto.validate().map_err(|errors| {
         log::warn!("{}: {}", ERR_CN_VALIDATION, errors.to_string());
         AppError::from(errors)
@@ -167,8 +186,9 @@ pub async fn patch_user(
     let id_str = request.match_info().query("id").to_string();
 
     let id = id_str.parse::<i32>().map_err(|e| {
-        log::warn!("{}: {}", CN_CASTING_TO_TYPE, e.to_string());
-        AppError::new(CN_CASTING_TO_TYPE, &e.to_string()).set_status(400)
+        let msg = msg_parse_err("id", MSG_PARSE_INT_ERROR, &id_str, &e.to_string());
+        log::warn!("{}: {}", CD_PARSE_INT_ERROR, msg);
+        AppError::new(CD_PARSE_INT_ERROR, &msg.to_string()).set_status(400)
     })?;
 
     let mut new_user: user_models::UserDto = json_user_dto.0.clone();
@@ -206,8 +226,8 @@ pub async fn patch_user(
     }
 }
 */
-// DELETE api/user/{id}
-#[delete("/user/{id}")]
+// DELETE api/users/{id}
+#[delete("/users/{id}")]
 pub async fn delete_user(
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
@@ -215,8 +235,9 @@ pub async fn delete_user(
     let id_str = request.match_info().query("id").to_string();
 
     let id = id_str.parse::<i32>().map_err(|e| {
-        log::warn!("{}: {}", CN_CASTING_TO_TYPE, e.to_string());
-        AppError::new(CN_CASTING_TO_TYPE, &e.to_string()).set_status(400)
+        let msg = msg_parse_err("id", MSG_PARSE_INT_ERROR, &id_str, &e.to_string());
+        log::warn!("{}: {}", CD_PARSE_INT_ERROR, msg);
+        AppError::new(CD_PARSE_INT_ERROR, &msg.to_string()).set_status(400)
     })?;
 
     let result_count = web::block(move || {
@@ -235,7 +256,7 @@ pub async fn delete_user(
     })??;
 
     if 0 == result_count {
-        Err(AppError::new(CN_NOT_FOUND, MSG_NOT_FOUND).set_status(404))
+        Err(AppError::new(CD_NOT_FOUND, MSG_NOT_FOUND).set_status(404))
     } else {
         Ok(HttpResponse::Ok().finish())
     }
@@ -250,7 +271,7 @@ mod tests {
     use crate::errors::AppError;
     use crate::users::{
         user_models::{ModifyUserDto, UserDto},
-        user_orm_mock::UserOrmApp,
+        user_orm::tests::UserOrmApp,
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize AppError response from JSON.";
@@ -264,18 +285,21 @@ mod tests {
             App::new().app_data(web::Data::clone(&user_orm)).service(get_user_by_id),
         )
         .await;
+        let user_id = "1a";
         let req = test::TestRequest::get()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri("/user/1a") // GET /user/1a
+            .uri(&format!("/users/{}", user_id)) // GET /users/1a
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
+
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CN_CASTING_TO_TYPE);
-        assert_eq!(app_err.message, MSG_CASTING_TO_TYPE);
+        assert_eq!(app_err.code, CD_PARSE_INT_ERROR);
+        let msg = msg_parse_err("id", MSG_PARSE_INT_ERROR, user_id, MSG_CASTING_TO_TYPE);
+        assert!(app_err.message.starts_with(&msg));
     }
 
     #[test]
@@ -290,7 +314,7 @@ mod tests {
         .await;
         let req = test::TestRequest::get()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri(&format!("/user/{}", user1.id)) // GET /user/1
+            .uri(&format!("/users/{}", user1.id)) // GET /users/1
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
@@ -315,7 +339,7 @@ mod tests {
         .await;
         let req = test::TestRequest::get()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri("/user/9999") // GET /user/9999
+            .uri("/users/9999") // GET /users/9999
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
@@ -334,7 +358,7 @@ mod tests {
         .await;
         let req = test::TestRequest::get()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri(&format!("/user/nickname/{}_bad", nickname)) // GET /user/nickname/JAMES_SMITH
+            .uri(&format!("/users/nickname/{}_bad", nickname)) // GET /users/nickname/JAMES_SMITH
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
@@ -353,7 +377,7 @@ mod tests {
         .await;
         let req = test::TestRequest::get()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri(&format!("/user/nickname/{}", nickname)) // GET /user/nickname/JAMES_SMITH
+            .uri(&format!("/users/nickname/{}", nickname)) // GET /users/nickname/JAMES_SMITH
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
@@ -376,9 +400,10 @@ mod tests {
         let app =
             test::init_service(App::new().app_data(web::Data::clone(&user_orm)).service(put_user))
                 .await;
+        let user_id = "1a";
         let req = test::TestRequest::put()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri("/user/1a") // PUT user/1a
+            .uri(&format!("/users/{}", user_id)) // PUT user/1a
             .set_json(ModifyUserDto {
                 nickname: Some("Oliver_Taylor".to_string()),
                 email: Some("Oliver_Taylor@gmail.com".to_string()),
@@ -392,8 +417,9 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CN_CASTING_TO_TYPE);
-        assert_eq!(app_err.message, MSG_CASTING_TO_TYPE);
+        assert_eq!(app_err.code, CD_PARSE_INT_ERROR);
+        let msg = msg_parse_err("id", MSG_PARSE_INT_ERROR, user_id, MSG_CASTING_TO_TYPE);
+        assert!(app_err.message.starts_with(&msg));
     }
 
     #[test]
@@ -407,7 +433,7 @@ mod tests {
                 .await;
         let req = test::TestRequest::put()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri(&format!("/user/{}999", user1a.id)) // PUT user/1999
+            .uri(&format!("/users/{}999", user1a.id)) // PUT users/1999
             .set_json(ModifyUserDto {
                 nickname: Some("Oliver_Taylor".to_string()),
                 email: Some("Oliver_Taylor@gmail.com".to_string()),
@@ -447,7 +473,7 @@ mod tests {
                 .await;
         let req = test::TestRequest::put()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri(&format!("/user/{}", user1a.id)) // PUT user/1
+            .uri(&format!("/users/{}", user1a.id)) // PUT users/1
             .set_json(ModifyUserDto {
                 nickname: Some(new_nickname.clone()),
                 email: Some(new_email.clone()),
@@ -489,7 +515,7 @@ mod tests {
                 .await;
         let req = test::TestRequest::put()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri(&format!("/user/{}", user1.id)) // PUT user/1
+            .uri(&format!("/users/{}", user1.id)) // PUT user/1
             .set_json(ModifyUserDto {
                 nickname: Some("Ol".to_string()),
                 email: Some("Oliver_Taylor@gmail.com".to_string()),
@@ -519,7 +545,7 @@ mod tests {
                 .await;
         let req = test::TestRequest::put()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri(&format!("/user/{}", user1.id)) // PUT user/1
+            .uri(&format!("/users/{}", user1.id)) // PUT users/1
             .set_json(ModifyUserDto {
                 nickname: Some(nickname),
                 email: Some("Oliver_Taylor@gmail.com".to_string()),
@@ -549,7 +575,7 @@ mod tests {
                 .await;
         let req = test::TestRequest::put()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri(&format!("/user/{}", user1.id)) // PUT user/1
+            .uri(&format!("/users/{}", user1.id)) // PUT users/1
             .set_json(ModifyUserDto {
                 nickname: Some("Oliver_Taylor".to_string()),
                 email: Some("o@us".to_string()),
@@ -582,7 +608,7 @@ mod tests {
                 .await;
         let req = test::TestRequest::put()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri(&format!("/user/{}", user1.id)) // PUT user/1
+            .uri(&format!("/users/{}", user1.id)) // PUT users/1
             .set_json(ModifyUserDto {
                 nickname: Some("Oliver_Taylor".to_string()),
                 email: Some(email2.to_string()),
@@ -612,7 +638,7 @@ mod tests {
                 .await;
         let req = test::TestRequest::put()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri(&format!("/user/{}", user1.id)) // PUT user/1
+            .uri(&format!("/users/{}", user1.id)) // PUT users/1
             .set_json(ModifyUserDto {
                 nickname: Some("Oliver_Taylor".to_string()),
                 email: Some("Oliver_Taylor@gmail.com".to_string()),
@@ -642,7 +668,7 @@ mod tests {
                 .await;
         let req = test::TestRequest::put()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri(&format!("/user/{}", user1.id)) // PUT user/1
+            .uri(&format!("/users/{}", user1.id)) // PUT users/1
             .set_json(ModifyUserDto {
                 nickname: Some("Oliver_Taylor".to_string()),
                 email: Some("Oliver_Taylor@gmail.com".to_string()),
@@ -668,9 +694,10 @@ mod tests {
             App::new().app_data(web::Data::clone(&user_orm)).service(delete_user),
         )
         .await;
+        let user_id = "1a";
         let req = test::TestRequest::delete()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri("/user/1a") // DELETE /user/1a
+            .uri(&format!("/users/{}", user_id)) // DELETE /user/1a
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
@@ -678,8 +705,9 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CN_CASTING_TO_TYPE);
-        assert_eq!(app_err.message, MSG_CASTING_TO_TYPE);
+        assert_eq!(app_err.code, CD_PARSE_INT_ERROR);
+        let msg = msg_parse_err("id", MSG_PARSE_INT_ERROR, user_id, MSG_CASTING_TO_TYPE);
+        assert!(app_err.message.starts_with(&msg));
     }
 
     #[test]
@@ -691,7 +719,7 @@ mod tests {
         .await;
         let req = test::TestRequest::delete()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri("/user/9999") // DELETE  /user/9999
+            .uri("/users/9999") // DELETE  /users/9999
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
@@ -699,7 +727,7 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CN_NOT_FOUND);
+        assert_eq!(app_err.code, CD_NOT_FOUND);
         assert_eq!(app_err.message, MSG_NOT_FOUND);
     }
 
@@ -715,7 +743,7 @@ mod tests {
         .await;
         let req = test::TestRequest::delete()
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri(&format!("/user/{}", user1.id)) // DELETE  /user/1
+            .uri(&format!("/users/{}", user1.id)) // DELETE  /users/1
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 404

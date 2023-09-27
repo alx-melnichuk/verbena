@@ -91,8 +91,8 @@ impl actix_web::ResponseError for AppError {
         self.status_code()
     }
     fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody> {
-        #[cfg(test)]
-        eprintln!("AppError({}): {}", self.status_code(), self.to_string()); // #
+        // #[cfg(test)]
+        // eprintln!("AppError({}): {}", self.status_code(), self.to_string()); // #
         HttpResponse::build(self.status_code())
             .insert_header(http::header::ContentType::json())
             .json(self)
