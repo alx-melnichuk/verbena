@@ -6,9 +6,9 @@ use validator::Validate;
 
 // use crate::errors::AppError; //,ERR_CN_VALIDATION
 use crate::errors::{AppError, ERR_CN_VALIDATION};
-use crate::extractors::authentication::RequireAuth;
+// use crate::extractors::authentication::RequireAuth;
 use crate::sessions::{config_jwt::ConfigJwt, hash_tools, tokens};
-use crate::users::user_models::{self, UserRole};
+use crate::users::user_models::{self /*UserRole*/};
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 #[cfg(not(feature = "mockdata"))]
@@ -55,7 +55,7 @@ pub async fn signup(
     let email = register_user.email.clone();
 
     let password_hashed = hash_tools::hash(&register_user.password).map_err(|e| {
-        log::warn!("{}: {}", CD_HASHING, e.to_string());
+        log::debug!("{}: {}", CD_HASHING, e.to_string());
         AppError::new(CD_HASHING, &e.to_string())
     })?;
     register_user2.password = password_hashed;
@@ -64,7 +64,7 @@ pub async fn signup(
         // Find for a user by nickname or email.
         let existing_user =
             user_orm.find_user_by_nickname_or_email(&nickname, &email).map_err(|e| {
-                log::warn!("{}: {}", CD_DATA_BASE, e.to_string());
+                log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
                 AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
             })?;
 
@@ -74,14 +74,14 @@ pub async fn signup(
 
         // Create a new entity (user).
         let res_user = user_orm.create_user(&register_user2).map_err(|e| {
-            log::warn!("{}: {}", CD_DATA_BASE, e.to_string());
+            log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
             AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
         });
         res_user
     })
     .await
     .map_err(|e| {
-        log::warn!("{}: {}", CD_BLOCKING, e.to_string());
+        log::debug!("{}: {}", CD_BLOCKING, e.to_string());
         AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
     })??;
 
@@ -97,7 +97,7 @@ pub async fn login(
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Checking the validity of the data model.
     json_user_dto.validate().map_err(|errors| {
-        log::warn!("{}: {}", ERR_CN_VALIDATION, errors.to_string());
+        log::debug!("{}: {}", ERR_CN_VALIDATION, errors.to_string());
         AppError::from(errors)
     })?;
 
@@ -113,14 +113,14 @@ pub async fn login(
         // find user by nickname or email
         let existing_user =
             user_orm.find_user_by_nickname_or_email(&nickname, &email).map_err(|e| {
-                log::warn!("{}: {}", CD_DATA_BASE, e.to_string());
+                log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
                 AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
             });
         existing_user
     })
     .await
     .map_err(|e| {
-        log::warn!("{}: {}", CD_BLOCKING, e.to_string());
+        log::debug!("{}: {}", CD_BLOCKING, e.to_string());
         AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
     })??;
 
@@ -132,7 +132,7 @@ pub async fn login(
 
     let user_password = user.password.to_string();
     let password_matches = hash_tools::compare(&password, &user_password).map_err(|e| {
-        log::warn!("{}: {}", "InvalidHashFormat", e.to_string());
+        log::debug!("{}: {}", "InvalidHashFormat", e.to_string());
         AppError::new("InvalidHashFormat", &e.to_string()).set_status(401)
     })?;
 
@@ -146,7 +146,7 @@ pub async fn login(
         cnf_jwt.jwt_maxage,
     )
     .map_err(|e| {
-        log::warn!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
+        log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
         AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
     })?;
 

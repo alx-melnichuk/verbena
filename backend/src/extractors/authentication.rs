@@ -16,6 +16,18 @@ use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::user_orm::UserOrmApp;
 use crate::users::user_orm::{UserOrm, CD_DATA_BASE};
 
+pub const CD_TOKEN_NOT_PROVIDED: &str = "TokenNotProvided";
+pub const MSG_TOKEN_NOT_PROVIDED: &str = "You are not logged in, please provide token";
+
+pub const CD_INVALID_TOKEN: &str = "InvalidToken";
+pub const MSG_INVALID_TOKEN: &str = "You are required to login, your token is incorrect";
+
+pub const CD_USER_NO_LONGER_EXIST: &str = "UserNoLongerExist";
+pub const MSG_USER_NO_LONGER_EXIST: &str = "User belonging to this token no longer exists";
+
+pub const CD_PERMISSION_DENIED: &str = "PermissionDenied";
+pub const MSG_PERMISSION_DENIED: &str = "You are not allowed to perform this action";
+
 pub struct Authenticated(User);
 
 impl FromRequest for Authenticated {
@@ -40,7 +52,6 @@ impl FromRequest for Authenticated {
 
 impl std::ops::Deref for Authenticated {
     type Target = User;
-
     /// Implement the deref method to access the inner User value of Authenticated.
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -52,6 +63,7 @@ pub struct RequireAuth {
 }
 
 impl RequireAuth {
+    #[allow(dead_code)]
     pub fn allowed_roles(allowed_roles: Vec<UserRole>) -> Self {
         RequireAuth {
             allowed_roles: Rc::new(allowed_roles),
@@ -122,25 +134,20 @@ where
         });
         // If token is missing, return unauthorized error
         if token.is_none() {
-            // let json_error = ErrorResponse { status: "fail".to_string(), message: ErrorMessage::TokenNotProvided.to_string()};
-            let err_msg = "You are not logged in, please provide token2";
-            let json_error = AppError::new("TokenNotProvided", err_msg);
-            log::warn!("{}: {}", "TokenNotProvided", err_msg);
+            log::debug!("{}: {}", CD_TOKEN_NOT_PROVIDED, MSG_TOKEN_NOT_PROVIDED);
+            let json_error = AppError::new(CD_TOKEN_NOT_PROVIDED, MSG_TOKEN_NOT_PROVIDED);
             return Box::pin(ready(Err(ErrorUnauthorized(json_error))));
         }
 
         let config_jwt = req.app_data::<web::Data<ConfigJwt>>().unwrap();
         // Decode token and handle errors
-        let user_id = match tokens::decode_token(&token.unwrap(), config_jwt.jwt_secret.as_bytes())
-        {
-            Ok(token_claims) => token_claims.sub,
-            Err(e) => {
-                return Box::pin(ready(Err(ErrorUnauthorized(
-                    // ErrorResponse { status: "fail".to_string(), message: e.message }
-                    AppError::new("Authentication2", &e.to_string()),
-                ))));
-            }
-        };
+        let decode = tokens::decode_token(&token.unwrap(), config_jwt.jwt_secret.as_bytes());
+        if decode.is_err() {
+            log::debug!("{}: {}", CD_INVALID_TOKEN, MSG_INVALID_TOKEN);
+            let json_error = AppError::new(CD_INVALID_TOKEN, MSG_INVALID_TOKEN);
+            return Box::pin(ready(Err(ErrorUnauthorized(json_error))));
+        }
+        let user_id_str = decode.unwrap().sub;
 
         // let cloned_app_state = app_state.clone();
         let allowed_roles = self.allowed_roles.clone();
@@ -148,44 +155,36 @@ where
 
         // Handle user extraction and request processing
         async move {
-            // let user_id = uuid::Uuid::parse_str(user_id.as_str()).unwrap();
-            let user_id = user_id.parse::<i32>().unwrap();
+            let user_id = user_id_str.parse::<i32>().unwrap();
 
             // let result = cloned_app_state.db_client.get_user(Some(user_id.clone()), None, None).await
             //     .map_err(|e| ErrorInternalServerError(HttpError::server_error(e.to_string())))?;
 
             let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap();
-
             let result = user_orm.find_user_by_id(user_id.clone()).map_err(|e| {
-                log::warn!("{}: {}", CD_DATA_BASE, e.to_string());
-                ErrorInternalServerError(
-                    AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500),
-                )
-                // #-OLD ErrorInternalServerError(AppError::new("Authentication4", &e.to_string()))
+                log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
+                #[rustfmt::skip]
+                eprintln!("### error find_user({user_id}): {}: {}", CD_DATA_BASE, e.to_string());
+                ErrorInternalServerError(AppError::new(CD_DATA_BASE, &e.to_string()))
             })?;
 
-            let err_msg = "User belonging to this token no longer exists";
             let user = result.ok_or(ErrorUnauthorized(
-                // ErrorResponse { status: "fail".to_string(), message: ErrorMessage::UserNoLongerExist.to_string(), }
-                AppError::new("UserNoLongerExist", err_msg),
+                // #? ErrorResponse { status: "fail".to_string(), message: ErrorMessage::UserNoLongerExist.to_string(), }
+                AppError::new(CD_USER_NO_LONGER_EXIST, MSG_USER_NO_LONGER_EXIST),
             ))?;
 
+            eprintln!("### allowed_roles: {:?}", allowed_roles);
             // Check if user's role matches the required role
-            // # if allowed_roles.contains(&user.role) {
-            let user_role = allowed_roles.get(0).unwrap();
-            if allowed_roles.contains(user_role) {
+            if allowed_roles.contains(&user.role) {
+                eprintln!("### SECC allowed_roles contains( {:?} )", user.role);
                 // Insert user information into request extensions
                 req.extensions_mut().insert::<User>(user);
                 // Call the wrapped service to handle the request
                 let res = srv.call(req).await?;
                 Ok(res)
             } else {
-                // let json_error = ErrorResponse {
-                //     status: "fail".to_string(),
-                //     message: ErrorMessage::PermissionDenied.to_string(),
-                // };
-                let err_msg = "You are not allowed to perform this action";
-                let json_error = AppError::new("Authentication6", err_msg);
+                log::debug!("{}: {}", CD_PERMISSION_DENIED, MSG_PERMISSION_DENIED);
+                let json_error = AppError::new(CD_PERMISSION_DENIED, MSG_PERMISSION_DENIED);
                 Err(ErrorForbidden(json_error))
             }
         }
@@ -193,23 +192,17 @@ where
     }
 }
 
-//#[cfg(test)]
-/*mod tests {
+#[cfg(all(test, feature = "mockdata"))]
+mod tests {
     use actix_web::{cookie::Cookie, get, test, App, HttpResponse};
-    use sqlx::{Pool, Postgres};
 
-    use crate::{
-        db::DBClient,
-        extractors::auth::RequireAuth,
-        utils::{password, test_utils::get_test_config, token},
-    };
+    use crate::sessions::{config_jwt, tokens};
+    use crate::users::{user_models, user_orm::tests::UserOrmApp};
 
     use super::*;
 
-    #[get(
-        "/",
-        wrap = "RequireAuth::allowed_roles(vec![UserRole::User, UserRole::Moderator, UserRole::Admin])"
-    )]
+    #[rustfmt::skip]
+    #[get("/",wrap = "RequireAuth::allowed_roles(vec![UserRole::User, UserRole::Moderator, UserRole::Admin])")]
     async fn handler_with_requireauth() -> HttpResponse {
         HttpResponse::Ok().into()
     }
@@ -219,24 +212,34 @@ where
         HttpResponse::Ok().into()
     }
 
-    #[sqlx::test]
-    async fn test_auth_middelware_valid_token(pool: Pool<Postgres>) {
-        let db_client = DBClient::new(pool);
-        let config = get_test_config();
+    fn create_user() -> user_models::User {
+        let mut user = UserOrmApp::new_user(
+            1001,
+            "Oliver_Taylor",
+            "Oliver_Taylor@gmail.com",
+            "passwordD1T1",
+        );
+        user.role = UserRole::User;
+        user
+    }
 
-        let hashed_password = password::hash("password123").unwrap();
+    #[test]
+    async fn test_auth_middelware_valid_token() {
+        let user1: user_models::User = create_user();
+        let user_id = user1.id.to_string();
+        let mut users: Vec<user_models::User> = Vec::new();
+        users.push(user1);
 
-        let user = db_client.save_user("John", "john@example.com", &hashed_password).await.unwrap();
+        let config_jwt = config_jwt::get_test_config();
+        let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
 
-        let token =
-            token::create_token(&user.id.to_string(), config.jwt_secret.as_bytes(), 60).unwrap();
+        let data_user_orm = web::Data::new(UserOrmApp::create(users));
+        let data_config_jwt = web::Data::new(config_jwt.clone());
 
         let app = test::init_service(
             App::new()
-                .app_data(web::Data::new(AppState {
-                    env: config.clone(),
-                    db_client,
-                }))
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
                 .service(handler_with_requireauth),
         )
         .await;
@@ -250,27 +253,25 @@ where
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 
-    #[sqlx::test]
-    async fn test_auth_middelware_valid_token_with_cookie(pool: Pool<Postgres>) {
-        let db_client = DBClient::new(pool);
-        let config = get_test_config();
+    #[test]
+    async fn test_auth_middelware_valid_token_with_cookie() {
+        let user1: user_models::User = create_user();
+        let user_id = user1.id.to_string();
+        let users: Vec<user_models::User> = vec![user1];
 
-        let hashed_password = password::hash("password123").unwrap();
+        let config_jwt = config_jwt::get_test_config();
+        let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
 
-        let user = db_client.save_user("John", "john@example.com", &hashed_password).await.unwrap();
+        let data_user_orm = web::Data::new(UserOrmApp::create(users));
+        let data_config_jwt = web::Data::new(config_jwt.clone());
 
         let app = test::init_service(
             App::new()
-                .app_data(web::Data::new(AppState {
-                    env: config.clone(),
-                    db_client,
-                }))
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
                 .service(handler_with_requireauth),
         )
         .await;
-
-        let token =
-            token::create_token(&user.id.to_string(), config.jwt_secret.as_bytes(), 60).unwrap();
 
         let req = test::TestRequest::default().cookie(Cookie::new("token", token)).to_request();
 
@@ -279,53 +280,51 @@ where
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 
-    #[sqlx::test]
-    async fn test_auth_middleware_missing_token(pool: Pool<Postgres>) {
-        let db_client = DBClient::new(pool);
-        let config = get_test_config();
+    #[test]
+    async fn test_auth_middleware_missing_token() {
+        let users: Vec<user_models::User> = vec![create_user()];
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_user_orm = web::Data::new(UserOrmApp::create(users));
+        let data_config_jwt = web::Data::new(config_jwt.clone());
 
         let app = test::init_service(
             App::new()
-                .app_data(web::Data::new(AppState {
-                    env: config.clone(),
-                    db_client,
-                }))
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
                 .service(handler_with_requireauth),
         )
         .await;
 
         let req = test::TestRequest::default().to_request();
+
         let result = test::try_call_service(&app, req).await.err();
 
-        match result {
-            Some(err) => {
-                let expected_status = http::StatusCode::UNAUTHORIZED;
-                let actual_status = err.as_response_error().status_code();
+        let err = result.expect("Service call succeeded, but an error was expected.");
 
-                assert_eq!(actual_status, expected_status);
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED);
 
-                let err_response: ErrorResponse = serde_json::from_str(&err.to_string())
-                    .expect("Failed to deserialize JSON string");
-                let expected_message = ErrorMessage::TokenNotProvided.to_string();
-                assert_eq!(err_response.message, expected_message);
-            }
-            None => {
-                panic!("Service call succeeded, but an error was expected.");
-            }
-        }
+        let app_err: AppError =
+            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        assert_eq!(app_err.code, CD_TOKEN_NOT_PROVIDED);
+        assert_eq!(app_err.message, MSG_TOKEN_NOT_PROVIDED);
     }
 
-    #[sqlx::test]
-    async fn test_auth_middleware_invalid_token(pool: Pool<Postgres>) {
-        let db_client = DBClient::new(pool);
-        let config = get_test_config();
+    #[test]
+    async fn test_auth_middleware_invalid_token() {
+        let users: Vec<user_models::User> = vec![create_user()];
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_user_orm = web::Data::new(UserOrmApp::create(users));
+        let data_config_jwt = web::Data::new(config_jwt.clone());
 
         let app = test::init_service(
             App::new()
-                .app_data(web::Data::new(AppState {
-                    env: config.clone(),
-                    db_client,
-                }))
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
                 .service(handler_with_requireauth),
         )
         .await;
@@ -339,42 +338,33 @@ where
 
         let result = test::try_call_service(&app, req).await.err();
 
-        match result {
-            Some(err) => {
-                let expected_status = http::StatusCode::UNAUTHORIZED;
-                let actual_status = err.as_response_error().status_code();
+        let err = result.expect("Service call succeeded, but an error was expected.");
 
-                assert_eq!(actual_status, expected_status);
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED);
 
-                let err_response: ErrorResponse = serde_json::from_str(&err.to_string())
-                    .expect("Failed to deserialize JSON string");
-                let expected_message = ErrorMessage::InvalidToken.to_string();
-                assert_eq!(err_response.message, expected_message);
-            }
-            None => {
-                panic!("Service call succeeded, but an error was expected.");
-            }
-        }
+        let app_err: AppError =
+            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        assert_eq!(app_err.code, CD_INVALID_TOKEN);
+        assert_eq!(app_err.message, MSG_INVALID_TOKEN);
     }
 
-    #[sqlx::test]
-    async fn test_auth_middleware_access_admin_only_endpoint_fail(pool: Pool<Postgres>) {
-        let db_client = DBClient::new(pool);
-        let config = get_test_config();
+    #[test]
+    async fn test_auth_middleware_access_admin_only_endpoint_fail() {
+        let user1: user_models::User = create_user();
+        let user_id = user1.id.to_string();
+        let users: Vec<user_models::User> = vec![user1];
 
-        let hashed_password = password::hash("password123").unwrap();
+        let config_jwt = config_jwt::get_test_config();
+        let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
 
-        let user = db_client.save_user("John", "john@example.com", &hashed_password).await.unwrap();
-
-        let token =
-            token::create_token(&user.id.to_string(), config.jwt_secret.as_bytes(), 60).unwrap();
+        let data_user_orm = web::Data::new(UserOrmApp::create(users));
+        let data_config_jwt = web::Data::new(config_jwt.clone());
 
         let app = test::init_service(
             App::new()
-                .app_data(web::Data::new(AppState {
-                    env: config.clone(),
-                    db_client,
-                }))
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
                 .service(handler_with_requireonlyadmin),
         )
         .await;
@@ -385,44 +375,34 @@ where
 
         let result = test::try_call_service(&app, req).await.err();
 
-        match result {
-            Some(err) => {
-                let expected_status = http::StatusCode::FORBIDDEN;
-                let actual_status = err.as_response_error().status_code();
+        let err = result.expect("Service call succeeded, but an error was expected.");
 
-                assert_eq!(actual_status, expected_status);
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, http::StatusCode::FORBIDDEN);
 
-                let err_response: ErrorResponse = serde_json::from_str(&err.to_string())
-                    .expect("Failed to deserialize JSON string");
-                let expected_message = ErrorMessage::PermissionDenied.to_string();
-                assert_eq!(err_response.message, expected_message);
-            }
-            None => {
-                panic!("Service call succeeded, but an error was expected.");
-            }
-        }
+        let app_err: AppError =
+            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        assert_eq!(app_err.code, CD_PERMISSION_DENIED);
+        assert_eq!(app_err.message, MSG_PERMISSION_DENIED);
     }
 
-    #[sqlx::test]
-    async fn test_auth_middleware_access_admin_only_endpoint_success(pool: Pool<Postgres>) {
-        let db_client = DBClient::new(pool.clone());
-        let config = get_test_config();
+    #[test]
+    async fn test_auth_middleware_access_admin_only_endpoint_success() {
+        let mut user1: user_models::User = create_user();
+        user1.role = UserRole::Admin;
+        let user_id = user1.id.to_string();
+        let users: Vec<user_models::User> = vec![user1];
 
-        let hashed_password = password::hash("password123").unwrap();
-        let user = db_client
-            .save_admin_user("John Doe", "johndoe@gmail.com", &hashed_password)
-            .await
-            .unwrap();
+        let config_jwt = config_jwt::get_test_config();
+        let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
 
-        let token =
-            token::create_token(&user.id.to_string(), config.jwt_secret.as_bytes(), 60).unwrap();
+        let data_user_orm = web::Data::new(UserOrmApp::create(users));
+        let data_config_jwt = web::Data::new(config_jwt.clone());
 
         let app = test::init_service(
             App::new()
-                .app_data(web::Data::new(AppState {
-                    env: config.clone(),
-                    db_client,
-                }))
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
                 .service(handler_with_requireonlyadmin),
         )
         .await;
@@ -435,4 +415,4 @@ where
 
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
-}*/
+}

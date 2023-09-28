@@ -2,6 +2,8 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 
+pub const CD_INVALID_TOKEN: &str = "InvalidToken";
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TokenClaims {
     pub sub: String,
@@ -32,18 +34,16 @@ pub fn create_token(
     )
 }
 
-pub fn decode_token<T: Into<String>>(
-    token: T,
-    secret: &[u8],
-) -> Result<TokenClaims, jsonwebtoken::errors::Error> {
+pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<TokenClaims, &str> {
     let decoded = decode::<TokenClaims>(
         &token.into(),
         &DecodingKey::from_secret(secret),
         &Validation::new(Algorithm::HS256),
     );
+
     match decoded {
         Ok(token) => Ok(token.claims),
-        Err(_) => Err(jsonwebtoken::errors::ErrorKind::InvalidToken.into()),
+        Err(_) => Err(CD_INVALID_TOKEN),
     }
 }
 
@@ -74,7 +74,7 @@ mod tests {
         assert_eq!(
             result.unwrap_err().into_kind(),
             jsonwebtoken::errors::ErrorKind::InvalidSubject
-        )
+        );
     }
 
     #[test]
@@ -85,10 +85,7 @@ mod tests {
         let result = decode_token(invalid_token, secret);
 
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().into_kind(),
-            jsonwebtoken::errors::ErrorKind::InvalidToken
-        );
+        assert_eq!(result.unwrap_err(), CD_INVALID_TOKEN);
     }
 
     #[test]
@@ -99,9 +96,6 @@ mod tests {
         let result = decode_token(expired_token, secret);
 
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().into_kind(),
-            jsonwebtoken::errors::ErrorKind::InvalidToken
-        );
+        assert_eq!(result.unwrap_err(), CD_INVALID_TOKEN);
     }
 }
