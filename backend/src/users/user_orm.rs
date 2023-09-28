@@ -5,7 +5,7 @@ use crate::users::user_models;
 pub const CD_BLOCKING: &str = "Blocking";
 pub const CD_DATA_BASE: &str = "DataBase";
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum UserOrmError {
     #[cfg(not(feature = "mockdata"))]
     /// Error getting a database connection from the pool.
@@ -125,7 +125,7 @@ impl UserOrm for UserOrmApp {
             .first::<user_models::User>(&mut conn)
             .optional()
             .map_err(|e| {
-                log::warn!("UsOrmError::DataBase: {}", e.to_string());
+                log::debug!("UsOrmError::DataBase: {}", e.to_string());
                 UserOrmError::DataBase(e.to_string())
             })?;
 
@@ -149,7 +149,7 @@ impl UserOrm for UserOrmApp {
             .first::<user_models::User>(&mut conn)
             .optional()
             .map_err(|e| {
-                log::warn!("UsOrmError::DataBase: {}", e.to_string());
+                log::debug!("UsOrmError::DataBase: {}", e.to_string());
                 UserOrmError::DataBase(e.to_string())
             })?;
 
@@ -170,7 +170,7 @@ impl UserOrm for UserOrmApp {
             .first::<user_models::User>(&mut conn)
             .optional()
             .map_err(|e| {
-                log::warn!("UsOrmError::DataBase: {}", e.to_string());
+                log::debug!("UsOrmError::DataBase: {}", e.to_string());
                 UserOrmError::DataBase(e.to_string())
             })?;
 
@@ -197,7 +197,7 @@ impl UserOrm for UserOrmApp {
             .first::<user_models::User>(&mut conn)
             .optional()
             .map_err(|e| {
-                log::warn!("UsOrmError::DataBase: {}", e.to_string());
+                log::debug!("UsOrmError::DataBase: {}", e.to_string());
                 UserOrmError::DataBase(e.to_string())
             })?;
 
@@ -226,7 +226,7 @@ impl UserOrm for UserOrmApp {
             .returning(user_models::User::as_returning())
             .get_result(&mut conn)
             .map_err(|e| {
-                log::warn!("UsOrmError::DataBase: {}", e.to_string());
+                log::debug!("UsOrmError::DataBase: {}", e.to_string());
                 UserOrmError::DataBase(e.to_string())
             })?;
 
@@ -271,7 +271,7 @@ impl UserOrm for UserOrmApp {
             .get_result(&mut conn)
             .optional()
             .map_err(|e| {
-                log::warn!("UsOrmError::DataBase: {}", e.to_string());
+                log::debug!("UsOrmError::DataBase: {}", e.to_string());
                 UserOrmError::DataBase(e.to_string())
             })?;
 
@@ -284,7 +284,7 @@ impl UserOrm for UserOrmApp {
         let count: usize = diesel::delete(schema::users::dsl::users.find(id))
             .execute(&mut conn)
             .map_err(|e| {
-                log::warn!("UsOrmError::DataBase: {}", e.to_string());
+                log::debug!("UsOrmError::DataBase: {}", e.to_string());
                 UserOrmError::DataBase(e.to_string())
             })?;
 
@@ -330,16 +330,11 @@ pub mod tests {
             UserOrmApp { users }
         }
         /// Create a new entity instance.
-        pub fn new_user(
-            id: i32,
-            nickname: String,
-            email: String,
-            password: String,
-        ) -> user_models::User {
+        pub fn new_user(id: i32, nickname: &str, email: &str, password: &str) -> user_models::User {
             let today = Utc::now();
             let cr_dt = today + Duration::seconds(-10);
 
-            let password_hashed = hash_tools::hash(&password).expect("Hashing error!");
+            let password_hashed = hash_tools::hash(password).expect("Hashing error!");
 
             user_models::User {
                 id,
@@ -355,27 +350,27 @@ pub mod tests {
             let mut buff: Vec<user_models::User> = Vec::new();
             buff.push(Self::new_user(
                 1,
-                "James_Smith".to_string(),
-                "James_Smith@gmail.com".to_string(),
-                "password1234".to_string(),
+                "James_Smith",
+                "James_Smith@gmail.com",
+                "password1234",
             ));
             buff.push(Self::new_user(
                 2,
-                "Mary_Williams".to_string(),
-                "Mary_Williams@gmail.com".to_string(),
-                "123justgetit".to_string(),
+                "Mary_Williams",
+                "Mary_Williams@gmail.com",
+                "123justgetit",
             ));
             buff.push(Self::new_user(
                 3,
-                "Robert_Brown".to_string(),
-                "Robert_Brown@gmail.com".to_string(),
-                "mostsecurepass".to_string(),
+                "Robert_Brown",
+                "Robert_Brown@gmail.com",
+                "mostsecurepass",
             ));
             buff.push(Self::new_user(
                 4,
-                "Linda_Miller".to_string(),
-                "Linda_Miller@gmail.com".to_string(),
-                "mostsecurepass".to_string(),
+                "Linda_Miller",
+                "Linda_Miller@gmail.com",
+                "mostsecurepass",
             ));
 
             buff
@@ -459,12 +454,8 @@ pub mod tests {
 
             let password = &create_user_dto.password.clone();
 
-            let user_saved: user_models::User = UserOrmApp::new_user(
-                1001,
-                nickname.to_string(),
-                email.to_string(),
-                password.to_string(),
-            );
+            let user_saved: user_models::User =
+                UserOrmApp::new_user(1001, nickname, email, password);
 
             Ok(user_saved)
         }
@@ -491,7 +482,8 @@ pub mod tests {
             let password = modify_user_dto2.password.unwrap_or("".to_string());
             let password_len = password.len();
 
-            let user_saved: user_models::User = UserOrmApp::new_user(id, nickname, email, password);
+            let user_saved: user_models::User =
+                UserOrmApp::new_user(id, &nickname, &email, &password);
 
             res_user.nickname = user_saved.nickname.clone();
             res_user.email = user_saved.email.clone();

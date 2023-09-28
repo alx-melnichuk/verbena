@@ -4,7 +4,7 @@ use std::ops::Deref;
 use validator::Validate;
 
 use crate::errors::{AppError, ERR_CN_VALIDATION};
-use crate::extractors::authentication::{Authenticated, RequireAuth};
+use crate::extractors::authentication::Authenticated;
 use crate::users::user_models;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
@@ -58,7 +58,7 @@ pub async fn get_user_by_id(
 
     let id = id_str.parse::<i32>().map_err(|e| {
         let msg = msg_parse_err("id", MSG_PARSE_INT_ERROR, &id_str, &e.to_string());
-        log::warn!("{}: {}", CD_PARSE_INT_ERROR, msg);
+        log::debug!("{}: {}", CD_PARSE_INT_ERROR, msg);
         AppError::new(CD_PARSE_INT_ERROR, &msg.to_string()).set_status(400)
     })?;
 
@@ -67,7 +67,7 @@ pub async fn get_user_by_id(
         let existing_user = user_orm
             .find_user_by_id(id)
             .map_err(|e| {
-                log::warn!("{}: {}", CD_DATA_BASE, e.to_string());
+                log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
                 AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
             })
             .ok()?;
@@ -76,7 +76,7 @@ pub async fn get_user_by_id(
     })
     .await
     .map_err(|e| {
-        log::warn!("{}: {}", CD_BLOCKING, e.to_string());
+        log::debug!("{}: {}", CD_BLOCKING, e.to_string());
         AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
     })?;
 
@@ -100,7 +100,7 @@ pub async fn get_user_by_nickname(
         let res_user = user_orm
             .find_user_by_nickname(&nickname)
             .map_err(|e| {
-                log::warn!("{}: {}", CD_DATA_BASE, e.to_string());
+                log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
                 AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
             })
             .ok()?;
@@ -109,7 +109,7 @@ pub async fn get_user_by_nickname(
     })
     .await
     .map_err(|e| {
-        log::warn!("{}: {}", CD_BLOCKING, e.to_string());
+        log::debug!("{}: {}", CD_BLOCKING, e.to_string());
         AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
     })?;
 
@@ -142,13 +142,13 @@ pub async fn put_user(
 
     let id = id_str.parse::<i32>().map_err(|e| {
         let msg = msg_parse_err("id", MSG_PARSE_INT_ERROR, &id_str, &e.to_string());
-        log::warn!("{}: {}", CD_PARSE_INT_ERROR, msg);
+        log::debug!("{}: {}", CD_PARSE_INT_ERROR, msg);
         AppError::new(CD_PARSE_INT_ERROR, &msg.to_string()).set_status(400)
     })?;
 
     // Checking the validity of the data model.
     json_user_dto.validate().map_err(|errors| {
-        log::warn!("{}: {}", ERR_CN_VALIDATION, errors.to_string());
+        log::debug!("{}: {}", ERR_CN_VALIDATION, errors.to_string());
         AppError::from(errors)
     })?;
 
@@ -157,7 +157,7 @@ pub async fn put_user(
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user = user_orm.modify_user(id, modify_user).map_err(|e| {
-            log::warn!("{}: {}", CD_DATA_BASE, e.to_string());
+            log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
             AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
         });
 
@@ -165,7 +165,7 @@ pub async fn put_user(
     })
     .await
     .map_err(|e| {
-        log::warn!("{}: {}", CD_BLOCKING, e.to_string());
+        log::debug!("{}: {}", CD_BLOCKING, e.to_string());
         AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
     })??;
 
@@ -187,14 +187,14 @@ pub async fn patch_user(
 
     let id = id_str.parse::<i32>().map_err(|e| {
         let msg = msg_parse_err("id", MSG_PARSE_INT_ERROR, &id_str, &e.to_string());
-        log::warn!("{}: {}", CD_PARSE_INT_ERROR, msg);
+        log::debug!("{}: {}", CD_PARSE_INT_ERROR, msg);
         AppError::new(CD_PARSE_INT_ERROR, &msg.to_string()).set_status(400)
     })?;
 
     let mut new_user: user_models::UserDto = json_user_dto.0.clone();
 
     if new_user.verify_for_edit() {
-        log::warn!("{}: {}", CN_INCORRECT_PARAM, MSG_INCORRECT_PARAM);
+        log::debug!("{}: {}", CN_INCORRECT_PARAM, MSG_INCORRECT_PARAM);
         return Err(AppError::new(CN_INCORRECT_PARAM, MSG_INCORRECT_PARAM).set_status(400));
     }
 
@@ -207,7 +207,7 @@ pub async fn patch_user(
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user = user_orm.modify_user(id, new_user).map_err(|e| {
-            log::warn!("{}: {}", CD_DATA_BASE, e.to_string());
+            log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
             AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
         });
 
@@ -215,7 +215,7 @@ pub async fn patch_user(
     })
     .await
     .map_err(|e| {
-        log::warn!("{}: {}", CD_BLOCKING, e.to_string());
+        log::debug!("{}: {}", CD_BLOCKING, e.to_string());
         AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
     })??;
 
@@ -236,14 +236,14 @@ pub async fn delete_user(
 
     let id = id_str.parse::<i32>().map_err(|e| {
         let msg = msg_parse_err("id", MSG_PARSE_INT_ERROR, &id_str, &e.to_string());
-        log::warn!("{}: {}", CD_PARSE_INT_ERROR, msg);
+        log::debug!("{}: {}", CD_PARSE_INT_ERROR, msg);
         AppError::new(CD_PARSE_INT_ERROR, &msg.to_string()).set_status(400)
     })?;
 
     let result_count = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_count = user_orm.delete_user(id).map_err(|e| {
-            log::warn!("{}: {}", CD_DATA_BASE, e.to_string());
+            log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
             AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
         });
 
@@ -251,7 +251,7 @@ pub async fn delete_user(
     })
     .await
     .map_err(|e| {
-        log::warn!("{}: {}", CD_BLOCKING, e.to_string());
+        log::debug!("{}: {}", CD_BLOCKING, e.to_string());
         AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
     })??;
 
@@ -270,7 +270,10 @@ mod tests {
     use super::*;
     use crate::errors::AppError;
     use crate::users::{
-        user_models::{ModifyUserDto, UserDto},
+        user_models::{
+            ModifyUserDto, UserDto, EMAIL_MAX, EMAIL_MIN, NICKNAME_MAX, NICKNAME_MIN, PASSWORD_MAX,
+            PASSWORD_MIN,
+        },
         user_orm::tests::UserOrmApp,
     };
 
@@ -278,7 +281,7 @@ mod tests {
     const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
 
     #[test]
-    async fn get_user_by_id_invalid_id() {
+    async fn test_get_user_by_id_invalid_id() {
         let user_orm = web::Data::new(UserOrmApp::new());
 
         let app = test::init_service(
@@ -303,7 +306,7 @@ mod tests {
     }
 
     #[test]
-    async fn get_user_by_id_valid_id() {
+    async fn test_get_user_by_id_valid_id() {
         let users = UserOrmApp::create_users();
         let user1: user_models::User = users.get(0).unwrap().clone();
         let user_orm = web::Data::new(UserOrmApp::create(users));
@@ -330,7 +333,7 @@ mod tests {
     }
 
     #[test]
-    async fn get_user_by_id_non_existent_id() {
+    async fn test_get_user_by_id_non_existent_id() {
         let user_orm = web::Data::new(UserOrmApp::new());
 
         let app = test::init_service(
@@ -346,7 +349,7 @@ mod tests {
     }
 
     #[test]
-    async fn get_user_by_nickname_non_existent_nickname() {
+    async fn test_get_user_by_nickname_non_existent_nickname() {
         let users = UserOrmApp::create_users();
         let user1: user_models::User = users.get(0).unwrap().clone();
         let nickname = user1.nickname.to_uppercase().to_string();
@@ -365,7 +368,7 @@ mod tests {
     }
 
     #[test]
-    async fn get_user_by_nickname_existent_nickname() {
+    async fn test_get_user_by_nickname_existent_nickname() {
         let users = UserOrmApp::create_users();
         let user1: user_models::User = users.get(0).unwrap().clone();
         let nickname = user1.nickname.to_uppercase().to_string();
@@ -393,7 +396,7 @@ mod tests {
     }
 
     #[test]
-    async fn put_user_invalid_id() {
+    async fn test_put_user_invalid_id() {
         let users = UserOrmApp::create_users();
 
         let user_orm = web::Data::new(UserOrmApp::create(users));
@@ -423,7 +426,7 @@ mod tests {
     }
 
     #[test]
-    async fn put_user_non_existent_id() {
+    async fn test_put_user_non_existent_id() {
         let users = UserOrmApp::create_users();
         let user1a: user_models::User = users.get(0).unwrap().clone();
 
@@ -446,10 +449,10 @@ mod tests {
     }
 
     #[test]
-    async fn put_user_valid_id() {
-        let new_nickname = "Oliver_Taylor".to_string(); // # TODO
-        let new_email = "Oliver_Taylor@gmail.com".to_string();
-        let new_password = "passwordD1T1".to_string();
+    async fn test_put_user_valid_id() {
+        let new_nickname = "Oliver_Taylor"; // # TODO
+        let new_email = "Oliver_Taylor@gmail.com";
+        let new_password = "passwordD1T1";
         let new_role = user_models::UserRole::Admin;
 
         let users = UserOrmApp::create_users();
@@ -475,9 +478,9 @@ mod tests {
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .uri(&format!("/users/{}", user1a.id)) // PUT users/1
             .set_json(ModifyUserDto {
-                nickname: Some(new_nickname.clone()),
-                email: Some(new_email.clone()),
-                password: Some(new_password.clone()),
+                nickname: Some(new_nickname.to_string()),
+                email: Some(new_email.to_string()),
+                password: Some(new_password.to_string()),
                 role: Some(new_role.clone()),
             })
             .to_request();
@@ -505,9 +508,10 @@ mod tests {
     }
 
     #[test]
-    async fn put_user_invalid_dto_nickname_min() {
+    async fn test_put_user_invalid_dto_nickname_min() {
         let users = UserOrmApp::create_users();
         let user1: user_models::User = users.get(0).unwrap().clone();
+        let nickname: String = (0..(NICKNAME_MIN - 1)).map(|_| 'a').collect();
 
         let user_orm = web::Data::new(UserOrmApp::create(users));
         let app =
@@ -517,7 +521,7 @@ mod tests {
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .uri(&format!("/users/{}", user1.id)) // PUT user/1
             .set_json(ModifyUserDto {
-                nickname: Some("Ol".to_string()),
+                nickname: Some(nickname),
                 email: Some("Oliver_Taylor@gmail.com".to_string()),
                 password: Some("passwordD1T1".to_string()),
                 role: Some(user_models::UserRole::User),
@@ -530,14 +534,15 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
-        assert_eq!(app_err.message, "nickname: must be more than 3 characters");
+        let msg_err = format!("nickname: must be more than {} characters", NICKNAME_MIN);
+        assert_eq!(app_err.message, msg_err);
     }
 
     #[test]
-    async fn put_user_invalid_dto_nickname_max() {
+    async fn test_put_user_invalid_dto_nickname_max() {
         let users = UserOrmApp::create_users();
         let user1: user_models::User = users.get(0).unwrap().clone();
-        let nickname: String = (0..65).map(|_| 'a').collect();
+        let nickname: String = (0..(NICKNAME_MAX + 1)).map(|_| 'a').collect();
 
         let user_orm = web::Data::new(UserOrmApp::create(users));
         let app =
@@ -560,14 +565,15 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
-        #[rustfmt::skip]
-        assert_eq!(app_err.message, "nickname: must be less than 64 characters");
+        let msg_err = format!("nickname: must be less than {} characters", NICKNAME_MAX);
+        assert_eq!(app_err.message, msg_err);
     }
 
     #[test]
-    async fn put_user_invalid_dto_email_min() {
+    async fn test_put_user_invalid_dto_nickname_bad() {
         let users = UserOrmApp::create_users();
         let user1: user_models::User = users.get(0).unwrap().clone();
+        let nickname: String = "!@#=!@#=".to_string();
 
         let user_orm = web::Data::new(UserOrmApp::create(users));
         let app =
@@ -577,8 +583,8 @@ mod tests {
             // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .uri(&format!("/users/{}", user1.id)) // PUT users/1
             .set_json(ModifyUserDto {
-                nickname: Some("Oliver_Taylor".to_string()),
-                email: Some("o@us".to_string()),
+                nickname: Some(nickname),
+                email: Some("Oliver_Taylor@gmail.com".to_string()),
                 password: Some("passwordD1T1".to_string()),
                 role: Some(user_models::UserRole::User),
             })
@@ -590,16 +596,52 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
-        assert_eq!(app_err.message, "email: must be more than 5 characters");
+        assert_eq!(app_err.message, "nickname: wrong value /^[a-zA-Z0-9_]+$/");
     }
 
     #[test]
-    async fn put_user_invalid_dto_email_max() {
+    async fn test_put_user_invalid_dto_email_min() {
+        let users = UserOrmApp::create_users();
+        let user1: user_models::User = users.get(0).unwrap().clone();
+
+        let suffix = "@us".to_string();
+        let email_min: usize = EMAIL_MIN.into();
+        let email: String = (0..(email_min - 1 - suffix.len())).map(|_| 'a').collect();
+        let email2 = format!("{}{}", email, suffix);
+
+        let user_orm = web::Data::new(UserOrmApp::create(users));
+        let app =
+            test::init_service(App::new().app_data(web::Data::clone(&user_orm)).service(put_user))
+                .await;
+        let req = test::TestRequest::put()
+            // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+            .uri(&format!("/users/{}", user1.id)) // PUT users/1
+            .set_json(ModifyUserDto {
+                nickname: Some("Oliver_Taylor".to_string()),
+                email: Some(email2),
+                password: Some("passwordD1T1".to_string()),
+                role: Some(user_models::UserRole::User),
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        let msg1 = format!("must be more than {} characters", EMAIL_MIN);
+        assert_eq!(app_err.message, format!("email: {}", msg1));
+    }
+
+    #[test]
+    async fn test_put_user_invalid_dto_email_max() {
         let users = UserOrmApp::create_users();
         let user1: user_models::User = users.get(0).unwrap().clone();
 
         let suffix = "@gmail.com".to_string();
-        let email: String = (0..(256 - suffix.len())).map(|_| 'a').collect();
+        let email_max: usize = EMAIL_MAX.into();
+        let email: String = (0..(email_max + 1 - suffix.len())).map(|_| 'a').collect();
         let email2 = format!("{}{}", email, suffix);
 
         let user_orm = web::Data::new(UserOrmApp::create(users));
@@ -623,14 +665,46 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
-        #[rustfmt::skip]
-        assert_eq!(app_err.message, "email: must be less than 255 characters");
+        let msg1 = format!("must be less than {} characters", EMAIL_MAX);
+        let msg2 = "wrong email";
+        assert_eq!(app_err.message, format!("email: {}, {}", msg1, msg2));
     }
 
     #[test]
-    async fn put_user_invalid_dto_password_min() {
+    async fn test_put_user_invalid_dto_email_bad() {
         let users = UserOrmApp::create_users();
         let user1: user_models::User = users.get(0).unwrap().clone();
+        let email = "demo_gmail.com";
+
+        let user_orm = web::Data::new(UserOrmApp::create(users));
+        let app =
+            test::init_service(App::new().app_data(web::Data::clone(&user_orm)).service(put_user))
+                .await;
+        let req = test::TestRequest::put()
+            // .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+            .uri(&format!("/users/{}", user1.id)) // PUT users/1
+            .set_json(ModifyUserDto {
+                nickname: Some("Oliver_Taylor".to_string()),
+                email: Some(email.to_string()),
+                password: Some("passwordD1T1".to_string()),
+                role: Some(user_models::UserRole::User),
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.message, "email: wrong email");
+    }
+
+    #[test]
+    async fn test_put_user_invalid_dto_password_min() {
+        let users = UserOrmApp::create_users();
+        let user1: user_models::User = users.get(0).unwrap().clone();
+        let password: String = (0..(PASSWORD_MIN - 1)).map(|_| 'a').collect();
 
         let user_orm = web::Data::new(UserOrmApp::create(users));
         let app =
@@ -642,7 +716,7 @@ mod tests {
             .set_json(ModifyUserDto {
                 nickname: Some("Oliver_Taylor".to_string()),
                 email: Some("Oliver_Taylor@gmail.com".to_string()),
-                password: Some("passw".to_string()),
+                password: Some(password),
                 role: Some(user_models::UserRole::User),
             })
             .to_request();
@@ -653,14 +727,16 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
-        assert_eq!(app_err.message, "password: must be more than 6 characters");
+        let msg1 = format!("must be more than {} characters", PASSWORD_MIN);
+        let msg2 = "wrong value /^[a-zA-Z]+\\d*[A-Za-z\\d\\W_]{6,}$/";
+        assert_eq!(app_err.message, format!("password: {}, {}", msg1, msg2));
     }
 
     #[test]
-    async fn put_user_invalid_dto_password_max() {
+    async fn test_put_user_invalid_dto_password_max() {
         let users = UserOrmApp::create_users();
         let user1: user_models::User = users.get(0).unwrap().clone();
-        let password: String = (0..65).map(|_| 'a').collect();
+        let password: String = (0..(PASSWORD_MAX + 1)).map(|_| 'a').collect();
 
         let user_orm = web::Data::new(UserOrmApp::create(users));
         let app =
@@ -672,7 +748,7 @@ mod tests {
             .set_json(ModifyUserDto {
                 nickname: Some("Oliver_Taylor".to_string()),
                 email: Some("Oliver_Taylor@gmail.com".to_string()),
-                password: Some(password.to_string()),
+                password: Some(password),
                 role: Some(user_models::UserRole::User),
             })
             .to_request();
@@ -684,11 +760,12 @@ mod tests {
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, "password: must be less than 64 characters");
+        let msg_err = format!("password: must be less than {} characters", PASSWORD_MAX);
+        assert_eq!(app_err.message, msg_err);
     }
 
     #[test]
-    async fn delete_user_invalid_id() {
+    async fn test_delete_user_invalid_id() {
         let user_orm = web::Data::new(UserOrmApp::new());
         let app = test::init_service(
             App::new().app_data(web::Data::clone(&user_orm)).service(delete_user),
@@ -711,7 +788,7 @@ mod tests {
     }
 
     #[test]
-    async fn delete_user_non_existent_id() {
+    async fn test_delete_user_non_existent_id() {
         let user_orm = web::Data::new(UserOrmApp::new());
         let app = test::init_service(
             App::new().app_data(web::Data::clone(&user_orm)).service(delete_user),
@@ -732,7 +809,7 @@ mod tests {
     }
 
     #[test]
-    async fn delete_user_existent_id() {
+    async fn test_delete_user_existent_id() {
         let users = UserOrmApp::create_users();
         let user1: user_models::User = users.get(0).unwrap().clone();
 

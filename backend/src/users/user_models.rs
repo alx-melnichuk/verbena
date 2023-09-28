@@ -1,5 +1,7 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
+use lazy_static::lazy_static;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -76,23 +78,44 @@ impl From<User> for UserDto {
     }
 }
 
+pub const NICKNAME_MIN: u8 = 3;
+pub const NICKNAME_MAX: u8 = 64;
+
+pub const EMAIL_MIN: u8 = 5;
+pub const EMAIL_MAX: u16 = 255;
+
+pub const PASSWORD_MIN: u8 = 6;
+pub const PASSWORD_MAX: u8 = 64;
+
+lazy_static! {
+    static ref NICKNAME_REG: Regex = Regex::new(r"^[a-zA-Z0-9_]+$").unwrap();
+    // static ref PASSWORD_REG: Regex = Regex::new(r"^[a-z]*[A-Z]*\d*[A-Za-z\d\W_]{6,}$").unwrap();
+    static ref PASSWORD_REG: Regex = Regex::new(r"^[a-zA-Z]+\d*[A-Za-z\d\W_]{6,}$").unwrap();
+    // \W - Matches anything other than a letter, digit or underscore. Equivalent to [^a-zA-Z0-9_]
+}
+
 #[derive(Debug, Validate, Serialize, Deserialize, Clone, AsChangeset)]
 #[diesel(table_name = schema::users)]
 pub struct ModifyUserDto {
     #[validate(
-        length(min = 3, message = "must be more than 3 characters"),
-        length(max = 64, message = "must be less than 64 characters")
+        length(min = "NICKNAME_MIN", message = "must be more than 3 characters"),
+        length(max = "NICKNAME_MAX", message = "must be less than 64 characters"),
+        regex(path = "NICKNAME_REG", message = "wrong value /^[a-zA-Z0-9_]+$/")
     )]
     pub nickname: Option<String>,
     #[validate(
-        length(min = 5, message = "must be more than 5 characters"),
-        length(max = 255, message = "must be less than 255 characters"),
-        // email
+        length(min = "EMAIL_MIN", message = "must be more than 5 characters"),
+        length(max = "EMAIL_MAX", message = "must be less than 255 characters"),
+        email(message = "wrong email")
     )]
     pub email: Option<String>,
     #[validate(
-        length(min = 6, message = "must be more than 6 characters"),
-        length(max = 64, message = "must be less than 64 characters")
+        length(min = "PASSWORD_MIN", message = "must be more than 6 characters"),
+        length(max = "PASSWORD_MAX", message = "must be less than 64 characters"),
+        regex(
+            path = "PASSWORD_REG",
+            message = "wrong value /^[a-zA-Z]+\\d*[A-Za-z\\d\\W_]{6,}$/"
+        )
     )]
     pub password: Option<String>,
     pub role: Option<UserRole>,
