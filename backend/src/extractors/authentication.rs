@@ -69,6 +69,14 @@ impl RequireAuth {
             allowed_roles: Rc::new(allowed_roles),
         }
     }
+
+    pub fn all_roles() -> Vec<UserRole> {
+        vec![UserRole::User, UserRole::Moderator, UserRole::Admin]
+    }
+
+    pub fn admin_role() -> Vec<UserRole> {
+        vec![UserRole::Admin]
+    }
 }
 
 impl<S> Transform<S, ServiceRequest> for RequireAuth
@@ -163,20 +171,22 @@ where
             let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap();
             let result = user_orm.find_user_by_id(user_id.clone()).map_err(|e| {
                 log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
-                #[rustfmt::skip]
-                eprintln!("### error find_user({user_id}): {}: {}", CD_DATA_BASE, e.to_string());
                 ErrorInternalServerError(AppError::new(CD_DATA_BASE, &e.to_string()))
             })?;
 
-            let user = result.ok_or(ErrorUnauthorized(
-                // #? ErrorResponse { status: "fail".to_string(), message: ErrorMessage::UserNoLongerExist.to_string(), }
-                AppError::new(CD_USER_NO_LONGER_EXIST, MSG_USER_NO_LONGER_EXIST),
-            ))?;
+            // let user = result.ok_or(ErrorUnauthorized(
+            //     // #? ErrorResponse { status: "fail".to_string(), message: ErrorMessage::UserNoLongerExist.to_string(), }
+            //     AppError::new(CD_USER_NO_LONGER_EXIST, MSG_USER_NO_LONGER_EXIST),
+            // ))?;
 
-            eprintln!("### allowed_roles: {:?}", allowed_roles);
+            let user = result.ok_or_else(|| {
+                log::debug!("{}: {}", CD_USER_NO_LONGER_EXIST, MSG_USER_NO_LONGER_EXIST);
+                let json_error = AppError::new(CD_USER_NO_LONGER_EXIST, MSG_USER_NO_LONGER_EXIST);
+                ErrorUnauthorized(json_error)
+            })?;
+
             // Check if user's role matches the required role
             if allowed_roles.contains(&user.role) {
-                eprintln!("### SECC allowed_roles contains( {:?} )", user.role);
                 // Insert user information into request extensions
                 req.extensions_mut().insert::<User>(user);
                 // Call the wrapped service to handle the request
@@ -201,13 +211,12 @@ mod tests {
 
     use super::*;
 
-    #[rustfmt::skip]
-    #[get("/",wrap = "RequireAuth::allowed_roles(vec![UserRole::User, UserRole::Moderator, UserRole::Admin])")]
+    #[get("/", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
     async fn handler_with_requireauth() -> HttpResponse {
         HttpResponse::Ok().into()
     }
 
-    #[get("/", wrap = "RequireAuth::allowed_roles(vec![UserRole::Admin])")]
+    #[get("/", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
     async fn handler_with_requireonlyadmin() -> HttpResponse {
         HttpResponse::Ok().into()
     }
@@ -329,11 +338,9 @@ mod tests {
         )
         .await;
 
+        let token = "invalid_token";
         let req = test::TestRequest::default()
-            .insert_header((
-                http::header::AUTHORIZATION,
-                format!("Bearer {}", "invalid_token"),
-            ))
+            .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .to_request();
 
         let result = test::try_call_service(&app, req).await.err();
@@ -347,6 +354,44 @@ mod tests {
             serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
         assert_eq!(app_err.code, CD_INVALID_TOKEN);
         assert_eq!(app_err.message, MSG_INVALID_TOKEN);
+    }
+
+    #[test]
+    async fn test_auth_middelware_valid_token_non_existent_user() {
+        let user1: user_models::User = create_user();
+        let bad_id = format!("{}9999", user1.id);
+        let mut users: Vec<user_models::User> = Vec::new();
+        users.push(user1);
+
+        let config_jwt = config_jwt::get_test_config();
+        let token = tokens::create_token(&bad_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
+
+        let data_user_orm = web::Data::new(UserOrmApp::create(users));
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(handler_with_requireauth),
+        )
+        .await;
+
+        let req = test::TestRequest::default()
+            .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+            .to_request();
+
+        let result = test::try_call_service(&app, req).await.err();
+
+        let err = result.expect("Service call succeeded, but an error was expected.");
+
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED);
+
+        let app_err: AppError =
+            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        assert_eq!(app_err.code, CD_USER_NO_LONGER_EXIST);
+        assert_eq!(app_err.message, MSG_USER_NO_LONGER_EXIST);
     }
 
     #[test]

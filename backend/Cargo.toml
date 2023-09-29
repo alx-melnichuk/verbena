@@ -27,6 +27,6 @@ serde_json = "1.0.103"
 validator = { version = "0.16.1", features = ["derive"] }
 
 [features]
-default = ["test", "mockdata"]
+# default = ["test", "mockdata"]
 test=[]
 mockdata = []

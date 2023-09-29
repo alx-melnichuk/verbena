@@ -26,9 +26,11 @@ use crate::users::{user_auth_controller, user_controller};
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     dotenv::dotenv().expect("Failed to read .env file");
-    let rust_log = "verbena_backend=debug,actix_web=info,actix_server=info";
-    env::set_var("RUST_LOG", rust_log);
 
+    if std::env::var_os("RUST_LOG").is_none() {
+        let log = "info,actix_web=info,actix_server=info,verbena_backend=info";
+        std::env::set_var("RUST_LOG", log);
+    }
     env_logger::init();
 
     let app_host = env::var("APP_HOST").expect("APP_HOST not found.");

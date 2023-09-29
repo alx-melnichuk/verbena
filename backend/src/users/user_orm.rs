@@ -1,3 +1,4 @@
+use log;
 use std::fmt;
 
 use crate::users::user_models;
@@ -186,12 +187,13 @@ impl UserOrm for UserOrmApp {
         let mut conn = self.get_conn()?;
 
         if nickname.len() == 0 || email.len() == 0 {
+            log::debug!("nickname or email are empty.");
             return Ok(None);
         }
         let nickname2 = nickname.to_lowercase();
         let email2 = email.to_lowercase();
 
-        let opt_user_dto = schema::users::table
+        let result = schema::users::table
             .filter(schema::users::dsl::nickname.eq(nickname2))
             .or_filter(schema::users::dsl::email.eq(email2))
             .first::<user_models::User>(&mut conn)
@@ -201,7 +203,11 @@ impl UserOrm for UserOrmApp {
                 UserOrmError::DataBase(e.to_string())
             })?;
 
-        Ok(opt_user_dto)
+        #[rustfmt::skip]
+        let res = if result.is_some() { "result.is_some();" } else { "result.is_none()" };
+        log::debug!("{res}");
+
+        Ok(result)
     }
 
     fn create_user(
@@ -242,6 +248,7 @@ impl UserOrm for UserOrmApp {
 
         let res_user: Option<user_models::User> = self.find_user_by_id(id)?; // #?
         if res_user.is_none() {
+            log::debug!("User with ID `{id}` not found");
             return Ok(None);
         }
 

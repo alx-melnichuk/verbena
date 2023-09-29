@@ -19,7 +19,9 @@ pub const CD_HASHING: &str = "Hashing";
 pub const CD_UNAUTHORIZED: &str = "UnAuthorized";
 pub const CD_USER_EXISTS: &str = "NicknameOrEmailExist";
 pub const MSG_USER_EXISTS: &str = "A user with the same nickname or email already exists.";
+pub const MSG_NO_USER_FOR_TOKEN: &str = "There is no user for this token";
 pub const MSG_WRONG_CREDENTIALS: &str = "Email or password is wrong";
+
 pub const CD_JSONWEBTOKEN: &str = "jsonwebtoken";
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
@@ -28,14 +30,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         // POST api/login
         .service(login)
         // POST api/logout
-        // .service(web::scope("")
-            .service(logout)
-        //     .wrap(RequireAuth::allowed_roles(
-        //         // List of allowed roles.
-        //         vec![UserRole::Admin],
-        //     )),
-        // )
-        ;
+        .service(logout);
 }
 
 // POST api/signup
@@ -95,14 +90,15 @@ pub async fn login(
     user_orm: web::Data<UserOrmApp>,
     json_user_dto: web::Json<user_models::LoginUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    // Checking the validity of the data model.
+    log::debug!("login()"); // #-
+                            // Checking the validity of the data model.
     json_user_dto.validate().map_err(|errors| {
         log::debug!("{}: {}", ERR_CN_VALIDATION, errors.to_string());
         AppError::from(errors)
     })?;
 
     let login_user_dto: user_models::LoginUserDto = json_user_dto.0.clone();
-
+    log::debug!("login_user_dto: {:?}", login_user_dto); // #-
     let nickname = login_user_dto.nickname.clone();
     let email = login_user_dto.nickname.clone();
     let password = login_user_dto.password.clone();
@@ -116,6 +112,13 @@ pub async fn login(
                 log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
                 AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
             });
+
+        if existing_user.clone().unwrap().is_none() {
+            log::debug!("##existing_user.is_none()");
+        } else {
+            log::debug!("##existing_user.is_some()");
+        }
+
         existing_user
     })
     .await
@@ -125,7 +128,8 @@ pub async fn login(
     })??;
 
     if user.is_none() {
-        return Err(AppError::new(CD_UNAUTHORIZED, MSG_WRONG_CREDENTIALS).set_status(401));
+        log::debug!("{}: {}", CD_UNAUTHORIZED, MSG_NO_USER_FOR_TOKEN);
+        return Err(AppError::new(CD_UNAUTHORIZED, MSG_NO_USER_FOR_TOKEN).set_status(401));
     }
 
     let user = user.unwrap();
@@ -137,6 +141,7 @@ pub async fn login(
     })?;
 
     if !password_matches {
+        log::debug!("{}: {}", CD_UNAUTHORIZED, MSG_WRONG_CREDENTIALS);
         return Err(AppError::new(CD_UNAUTHORIZED, MSG_WRONG_CREDENTIALS).set_status(401));
     }
 
@@ -164,7 +169,8 @@ pub async fn login(
 }
 
 // POST api/logout
-#[post("/logout")]
+#[rustfmt::skip]
+#[post("/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn logout() -> impl Responder {
     let cookie = Cookie::build("token", "")
         .path("/")

@@ -4,7 +4,7 @@ use std::ops::Deref;
 use validator::Validate;
 
 use crate::errors::{AppError, ERR_CN_VALIDATION};
-use crate::extractors::authentication::Authenticated;
+use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::users::user_models;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
@@ -22,30 +22,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         // GET api/users/nickname/{nickname}
         .service(get_user_by_nickname)
         // GET api/user_me
-        // .service(web::scope("")
         .service(get_user_me)
-        // .wrap(RequireAuth::allowed_roles(
-        //         // List of allowed roles.
-        //         vec![UserRole::User, UserRole::Moderator, UserRole::Admin],
-        //     )),
-        // )
         // PUT api/users/{id}
-        // .service(            web::scope("")
         .service(put_user)
-        // .wrap(RequireAuth::allowed_roles(
-        //     // List of allowed roles.
-        //     vec![UserRole::User, UserRole::Moderator, UserRole::Admin],
-        // )),
-        // )
         // DELETE api/users/{id}
-        // .service( web::scope("")
-        .service(delete_user)
-        // .wrap(RequireAuth::allowed_roles(
-        //         // List of allowed roles.
-        //         vec![UserRole::Admin],
-        //     )),
-        // )
-        ;
+        .service(delete_user);
 }
 
 // GET api/users/{id}
@@ -121,7 +102,8 @@ pub async fn get_user_by_nickname(
 }
 
 // GET api/user_me
-#[get("/user_me")]
+#[rustfmt::skip]
+#[get("/user_me", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_user_me(
     authenticated: Authenticated,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -227,7 +209,8 @@ pub async fn patch_user(
 }
 */
 // DELETE api/users/{id}
-#[delete("/users/{id}")]
+#[rustfmt::skip]
+#[delete("/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn delete_user(
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
