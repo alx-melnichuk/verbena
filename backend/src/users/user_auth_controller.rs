@@ -4,9 +4,8 @@ use actix_web::{
 use serde_json::json;
 use validator::Validate;
 
-// use crate::errors::AppError; //,ERR_CN_VALIDATION
 use crate::errors::{AppError, ERR_CN_VALIDATION};
-// use crate::extractors::authentication::RequireAuth;
+use crate::extractors::authentication::RequireAuth;
 use crate::sessions::{config_jwt::ConfigJwt, hash_tools, tokens};
 use crate::users::user_models::{self /*UserRole*/};
 #[cfg(feature = "mockdata")]
