@@ -9,7 +9,7 @@ use std::task::{Context, Poll};
 
 use crate::errors::AppError;
 use crate::sessions::{config_jwt::ConfigJwt, tokens};
-use crate::users::user_models::{User, /*UserDto,*/ UserRole};
+use crate::users::user_models::{User, UserRole};
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 #[cfg(not(feature = "mockdata"))]
@@ -236,13 +236,11 @@ mod tests {
     async fn test_auth_middelware_valid_token() {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
-        let mut users: Vec<user_models::User> = Vec::new();
-        users.push(user1);
 
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(users));
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
         let data_config_jwt = web::Data::new(config_jwt.clone());
 
         let app = test::init_service(
@@ -252,11 +250,9 @@ mod tests {
                 .service(handler_with_requireauth),
         )
         .await;
-
-        let req = test::TestRequest::default()
+        let req = test::TestRequest::get()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .to_request();
-
         let resp = test::call_service(&app, req).await;
 
         assert_eq!(resp.status(), http::StatusCode::OK);
@@ -266,12 +262,11 @@ mod tests {
     async fn test_auth_middelware_valid_token_with_cookie() {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
-        let users: Vec<user_models::User> = vec![user1];
 
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(users));
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
         let data_config_jwt = web::Data::new(config_jwt.clone());
 
         let app = test::init_service(
@@ -282,7 +277,7 @@ mod tests {
         )
         .await;
 
-        let req = test::TestRequest::default().cookie(Cookie::new("token", token)).to_request();
+        let req = test::TestRequest::get().cookie(Cookie::new("token", token)).to_request();
 
         let resp = test::call_service(&app, req).await;
 
@@ -291,11 +286,9 @@ mod tests {
 
     #[test]
     async fn test_auth_middleware_missing_token() {
-        let users: Vec<user_models::User> = vec![create_user()];
-
         let config_jwt = config_jwt::get_test_config();
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(users));
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![create_user()]));
         let data_config_jwt = web::Data::new(config_jwt.clone());
 
         let app = test::init_service(
@@ -306,7 +299,7 @@ mod tests {
         )
         .await;
 
-        let req = test::TestRequest::default().to_request();
+        let req = test::TestRequest::get().to_request();
 
         let result = test::try_call_service(&app, req).await.err();
 
@@ -323,11 +316,9 @@ mod tests {
 
     #[test]
     async fn test_auth_middleware_invalid_token() {
-        let users: Vec<user_models::User> = vec![create_user()];
-
         let config_jwt = config_jwt::get_test_config();
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(users));
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![create_user()]));
         let data_config_jwt = web::Data::new(config_jwt.clone());
 
         let app = test::init_service(
@@ -339,7 +330,7 @@ mod tests {
         .await;
 
         let token = "invalid_token";
-        let req = test::TestRequest::default()
+        let req = test::TestRequest::get()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .to_request();
 
@@ -360,13 +351,11 @@ mod tests {
     async fn test_auth_middelware_valid_token_non_existent_user() {
         let user1: user_models::User = create_user();
         let bad_id = format!("{}9999", user1.id);
-        let mut users: Vec<user_models::User> = Vec::new();
-        users.push(user1);
 
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&bad_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(users));
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
         let data_config_jwt = web::Data::new(config_jwt.clone());
 
         let app = test::init_service(
@@ -377,7 +366,7 @@ mod tests {
         )
         .await;
 
-        let req = test::TestRequest::default()
+        let req = test::TestRequest::get()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .to_request();
 
@@ -398,12 +387,11 @@ mod tests {
     async fn test_auth_middleware_access_admin_only_endpoint_fail() {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
-        let users: Vec<user_models::User> = vec![user1];
 
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(users));
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
         let data_config_jwt = web::Data::new(config_jwt.clone());
 
         let app = test::init_service(
@@ -414,7 +402,7 @@ mod tests {
         )
         .await;
 
-        let req = test::TestRequest::default()
+        let req = test::TestRequest::get()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .to_request();
 
@@ -436,12 +424,11 @@ mod tests {
         let mut user1: user_models::User = create_user();
         user1.role = UserRole::Admin;
         let user_id = user1.id.to_string();
-        let users: Vec<user_models::User> = vec![user1];
 
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(users));
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
         let data_config_jwt = web::Data::new(config_jwt.clone());
 
         let app = test::init_service(
@@ -452,7 +439,7 @@ mod tests {
         )
         .await;
 
-        let req = test::TestRequest::default()
+        let req = test::TestRequest::get()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .to_request();
 

@@ -7,7 +7,7 @@ use validator::Validate;
 use crate::errors::{AppError, ERR_CN_VALIDATION};
 use crate::extractors::authentication::RequireAuth;
 use crate::sessions::{config_jwt::ConfigJwt, hash_tools, tokens};
-use crate::users::user_models::{self /*UserRole*/};
+use crate::users::user_models;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 #[cfg(not(feature = "mockdata"))]
@@ -99,6 +99,7 @@ pub async fn login(
     let login_user_dto: user_models::LoginUserDto = json_user_dto.0.clone();
     log::debug!("login_user_dto: {:?}", login_user_dto); // #-
     let nickname = login_user_dto.nickname.clone();
+
     let email = login_user_dto.nickname.clone();
     let password = login_user_dto.password.clone();
 

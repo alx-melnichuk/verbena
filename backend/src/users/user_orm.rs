@@ -1,4 +1,3 @@
-use log;
 use std::fmt;
 
 use crate::users::user_models;
@@ -316,8 +315,7 @@ pub mod tests {
     impl UserOrmApp {
         /// Create a new instance.
         pub fn new() -> Self {
-            let users: Vec<user_models::User> = UserOrmApp::create_users();
-            UserOrmApp { users }
+            UserOrmApp { users: Vec::new() }
         }
         /// Create a new instance with the specified users.
         #[cfg(test)]
@@ -353,35 +351,7 @@ pub mod tests {
                 role: user_models::UserRole::User,
             }
         }
-        pub fn create_users() -> Vec<user_models::User> {
-            let mut buff: Vec<user_models::User> = Vec::new();
-            buff.push(Self::new_user(
-                1,
-                "James_Smith",
-                "James_Smith@gmail.com",
-                "password1234",
-            ));
-            buff.push(Self::new_user(
-                2,
-                "Mary_Williams",
-                "Mary_Williams@gmail.com",
-                "123justgetit",
-            ));
-            buff.push(Self::new_user(
-                3,
-                "Robert_Brown",
-                "Robert_Brown@gmail.com",
-                "mostsecurepass",
-            ));
-            buff.push(Self::new_user(
-                4,
-                "Linda_Miller",
-                "Linda_Miller@gmail.com",
-                "mostsecurepass",
-            ));
-
-            buff
-        }
+        /* "James_Smith", "Mary_Williams", "Robert_Brown", "Linda_Miller", */
     }
 
     impl UserOrm for UserOrmApp {
