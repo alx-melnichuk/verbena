@@ -61,6 +61,7 @@ impl AppError {
     pub fn status_code(&self) -> http::StatusCode {
         match self.status {
             400 => http::StatusCode::BAD_REQUEST,
+            401 => http::StatusCode::UNAUTHORIZED,
             404 => http::StatusCode::NOT_FOUND,
             409 => http::StatusCode::CONFLICT,
             _ => http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -92,7 +93,8 @@ impl actix_web::ResponseError for AppError {
     }
     fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody> {
         // #[cfg(test)]
-        // eprintln!("AppError({}): {}", self.status_code(), self.to_string()); // #
+        // #[rustfmt::skip]
+        // eprintln!("AppError({} {}): {}", self.status, self.status_code(), self.to_string() ); // #
         HttpResponse::build(self.status_code())
             .insert_header(http::header::ContentType::json())
             .json(self)

@@ -174,11 +174,6 @@ where
                 ErrorInternalServerError(AppError::new(CD_DATA_BASE, &e.to_string()))
             })?;
 
-            // let user = result.ok_or(ErrorUnauthorized(
-            //     // #? ErrorResponse { status: "fail".to_string(), message: ErrorMessage::UserNoLongerExist.to_string(), }
-            //     AppError::new(CD_USER_NO_LONGER_EXIST, MSG_USER_NO_LONGER_EXIST),
-            // ))?;
-
             let user = result.ok_or_else(|| {
                 log::debug!("{}: {}", CD_USER_NO_LONGER_EXIST, MSG_USER_NO_LONGER_EXIST);
                 let json_error = AppError::new(CD_USER_NO_LONGER_EXIST, MSG_USER_NO_LONGER_EXIST);

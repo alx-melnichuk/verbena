@@ -19,7 +19,9 @@ pub const CD_UNAUTHORIZED: &str = "UnAuthorized";
 pub const CD_USER_EXISTS: &str = "NicknameOrEmailExist";
 pub const MSG_USER_EXISTS: &str = "A user with the same nickname or email already exists.";
 pub const MSG_NO_USER_FOR_TOKEN: &str = "There is no user for this token";
-pub const MSG_WRONG_CREDENTIALS: &str = "Email or password is wrong";
+pub const MSG_WRONG_CREDENTIALS_A: &str = "Email or password is wrong (A)";
+pub const MSG_WRONG_CREDENTIALS_B: &str = "Email or password is wrong (B)";
+pub const MSG_WRONG_CREDENTIALS_C: &str = "Email or password is wrong (C)";
 
 pub const CD_JSONWEBTOKEN: &str = "jsonwebtoken";
 
@@ -36,23 +38,26 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 #[post("/signup")]
 pub async fn signup(
     user_orm: web::Data<UserOrmApp>,
-    body: web::Json<user_models::CreateUserDto>,
+    json_user_dto: web::Json<user_models::CreateUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let register_user: user_models::CreateUserDto = body.0.clone();
-    let mut register_user2 = register_user.clone();
+    // Checking the validity of the data model.
+    json_user_dto.validate().map_err(|errors| {
+        log::debug!("{}: {}", ERR_CN_VALIDATION, errors.to_string());
+        AppError::from(errors)
+    })?;
 
-    // let err_res1: Vec<AppError> = user_models::CreateUserDto::validation(&register_user);
-    // if err_res1.len() > 0 {
-    //     return Ok(AppError::get_http_response(&err_res1));
-    // }
-    let nickname = register_user.nickname.clone();
-    let email = register_user.email.clone();
+    let mut create_user_dto: user_models::CreateUserDto = json_user_dto.0.clone();
+    // let mut create_user2 = create_user_dto.clone();
 
-    let password_hashed = hash_tools::hash(&register_user.password).map_err(|e| {
+    let nickname = create_user_dto.nickname.clone();
+    let email = create_user_dto.email.clone();
+    let password = create_user_dto.password.clone();
+
+    let password_hashed = hash_tools::hash(&password).map_err(|e| {
         log::debug!("{}: {}", CD_HASHING, e.to_string());
         AppError::new(CD_HASHING, &e.to_string())
     })?;
-    register_user2.password = password_hashed;
+    create_user_dto.password = password_hashed;
 
     let result_user = web::block(move || {
         // Find for a user by nickname or email.
@@ -67,7 +72,7 @@ pub async fn signup(
         }
 
         // Create a new entity (user).
-        let res_user = user_orm.create_user(&register_user2).map_err(|e| {
+        let res_user = user_orm.create_user(&create_user_dto).map_err(|e| {
             log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
             AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
         });
@@ -89,17 +94,16 @@ pub async fn login(
     user_orm: web::Data<UserOrmApp>,
     json_user_dto: web::Json<user_models::LoginUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    log::debug!("login()"); // #-
-                            // Checking the validity of the data model.
+    // Checking the validity of the data model.
     json_user_dto.validate().map_err(|errors| {
+        eprintln!("$$validate() error: {:?}", errors);
         log::debug!("{}: {}", ERR_CN_VALIDATION, errors.to_string());
         AppError::from(errors)
     })?;
 
     let login_user_dto: user_models::LoginUserDto = json_user_dto.0.clone();
-    log::debug!("login_user_dto: {:?}", login_user_dto); // #-
+    eprintln!("$$login_user_dto: {:?}", login_user_dto); // #-
     let nickname = login_user_dto.nickname.clone();
-
     let email = login_user_dto.nickname.clone();
     let password = login_user_dto.password.clone();
 
@@ -113,12 +117,6 @@ pub async fn login(
                 AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
             });
 
-        if existing_user.clone().unwrap().is_none() {
-            log::debug!("##existing_user.is_none()");
-        } else {
-            log::debug!("##existing_user.is_some()");
-        }
-
         existing_user
     })
     .await
@@ -127,22 +125,23 @@ pub async fn login(
         AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
     })??;
 
-    if user.is_none() {
-        log::debug!("{}: {}", CD_UNAUTHORIZED, MSG_NO_USER_FOR_TOKEN);
-        return Err(AppError::new(CD_UNAUTHORIZED, MSG_NO_USER_FOR_TOKEN).set_status(401));
-    }
+    let user = user.ok_or_else(|| {
+        log::debug!("{}: {}", CD_UNAUTHORIZED, MSG_WRONG_CREDENTIALS_A);
+        AppError::new(CD_UNAUTHORIZED, MSG_WRONG_CREDENTIALS_A).set_status(401)
+    })?;
 
-    let user = user.unwrap();
-
+    eprintln!("$$user exists");
     let user_password = user.password.to_string();
     let password_matches = hash_tools::compare(&password, &user_password).map_err(|e| {
-        log::debug!("{}: {}", "InvalidHashFormat", e.to_string());
-        AppError::new("InvalidHashFormat", &e.to_string()).set_status(401)
+        let msg = format!("InvalidHashFormat {:?}", e.to_string());
+        log::debug!("{}: {} {}", CD_UNAUTHORIZED, MSG_WRONG_CREDENTIALS_B, msg);
+        AppError::new(CD_UNAUTHORIZED, MSG_WRONG_CREDENTIALS_B).set_status(401)
     })?;
 
     if !password_matches {
-        log::debug!("{}: {}", CD_UNAUTHORIZED, MSG_WRONG_CREDENTIALS);
-        return Err(AppError::new(CD_UNAUTHORIZED, MSG_WRONG_CREDENTIALS).set_status(401));
+        eprintln!("$$user !password_matches $$");
+        log::debug!("{}: {}", CD_UNAUTHORIZED, MSG_WRONG_CREDENTIALS_C);
+        return Err(AppError::new(CD_UNAUTHORIZED, MSG_WRONG_CREDENTIALS_C).set_status(401));
     }
 
     let token = tokens::create_token(
@@ -161,10 +160,11 @@ pub async fn login(
         .http_only(true)
         .finish();
 
-    let response = json!({
-        "status": "success".to_string(),
-        "token": token.to_string(),
-    });
+    let response = json!({ "status": "success".to_string(), "token": token.to_string(), });
+    // user_dto: UserDto,
+    // user_tokens_dto: UserTokensDto,
+    // let response_login_user_dto = ResponseLoginUserDto { user_dto, user_tokens_dto };
+
     Ok(HttpResponse::Ok().cookie(cookie).json(response))
 }
 
@@ -179,4 +179,440 @@ pub async fn logout() -> impl Responder {
         .finish();
 
     HttpResponse::Ok().cookie(cookie).json(json!({"status": "success"}))
+}
+
+#[cfg(all(test, feature = "mockdata"))]
+mod tests {
+    use actix_web::{http, test, web, App};
+    // use chrono::Utc;
+
+    use crate::errors::AppError;
+    use crate::sessions::config_jwt;
+    use crate::users::{
+        /*ModifyUserDto, UserDto,  */
+        user_models::{NICKNAME_MAX, NICKNAME_MIN, PASSWORD_MAX, PASSWORD_MIN},
+        user_orm::tests::UserOrmApp,
+    };
+
+    use super::*;
+
+    fn create_user() -> user_models::User {
+        let mut user = UserOrmApp::new_user(
+            1001,
+            "Oliver_Taylor",
+            "Oliver_Taylor@gmail.com",
+            "passwdT1R1",
+        );
+        user.role = user_models::UserRole::User;
+        user
+    }
+
+    const MSG_FAILED_DESER: &str = "Failed to deserialize AppError response from JSON.";
+
+    #[test]
+    async fn test_login_user_invalid_dto_nickname_min() {
+        let user1: user_models::User = create_user();
+        let nickname: String = (0..(NICKNAME_MIN - 1)).map(|_| 'a').collect();
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(login),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri("/login") //POST /login
+            .set_json(user_models::LoginUserDto {
+                nickname: nickname,
+                password: "passwordD1T1".to_string(),
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        let msg_err = format!("nickname: must be more than {} characters", NICKNAME_MIN);
+        assert_eq!(app_err.message, msg_err);
+    }
+
+    #[test]
+    async fn test_login_user_invalid_dto_nickname_max() {
+        let user1: user_models::User = create_user();
+        let nickname: String = (0..(NICKNAME_MAX + 1)).map(|_| 'a').collect();
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(login),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri("/login") //POST /login
+            .set_json(user_models::LoginUserDto {
+                nickname: nickname,
+                password: "passwordD1T1".to_string(),
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        let msg_err = format!("nickname: must be less than {} characters", NICKNAME_MAX);
+        assert_eq!(app_err.message, msg_err);
+    }
+    /*ValidationErrors(
+    {"nickname": Field([
+        ValidationError {
+            code: "length",
+            message: Some("must be less than 64 characters"),
+            params: {
+                "value": String("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+                "max": Number(64)
+            }
+        }])
+    }) */
+    #[test]
+    async fn test_login_user_invalid_dto_nickname_bad() {
+        let user1: user_models::User = create_user();
+        let nickname: String = "!@#=!@#=".to_string();
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(login),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri("/login") //POST /login
+            .set_json(user_models::LoginUserDto {
+                nickname: nickname,
+                password: "passwordD1T1".to_string(),
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.message, "nickname: wrong value /^[a-zA-Z0-9_]+$/");
+    }
+    /*ValidationErrors(
+    {"nickname": Field([
+        ValidationError {
+            code: "regex",
+            message: Some("wrong value /^[a-zA-Z0-9_]+$/"),
+            params: {"value": String("!@#=!@#=")}
+        }])
+    })*/
+    #[test]
+    async fn test_login_user_invalid_dto_password_min() {
+        let user1: user_models::User = create_user();
+        let password: String = (0..(PASSWORD_MIN - 1)).map(|_| 'a').collect();
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(login),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri("/login") //POST /login
+            .set_json(user_models::LoginUserDto {
+                nickname: "James_Smith".to_string(),
+                password: password,
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        let msg1 = format!("must be more than {} characters", PASSWORD_MIN);
+        let msg2 = "wrong value /^[a-zA-Z]+\\d*[A-Za-z\\d\\W_]{6,}$/";
+        assert_eq!(app_err.message, format!("password: {}, {}", msg1, msg2));
+    }
+    /*ValidationErrors(
+    {"password": Field([
+        ValidationError {
+            code: "length",
+            message: Some("must be more than 6 characters"),
+            params: {"min": Number(6), "value": String("aaaaa")}
+        },
+        ValidationError {
+            code: "regex",
+            message: Some("wrong value /^[a-zA-Z]+\\d*[A-Za-z\\d\\W_]{6,}$/"),
+            params: {"value": String("aaaaa")}
+        }
+        ])
+    })*/
+    #[test]
+    async fn test_login_user_invalid_dto_password_max() {
+        let user1: user_models::User = create_user();
+        let password: String = (0..(PASSWORD_MAX + 1)).map(|_| 'a').collect();
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(login),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri("/login") //POST /login
+            .set_json(user_models::LoginUserDto {
+                nickname: "James_Smith".to_string(),
+                password: password,
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        #[rustfmt::skip]
+        let msg_err = format!("password: must be less than {} characters", PASSWORD_MAX);
+        assert_eq!(app_err.message, msg_err);
+    }
+
+    #[test]
+    async fn test_login_user_invalid_dto_password_bad() {
+        let user1: user_models::User = create_user();
+        let password: String = "!@#=!@#=".to_string();
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(login),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri("/login") //POST /login
+            .set_json(user_models::LoginUserDto {
+                nickname: "James_Smith".to_string(),
+                password: password,
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        let msg = "wrong value /^[a-zA-Z]+\\d*[A-Za-z\\d\\W_]{6,}$/";
+        assert_eq!(app_err.message, format!("password: {}", msg));
+    }
+
+    #[test]
+    async fn test_login_user_wrong_nickname() {
+        let nickname = "Oliver_Taylor".to_string();
+        let email = format!("{}@gmail.com", nickname).to_string();
+        let password = "passwdT1R1".to_string();
+        let mut user1 =
+            UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
+        user1.role = user_models::UserRole::User;
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(login),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri("/login") //POST /login
+            .set_json(user_models::LoginUserDto {
+                nickname: format!("{}a", nickname).to_string(),
+                password: password,
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, CD_UNAUTHORIZED);
+        assert_eq!(app_err.message, MSG_WRONG_CREDENTIALS_A);
+    }
+
+    // #[test]
+    /*async fn test_login_user_wrong_email() {
+        let nickname = "Oliver_Taylor".to_string();
+        let email = format!("{}@gmail.com", nickname).to_string();
+        let password = "passwdT1R1".to_string();
+        let mut user1 =
+            UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
+        user1.role = user_models::UserRole::User;
+        user1.password += "bad";
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(login),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri("/login") //POST /login
+            .set_json(user_models::LoginUserDto {
+                nickname: format!("a{}", email).to_string(),
+                password: password.to_string(),
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        // assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+
+        let body = test::read_body(resp).await;
+        eprintln!("\n###### body: {:?}\n", body);
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, CD_UNAUTHORIZED);
+        assert_eq!(app_err.message, MSG_WRONG_CREDENTIALS_A);
+    }*/
+    /*ValidationErrors(
+    { "nickname": Field(
+        [
+            ValidationError {
+                code: "regex",
+                message: Some("wrong value /^[a-zA-Z0-9_]+$/"),
+                params: {"value": String("aOliver_Taylor@gmail.com")}
+            }
+        ])
+    })*/
+
+    #[test]
+    async fn test_login_user_wrong_password() {
+        let nickname = "Oliver_Taylor".to_string();
+        let email = format!("{}@gmail.com", nickname).to_string();
+        let password = "passwdT1R1".to_string();
+        let mut user1 =
+            UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
+        user1.role = user_models::UserRole::User;
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(login),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri("/login") //POST /login
+            .set_json(user_models::LoginUserDto {
+                nickname: nickname.to_string(),
+                password: format!("{}a", password).to_string(),
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+
+        let body = test::read_body(resp).await;
+        // eprintln!("\n###### body: {:?}\n", body);
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, CD_UNAUTHORIZED);
+        assert_eq!(app_err.message, MSG_WRONG_CREDENTIALS_C);
+    }
+
+    #[test]
+    async fn test_login_user_wrong_hashed_password() {
+        let nickname = "Oliver_Taylor".to_string();
+        let email = format!("{}@gmail.com", nickname).to_string();
+        let password = "passwdT1R1".to_string();
+        let mut user1 =
+            UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
+        user1.role = user_models::UserRole::User;
+        user1.password += "bad";
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(login),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri("/login") //POST /login
+            .set_json(user_models::LoginUserDto {
+                nickname: nickname.to_string(),
+                password: password.to_string(),
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, CD_UNAUTHORIZED);
+        assert_eq!(app_err.message, MSG_WRONG_CREDENTIALS_B);
+    }
 }
