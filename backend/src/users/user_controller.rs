@@ -250,16 +250,16 @@ mod tests {
     use actix_web::{http, test, web, App};
     use chrono::Utc;
 
-    use super::*;
     use crate::errors::AppError;
     use crate::sessions::{config_jwt, tokens};
     use crate::users::{
         user_models::{
-            ModifyUserDto, UserDto, EMAIL_MAX, EMAIL_MIN, NICKNAME_MAX, NICKNAME_MIN, PASSWORD_MAX,
-            PASSWORD_MIN,
+            EMAIL_MAX, EMAIL_MIN, NICKNAME_MAX, NICKNAME_MIN, PASSWORD_MAX, PASSWORD_MIN,
         },
         user_orm::tests::UserOrmApp,
     };
+
+    use super::*;
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize AppError response from JSON.";
     const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
@@ -280,10 +280,11 @@ mod tests {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
         let user_id_bad = format!("{}a", user_id).to_string();
-        let user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
 
         let app = test::init_service(
-            App::new().app_data(web::Data::clone(&user_orm)).service(get_user_by_id),
+            App::new().app_data(web::Data::clone(&data_user_orm)).service(get_user_by_id),
         )
         .await;
         let req = test::TestRequest::get()
@@ -306,12 +307,12 @@ mod tests {
     async fn test_get_user_by_id_valid_id() {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
-        let user1b_dto = UserDto::from(user1.clone());
+        let user1b_dto = user_models::UserDto::from(user1.clone());
 
-        let user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
 
         let app = test::init_service(
-            App::new().app_data(web::Data::clone(&user_orm)).service(get_user_by_id),
+            App::new().app_data(web::Data::clone(&data_user_orm)).service(get_user_by_id),
         )
         .await;
         let req = test::TestRequest::get()
@@ -322,10 +323,11 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let user_dto_res: user_models::UserDto =
+            serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_user1b_dto = serde_json::json!(user1b_dto).to_string();
-        let user1_dto_ser: UserDto =
+        let user1_dto_ser: user_models::UserDto =
             serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(user_dto_res, user1_dto_ser);
@@ -334,10 +336,11 @@ mod tests {
     #[test]
     async fn test_get_user_by_id_non_existent_id() {
         let user1: user_models::User = create_user();
-        let user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
 
         let app = test::init_service(
-            App::new().app_data(web::Data::clone(&user_orm)).service(get_user_by_id),
+            App::new().app_data(web::Data::clone(&data_user_orm)).service(get_user_by_id),
         )
         .await;
         let req = test::TestRequest::get()
@@ -353,9 +356,11 @@ mod tests {
         let user1: user_models::User = create_user();
         let nickname = user1.nickname.to_uppercase().to_string();
 
-        let user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
         let app = test::init_service(
-            App::new().app_data(web::Data::clone(&user_orm)).service(get_user_by_nickname),
+            App::new()
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(get_user_by_nickname),
         )
         .await;
         let req = test::TestRequest::get()
@@ -369,13 +374,15 @@ mod tests {
     #[test]
     async fn test_get_user_by_nickname_existent_nickname() {
         let user1: user_models::User = create_user();
-        let user1b_dto = UserDto::from(user1.clone());
+        let user1b_dto = user_models::UserDto::from(user1.clone());
 
         let nickname = user1.nickname.to_uppercase().to_string();
 
-        let user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
         let app = test::init_service(
-            App::new().app_data(web::Data::clone(&user_orm)).service(get_user_by_nickname),
+            App::new()
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(get_user_by_nickname),
         )
         .await;
         let req = test::TestRequest::get()
@@ -386,10 +393,11 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let user_dto_res: user_models::UserDto =
+            serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_user1b_dto = serde_json::json!(user1b_dto).to_string();
-        let user1_dto_ser: UserDto =
+        let user1_dto_ser: user_models::UserDto =
             serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(user_dto_res, user1_dto_ser);
@@ -405,7 +413,7 @@ mod tests {
         );
         user1.role = user_models::UserRole::User;
         let user_id = user1.id.to_string();
-        let user1b_dto = UserDto::from(user1.clone());
+        let user1b_dto = user_models::UserDto::from(user1.clone());
 
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
@@ -428,10 +436,11 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let user_dto_res: user_models::UserDto =
+            serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_user1b_dto = serde_json::json!(user1b_dto).to_string();
-        let user1b_dto_ser: UserDto =
+        let user1b_dto_ser: user_models::UserDto =
             serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(user_dto_res.id, user1b_dto_ser.id);
@@ -469,7 +478,7 @@ mod tests {
         let req = test::TestRequest::put()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .uri(&format!("/users/{}", &user_id_bad)) // PUT users/1001a
-            .set_json(ModifyUserDto {
+            .set_json(user_models::ModifyUserDto {
                 nickname: Some("Oliver_Taylor".to_string()),
                 email: Some("Oliver_Taylor@gmail.com".to_string()),
                 password: Some("passwordD1T1".to_string()),
@@ -508,7 +517,7 @@ mod tests {
         let req = test::TestRequest::put()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .uri(&format!("/users/{}9", &user_id)) // PUT users/10019
-            .set_json(ModifyUserDto {
+            .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
                 email: Some("James_Smith@gmail.com".to_string()),
                 password: Some("passwordD1T1".to_string()),
@@ -535,7 +544,7 @@ mod tests {
         user1b.created_at = user1.created_at.clone();
         user1b.updated_at = Utc::now();
 
-        let user1b_dto = UserDto::from(user1b.clone());
+        let user1b_dto = user_models::UserDto::from(user1b.clone());
 
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
@@ -553,7 +562,7 @@ mod tests {
         let req = test::TestRequest::put()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .uri(&format!("/users/{}", &user_id)) // PUT users/1001
-            .set_json(ModifyUserDto {
+            .set_json(user_models::ModifyUserDto {
                 nickname: Some(user1b.nickname),
                 email: Some(user1b.email),
                 password: Some(new_password.to_string()),
@@ -564,10 +573,11 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let user_dto_res: user_models::UserDto =
+            serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_user1b_dto = serde_json::json!(user1b_dto).to_string();
-        let user1b_dto_ser: UserDto =
+        let user1b_dto_ser: user_models::UserDto =
             serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(user_dto_res.id, user1b_dto_ser.id);
@@ -583,7 +593,7 @@ mod tests {
         assert_ne!(user_dto_res.updated_at, user_dto_res.created_at);
     }
 
-    #[test]
+    #[test] // +
     async fn test_put_user_invalid_dto_nickname_min() {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
@@ -605,7 +615,7 @@ mod tests {
         let req = test::TestRequest::put()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .uri(&format!("/users/{}", &user_id)) // PUT users/1001
-            .set_json(ModifyUserDto {
+            .set_json(user_models::ModifyUserDto {
                 nickname: Some(nickname),
                 email: Some("James_Smith@gmail.com".to_string()),
                 password: Some("passwordD1T1".to_string()),
@@ -623,7 +633,7 @@ mod tests {
         assert_eq!(app_err.message, msg_err);
     }
 
-    #[test]
+    #[test] // +
     async fn test_put_user_invalid_dto_nickname_max() {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
@@ -645,7 +655,7 @@ mod tests {
         let req = test::TestRequest::put()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .uri(&format!("/users/{}", &user_id)) // PUT users/1001
-            .set_json(ModifyUserDto {
+            .set_json(user_models::ModifyUserDto {
                 nickname: Some(nickname),
                 email: Some("James_Smith@gmail.com".to_string()),
                 password: Some("passwordD1T1".to_string()),
@@ -663,7 +673,7 @@ mod tests {
         assert_eq!(app_err.message, msg_err);
     }
 
-    #[test]
+    #[test] // +
     async fn test_put_user_invalid_dto_nickname_bad() {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
@@ -685,7 +695,7 @@ mod tests {
         let req = test::TestRequest::put()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .uri(&format!("/users/{}", &user_id)) // PUT users/1001
-            .set_json(ModifyUserDto {
+            .set_json(user_models::ModifyUserDto {
                 nickname: Some(nickname),
                 email: Some("James_Smith@gmail.com".to_string()),
                 password: Some("passwordD1T1".to_string()),
@@ -728,7 +738,7 @@ mod tests {
         let req = test::TestRequest::put()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .uri(&format!("/users/{}", &user_id)) // PUT users/1001
-            .set_json(ModifyUserDto {
+            .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
                 email: Some(email2),
                 password: Some("passwordD1T1".to_string()),
@@ -772,7 +782,7 @@ mod tests {
         let req = test::TestRequest::put()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .uri(&format!("/users/{}", &user_id)) // PUT users/1001
-            .set_json(ModifyUserDto {
+            .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
                 email: Some(email2.to_string()),
                 password: Some("passwordD1T1".to_string()),
@@ -813,7 +823,7 @@ mod tests {
         let req = test::TestRequest::put()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .uri(&format!("/users/{}", &user_id)) // PUT users/1001
-            .set_json(ModifyUserDto {
+            .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
                 email: Some(email.to_string()),
                 password: Some("passwordD1T1".to_string()),
@@ -830,7 +840,7 @@ mod tests {
         assert_eq!(app_err.message, "email: wrong email");
     }
 
-    #[test]
+    #[test] // +
     async fn test_put_user_invalid_dto_password_min() {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
@@ -852,7 +862,7 @@ mod tests {
         let req = test::TestRequest::put()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .uri(&format!("/users/{}", &user_id)) // PUT users/1001
-            .set_json(ModifyUserDto {
+            .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
                 email: Some("James_Smith@gmail.com".to_string()),
                 password: Some(password),
@@ -871,7 +881,7 @@ mod tests {
         assert_eq!(app_err.message, format!("password: {}, {}", msg1, msg2));
     }
 
-    #[test]
+    #[test] // +
     async fn test_put_user_invalid_dto_password_max() {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
@@ -893,7 +903,7 @@ mod tests {
         let req = test::TestRequest::put()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
             .uri(&format!("/users/{}", &user_id)) // PUT users/1001
-            .set_json(ModifyUserDto {
+            .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
                 email: Some("James_Smith@gmail.com".to_string()),
                 password: Some(password),
@@ -910,6 +920,46 @@ mod tests {
         #[rustfmt::skip]
         let msg_err = format!("password: must be less than {} characters", PASSWORD_MAX);
         assert_eq!(app_err.message, msg_err);
+    }
+
+    #[test] // +
+    async fn test_put_user_invalid_dto_password_bad() {
+        let user1: user_models::User = create_user();
+        let user_id = user1.id.to_string();
+        let password: String = "!@#=!@#=".to_string();
+
+        let config_jwt = config_jwt::get_test_config();
+        let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
+
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(put_user),
+        )
+        .await;
+        let req = test::TestRequest::put()
+            .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+            .uri(&format!("/users/{}", &user_id)) // PUT users/1001
+            .set_json(user_models::ModifyUserDto {
+                nickname: Some("James_Smith".to_string()),
+                email: Some("James_Smith@gmail.com".to_string()),
+                password: Some(password),
+                role: Some(user_models::UserRole::User),
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        let msg = "wrong value /^[a-zA-Z]+\\d*[A-Za-z\\d\\W_]{6,}$/";
+        assert_eq!(app_err.message, format!("password: {}", msg));
     }
 
     #[test]
