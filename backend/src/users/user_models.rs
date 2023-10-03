@@ -1,6 +1,5 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -56,15 +55,6 @@ pub struct UserDto {
     pub updated_at: DateTime<Utc>,
 }
 
-impl UserDto {
-    pub fn verify_for_create(&self) -> bool {
-        self.nickname.len() > 0 && self.email.len() > 0 && self.password.len() > 0
-    }
-    pub fn verify_for_edit(&self) -> bool {
-        self.nickname.len() == 0 || self.email.len() == 0 || self.password.len() == 0
-    }
-}
-
 impl From<User> for UserDto {
     fn from(user: User) -> Self {
         UserDto {
@@ -80,44 +70,33 @@ impl From<User> for UserDto {
 }
 
 pub const NICKNAME_MIN: u8 = 3;
+pub const MSG_NICKNAME_MIN: &str = "must be more than 3 characters";
 pub const NICKNAME_MAX: u8 = 64;
+pub const MSG_NICKNAME_MAX: &str = "must be less than 64 characters";
+pub const NICKNAME_REGEX: &str = r"^[a-zA-Z]+[\w]+$";
+pub const MSG_NICKNAME_REGEX: &str = "must match /^[a-zA-Z]+[\\w]+$/";
+// \w   Matches any letter, digit or underscore. Equivalent to [a-zA-Z0-9_].
+// \W - Matches anything other than a letter, digit or underscore. Equivalent to [^a-zA-Z0-9_]
 
 pub const EMAIL_MIN: u8 = 5;
+pub const MSG_EMAIL_MIN: &str = "must be more than 5 characters";
 pub const EMAIL_MAX: u16 = 255;
+pub const MSG_EMAIL_MAX: &str = "must be less than 255 characters";
+pub const MSG_EMAIL: &str = "must match `user@email.com`";
 
 pub const PASSWORD_MIN: u8 = 6;
+pub const MSG_PASSWORD_MIN: &str = "must be more than 6 characters";
 pub const PASSWORD_MAX: u8 = 64;
-
-lazy_static! {
-    static ref NICKNAME_REG: Regex = Regex::new(r"^[a-zA-Z0-9_]+$").unwrap();
-    // static ref PASSWORD_REG: Regex = Regex::new(r"^[a-z]*[A-Z]*\d*[A-Za-z\d\W_]{6,}$").unwrap();
-    static ref PASSWORD_REG: Regex = Regex::new(r"^[a-zA-Z]+\d*[A-Za-z\d\W_]{6,}$").unwrap();
-    // \W - Matches anything other than a letter, digit or underscore. Equivalent to [^a-zA-Z0-9_]
-}
+pub const MSG_PASSWORD_MAX: &str = "must be less than 64 characters";
 
 #[derive(Debug, Serialize, Deserialize, Clone, Validate, AsChangeset)]
 #[diesel(table_name = schema::users)]
 pub struct ModifyUserDto {
-    #[validate(
-        length(min = "NICKNAME_MIN", message = "must be more than 3 characters"),
-        length(max = "NICKNAME_MAX", message = "must be less than 64 characters"),
-        regex(path = "NICKNAME_REG", message = "wrong value /^[a-zA-Z0-9_]+$/")
-    )]
+    #[validate(custom = "UserValidate::nickname")]
     pub nickname: Option<String>,
-    #[validate(
-        length(min = "EMAIL_MIN", message = "must be more than 5 characters"),
-        length(max = "EMAIL_MAX", message = "must be less than 255 characters"),
-        email(message = "wrong email")
-    )]
+    #[validate(custom = "UserValidate::email")]
     pub email: Option<String>,
-    #[validate(
-        length(min = "PASSWORD_MIN", message = "must be more than 6 characters"),
-        length(max = "PASSWORD_MAX", message = "must be less than 64 characters"),
-        regex(
-            path = "PASSWORD_REG",
-            message = "wrong value /^[a-zA-Z]+\\d*[A-Za-z\\d\\W_]{6,}$/"
-        )
-    )]
+    #[validate(custom = "UserValidate::password")]
     pub password: Option<String>,
     pub role: Option<UserRole>,
 }
@@ -125,132 +104,99 @@ pub struct ModifyUserDto {
 #[derive(Debug, Serialize, Deserialize, Clone, Validate, AsChangeset, Insertable)]
 #[diesel(table_name = schema::users)]
 pub struct CreateUserDto {
-    #[validate(
-        length(min = "NICKNAME_MIN", message = "must be more than 3 characters"),
-        length(max = "NICKNAME_MAX", message = "must be less than 64 characters"),
-        regex(path = "NICKNAME_REG", message = "wrong value /^[a-zA-Z0-9_]+$/")
-    )]
+    #[validate(custom = "UserValidate::nickname")]
     pub nickname: String,
-    #[validate(
-        length(min = "EMAIL_MIN", message = "must be more than 5 characters"),
-        length(max = "EMAIL_MAX", message = "must be less than 255 characters"),
-        email(message = "wrong email")
-    )]
+    #[validate(custom = "UserValidate::email")]
     pub email: String,
-    #[validate(
-        length(min = "PASSWORD_MIN", message = "must be more than 6 characters"),
-        length(max = "PASSWORD_MAX", message = "must be less than 64 characters"),
-        regex(
-            path = "PASSWORD_REG",
-            message = "wrong value /^[a-zA-Z]+\\d*[A-Za-z\\d\\W_]{6,}$/"
-        )
-    )]
+    #[validate(custom = "UserValidate::password")]
     pub password: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Validate, AsChangeset)]
 #[diesel(table_name = schema::users)]
 pub struct LoginUserDto {
-    #[validate(
-        length(min = "NICKNAME_MIN", message = "must be more than 3 characters"),
-        length(max = "NICKNAME_MAX", message = "must be less than 64 characters"),
-        regex(path = "NICKNAME_REG", message = "wrong value /^[a-zA-Z0-9_]+$/")
-    )]
-    // #[validate(custom = "LoginUserDto::validate_nickname_or_email")]
-    // #[validate(
-    //     custom = "LoginUserDto::validate_nickname",
-    //     custom = "LoginUserDto::validate_email"
-    // )]
+    #[validate(custom = "UserValidate::nickname_or_email")]
     pub nickname: String,
-    #[validate(
-        length(min = "PASSWORD_MIN", message = "must be more than 6 characters"),
-        length(max = "PASSWORD_MAX", message = "must be less than 64 characters"),
-        regex(
-            path = "PASSWORD_REG",
-            message = "wrong value /^[a-zA-Z]+\\d*[A-Za-z\\d\\W_]{6,}$/"
-        )
-    )]
+    #[validate(custom = "UserValidate::password")]
     pub password: String,
 }
 
-impl LoginUserDto {
-    pub fn validate_nickname(value: &str) -> Result<(), validator::ValidationError> {
+pub struct UserValidate {}
+
+impl UserValidate {
+    #[rustfmt::skip]
+    fn new_err<T: Serialize>(code: &'static str, msg: &'static str, val: &T) -> validator::ValidationError {
+        let mut err = validator::ValidationError::new(code.clone());
+        err.message = Some(Cow::Borrowed(msg));
+        err.add_param(Cow::Borrowed("value"), &val);
+        err
+    }
+    #[rustfmt::skip]
+    fn check_min(value: &str, min: usize, msg: &'static str) -> Result<(), validator::ValidationError> {
         let len: usize = value.len();
-        // nuickname
-        // #- length(min = "NICKNAME_MIN", message = "must be more than 3 characters"),
-        let min: usize = NICKNAME_MIN.clone().into();
         if len < min {
-            let mut err = validator::ValidationError::new("length");
-            err.message = Some(Cow::Borrowed("must be more than 3 characters"));
+            let mut err = Self::new_err("length", msg, &value.clone());
             err.add_param(Cow::Borrowed("min"), &min);
-            err.add_param(Cow::Borrowed("value"), &value.clone());
-            // code: "length", message: Some("must be more than 6 characters"),params: {"min": Number(6), "value": String("aaaaa")}
             return Err(err);
         }
-        // #- length(max = "NICKNAME_MAX", message = "must be less than 64 characters"),
-        let max: usize = NICKNAME_MAX.clone().into();
+        Ok(())
+    }
+    #[rustfmt::skip]
+    fn check_max(value: &str, max: usize, msg: &'static str) -> Result<(), validator::ValidationError> {
+        let len: usize = value.len();
         if max < len {
-            let mut err = validator::ValidationError::new("length");
-            err.message = Some(Cow::Borrowed("must be less than 64 characters"));
+            let mut err = Self::new_err("length", msg, &value.clone());
             err.add_param(Cow::Borrowed("max"), &max);
-            err.add_param(Cow::Borrowed("value"), &value.clone());
             return Err(err);
         }
-        // regex(path = "NICKNAME_REG", message = "wrong value /^[a-zA-Z0-9_]+$/")
-        // NICKNAME_REG
-        let reg_ex = Regex::new(r"^[a-zA-Z0-9_]+$").unwrap();
-        let res = reg_ex.captures(value.clone());
-        if res.is_none() {
+        Ok(())
+    }
+    #[rustfmt::skip]
+    fn check_reg_ex(value: &str, reg_ex: &str, msg: &'static str) -> Result<(), validator::ValidationError> {
+        let reg_ex = Regex::new(reg_ex).unwrap(); // /^[\w\W_]+$/
+        let result = reg_ex.captures(value.clone());
+        if result.is_none() {
             let mut err = validator::ValidationError::new("regex");
-            err.message = Some(Cow::Borrowed("wrong value /^[a-zA-Z0-9_]+$/"));
+            err.message = Some(Cow::Borrowed(msg));
             err.add_param(Cow::Borrowed("value"), &value.clone());
             return Err(err);
         }
+        Ok(())
+    }
+    #[rustfmt::skip]
+    fn check_email(value: &str, msg: &'static str) -> Result<(), validator::ValidationError> {
+        if !validator::validate_email(value) {
+            let mut err = validator::ValidationError::new("email");
+            err.message = Some(Cow::Borrowed(msg));
+            err.add_param(Cow::Borrowed("value"), &value.clone());
+            return Err(err);
+        }
+        Ok(())
+    }
 
+    pub fn nickname(value: &str) -> Result<(), validator::ValidationError> {
+        Self::check_min(value, NICKNAME_MIN.into(), MSG_NICKNAME_MIN)?;
+        Self::check_max(value, NICKNAME_MAX.into(), MSG_NICKNAME_MAX)?;
+        Self::check_reg_ex(value, NICKNAME_REGEX, MSG_NICKNAME_REGEX)?; // /^[a-zA-Z]+[\w]+$/
         Ok(())
     }
-    pub fn validate_email(value: &str) -> Result<(), validator::ValidationError> {
-        let len: usize = value.len();
-        let min: usize = EMAIL_MIN.clone().into();
-        // code: "length", message: Some("must be more than 3 characters"),params: {"min": Number(3), "value": String("aaaaa")}
-        if len < min {
-            let mut err = validator::ValidationError::new("length");
-            err.message = Some(Cow::Borrowed("must be more than 5 characters"));
-            err.add_param(Cow::Borrowed("min"), &min);
-            err.add_param(Cow::Borrowed("value"), &value.clone());
-            return Err(err);
-        }
-        let max: usize = EMAIL_MAX.clone().into();
-        // code: "length", message: Some("must be less than 64 characters"), params: { "max": Number(64), "value": String("aaaaa")} }
-        if max < len {
-            let mut err = validator::ValidationError::new("length");
-            err.message = Some(Cow::Borrowed("must be less than 255 characters"));
-            err.add_param(Cow::Borrowed("max"), &max);
-            err.add_param(Cow::Borrowed("value"), &value.clone());
-            return Err(err);
-        }
-        // regex(path = "NICKNAME_REG", message = "wrong value /^[a-zA-Z0-9_]+$/")
+    pub fn password(value: &str) -> Result<(), validator::ValidationError> {
+        Self::check_min(value, PASSWORD_MIN.into(), MSG_PASSWORD_MIN)?;
+        Self::check_max(value, PASSWORD_MAX.into(), MSG_PASSWORD_MAX)?;
         Ok(())
     }
-    pub fn validate_nickname_or_email(value: &str) -> Result<(), validator::ValidationError> {
+    pub fn email(value: &str) -> Result<(), validator::ValidationError> {
+        Self::check_min(value, EMAIL_MIN.into(), MSG_EMAIL_MIN)?;
+        Self::check_max(value, EMAIL_MAX.into(), MSG_EMAIL_MAX)?;
+        Self::check_email(value, MSG_EMAIL)?;
+        Ok(())
+    }
+    pub fn nickname_or_email(value: &str) -> Result<(), validator::ValidationError> {
         if value.contains("@") {
-            // email
-            // length(min = "EMAIL_MIN", message = "must be more than 5 characters"),
-            // length(max = "EMAIL_MAX", message = "must be less than 255 characters"),
-            // email(message = "wrong email")
-            Self::validate_email(&value.clone()).map_err(|err| err)?;
+            Self::email(&value.clone()).map_err(|err| err)?;
         } else {
-            // nickname
-            // length(min = "NICKNAME_MIN", message = "must be more than 3 characters"),
-            // length(max = "NICKNAME_MAX", message = "must be less than 64 characters"),
-            // regex(path = "NICKNAME_REG", message = "wrong value /^[a-zA-Z0-9_]+$/")
-            Self::validate_nickname(&value.clone()).map_err(|err| err)?;
+            Self::nickname(&value.clone()).map_err(|err| err)?;
         }
-        if value == "xXxShad0wxXx" {
-            // the value of the username will automatically be added later
-            return Err(validator::ValidationError::new("terrible_username"));
-        }
-
         Ok(())
     }
 }

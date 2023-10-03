@@ -175,7 +175,7 @@ pub async fn patch_user(
 
     let mut new_user: user_models::UserDto = json_user_dto.0.clone();
 
-    if new_user.verify_for_edit() {
+    if new_user.verify_for_edit???() {
         log::debug!("{}: {}", CN_INCORRECT_PARAM, MSG_INCORRECT_PARAM);
         return Err(AppError::new(CN_INCORRECT_PARAM, MSG_INCORRECT_PARAM).set_status(400));
     }
@@ -252,12 +252,7 @@ mod tests {
 
     use crate::errors::AppError;
     use crate::sessions::{config_jwt, tokens};
-    use crate::users::{
-        user_models::{
-            EMAIL_MAX, EMAIL_MIN, NICKNAME_MAX, NICKNAME_MIN, PASSWORD_MAX, PASSWORD_MIN,
-        },
-        user_orm::tests::UserOrmApp,
-    };
+    use crate::users::{user_models, user_orm::tests::UserOrmApp};
 
     use super::*;
 
@@ -593,11 +588,11 @@ mod tests {
         assert_ne!(user_dto_res.updated_at, user_dto_res.created_at);
     }
 
-    #[test] // +
+    #[test]
     async fn test_put_user_invalid_dto_nickname_min() {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
-        let nickname: String = (0..(NICKNAME_MIN - 1)).map(|_| 'a').collect();
+        let nickname: String = (0..(user_models::NICKNAME_MIN - 1)).map(|_| 'a').collect();
 
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
@@ -629,15 +624,15 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
-        let msg_err = format!("nickname: must be more than {} characters", NICKNAME_MIN);
+        let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_MIN);
         assert_eq!(app_err.message, msg_err);
     }
 
-    #[test] // +
+    #[test]
     async fn test_put_user_invalid_dto_nickname_max() {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
-        let nickname: String = (0..(NICKNAME_MAX + 1)).map(|_| 'a').collect();
+        let nickname: String = (0..(user_models::NICKNAME_MAX + 1)).map(|_| 'a').collect();
 
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
@@ -669,15 +664,15 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
-        let msg_err = format!("nickname: must be less than {} characters", NICKNAME_MAX);
+        let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_MAX);
         assert_eq!(app_err.message, msg_err);
     }
 
-    #[test] // +
-    async fn test_put_user_invalid_dto_nickname_bad() {
+    #[test]
+    async fn test_put_user_invalid_dto_wrong_nickname() {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
-        let nickname: String = "!@#=!@#=".to_string();
+        let nickname: String = "~!@#$%^&*()-+=".to_string();
 
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
@@ -709,7 +704,8 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
-        assert_eq!(app_err.message, "nickname: wrong value /^[a-zA-Z0-9_]+$/");
+        let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_REGEX);
+        assert_eq!(app_err.message, msg_err);
     }
 
     #[test]
@@ -718,7 +714,7 @@ mod tests {
         let user_id = user1.id.to_string();
 
         let suffix = "@us".to_string();
-        let email_min: usize = EMAIL_MIN.into();
+        let email_min: usize = user_models::EMAIL_MIN.into();
         let email: String = (0..(email_min - 1 - suffix.len())).map(|_| 'a').collect();
         let email2 = format!("{}{}", email, suffix);
 
@@ -752,8 +748,8 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
-        let msg1 = format!("must be more than {} characters", EMAIL_MIN);
-        assert_eq!(app_err.message, format!("email: {}", msg1));
+        let msg_err = format!("email: {}", user_models::MSG_EMAIL_MIN);
+        assert_eq!(app_err.message, msg_err);
     }
 
     #[test]
@@ -761,10 +757,12 @@ mod tests {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
 
-        let suffix = "@gmail.com".to_string();
-        let email_max: usize = EMAIL_MAX.into();
-        let email: String = (0..(email_max + 1 - suffix.len())).map(|_| 'a').collect();
-        let email2 = format!("{}{}", email, suffix);
+        let email_max: usize = user_models::EMAIL_MAX.into();
+        let prefix: String = (0..64).map(|_| 'a').collect();
+        let domain = ".ua";
+        let len = email_max - prefix.len() - domain.len() + 1;
+        let suffix: String = (0..len).map(|_| 'a').collect();
+        let email2 = format!("{}@{}{}", prefix, suffix, domain);
 
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
@@ -796,13 +794,12 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
-        let msg1 = format!("must be less than {} characters", EMAIL_MAX);
-        let msg2 = "wrong email";
-        assert_eq!(app_err.message, format!("email: {}, {}", msg1, msg2));
+        let msg_err = format!("email: {}", user_models::MSG_EMAIL_MAX);
+        assert_eq!(app_err.message, msg_err);
     }
 
     #[test]
-    async fn test_put_user_invalid_dto_email_bad() {
+    async fn test_put_user_invalid_dto_wrong_email() {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
         let email = "demo_gmail.com";
@@ -837,96 +834,15 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
-        assert_eq!(app_err.message, "email: wrong email");
-    }
-
-    #[test] // +
-    async fn test_put_user_invalid_dto_password_min() {
-        let user1: user_models::User = create_user();
-        let user_id = user1.id.to_string();
-        let password: String = (0..(PASSWORD_MIN - 1)).map(|_| 'a').collect();
-
-        let config_jwt = config_jwt::get_test_config();
-        let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
-
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(put_user),
-        )
-        .await;
-        let req = test::TestRequest::put()
-            .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri(&format!("/users/{}", &user_id)) // PUT users/1001
-            .set_json(user_models::ModifyUserDto {
-                nickname: Some("James_Smith".to_string()),
-                email: Some("James_Smith@gmail.com".to_string()),
-                password: Some(password),
-                role: Some(user_models::UserRole::User),
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
-        let msg1 = format!("must be more than {} characters", PASSWORD_MIN);
-        let msg2 = "wrong value /^[a-zA-Z]+\\d*[A-Za-z\\d\\W_]{6,}$/";
-        assert_eq!(app_err.message, format!("password: {}, {}", msg1, msg2));
-    }
-
-    #[test] // +
-    async fn test_put_user_invalid_dto_password_max() {
-        let user1: user_models::User = create_user();
-        let user_id = user1.id.to_string();
-        let password: String = (0..(PASSWORD_MAX + 1)).map(|_| 'a').collect();
-
-        let config_jwt = config_jwt::get_test_config();
-        let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
-
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(put_user),
-        )
-        .await;
-        let req = test::TestRequest::put()
-            .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri(&format!("/users/{}", &user_id)) // PUT users/1001
-            .set_json(user_models::ModifyUserDto {
-                nickname: Some("James_Smith".to_string()),
-                email: Some("James_Smith@gmail.com".to_string()),
-                password: Some(password),
-                role: Some(user_models::UserRole::User),
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
-        #[rustfmt::skip]
-        let msg_err = format!("password: must be less than {} characters", PASSWORD_MAX);
+        let msg_err = format!("email: {}", user_models::MSG_EMAIL);
         assert_eq!(app_err.message, msg_err);
     }
 
-    #[test] // +
-    async fn test_put_user_invalid_dto_password_bad() {
+    #[test]
+    async fn test_put_user_invalid_dto_password_min() {
         let user1: user_models::User = create_user();
         let user_id = user1.id.to_string();
-        let password: String = "!@#=!@#=".to_string();
+        let password: String = (0..(user_models::PASSWORD_MIN - 1)).map(|_| 'a').collect();
 
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
@@ -958,8 +874,48 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
-        let msg = "wrong value /^[a-zA-Z]+\\d*[A-Za-z\\d\\W_]{6,}$/";
-        assert_eq!(app_err.message, format!("password: {}", msg));
+        let msg_err = format!("password: {}", user_models::MSG_PASSWORD_MIN);
+        assert_eq!(app_err.message, msg_err);
+    }
+
+    #[test]
+    async fn test_put_user_invalid_dto_password_max() {
+        let user1: user_models::User = create_user();
+        let user_id = user1.id.to_string();
+        let password: String = (0..(user_models::PASSWORD_MAX + 1)).map(|_| 'a').collect();
+
+        let config_jwt = config_jwt::get_test_config();
+        let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
+
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(put_user),
+        )
+        .await;
+        let req = test::TestRequest::put()
+            .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+            .uri(&format!("/users/{}", &user_id)) // PUT users/1001
+            .set_json(user_models::ModifyUserDto {
+                nickname: Some("James_Smith".to_string()),
+                email: Some("James_Smith@gmail.com".to_string()),
+                password: Some(password),
+                role: Some(user_models::UserRole::User),
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        let msg_err = format!("password: {}", user_models::MSG_PASSWORD_MAX);
+        assert_eq!(app_err.message, msg_err);
     }
 
     #[test]
