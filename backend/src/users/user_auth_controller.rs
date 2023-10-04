@@ -1,7 +1,6 @@
 use actix_web::{
     cookie::time::Duration as ActixWebDuration, cookie::Cookie, post, web, HttpResponse, Responder,
 };
-use serde_json::json;
 use validator::Validate;
 
 use crate::errors::{AppError, ERR_CN_VALIDATION};
@@ -104,7 +103,9 @@ pub async fn login(
     let login_user_dto: user_models::LoginUserDto = json_user_dto.0.clone();
     eprintln!("$$login_user_dto: {:?}", login_user_dto); // #-
     let nickname = login_user_dto.nickname.clone();
+    eprintln!("$$nickname: {}", nickname); // #-
     let email = login_user_dto.nickname.clone();
+    eprintln!("$$email: {}", email); // #-
     let password = login_user_dto.password.clone();
 
     let cnf_jwt = config_jwt.clone();
@@ -116,7 +117,7 @@ pub async fn login(
                 log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
                 AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
             });
-
+        eprintln!("$$existing_user: {:?}", existing_user); // #-
         existing_user
     })
     .await
@@ -146,34 +147,34 @@ pub async fn login(
 
     // if (!user.registered) { ForbiddenException('Your registration not confirmed!'); }
 
-    let token = tokens::create_token(
-        &user.id.to_string(),
-        &cnf_jwt.jwt_secret.as_bytes(),
-        cnf_jwt.jwt_maxage,
-    )
-    .map_err(|e| {
+    let user_id = user.id.to_string();
+    let jwt_secret: &[u8] = cnf_jwt.jwt_secret.as_bytes();
+
+    let token = tokens::create_token(&user_id, &jwt_secret, cnf_jwt.jwt_access).map_err(|e| {
+        log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
+        AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
+    })?;
+    #[rustfmt::skip]
+    let refresh = tokens::create_token(&user_id, &jwt_secret, cnf_jwt.jwt_refresh).map_err(|e| {
         log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
         AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
     })?;
 
     let cookie = Cookie::build("token", token.to_owned())
         .path("/")
-        .max_age(ActixWebDuration::new(60 * &cnf_jwt.jwt_maxage, 0))
+        .max_age(ActixWebDuration::new(cnf_jwt.jwt_access, 0))
         .http_only(true)
         .finish();
 
-    let refresh_token = "refresh_token".to_string();
-    let user_dto: user_models::UserDto = user_models::UserDto::from(user);
-    let user_tokens_dto: user_models::UserTokensDto = user_models::UserTokensDto {
+    let user_tokens_dto = user_models::UserTokensDto {
         access_token: token.to_owned(),
-        refresh_token,
+        refresh_token: refresh.to_owned(),
     };
 
-    let response = user_models::ResponseLoginUserDto {
-        user_dto,
-        user_tokens_dto,
+    let response = user_models::LoginUserResponseDto {
+        user_dto: user_models::UserDto::from(user),
+        user_tokens_dto: user_tokens_dto,
     };
-    // let response = json!({ "status": "success".to_string(), "token": token.to_string(), });
 
     Ok(HttpResponse::Ok().cookie(cookie).json(response))
 }
@@ -184,19 +185,20 @@ pub async fn login(
 pub async fn logout() -> impl Responder {
     let cookie = Cookie::build("token", "")
         .path("/")
-        .max_age(ActixWebDuration::new(-1, 0))
+        .max_age(ActixWebDuration::new(0, 0))
         .http_only(true)
         .finish();
 
-    HttpResponse::Ok().cookie(cookie).json(json!({"status": "success"}))
+    HttpResponse::Ok().cookie(cookie).body(())
 }
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{http, test, web, App};
-    // use chrono::Utc;
+    use serde_json::json;
 
     use crate::errors::AppError;
+    use crate::extractors::authentication;
     use crate::sessions::config_jwt;
     use crate::users::{user_models, user_orm::tests::UserOrmApp};
 
@@ -212,8 +214,6 @@ mod tests {
         user.role = user_models::UserRole::User;
         user
     }
-
-    const MSG_FAILED_DESER: &str = "Failed to deserialize AppError response from JSON.";
 
     #[test]
     async fn test_login_invalid_dto_nickname_min() {
@@ -243,7 +243,8 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err: AppError =
+            serde_json::from_slice(&body).expect("Failed to deserialize response from JSON.");
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_MIN);
@@ -278,7 +279,8 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err: AppError =
+            serde_json::from_slice(&body).expect("Failed to deserialize response from JSON.");
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_MAX);
@@ -313,7 +315,8 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err: AppError =
+            serde_json::from_slice(&body).expect("Failed to deserialize response from JSON.");
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_REGEX);
@@ -352,7 +355,8 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err: AppError =
+            serde_json::from_slice(&body).expect("Failed to deserialize response from JSON.");
 
         assert_eq!(app_err.code, CD_UNAUTHORIZED);
         assert_eq!(app_err.message, MSG_WRONG_NICKNAME);
@@ -389,7 +393,8 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err: AppError =
+            serde_json::from_slice(&body).expect("Failed to deserialize response from JSON.");
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_EMAIL_MIN);
@@ -431,7 +436,8 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err: AppError =
+            serde_json::from_slice(&body).expect("Failed to deserialize response from JSON.");
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_EMAIL_MAX);
@@ -469,7 +475,8 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err: AppError =
+            serde_json::from_slice(&body).expect("Failed to deserialize response from JSON.");
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_EMAIL);
@@ -508,7 +515,8 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err: AppError =
+            serde_json::from_slice(&body).expect("Failed to deserialize response from JSON.");
 
         assert_eq!(app_err.code, CD_UNAUTHORIZED);
         assert_eq!(app_err.message, MSG_WRONG_NICKNAME);
@@ -542,7 +550,8 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err: AppError =
+            serde_json::from_slice(&body).expect("Failed to deserialize response from JSON.");
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("password: {}", user_models::MSG_PASSWORD_MIN);
@@ -577,7 +586,8 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err: AppError =
+            serde_json::from_slice(&body).expect("Failed to deserialize response from JSON.");
 
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("password: {}", user_models::MSG_PASSWORD_MAX);
@@ -617,7 +627,8 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err: AppError =
+            serde_json::from_slice(&body).expect("Failed to deserialize response from JSON.");
 
         assert_eq!(app_err.code, CD_UNAUTHORIZED);
         assert_eq!(app_err.message, MSG_INVALID_HASH_FORMAT);
@@ -655,7 +666,8 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err: AppError =
+            serde_json::from_slice(&body).expect("Failed to deserialize response from JSON.");
 
         assert_eq!(app_err.code, CD_UNAUTHORIZED);
         assert_eq!(app_err.message, MSG_WRONG_PASSWORD);
@@ -730,15 +742,15 @@ mod tests {
         assert!(body_str.contains(expected_message));
     }
 
-    // #[test]
-    /*async fn test_login_wrong_email() {
+    #[test]
+    async fn test_login_valid_credentials() {
         let nickname = "Oliver_Taylor".to_string();
         let email = format!("{}@gmail.com", nickname).to_string();
         let password = "passwdT1R1".to_string();
         let mut user1 =
             UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
         user1.role = user_models::UserRole::User;
-        user1.password += "bad";
+        let user1b_dto = user_models::UserDto::from(user1.clone());
 
         let config_jwt = config_jwt::get_test_config();
 
@@ -755,69 +767,224 @@ mod tests {
         let req = test::TestRequest::post()
             .uri("/login") //POST /login
             .set_json(user_models::LoginUserDto {
-                nickname: format!("a{}", email).to_string(),
-                password: password.to_string(),
+                nickname: nickname,
+                password: password,
             })
             .to_request();
         let resp = test::call_service(&app, req).await;
-        // assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+        assert_eq!(resp.status(), http::StatusCode::OK);
 
         let body = test::read_body(resp).await;
-        eprintln!("\n###### body: {:?}\n", body);
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CD_UNAUTHORIZED);
-        assert_eq!(app_err.message, MSG_WRONG_CREDENTIALS_A);
-    }*/
-    /*ValidationErrors(
-    { "nickname": Field(
-        [
-            ValidationError {
-                code: "regex",
-                message: Some("wrong value /^[a-zA-Z0-9_]+$/"),
-                params: {"value": String("aOliver_Taylor@gmail.com")}
-            }
-        ])
-    })*/
-    /*
-        #[test]
-        async fn test_login_wrong_password() {
-            let nickname = "Oliver_Taylor".to_string();
-            let email = format!("{}@gmail.com", nickname).to_string();
-            let password = "passwdT1R1".to_string();
-            let mut user1 =
-                UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
-            user1.role = user_models::UserRole::User;
+        let login_resp: user_models::LoginUserResponseDto =
+            serde_json::from_slice(&body).expect("Failed to deserialize response from JSON.");
 
-            let config_jwt = config_jwt::get_test_config();
+        let user_dto_res = login_resp.user_dto;
 
-            let data_config_jwt = web::Data::new(config_jwt.clone());
-            let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+        let json_user1b_dto = serde_json::json!(user1b_dto).to_string();
+        let user1b_dto_ser: user_models::UserDto =
+            serde_json::from_slice(json_user1b_dto.as_bytes())
+                .expect("Failed to deserialize response from JSON.");
 
-            let app = test::init_service(
-                App::new()
-                    .app_data(web::Data::clone(&data_config_jwt))
-                    .app_data(web::Data::clone(&data_user_orm))
-                    .service(login),
-            )
-            .await;
-            let req = test::TestRequest::post()
-                .uri("/login") //POST /login
-                .set_json(user_models::LoginUserDto {
-                    nickname: nickname.to_string(),
-                    password: format!("{}a", password).to_string(),
-                })
-                .to_request();
-            let resp = test::call_service(&app, req).await;
-            assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+        assert_eq!(user_dto_res, user1b_dto_ser);
 
-            let body = test::read_body(resp).await;
-            // eprintln!("\n###### body: {:?}\n", body);
-            let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let access_token: String = login_resp.user_tokens_dto.access_token;
+        assert!(!access_token.is_empty());
 
-            assert_eq!(app_err.code, CD_UNAUTHORIZED);
-            assert_eq!(app_err.message, MSG_WRONG_CREDENTIALS_C);
-        }
+        let refresh_token: String = login_resp.user_tokens_dto.refresh_token;
+        assert!(!refresh_token.is_empty());
+    }
 
-    */
+    #[test]
+    async fn test_login_valid_credentials_receive_cookie() {
+        let nickname = "Oliver_Taylor".to_string();
+        let email = format!("{}@gmail.com", nickname).to_string();
+        let password = "passwdT1R1".to_string();
+        let mut user1 =
+            UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
+        user1.role = user_models::UserRole::User;
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(login),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri("/login") //POST /login
+            .set_json(user_models::LoginUserDto {
+                nickname: nickname,
+                password: password,
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK);
+
+        let token_cookie = resp.response().cookies().find(|cookie| cookie.name() == "token");
+
+        assert!(token_cookie.is_some());
+    }
+
+    #[test]
+    async fn test_logout_with_valid_token() {
+        let user1: user_models::User = create_user();
+        let user_id: String = user1.id.to_string();
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(logout),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+            .uri("/logout") //POST /login
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let token_cookie = resp.response().cookies().find(|cookie| cookie.name() == "token");
+        assert!(token_cookie.is_some());
+
+        let token = token_cookie.unwrap();
+        let token_value = token.value().to_string();
+        assert!(token_value.len() == 0);
+
+        let max_age = token.max_age();
+        assert!(max_age.is_some());
+
+        let max_age_value = max_age.unwrap();
+        assert_eq!(max_age_value, ActixWebDuration::new(0, 0));
+
+        let body = test::read_body(resp).await;
+        let body_str = String::from_utf8_lossy(&body);
+        assert_eq!(body_str, "");
+    }
+
+    #[test]
+    async fn test_logout_with_invalid_token() {
+        let user1: user_models::User = create_user();
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(logout),
+        )
+        .await;
+
+        let req = test::TestRequest::post()
+            .insert_header((
+                http::header::AUTHORIZATION,
+                format!("Bearer {}", "invalid_token"),
+            ))
+            .uri("/logout") //POST /login
+            .to_request();
+
+        let result = test::try_call_service(&app, req).await.err();
+
+        let err = result.expect("Service call succeeded, but an error was expected.");
+        eprintln!("\n###### err: {:?}\n", &err);
+        let actual_status = err.as_response_error().status_code();
+        eprintln!("actual_status: {}", actual_status); // #-
+        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED);
+
+        let app_err: AppError =
+            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        assert_eq!(app_err.code, authentication::CD_INVALID_TOKEN);
+        assert_eq!(app_err.message, authentication::MSG_INVALID_TOKEN);
+    }
+
+    #[test]
+    async fn test_logout_with_misssing_token() {
+        let user1: user_models::User = create_user();
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(logout),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .uri("/logout") //POST /login
+            .to_request();
+
+        let result = test::try_call_service(&app, req).await.err();
+
+        let err = result.expect("Service call succeeded, but an error was expected.");
+
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED);
+
+        let app_err: AppError =
+            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        assert_eq!(app_err.code, authentication::CD_TOKEN_NOT_PROVIDED);
+        assert_eq!(app_err.message, authentication::MSG_TOKEN_NOT_PROVIDED);
+    }
+
+    #[test]
+    async fn test_logout_with_expired_token() {
+        let user1: user_models::User = create_user();
+        let user_id: String = user1.id.to_string();
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let expired_token =
+            tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), -60).unwrap();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(logout),
+        )
+        .await;
+        let req = test::TestRequest::post()
+            .insert_header((
+                http::header::AUTHORIZATION,
+                format!("Bearer {}", expired_token),
+            ))
+            .uri("/logout") //POST /login
+            .to_request();
+
+        let result = test::try_call_service(&app, req).await.err();
+
+        let err = result.expect("Service call succeeded, but an error was expected.");
+
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED);
+
+        let app_err: AppError =
+            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        assert_eq!(app_err.code, authentication::CD_INVALID_TOKEN);
+        assert_eq!(app_err.message, authentication::MSG_INVALID_TOKEN);
+    }
 }

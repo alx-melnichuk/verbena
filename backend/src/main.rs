@@ -25,6 +25,10 @@ use crate::users::{user_auth_controller, user_controller};
 // ** Funcion Main **
 #[actix_web::main]
 async fn main() -> io::Result<()> {
+    #[cfg(feature = "mockdata")]
+    #[rustfmt::skip]
+    assert!(false, "Launch in `mockdata` mode! Disable `default=[test, mockdata]` in Cargo.toml.");
+
     dotenv::dotenv().expect("Failed to read .env file");
 
     if std::env::var_os("RUST_LOG").is_none() {

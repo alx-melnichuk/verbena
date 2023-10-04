@@ -143,7 +143,8 @@ where
         // If token is missing, return unauthorized error
         if token.is_none() {
             log::debug!("{}: {}", CD_TOKEN_NOT_PROVIDED, MSG_TOKEN_NOT_PROVIDED);
-            let json_error = AppError::new(CD_TOKEN_NOT_PROVIDED, MSG_TOKEN_NOT_PROVIDED);
+            let json_error =
+                AppError::new(CD_TOKEN_NOT_PROVIDED, MSG_TOKEN_NOT_PROVIDED).set_status(401);
             return Box::pin(ready(Err(ErrorUnauthorized(json_error))));
         }
 
@@ -152,7 +153,7 @@ where
         let decode = tokens::decode_token(&token.unwrap(), config_jwt.jwt_secret.as_bytes());
         if decode.is_err() {
             log::debug!("{}: {}", CD_INVALID_TOKEN, MSG_INVALID_TOKEN);
-            let json_error = AppError::new(CD_INVALID_TOKEN, MSG_INVALID_TOKEN);
+            let json_error = AppError::new(CD_INVALID_TOKEN, MSG_INVALID_TOKEN).set_status(401);
             return Box::pin(ready(Err(ErrorUnauthorized(json_error))));
         }
         let user_id_str = decode.unwrap().sub;
@@ -176,7 +177,8 @@ where
 
             let user = result.ok_or_else(|| {
                 log::debug!("{}: {}", CD_USER_NO_LONGER_EXIST, MSG_USER_NO_LONGER_EXIST);
-                let json_error = AppError::new(CD_USER_NO_LONGER_EXIST, MSG_USER_NO_LONGER_EXIST);
+                let json_error = AppError::new(CD_USER_NO_LONGER_EXIST, MSG_USER_NO_LONGER_EXIST)
+                    .set_status(401);
                 ErrorUnauthorized(json_error)
             })?;
 
@@ -189,7 +191,8 @@ where
                 Ok(res)
             } else {
                 log::debug!("{}: {}", CD_PERMISSION_DENIED, MSG_PERMISSION_DENIED);
-                let json_error = AppError::new(CD_PERMISSION_DENIED, MSG_PERMISSION_DENIED);
+                let json_error =
+                    AppError::new(CD_PERMISSION_DENIED, MSG_PERMISSION_DENIED).set_status(403);
                 Err(ErrorForbidden(json_error))
             }
         }
@@ -235,8 +238,8 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
         let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
 
         let app = test::init_service(
             App::new()
@@ -261,8 +264,8 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
         let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
 
         let app = test::init_service(
             App::new()
@@ -283,8 +286,8 @@ mod tests {
     async fn test_auth_middleware_missing_token() {
         let config_jwt = config_jwt::get_test_config();
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![create_user()]));
         let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![create_user()]));
 
         let app = test::init_service(
             App::new()
@@ -313,8 +316,8 @@ mod tests {
     async fn test_auth_middleware_invalid_token() {
         let config_jwt = config_jwt::get_test_config();
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![create_user()]));
         let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![create_user()]));
 
         let app = test::init_service(
             App::new()
@@ -324,9 +327,80 @@ mod tests {
         )
         .await;
 
-        let token = "invalid_token";
         let req = test::TestRequest::get()
-            .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+            .insert_header((
+                http::header::AUTHORIZATION,
+                format!("Bearer {}", "invalid_token"),
+            ))
+            .to_request();
+
+        let result = test::try_call_service(&app, req).await.err();
+
+        let err = result.expect("Service call succeeded, but an error was expected.");
+
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED);
+
+        let app_err: AppError =
+            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        assert_eq!(app_err.code, CD_INVALID_TOKEN);
+        assert_eq!(app_err.message, MSG_INVALID_TOKEN);
+    }
+    #[test]
+    async fn test_auth_middleware_misssing_token() {
+        let config_jwt = config_jwt::get_test_config();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![create_user()]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(handler_with_requireauth),
+        )
+        .await;
+
+        let req = test::TestRequest::get().to_request();
+
+        let result = test::try_call_service(&app, req).await.err();
+
+        let err = result.expect("Service call succeeded, but an error was expected.");
+
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED);
+
+        let app_err: AppError =
+            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        assert_eq!(app_err.code, CD_TOKEN_NOT_PROVIDED);
+        assert_eq!(app_err.message, MSG_TOKEN_NOT_PROVIDED);
+    }
+
+    #[test]
+    async fn test_auth_middelware_with_expired_token() {
+        let user1: user_models::User = create_user();
+        let user_id: String = user1.id.to_string();
+
+        let config_jwt = config_jwt::get_test_config();
+
+        let expired_token =
+            tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), -60).unwrap();
+
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .service(handler_with_requireauth),
+        )
+        .await;
+        let req = test::TestRequest::get()
+            .insert_header((
+                http::header::AUTHORIZATION,
+                format!("Bearer {}", expired_token),
+            ))
             .to_request();
 
         let result = test::try_call_service(&app, req).await.err();
@@ -350,8 +424,8 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&bad_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
         let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
 
         let app = test::init_service(
             App::new()
@@ -386,8 +460,8 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
         let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
 
         let app = test::init_service(
             App::new()
@@ -423,8 +497,8 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
         let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
 
         let app = test::init_service(
             App::new()

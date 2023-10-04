@@ -210,7 +210,7 @@ pub struct UserTokensDto {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ResponseLoginUserDto {
+pub struct LoginUserResponseDto {
     #[serde(rename = "userDto")]
     pub user_dto: UserDto,
     #[serde(rename = "userTokensDto")]
