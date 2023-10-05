@@ -62,6 +62,7 @@ impl AppError {
         match self.status {
             400 => http::StatusCode::BAD_REQUEST,
             401 => http::StatusCode::UNAUTHORIZED,
+            403 => http::StatusCode::FORBIDDEN,
             404 => http::StatusCode::NOT_FOUND,
             409 => http::StatusCode::CONFLICT,
             _ => http::StatusCode::INTERNAL_SERVER_ERROR,

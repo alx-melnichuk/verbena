@@ -256,7 +256,7 @@ mod tests {
 
     use super::*;
 
-    const MSG_FAILED_DESER: &str = "Failed to deserialize AppError response from JSON.";
+    const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
     const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
 
     fn create_user() -> user_models::User {

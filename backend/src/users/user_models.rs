@@ -216,3 +216,8 @@ pub struct LoginUserResponseDto {
     #[serde(rename = "userTokensDto")]
     pub user_tokens_dto: UserTokensDto,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TokenUserDto {
+    pub token: String, // refreshToken
+}
