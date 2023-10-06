@@ -15,7 +15,7 @@ use crate::users::user_orm::tests::UserOrmApp;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::UserOrmApp;
 use crate::users::user_orm::{UserOrm, CD_DATA_BASE};
-use crate::utils::err;
+use crate::utils::{err, parse_err};
 
 pub struct Authenticated(User);
 
@@ -150,15 +150,15 @@ where
         }
         let user_id_str = decode.unwrap().sub;
 
-        let user_id = user_id_str.parse::<i32>().unwrap();
-        // TODO add test
-        // let res_user_id = user_id_str.parse::<i32>().map_err(|e| {
-        //     let msg = msg_parse_err("id", MSG_PARSE_INT_ERROR, &user_id_str, &e.to_string());
-        //     log::debug!("{}: {}", CD_INVALID_TOKEN, msg);
-        //     let json_error = AppError::new(CD_INVALID_TOKEN, MSG_INVALID_TOKEN).set_status(401);
-        //     return Box::pin(ready(Err(ErrorUnauthorized(json_error))));
-        // });
-        // let user_id = res_user_id.unwrap();
+        let user_id_res = user_id_str.parse::<i32>().map_err(|e| {
+            let str = parse_err::MSG_PARSE_INT_ERROR;
+            let msg = format!("user_id: {} `{}` - {}", str, user_id_str, e.to_string());
+            log::debug!("{}: {}", err::CD_INVALID_TOKEN, msg);
+            let json_error =
+                AppError::new(err::CD_INVALID_TOKEN, err::MSG_INVALID_TOKEN).set_status(401);
+            return Box::pin(ready(ErrorUnauthorized(json_error)));
+        });
+        let user_id = user_id_res.unwrap();
 
         // ^-- new fn
 

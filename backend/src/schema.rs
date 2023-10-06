@@ -7,6 +7,13 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    sessions (user_id) {
+        user_id -> Int4,
+        num_token -> Nullable<Int4>,
+    }
+}
+
+diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::UserRole;
 
@@ -23,3 +30,10 @@ diesel::table! {
         role -> UserRole,
     }
 }
+
+diesel::joinable!(sessions -> users (user_id));
+
+diesel::allow_tables_to_appear_in_same_query!(
+    sessions,
+    users,
+);

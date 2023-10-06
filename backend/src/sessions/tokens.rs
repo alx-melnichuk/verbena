@@ -1,8 +1,13 @@
 use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
+use crate::utils::parse_err;
+
 pub const CD_INVALID_TOKEN: &str = "InvalidToken";
+pub const CD_NUM_TOKEN_MIN: usize = 0;
+pub const CD_NUM_TOKEN_MAX: usize = 10000;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TokenClaims {
@@ -12,18 +17,18 @@ pub struct TokenClaims {
 }
 
 pub fn create_token(
-    user_id: &str,
+    sub: &str,
     secret: &[u8],
     expires_in_seconds: i64,
 ) -> Result<String, jsonwebtoken::errors::Error> {
-    if user_id.is_empty() {
+    if sub.is_empty() {
         return Err(jsonwebtoken::errors::ErrorKind::InvalidSubject.into());
     }
 
     let now = Utc::now();
     let iat = now.timestamp() as usize;
     let exp = (now + Duration::minutes(expires_in_seconds)).timestamp() as usize;
-    let sub = user_id.to_string();
+    let sub = sub.to_string();
 
     let claims: TokenClaims = TokenClaims { sub, exp, iat };
 
@@ -45,6 +50,34 @@ pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<TokenCla
         Ok(token) => Ok(token.claims),
         Err(_) => Err(CD_INVALID_TOKEN),
     }
+}
+
+pub fn generate_num_token() -> i32 {
+    let mut rng = rand::thread_rng();
+    let result = rng.gen_range(CD_NUM_TOKEN_MIN..CD_NUM_TOKEN_MAX);
+    result as i32
+}
+
+pub fn create_dual_sub(user_id: i32, num_token: i32) -> String {
+    format!("{}.{}", user_id, num_token)
+}
+
+pub fn parse_dual_sub(dual_sub: &str) -> Result<(i32, i32), String> {
+    let list: Vec<&str> = dual_sub.split('.').collect();
+    let user_id: &str = list.get(0).unwrap_or(&"").clone();
+    let num_token: &str = list.get(1).unwrap_or(&"").clone();
+
+    let user_id = user_id.parse::<i32>().map_err(|e| {
+        let msg = parse_err::MSG_PARSE_INT_ERROR;
+        format!("id: {} `{}` - {}", msg, user_id, e.to_string())
+    })?;
+
+    let num_token = num_token.parse::<i32>().map_err(|e| {
+        let msg = parse_err::MSG_PARSE_INT_ERROR;
+        format!("num_token: {} `{}` - {}", msg, num_token, e.to_string())
+    })?;
+
+    Ok((user_id, num_token))
 }
 
 #[cfg(test)]

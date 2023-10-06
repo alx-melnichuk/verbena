@@ -213,8 +213,6 @@ impl UserOrm for UserOrmApp {
         &self,
         create_user_dto: &user_models::CreateUserDto,
     ) -> Result<user_models::User, UserOrmError> {
-        // #? Checking data validity.
-
         // Get a connection from the P2D2 pool.
         let mut conn = self.get_conn()?;
 
@@ -243,9 +241,8 @@ impl UserOrm for UserOrmApp {
         id: i32,
         modify_user_dto: user_models::ModifyUserDto,
     ) -> Result<Option<user_models::User>, UserOrmError> {
-        // #? Checking data validity.
-
-        let res_user: Option<user_models::User> = self.find_user_by_id(id)?; // #?
+        // Search for a record by ID
+        let res_user: Option<user_models::User> = self.find_user_by_id(id)?;
         if res_user.is_none() {
             log::debug!("User with ID `{id}` not found");
             return Ok(None);
@@ -267,9 +264,6 @@ impl UserOrm for UserOrmApp {
                 .map_err(|e| UserOrmError::HashingPassword(e.to_string()))?;
             modify_user_dto2.password = Some(password_hashed);
         }
-        // if let Some(role_val) = modify_user_dto2.role {
-        //     // #!! check current role is admin
-        // }
 
         let result = diesel::update(schema::users::dsl::users.find(id))
             .set(&modify_user_dto2)
@@ -412,8 +406,6 @@ pub mod tests {
             &self,
             create_user_dto: &user_models::CreateUserDto,
         ) -> Result<user_models::User, UserOrmError> {
-            // #? Checking data validity.
-
             let nickname = &create_user_dto.nickname.clone();
             let email = &create_user_dto.email.clone();
 
@@ -442,8 +434,6 @@ pub mod tests {
             id: i32,
             modify_user_dto: user_models::ModifyUserDto,
         ) -> Result<Option<user_models::User>, UserOrmError> {
-            // #? Checking data validity.
-
             let exist_user_opt: Option<&user_models::User> =
                 self.users.iter().find(|user| user.id == id);
 

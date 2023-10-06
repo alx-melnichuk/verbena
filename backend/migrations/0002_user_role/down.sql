@@ -3,3 +3,6 @@ ALTER TABLE users DROP COLUMN "role";
 
 /* Remove type "user_role". */
 DROP TYPE user_role;
+
+/* Drop the session table. */
+DROP TABLE IF EXISTS sessions;

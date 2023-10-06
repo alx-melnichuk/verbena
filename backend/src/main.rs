@@ -17,6 +17,11 @@ mod utils;
 
 use crate::sessions::config_jwt::ConfigJwt;
 #[cfg(feature = "mockdata")]
+use crate::sessions::session_orm::tests::SessionOrmApp;
+#[cfg(not(feature = "mockdata"))]
+use crate::sessions::session_orm::SessionOrmApp;
+
+#[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::UserOrmApp;
@@ -55,6 +60,12 @@ async fn main() -> io::Result<()> {
     let user_orm: UserOrmApp = UserOrmApp::new(pool.clone());
     let data_user_orm = web::Data::new(user_orm);
 
+    #[cfg(feature = "mockdata")]
+    let session_orm: SessionOrmApp = SessionOrmApp::new();
+    #[cfg(not(feature = "mockdata"))]
+    let session_orm: SessionOrmApp = SessionOrmApp::new(pool.clone());
+    let data_session_orm = web::Data::new(session_orm);
+
     println!("🚀 Server started successfully {}", &app_url);
     log::info!("starting HTTP server at http://{}", &app_url);
 
@@ -63,6 +74,7 @@ async fn main() -> io::Result<()> {
             // #.app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::clone(&config_jwt))
             .app_data(web::Data::clone(&data_user_orm))
+            .app_data(web::Data::clone(&data_session_orm))
             // enable logger
             .wrap(actix_web::middleware::Logger::default())
             .service(Files::new("/static", "static").show_files_listing())
