@@ -1,37 +1,36 @@
+use std::ops::Deref;
+
 use actix_web::{
-    cookie::time::Duration as ActixWebDuration, cookie::Cookie, http, post, web, HttpResponse,
-    Responder,
+    cookie::time::Duration as ActixWebDuration, cookie::Cookie, post, web, HttpResponse,
 };
-#[cfg(not(feature = "mockdata"))]
-use serde_json::to_string;
 use validator::Validate;
 
 use crate::errors::{AppError, ERR_CN_VALIDATION};
-use crate::extractors::authentication::RequireAuth;
+use crate::extractors::authentication::{Authenticated, RequireAuth};
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::session_orm::SessionOrm;
 #[cfg(not(feature = "mockdata"))]
 use crate::sessions::session_orm::SessionOrmApp;
-use crate::sessions::{config_jwt::ConfigJwt, hash_tools, tokens};
+use crate::sessions::{config_jwt::ConfigJwt, hash_tools, session_models, tokens, tools_token};
 use crate::users::user_models;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::UserOrmApp;
 use crate::users::user_orm::{UserOrm, CD_BLOCKING, CD_DATA_BASE};
-use crate::utils::{
-    err,
-    parse_err::{msg_parse_err, MSG_PARSE_INT_ERROR},
-};
+use crate::utils::err;
 
-pub const CD_HASHING: &str = "Hashing";
 pub const CD_UNAUTHORIZED: &str = "UnAuthorized"; // TODO remove
+
 pub const CD_USER_EXISTS: &str = "NicknameOrEmailExist";
 pub const MSG_USER_EXISTS: &str = "A user with the same nickname or email already exists.";
+
 // #- pub const MSG_NO_USER_FOR_TOKEN: &str = "There is no user for this token";
+
 pub const MSG_WRONG_NICKNAME: &str = "Wrong email / nickname!";
 pub const MSG_WRONG_PASSWORD: &str = "Wrong password!";
+
 pub const MSG_INVALID_HASH_FORMAT: &str = "Invalid hash format!";
 
 pub const CD_JSONWEBTOKEN: &str = "jsonwebtoken";
@@ -57,26 +56,20 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 #[post("/signup")]
 pub async fn signup(
     user_orm: web::Data<UserOrmApp>,
+    session_orm: web::Data<SessionOrmApp>,
     json_user_dto: web::Json<user_models::CreateUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Checking the validity of the data model.
     json_user_dto.validate().map_err(|errors| {
+        eprintln!("##json_user_dto.validate()"); // #-
         log::debug!("{}: {}", ERR_CN_VALIDATION, errors.to_string());
         AppError::from(errors)
     })?;
 
-    let mut create_user_dto: user_models::CreateUserDto = json_user_dto.0.clone();
-    // let mut create_user2 = create_user_dto.clone();
+    let create_user_dto: user_models::CreateUserDto = json_user_dto.0.clone();
 
     let nickname = create_user_dto.nickname.clone();
     let email = create_user_dto.email.clone();
-    let password = create_user_dto.password.clone();
-
-    let password_hashed = hash_tools::hash(&password).map_err(|e| {
-        log::debug!("{}: {}", CD_HASHING, e.to_string());
-        AppError::new(CD_HASHING, &e.to_string())
-    })?;
-    create_user_dto.password = password_hashed;
 
     let result_user = web::block(move || {
         // Find for a user by nickname or email.
@@ -87,22 +80,34 @@ pub async fn signup(
             })?;
 
         if existing_user.is_some() {
+            eprintln!("##existing_user.is_some()"); // #-
             return Err(AppError::new(CD_USER_EXISTS, MSG_USER_EXISTS).set_status(409));
         }
 
         // Create a new entity (user).
-        let res_user = user_orm.create_user(&create_user_dto).map_err(|e| {
+        let user = user_orm.create_user(&create_user_dto).map_err(|e| {
+            eprintln!("##user_orm.create_user() err: {}", e.to_string()); // #-
             log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
             AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
-        });
-        res_user
+        })?;
+
+        // Create a new entity (session).
+        #[rustfmt::skip]
+        let session = session_models::Session { user_id: user.clone().id, num_token: None };
+        session_orm.create_session(&session).map_err(|e| {
+            eprintln!("##session_orm.create_session() err: {}", e.to_string()); // #-
+            log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
+            AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
+        })?;
+
+        Ok(user)
     })
     .await
     .map_err(|e| {
         log::debug!("{}: {}", CD_BLOCKING, e.to_string());
         AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
     })??;
-
+    eprintln!("##result_user: {:#?}", result_user); // #-
     Ok(HttpResponse::Created().json(user_models::UserDto::from(result_user)))
 }
 
@@ -160,111 +165,84 @@ pub async fn login(
 
     // if (!user.registered) { ForbiddenException('Your registration not confirmed!'); }
 
-    let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-    let user_id = user.id.to_string();
-
-    let token =
-        tokens::create_token(&user_id, &jwt_secret, config_jwt.jwt_access).map_err(|e| {
-            log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
-            AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
-        })?;
-
-    let max_age = ActixWebDuration::new(config_jwt.jwt_access, 0);
-    #[rustfmt::skip]
-    let cookie = Cookie::build("token", token.to_owned()).path("/").max_age(max_age).http_only(true)
-        .finish();
-
-    let session_orm2 = session_orm.get_ref().clone();
-    let refresh =
-        create_refresh_and_modify_session(user.id, config_jwt.get_ref().clone(), session_orm2)
-            .map_err(|e| e)?;
-
-    let user_tokens_dto = user_models::UserTokensDto {
-        access_token: token.to_owned(),
-        refresh_token: refresh.to_owned(),
-    };
-
-    let login_user_response_dto = user_models::LoginUserResponseDto {
-        user_dto: user_models::UserDto::from(user),
-        user_tokens_dto: user_tokens_dto,
-    };
-    eprintln!("$$HttpResponse::Ok()"); // #-
-    Ok(HttpResponse::Ok().cookie(cookie).json(login_user_response_dto))
-}
-
-fn create_refresh_and_modify_session(
-    user_id: i32,
-    config_jwt: ConfigJwt,
-    session_orm: SessionOrmApp,
-) -> Result<String, AppError> {
-    let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
     let num_token = tokens::generate_num_token();
-    let sub = tokens::create_dual_sub(user_id.clone(), num_token);
+    let sub = tokens::create_dual_sub(user.id, num_token);
+    let (token, refresh_token) = create_tokens(&sub, config_jwt.get_ref().clone())?;
 
-    #[rustfmt::skip]
-    let refresh = tokens::create_token(&sub, &jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
-        AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
-    })?;
-
-    let session_opt = session_orm.modify_session(user_id, Some(num_token)).map_err(|e| {
+    let session_opt = session_orm.modify_session(user.id, Some(num_token)).map_err(|e| {
         #[rustfmt::skip]
         log::debug!("{}: {} {}", CD_SESSION_ERROR, MSG_SESSION_ERROR, e.to_string());
         AppError::new(CD_SESSION_ERROR, MSG_SESSION_ERROR).set_status(500)
     })?;
     if session_opt.is_none() {
         #[rustfmt::skip]
-        log::debug!("{}: {}{}", CD_USER_NO_SESSION, MSG_USER_NO_SESSION, user_id.clone());
+        log::debug!("{}: {}{}", CD_USER_NO_SESSION, MSG_USER_NO_SESSION, user.id.to_string());
         return Err(AppError::new(CD_USER_NO_SESSION, MSG_USER_NO_SESSION).set_status(500));
     }
 
-    Ok(refresh)
+    let user_tokens_dto = user_models::UserTokensDto {
+        access_token: token.to_owned(),
+        refresh_token,
+    };
+
+    let login_user_response_dto = user_models::LoginUserResponseDto {
+        user_dto: user_models::UserDto::from(user),
+        user_tokens_dto: user_tokens_dto,
+    };
+
+    let max_age = ActixWebDuration::new(config_jwt.jwt_access, 0);
+    #[rustfmt::skip]
+    let cookie = Cookie::build("token", token.to_owned()).path("/").max_age(max_age).http_only(true)
+        .finish();
+
+    Ok(HttpResponse::Ok().cookie(cookie).json(login_user_response_dto))
+}
+
+fn create_tokens(sub: &str, config_jwt: ConfigJwt) -> Result<(String, String), AppError> {
+    let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+    let access_token =
+        tokens::create_token(sub, &jwt_secret, config_jwt.jwt_access).map_err(|e| {
+            log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
+            AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
+        })?;
+
+    let refresh_token =
+        tokens::create_token(&sub, &jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
+            log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
+            AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
+        })?;
+
+    Ok((access_token, refresh_token))
 }
 
 // POST api/logout
 #[rustfmt::skip]
 #[post("/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn logout() -> impl Responder {
+pub async fn logout(session_orm: web::Data<SessionOrmApp>, authenticated: Authenticated) -> actix_web::Result<HttpResponse, AppError> {
+    // Get user ID.
+    let user = authenticated.deref().clone();
+
+    // Clear "num_token" value.
+    let session_opt = session_orm.modify_session(user.id, None).map_err(|e| {
+        #[rustfmt::skip]
+        log::debug!("{}: {} {}", CD_SESSION_ERROR, MSG_SESSION_ERROR, e.to_string());
+        AppError::new(CD_SESSION_ERROR, MSG_SESSION_ERROR).set_status(500)
+    })?;
+    if session_opt.is_none() {
+        #[rustfmt::skip]
+        log::debug!("{}: {}{}", CD_USER_NO_SESSION, MSG_USER_NO_SESSION, user.id.to_string());
+        return Err(AppError::new(CD_USER_NO_SESSION, MSG_USER_NO_SESSION).set_status(500));
+    }
+
     let cookie = Cookie::build("token", "")
         .path("/")
         .max_age(ActixWebDuration::new(0, 0))
         .http_only(true)
         .finish();
 
-    HttpResponse::Ok().cookie(cookie).body(())
+    Ok(HttpResponse::Ok().cookie(cookie).body(()))
 }
-
-/*pub fn verify_token(
-    token_opt: Option<String>,
-    jwt_secret: &[u8],
-) -> Result<tokens::TokenClaims, AppError> {
-    // If token is missing, return unauthorized error
-    let token = token_opt.unwrap_or("".to_string());
-    if token.len() == 0 {
-        eprintln!("&&token.len() == 0"); // #-
-        log::debug!("{}: {}", err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN);
-        return Err(AppError::new(err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN).set_status(401));
-    }
-    eprintln!("$^token.len() > 0");
-    // Decode token and handle errors
-    let decode = tokens::decode_token(&token, jwt_secret);
-    if decode.is_err() {
-        eprintln!("$^decode.is_err()"); // #-
-        log::debug!("{}: {}", err::CD_INVALID_TOKEN, err::MSG_INVALID_TOKEN);
-        return Err(AppError::new(err::CD_INVALID_TOKEN, err::MSG_INVALID_TOKEN).set_status(403));
-    }
-    Ok(decode.unwrap())
-}*/
-
-/*pub fn check_user_id(user_id_str: String) -> Result<i32, AppError> {
-    let user_id = user_id_str.parse::<i32>().map_err(|e| {
-        eprintln!("$^id_str.parse::<i32>(): {}", &e.to_string()); // #-
-        let msg = msg_parse_err("id", MSG_PARSE_INT_ERROR, &user_id_str, &e.to_string());
-        log::debug!("{}: {}", err::CD_INVALID_TOKEN, msg);
-        AppError::new(err::CD_INVALID_TOKEN, err::MSG_INVALID_TOKEN).set_status(403)
-    })?;
-    Ok(user_id)
-}*/
 
 // POST api/token
 #[post("/token")]
@@ -275,30 +253,15 @@ pub async fn new_token(
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get token2 from json.
     let token_user_dto: user_models::TokenUserDto = json_token_user_dto.0.clone();
-
+    let token = token_user_dto.token;
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
-    // Decode token and handle errors
-    let decode = tokens::decode_token(&token_user_dto.token, jwt_secret);
-    if decode.is_err() {
-        eprintln!("$^decode.is_err()"); // #-
-        log::debug!("{}: {}", err::CD_INVALID_TOKEN, err::MSG_INVALID_TOKEN);
-        return Err(AppError::new(err::CD_INVALID_TOKEN, err::MSG_INVALID_TOKEN).set_status(403));
-    }
-    let token_claims = decode.unwrap();
-
-    let (user_id, num_token) = tokens::parse_dual_sub(&token_claims.sub).map_err(|e| {
-        eprintln!("$^parse_dual_sub: {}", e.to_string()); // #-
-        #[rustfmt::skip]
-        log::debug!("{}: {}", err::CD_UNALLOWABLE_TOKEN, err::MSG_UNALLOWABLE_TOKEN);
-        return AppError::new(err::CD_UNALLOWABLE_TOKEN, err::MSG_UNALLOWABLE_TOKEN)
-            .set_status(403);
-    })?;
+    let (user_id, num_token) = tools_token::parse_token(&token, jwt_secret)?;
 
     let session_orm1 = session_orm.clone();
 
-    let session = web::block(move || {
-        let existing_session = session_orm.find_by_id(user_id.clone()).map_err(|e| {
+    let session_opt = web::block(move || {
+        let existing_session = session_orm.find_by_id(user_id).map_err(|e| {
             log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
             AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
         });
@@ -310,7 +273,7 @@ pub async fn new_token(
         AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
     })??;
 
-    let session = session.ok_or_else(|| {
+    let session = session_opt.ok_or_else(|| {
         eprintln!("$^session with {} not found", user_id.clone()); // #-
         #[rustfmt::skip]
         log::debug!("{}: session with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id.clone());
@@ -326,31 +289,33 @@ pub async fn new_token(
             AppError::new(err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN).set_status(403),
         );
     }
+    eprintln!("$^user_id: {}", user_id.clone());
 
-    eprintln!("$^user_id: {}", user_id.clone()); // #-
-    let user_id_str = user_id.to_string();
+    let num_token = tokens::generate_num_token();
+    let sub = tokens::create_dual_sub(user_id, num_token);
+    let (token, refresh_token) = create_tokens(&sub, config_jwt.get_ref().clone())?;
 
-    let token =
-        tokens::create_token(&user_id_str, &jwt_secret, config_jwt.jwt_access).map_err(|e| {
-            log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
-            AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
-        })?;
+    let session_opt = session_orm1.modify_session(user_id, Some(num_token)).map_err(|e| {
+        #[rustfmt::skip]
+        log::debug!("{}: {} {}", CD_SESSION_ERROR, MSG_SESSION_ERROR, e.to_string());
+        AppError::new(CD_SESSION_ERROR, MSG_SESSION_ERROR).set_status(500)
+    })?;
+    if session_opt.is_none() {
+        #[rustfmt::skip]
+        log::debug!("{}: {}{}", CD_USER_NO_SESSION, MSG_USER_NO_SESSION, user_id);
+        return Err(AppError::new(CD_USER_NO_SESSION, MSG_USER_NO_SESSION).set_status(500));
+    }
+
+    let user_tokens_dto = user_models::UserTokensDto {
+        access_token: token.to_owned(),
+        refresh_token,
+    };
 
     let max_age = ActixWebDuration::new(config_jwt.jwt_access, 0);
     #[rustfmt::skip]
     let cookie = Cookie::build("token", token.to_owned()).path("/").max_age(max_age).http_only(true)
         .finish();
 
-    let session_orm2 = session_orm1.get_ref().clone();
-    let refresh =
-        create_refresh_and_modify_session(user_id, config_jwt.get_ref().clone(), session_orm2)
-            .map_err(|e| e)?;
-
-    let user_tokens_dto = user_models::UserTokensDto {
-        access_token: token.to_owned(),
-        refresh_token: refresh.to_owned(),
-    };
-    eprintln!("$^HttpResponse::Ok()"); // #-
     Ok(HttpResponse::Ok().cookie(cookie).json(user_tokens_dto))
 }
 

@@ -8,14 +8,18 @@ use std::rc::Rc;
 use std::task::{Context, Poll};
 
 use crate::errors::AppError;
-use crate::sessions::{config_jwt::ConfigJwt, tokens};
+#[cfg(feature = "mockdata")]
+use crate::sessions::session_orm::tests::SessionOrmApp;
+use crate::sessions::session_orm::SessionOrm;
+#[cfg(not(feature = "mockdata"))]
+use crate::sessions::{config_jwt::ConfigJwt, session_orm::SessionOrmApp, tools_token};
 use crate::users::user_models::{User, UserRole};
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::UserOrmApp;
 use crate::users::user_orm::{UserOrm, CD_DATA_BASE};
-use crate::utils::{err, parse_err};
+use crate::utils::err;
 
 pub struct Authenticated(User);
 
@@ -140,35 +144,53 @@ where
         }
 
         let config_jwt = req.app_data::<web::Data<ConfigJwt>>().unwrap();
-        // Decode token and handle errors
-        let decode = tokens::decode_token(&token.unwrap(), config_jwt.jwt_secret.as_bytes());
-        if decode.is_err() {
-            log::debug!("{}: {}", err::CD_INVALID_TOKEN, err::MSG_INVALID_TOKEN);
-            #[rustfmt::skip]
-            let json_error = AppError::new(err::CD_INVALID_TOKEN, err::MSG_INVALID_TOKEN).set_status(403);
-            return Box::pin(ready(Err(ErrorForbidden(json_error))));
-        }
-        let user_id_str = decode.unwrap().sub;
 
-        let user_id_res = user_id_str.parse::<i32>().map_err(|e| {
-            let str = parse_err::MSG_PARSE_INT_ERROR;
-            let msg = format!("user_id: {} `{}` - {}", str, user_id_str, e.to_string());
-            log::debug!("{}: {}", err::CD_INVALID_TOKEN, msg);
-            let json_error =
-                AppError::new(err::CD_INVALID_TOKEN, err::MSG_INVALID_TOKEN).set_status(401);
-            return Box::pin(ready(ErrorUnauthorized(json_error)));
+        let token = token.unwrap();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+        let token_res = tools_token::parse_token(&token, jwt_secret)
+        .map_err(|e| {
+            log::debug!("{}: {}", e.code, e.message);
+            return Box::pin(ready(ErrorForbidden(e)));
         });
-        let user_id = user_id_res.unwrap();
-
-        // ^-- new fn
-
-        // let cloned_app_state = app_state.clone();
+        let (user_id, num_token) = token_res.unwrap();
+        
         let allowed_roles = self.allowed_roles.clone();
         let srv = Rc::clone(&self.service);
 
         // Handle user extraction and request processing
         async move {
+            /* */
+            let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap();
+            
+            let session_opt = session_orm.find_by_id(user_id).map_err(|e| {
+                log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
+                let json_error = AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500);
+                return ErrorInternalServerError(json_error);
+            })?;
+            
+            let session = session_opt.ok_or_else(|| {
+                eprintln!("$^session with {} not found", user_id.clone());
+                #[rustfmt::skip]
+                log::debug!("{}: session with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id);
+                let json_error = AppError::new(err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN)
+                    .set_status(403); // ?!?
+                ErrorForbidden(json_error)
+            })?;
+
+            let session_num_token = session.num_token.unwrap_or(0);
+            if session_num_token != num_token {
+                eprintln!("$^session_num_token != num_token");
+                log::debug!("{}: session with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id);
+                let json_error = AppError::new(err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN)
+                    .set_status(403); // ?!?
+                return Err(ErrorForbidden(json_error));
+            }
+
+            eprintln!("$^user_id: {}, num_token: {}", user_id.clone(), num_token);
+
             let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap();
+            
             let result = user_orm.find_user_by_id(user_id.clone()).map_err(|e| {
                 log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
                 ErrorInternalServerError(AppError::new(CD_DATA_BASE, &e.to_string()))

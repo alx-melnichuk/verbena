@@ -1,14 +1,14 @@
 use crate::sessions::session_models;
 
 pub trait SessionOrm {
-    /// Run query using Diesel to find user by id and return it.
+    /// Search for a user by ID and return it.
     fn find_by_id(&self, user_id: i32) -> Result<Option<session_models::Session>, String>;
-    /// Run query using Diesel to add a new session entry.
-    /*fn create_session(
+    /// Add a new session entry.
+    fn create_session(
         &self,
         session: &session_models::Session,
-    ) -> Result<session_models::Session, String>;*/
-    /// Run query using Diesel to full or partially modify the session entry.
+    ) -> Result<session_models::Session, String>;
+    /// Perform a full or partial change to a session record.
     fn modify_session(
         &self,
         user_id: i32,
@@ -42,11 +42,11 @@ impl SessionOrmApp {
 
 #[cfg(not(feature = "mockdata"))]
 impl SessionOrm for SessionOrmApp {
+    /// Search for a user by ID and return it.
     fn find_by_id(&self, user_id: i32) -> Result<Option<session_models::Session>, String> {
         // Get a connection from the P2D2 pool.
         let mut conn = self.get_conn()?;
-
-        // Run query using Diesel to find session by id.
+        // Run query using Diesel to find user by id and return it.
         let session_opt: Option<session_models::Session> = schema::sessions::table
             .filter(schema::sessions::dsl::user_id.eq(user_id))
             .first::<session_models::Session>(&mut conn)
@@ -58,13 +58,14 @@ impl SessionOrm for SessionOrmApp {
 
         Ok(session_opt)
     }
-    /*fn create_session(
+    /// Add a new session entry.
+    fn create_session(
         &self,
         session: &session_models::Session,
     ) -> Result<session_models::Session, String> {
         // Get a connection from the P2D2 pool.
         let mut conn = self.get_conn()?;
-
+        // Run query using Diesel to add a new session entry.
         let session: session_models::Session = diesel::insert_into(schema::sessions::table)
             .values(session)
             .returning(session_models::Session::as_returning())
@@ -75,8 +76,8 @@ impl SessionOrm for SessionOrmApp {
             })?;
 
         Ok(session)
-    }*/
-
+    }
+    /// Perform a full or partial change to a session record.
     fn modify_session(
         &self,
         user_id: i32,
@@ -84,7 +85,7 @@ impl SessionOrm for SessionOrmApp {
     ) -> Result<Option<session_models::Session>, String> {
         // Get a connection from the P2D2 pool.
         let mut conn = self.get_conn()?;
-
+        // Run query using Diesel to full or partially modify the session entry.
         let result = diesel::update(schema::sessions::dsl::sessions.find(user_id))
             .set(schema::sessions::dsl::num_token.eq(num_token))
             .returning(session_models::Session::as_returning())
@@ -136,35 +137,30 @@ pub mod tests {
                 num_token: Some(num_token),
             }
         }
-        pub fn find(&self, user_id: i32) -> Option<&session_models::Session> {
-            self.sessions.iter().find(|session| session.user_id == user_id)
-            // .map(|user| session.clone())
-        }
     }
 
     impl SessionOrm for SessionOrmApp {
-        fn find_by_id(&self, id: i32) -> Result<Option<session_models::Session>, String> {
+        /// Search for a user by ID and return it.
+        fn find_by_id(&self, user_id: i32) -> Result<Option<&session_models::Session>, String> {
             let session_opt: Option<&session_models::Session> = self.find(user_id);
             Ok(session_opt)
         }
-
-        /*fn create_session(
+        /// Add a new session entry.
+        fn create_session(
             &self,
             session: &session_models::Session,
         ) -> Result<session_models::Session, String> {
             let id = session.user_id;
             // Check the availability of the user ID.
-
-
-            if res_user1.is_some() {
+            let user_opt = self.find_by_user_id(id)?;
+            if user_opt.is_some() {
                 return Err("Session already exists".to_string());
             }
-
-            let session_saved = SessionOrmApp::new_session(session.user_id, 23); // #??
+            let session_saved = SessionOrmApp::new_session(session.user_id, session.num_token);
 
             Ok(session_saved)
-        }*/
-
+        }
+        /// Perform a full or partial change to a session record.
         fn modify_session(
             &self,
             user_id: i32,

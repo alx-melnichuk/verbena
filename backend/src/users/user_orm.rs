@@ -16,8 +16,6 @@ pub enum UserOrmError {
     #[cfg(not(feature = "mockdata"))]
     /// Error while generating password hash.
     HashingPassword(String),
-    /// A user with the given nickname or email already exists.
-    UserAlreadyExists,
 }
 
 impl Into<String> for UserOrmError {
@@ -43,47 +41,38 @@ impl fmt::Display for UserOrmError {
             UserOrmError::HashingPassword(info) => {
                 write!(f, "Error HashingPassword: {}", info)
             }
-            UserOrmError::UserAlreadyExists => {
-                write!(f, "Error, the given nickname or email already exists.")
-            }
         }
     }
 }
 
 pub trait UserOrm {
-    /// Run query using Diesel to find user by id and return it.
+    /// Find for an entity (user) by identifier.
     fn find_user_by_id(&self, id: i32) -> Result<Option<user_models::User>, UserOrmError>;
-
-    /// Run query using Diesel to find user by nickname and return it.
+    /// Find for entity (user) by nickname.
     fn find_user_by_nickname(
         &self,
         nickname: &str,
     ) -> Result<Option<user_models::User>, UserOrmError>;
-
-    /// Run query using Diesel to find user by email and return it.
+    /// Find for an entity (user) by email.
     fn find_user_by_email(&self, email: &str) -> Result<Option<user_models::User>, UserOrmError>;
-
-    /// Run query using Diesel to find user by nickname or email and return it.
+    /// Find for an entity (user) by nickname or email.
     fn find_user_by_nickname_or_email(
         &self,
         nickname: &str,
         email: &str,
     ) -> Result<Option<user_models::User>, UserOrmError>;
-
-    /// Run query using Diesel to add a new user entry.
+    /// Add a new entity (user).
     fn create_user(
         &self,
         create_user_dto: &user_models::CreateUserDto,
     ) -> Result<user_models::User, UserOrmError>;
-
-    /// Run query using Diesel to full or partially modify the user entry.
+    /// Modify an entity (user).
     fn modify_user(
         &self,
         id: i32,
         new_user_dto: user_models::ModifyUserDto,
     ) -> Result<Option<user_models::User>, UserOrmError>;
-
-    /// Run query using Diesel to delete a user entry.
+    /// Delete an entity (user).
     fn delete_user(&self, id: i32) -> Result<usize, UserOrmError>;
 }
 
@@ -115,6 +104,7 @@ impl UserOrmApp {
 
 #[cfg(not(feature = "mockdata"))]
 impl UserOrm for UserOrmApp {
+    /// Find for an entity (user) by identifier.
     fn find_user_by_id(&self, id: i32) -> Result<Option<user_models::User>, UserOrmError> {
         // Get a connection from the P2D2 pool.
         let mut conn = self.get_conn()?;
@@ -131,7 +121,7 @@ impl UserOrm for UserOrmApp {
 
         Ok(opt_user_dto)
     }
-
+    /// Find for entities (users) by nickname.
     fn find_user_by_nickname(
         &self,
         nickname: &str,
@@ -143,7 +133,7 @@ impl UserOrm for UserOrmApp {
             return Ok(None);
         }
         let nickname2 = nickname.to_lowercase();
-
+        // Run query using Diesel to find user by nickname and return it.
         let opt_user_dto: Option<user_models::User> = schema::users::table
             .filter(schema::users::dsl::nickname.eq(nickname2))
             .first::<user_models::User>(&mut conn)
@@ -155,7 +145,7 @@ impl UserOrm for UserOrmApp {
 
         Ok(opt_user_dto)
     }
-
+    /// Find for an entity (user) by email.
     fn find_user_by_email(&self, email: &str) -> Result<Option<user_models::User>, UserOrmError> {
         // Get a connection from the P2D2 pool.
         let mut conn = self.get_conn()?;
@@ -164,7 +154,7 @@ impl UserOrm for UserOrmApp {
             return Ok(None);
         }
         let email2 = email.to_lowercase();
-
+        // Run query using Diesel to find user by email and return it.
         let opt_user_dto: Option<user_models::User> = schema::users::table
             .filter(schema::users::dsl::email.eq(email2))
             .first::<user_models::User>(&mut conn)
@@ -176,7 +166,7 @@ impl UserOrm for UserOrmApp {
 
         Ok(opt_user_dto)
     }
-
+    /// Find for an entity (user) by nickname or email.
     fn find_user_by_nickname_or_email(
         &self,
         nickname: &str,
@@ -191,7 +181,7 @@ impl UserOrm for UserOrmApp {
         }
         let nickname2 = nickname.to_lowercase();
         let email2 = email.to_lowercase();
-
+        // Run query using Diesel to find user by nickname or email and return it.
         let result = schema::users::table
             .filter(schema::users::dsl::nickname.eq(nickname2))
             .or_filter(schema::users::dsl::email.eq(email2))
@@ -208,7 +198,7 @@ impl UserOrm for UserOrmApp {
 
         Ok(result)
     }
-
+    /// Add a new entity (user).
     fn create_user(
         &self,
         create_user_dto: &user_models::CreateUserDto,
@@ -219,11 +209,13 @@ impl UserOrm for UserOrmApp {
         let mut create_user_dto2 = create_user_dto.clone();
         create_user_dto2.nickname = create_user_dto2.nickname.to_lowercase();
         create_user_dto2.email = create_user_dto2.email.to_lowercase();
+        let password = create_user_dto.password.clone();
 
-        let password_hashed = hash_tools::hash(&create_user_dto.password.clone())
+        let password_hashed = hash_tools::hash(&password)
             .map_err(|e| UserOrmError::HashingPassword(e.to_string()))?;
         create_user_dto2.password = password_hashed;
 
+        // Run query using Diesel to add a new user entry.
         let user: user_models::User = diesel::insert_into(schema::users::table)
             .values(create_user_dto2)
             .returning(user_models::User::as_returning())
@@ -235,7 +227,7 @@ impl UserOrm for UserOrmApp {
 
         Ok(user)
     }
-
+    /// Modify an entity (user).
     fn modify_user(
         &self,
         id: i32,
@@ -264,7 +256,7 @@ impl UserOrm for UserOrmApp {
                 .map_err(|e| UserOrmError::HashingPassword(e.to_string()))?;
             modify_user_dto2.password = Some(password_hashed);
         }
-
+        // Run query using Diesel to full or partially modify the user entry.
         let result = diesel::update(schema::users::dsl::users.find(id))
             .set(&modify_user_dto2)
             .returning(user_models::User::as_returning())
@@ -277,10 +269,11 @@ impl UserOrm for UserOrmApp {
 
         Ok(result)
     }
+    /// Delete an entity (user).
     fn delete_user(&self, id: i32) -> Result<usize, UserOrmError> {
         // Get a connection from the P2D2 pool.
         let mut conn = self.get_conn()?;
-
+        // Run query using Diesel to delete a user entry.
         let count: usize = diesel::delete(schema::users::dsl::users.find(id))
             .execute(&mut conn)
             .map_err(|e| {
@@ -402,7 +395,7 @@ pub mod tests {
             Ok(result)
         }
 
-        fn create_user(
+        /*fn create_user(
             &self,
             create_user_dto: &user_models::CreateUserDto,
         ) -> Result<user_models::User, UserOrmError> {
@@ -427,7 +420,7 @@ pub mod tests {
                 UserOrmApp::new_user(1001, nickname, email, password);
 
             Ok(user_saved)
-        }
+        }*/
 
         fn modify_user(
             &self,
