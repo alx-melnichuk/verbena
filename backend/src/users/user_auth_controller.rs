@@ -21,17 +21,17 @@ use crate::users::user_orm::UserOrmApp;
 use crate::users::user_orm::{UserOrm, CD_BLOCKING, CD_DATA_BASE};
 use crate::utils::err;
 
-pub const CD_UNAUTHORIZED: &str = "UnAuthorized"; // TODO remove
-
 pub const CD_USER_EXISTS: &str = "NicknameOrEmailExist";
 pub const MSG_USER_EXISTS: &str = "A user with the same nickname or email already exists.";
 
-// #- pub const MSG_NO_USER_FOR_TOKEN: &str = "There is no user for this token";
+pub const CD_WRONG_NICKNAME: &str = "WrongEmailNickname";
+pub const MSG_WRONG_NICKNAME: &str = "The specified nickname or email is incorrect!";
 
-pub const MSG_WRONG_NICKNAME: &str = "Wrong email / nickname!";
-pub const MSG_WRONG_PASSWORD: &str = "Wrong password!";
+pub const CD_WRONG_PASSWORD: &str = "WrongPassword";
+pub const MSG_WRONG_PASSWORD: &str = "The password specified is incorrect!";
 
-pub const MSG_INVALID_HASH_FORMAT: &str = "Invalid hash format!";
+pub const CD_INVALID_HASH: &str = "InvalidHash";
+pub const MSG_INVALID_HASH: &str = "Invalid hash format in the database.";
 
 pub const CD_JSONWEBTOKEN: &str = "jsonwebtoken";
 
@@ -147,20 +147,20 @@ pub async fn login(
     })??;
 
     let user: user_models::User = user.ok_or_else(|| {
-        log::debug!("{}: {}", CD_UNAUTHORIZED, MSG_WRONG_NICKNAME);
-        AppError::new(CD_UNAUTHORIZED, MSG_WRONG_NICKNAME).set_status(401)
+        log::debug!("{}: {}", CD_WRONG_NICKNAME, MSG_WRONG_NICKNAME);
+        AppError::new(CD_WRONG_NICKNAME, MSG_WRONG_NICKNAME).set_status(403)
     })?;
 
     let user_password = user.password.to_string();
     let password_matches = hash_tools::compare(&password, &user_password).map_err(|e| {
-        let msg = format!("InvalidHashFormat {:?}", e.to_string());
-        log::debug!("{}: {} {}", CD_UNAUTHORIZED, MSG_INVALID_HASH_FORMAT, msg);
-        AppError::new(CD_UNAUTHORIZED, MSG_INVALID_HASH_FORMAT).set_status(401)
+        #[rustfmt::skip]
+        log::debug!("{}: {} {:?}", CD_INVALID_HASH, MSG_INVALID_HASH, e.to_string());
+        AppError::new(CD_INVALID_HASH, MSG_INVALID_HASH).set_status(500)
     })?;
 
     if !password_matches {
-        log::debug!("{}: {}", CD_UNAUTHORIZED, MSG_WRONG_PASSWORD);
-        return Err(AppError::new(CD_UNAUTHORIZED, MSG_WRONG_PASSWORD).set_status(401));
+        log::debug!("{}: {}", CD_WRONG_PASSWORD, MSG_WRONG_PASSWORD);
+        return Err(AppError::new(CD_WRONG_PASSWORD, MSG_WRONG_PASSWORD).set_status(403));
     }
 
     // if (!user.registered) { ForbiddenException('Your registration not confirmed!'); }

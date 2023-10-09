@@ -1,7 +1,8 @@
 use std::{env, io};
 
+use actix_cors::Cors;
 use actix_files::Files;
-use actix_web::{web, App, HttpServer};
+use actix_web::{http, web, App, HttpServer};
 use dotenv;
 use env_logger;
 use log;
@@ -70,11 +71,24 @@ async fn main() -> io::Result<()> {
     log::info!("starting HTTP server at http://{}", &app_url);
 
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allowed_origin("http://localhost:4250")
+            .allowed_origin("http://127.0.0.1:8080")
+            // .allowed_origin("https://fonts.googleapis.com")
+            .allowed_methods(vec!["GET", "POST"])
+            .allowed_headers(vec![
+                http::header::CONTENT_TYPE,
+                http::header::AUTHORIZATION,
+                http::header::ACCEPT,
+            ])
+            .supports_credentials();
+
         App::new()
             // #.app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::clone(&config_jwt))
             .app_data(web::Data::clone(&data_user_orm))
             .app_data(web::Data::clone(&data_session_orm))
+            .wrap(cors)
             // enable logger
             .wrap(actix_web::middleware::Logger::default())
             .service(Files::new("/static", "static").show_files_listing())
