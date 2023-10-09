@@ -28,7 +28,8 @@
   "login": {
     "title": "Log in to ",
     "email_or_nickname": "Email or Nickname ",
-    "button_ok": "Log in"
+    "button_ok": "Log in",
+    "err_not_correct_password": "The nickname or password is not correct."
   },
   "signup": {
     "title": "Sign up to ",

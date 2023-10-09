@@ -5,7 +5,9 @@
 export const environment = {
   production: false,
   appRoot: 'http://localhost:4250/',
-  appApi: 'http://localhost:4250/',
+  //   appApi: 'http://localhost:4250/',
+  //   appRoot: 'http://127.0.0.1:8080/',
+  appApi: 'http://127.0.0.1:8080/',
 };
 
 /*

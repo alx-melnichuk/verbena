@@ -6,6 +6,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { HeaderComponent } from './components/header/header.component';
 import { UriConfig } from './utils/uri-config';
 import { environment } from 'src/environments/environment';
+import { UserService } from './entities/user/user.service';
 
 @Component({
   selector: 'app-root',
@@ -18,7 +19,7 @@ import { environment } from 'src/environments/environment';
 })
 export class AppComponent {
   title = 'verbena';
-  constructor(public translate: TranslateService) {
+  constructor(public translate: TranslateService, public userService: UserService) {
     UriConfig.initial(environment.appRoot, environment.appApi);
   }
 }

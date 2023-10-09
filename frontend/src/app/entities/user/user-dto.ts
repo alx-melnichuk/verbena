@@ -12,3 +12,18 @@ export interface SendUserRegistrationDto {
   password: string; // Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d\W_]{6,}$/)
   locale?: string; // = 'default';
 }
+
+export interface LoginUserDto {
+  nickname: string;
+  password: string;
+}
+
+export interface UserTokensDto {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface LoginUserResponseDto {
+  userDto: UserDto;
+  userTokensDto: UserTokensDto;
+}

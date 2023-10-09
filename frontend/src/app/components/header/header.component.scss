@@ -35,12 +35,30 @@ app-header {
     font-weight: 500;
     margin-left: 0.5em;
   }
+  .hd-logo-mini {
+    background-image: url('../../../assets/images/logo_mini.png');
+    height: 53px;
+    width: 53px;
+  }
+
   // Section: "box-search"
   .hd-box-search {
     // font-size: 14px;
     margin-top: 3px;
     max-width: 400px;
     min-width: 200px;
+  }
+
+  // "box-user"
+  .hd-user-info {
+    display: flex;
+    align-items: center;
+  }
+  .hd-user-image {
+    width: 45px;
+    height: 45px;
+    margin-left: 10px;
+    border-radius: 12px;
   }
 
   // -- --
@@ -50,10 +68,5 @@ app-header {
     background-size: cover;
     // &.hd-my-profile { width: 21px; height: 21px; }
     // &.hd-create-stream { width: 24px; height: 24px; }
-  }
-  .hd-logo-mini {
-    background-image: url('../../../assets/images/logo_mini.png');
-    height: 53px;
-    width: 53px;
   }
 }
