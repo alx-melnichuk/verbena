@@ -1,10 +1,14 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SignupComponent } from '../components/signup/signup.component';
 import { StrParams } from '../common/str-params';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { UserService } from '../entities/user/user.service';
+import { DialogService } from '../lib-dialog/dialog.service';
+import { Router } from '@angular/router';
+import { ROUTE_LOGIN } from '../common/routes';
+import { AppErrorUtil } from '../common/app-error';
 
 @Component({
   selector: 'app-pg-signup',
@@ -14,25 +18,28 @@ import { UserService } from '../entities/user/user.service';
   styleUrls: ['./pg-signup.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [DialogService],
 })
 export class PgSignupComponent {
   public isLogin = true;
   public isDisabledSubmit = false;
   public errMsgList: string[] = [];
 
+  private defaultError: string;
+
   constructor(
     private changeDetector: ChangeDetectorRef,
-    // private router: Router,
-    private translate: TranslateService, // private dialogService: DialogService,
+    private router: Router,
+    private translate: TranslateService,
+    private dialogService: DialogService,
     private userService: UserService
   ) {
-    // this.isLogin = (window.location.pathname === ROUTE_LOGIN);
+    this.defaultError = this.translate.instant('error.server_api_call');
   }
 
   // ** Public API **
 
   public doSignup(params: StrParams): void {
-    // this.signup.emit({ nickname, email, password });
     if (!params) {
       return;
     }
@@ -48,34 +55,21 @@ export class PgSignupComponent {
     this.userService
       .registration(nickname, email, password)
       .then(() => {
-        console.log(`PgSignup.doSignup() registration(); Ok`); // #
-        // const title = this.translate.instant('login.registration_title');
-        // const message = this.translate.instant('login.registration_message', { value: email });
-        // this.dialogService.openConfirmation(message, title, null, 'buttons.ok')
-        //   .then((result) => {
-        //     this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
-        //   });
+        const appName = this.translate.instant('app_name');
+        const title = this.translate.instant('login.registration_title', { app_name: appName });
+        const message = this.translate.instant('login.registration_message', { value: email });
+        this.dialogService.openConfirmation(message, title, null, 'buttons.ok').then(() => {
+          this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
+        });
       })
       .catch((error: HttpErrorResponse) => {
-        this.errMsgList = this.handleError(error);
-        this.changeDetector.markForCheck();
-        console.log(`PgSignup.doSignup() registration(); err:`, error); // #
+        this.errMsgList = AppErrorUtil.handleError(error, this.defaultError);
       })
-      .finally(() => (this.isDisabledSubmit = false));
+      .finally(() => {
+        this.changeDetector.markForCheck();
+        this.isDisabledSubmit = false;
+      });
   }
 
   // ** Private API **
-
-  private handleError(error: HttpErrorResponse): string[] {
-    let result: string[] = [this.translate.instant('error.server_api_call')];
-    if (!!error) {
-      const errMessage = error.error?.message;
-      if (!!errMessage) {
-        result = Array.isArray(errMessage) ? errMessage : [errMessage];
-      } else if (!!error.message) {
-        result = [error.message];
-      }
-    }
-    return result;
-  }
 }

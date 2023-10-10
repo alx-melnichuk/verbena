@@ -27,8 +27,8 @@ import { MatInput, MatInputModule } from '@angular/material/input';
 import { TranslateModule } from '@ngx-translate/core';
 
 export const NICKNAME_MIN_LENGTH = 3;
-export const NICKNAME_MAX_LENGTH = 254;
-export const NICKNAME_PATTERN = '^[a-zA-Z0-9]+$';
+export const NICKNAME_MAX_LENGTH = 64;
+export const NICKNAME_PATTERN = '^[a-zA-Z]+[\\w]+$';
 
 @Component({
   selector: 'app-field-nickname',

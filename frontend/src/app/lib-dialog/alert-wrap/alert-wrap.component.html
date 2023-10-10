@@ -1,0 +1,9 @@
+<app-alert
+  [isOneLine]="data.isOneLine"
+  [closeable]="data.closeable || true"
+  [mode]="data.mode"
+  [title]="data.title"
+  [message]="data.message"
+  [messageHtml]="data.messageHtml"
+  (closed)="doClose()"
+></app-alert>

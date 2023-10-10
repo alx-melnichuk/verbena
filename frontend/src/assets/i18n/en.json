@@ -4,6 +4,10 @@
     "required": "Enter a required field.",
     "server_api_call": "An error occurred while calling the server API."
   },
+  "buttons": {
+    "ok": "Ok",
+    "cancel": "Cancel"
+  },
   "field-email": {
     "err_minlength_symbol_search": "The symbol search should have {{value}} characters or more.",
     "err_maxlength_symbol_search": "The symbol search should be less than {{value}} characters.",
@@ -17,7 +21,7 @@
     "label": "Nickname ",
     "err_minlength": "The nickname should have {{ minlength.requiredLength }} characters or more.",
     "err_maxlength": "The nickname should be less than {{ maxlength.requiredLength }} characters.",
-    "err_pattern": "Please enter the correct nickname value."
+    "err_pattern": "Nickname must start with a letter."
   },
   "field-password": {
     "label": "Password ",
@@ -29,7 +33,9 @@
     "title": "Log in to ",
     "email_or_nickname": "Email or Nickname ",
     "button_ok": "Log in",
-    "err_not_correct_password": "The nickname or password is not correct."
+    "err_not_correct_password": "The nickname or password is not correct.",
+    "registration_title": "Welcome to the {{app_name}} !",
+    "registration_message": "We have sent a registration link to {{value}}"
   },
   "signup": {
     "title": "Sign up to ",

@@ -27,8 +27,7 @@ import { MatInput, MatInputModule } from '@angular/material/input';
 import { TranslateModule } from '@ngx-translate/core';
 
 export const PASSWORD_MIN_LENGTH = 6;
-export const PASSWORD_MAX_LENGTH = 254;
-export const PASSWORD_PATTERN = '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d\\W_]{6,}$';
+export const PASSWORD_MAX_LENGTH = 64;
 
 @Component({
   selector: 'app-field-password',
@@ -55,7 +54,7 @@ export class FieldPasswordComponent implements OnChanges, ControlValueAccessor, 
   @Input()
   public maxLen: number = PASSWORD_MAX_LENGTH;
   @Input()
-  public pattern: string = PASSWORD_PATTERN;
+  public pattern: string = '';
   @Input()
   public isDisabled: boolean = false;
 

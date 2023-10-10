@@ -1,0 +1,76 @@
+/*# sourceURL=alert.component.scss */
+
+app-alert {
+  background-color: var(--app-theme-background-panel-2);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--app-theme-color);
+  flex: 1 1 auto;
+  line-height: 1.42857rem;
+  padding: 0.75em 1.6em 0.75em 0.75em;
+  position: relative;
+  white-space: normal;
+
+  &:not([hidden]) {
+    display: inline-block;
+  }
+
+  .btn-close {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 0;
+    position: absolute;
+    right: 0.7vw;
+    top: 0.5vh;
+    &:hover,
+    &:focus {
+      opacity: 0.7;
+    }
+  }
+  .title {
+    font-weight: 500;
+  }
+
+  &.app-comment {
+    .title {
+      color: #8c8c8c;
+    } // #8c8c8c
+    // background-color: #fff;
+    border-color: #8c8c8c; // #8c8c8c
+  }
+
+  &.app-info {
+    .title {
+      color: var(--app-theme-color);
+    } // #31708f
+    // background-color: #d9edf7;
+    border-color: var(--app-theme-color); // #bce8f1
+  }
+
+  &.app-warning {
+    .title {
+      color: #806d3f;
+    } // #806d3f
+    // background-color: #fcf9de;
+    border-color: #806d3f; // #faebb4
+  }
+
+  &.app-error {
+    .title {
+      color: var(--app-theme-warn);
+    } // #aa4442
+    // background-color: #f3dede;
+    border-color: var(--app-theme-warn); // #ecccd1
+  }
+
+  &.app-success {
+    .title {
+      color: #355e3b;
+    }
+    // background-color: #c6f5d7;
+    border-color: #355e3b; // #98C793
+  }
+}

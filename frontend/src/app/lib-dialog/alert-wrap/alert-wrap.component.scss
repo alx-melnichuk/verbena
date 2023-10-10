@@ -1,0 +1,23 @@
+/*# sourceURL=alert-wrap.component.scss */
+
+app-alert-wrap {
+  height: 100%;
+  display: flex;
+  line-height: 1.42857rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  white-space: normal;
+}
+
+.cdk-overlay-container {
+  mat-snack-bar-container.app-alert-wrap-panel {
+    // padding: 0 0;
+    // max-width: 90vw;
+    // min-width: 10vw;
+    // border-width: 0;
+    // background-color: transparent;
+    .mdc-snackbar__label {
+      padding: 0.75em 0.25em 0.75em 0.75em;
+    }
+  }
+}

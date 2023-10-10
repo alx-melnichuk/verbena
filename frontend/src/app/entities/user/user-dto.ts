@@ -6,12 +6,7 @@ export interface UserDto {
   description: string;
 }
 
-export interface SendUserRegistrationDto {
-  email: string;
-  nickname: string; // Matches(/^[a-zA-Z0-9]+$/i)
-  password: string; // Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d\W_]{6,}$/)
-  locale?: string; // = 'default';
-}
+// ** Login **
 
 export interface LoginUserDto {
   nickname: string;
@@ -27,3 +22,20 @@ export interface LoginUserResponseDto {
   userDto: UserDto;
   userTokensDto: UserTokensDto;
 }
+
+// ** Registration **
+
+export interface CreateUserDto {
+  nickname: string;
+  email: string;
+  password: string;
+}
+
+/*export interface SendUserRegistrationDto {
+  email: string;
+  nickname: string; // Matches(/^[a-zA-Z0-9]+$/i)
+  password: string; // Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d\W_]{6,}$/)
+  locale?: string; // = 'default';
+}*/
+
+// ** **

@@ -5,7 +5,7 @@ import { StrParams } from '../common/str-params';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { UserService } from '../entities/user/user.service';
-import { AppError } from '../common/app-error';
+import { AppErrorUtil } from '../common/app-error';
 import { ROUTE_ROOT } from '../common/routes';
 import { Router } from '@angular/router';
 
@@ -23,6 +23,8 @@ export class PgLoginComponent {
   public isDisabledSubmit = false;
   public errMsgList: string[] = [];
 
+  private defaultError: string;
+
   constructor(
     private changeDetector: ChangeDetectorRef,
     private router: Router,
@@ -31,8 +33,7 @@ export class PgLoginComponent {
     // private profileService: ProfileService,
     private userService: UserService
   ) {
-    console.log('PgLoginComponent();'); // #-
-    // this.isLogin = (window.location.pathname === ROUTE_LOGIN);
+    this.defaultError = this.translate.instant('error.server_api_call');
   }
 
   // ** Public API **
@@ -58,7 +59,7 @@ export class PgLoginComponent {
         if (errRes.status === 403) {
           this.errMsgList = [this.translate.instant('login.err_not_correct_password')];
         } else {
-          this.errMsgList = this.handleAppError(errRes);
+          this.errMsgList = AppErrorUtil.handleError(errRes, this.defaultError);
         }
       } else {
         throw errRes;
@@ -70,13 +71,4 @@ export class PgLoginComponent {
   }
 
   // ** Private API **
-
-  private handleAppError(errRes: HttpErrorResponse): string[] {
-    let result: string[] = [this.translate.instant('error.server_api_call')];
-    if (!!errRes && !!errRes.error && !!errRes.error['errCode'] && !!errRes.error['errMsg']) {
-      let appError = errRes.error as AppError;
-      result = appError.errMsg.split('\n');
-    }
-    return result;
-  }
 }

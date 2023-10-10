@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 // import { Subject } from 'rxjs';
 import { UserApiService } from './user-api.service';
-import { LoginUserDto, LoginUserResponseDto, SendUserRegistrationDto, UserDto, UserTokensDto } from './user-dto';
+import { CreateUserDto, LoginUserResponseDto, UserDto, UserTokensDto } from './user-dto';
 
 export const ACCESS_TOKEN = 'accessToken';
 export const REFRESH_TOKEN = 'refreshToken';
@@ -29,8 +29,7 @@ export class UserService {
     }
 
     this.userTokensDto = this.setUserTokensDtoToLocalStorage(null);
-    const loginUserDto: LoginUserDto = { nickname, password };
-    return this.userApiService.login(loginUserDto).then((response: LoginUserResponseDto | HttpErrorResponse | undefined) => {
+    return this.userApiService.login({ nickname, password }).then((response: LoginUserResponseDto | HttpErrorResponse | undefined) => {
       let userResponseDto: LoginUserResponseDto = response as LoginUserResponseDto;
       this.userInfo = { ...userResponseDto.userDto } as UserDto;
       this.userTokensDto = this.setUserTokensDtoToLocalStorage(userResponseDto.userTokensDto);
@@ -38,12 +37,11 @@ export class UserService {
     });
   }
 
-  public registration(nickname: string, email: string, password: string): Promise<UserDto | HttpErrorResponse | undefined> {
+  public registration(nickname: string, email: string, password: string): Promise<null | HttpErrorResponse | undefined> {
     if (!nickname || !email || !password) {
       return Promise.reject();
     }
-    const sendUserRegistrationDto: SendUserRegistrationDto = { nickname, email, password };
-    return this.userApiService.addUser(sendUserRegistrationDto);
+    return this.userApiService.registration({ nickname, email, password });
   }
 
   // ** Private **

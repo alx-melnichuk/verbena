@@ -27,8 +27,7 @@ import { MatInput, MatInputModule } from '@angular/material/input';
 import { TranslateModule } from '@ngx-translate/core';
 
 export const EMAIL_MIN_LENGTH = 5;
-export const EMAIL_MAX_LENGTH = 10; // 254
-export const EMAIL_PATTERN = '^[a-zA-Z0-9]+$';
+export const EMAIL_MAX_LENGTH = 255;
 
 @Component({
   selector: 'app-field-email',
@@ -55,7 +54,7 @@ export class FieldEmailComponent implements OnChanges, ControlValueAccessor, Val
   @Input()
   public maxLen: number = EMAIL_MAX_LENGTH;
   @Input()
-  public pattern: string = EMAIL_PATTERN;
+  public pattern: string = '';
   @Input()
   public isDisabled: boolean = false;
 
