@@ -42,8 +42,8 @@ pub const CD_USER_NO_SESSION: &str = "UserNoSession";
 pub const MSG_USER_NO_SESSION: &str = "There is no session for user";
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
-    //     POST api/signup
-    cfg.service(signup)
+    //     POST api/registration
+    cfg.service(registration)
         // POST api/login
         .service(login)
         // POST api/logout
@@ -52,9 +52,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .service(new_token);
 }
 
-// POST api/signup
-#[post("/signup")]
-pub async fn signup(
+// POST api/registration
+#[post("/registration")]
+pub async fn registration(
     user_orm: web::Data<UserOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
     json_user_dto: web::Json<user_models::CreateUserDto>,
@@ -108,7 +108,7 @@ pub async fn signup(
         AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
     })??;
     eprintln!("##result_user: {:#?}", result_user); // #-
-    Ok(HttpResponse::Created().json(user_models::UserDto::from(result_user)))
+    Ok(HttpResponse::Created().body(()))
 }
 
 // POST api/login
