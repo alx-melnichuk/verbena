@@ -21,8 +21,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(get_user_by_id)
         // GET api/users/nickname/{nickname}
         .service(get_user_by_nickname)
-        // GET api/user_me
-        .service(get_user_me)
+        // GET api/user_current
+        .service(get_user_current)
         // PUT api/users/{id}
         .service(put_user)
         // DELETE api/users/{id}
@@ -101,10 +101,10 @@ pub async fn get_user_by_nickname(
     }
 }
 
-// GET api/user_me
+// GET api/user_current
 #[rustfmt::skip]
-#[get("/user_me", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn get_user_me(
+#[get("/user_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn get_user_current(
     authenticated: Authenticated,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let user = authenticated.deref();
@@ -399,7 +399,7 @@ mod tests {
     }
 
     #[test]
-    async fn test_get_user_me_valid_token() {
+    async fn test_get_user_current_valid_token() {
         let mut user1 = UserOrmApp::new_user(
             1001,
             "Oliver_Taylor",
@@ -420,12 +420,12 @@ mod tests {
             App::new()
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_user_orm))
-                .service(get_user_me),
+                .service(get_user_current),
         )
         .await;
         let req = test::TestRequest::get()
             .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri(&"/user_me") // GET /user_me
+            .uri(&"/user_current") // GET /user_current
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
