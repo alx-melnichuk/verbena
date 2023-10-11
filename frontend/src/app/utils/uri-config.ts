@@ -1,8 +1,9 @@
+import { environment } from 'src/environments/environment';
 import { Uri } from './uri';
 
 export class UriConfig {
-  public static initial(appRoot: string, appApi: string): void {
-    Uri.replace('appRoot://', appRoot);
-    Uri.replace('appApi://', appApi);
+  public static initial(): void {
+    Uri.replace('appRoot://', environment.appRoot);
+    Uri.replace('appApi://', environment.appApi);
   }
 }

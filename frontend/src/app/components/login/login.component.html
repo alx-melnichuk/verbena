@@ -11,9 +11,6 @@
       formControlName="nickname"
       [isRequired]="true"
       label="login.email_or_nickname"
-      [minLen]="0"
-      [maxLen]="0"
-      [pattern]="''"
       (input)="updateErrMsg()"
     >
     </app-field-nickname>
@@ -22,9 +19,6 @@
       class="lg-field"
       formControlName="password"
       [isRequired]="true"
-      [minLen]="0"
-      [maxLen]="0"
-      [pattern]="''"
       (input)="updateErrMsg()"
     ></app-field-password>
 

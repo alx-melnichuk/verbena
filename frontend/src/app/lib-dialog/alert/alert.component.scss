@@ -1,15 +1,15 @@
 /*# sourceURL=alert.component.scss */
 
 app-alert {
-  background-color: var(--app-theme-background-panel-2);
+  // #  background-color: var(--app-theme-background-panel-2);
   border: 1px solid transparent;
   border-radius: 4px;
-  color: var(--app-theme-color);
+  // #  color: var(--app-theme-color);
   flex: 1 1 auto;
-  line-height: 1.42857rem;
+  // #  line-height: 1.42857rem;
   padding: 0.75em 1.6em 0.75em 0.75em;
   position: relative;
-  white-space: normal;
+  // #  white-space: normal;
 
   &:not([hidden]) {
     display: inline-block;
@@ -23,8 +23,8 @@ app-alert {
     font-size: 20px;
     padding: 0;
     position: absolute;
-    right: 0.7vw;
-    top: 0.5vh;
+    right: 0.85vw;
+    top: 0.85vh;
     &:hover,
     &:focus {
       opacity: 0.7;
@@ -35,42 +35,30 @@ app-alert {
   }
 
   &.app-comment {
-    .title {
-      color: #8c8c8c;
-    } // #8c8c8c
-    // background-color: #fff;
-    border-color: #8c8c8c; // #8c8c8c
+    --text-cl: #5e5e5e;
+    // .title { color: #8c8c8c; }    // background-color: #fff;    // border-color: #8c8c8c;
   }
 
   &.app-info {
-    .title {
-      color: var(--app-theme-color);
-    } // #31708f
-    // background-color: #d9edf7;
-    border-color: var(--app-theme-color); // #bce8f1
+    --text-cl: #31708f;
+    // .title { color: #31708f; } //    // background-color: #d9edf7;    // border-color: #bce8f1;    border-color: #31708f;
   }
 
   &.app-warning {
-    .title {
-      color: #806d3f;
-    } // #806d3f
-    // background-color: #fcf9de;
-    border-color: #806d3f; // #faebb4
+    --text-cl: #806d3f;
+    // .title { color: #806d3f; } // background-color: #fcf9de; // border-color: #faebb4 border-color: #806d3f;
   }
 
   &.app-error {
-    .title {
-      color: var(--app-theme-warn);
-    } // #aa4442
-    // background-color: #f3dede;
-    border-color: var(--app-theme-warn); // #ecccd1
+    --text-cl: #aa4442;
+    // .title { color: #aa4442; } // background-color: #f3dede; // border-color: #ecccd1; border-color: #aa4442;
   }
 
   &.app-success {
-    .title {
-      color: #355e3b;
-    }
-    // background-color: #c6f5d7;
-    border-color: #355e3b; // #98C793
+    --text-cl: #355e3b;
+    // .title { color: #355e3b; } // background-color: #c6f5d7; // border-color: #355e3b; // #98C793
   }
+
+  color: var(--text-cl);
+  border-color: var(--text-cl);
 }

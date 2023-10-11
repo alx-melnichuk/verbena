@@ -41,7 +41,7 @@ export class AlertService {
     const innConfig: MatSnackBarConfig<any> = {
       ...{ duration, horizontalPosition, verticalPosition },
       ...(config || {}),
-      ...{ panelClass: ['app-alert-wrap-panel'] },
+      ...{ panelClass: ['app-alert-wrap-panel', 'app-' + mode] },
       ...{ data: { mode, title, message } },
     };
     this.currentSnackBarRef = this.snackBar.openFromComponent(AlertWrapComponent, innConfig);

@@ -38,4 +38,10 @@ export interface CreateUserDto {
   locale?: string; // = 'default';
 }*/
 
+// ** RefreshToken **
+
+export interface TokenUserDto {
+  token: string; // refreshToken
+}
+
 // ** **

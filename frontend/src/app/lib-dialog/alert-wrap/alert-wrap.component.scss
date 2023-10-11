@@ -3,10 +3,10 @@
 app-alert-wrap {
   height: 100%;
   display: flex;
-  line-height: 1.42857rem;
+  // #  line-height: 1.42857rem;
   border: 1px solid transparent;
   border-radius: 4px;
-  white-space: normal;
+  // #  white-space: normal;
 }
 
 .cdk-overlay-container {
@@ -18,6 +18,21 @@ app-alert-wrap {
     // background-color: transparent;
     .mdc-snackbar__label {
       padding: 0.75em 0.25em 0.75em 0.75em;
+    }
+    &.app-comment {
+      --mdc-snackbar-container-color: #fafafa; //#fff;
+    }
+    &.app-info {
+      --mdc-snackbar-container-color: #d9edf7;
+    }
+    &.app-warning {
+      --mdc-snackbar-container-color: #fcf9de;
+    }
+    &.app-error {
+      --mdc-snackbar-container-color: #f3dede;
+    }
+    &.app-success {
+      --mdc-snackbar-container-color: #c6f5d7;
     }
   }
 }

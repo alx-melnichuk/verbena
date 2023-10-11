@@ -6,23 +6,15 @@
 >
   <span>&#215;</span>
 </button>
-<!--
-  <span class="glyphicon"
-    [ngClass]="{
-      'glyphicon-info-sign': isInfo,
-      'glyphicon-exclamation-sign': isComment,
-      'glyphicon-alert': isWarning,
-      'glyphicon-remove-sign': isError,
-      'glyphicon-ok-sign': isSuccess
-    }"
-  ></span>
--->
+
 <strong class="title">{{ title }}</strong>
-<ng-container *ngIf="title != null && (message != null || messageHtml != null)">
+
+<ng-container *ngIf="title != null && (!!message || messageHtml != null)">
   <span class="title">: </span>
   <br *ngIf="!isOneLine" />
 </ng-container>
 <span>{{ message }}</span>
+
 <ng-container *ngIf="messageHtml != null">
   <span [innerHTML]="messageHtml"></span>
 </ng-container>

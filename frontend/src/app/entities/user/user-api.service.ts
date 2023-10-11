@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Uri } from 'src/app/utils/uri';
-import { CreateUserDto, LoginUserDto, LoginUserResponseDto, UserDto } from './user-dto';
+import { CreateUserDto, LoginUserDto, LoginUserResponseDto, TokenUserDto, UserDto, UserTokensDto } from './user-dto';
 
 @Injectable({
   providedIn: 'root',
@@ -19,8 +19,13 @@ export class UserApiService {
     return this.http.post<null | HttpErrorResponse>(url, createUserDto).toPromise();
   }
 
-  /*public refreshProfileToken(tokenUserDTO: TokenUserDTO): Promise<UserTokensDTO | HttpErrorResponse> {
-    const url = Uri.appUri('appApi://profile/token');
-    return this.http.post<UserTokensDTO | HttpErrorResponse>(url, tokenUserDTO).toPromise();
-  }*/
+  public currentUser(): Promise<UserDto | HttpErrorResponse | undefined> {
+    const url = Uri.appUri('appApi://api/user_current');
+    return this.http.get<UserDto | HttpErrorResponse>(url).toPromise();
+  }
+
+  public refreshToken(tokenUserDto: TokenUserDto): Promise<UserTokensDto | HttpErrorResponse | undefined> {
+    const url = Uri.appUri('appApi://api/token');
+    return this.http.post<UserTokensDto | HttpErrorResponse>(url, tokenUserDto).toPromise();
+  }
 }

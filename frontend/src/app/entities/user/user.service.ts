@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 // import { Subject } from 'rxjs';
 import { UserApiService } from './user-api.service';
-import { CreateUserDto, LoginUserResponseDto, UserDto, UserTokensDto } from './user-dto';
+import { CreateUserDto, LoginUserResponseDto, TokenUserDto, UserDto, UserTokensDto } from './user-dto';
 
 export const ACCESS_TOKEN = 'accessToken';
 export const REFRESH_TOKEN = 'refreshToken';
@@ -18,8 +18,24 @@ export class UserService {
   //   public sessionDTO$ = this.innSessionDto.asObservable();
 
   constructor(private userApiService: UserApiService) {
-    console.log(`UserService();`); // #
-    this.userTokensDto = this.getUserTokensDTOFromLocalStorage();
+    console.log(`#1-UserService();`); // #
+    this.userTokensDto = this.getUserTokensDtoFromLocalStorage();
+  }
+
+  public hasAccessTokenInLocalStorage(): boolean {
+    return !!localStorage.getItem(ACCESS_TOKEN);
+  }
+
+  public isExistRefreshToken(): boolean {
+    return !!this.userTokensDto?.refreshToken;
+  }
+
+  public getAccessToken(): string | null {
+    return this.userTokensDto?.accessToken || null;
+  }
+
+  public getRefreshToken(): string | null {
+    return this.userTokensDto?.refreshToken || null;
   }
 
   public login(nickname: string, password: string): Promise<LoginUserResponseDto | HttpErrorResponse | undefined> {
@@ -37,11 +53,33 @@ export class UserService {
     });
   }
 
+  public refreshToken(): Promise<UserTokensDto | HttpErrorResponse> {
+    if (!this.userTokensDto || !this.userTokensDto.refreshToken) {
+      return Promise.reject();
+    }
+    return this.userApiService
+      .refreshToken({ token: this.userTokensDto.refreshToken })
+      .then((response: HttpErrorResponse | UserTokensDto | undefined) => {
+        this.userTokensDto = this.setUserTokensDtoToLocalStorage(response as UserTokensDto);
+        return response as UserTokensDto;
+      })
+      .catch((error) => {
+        this.userTokensDto = this.setUserTokensDtoToLocalStorage(null);
+        throw error;
+      });
+  }
+
   public registration(nickname: string, email: string, password: string): Promise<null | HttpErrorResponse | undefined> {
     if (!nickname || !email || !password) {
       return Promise.reject();
     }
     return this.userApiService.registration({ nickname, email, password });
+  }
+
+  public async getCurrentUser(): Promise<UserDto | HttpErrorResponse> {
+    const userDto: UserDto = (await this.userApiService.currentUser()) as UserDto;
+    this.userInfo = { ...userDto } as UserDto;
+    return Promise.resolve(userDto);
   }
 
   // ** Private **
@@ -55,15 +93,15 @@ export class UserService {
       }
     }
   }
-  private setUserTokensDtoToLocalStorage(authenticationDto: UserTokensDto | null): UserTokensDto | null {
-    const accessToken = !!authenticationDto ? authenticationDto.accessToken : null;
+  private setUserTokensDtoToLocalStorage(userTokensDto: UserTokensDto | null): UserTokensDto | null {
+    const accessToken = userTokensDto?.accessToken || null;
     this.updateItemInLocalStorage(ACCESS_TOKEN, accessToken);
-    const refreshToken = !!authenticationDto ? authenticationDto.refreshToken : null;
+    const refreshToken = userTokensDto?.refreshToken || null;
     this.updateItemInLocalStorage(REFRESH_TOKEN, refreshToken);
-    return !!authenticationDto ? { ...authenticationDto } : null;
+    return !!userTokensDto ? { ...userTokensDto } : null;
   }
 
-  private getUserTokensDTOFromLocalStorage(): UserTokensDto | null {
+  private getUserTokensDtoFromLocalStorage(): UserTokensDto | null {
     let result: UserTokensDto | null = null;
     const accessToken = localStorage.getItem(ACCESS_TOKEN);
     const refreshToken = localStorage.getItem(REFRESH_TOKEN);
@@ -72,6 +110,8 @@ export class UserService {
     }
     return result;
   }
+
+  // ** Private Api **
 
   //   private updateSessionDTO(sessionDto: SessionDto | null): void {
   //     this.sessionDto = (!!sessionDto ? { ...sessionDto } : null);

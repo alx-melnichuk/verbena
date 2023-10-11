@@ -8,6 +8,10 @@
     "ok": "Ok",
     "cancel": "Cancel"
   },
+  "main_menu": {
+    "my_profile": "My profile",
+    "log_out": "Log Out"
+  },
   "field-email": {
     "err_minlength_symbol_search": "The symbol search should have {{value}} characters or more.",
     "err_maxlength_symbol_search": "The symbol search should be less than {{value}} characters.",

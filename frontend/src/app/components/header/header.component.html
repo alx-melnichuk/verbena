@@ -20,17 +20,19 @@
   <!-- <span>box-user</span> -->
 
   <ng-container *ngIf="!!userInfo">
-    <div class="hd-user-info">
-      <span>{{ userInfo.nickname }}</span>
-      <!-- <app-avatar class="hd-user-image"
+    <app-main-menu>
+      <div class="hd-user-info">
+        <span>{{ userInfo.nickname }}</span>
+        <!-- <app-avatar class="hd-user-image"
         [avatar]="sessionDTO.avatar"
         [nickname]="sessionDTO.nickname">
       </app-avatar> -->
-      <i
-        class="hd-user-image hd-icon"
-        style="background-image: url('../../../assets/images/icon_man.png')"
-      >
-      </i>
-    </div>
+        <i
+          class="hd-user-image hd-icon"
+          style="background-image: url('../../../assets/images/icon_man.png')"
+        >
+        </i>
+      </div>
+    </app-main-menu>
   </ng-container>
 </div>
