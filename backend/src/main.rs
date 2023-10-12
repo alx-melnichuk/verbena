@@ -46,6 +46,8 @@ async fn main() -> io::Result<()> {
     let app_host = env::var("APP_HOST").expect("APP_HOST not found.");
     let app_port = env::var("APP_PORT").expect("APP_PORT not found.");
     let app_url = format!("{}:{}", &app_host, &app_port);
+    let max_age_str = env::var("APP_MAX_AGE").unwrap_or("".to_string()); // default=3600
+    let app_max_age: usize = max_age_str.parse::<usize>().unwrap_or(3600);
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL not found.");
 
     // let domain: String = env::var("DOMAIN").unwrap_or_else(|_| "localhost".to_string());
@@ -75,21 +77,22 @@ async fn main() -> io::Result<()> {
             .allowed_origin("http://localhost:4250")
             .allowed_origin("http://127.0.0.1:8080")
             // .allowed_origin("https://fonts.googleapis.com")
-            .allowed_methods(vec!["GET", "POST"])
+            // "HEAD", "CONNECT", "PATCH", "TRACE",
+            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
             .allowed_headers(vec![
                 http::header::CONTENT_TYPE,
                 http::header::AUTHORIZATION,
                 http::header::ACCEPT,
             ])
-            .supports_credentials();
+            .max_age(app_max_age);
+        // let cors = Cors::permissive();
+        // let cors = cors.allow_any_method().allow_any_header()
 
         App::new()
-            // #.app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::clone(&config_jwt))
             .app_data(web::Data::clone(&data_user_orm))
             .app_data(web::Data::clone(&data_session_orm))
             .wrap(cors)
-            // enable logger
             .wrap(actix_web::middleware::Logger::default())
             .service(Files::new("/static", "static").show_files_listing())
             .service(Files::new("/assets", "static/assets").show_files_listing())

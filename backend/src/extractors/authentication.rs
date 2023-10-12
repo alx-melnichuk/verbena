@@ -133,7 +133,7 @@ where
         let token = req.cookie("token").map(|c| c.value().to_string()).or_else(|| {
             req.headers()
                 .get(http::header::AUTHORIZATION)
-                .map(|h| h.to_str().unwrap().split_at(7).1.to_string())
+                .map(|h| h.to_str().unwrap().to_string())
         });
         // If token is missing, return unauthorized error
         if token.is_none() {
@@ -160,7 +160,6 @@ where
 
         // Handle user extraction and request processing
         async move {
-            /* */
             let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap();
             
             let session_opt = session_orm.find_by_id(user_id).map_err(|e| {
