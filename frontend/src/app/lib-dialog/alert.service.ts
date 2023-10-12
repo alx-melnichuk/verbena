@@ -15,9 +15,7 @@ import {
 export class AlertService {
   private currentSnackBarRef: MatSnackBarRef<AlertWrapComponent> | null = null;
 
-  constructor(private snackBar: MatSnackBar) {
-    console.log(`AlertService() snackBar!=null : ${this.snackBar != null}`); // #-
-  }
+  constructor(private snackBar: MatSnackBar) {}
 
   /**
    * Display title and message in toaster.

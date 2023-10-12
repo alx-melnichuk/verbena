@@ -3,9 +3,8 @@ import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { first } from 'rxjs/operators';
 import { ROUTE_LOGIN } from './routes';
-import { Authorization } from './authorization';
+import { AuthorizationUtil } from '../utils/authorization-util';
 import { UserService } from '../entities/user/user.service';
-import { UriConfig } from '../utils/uri-config';
 import { DateAdapter } from '@angular/material/core';
 
 @Injectable({
@@ -19,7 +18,6 @@ export class InitializationService {
     private userService: UserService
   ) {
     console.log(`#2-InitializationService();`); // #
-    UriConfig.initial();
   }
 
   public initTranslate(): Promise<void | unknown> {
@@ -40,8 +38,8 @@ export class InitializationService {
   }
 
   public async initSession(): Promise<void> {
-    const isAuthorizationRequired = Authorization.isAuthorizationRequired();
-    const isNotRequiredNotDenied = Authorization.isAuthorizationNotRequiredNotDenied();
+    const isAuthorizationRequired = AuthorizationUtil.isAuthorizationRequired();
+    const isNotRequiredNotDenied = AuthorizationUtil.isAuthorizationNotRequiredNotDenied();
     const isExistAccessToken = this.userService.hasAccessTokenInLocalStorage();
     if (isAuthorizationRequired || (isNotRequiredNotDenied && isExistAccessToken)) {
       try {

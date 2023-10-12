@@ -1,6 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Uri } from 'src/app/utils/uri';
+
+import { Uri } from 'src/app/common/uri';
 import { CreateUserDto, LoginUserDto, LoginUserResponseDto, TokenUserDto, UserDto, UserTokensDto } from './user-dto';
 
 @Injectable({

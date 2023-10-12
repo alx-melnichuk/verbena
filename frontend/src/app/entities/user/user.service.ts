@@ -39,7 +39,6 @@ export class UserService {
   }
 
   public login(nickname: string, password: string): Promise<LoginUserResponseDto | HttpErrorResponse | undefined> {
-    console.log(`UserService.login("${nickname}", "${password}");`); // #
     if (!nickname || !password) {
       return Promise.reject();
     }
@@ -48,7 +47,8 @@ export class UserService {
     return this.userApiService.login({ nickname, password }).then((response: LoginUserResponseDto | HttpErrorResponse | undefined) => {
       let userResponseDto: LoginUserResponseDto = response as LoginUserResponseDto;
       this.userInfo = { ...userResponseDto.userDto } as UserDto;
-      this.userTokensDto = this.setUserTokensDtoToLocalStorage(userResponseDto.userTokensDto);
+      //   this.userTokensDto = this.setUserTokensDtoToLocalStorage(userResponseDto.userTokensDto);
+      this.userTokensDto = userResponseDto.userTokensDto;
       return userResponseDto;
     });
   }

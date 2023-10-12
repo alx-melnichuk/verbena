@@ -1,7 +1,15 @@
+import { environment } from 'src/environments/environment';
+
 const TEMPLATES_PATTERN = /[\w]+:\/\/|:[\w]+/g;
 
 export class Uri {
   static readonly replacements: { [key: string]: string } = {};
+
+  static {
+    // Data Initialization
+    Uri.replace('appRoot://', environment.appRoot);
+    Uri.replace('appApi://', environment.appApi);
+  }
 
   /**
    * Specifies a pattern and its replacement on the Uri.
@@ -26,7 +34,6 @@ export class Uri {
       const replacement = Uri.replacements[template];
       return replacement !== undefined ? replacement : template;
     });
-
     return replaced;
   }
 

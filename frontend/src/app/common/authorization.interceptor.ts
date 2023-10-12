@@ -16,25 +16,18 @@ export class AuthorizationInterceptor implements HttpInterceptor {
   // List of public methods that do not require authorization.
   private listPublicMethods: { [key: string]: string } = LIST_PUBLIC_METHODS;
 
-  constructor(/*private userService: UserService*/) {
-    console.log(`#3$$-AuthorizationInterceptor();`); // #-
+  constructor(private userService: UserService) {
+    console.log(`#3-AuthorizationInterceptor();`); // #-
   }
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    return next.handle(request);
-  }
-
-  /*intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    // if (!request.headers.has('Content-Type')) {
-    //   request = request.clone({ headers: request.headers.set('Content-Type', 'application/json') });
-    // }
     request = this.addAuthenticationToken(request);
     return next.handle(request).pipe(
       // tap((evt) => console .log('evt=', evt)),
       catchError((error: HttpErrorResponse) => {
         // 401 Unauthorized, 403 Forbidden
         if (this.refreshTokenInProgress && request.method === 'POST' && request.url === Uri.appUri('appApi://profile/token')) {
-          return throwError(error);
+          return throwError(() => error);
         }
         if (error && [401, 403].includes(error.status) && this.userService.isExistRefreshToken()) {
           // 401 errors are most likely going to be because we have an expired token that we need to refresh.
@@ -56,33 +49,33 @@ export class AuthorizationInterceptor implements HttpInterceptor {
             take(1),
             switchMap(() => next.handle(this.addAuthenticationToken(request))),
             catchError((error2) => {
-              return throwError(error2);
+              return throwError(() => error2);
             })
           );
         } else {
-          return throwError(error);
+          return throwError(() => error);
         }
       })
     );
-  }*/
+  }
 
   // ** Private **
 
-  /*private addAuthenticationToken(request: HttpRequest<any>): HttpRequest<any> {
+  private addAuthenticationToken(request: HttpRequest<any>): HttpRequest<any> {
     const accessToken = this.userService.getAccessToken();
     // If the call is to an external domain, then the token is not added.
-    if (!accessToken || !request.url.includes(Uri.appUri('appApi://')) || this.listPublicMethods[request.url] === request.method) {
+    let isNotIncludes = !request.url.includes(Uri.appUri('appApi://'));
+    let publicMethod = this.listPublicMethods[request.url];
+    if (!accessToken || isNotIncludes || publicMethod === request.method) {
       return request;
     }
-    console.log(`$$_addAuthenticationToken();`); // #-
-    return request.clone({ setHeaders: { AUTH: accessToken } });
+    return request.clone({ setHeaders: { authorization: accessToken } });
   }
 
   private refreshAccessToken(): Promise<boolean> {
-    // console .log('##refreshAccessToken();');
     return this.userService
       .refreshToken()
       .then(() => true)
       .catch(() => false);
-  }*/
+  }
 }

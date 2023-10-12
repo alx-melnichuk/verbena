@@ -1,6 +1,6 @@
-import { AUTHORIZATION_DENIED, AUTHORIZATION_REQUIRED } from './routes';
+import { AUTHORIZATION_DENIED, AUTHORIZATION_REQUIRED } from '../common/routes';
 
-export class Authorization {
+export class AuthorizationUtil {
   public static isAuthorizationRequired(): boolean {
     const currentRoute = window.location.pathname;
     return AUTHORIZATION_REQUIRED.findIndex((item) => currentRoute.startsWith(item)) > -1;
@@ -12,6 +12,6 @@ export class Authorization {
   }
 
   public static isAuthorizationNotRequiredNotDenied(): boolean {
-    return !Authorization.isAuthorizationDenied() && !Authorization.isAuthorizationDenied();
+    return !AuthorizationUtil.isAuthorizationDenied() && !AuthorizationUtil.isAuthorizationDenied();
   }
 }
