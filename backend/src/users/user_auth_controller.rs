@@ -5,6 +5,7 @@ use actix_web::{
 };
 use validator::Validate;
 
+use crate::email::{self, config_smtp};
 use crate::errors::{AppError, ERR_CN_VALIDATION};
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 #[cfg(feature = "mockdata")]
@@ -12,7 +13,8 @@ use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::session_orm::SessionOrm;
 #[cfg(not(feature = "mockdata"))]
 use crate::sessions::session_orm::SessionOrmApp;
-use crate::sessions::{config_jwt::ConfigJwt, hash_tools, session_models, tokens, tools_token};
+
+use crate::sessions::{config_jwt, hash_tools, session_models, tokens, tools_token};
 use crate::users::user_models;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
@@ -114,7 +116,8 @@ pub async fn registration(
 // POST api/login
 #[post("/login")]
 pub async fn login(
-    config_jwt: web::Data<ConfigJwt>,
+    config_smtp: web::Data<config_smtp::ConfigSmtp>,
+    config_jwt: web::Data<config_jwt::ConfigJwt>,
     user_orm: web::Data<UserOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
     json_user_dto: web::Json<user_models::LoginUserDto>,
@@ -195,10 +198,63 @@ pub async fn login(
     let cookie = Cookie::build("token", token.to_owned()).path("/").max_age(max_age).http_only(true)
         .finish();
 
+    let result = sending_email(config_smtp.get_ref().clone());
+    if result.is_err() {
+        let err = result.unwrap_err();
+        eprintln!("Failed to send email: {:?}", err);
+    } else {
+        println!("The letter was sent successfully!");
+    }
+    /*
+    let user_name: String = "Fred Miller".to_string();
+    let user_email: String = "alx.melnichuk@gmail.com".to_string();
+    let verification_code = "my_ultra_secure_verification_code";
+    let verification_url = format!("http://localhost:3000/verifyemail/{}", verification_code);
+
+    let email = email::send_mail::Email::new(user_name, user_email, verification_url, config);
+
+    // Send a password reset token email
+    if let Err(err) = email.send_password_reset_token().await {
+        eprintln!("Failed to send password reset token email: {:?}", err);
+    } else {
+        println!("✅Password reset token email sent successfully!");
+    }
+    email.send();
+    */
     Ok(HttpResponse::Ok().cookie(cookie).json(login_user_response_dto))
 }
 
-fn create_tokens(sub: &str, config_jwt: ConfigJwt) -> Result<(String, String), AppError> {
+fn sending_email(config_smtp: email::config_smtp::ConfigSmtp) -> Result<(), String> {
+    // Create an instance of Mailer.
+    let mailer = email::mailer::Mailer::new(config_smtp);
+
+    let recipient = "lg2aam@gmail.com";
+    // let subject = "Demo test";
+    // let letter = "Hi there, it's a test email, with utf-8 chars ë!\n\nDemo2\n";
+
+    // let message = mailer.new_message(recipient, subject, letter);
+    // if message.is_err() { let err = message.unwrap_err(); eprintln!("Failed to build message: {:?}", err);
+    //     return Err(err);
+    // }
+    /*
+    // Sending mail (synchronous)
+    let result = mailer.sending(message.unwrap());
+
+    // // Send mail (asynchronous)
+    // let result = mailer.send(message.unwrap()).await;
+    */
+
+    let result = mailer.send_verification_code(recipient);
+    if result.is_err() {
+        return Err(result.unwrap_err());
+    }
+    Ok(())
+}
+
+fn create_tokens(
+    sub: &str,
+    config_jwt: config_jwt::ConfigJwt,
+) -> Result<(String, String), AppError> {
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     let access_token =
@@ -247,7 +303,7 @@ pub async fn logout(session_orm: web::Data<SessionOrmApp>, authenticated: Authen
 // POST api/token
 #[post("/token")]
 pub async fn new_token(
-    config_jwt: web::Data<ConfigJwt>,
+    config_jwt: web::Data<config_jwt::ConfigJwt>,
     session_orm: web::Data<SessionOrmApp>,
     json_token_user_dto: web::Json<user_models::TokenUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
