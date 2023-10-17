@@ -1,3 +1,4 @@
+use std::env;
 use std::ops::Deref;
 
 use actix_web::{
@@ -198,57 +199,31 @@ pub async fn login(
     let cookie = Cookie::build("token", token.to_owned()).path("/").max_age(max_age).http_only(true)
         .finish();
 
-    let result = sending_email(config_smtp.get_ref().clone());
+    let app_host = env::var("APP_HOST").expect("APP_HOST not found.");
+    let app_port = env::var("APP_PORT").expect("APP_PORT not found.");
+    let domain = format!("http://{}:{}", &app_host, &app_port); // "http://127.0.0.1:8080"
+
+    // Create an instance of Mailer.
+    let mailer = email::mailer::Mailer::new(config_smtp.get_ref().clone());
+    let receiver = "lg2aam@gmail.com";
+    let result = mailer.send_verification_code(receiver, &domain, &"nickname1", &"target1");
     if result.is_err() {
         let err = result.unwrap_err();
         eprintln!("Failed to send email: {:?}", err);
+        // return Err(result.unwrap_err());
     } else {
         println!("The letter was sent successfully!");
     }
-    /*
-    let user_name: String = "Fred Miller".to_string();
-    let user_email: String = "alx.melnichuk@gmail.com".to_string();
-    let verification_code = "my_ultra_secure_verification_code";
-    let verification_url = format!("http://localhost:3000/verifyemail/{}", verification_code);
 
-    let email = email::send_mail::Email::new(user_name, user_email, verification_url, config);
-
-    // Send a password reset token email
-    if let Err(err) = email.send_password_reset_token().await {
-        eprintln!("Failed to send password reset token email: {:?}", err);
-    } else {
-        println!("✅Password reset token email sent successfully!");
-    }
-    email.send();
-    */
-    Ok(HttpResponse::Ok().cookie(cookie).json(login_user_response_dto))
-}
-
-fn sending_email(config_smtp: email::config_smtp::ConfigSmtp) -> Result<(), String> {
-    // Create an instance of Mailer.
-    let mailer = email::mailer::Mailer::new(config_smtp);
-
-    let recipient = "lg2aam@gmail.com";
-    // let subject = "Demo test";
-    // let letter = "Hi there, it's a test email, with utf-8 chars ë!\n\nDemo2\n";
-
-    // let message = mailer.new_message(recipient, subject, letter);
-    // if message.is_err() { let err = message.unwrap_err(); eprintln!("Failed to build message: {:?}", err);
-    //     return Err(err);
-    // }
-    /*
-    // Sending mail (synchronous)
-    let result = mailer.sending(message.unwrap());
-
-    // // Send mail (asynchronous)
-    // let result = mailer.send(message.unwrap()).await;
-    */
-
-    let result = mailer.send_verification_code(recipient);
+    let result = mailer.send_password_recovery(receiver, &domain, &"nickname2", &"target2");
     if result.is_err() {
-        return Err(result.unwrap_err());
+        let err = result.unwrap_err();
+        eprintln!("Failed to send email: {:?}", err);
+        // return Err(result.unwrap_err());
+    } else {
+        println!("The letter was sent successfully!");
     }
-    Ok(())
+    Ok(HttpResponse::Ok().cookie(cookie).json(login_user_response_dto))
 }
 
 fn create_tokens(

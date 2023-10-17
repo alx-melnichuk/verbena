@@ -1,28 +1,30 @@
+use std::collections::HashMap;
+
 use handlebars::Handlebars;
-use lettre::{
-    message::header::ContentType, transport::smtp, AsyncSmtpTransport, AsyncTransport,
-    SmtpTransport, Tokio1Executor, Transport,
-};
+use lettre::{message::header::ContentType, transport::smtp, Message, SmtpTransport, Transport};
 
 use super::config_smtp::ConfigSmtp;
 
-pub fn render_template(template_name: &str) -> Result<String, handlebars::RenderError> {
-    let template_path = format!("./templates/{}.hbs", template_name);
+pub fn render_template(template: &str, params: HashMap<&str, &str>) -> Result<String, String> {
+    if template.len() == 0 {
+        return Err("The template name is not defined.".to_string());
+    }
+    let template_path = format!("./templates/{}.hbs", template);
     let mut handlebars = Handlebars::new();
-    handlebars.register_template_file(template_name, &template_path)?;
-    handlebars.register_template_file("styles", "./templates/partials/styles.hbs")?;
-    handlebars.register_template_file("base", "./templates/layouts/base.hbs")?;
+    handlebars
+        .register_template_file(template, &template_path)
+        .map_err(|e| e.to_string())?;
 
-    let first_name = "demo first_name";
-    let url = "url";
+    handlebars
+        .register_template_file("base", "./templates/basic_layout.hbs")
+        .map_err(|e| e.to_string())?;
 
-    let data = serde_json::json!({
-        "first_name": &first_name,
-        "subject": &template_name,
-        "url": &url
-    });
+    let mut data = serde_json::json!({});
+    for (key, value) in params {
+        data[key] = serde_json::Value::String(value.to_string());
+    }
 
-    let content_template = handlebars.render(template_name, &data)?;
+    let content_template = handlebars.render(template, &data).map_err(|e| e.to_string())?;
 
     Ok(content_template)
 }
@@ -55,49 +57,30 @@ impl Mailer {
         Ok(transport)
     }
 
-    fn new_async_smtp_transport(
-        &self,
-    ) -> Result<AsyncSmtpTransport<Tokio1Executor>, lettre::transport::smtp::Error> {
-        let smtp_host = self.config_smtp.smtp_host.to_string();
-        let smtp_port = self.config_smtp.smtp_port;
-
-        let transport =
-            AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&smtp_host.to_owned())?
-                .port(smtp_port)
-                .credentials(self.get_credentials())
-                .build();
-
-        Ok(transport)
-    }
-
-    pub fn new_message(
-        &self,
-        recipient: &str,
-        subject: &str,
-        letter: &str,
-    ) -> Result<lettre::Message, String> {
-        if recipient.len() == 0 {
+    // Create a message to send.
+    pub fn new_message(&self, to_whom: &str, subject: &str, body: &str) -> Result<Message, String> {
+        if to_whom.len() == 0 {
             return Err("Recipient not specified.".to_string());
         }
-        if letter.len() == 0 {
+        if body.len() == 0 {
             return Err("The contents of the letter are not specified.".to_string());
         }
-
         let smtp_from = self.config_smtp.smtp_sender.to_string();
 
-        let message = lettre::Message::builder()
+        let message = Message::builder()
             .from(smtp_from.parse().unwrap())
             // .reply_to("Yuin <yuin@domain.tld>".parse()?)
-            .to(recipient.parse().unwrap())
+            .to(to_whom.parse().unwrap())
             .subject(subject.to_string())
-            // .header(ContentType::html())
-            .body(letter.to_owned())
+            .header(ContentType::TEXT_HTML)
+            .body(body.to_owned())
             .map_err(|e| e.to_string())?;
 
         Ok(message)
     }
+
     // Sending mail (synchronous)
-    pub fn sending(&self, message: lettre::Message) -> Result<(), String> {
+    pub fn sending(&self, message: Message) -> Result<(), String> {
         // Open a remote connection to the SMTP relay server
         let transport = self.new_smtp_transport().map_err(|e| e.to_string())?;
         // Send the email.
@@ -105,38 +88,53 @@ impl Mailer {
         Ok(())
     }
 
-    // Send mail (asynchronous)
-    pub async fn send(&self, message: lettre::Message) -> Result<(), String> {
-        // Open a remote connection to the SMTP relay server
-        let transport = self.new_async_smtp_transport().map_err(|e| e.to_string())?;
-        // Send the email.
-        transport.send(message).await.map_err(|e| e.to_string())?;
-        Ok(())
-    }
-
-    pub fn send_verification_code(&self, recipient: &str) -> Result<(), String> {
-        if recipient.len() == 0 {
+    pub fn send_verification_code(
+        &self,
+        receiver: &str,
+        domain: &str,
+        nickname: &str,
+        target: &str,
+    ) -> Result<(), String> {
+        if receiver.len() == 0 {
             return Err("Recipient not specified.".to_string());
         }
-
-        let template_name = "verification_code";
         let subject = "Your account verification code";
-        let html_template = render_template(template_name).map_err(|e| e.to_string())?;
-        if html_template.len() == 0 {
-            return Err("The contents of the letter are not specified.".to_string());
+
+        let mut params: HashMap<&str, &str> = HashMap::new();
+        params.insert("subject", subject);
+        params.insert("domain", domain);
+        params.insert("nickname", nickname);
+        params.insert("target", target);
+        // Create a html_template to send.
+        let html_template = render_template("verification_code", params)?;
+        // Create a message to send.
+        let message = self.new_message(receiver, subject, &html_template)?;
+        // Sending mail (synchronous)
+        self.sending(message)
+    }
+
+    pub fn send_password_recovery(
+        &self,
+        receiver: &str,
+        domain: &str,
+        nickname: &str,
+        target: &str,
+    ) -> Result<(), String> {
+        if receiver.len() == 0 {
+            return Err("Recipient not specified.".to_string());
         }
+        let subject = "Your password reset token (valid for only 10 minutes)";
 
-        let smtp_from = self.config_smtp.smtp_sender.to_string();
-
-        let message = lettre::Message::builder()
-            .from(smtp_from.parse().unwrap())
-            // .reply_to("Yuin <yuin@domain.tld>".parse()?)
-            .to(recipient.parse().unwrap())
-            .subject(subject.to_string())
-            .header(ContentType::TEXT_HTML)
-            .body(html_template)
-            .map_err(|e| e.to_string())?;
-
+        let mut params: HashMap<&str, &str> = HashMap::new();
+        params.insert("subject", subject);
+        params.insert("domain", domain);
+        params.insert("nickname", nickname);
+        params.insert("target", target);
+        // Create a html_template to send.
+        let html_template = render_template("password_recovery", params)?;
+        // Create a message to send.
+        let message = self.new_message(receiver, subject, &html_template)?;
+        // Sending mail (synchronous)
         self.sending(message)
     }
 }
