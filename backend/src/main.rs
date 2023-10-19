@@ -57,6 +57,8 @@ async fn main() -> io::Result<()> {
     let pool: dbase::DbPool = dbase::init_db_pool(&db_url);
     dbase::run_migration(&mut pool.get().unwrap());
 
+    let config_app = web::Data::new(utils::config_app::ConfigApp::init_by_env());
+
     let config_jwt = web::Data::new(config_jwt::ConfigJwt::init_by_env());
 
     let config_smtp = web::Data::new(config_smtp::ConfigSmtp::init_by_env());
@@ -93,6 +95,7 @@ async fn main() -> io::Result<()> {
         // let cors = cors.allow_any_method().allow_any_header()
 
         App::new()
+            .app_data(web::Data::clone(&config_app))
             .app_data(web::Data::clone(&config_jwt))
             .app_data(web::Data::clone(&config_smtp))
             .app_data(web::Data::clone(&data_user_orm))
