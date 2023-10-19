@@ -121,6 +121,23 @@ pub struct LoginUserDto {
     pub password: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Validate /*AsChangeset, Insertable*/)]
+// #[diesel(table_name = schema::users)]
+pub struct RegistrationUserDto {
+    #[validate(custom = "UserValidate::nickname")]
+    pub nickname: String,
+    #[validate(custom = "UserValidate::email")]
+    pub email: String,
+    #[validate(custom = "UserValidate::password")]
+    pub password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Validate)]
+pub struct RecoveryUserDto {
+    #[validate(custom = "UserValidate::email")]
+    pub email: String,
+}
+
 pub struct UserValidate {}
 
 impl UserValidate {

@@ -22,13 +22,19 @@ use crate::users::user_orm::tests::UserOrmApp;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::UserOrmApp;
 use crate::users::user_orm::{UserOrm, CD_BLOCKING, CD_DATA_BASE};
-use crate::utils::err;
+use crate::utils::{config_app, err};
 
 pub const CD_USER_EXISTS: &str = "NicknameOrEmailExist";
 pub const MSG_USER_EXISTS: &str = "A user with the same nickname or email already exists.";
 
-pub const CD_WRONG_NICKNAME: &str = "WrongEmailNickname";
-pub const MSG_WRONG_NICKNAME: &str = "The specified nickname or email is incorrect!";
+pub const CD_WRONG_EMAIL: &str = "WrongEmail";
+pub const MSG_WRONG_EMAIL: &str = "The specified email is incorrect!";
+
+pub const CD_WRONG_NICKNAME: &str = "WrongNickname";
+pub const MSG_WRONG_NICKNAME: &str = "The specified nickname is incorrect!";
+
+pub const CD_WRONG_NICKNAME_EMAIL: &str = "WrongEmailNickname";
+pub const MSG_WRONG_NICKNAME_EMAIL: &str = "The specified nickname or email is incorrect!";
 
 pub const CD_WRONG_PASSWORD: &str = "WrongPassword";
 pub const MSG_WRONG_PASSWORD: &str = "The password specified is incorrect!";
@@ -44,9 +50,14 @@ pub const MSG_SESSION_ERROR: &str = "Session error";
 pub const CD_USER_NO_SESSION: &str = "UserNoSession";
 pub const MSG_USER_NO_SESSION: &str = "There is no session for user";
 
+pub const CD_ERROR_SENDING_EMAIL: &str = "ErrorSendingEmail";
+pub const MSG_ERROR_SENDING_EMAIL: &str = "Error sending registration confirmation email.";
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
-    //     POST api/registration
-    cfg.service(registration)
+    //     POST api/registration0
+    cfg.service(registration0)
+        //     POST api/registration
+        .service(registration)
         // POST api/login
         .service(login)
         // POST api/logout
@@ -56,8 +67,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 }
 
 // POST api/registration
-#[post("/registration")]
-pub async fn registration(
+#[post("/registration0")]
+pub async fn registration0(
     user_orm: web::Data<UserOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
     json_user_dto: web::Json<user_models::CreateUserDto>,
@@ -114,6 +125,81 @@ pub async fn registration(
     Ok(HttpResponse::Created().body(()))
 }
 
+// Send a confirmation email to register the user.
+// POST api/registration
+#[post("/registration")]
+pub async fn registration(
+    config_app: web::Data<config_app::ConfigApp>,
+    config_smtp: web::Data<config_smtp::ConfigSmtp>,
+    user_orm: web::Data<UserOrmApp>,
+    json_user_dto: web::Json<user_models::RegistrationUserDto>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    // Checking the validity of the data model.
+    json_user_dto.validate().map_err(|errors| {
+        log::debug!("{}: {}", ERR_CN_VALIDATION, errors.to_string());
+        AppError::from(errors)
+    })?;
+
+    let registration_user_dto: user_models::RegistrationUserDto = json_user_dto.0.clone();
+    let nickname = registration_user_dto.nickname.clone().to_lowercase();
+    let nickname2 = nickname.clone();
+    let email = registration_user_dto.email.clone().to_lowercase();
+    let email2 = email.clone();
+    // !! let password = registration_user_dto.password.clone();
+
+    let user_opt = web::block(move || {
+        // Find user by nickname or email.
+        let existing_user =
+            user_orm.find_user_by_nickname_or_email(&nickname, &email).map_err(|e| {
+                log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
+                AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
+            });
+        eprintln!("#_existing_user: {:#?}", existing_user); // #-
+        existing_user
+    })
+    .await
+    .map_err(|e| {
+        log::debug!("{}: {}", CD_BLOCKING, e.to_string());
+        AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
+    })??;
+
+    if let Some(user) = user_opt {
+        let val = if user.email == email2 {
+            (CD_WRONG_EMAIL, MSG_WRONG_EMAIL)
+        } else {
+            (CD_WRONG_NICKNAME, MSG_WRONG_NICKNAME)
+        };
+        log::debug!("{}: {}", val.0, val.1);
+        return Err(AppError::new(val.0, val.1).set_status(409));
+    }
+
+    // Find in the "user_registration" table an entry with an active date, by nickname or email address.
+    // If such an entry exists, then error 409.
+
+    // If there is no such record, then add the specified data to this table.
+
+    let target = "target101";
+    // Prepare a letter confirming this registration.
+    let domain = &config_app.app_domain;
+
+    // Create an instance of Mailer.
+    let mailer = email::mailer::Mailer::new(config_smtp.get_ref().clone());
+    // let receiver = email;
+    let receiver = "lg2aam@gmail.com";
+    let result = mailer.send_verification_code(receiver, &domain, &nickname2, &target);
+    if result.is_err() {
+        let err = result.unwrap_err();
+        eprintln!("Failed to send email: {:?}", err);
+        log::debug!("{CD_ERROR_SENDING_EMAIL}: {MSG_ERROR_SENDING_EMAIL}");
+        return Err(AppError::new(CD_ERROR_SENDING_EMAIL, MSG_ERROR_SENDING_EMAIL).set_status(409));
+    }
+
+    Ok(HttpResponse::Ok().into())
+}
+
+// PUT('registration2/:confirmationId')
+// userRegistration(confirmationId)
+
 // POST api/login
 #[post("/login")]
 pub async fn login(
@@ -151,8 +237,8 @@ pub async fn login(
     })??;
 
     let user: user_models::User = user.ok_or_else(|| {
-        log::debug!("{}: {}", CD_WRONG_NICKNAME, MSG_WRONG_NICKNAME);
-        AppError::new(CD_WRONG_NICKNAME, MSG_WRONG_NICKNAME).set_status(403)
+        log::debug!("{}: {}", CD_WRONG_NICKNAME_EMAIL, MSG_WRONG_NICKNAME_EMAIL);
+        AppError::new(CD_WRONG_NICKNAME_EMAIL, MSG_WRONG_NICKNAME_EMAIL).set_status(403)
     })?;
 
     let user_password = user.password.to_string();
