@@ -1,0 +1,52 @@
+# -----------------------------------------------------------------------------
+# RUST_LOG
+# -----------------------------------------------------------------------------
+# for release
+# RUST_LOG=info,actix_web=info,actix_server=info,verbena_backend=info
+
+# for debugging
+L_COMM=info,actix_web=info,actix_server=info
+L_MAIN=verbena_backend=debug
+#L_DBASE=verbena_backend::dbase=info
+L_USER=users::user_controller=debug
+L_USER_AUTH=users::user_auth_controller=debug
+L_AUTH=extractors::authentication=debug
+
+RUST_LOG=${L_COMM},${L_MAIN},${L_DBASE},${L_USER},${L_USER_AUTH},${L_AUTH}
+
+# -----------------------------------------------------------------------------
+
+APP_HOST=127.0.0.1
+APP_PORT=8080
+APP_MAX_AGE=3600
+
+# -----------------------------------------------------------------------------
+# Database (PostgreSQL)
+# -----------------------------------------------------------------------------
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=
+DB_USER=
+DB_PASSWORD=
+# Don't worry about the placeholders. Rust supports this feature.
+DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}
+
+# -----------------------------------------------------------------------------
+# JSON Web Token Credentials
+# -----------------------------------------------------------------------------
+JWT_SECRET_KEY=jwt_secret_key
+JWT_MAXAGE=60
+#  15 minutes (15*60=900);
+JWT_ACCESS_TOKEN_DURATION=900
+#  14 days - (86400×14=1209600); 7 days - (86400×7=604800)
+JWT_REFRESH_TOKEN_DURATION=604800
+
+# -----------------------------------------------------------------------------
+# SMTP
+# -----------------------------------------------------------------------------
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASS=
+SMTP_SENDER=
+
