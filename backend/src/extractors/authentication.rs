@@ -18,7 +18,7 @@ use crate::users::user_models::{User, UserRole};
 use crate::users::user_orm::tests::UserOrmApp;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::UserOrmApp;
-use crate::users::user_orm::{UserOrm, CD_DATA_BASE};
+use crate::users::user_orm::UserOrm;
 use crate::utils::err;
 
 pub struct Authenticated(User);
@@ -163,8 +163,8 @@ where
             let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap();
             
             let session_opt = session_orm.find_by_id(user_id).map_err(|e| {
-                log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
-                let json_error = AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500);
+                log::debug!("{}: {}", err::CD_DATABASE, e.to_string());
+                let json_error = AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500);
                 return ErrorInternalServerError(json_error);
             })?;
             
@@ -191,8 +191,8 @@ where
             let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap();
             
             let result = user_orm.find_user_by_id(user_id.clone()).map_err(|e| {
-                log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
-                ErrorInternalServerError(AppError::new(CD_DATA_BASE, &e.to_string()))
+                log::debug!("{}: {}", err::CD_DATABASE, e.to_string());
+                ErrorInternalServerError(AppError::new(err::CD_DATABASE, &e.to_string()))
             })?;
 
             let user = result.ok_or_else(|| {

@@ -5,6 +5,8 @@ use argon2::{
     Argon2,
 };
 
+pub const CD_HASHING_PASSWD: &str = "HashingPassword";
+
 const MAX_PASSWORD_LENGTH: usize = 64;
 
 #[derive(Debug, PartialEq)]

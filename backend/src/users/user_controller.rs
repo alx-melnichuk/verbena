@@ -8,10 +8,13 @@ use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::users::user_models;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
+use crate::users::user_orm::UserOrm;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::UserOrmApp;
-use crate::users::user_orm::{UserOrm, CD_BLOCKING, CD_DATA_BASE};
-use crate::utils::parse_err::{msg_parse_err, CD_PARSE_INT_ERROR, MSG_PARSE_INT_ERROR};
+use crate::utils::{
+    err,
+    parse_err::{msg_parse_err, CD_PARSE_INT_ERROR, MSG_PARSE_INT_ERROR},
+};
 
 pub const CD_NOT_FOUND: &str = "NotFound";
 pub const MSG_NOT_FOUND: &str = "The user with the specified ID was not found.";
@@ -48,8 +51,8 @@ pub async fn get_user_by_id(
         let existing_user = user_orm
             .find_user_by_id(id)
             .map_err(|e| {
-                log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
-                AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
+                log::debug!("{}: {}", err::CD_DATABASE, e.to_string());
+                AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500)
             })
             .ok()?;
 
@@ -57,8 +60,8 @@ pub async fn get_user_by_id(
     })
     .await
     .map_err(|e| {
-        log::debug!("{}: {}", CD_BLOCKING, e.to_string());
-        AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
+        log::debug!("{}: {}", err::CD_BLOCKING, e.to_string());
+        AppError::new(err::CD_BLOCKING, &e.to_string()).set_status(500)
     })?;
 
     if let Some(user) = result_user {
@@ -81,8 +84,8 @@ pub async fn get_user_by_nickname(
         let res_user = user_orm
             .find_user_by_nickname(&nickname)
             .map_err(|e| {
-                log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
-                AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
+                log::debug!("{}: {}", err::CD_DATABASE, e.to_string());
+                AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500)
             })
             .ok()?;
 
@@ -90,8 +93,8 @@ pub async fn get_user_by_nickname(
     })
     .await
     .map_err(|e| {
-        log::debug!("{}: {}", CD_BLOCKING, e.to_string());
-        AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
+        log::debug!("{}: {}", err::CD_BLOCKING, e.to_string());
+        AppError::new(err::CD_BLOCKING, &e.to_string()).set_status(500)
     })?;
 
     if let Some(user) = result_user {
@@ -139,16 +142,16 @@ pub async fn put_user(
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user = user_orm.modify_user(id, modify_user).map_err(|e| {
-            log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
-            AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
+            log::debug!("{}: {}", err::CD_DATABASE, e.to_string());
+            AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500)
         });
 
         res_user
     })
     .await
     .map_err(|e| {
-        log::debug!("{}: {}", CD_BLOCKING, e.to_string());
-        AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
+        log::debug!("{}: {}", err::CD_BLOCKING, e.to_string());
+        AppError::new(err::CD_BLOCKING, &e.to_string()).set_status(500)
     })??;
 
     if let Some(user) = result_user {
@@ -189,16 +192,16 @@ pub async fn patch_user(
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user = user_orm.modify_user(id, new_user).map_err(|e| {
-            log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
-            AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
+            log::debug!("{}: {}", err::CD_DATA_BASE, e.to_string());
+            AppError::new(err::CD_DATA_BASE, &e.to_string()).set_status(500)
         });
 
         res_user
     })
     .await
     .map_err(|e| {
-        log::debug!("{}: {}", CD_BLOCKING, e.to_string());
-        AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
+        log::debug!("{}: {}", err::CD_BLOCKING, e.to_string());
+        AppError::new(err::CD_BLOCKING, &e.to_string()).set_status(500)
     })??;
 
     if let Some(user) = result_user {
@@ -226,16 +229,16 @@ pub async fn delete_user(
     let result_count = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_count = user_orm.delete_user(id).map_err(|e| {
-            log::debug!("{}: {}", CD_DATA_BASE, e.to_string());
-            AppError::new(CD_DATA_BASE, &e.to_string()).set_status(500)
+            log::debug!("{}: {}", err::CD_DATABASE, e.to_string());
+            AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500)
         });
 
         res_count
     })
     .await
     .map_err(|e| {
-        log::debug!("{}: {}", CD_BLOCKING, e.to_string());
-        AppError::new(CD_BLOCKING, &e.to_string()).set_status(500)
+        log::debug!("{}: {}", err::CD_BLOCKING, e.to_string());
+        AppError::new(err::CD_BLOCKING, &e.to_string()).set_status(500)
     })??;
 
     if 0 == result_count {

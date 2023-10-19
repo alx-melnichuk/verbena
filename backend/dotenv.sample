@@ -19,6 +19,8 @@ RUST_LOG=${L_COMM},${L_MAIN},${L_DBASE},${L_USER},${L_USER_AUTH},${L_AUTH}
 APP_HOST=127.0.0.1
 APP_PORT=8080
 APP_MAX_AGE=3600
+# Waiting time for registration confirmation (in minutes)
+APP_REGISTR_DURATION=10
 
 # -----------------------------------------------------------------------------
 # Database (PostgreSQL)

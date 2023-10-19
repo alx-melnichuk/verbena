@@ -23,3 +23,7 @@ pub const MSG_UNALLOWABLE_TOKEN: &str = "oken value is unallowable";
 
 pub const CD_PERMISSION_DENIED: &str = "PermissionDenied";
 pub const MSG_PERMISSION_DENIED: &str = "You are not allowed to perform this action";
+
+// 500
+pub const CD_BLOCKING: &str = "Blocking";
+pub const CD_DATABASE: &str = "Database";

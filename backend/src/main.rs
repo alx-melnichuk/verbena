@@ -19,16 +19,7 @@ mod utils;
 
 use crate::email::config_smtp;
 use crate::sessions::config_jwt;
-#[cfg(feature = "mockdata")]
-use crate::sessions::session_orm::tests::SessionOrmApp;
-#[cfg(not(feature = "mockdata"))]
-use crate::sessions::session_orm::SessionOrmApp;
-
-#[cfg(feature = "mockdata")]
-use crate::users::user_orm::tests::UserOrmApp;
-#[cfg(not(feature = "mockdata"))]
-use crate::users::user_orm::UserOrmApp;
-use crate::users::{user_auth_controller, user_controller};
+use crate::users::{user_auth_controller, user_controller, user_registr_controller};
 
 // ** Funcion Main **
 #[actix_web::main]
@@ -63,17 +54,11 @@ async fn main() -> io::Result<()> {
 
     let config_smtp = web::Data::new(config_smtp::ConfigSmtp::init_by_env());
 
-    #[cfg(feature = "mockdata")]
-    let user_orm: UserOrmApp = UserOrmApp::new();
-    #[cfg(not(feature = "mockdata"))]
-    let user_orm: UserOrmApp = UserOrmApp::new(pool.clone());
-    let data_user_orm = web::Data::new(user_orm);
+    let data_user_orm = web::Data::new(dbase::get_user_orm_app(pool.clone()));
 
-    #[cfg(feature = "mockdata")]
-    let session_orm: SessionOrmApp = SessionOrmApp::new();
-    #[cfg(not(feature = "mockdata"))]
-    let session_orm: SessionOrmApp = SessionOrmApp::new(pool.clone());
-    let data_session_orm = web::Data::new(session_orm);
+    let data_user_registr_orm = web::Data::new(dbase::get_user_registr_orm_app(pool.clone()));
+
+    let data_session_orm = web::Data::new(dbase::get_session_orm_app(pool.clone()));
 
     println!("🚀 Server started successfully {}", &app_url);
     log::info!("starting HTTP server at http://{}", &app_url);
@@ -99,6 +84,7 @@ async fn main() -> io::Result<()> {
             .app_data(web::Data::clone(&config_jwt))
             .app_data(web::Data::clone(&config_smtp))
             .app_data(web::Data::clone(&data_user_orm))
+            .app_data(web::Data::clone(&data_user_registr_orm))
             .app_data(web::Data::clone(&data_session_orm))
             .wrap(cors)
             .wrap(actix_web::middleware::Logger::default())
@@ -107,6 +93,7 @@ async fn main() -> io::Result<()> {
             .configure(static_controller::configure)
             .service(
                 web::scope("/api")
+                    .configure(user_registr_controller::configure)
                     .configure(user_auth_controller::configure)
                     .configure(user_controller::configure),
             )

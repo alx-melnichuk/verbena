@@ -14,6 +14,19 @@ diesel::table! {
 }
 
 diesel::table! {
+    user_registration (id) {
+        id -> Int4,
+        #[max_length = 255]
+        nickname -> Varchar,
+        #[max_length = 255]
+        email -> Varchar,
+        #[max_length = 255]
+        password -> Varchar,
+        final_date -> Timestamptz,
+    }
+}
+
+diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::UserRole;
 
@@ -35,5 +48,6 @@ diesel::joinable!(sessions -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     sessions,
+    user_registration,
     users,
 );

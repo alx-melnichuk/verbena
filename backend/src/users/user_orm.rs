@@ -1,9 +1,15 @@
+#[cfg(not(feature = "mockdata"))]
+use diesel::prelude::*;
 use std::fmt;
 
-use crate::users::user_models;
+#[cfg(not(feature = "mockdata"))]
+use crate::dbase;
+#[cfg(not(feature = "mockdata"))]
+use crate::schema;
+#[cfg(not(feature = "mockdata"))]
+use crate::sessions::hash_tools;
 
-pub const CD_BLOCKING: &str = "Blocking";
-pub const CD_DATA_BASE: &str = "DataBase";
+use crate::users::user_models;
 
 #[derive(Debug, Clone)]
 pub enum UserOrmError {
@@ -75,16 +81,6 @@ pub trait UserOrm {
     /// Delete an entity (user).
     fn delete_user(&self, id: i32) -> Result<usize, UserOrmError>;
 }
-
-#[cfg(not(feature = "mockdata"))]
-use diesel::prelude::*;
-
-#[cfg(not(feature = "mockdata"))]
-use crate::dbase;
-#[cfg(not(feature = "mockdata"))]
-use crate::schema;
-#[cfg(not(feature = "mockdata"))]
-use crate::sessions::hash_tools;
 
 #[cfg(not(feature = "mockdata"))]
 #[derive(Debug, Clone)]
@@ -172,15 +168,14 @@ impl UserOrm for UserOrmApp {
         nickname: &str,
         email: &str,
     ) -> Result<Option<user_models::User>, UserOrmError> {
-        // Get a connection from the P2D2 pool.
-        let mut conn = self.get_conn()?;
-
         if nickname.len() == 0 || email.len() == 0 {
             log::debug!("nickname or email are empty.");
             return Ok(None);
         }
         let nickname2 = nickname.to_lowercase();
         let email2 = email.to_lowercase();
+        // Get a connection from the P2D2 pool.
+        let mut conn = self.get_conn()?;
         // Run query using Diesel to find user by nickname or email and return it.
         let result = schema::users::table
             .filter(schema::users::dsl::nickname.eq(nickname2))
@@ -192,10 +187,6 @@ impl UserOrm for UserOrmApp {
                 UserOrmError::DataBase(e.to_string())
             })?;
 
-        #[rustfmt::skip]
-        let res = if result.is_some() { "result.is_some();" } else { "result.is_none()" };
-        log::debug!("{res}");
-
         Ok(result)
     }
     /// Add a new entity (user).
@@ -203,18 +194,17 @@ impl UserOrm for UserOrmApp {
         &self,
         create_user_dto: &user_models::CreateUserDto,
     ) -> Result<user_models::User, UserOrmError> {
-        // Get a connection from the P2D2 pool.
-        let mut conn = self.get_conn()?;
-
         let mut create_user_dto2 = create_user_dto.clone();
         create_user_dto2.nickname = create_user_dto2.nickname.to_lowercase();
         create_user_dto2.email = create_user_dto2.email.to_lowercase();
         let password = create_user_dto.password.clone();
 
-        let password_hashed = hash_tools::hash(&password)
-            .map_err(|e| UserOrmError::HashingPassword(e.to_string()))?;
-        create_user_dto2.password = password_hashed;
+        // #-let password_hashed = hash_tools::hash(&password)
+        // #-    .map_err(|e| UserOrmError::HashingPassword(e.to_string()))?;
+        // #-create_user_dto2.password = password_hashed;
 
+        // Get a connection from the P2D2 pool.
+        let mut conn = self.get_conn()?;
         // Run query using Diesel to add a new user entry.
         let user: user_models::User = diesel::insert_into(schema::users::table)
             .values(create_user_dto2)
@@ -273,7 +263,7 @@ impl UserOrm for UserOrmApp {
     fn delete_user(&self, id: i32) -> Result<usize, UserOrmError> {
         // Get a connection from the P2D2 pool.
         let mut conn = self.get_conn()?;
-        // Run query using Diesel to delete a user entry.
+        // Run query using Diesel to delete a entry (user).
         let count: usize = diesel::delete(schema::users::dsl::users.find(id))
             .execute(&mut conn)
             .map_err(|e| {
@@ -374,7 +364,7 @@ pub mod tests {
 
             Ok(exist_user_opt)
         }
-
+        /// Find for an entity (user) by nickname or email.
         fn find_user_by_nickname_or_email(
             &self,
             nickname: &str,
