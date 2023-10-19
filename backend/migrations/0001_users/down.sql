@@ -1,3 +1,3 @@
 /* Deleting the "users" table. */
 
-DROP TABLE users;
+DROP TABLE IF EXISTS users;

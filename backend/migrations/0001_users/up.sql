@@ -10,16 +10,3 @@ CREATE TABLE users (
 );
 
 SELECT diesel_manage_updated_at('users');
-
-/*
-CREATE TABLE public.users (
-	id serial4 NOT NULL,
-	nickname varchar(255) NOT NULL,
-	email varchar(255) NOT NULL,
-	"password" varchar(255) NOT NULL,
-	created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	CONSTRAINT users_email_key UNIQUE (email),
-	CONSTRAINT users_nickname_key UNIQUE (nickname),
-	CONSTRAINT users_pkey PRIMARY KEY (id)
-);*/
