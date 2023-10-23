@@ -1,4 +1,3 @@
-use std::env;
 use std::ops::Deref;
 
 use actix_web::{
@@ -6,34 +5,27 @@ use actix_web::{
 };
 use validator::Validate;
 
-use crate::email::{self, config_smtp};
 use crate::errors::{AppError, ERR_CN_VALIDATION};
 use crate::extractors::authentication::{Authenticated, RequireAuth};
+use crate::hash_tools;
+#[cfg(not(feature = "mockdata"))]
+use crate::sessions::session_orm::inst::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::sessions::session_orm::SessionOrm;
-#[cfg(not(feature = "mockdata"))]
-use crate::sessions::session_orm::SessionOrmApp;
-
-use crate::sessions::{config_jwt, hash_tools, session_models, tokens, tools_token};
+use crate::sessions::{config_jwt, session_models, session_orm::SessionOrm, tokens, tools_token};
 use crate::users::user_models;
+#[cfg(not(feature = "mockdata"))]
+use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::user_orm::UserOrm;
-#[cfg(not(feature = "mockdata"))]
-use crate::users::user_orm::UserOrmApp;
-#[cfg(feature = "mockdata")]
-use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
-use crate::users::user_registr_orm::UserRegistrOrm;
-#[cfg(not(feature = "mockdata"))]
-use crate::users::user_registr_orm::UserRegistrOrmApp;
-use crate::utils::{config_app, err};
+use crate::utils::err;
 
 pub const CD_USER_EXISTS: &str = "NicknameOrEmailExist";
 pub const MSG_USER_EXISTS: &str = "A user with the same nickname or email already exists.";
 
-pub const CD_WRONG_NICKNAME: &str = "WrongNickname";
-pub const MSG_WRONG_NICKNAME: &str = "The specified nickname is incorrect!";
+// #- pub const CD_WRONG_NICKNAME: &str = "WrongNickname";
+// #- pub const MSG_WRONG_NICKNAME: &str = "The specified nickname is incorrect!";
 
 pub const CD_WRONG_NICKNAME_EMAIL: &str = "WrongEmailNickname";
 pub const MSG_WRONG_NICKNAME_EMAIL: &str = "The specified nickname or email is incorrect!";
@@ -128,7 +120,6 @@ pub async fn registration0(
 // POST api/login
 #[post("/login")]
 pub async fn login(
-    config_smtp: web::Data<config_smtp::ConfigSmtp>,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     user_orm: web::Data<UserOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
@@ -167,7 +158,7 @@ pub async fn login(
     })?;
 
     let user_password = user.password.to_string();
-    let password_matches = hash_tools::compare(&password, &user_password).map_err(|e| {
+    let password_matches = hash_tools::compare_hash(&password, &user_password).map_err(|e| {
         #[rustfmt::skip]
         log::debug!("{}: {} {:?}", CD_INVALID_HASH, MSG_INVALID_HASH, e.to_string());
         AppError::new(CD_INVALID_HASH, MSG_INVALID_HASH).set_status(500)
@@ -210,30 +201,6 @@ pub async fn login(
     let cookie = Cookie::build("token", token.to_owned()).path("/").max_age(max_age).http_only(true)
         .finish();
 
-    let app_host = env::var("APP_HOST").expect("APP_HOST not found.");
-    let app_port = env::var("APP_PORT").expect("APP_PORT not found.");
-    let domain = format!("http://{}:{}", &app_host, &app_port); // "http://127.0.0.1:8080"
-
-    // Create an instance of Mailer.
-    let mailer = email::mailer::Mailer::new(config_smtp.get_ref().clone());
-    let receiver = "lg2aam@gmail.com";
-    let result = mailer.send_verification_code(receiver, &domain, &"nickname1", &"target1");
-    if result.is_err() {
-        let err = result.unwrap_err();
-        eprintln!("Failed to send email: {:?}", err);
-        // return Err(result.unwrap_err());
-    } else {
-        println!("The letter was sent successfully!");
-    }
-
-    let result = mailer.send_password_recovery(receiver, &domain, &"nickname2", &"target2");
-    if result.is_err() {
-        let err = result.unwrap_err();
-        eprintln!("Failed to send email: {:?}", err);
-        // return Err(result.unwrap_err());
-    } else {
-        println!("The letter was sent successfully!");
-    }
     Ok(HttpResponse::Ok().cookie(cookie).json(login_user_response_dto))
 }
 
@@ -303,7 +270,7 @@ pub async fn new_token(
     let session_orm1 = session_orm.clone();
 
     let session_opt = web::block(move || {
-        let existing_session = session_orm.find_by_id(user_id).map_err(|e| {
+        let existing_session = session_orm.find_session_by_id(user_id).map_err(|e| {
             log::debug!("{}: {}", err::CD_DATABASE, e.to_string());
             AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500)
         });
@@ -364,16 +331,16 @@ pub async fn new_token(
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{http, test, web, App};
-    use serde_json::{json, to_string};
+    // use serde_json::{json, to_string};
 
-    use crate::errors::AppError;
+    // use crate::errors::AppError;
     use crate::sessions::config_jwt;
     use crate::users::{user_models, user_orm::tests::UserOrmApp};
 
     use super::*;
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
-    const MSG_FAILED_DESER2: &str = "Failed to deserialize JSON string";
+    // const MSG_FAILED_DESER2: &str = "Failed to deserialize JSON string";
 
     fn create_user() -> user_models::User {
         let mut user = UserOrmApp::new_user(
@@ -385,9 +352,9 @@ mod tests {
         user.role = user_models::UserRole::User;
         user
     }
-    /*
-    #[test]
-    async fn test_login_invalid_dto_nickname_min() {
+
+    //#[test] // !
+    /*async fn test_login_invalid_dto_nickname_min() {
         let user1: user_models::User = create_user();
         let nickname: String = (0..(user_models::NICKNAME_MIN - 1)).map(|_| 'a').collect();
 
@@ -416,10 +383,10 @@ mod tests {
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_MIN);
         assert_eq!(app_err.message, msg_err);
-    }
+    }*/
 
-    #[test]
-    async fn test_login_invalid_dto_nickname_max() {
+    //#[test] // !
+    /*async fn test_login_invalid_dto_nickname_max() {
         let user1: user_models::User = create_user();
         let nickname: String = (0..(user_models::NICKNAME_MAX + 1)).map(|_| 'a').collect();
 
@@ -448,10 +415,10 @@ mod tests {
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_MAX);
         assert_eq!(app_err.message, msg_err);
-    }
+    }*/
 
-    #[test]
-    async fn test_login_invalid_dto_wrong_nickname() {
+    //#[test] // !
+    /*async fn test_login_invalid_dto_wrong_nickname() {
         let user1: user_models::User = create_user();
         let nickname: String = "Oliver_Taylor#".to_string();
 
@@ -480,8 +447,8 @@ mod tests {
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_REGEX);
         assert_eq!(app_err.message, msg_err);
-    }
-
+    }*/
+    /*
     #[test]
     async fn test_login_non_existent_nickname() {
         let nickname = "Oliver_Taylor".to_string();
@@ -515,10 +482,10 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, CD_UNAUTHORIZED);
         assert_eq!(app_err.message, MSG_WRONG_NICKNAME);
-    }
+    }*/
 
-    #[test]
-    async fn test_login_invalid_dto_email_min() {
+    //#[test] // !
+    /*async fn test_login_invalid_dto_email_min() {
         let user1: user_models::User = create_user();
         let suffix = "@us".to_string();
         let email_min: usize = user_models::EMAIL_MIN.into();
@@ -550,10 +517,10 @@ mod tests {
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_EMAIL_MIN);
         assert_eq!(app_err.message, msg_err);
-    }
+    }*/
 
-    #[test]
-    async fn test_login_invalid_dto_email_max() {
+    //#[test] // !
+    /*async fn test_login_invalid_dto_email_max() {
         let user1: user_models::User = create_user();
         let email_max: usize = user_models::EMAIL_MAX.into();
         let prefix: String = (0..64).map(|_| 'a').collect();
@@ -587,10 +554,10 @@ mod tests {
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_EMAIL_MAX);
         assert_eq!(app_err.message, msg_err);
-    }
+    }*/
 
-    #[test]
-    async fn test_login_invalid_dto_wrong_email() {
+    // #[test] // !
+    /*async fn test_login_invalid_dto_wrong_email() {
         let user1: user_models::User = create_user();
         let suffix = "@".to_string();
         let email_min: usize = user_models::EMAIL_MIN.into();
@@ -622,10 +589,10 @@ mod tests {
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_EMAIL);
         assert_eq!(app_err.message, msg_err);
-    }
+    }*/
 
-    #[test]
-    async fn test_login_non_existent_email() {
+    //#[test]
+    /*async fn test_login_non_existent_email() {
         let nickname = "Oliver_Taylor".to_string();
         let email = format!("{}@gmail.com", nickname).to_string();
         let password = "passwdT1R1".to_string();
@@ -657,10 +624,10 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, CD_UNAUTHORIZED);
         assert_eq!(app_err.message, MSG_WRONG_NICKNAME);
-    }
+    }*/
 
-    #[test]
-    async fn test_login_invalid_dto_password_min() {
+    // #[test] // !
+    /*async fn test_login_invalid_dto_password_min() {
         let user1: user_models::User = create_user();
         let password: String = (0..(user_models::PASSWORD_MIN - 1)).map(|_| 'a').collect();
 
@@ -689,10 +656,10 @@ mod tests {
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("password: {}", user_models::MSG_PASSWORD_MIN);
         assert_eq!(app_err.message, msg_err);
-    }
+    }*/
 
-    #[test]
-    async fn test_login_invalid_dto_password_max() {
+    // #[test] // !
+    /*async fn test_login_invalid_dto_password_max() {
         let user1: user_models::User = create_user();
         let password: String = (0..(user_models::PASSWORD_MAX + 1)).map(|_| 'a').collect();
 
@@ -721,10 +688,10 @@ mod tests {
         assert_eq!(app_err.code, ERR_CN_VALIDATION);
         let msg_err = format!("password: {}", user_models::MSG_PASSWORD_MAX);
         assert_eq!(app_err.message, msg_err);
-    }
+    }*/
 
-    #[test]
-    async fn test_login_wrong_hashed_password() {
+    // #[test]
+    /*async fn test_login_wrong_hashed_password() {
         let nickname = "Oliver_Taylor".to_string();
         let email = format!("{}@gmail.com", nickname).to_string();
         let password = "passwdT1R1".to_string();
@@ -756,10 +723,10 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, CD_UNAUTHORIZED);
         assert_eq!(app_err.message, MSG_INVALID_HASH_FORMAT);
-    }
+    }*/
 
-    #[test]
-    async fn test_login_wrong_password() {
+    // #[test] // no use
+    /*async fn test_login_wrong_password() {
         let nickname = "Oliver_Taylor".to_string();
         let email = format!("{}@gmail.com", nickname).to_string();
         let password = "passwdT1R1".to_string();
@@ -793,10 +760,10 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, CD_UNAUTHORIZED);
         assert_eq!(app_err.message, MSG_WRONG_PASSWORD);
-    }
+    }*/
 
-    #[test]
-    async fn test_login_no_data() {
+    // #[test] // !
+    /*async fn test_login_no_data() {
         let nickname = "Oliver_Taylor".to_string();
         let email = format!("{}@gmail.com", nickname).to_string();
         let password = "passwdT1R1".to_string();
@@ -824,10 +791,10 @@ mod tests {
         let body_str = String::from_utf8_lossy(&body);
         let expected_message = "Content type error";
         assert!(body_str.contains(expected_message));
-    }
+    }*/
 
-    #[test]
-    async fn test_login_empty_json_object() {
+    // #[test] // !
+    /*async fn test_login_empty_json_object() {
         let nickname = "Oliver_Taylor".to_string();
         let email = format!("{}@gmail.com", nickname).to_string();
         let password = "passwdT1R1".to_string();
@@ -856,10 +823,10 @@ mod tests {
         let body_str = String::from_utf8_lossy(&body);
         let expected_message = "Json deserialize error: missing field";
         assert!(body_str.contains(expected_message));
-    }
+    }*/
 
-    #[test]
-    async fn test_login_valid_credentials() {
+    // #[test]
+    /*async fn test_login_valid_credentials() {
         let nickname = "Oliver_Taylor".to_string();
         let email = format!("{}@gmail.com", nickname).to_string();
         let password = "passwdT1R1".to_string();

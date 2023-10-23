@@ -6,11 +6,11 @@ use validator::Validate;
 use crate::errors::{AppError, ERR_CN_VALIDATION};
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::users::user_models;
+#[cfg(not(feature = "mockdata"))]
+use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::user_orm::UserOrm;
-#[cfg(not(feature = "mockdata"))]
-use crate::users::user_orm::UserOrmApp;
 use crate::utils::{
     err,
     parse_err::{msg_parse_err, CD_PARSE_INT_ERROR, MSG_PARSE_INT_ERROR},

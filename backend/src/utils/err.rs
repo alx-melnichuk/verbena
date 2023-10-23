@@ -25,5 +25,9 @@ pub const CD_PERMISSION_DENIED: &str = "PermissionDenied";
 pub const MSG_PERMISSION_DENIED: &str = "You are not allowed to perform this action";
 
 // 500
+// Error web::block for waiting for database query to complete.
 pub const CD_BLOCKING: &str = "Blocking";
+// An error occurred while executing a database query.
 pub const CD_DATABASE: &str = "Database";
+// Error creating password hash.
+pub const CD_HASHING_PASSWD: &str = "HashingPassword";

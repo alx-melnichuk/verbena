@@ -17,10 +17,22 @@ impl ConfigSmtp {
 
         ConfigSmtp {
             smtp_host,
-            smtp_pass,
-            smtp_user,
             smtp_port: smtp_port.parse::<u16>().unwrap(),
+            smtp_user,
+            smtp_pass,
             smtp_sender,
         }
+    }
+}
+
+#[cfg(all(test, feature = "mockdata"))]
+#[allow(dead_code)]
+pub fn get_test_config() -> ConfigSmtp {
+    ConfigSmtp {
+        smtp_host: "127.0.0.1".to_string(),
+        smtp_pass: "pass".to_string(),
+        smtp_user: "user".to_string(),
+        smtp_port: 465,
+        smtp_sender: "sender".to_string(),
     }
 }

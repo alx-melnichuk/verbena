@@ -121,9 +121,10 @@ pub struct LoginUserDto {
     pub password: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Validate /*AsChangeset, Insertable*/)]
-// #[diesel(table_name = schema::users)]
-pub struct RegistrationUserDto {
+// ** Registration User **
+
+#[derive(Debug, Serialize, Deserialize, Clone, Validate)]
+pub struct RegistrUserDto {
     #[validate(custom = "UserValidate::nickname")]
     pub nickname: String,
     #[validate(custom = "UserValidate::email")]
@@ -131,6 +132,15 @@ pub struct RegistrationUserDto {
     #[validate(custom = "UserValidate::password")]
     pub password: String,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RegistrUserResponseDto {
+    pub nickname: String,
+    pub email: String,
+    pub target: String,
+}
+
+// ** - **
 
 #[derive(Debug, Serialize, Deserialize, Clone, Validate)]
 pub struct RecoveryUserDto {
@@ -215,6 +225,47 @@ impl UserValidate {
             Self::nickname(&value.clone()).map_err(|err| err)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(feature = "mockdata")]
+pub struct UserValidateTest {}
+#[cfg(feature = "mockdata")]
+impl UserValidateTest {
+    pub fn nickname_min() -> String {
+        (0..(NICKNAME_MIN - 1)).map(|_| 'a').collect()
+    }
+    pub fn nickname_max() -> String {
+        (0..(NICKNAME_MAX + 1)).map(|_| 'a').collect()
+    }
+    pub fn nickname_wrong() -> String {
+        "Oliver_Taylor#".to_string()
+    }
+    pub fn email_min() -> String {
+        let suffix = "@us".to_string();
+        let email_min: usize = EMAIL_MIN.into();
+        let email: String = (0..(email_min - 1 - suffix.len())).map(|_| 'a').collect();
+        format!("{}{}", email, suffix)
+    }
+    pub fn email_max() -> String {
+        let email_max: usize = EMAIL_MAX.into();
+        let prefix: String = (0..64).map(|_| 'a').collect();
+        let domain = ".ua";
+        let len = email_max - prefix.len() - domain.len() + 1;
+        let suffix: String = (0..len).map(|_| 'a').collect();
+        format!("{}@{}{}", prefix, suffix, domain)
+    }
+    pub fn email_wrong() -> String {
+        let suffix = "@".to_string();
+        let email_min: usize = EMAIL_MIN.into();
+        let email: String = (0..(email_min - suffix.len())).map(|_| 'a').collect();
+        format!("{}{}", email, suffix)
+    }
+    pub fn password_min() -> String {
+        (0..(PASSWORD_MIN - 1)).map(|_| 'a').collect()
+    }
+    pub fn password_max() -> String {
+        (0..(PASSWORD_MAX + 1)).map(|_| 'a').collect()
     }
 }
 

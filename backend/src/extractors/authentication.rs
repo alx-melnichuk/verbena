@@ -8,16 +8,16 @@ use std::rc::Rc;
 use std::task::{Context, Poll};
 
 use crate::errors::AppError;
+#[cfg(not(feature = "mockdata"))]
+use crate::sessions::session_orm::inst::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::sessions::session_orm::SessionOrm;
-#[cfg(not(feature = "mockdata"))]
-use crate::sessions::{config_jwt::ConfigJwt, session_orm::SessionOrmApp, tools_token};
+use crate::sessions::{session_orm::SessionOrm, tools_token, config_jwt::ConfigJwt};
 use crate::users::user_models::{User, UserRole};
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 #[cfg(not(feature = "mockdata"))]
-use crate::users::user_orm::UserOrmApp;
+use crate::users::user_orm::inst::UserOrmApp;
 use crate::users::user_orm::UserOrm;
 use crate::utils::err;
 
@@ -162,7 +162,7 @@ where
         async move {
             let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap();
             
-            let session_opt = session_orm.find_by_id(user_id).map_err(|e| {
+            let session_opt = session_orm.find_session_by_id(user_id).map_err(|e| {
                 log::debug!("{}: {}", err::CD_DATABASE, e.to_string());
                 let json_error = AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500);
                 return ErrorInternalServerError(json_error);
