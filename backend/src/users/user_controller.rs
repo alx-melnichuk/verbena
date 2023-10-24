@@ -264,16 +264,18 @@ mod tests {
         user
     }
 
-    async fn call_service_get_user_by_id(user_vec: Vec<User>, id: &str) -> dev::ServiceResponse {
+    async fn call_server_inn(
+        user_vec: Vec<User>,
+        factory: impl HttpServiceFactory + 'static,
+        test_request: TestRequest,
+    ) -> dev::ServiceResponse {
         let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
 
         let app = test::init_service(
-            App::new().app_data(web::Data::clone(&data_user_orm)).service(get_user_by_id),
+            App::new().app_data(web::Data::clone(&data_user_orm)).service(factory),
         )
         .await;
-        let req = test::TestRequest::get()
-            .uri(&format!("/users/{}", &id)) // GET /users/${id}
-            .to_request();
+        let req = test_request.to_request();
 
         let resp = test::call_service(&app, req).await;
 
@@ -283,7 +285,9 @@ mod tests {
     #[test]
     async fn test_get_user_by_id_invalid_id() {
         let user_id_bad = "1a";
-        let resp = call_service_get_user_by_id(vec![], user_id_bad).await;
+        let req = test::TestRequest::get().uri(&format!("/users/{}", &user_id_bad)); // GET /users/${id}
+
+        let resp = call_server_inn(vec![], get_user_by_id, req).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -300,7 +304,9 @@ mod tests {
         let user_id = user1.id.to_string();
         let user1b_dto = UserDto::from(user1.clone());
 
-        let resp = call_service_get_user_by_id(vec![user1], &user_id).await;
+        let req = test::TestRequest::get().uri(&format!("/users/{}", &user_id)); // GET /users/${id}
+
+        let resp = call_server_inn(vec![user1], get_user_by_id, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -315,34 +321,17 @@ mod tests {
 
     #[test]
     async fn test_get_user_by_id_non_existent_id() {
-        let resp = call_service_get_user_by_id(vec![], "9999").await;
+        let req = test::TestRequest::get().uri(&"/users/9999"); // GET /users/${id}
+
+        let resp = call_server_inn(vec![], get_user_by_id, req).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
-    }
-
-    async fn call_service_get_user_by_nickname(
-        user_vec: Vec<User>,
-        nickname: &str,
-    ) -> dev::ServiceResponse {
-        let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(get_user_by_nickname),
-        )
-        .await;
-        let req = test::TestRequest::get()
-            .uri(&format!("/users/nickname/{}", nickname)) // GET /users/nickname/${nickname}
-            .to_request();
-
-        let resp = test::call_service(&app, req).await;
-
-        resp
     }
 
     #[test]
     async fn test_get_user_by_nickname_non_existent_nickname() {
-        let resp = call_service_get_user_by_nickname(vec![], "JAMES_SMITH").await;
+        let req = test::TestRequest::get().uri(&"/users/nickname/JAMES_SMITH"); // GET /users/nickname/${nickname}
+
+        let resp = call_server_inn(vec![], get_user_by_nickname, req).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
 
@@ -352,7 +341,9 @@ mod tests {
         let user1b_dto = UserDto::from(user1.clone());
         let nickname = user1.nickname.to_uppercase().to_string();
 
-        let resp = call_service_get_user_by_nickname(vec![user1], &nickname).await;
+        let req = test::TestRequest::get().uri(&format!("/users/nickname/{}", nickname)); // GET /users/nickname/${nickname}
+
+        let resp = call_server_inn(vec![user1], get_user_by_nickname, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
