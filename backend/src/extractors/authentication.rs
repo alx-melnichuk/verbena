@@ -21,6 +21,8 @@ use crate::users::user_orm::inst::UserOrmApp;
 use crate::users::user_orm::UserOrm;
 use crate::utils::err;
 
+const BEARER: &str = "Bearer ";
+
 pub struct Authenticated(User);
 
 impl FromRequest for Authenticated {
@@ -106,6 +108,21 @@ pub struct AuthMiddleware<S> {
     allowed_roles: Rc<Vec<UserRole>>,
 }
 
+fn jwt_from_header(header_token: &str) -> Result<String, String> {
+    const NO_AUTH_HEADER: &str = "No authentication header";
+    if header_token.len() == 0 {
+        return Err(NO_AUTH_HEADER.to_string());
+    }
+    let auth_header = match std::str::from_utf8(header_token.as_bytes()) {
+        Ok(v) => v,
+        Err(e) => return Err(format!("{NO_AUTH_HEADER} : {}", e.to_string()) ),
+    };
+    if !auth_header.starts_with(BEARER) {
+        return Err("Invalid authentication header".to_string());
+    }
+    Ok(auth_header.trim_start_matches(BEARER).to_owned())
+}
+
 impl<S> Service<ServiceRequest> for AuthMiddleware<S>
 where
     S: Service<
@@ -127,27 +144,37 @@ where
     }
     /// The future type representing the asynchronous response.
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        // v-- new fn
 
         // Attempt to extract token from cookie or authorization header
-        let token = req.cookie("token").map(|c| c.value().to_string()).or_else(|| {
-            req.headers()
-                .get(http::header::AUTHORIZATION)
-                .map(|h| h.to_str().unwrap().to_string())
-        });
+        let token = req.cookie("token")
+            .map(|c| c.value().to_string())
+            .or_else(|| {
+                let header_token = req.headers().get(http::header::AUTHORIZATION)
+                    .map(|h| h.to_str().unwrap().to_string()).unwrap_or("".to_string());
+                // eprintln!("a_ header_token: {header_token}");
+                let token2 = jwt_from_header(&header_token)
+                .map_err(|e| {
+                    log::debug!("{}: {}", "InvalidToken", e);
+                    let json_error = AppError::new("InvalidToken", &e).set_status(401);
+                    return Box::pin(ready(ErrorUnauthorized(json_error)));
+                }).ok();
+                // eprintln!("a_ token2: {}", token2.clone().unwrap().to_string());
+                token2
+            });
+
         // If token is missing, return unauthorized error
         if token.is_none() {
+            // eprintln!("a_ token.is_none()");
             log::debug!("{}: {}", err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN);
             let json_error =
                 AppError::new(err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN).set_status(401);
             return Box::pin(ready(Err(ErrorUnauthorized(json_error))));
         }
+        let token = token.unwrap().to_string();
 
         let config_jwt = req.app_data::<web::Data<ConfigJwt>>().unwrap();
-
-        let token = token.unwrap();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-
+        // eprintln!(")( auth() token: `{}`", token.to_string()); // #-
         let token_res = tools_token::parse_token(&token, jwt_secret)
         .map_err(|e| {
             log::debug!("{}: {}", e.code, e.message);
@@ -169,7 +196,7 @@ where
             })?;
             
             let session = session_opt.ok_or_else(|| {
-                eprintln!("$^session with {} not found", user_id.clone());
+                // eprintln!("$^session with {} not found", user_id.clone());
                 #[rustfmt::skip]
                 log::debug!("{}: session with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id);
                 let json_error = AppError::new(err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN)
@@ -179,14 +206,14 @@ where
 
             let session_num_token = session.num_token.unwrap_or(0);
             if session_num_token != num_token {
-                eprintln!("$^session_num_token != num_token");
+                // eprintln!("$^session_num_token != num_token");
                 log::debug!("{}: session with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id);
                 let json_error = AppError::new(err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN)
                     .set_status(403); // ?!?
                 return Err(ErrorForbidden(json_error));
             }
 
-            eprintln!("$^user_id: {}, num_token: {}", user_id.clone(), num_token);
+            // eprintln!("$^user_id: {}, num_token: {}", user_id.clone(), num_token);
 
             let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap();
             

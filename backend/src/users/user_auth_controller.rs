@@ -36,7 +36,7 @@ pub const MSG_WRONG_PASSWORD: &str = "The password specified is incorrect!";
 pub const CD_INVALID_HASH: &str = "InvalidHash";
 pub const MSG_INVALID_HASH: &str = "Invalid hash format in the database.";
 
-pub const CD_JSONWEBTOKEN: &str = "jsonwebtoken";
+pub const CD_JSONWEBTOKEN: &str = "jsonwebtoken"; // #-
 
 pub const CD_SESSION_ERROR: &str = "SessionError";
 pub const MSG_SESSION_ERROR: &str = "Session error";
@@ -221,7 +221,21 @@ fn create_tokens(
             log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
             AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
         })?;
+    /*
+    let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
+    let access_token =
+        tools_token::collect_token(user_id: i32, num_token: i32, jwt_secret, config_jwt.jwt_access).map_err(|e| {
+            log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
+            AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
+        })?;
+
+    let refresh_token =
+        tools_token::collect_token(user_id: i32, num_token: i32, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
+            log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
+            AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
+        })?;
+    */
     Ok((access_token, refresh_token))
 }
 

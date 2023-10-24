@@ -336,6 +336,7 @@ pub mod tests {
 
             let mut user_saved: User = UserOrmApp::new_user(id, &nickname, &email, &password);
             user_saved.role = role;
+            user_saved.created_at = user.created_at;
             user_saved.updated_at = Utc::now();
 
             Ok(Some(user_saved))

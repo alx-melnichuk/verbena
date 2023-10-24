@@ -123,16 +123,16 @@ pub mod tests {
                 session_vec: Vec::new(),
             }
         }
-        // /// Create a new instance with the specified session list.
-        // #[cfg(test)]
-        /*pub fn create(session_list: Vec<Session>) -> Self {
+        /// Create a new instance with the specified session list.
+        #[cfg(test)]
+        pub fn create(session_list: Vec<Session>) -> Self {
             let mut session_vec: Vec<Session> = Vec::new();
             for session in session_list.iter() {
                 session_vec.push(Self::new_session(session.user_id, session.num_token));
             }
 
             SessionOrmApp { session_vec }
-        }*/
+        }
         /// Create a new entity instance.
         pub fn new_session(user_id: i32, num_token: Option<i32>) -> Session {
             Session { user_id, num_token }

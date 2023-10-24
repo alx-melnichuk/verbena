@@ -31,3 +31,5 @@ pub const CD_BLOCKING: &str = "Blocking";
 pub const CD_DATABASE: &str = "Database";
 // Error creating password hash.
 pub const CD_HASHING_PASSWD: &str = "HashingPassword";
+// Error creating token.
+// pub const CD_JSONWEBTOKEN: &str = "jsonwebtoken";
