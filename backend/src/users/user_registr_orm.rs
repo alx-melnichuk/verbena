@@ -143,6 +143,9 @@ pub mod tests {
 
     use super::UserRegistrOrm;
 
+    pub const USER_REGISTR_ID_1: i32 = 1201;
+    pub const USER_REGISTR_ID_2: i32 = 1202;
+
     #[derive(Debug, Clone)]
     pub struct UserRegistrOrmApp {
         pub user_registr_vec: Vec<UserRegistr>,
@@ -229,10 +232,13 @@ pub mod tests {
                 return Err("\"User Registration\" already exists.".to_string());
             }
 
+            let new_id = USER_REGISTR_ID_2;
+
             let nickname = create_user_registr_dto.nickname.clone();
             let email = create_user_registr_dto.email.clone();
-            let user_registr_saved: UserRegistr =
-                UserRegistrOrmApp::new_user_registr(1001, &nickname, &email, &password, final_date);
+            let user_registr_saved: UserRegistr = UserRegistrOrmApp::new_user_registr(
+                new_id, &nickname, &email, &password, final_date,
+            );
 
             Ok(user_registr_saved)
         }

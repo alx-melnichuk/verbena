@@ -239,7 +239,7 @@ mod tests {
     };
     use crate::users::{
         user_models::{ModifyUserDto, User, UserDto, UserRole, UserValidateTest},
-        user_orm::tests::UserOrmApp,
+        user_orm::tests::{UserOrmApp, USER_ID_1},
     };
     use crate::utils::parser::{CD_PARSE_INT_ERROR, MSG_PARSE_INT_ERROR};
 
@@ -250,7 +250,7 @@ mod tests {
 
     fn create_user() -> User {
         let mut user = UserOrmApp::new_user(
-            1001,
+            USER_ID_1,
             "Oliver_Taylor",
             "Oliver_Taylor@gmail.com",
             "passwdT1R1",
@@ -427,7 +427,7 @@ mod tests {
         let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", &user_id_bad)) // PUT users/1001a
+            .uri(&format!("/users/{}", &user_id_bad)) // PUT users/{id}a
             .set_json(ModifyUserDto {
                 nickname: Some("Oliver_Taylor".to_string()),
                 email: Some("Oliver_Taylor@gmail.com".to_string()),
@@ -461,7 +461,7 @@ mod tests {
         let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
-            .uri(&format!("/users/{}9", &user_id)) // PUT users/10019
+            .uri(&format!("/users/{}9", &user_id)) // PUT users/{id}9
             .set_json(ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
                 email: Some("James_Smith@gmail.com".to_string()),
@@ -501,7 +501,7 @@ mod tests {
         let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", &user_id)) // PUT users/1001
+            .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
             .set_json(ModifyUserDto {
                 nickname: Some(user1b.nickname),
                 email: Some(user1b.email),
@@ -547,7 +547,7 @@ mod tests {
         let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", &user_id)) // PUT users/1001
+            .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
             .set_json(user_models::ModifyUserDto {
                 nickname: Some(UserValidateTest::nickname_min()),
                 email: Some("James_Smith@gmail.com".to_string()),
@@ -581,7 +581,7 @@ mod tests {
         let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", &user_id)) // PUT users/1001
+            .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
             .set_json(user_models::ModifyUserDto {
                 nickname: Some(UserValidateTest::nickname_max()),
                 email: Some("James_Smith@gmail.com".to_string()),
@@ -615,7 +615,7 @@ mod tests {
         let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", &user_id)) // PUT users/1001
+            .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
             .set_json(user_models::ModifyUserDto {
                 nickname: Some(UserValidateTest::nickname_wrong()),
                 email: Some("James_Smith@gmail.com".to_string()),
@@ -649,7 +649,7 @@ mod tests {
         let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", &user_id)) // PUT users/1001
+            .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
             .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
                 email: Some(UserValidateTest::email_min()),
@@ -683,7 +683,7 @@ mod tests {
         let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", &user_id)) // PUT users/1001
+            .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
             .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
                 email: Some(UserValidateTest::email_max()),
@@ -717,7 +717,7 @@ mod tests {
         let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", &user_id)) // PUT users/1001
+            .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
             .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
                 email: Some(UserValidateTest::email_wrong()),
@@ -751,7 +751,7 @@ mod tests {
         let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", &user_id)) // PUT users/1001
+            .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
             .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
                 email: Some("James_Smith@gmail.com".to_string()),
@@ -785,7 +785,7 @@ mod tests {
         let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", &user_id)) // PUT users/1001
+            .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
             .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
                 email: Some("James_Smith@gmail.com".to_string()),
@@ -820,7 +820,7 @@ mod tests {
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::delete().uri(&format!("/users/{}", &user_id_bad)); // DELETE /user/1001a
+        let req = test::TestRequest::delete().uri(&format!("/users/{}", &user_id_bad)); // DELETE /user/{id}a
         let user_v = vec![user1];
         let resp = call_service_auth(user_v, session_v, config_jwt, &token, delete_user, req).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
@@ -874,7 +874,7 @@ mod tests {
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::delete().uri(&format!("/users/{}", &user_id)); // DELETE /user/1001
+        let req = test::TestRequest::delete().uri(&format!("/users/{}", &user_id)); // DELETE /user/{id}
         let user_v = vec![user1];
         let resp = call_service_auth(user_v, session_v, config_jwt, &token, delete_user, req).await;
 

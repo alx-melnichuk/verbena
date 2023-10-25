@@ -202,6 +202,9 @@ pub mod tests {
 
     use super::*;
 
+    pub const USER_ID_1: i32 = 1201;
+    pub const USER_ID_2: i32 = 1202;
+
     #[derive(Debug, Clone)]
     pub struct UserOrmApp {
         user_vec: Vec<User>,
@@ -313,7 +316,7 @@ pub mod tests {
             }
             let password = &create_user_dto.password.clone();
 
-            let user_saved: User = UserOrmApp::new_user(1001, nickname, email, password);
+            let user_saved: User = UserOrmApp::new_user(USER_ID_2, nickname, email, password);
 
             Ok(user_saved)
         }

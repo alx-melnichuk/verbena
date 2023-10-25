@@ -19,7 +19,7 @@ use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::user_orm::UserOrm;
-use crate::utils::err;
+use crate::utils::err::{self, CD_JSONWEBTOKEN};
 
 pub const CD_USER_EXISTS: &str = "NicknameOrEmailExist";
 pub const MSG_USER_EXISTS: &str = "A user with the same nickname or email already exists.";
@@ -35,8 +35,6 @@ pub const MSG_WRONG_PASSWORD: &str = "The password specified is incorrect!";
 
 pub const CD_INVALID_HASH: &str = "InvalidHash";
 pub const MSG_INVALID_HASH: &str = "Invalid hash format in the database.";
-
-pub const CD_JSONWEBTOKEN: &str = "jsonwebtoken"; // #-
 
 pub const CD_SESSION_ERROR: &str = "SessionError";
 pub const MSG_SESSION_ERROR: &str = "Session error";
@@ -367,7 +365,10 @@ mod tests {
 
     // use crate::errors::AppError;
     use crate::sessions::config_jwt;
-    use crate::users::{user_models, user_orm::tests::UserOrmApp};
+    use crate::users::{
+        user_models,
+        user_orm::tests::{UserOrmApp, USER_ID_1},
+    };
 
     use super::*;
 
@@ -376,7 +377,7 @@ mod tests {
 
     fn create_user() -> user_models::User {
         let mut user = UserOrmApp::new_user(
-            1001,
+            USER_ID_1,
             "Oliver_Taylor",
             "Oliver_Taylor@gmail.com",
             "passwdT1R1",
@@ -487,7 +488,7 @@ mod tests {
         let email = format!("{}@gmail.com", nickname).to_string();
         let password = "passwdT1R1".to_string();
         let mut user1 =
-            UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
+            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
         user1.role = user_models::UserRole::User;
 
         let config_jwt = config_jwt::get_test_config();
@@ -629,7 +630,7 @@ mod tests {
         let email = format!("{}@gmail.com", nickname).to_string();
         let password = "passwdT1R1".to_string();
         let mut user1 =
-            UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
+            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
         user1.role = user_models::UserRole::User;
 
         let config_jwt = config_jwt::get_test_config();
@@ -728,7 +729,7 @@ mod tests {
         let email = format!("{}@gmail.com", nickname).to_string();
         let password = "passwdT1R1".to_string();
         let mut user1 =
-            UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
+            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
         user1.role = user_models::UserRole::User;
         user1.password += "bad";
 
@@ -763,7 +764,7 @@ mod tests {
         let email = format!("{}@gmail.com", nickname).to_string();
         let password = "passwdT1R1".to_string();
         let mut user1 =
-            UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
+            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
         user1.role = user_models::UserRole::User;
 
         let config_jwt = config_jwt::get_test_config();
@@ -800,7 +801,7 @@ mod tests {
         let email = format!("{}@gmail.com", nickname).to_string();
         let password = "passwdT1R1".to_string();
         let mut user1 =
-            UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
+            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
         user1.role = user_models::UserRole::User;
 
         let config_jwt = config_jwt::get_test_config();
@@ -831,7 +832,7 @@ mod tests {
         let email = format!("{}@gmail.com", nickname).to_string();
         let password = "passwdT1R1".to_string();
         let mut user1 =
-            UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
+            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
         user1.role = user_models::UserRole::User;
 
         let config_jwt = config_jwt::get_test_config();
@@ -863,7 +864,7 @@ mod tests {
         let email = format!("{}@gmail.com", nickname).to_string();
         let password = "passwdT1R1".to_string();
         let mut user1 =
-            UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
+            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
         user1.role = user_models::UserRole::User;
         let user1b_dto = user_models::UserDto::from(user1.clone());
 
@@ -909,7 +910,7 @@ mod tests {
         let email = format!("{}@gmail.com", nickname).to_string();
         let password = "passwdT1R1".to_string();
         let mut user1 =
-            UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
+            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
         user1.role = user_models::UserRole::User;
 
         let config_jwt = config_jwt::get_test_config();
@@ -1344,7 +1345,7 @@ mod tests {
            let email = format!("{}@gmail.com", nickname).to_string();
            let password = "passwdT1R1".to_string();
            let mut user1 =
-               UserOrmApp::new_user(1001, &nickname.clone(), &email.clone(), &password.clone());
+               UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
            user1.role = user_models::UserRole::User;
            let user1b_dto = user_models::UserDto::from(user1.clone());
 

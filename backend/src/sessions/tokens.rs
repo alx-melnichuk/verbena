@@ -5,11 +5,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     errors::AppError,
-    utils::{err, parser},
+    utils::{
+        err::{CD_INVALID_TOKEN, CD_UNALLOWABLE_TOKEN, MSG_INVALID_TOKEN, MSG_UNALLOWABLE_TOKEN},
+        parser,
+    },
 };
 
-pub const CD_INVALID_TOKEN: &str = "InvalidToken";
-pub const CD_NUM_TOKEN_MIN: usize = 0;
+pub const CD_NUM_TOKEN_MIN: usize = 1;
 pub const CD_NUM_TOKEN_MAX: usize = 10000;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -93,19 +95,16 @@ pub fn pack_token(
 /// Unpack two parameters from the token.
 pub fn unpack_token(token: &str, jwt_secret: &[u8]) -> Result<(i32, i32), AppError> {
     let token_claims = decode_token(token, jwt_secret).map_err(|e| {
-        // eprintln!("$^ unpack_token() decode_token.is_err(): {}", e); // #-
-        // eprintln!("$^ unpack_token() token: `{}`", token); // #-
         #[rustfmt::skip]
-        log::debug!("{}: {} {}", err::CD_INVALID_TOKEN, err::MSG_INVALID_TOKEN, e);
-        return AppError::new(err::CD_INVALID_TOKEN, err::MSG_INVALID_TOKEN).set_status(403);
+        log::debug!("{CD_INVALID_TOKEN}: {} {}", MSG_INVALID_TOKEN, e);
+        return AppError::new(CD_INVALID_TOKEN, MSG_INVALID_TOKEN).set_status(403);
     })?;
 
-    let (user_id, num_token) = unpack_dual_sub(&token_claims.sub).map_err(|e| {
+    let (user_id, num_token) = unpack_dual_sub(&token_claims.sub).map_err(|_| {
         // eprintln!("$^ unpack_token() unpack_dual_sub.err(): {}", e.to_string()); // #-
         #[rustfmt::skip]
-        log::debug!("{}: {}", err::CD_UNALLOWABLE_TOKEN, err::MSG_UNALLOWABLE_TOKEN);
-        return AppError::new(err::CD_UNALLOWABLE_TOKEN, err::MSG_UNALLOWABLE_TOKEN)
-            .set_status(403);
+        log::debug!("{CD_UNALLOWABLE_TOKEN}: {MSG_UNALLOWABLE_TOKEN}");
+        return AppError::new(CD_UNALLOWABLE_TOKEN, MSG_UNALLOWABLE_TOKEN).set_status(403);
     })?;
 
     Ok((user_id, num_token))

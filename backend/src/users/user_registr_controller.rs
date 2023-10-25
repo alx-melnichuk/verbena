@@ -9,6 +9,10 @@ use crate::email::mailer::tests::MailerApp;
 use crate::email::mailer::Mailer;
 use crate::errors::{AppError, ERR_CN_VALIDATION};
 use crate::hash_tools;
+use crate::sessions::{
+    config_jwt,
+    tokens::{generate_num_token, pack_token},
+};
 use crate::users::{
     user_models, user_orm::UserOrm, user_registr_models, user_registr_orm::UserRegistrOrm,
 };
@@ -16,8 +20,10 @@ use crate::users::{
 use crate::users::{user_orm::inst::UserOrmApp, user_registr_orm::inst::UserRegistrOrmApp};
 #[cfg(feature = "mockdata")]
 use crate::users::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
-
-use crate::utils::{config_app, err};
+use crate::utils::{
+    config_app,
+    err::{self, CD_JSONWEBTOKEN},
+};
 
 pub const CD_WRONG_EMAIL: &str = "WrongEmail";
 pub const MSG_WRONG_EMAIL: &str = "The specified email is incorrect!";
@@ -55,6 +61,7 @@ fn err_wrong_email_or_nickname(is_nickname: bool) -> AppError {
 #[post("/registration")]
 pub async fn registration(
     config_app: web::Data<config_app::ConfigApp>,
+    config_jwt: web::Data<config_jwt::ConfigJwt>,
     mailer: web::Data<MailerApp>,
     user_orm: web::Data<UserOrmApp>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,
@@ -121,12 +128,11 @@ pub async fn registration(
 
     let nickname = registr_user_dto.nickname.clone();
     let email = registr_user_dto.email.clone();
-    // let dt = Local::now().dt.naive_utc();
-    // let final_date_utc = Utc::now();
+
     let app_registr_duration = config_app.app_registr_duration.try_into().unwrap();
     let final_date_utc = Utc::now() + Duration::minutes(app_registr_duration);
 
-    let insert_user_registr_dto = user_registr_models::CreateUserRegistrDto {
+    let create_user_registr_dto = user_registr_models::CreateUserRegistrDto {
         nickname,
         email,
         password: password_hashed,
@@ -136,14 +142,26 @@ pub async fn registration(
     let user_registr = web::block(move || {
         // Create a new entity (user).
         let user_registr = user_registr_orm
-            .create_user_registr(&insert_user_registr_dto)
+            .create_user_registr(&create_user_registr_dto)
             .map_err(|e| err_database(e));
         user_registr
     })
     .await
     .map_err(|e| err_blocking(e.to_string()))??;
 
-    let target = format!("target_{}", user_registr.id);
+    let num_token = generate_num_token();
+    let config_jwt = config_jwt.get_ref().clone();
+    let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+    // Pack two parameters (user_registr.id, num_token) into a registr_token.
+    let registr_token = pack_token(user_registr.id, num_token, jwt_secret, app_registr_duration)
+        .map_err(|err| {
+            log::debug!("{CD_JSONWEBTOKEN}: {}", err);
+            AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
+        })?;
+
+    let target = registr_token;
+    // let target = user_registr.id.to_string(); // #-
 
     // Prepare a letter confirming this registration.
     let domain = &config_app.app_domain;
@@ -153,7 +171,7 @@ pub async fn registration(
     let result = mailer.send_verification_code(&receiver, &domain, &nickname, &target);
     if result.is_err() {
         let err = result.unwrap_err();
-        eprintln!("Failed to send email: {:?}", err);
+        eprintln!("Failed to send email: {:?}", err); // #-
         log::debug!("{CD_ERROR_SENDING_EMAIL}: {err}");
         return Err(AppError::new(CD_ERROR_SENDING_EMAIL, &err).set_status(500));
     }
@@ -175,9 +193,13 @@ mod tests {
 
     use crate::email::config_smtp;
     use crate::errors::{AppError, ERR_CN_VALIDATION};
-    use crate::users::user_models::{RegistrUserDto, User, UserRole, UserValidateTest};
-    use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
-    use crate::users::{user_orm::tests::UserOrmApp, user_registr_models};
+    use crate::sessions::tokens::unpack_token;
+    use crate::users::{
+        user_models::{RegistrUserDto, User, UserRole, UserValidateTest},
+        user_orm::tests::{UserOrmApp, USER_ID_1},
+        user_registr_models,
+        user_registr_orm::tests::{UserRegistrOrmApp, USER_REGISTR_ID_1, USER_REGISTR_ID_2},
+    };
     use crate::utils::config_app;
 
     use super::*;
@@ -186,7 +208,7 @@ mod tests {
 
     fn create_user() -> User {
         let mut user = UserOrmApp::new_user(
-            1001,
+            USER_ID_1,
             "Oliver_Taylor",
             "Oliver_Taylor@gmail.com",
             "passwdT1R1",
@@ -199,7 +221,7 @@ mod tests {
         let final_date: DateTime<Utc> = today + Duration::seconds(20);
 
         let user_registr = UserRegistrOrmApp::new_user_registr(
-            1001,
+            USER_REGISTR_ID_1,
             "Oliver_Taylor",
             "Oliver_Taylor@gmail.com",
             "passwdT1R1",
@@ -215,6 +237,7 @@ mod tests {
         test_request: TestRequest,
     ) -> dev::ServiceResponse {
         let data_config_app = web::Data::new(config_app::get_test_config());
+        let data_config_jwt = web::Data::new(config_jwt::get_test_config());
         let data_mailer = web::Data::new(MailerApp::new(config_smtp::get_test_config()));
         let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
         let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(user_registr_vec));
@@ -222,19 +245,19 @@ mod tests {
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::clone(&data_config_app))
+                .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_mailer))
                 .app_data(web::Data::clone(&data_user_orm))
                 .app_data(web::Data::clone(&data_user_registr_orm))
                 .service(registration),
         )
         .await;
+
         let req = test_request
             .uri("/registration") //POST /registration
             .to_request();
 
-        let resp = test::call_service(&app, req).await;
-
-        resp
+        test::call_service(&app, req).await
     }
 
     #[test]
@@ -242,11 +265,12 @@ mod tests {
         let req = test::TestRequest::post();
 
         let resp = call_service_registr(vec![], vec![], req).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST);
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
         let body_str = String::from_utf8_lossy(&body);
         let expected_message = "Content type error";
+        eprintln!("body_str: `{body_str}`");
         assert!(body_str.contains(expected_message));
     }
     #[test]
@@ -254,7 +278,7 @@ mod tests {
         let req = test::TestRequest::post().set_json(json!({}));
 
         let resp = call_service_registr(vec![], vec![], req).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST);
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
         let body_str = String::from_utf8_lossy(&body);
@@ -476,5 +500,47 @@ mod tests {
 
         assert_eq!(app_err.code, CD_WRONG_EMAIL);
         assert_eq!(app_err.message, MSG_WRONG_EMAIL);
+    }
+
+    #[test]
+    async fn test_registration_new_user() {
+        let nickname = "Mary_Williams".to_string();
+        let email = "Mary_Williams@gmail.com".to_string();
+        let password = "passwordD2T2".to_string();
+
+        let req = test::TestRequest::post().set_json(RegistrUserDto {
+            nickname: nickname.to_string(),
+            email: email.to_string(),
+            password: password.to_string(),
+        });
+
+        let resp = call_service_registr(vec![], vec![], req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+
+        let registr_user_resp: user_models::RegistrUserResponseDto =
+            serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        eprintln!("registr_user_resp: {:#?}", registr_user_resp.clone());
+
+        let final_date: DateTime<Utc> = Utc::now() + Duration::seconds(20);
+        let user_registr = UserRegistrOrmApp::new_user_registr(
+            1,
+            &nickname.to_string(),
+            &email.to_string(),
+            &password.to_string(),
+            final_date,
+        );
+
+        assert_eq!(user_registr.nickname, registr_user_resp.nickname);
+        assert_eq!(user_registr.email, registr_user_resp.email);
+
+        let registr_token = registr_user_resp.target;
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+        let (user_registr_id, _) = unpack_token(&registr_token, jwt_secret).unwrap();
+        assert_eq!(USER_REGISTR_ID_2, user_registr_id);
     }
 }

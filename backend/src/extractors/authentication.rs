@@ -265,7 +265,7 @@ mod tests {
         session_orm::tests::SessionOrmApp};
     use crate::users::{
         user_models::{User, UserRole},
-        user_orm::tests::UserOrmApp,
+        user_orm::tests::{UserOrmApp, USER_ID_1},
     };
 
 
@@ -283,7 +283,7 @@ mod tests {
 
     fn create_user() -> User {
         let mut user = UserOrmApp::new_user(
-            1001,
+            USER_ID_1,
             "Oliver_Taylor",
             "Oliver_Taylor@gmail.com",
             "passwordD1T1",
