@@ -12,7 +12,7 @@ use crate::errors::AppError;
 use crate::sessions::session_orm::inst::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::sessions::{session_orm::SessionOrm, tools_token, config_jwt::ConfigJwt};
+use crate::sessions::{session_orm::SessionOrm, tokens::unpack_token, config_jwt::ConfigJwt};
 use crate::users::user_models::{User, UserRole};
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
@@ -110,6 +110,7 @@ pub struct AuthMiddleware<S> {
 
 fn jwt_from_header(header_token: &str) -> Result<String, String> {
     const NO_AUTH_HEADER: &str = "No authentication header";
+
     if header_token.len() == 0 {
         return Err(NO_AUTH_HEADER.to_string());
     }
@@ -154,9 +155,9 @@ where
                 // eprintln!("a_ header_token: {header_token}");
                 let token2 = jwt_from_header(&header_token)
                 .map_err(|e| {
+                    eprintln!("a_ jwt_from_header.err: {e}");
                     log::debug!("{}: {}", "InvalidToken", e);
-                    let json_error = AppError::new("InvalidToken", &e).set_status(401);
-                    return Box::pin(ready(ErrorUnauthorized(json_error)));
+                    None::<String>
                 }).ok();
                 // eprintln!("a_ token2: {}", token2.clone().unwrap().to_string());
                 token2
@@ -164,7 +165,7 @@ where
 
         // If token is missing, return unauthorized error
         if token.is_none() {
-            // eprintln!("a_ token.is_none()");
+            // eprintln!("a_ token.is_none()"); // #-
             log::debug!("{}: {}", err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN);
             let json_error =
                 AppError::new(err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN).set_status(401);
@@ -175,11 +176,16 @@ where
         let config_jwt = req.app_data::<web::Data<ConfigJwt>>().unwrap();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // eprintln!(")( auth() token: `{}`", token.to_string()); // #-
-        let token_res = tools_token::parse_token(&token, jwt_secret)
-        .map_err(|e| {
+
+        let token_res = unpack_token(&token, jwt_secret);
+        
+        if let Err(e) = token_res {
+            // eprintln!("a_ unpack_token().err {}: {}", e.code, e.message); // #-
             log::debug!("{}: {}", e.code, e.message);
-            return Box::pin(ready(ErrorForbidden(e)));
-        });
+            return Box::pin(ready(Err(ErrorForbidden(e))));
+        }
+
+        // eprintln!("a_ token_res.unwrap();"); // #-
         let (user_id, num_token) = token_res.unwrap();
         
         let allowed_roles = self.allowed_roles.clone();
@@ -251,16 +257,22 @@ where
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use actix_web::{cookie::Cookie, get, test, App, HttpResponse};
+    use actix_web::{dev, http, test, web, App, test::TestRequest, cookie::Cookie, get, HttpResponse};
+    use crate::sessions::{
+        config_jwt::{self, ConfigJwt},
+        tokens::pack_token,
+        session_models::Session,
+        session_orm::tests::SessionOrmApp};
+    use crate::users::{
+        user_models::{User, UserRole},
+        user_orm::tests::UserOrmApp,
+    };
 
-    use crate::sessions::{config_jwt, tokens};
-    use crate::users::{user_models, user_orm::tests::UserOrmApp};
-    use crate::utils::err;
 
     use super::*;
 
     #[get("/", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-    async fn handler_with_requireauth() -> HttpResponse {
+    async fn handler_with_auth() -> HttpResponse {
         HttpResponse::Ok().into()
     }
 
@@ -269,7 +281,7 @@ mod tests {
         HttpResponse::Ok().into()
     }
 
-    fn create_user() -> user_models::User {
+    fn create_user() -> User {
         let mut user = UserOrmApp::new_user(
             1001,
             "Oliver_Taylor",
@@ -280,76 +292,127 @@ mod tests {
         user
     }
 
-    #[test]
-    async fn test_auth_middelware_valid_token() {
-        let user1: user_models::User = create_user();
-        let user_id = user1.id.to_string();
-
-        let config_jwt = config_jwt::get_test_config();
-        let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
-
+    async fn call_service_auth(
+        user_vec: Vec<User>,
+        session_vec: Vec<Session>,
+        config_jwt: ConfigJwt,
+        token: &str,
+        factory: impl dev::HttpServiceFactory + 'static,
+        test_request: TestRequest,
+    ) -> dev::ServiceResponse {
         let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+        let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
+        let data_session_orm = web::Data::new(SessionOrmApp::create(session_vec));
 
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_user_orm))
-                .service(handler_with_requireauth),
+                .app_data(web::Data::clone(&data_session_orm))
+                .service(factory),
         )
         .await;
-        let req = test::TestRequest::get()
-            .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+        let test_request = if token.len() > 0 {
+            test_request.insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+        } else {
+            test_request
+        };
+        let req = test_request
             .to_request();
-        let resp = test::call_service(&app, req).await;
 
+        test::call_service(&app, req).await
+    }
+
+    #[test]
+    async fn test_authentication_middelware_valid_token() {
+        let user1: User = create_user();
+
+        let num_token = 1234;
+        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let req = test::TestRequest::get();
+        let resp =
+            call_service_auth(vec![user1], session_v, config_jwt, &token, handler_with_auth, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 
     #[test]
-    async fn test_auth_middelware_valid_token_with_cookie() {
-        let user1: user_models::User = create_user();
-        let user_id = user1.id.to_string();
+    async fn test_authentication_middelware_valid_token_with_cookie() {
+        let user1: User = create_user();
+
+        let num_token = 1234;
+        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
+        let req = test::TestRequest::get().cookie(Cookie::new("token", token));
+        let resp =
+            call_service_auth(vec![user1], session_v, config_jwt, &"", handler_with_auth, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK);
+    }
+
+    #[test]
+    async fn test_authentication_middleware_access_admin_only_endpoint_success() {
+        let mut user1: User = create_user();
+        user1.role = UserRole::Admin;
+
+        let num_token = 1234;
+        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let req = test::TestRequest::get();
+        let resp =
+            call_service_auth(vec![user1], session_v, config_jwt, &token, handler_with_requireonlyadmin, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK);
+    }
+
+    async fn try_call_service_auth(
+        user_vec: Vec<User>,
+        session_vec: Vec<Session>,
+        config_jwt: ConfigJwt,
+        token: &str,
+        factory: impl dev::HttpServiceFactory + 'static,
+        test_request: TestRequest,
+    ) -> Result<dev::ServiceResponse, actix_web::Error> {
         let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+        let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
+        let data_session_orm = web::Data::new(SessionOrmApp::create(session_vec));
 
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_user_orm))
-                .service(handler_with_requireauth),
+                .app_data(web::Data::clone(&data_session_orm))
+                .service(factory),
         )
         .await;
+        let test_request = if token.len() > 0 {
+            test_request.insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+        } else {
+            test_request
+        };
+        let req = test_request
+            .to_request();
 
-        let req = test::TestRequest::get().cookie(Cookie::new("token", token)).to_request();
-
-        let resp = test::call_service(&app, req).await;
-
-        assert_eq!(resp.status(), http::StatusCode::OK);
+        test::try_call_service(&app, req).await
     }
 
     #[test]
-    async fn test_auth_middleware_missing_token() {
+    async fn test_authentication_middleware_missing_token() {
         let config_jwt = config_jwt::get_test_config();
 
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![create_user()]));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(handler_with_requireauth),
-        )
-        .await;
-
-        let req = test::TestRequest::get().to_request();
-
-        let result = test::try_call_service(&app, req).await.err();
+        let req = test::TestRequest::get();
+        let result =
+            try_call_service_auth(vec![], vec![], config_jwt, &"", handler_with_auth, req).await.err();
 
         let err = result.expect("Service call succeeded, but an error was expected.");
 
@@ -363,29 +426,15 @@ mod tests {
     }
 
     #[test]
-    async fn test_auth_middleware_invalid_token() {
+    async fn test_authentication_middleware_invalid_token() {
+
         let config_jwt = config_jwt::get_test_config();
+        let token = "invalid_token";
+        let req = test::TestRequest::get();
 
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![create_user()]));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(handler_with_requireauth),
-        )
-        .await;
-
-        let req = test::TestRequest::get()
-            .insert_header((
-                http::header::AUTHORIZATION,
-                format!("Bearer {}", "invalid_token"),
-            ))
-            .to_request();
-
-        let result = test::try_call_service(&app, req).await.err();
-
+        let result =
+            try_call_service_auth(vec![], vec![], config_jwt, &token, handler_with_auth, req).await.err();
+    
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
@@ -398,34 +447,21 @@ mod tests {
     }
 
     #[test]
-    async fn test_auth_middelware_expired_token() {
-        let user1: user_models::User = create_user();
-        let user_id: String = user1.id.to_string();
+    async fn test_authentication_middelware_expired_token() {
+        let user1: User = create_user();
+
+        let num_token = 1234;
+        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-
-        let expired_token =
-            tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), -60).unwrap();
-
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(handler_with_requireauth),
-        )
-        .await;
-        let req = test::TestRequest::get()
-            .insert_header((
-                http::header::AUTHORIZATION,
-                format!("Bearer {}", expired_token),
-            ))
-            .to_request();
-
-        let result = test::try_call_service(&app, req).await.err();
-
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let token = pack_token(user1.id, num_token, &jwt_secret, -config_jwt.jwt_access).unwrap();
+ 
+        let req = test::TestRequest::get();
+        let user_v = vec![user1];
+        let result =
+            try_call_service_auth(user_v, session_v, config_jwt, &token, handler_with_auth, req).await.err();
+ 
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
@@ -438,30 +474,22 @@ mod tests {
     }
 
     #[test]
-    async fn test_auth_middelware_valid_token_non_existent_user() {
-        let user1: user_models::User = create_user();
-        let bad_id = format!("{}9999", user1.id);
+    async fn test_authentication_middelware_valid_token_non_existent_user() {
+        let user1: User = create_user();
+        let user_id = user1.id + 1;
+
+        let num_token = 1234;
+        let session_v = vec![SessionOrmApp::new_session(user_id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let token = tokens::create_token(&bad_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
-
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(handler_with_requireauth),
-        )
-        .await;
-
-        let req = test::TestRequest::get()
-            .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .to_request();
-
-        let result = test::try_call_service(&app, req).await.err();
-
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let token = pack_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+    
+        let req = test::TestRequest::get();
+        let user_v = vec![user1];
+        let result =
+            try_call_service_auth(user_v, session_v, config_jwt, &token, handler_with_auth, req).await.err();
+    
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
@@ -474,29 +502,21 @@ mod tests {
     }
 
     #[test]
-    async fn test_auth_middleware_access_admin_only_endpoint_fail() {
-        let user1: user_models::User = create_user();
-        let user_id = user1.id.to_string();
+    async fn test_authentication_middleware_access_admin_only_endpoint_fail() {
+        let user1: User = create_user();
+
+        let num_token = 1234;
+        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
-
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(handler_with_requireonlyadmin),
-        )
-        .await;
-
-        let req = test::TestRequest::get()
-            .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .to_request();
-
-        let result = test::try_call_service(&app, req).await.err();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+ 
+        let req = test::TestRequest::get();
+        let user_v = vec![user1];
+        let factory = handler_with_requireonlyadmin;
+        let result =
+            try_call_service_auth(user_v, session_v, config_jwt, &token, factory, req).await.err();
 
         let err = result.expect("Service call succeeded, but an error was expected.");
 
@@ -509,32 +529,4 @@ mod tests {
         assert_eq!(app_err.message, err::MSG_PERMISSION_DENIED);
     }
 
-    #[test]
-    async fn test_auth_middleware_access_admin_only_endpoint_success() {
-        let mut user1: user_models::User = create_user();
-        user1.role = UserRole::Admin;
-        let user_id = user1.id.to_string();
-
-        let config_jwt = config_jwt::get_test_config();
-        let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
-
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(handler_with_requireonlyadmin),
-        )
-        .await;
-
-        let req = test::TestRequest::get()
-            .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .to_request();
-
-        let resp = test::call_service(&app, req).await;
-
-        assert_eq!(resp.status(), http::StatusCode::OK);
-    }
 }

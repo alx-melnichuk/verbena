@@ -12,7 +12,7 @@ use crate::hash_tools;
 use crate::sessions::session_orm::inst::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::sessions::{config_jwt, session_models, session_orm::SessionOrm, tokens, tools_token};
+use crate::sessions::{config_jwt, session_models, session_orm::SessionOrm, tokens};
 use crate::users::user_models;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::inst::UserOrmApp;
@@ -55,6 +55,15 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .service(new_token);
 }
 
+fn err_database(err: String) -> AppError {
+    log::debug!("{}: {}", err::CD_DATABASE, err);
+    AppError::new(err::CD_DATABASE, &err).set_status(500)
+}
+fn err_blocking(err: String) -> AppError {
+    log::debug!("{}: {}", err::CD_BLOCKING, err);
+    AppError::new(err::CD_BLOCKING, &err).set_status(500)
+}
+
 // POST api/registration
 #[post("/registration0")]
 pub async fn registration0(
@@ -76,11 +85,9 @@ pub async fn registration0(
 
     let result_user = web::block(move || {
         // Find for a user by nickname or email.
-        let existing_user =
-            user_orm.find_user_by_nickname_or_email(&nickname, &email).map_err(|e| {
-                log::debug!("{}: {}", err::CD_DATABASE, e.to_string());
-                AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500)
-            })?;
+        let existing_user = user_orm
+            .find_user_by_nickname_or_email(&nickname, &email)
+            .map_err(|e| err_database(e.to_string()))?;
 
         if existing_user.is_some() {
             eprintln!("##existing_user.is_some()"); // #-
@@ -88,28 +95,19 @@ pub async fn registration0(
         }
 
         // Create a new entity (user).
-        let user = user_orm.create_user(&create_user_dto).map_err(|e| {
-            eprintln!("##user_orm.create_user() err: {}", e.to_string()); // #-
-            log::debug!("{}: {}", err::CD_DATABASE, e.to_string());
-            AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500)
-        })?;
+        let user = user_orm
+            .create_user(&create_user_dto)
+            .map_err(|e| err_database(e.to_string()))?;
 
         // Create a new entity (session).
         #[rustfmt::skip]
         let session = session_models::Session { user_id: user.clone().id, num_token: None };
-        session_orm.create_session(&session).map_err(|e| {
-            eprintln!("##session_orm.create_session() err: {}", e.to_string()); // #-
-            log::debug!("{}: {}", err::CD_DATABASE, e.to_string());
-            AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500)
-        })?;
+        session_orm.create_session(&session).map_err(|e| err_database(e.to_string()))?;
 
         Ok(user)
     })
     .await
-    .map_err(|e| {
-        log::debug!("{}: {}", err::CD_BLOCKING, e.to_string());
-        AppError::new(err::CD_BLOCKING, &e.to_string()).set_status(500)
-    })??;
+    .map_err(|e| err_blocking(e.to_string()))??;
     eprintln!("##result_user: {:#?}", result_user); // #-
     Ok(HttpResponse::Created().body(()))
 }
@@ -138,19 +136,14 @@ pub async fn login(
 
     let user = web::block(move || {
         // find user by nickname or email
-        let existing_user =
-            user_orm.find_user_by_nickname_or_email(&nickname, &email).map_err(|e| {
-                log::debug!("{}: {}", err::CD_DATABASE, e.to_string());
-                AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500)
-            });
+        let existing_user = user_orm
+            .find_user_by_nickname_or_email(&nickname, &email)
+            .map_err(|e| err_database(e.to_string()));
         eprintln!("$$existing_user: {:?}", existing_user); // #-
         existing_user
     })
     .await
-    .map_err(|e| {
-        log::debug!("{}: {}", err::CD_BLOCKING, e.to_string());
-        AppError::new(err::CD_BLOCKING, &e.to_string()).set_status(500)
-    })??;
+    .map_err(|e| err_blocking(e.to_string()))??;
 
     let user: user_models::User = user.ok_or_else(|| {
         log::debug!("{}: {}", CD_WRONG_NICKNAME_EMAIL, MSG_WRONG_NICKNAME_EMAIL);
@@ -159,21 +152,34 @@ pub async fn login(
 
     let user_password = user.password.to_string();
     let password_matches = hash_tools::compare_hash(&password, &user_password).map_err(|e| {
-        #[rustfmt::skip]
-        log::debug!("{}: {} {:?}", CD_INVALID_HASH, MSG_INVALID_HASH, e.to_string());
+        log::debug!("{CD_INVALID_HASH}: {MSG_INVALID_HASH} {:?}", e.to_string());
         AppError::new(CD_INVALID_HASH, MSG_INVALID_HASH).set_status(500)
     })?;
 
     if !password_matches {
-        log::debug!("{}: {}", CD_WRONG_PASSWORD, MSG_WRONG_PASSWORD);
+        log::debug!("{CD_WRONG_PASSWORD}: {MSG_WRONG_PASSWORD}");
         return Err(AppError::new(CD_WRONG_PASSWORD, MSG_WRONG_PASSWORD).set_status(403));
     }
 
     // if (!user.registered) { ForbiddenException('Your registration not confirmed!'); }
 
     let num_token = tokens::generate_num_token();
-    let sub = tokens::create_dual_sub(user.id, num_token);
-    let (token, refresh_token) = create_tokens(&sub, config_jwt.get_ref().clone())?;
+    let config_jwt = config_jwt.get_ref().clone();
+    let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+    // Pack two parameters (user.id, num_token) into a access_token.
+    let access_token = tokens::pack_token(user.id, num_token, jwt_secret, config_jwt.jwt_access)
+        .map_err(|err| {
+            log::debug!("{CD_JSONWEBTOKEN}: {}", err);
+            AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
+        })?;
+
+    // Pack two parameters (user.id, num_token) into a access_token.
+    let refresh_token = tokens::pack_token(user.id, num_token, jwt_secret, config_jwt.jwt_refresh)
+        .map_err(|err| {
+            log::debug!("{CD_JSONWEBTOKEN}: {}", err);
+            AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
+        })?;
 
     let session_opt = session_orm.modify_session(user.id, Some(num_token)).map_err(|e| {
         #[rustfmt::skip]
@@ -187,57 +193,58 @@ pub async fn login(
     }
 
     let user_tokens_dto = user_models::UserTokensDto {
-        access_token: token.to_owned(),
+        access_token: access_token.to_owned(),
         refresh_token,
     };
 
     let login_user_response_dto = user_models::LoginUserResponseDto {
         user_dto: user_models::UserDto::from(user),
-        user_tokens_dto: user_tokens_dto,
+        user_tokens_dto,
     };
 
     let max_age = ActixWebDuration::new(config_jwt.jwt_access, 0);
     #[rustfmt::skip]
-    let cookie = Cookie::build("token", token.to_owned()).path("/").max_age(max_age).http_only(true)
+    let cookie = Cookie::build("token", access_token.to_owned()).path("/").max_age(max_age).http_only(true)
         .finish();
 
     Ok(HttpResponse::Ok().cookie(cookie).json(login_user_response_dto))
 }
 
-fn create_tokens(
-    sub: &str,
-    config_jwt: config_jwt::ConfigJwt,
-) -> Result<(String, String), AppError> {
-    let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+// fn create_tokens(
+//     sub: &str,
+//     config_jwt: config_jwt::ConfigJwt,
+// ) -> Result<(String, String), AppError> {
+/*let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
-    let access_token =
-        tokens::create_token(sub, &jwt_secret, config_jwt.jwt_access).map_err(|e| {
-            log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
-            AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
-        })?;
+let access_token =
+    tokens::encode_token(sub, &jwt_secret, config_jwt.jwt_access).map_err(|e| {
+        log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
+        AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
+    })?;
 
-    let refresh_token =
-        tokens::create_token(&sub, &jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-            log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
-            AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
-        })?;
-    /*
-    let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-
-    let access_token =
-        tools_token::collect_token(user_id: i32, num_token: i32, jwt_secret, config_jwt.jwt_access).map_err(|e| {
-            log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
-            AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
-        })?;
-
-    let refresh_token =
-        tools_token::collect_token(user_id: i32, num_token: i32, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-            log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
-            AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
-        })?;
+let refresh_token =
+    tokens::encode_token(&sub, &jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
+        log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
+        AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
+    })?;
     */
-    Ok((access_token, refresh_token))
-}
+/*
+let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+let access_token =
+    tools_token::collect_token(user_id: i32, num_token: i32, jwt_secret, config_jwt.jwt_access).map_err(|e| {
+        log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
+        AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
+    })?;
+
+let refresh_token =
+    tools_token::collect_token(user_id: i32, num_token: i32, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
+        log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
+        AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
+    })?;
+*/
+// Ok((access_token, refresh_token))
+// }
 
 // POST api/logout
 #[rustfmt::skip]
@@ -279,7 +286,7 @@ pub async fn new_token(
     let token = token_user_dto.token;
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
-    let (user_id, num_token) = tools_token::parse_token(&token, jwt_secret)?;
+    let (user_id, num_token) = tokens::unpack_token(&token, jwt_secret)?;
 
     let session_orm1 = session_orm.clone();
 
@@ -291,10 +298,7 @@ pub async fn new_token(
         existing_session
     })
     .await
-    .map_err(|e| {
-        log::debug!("{}: {}", err::CD_BLOCKING, e.to_string());
-        AppError::new(err::CD_BLOCKING, &e.to_string()).set_status(500)
-    })??;
+    .map_err(|e| err_blocking(e.to_string()))??;
 
     let session = session_opt.ok_or_else(|| {
         eprintln!("$^session with {} not found", user_id.clone()); // #-
@@ -315,8 +319,22 @@ pub async fn new_token(
     eprintln!("$^user_id: {}", user_id.clone());
 
     let num_token = tokens::generate_num_token();
-    let sub = tokens::create_dual_sub(user_id, num_token);
-    let (token, refresh_token) = create_tokens(&sub, config_jwt.get_ref().clone())?;
+    let config_jwt = config_jwt.get_ref().clone();
+    let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+    // Pack two parameters (user.id, num_token) into a access_token.
+    let access_token = tokens::pack_token(user_id, num_token, jwt_secret, config_jwt.jwt_access)
+        .map_err(|err| {
+            log::debug!("{CD_JSONWEBTOKEN}: {}", err);
+            AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
+        })?;
+
+    // Pack two parameters (user.id, num_token) into a access_token.
+    let refresh_token = tokens::pack_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh)
+        .map_err(|err| {
+            log::debug!("{CD_JSONWEBTOKEN}: {}", err);
+            AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
+        })?;
 
     let session_opt = session_orm1.modify_session(user_id, Some(num_token)).map_err(|e| {
         #[rustfmt::skip]
@@ -330,13 +348,13 @@ pub async fn new_token(
     }
 
     let user_tokens_dto = user_models::UserTokensDto {
-        access_token: token.to_owned(),
+        access_token: access_token.to_owned(),
         refresh_token,
     };
 
     let max_age = ActixWebDuration::new(config_jwt.jwt_access, 0);
     #[rustfmt::skip]
-    let cookie = Cookie::build("token", token.to_owned()).path("/").max_age(max_age).http_only(true)
+    let cookie = Cookie::build("token", access_token.to_owned()).path("/").max_age(max_age).http_only(true)
         .finish();
 
     Ok(HttpResponse::Ok().cookie(cookie).json(user_tokens_dto))
@@ -1289,8 +1307,8 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = tokens::create_token(&user_id, jwt_secret, -60).unwrap();
-        let data_token = tokens::create_token(&user_id, jwt_secret, 120).unwrap();
+        let token = tokens::encode_token(&user_id, jwt_secret, -60).unwrap();
+        let data_token = tokens::encode_token(&user_id, jwt_secret, 120).unwrap();
 
         let data_config_jwt = web::Data::new(config_jwt.clone());
         let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));

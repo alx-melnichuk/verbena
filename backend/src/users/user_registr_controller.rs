@@ -71,7 +71,7 @@ pub async fn registration(
     registr_user_dto.email = registr_user_dto.email.to_lowercase();
 
     let password = registr_user_dto.password.clone();
-    let password_hashed = hash_tools::ctreate_hash(&password).map_err(|e| {
+    let password_hashed = hash_tools::encode_hash(&password).map_err(|e| {
         log::debug!("{}: {}", err::CD_HASHING_PASSWD, e.to_string());
         AppError::new(err::CD_HASHING_PASSWD, &e.to_string()).set_status(500)
     })?;
@@ -169,8 +169,7 @@ pub async fn registration(
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use actix_web::test::TestRequest;
-    use actix_web::{dev, http, test, web, App};
+    use actix_web::{dev, http, test, test::TestRequest, web, App};
     use chrono::{DateTime, Duration, Utc};
     use serde_json::json;
 

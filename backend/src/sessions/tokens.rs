@@ -3,7 +3,10 @@ use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, 
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::utils::parse_err;
+use crate::{
+    errors::AppError,
+    utils::{err, parser},
+};
 
 pub const CD_INVALID_TOKEN: &str = "InvalidToken";
 pub const CD_NUM_TOKEN_MIN: usize = 0;
@@ -16,7 +19,7 @@ pub struct TokenClaims {
     pub exp: usize,
 }
 
-pub fn create_token(
+pub fn encode_token(
     sub: &str,
     secret: &[u8],
     expires_in_seconds: i64,
@@ -58,23 +61,51 @@ pub fn generate_num_token() -> i32 {
     result as i32
 }
 
-pub fn create_dual_sub(user_id: i32, num_token: i32) -> String {
+pub fn pack_dual_sub(user_id: i32, num_token: i32) -> String {
     format!("{}.{}", user_id, num_token)
 }
 
-pub fn parse_dual_sub(dual_sub: &str) -> Result<(i32, i32), String> {
+pub fn unpack_dual_sub(dual_sub: &str) -> Result<(i32, i32), String> {
     let list: Vec<&str> = dual_sub.split('.').collect();
     let user_id: &str = list.get(0).unwrap_or(&"").clone();
     let num_token: &str = list.get(1).unwrap_or(&"").clone();
 
-    let user_id = user_id.parse::<i32>().map_err(|e| {
-        let msg = parse_err::MSG_PARSE_INT_ERROR;
-        format!("id: {} `{}` - {}", msg, user_id, e.to_string())
+    let user_id = parser::parse_i32(user_id).map_err(|err| format!("id: {err}"))?;
+
+    let num_token = parser::parse_i32(num_token).map_err(|err| format!("num_token: {err}"))?;
+
+    Ok((user_id, num_token))
+}
+
+/// Pack two parameters into a token.
+pub fn pack_token(
+    user_id: i32,
+    num_token: i32,
+    jwt_secret: &[u8],
+    token_duration: i64,
+) -> Result<String, String> {
+    let sub = pack_dual_sub(user_id, num_token);
+    let token = encode_token(&sub, &jwt_secret, token_duration).map_err(|e| e.to_string())?;
+
+    Ok(token)
+}
+
+/// Unpack two parameters from the token.
+pub fn unpack_token(token: &str, jwt_secret: &[u8]) -> Result<(i32, i32), AppError> {
+    let token_claims = decode_token(token, jwt_secret).map_err(|e| {
+        // eprintln!("$^ unpack_token() decode_token.is_err(): {}", e); // #-
+        // eprintln!("$^ unpack_token() token: `{}`", token); // #-
+        #[rustfmt::skip]
+        log::debug!("{}: {} {}", err::CD_INVALID_TOKEN, err::MSG_INVALID_TOKEN, e);
+        return AppError::new(err::CD_INVALID_TOKEN, err::MSG_INVALID_TOKEN).set_status(403);
     })?;
 
-    let num_token = num_token.parse::<i32>().map_err(|e| {
-        let msg = parse_err::MSG_PARSE_INT_ERROR;
-        format!("num_token: {} `{}` - {}", msg, num_token, e.to_string())
+    let (user_id, num_token) = unpack_dual_sub(&token_claims.sub).map_err(|e| {
+        // eprintln!("$^ unpack_token() unpack_dual_sub.err(): {}", e.to_string()); // #-
+        #[rustfmt::skip]
+        log::debug!("{}: {}", err::CD_UNALLOWABLE_TOKEN, err::MSG_UNALLOWABLE_TOKEN);
+        return AppError::new(err::CD_UNALLOWABLE_TOKEN, err::MSG_UNALLOWABLE_TOKEN)
+            .set_status(403);
     })?;
 
     Ok((user_id, num_token))
@@ -90,7 +121,7 @@ mod tests {
         let user_id = "user123";
         let secret = b"my-secret-key";
 
-        let token = create_token(user_id, secret, 60).unwrap();
+        let token = encode_token(user_id, secret, 60).unwrap();
         let decoded_user_id = decode_token(&token, secret).unwrap().sub;
 
         assert_eq!(decoded_user_id, user_id);
@@ -101,7 +132,7 @@ mod tests {
         let user_id = "";
         let secret = b"my-secret-key";
 
-        let result = create_token(user_id, secret, 60);
+        let result = encode_token(user_id, secret, 60);
 
         assert!(result.is_err());
         assert_eq!(
@@ -124,7 +155,7 @@ mod tests {
     #[test]
     fn test_decode_expired_token() {
         let secret = b"my-secret-key";
-        let expired_token = create_token("user123", secret, -60).unwrap();
+        let expired_token = encode_token("user123", secret, -60).unwrap();
 
         let result = decode_token(expired_token, secret);
 

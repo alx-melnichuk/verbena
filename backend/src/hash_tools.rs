@@ -7,10 +7,10 @@ pub const MAX_PARAM_LENGTH: usize = 64;
 pub const ERR_PARAM_EMPTY: &str = "Parameter is empty.";
 pub const ERR_PARAM_EXCEED_MAX_LEN: &str = "The parameter exceeds the max length of ";
 pub const ERR_HASHING_ERR: &str = "Error creating hash - ";
-pub const ERR_INVALID_HASH_FORMAT: &str = "Invalid password hash format - ";
+pub const ERR_INVALID_HASH_FORMAT: &str = "Invalid parameter hash format - ";
 
 /// Create a hash for the value.
-pub fn ctreate_hash(param: impl Into<String>) -> Result<String, String> {
+pub fn encode_hash(param: impl Into<String>) -> Result<String, String> {
     let param = param.into();
 
     if param.is_empty() {
@@ -26,8 +26,7 @@ pub fn ctreate_hash(param: impl Into<String>) -> Result<String, String> {
         .map_err(|e| format!("{}{}", ERR_HASHING_ERR, e.to_string()))?
         .to_string();
 
-    // Ok(password_hash.hash.to_owned())
-    Ok(param_hash)
+    Ok(param_hash.to_owned())
 }
 
 /// Compare the hash for the value with the specified one.
@@ -56,7 +55,7 @@ mod tests {
 
     fn setup_test() -> (String, String) {
         let password = "password123";
-        let hashed_password = ctreate_hash(password).unwrap();
+        let hashed_password = encode_hash(password).unwrap();
         (password.to_string(), hashed_password)
     }
 
@@ -106,7 +105,7 @@ mod tests {
 
     #[test]
     fn test_hash_empty_password_should_fail() {
-        let result = ctreate_hash("");
+        let result = encode_hash("");
 
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), ERR_PARAM_EMPTY)
@@ -114,7 +113,7 @@ mod tests {
 
     #[test]
     fn test_hash_long_password_should_fail() {
-        let result = ctreate_hash("a".repeat(1000));
+        let result = encode_hash("a".repeat(1000));
         let error = format!("{}{}", ERR_PARAM_EXCEED_MAX_LEN, MAX_PARAM_LENGTH);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), error);
