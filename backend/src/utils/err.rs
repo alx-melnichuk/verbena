@@ -24,6 +24,10 @@ pub const MSG_UNALLOWABLE_TOKEN: &str = "oken value is unallowable";
 pub const CD_PERMISSION_DENIED: &str = "PermissionDenied";
 pub const MSG_PERMISSION_DENIED: &str = "You are not allowed to perform this action";
 
+// 404
+pub const CD_NO_CONFIRM: &str = "No Confirmation";
+pub const MSG_CONFIRM_NOT_FOUND: &str = "Confirmation not found!";
+
 // 500
 // Error web::block for waiting for database query to complete.
 pub const CD_BLOCKING: &str = "Blocking";

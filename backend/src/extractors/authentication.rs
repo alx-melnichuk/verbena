@@ -12,7 +12,7 @@ use crate::errors::AppError;
 use crate::sessions::session_orm::inst::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::sessions::{session_orm::SessionOrm, tokens::unpack_token, config_jwt::ConfigJwt};
+use crate::sessions::{session_orm::SessionOrm, tokens::decode_dual_token, config_jwt::ConfigJwt};
 use crate::users::user_models::{User, UserRole};
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
@@ -177,10 +177,10 @@ where
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // eprintln!(")( auth() token: `{}`", token.to_string()); // #-
 
-        let token_res = unpack_token(&token, jwt_secret);
+        let token_res = decode_dual_token(&token, jwt_secret);
         
         if let Err(e) = token_res {
-            // eprintln!("a_ unpack_token().err {}: {}", e.code, e.message); // #-
+            // eprintln!("a_ decode_dual_token().err {}: {}", e.code, e.message); // #-
             log::debug!("{}: {}", e.code, e.message);
             return Box::pin(ready(Err(ErrorForbidden(e))));
         }
@@ -260,7 +260,7 @@ mod tests {
     use actix_web::{dev, http, test, web, App, test::TestRequest, cookie::Cookie, get, HttpResponse};
     use crate::sessions::{
         config_jwt::{self, ConfigJwt},
-        tokens::pack_token,
+        tokens::encode_dual_token,
         session_models::Session,
         session_orm::tests::SessionOrmApp};
     use crate::users::{
@@ -332,7 +332,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::get();
         let resp =
@@ -349,7 +349,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::get().cookie(Cookie::new("token", token));
         let resp =
@@ -367,7 +367,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::get();
         let resp =
@@ -455,7 +455,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
-        let token = pack_token(user1.id, num_token, &jwt_secret, -config_jwt.jwt_access).unwrap();
+        let token = encode_dual_token(user1.id, num_token, &jwt_secret, -config_jwt.jwt_access).unwrap();
  
         let req = test::TestRequest::get();
         let user_v = vec![user1];
@@ -483,7 +483,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
-        let token = pack_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_dual_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
     
         let req = test::TestRequest::get();
         let user_v = vec![user1];
@@ -510,7 +510,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
  
         let req = test::TestRequest::get();
         let user_v = vec![user1];

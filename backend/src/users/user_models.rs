@@ -137,7 +137,8 @@ pub struct RegistrUserDto {
 pub struct RegistrUserResponseDto {
     pub nickname: String,
     pub email: String,
-    pub target: String,
+    #[serde(rename = "registrToken")]
+    pub registr_token: String,
 }
 
 // ** - **

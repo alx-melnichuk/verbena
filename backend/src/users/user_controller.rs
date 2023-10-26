@@ -235,7 +235,7 @@ mod tests {
         config_jwt::{self, ConfigJwt},
         session_models::Session,
         session_orm::tests::SessionOrmApp,
-        tokens::pack_token,
+        tokens::encode_dual_token,
     };
     use crate::users::{
         user_models::{ModifyUserDto, User, UserDto, UserRole, UserValidateTest},
@@ -386,7 +386,8 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::get().uri("/user_current");
         let user_v = vec![user1];
@@ -424,7 +425,8 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
             .uri(&format!("/users/{}", &user_id_bad)) // PUT users/{id}a
@@ -458,7 +460,8 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
             .uri(&format!("/users/{}9", &user_id)) // PUT users/{id}9
@@ -498,7 +501,8 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
             .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
@@ -544,7 +548,8 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
             .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
@@ -578,7 +583,8 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
             .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
@@ -612,7 +618,8 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
             .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
@@ -646,7 +653,8 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
             .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
@@ -680,7 +688,8 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
             .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
@@ -714,7 +723,8 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
             .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
@@ -748,7 +758,8 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
             .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
@@ -782,7 +793,8 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::put()
             .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
@@ -818,7 +830,8 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::delete().uri(&format!("/users/{}", &user_id_bad)); // DELETE /user/{id}a
         let user_v = vec![user1];
@@ -846,7 +859,8 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
         // let jwt_access = config_jwt.jwt_access;
         // let token =      collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::delete().uri(&format!("/users/{}", user_id_bad)); // DELETE /user/1002
         let user_v = vec![user1];
@@ -872,7 +886,8 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token = pack_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::delete().uri(&format!("/users/{}", &user_id)); // DELETE /user/{id}
         let user_v = vec![user1];

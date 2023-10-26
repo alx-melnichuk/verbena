@@ -72,7 +72,7 @@ pub mod inst {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to find user by id and return it.
-            let user_opt: Option<User> = schema::users::table
+            let user_opt = schema::users::table
                 .filter(schema::users::dsl::id.eq(id))
                 .first::<User>(&mut conn)
                 .optional()
@@ -89,7 +89,7 @@ pub mod inst {
             let mut conn = self.get_conn()?;
             let nickname2 = nickname.to_lowercase();
             // Run query using Diesel to find user by nickname and return it.
-            let user_opt: Option<User> = schema::users::table
+            let user_opt = schema::users::table
                 .filter(schema::users::dsl::nickname.eq(nickname2))
                 .first::<User>(&mut conn)
                 .optional()
@@ -106,7 +106,7 @@ pub mod inst {
             let mut conn = self.get_conn()?;
             let email2 = email.to_lowercase();
             // Run query using Diesel to find user by email and return it.
-            let user_opt: Option<User> = schema::users::table
+            let user_opt = schema::users::table
                 .filter(schema::users::dsl::email.eq(email2))
                 .first::<User>(&mut conn)
                 .optional()
@@ -254,9 +254,8 @@ pub mod tests {
     impl UserOrm for UserOrmApp {
         /// Find for an entity (user) by id.
         fn find_user_by_id(&self, id: i32) -> Result<Option<User>, String> {
-            let user_opt: Option<User> =
-                self.user_vec.iter().find(|user| user.id == id).map(|user| user.clone());
-            Ok(user_opt)
+            let result = self.user_vec.iter().find(|user| user.id == id).map(|user| user.clone());
+            Ok(result)
         }
         /// Find for entity (user) by nickname.
         fn find_user_by_nickname(&self, nickname: &str) -> Result<Option<User>, String> {
@@ -265,13 +264,13 @@ pub mod tests {
             }
             let nickname2 = nickname.to_lowercase();
 
-            let user_opt: Option<User> = self
+            let result = self
                 .user_vec
                 .iter()
                 .find(|user| user.nickname == nickname2)
                 .map(|user| user.clone());
 
-            Ok(user_opt)
+            Ok(result)
         }
         /// Find for an entity (user) by email.
         fn find_user_by_email(&self, email: &str) -> Result<Option<User>, String> {
@@ -280,10 +279,10 @@ pub mod tests {
             }
             let email2 = email.to_lowercase();
 
-            let user_opt: Option<User> =
+            let result =
                 self.user_vec.iter().find(|user| user.email == email2).map(|user| user.clone());
 
-            Ok(user_opt)
+            Ok(result)
         }
         /// Find for an entity (user) by nickname or email.
         fn find_user_by_nickname_or_email(
@@ -297,20 +296,20 @@ pub mod tests {
             let nickname2 = nickname.to_lowercase();
             let email2 = email.to_lowercase();
 
-            let user_opt: Option<User> = self
+            let result = self
                 .user_vec
                 .iter()
                 .find(|user| user.nickname == nickname2 || user.email == email2)
                 .map(|user| user.clone());
 
-            Ok(user_opt)
+            Ok(result)
         }
         /// Add a new entity (user).
         fn create_user(&self, create_user_dto: &CreateUserDto) -> Result<User, String> {
             let nickname = &create_user_dto.nickname.to_lowercase();
             let email = &create_user_dto.email.to_lowercase();
 
-            let user1_opt: Option<User> = self.find_user_by_nickname_or_email(nickname, email)?;
+            let user1_opt = self.find_user_by_nickname_or_email(nickname, email)?;
             if user1_opt.is_some() {
                 return Err("Session already exists".to_string());
             }

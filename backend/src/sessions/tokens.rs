@@ -63,47 +63,38 @@ pub fn generate_num_token() -> i32 {
     result as i32
 }
 
-pub fn pack_dual_sub(user_id: i32, num_token: i32) -> String {
-    format!("{}.{}", user_id, num_token)
-}
-
-pub fn unpack_dual_sub(dual_sub: &str) -> Result<(i32, i32), String> {
-    let list: Vec<&str> = dual_sub.split('.').collect();
-    let user_id: &str = list.get(0).unwrap_or(&"").clone();
-    let num_token: &str = list.get(1).unwrap_or(&"").clone();
-
-    let user_id = parser::parse_i32(user_id).map_err(|err| format!("id: {err}"))?;
-
-    let num_token = parser::parse_i32(num_token).map_err(|err| format!("num_token: {err}"))?;
-
-    Ok((user_id, num_token))
-}
-
 /// Pack two parameters into a token.
-pub fn pack_token(
+pub fn encode_dual_token(
     user_id: i32,
     num_token: i32,
     jwt_secret: &[u8],
     token_duration: i64,
 ) -> Result<String, String> {
-    let sub = pack_dual_sub(user_id, num_token);
+    let sub = format!("{}.{}", user_id, num_token);
     let token = encode_token(&sub, &jwt_secret, token_duration).map_err(|e| e.to_string())?;
 
     Ok(token)
 }
 
 /// Unpack two parameters from the token.
-pub fn unpack_token(token: &str, jwt_secret: &[u8]) -> Result<(i32, i32), AppError> {
+pub fn decode_dual_token(token: &str, jwt_secret: &[u8]) -> Result<(i32, i32), AppError> {
     let token_claims = decode_token(token, jwt_secret).map_err(|e| {
         #[rustfmt::skip]
         log::debug!("{CD_INVALID_TOKEN}: {} {}", MSG_INVALID_TOKEN, e);
         return AppError::new(CD_INVALID_TOKEN, MSG_INVALID_TOKEN).set_status(403);
     })?;
 
-    let (user_id, num_token) = unpack_dual_sub(&token_claims.sub).map_err(|_| {
-        // eprintln!("$^ unpack_token() unpack_dual_sub.err(): {}", e.to_string()); // #-
-        #[rustfmt::skip]
-        log::debug!("{CD_UNALLOWABLE_TOKEN}: {MSG_UNALLOWABLE_TOKEN}");
+    let list: Vec<&str> = token_claims.sub.split('.').collect();
+    let user_id_str: &str = list.get(0).unwrap_or(&"").clone();
+    let num_token_str: &str = list.get(1).unwrap_or(&"").clone();
+
+    let user_id = parser::parse_i32(user_id_str).map_err(|err| {
+        log::debug!("{CD_UNALLOWABLE_TOKEN}: {MSG_UNALLOWABLE_TOKEN} - id: {err}");
+        return AppError::new(CD_UNALLOWABLE_TOKEN, MSG_UNALLOWABLE_TOKEN).set_status(403);
+    })?;
+
+    let num_token = parser::parse_i32(num_token_str).map_err(|err| {
+        log::debug!("{CD_UNALLOWABLE_TOKEN}: {MSG_UNALLOWABLE_TOKEN} - num_token: {err}");
         return AppError::new(CD_UNALLOWABLE_TOKEN, MSG_UNALLOWABLE_TOKEN).set_status(403);
     })?;
 

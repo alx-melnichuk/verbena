@@ -1,4 +1,4 @@
-use actix_web::{post, web, HttpResponse};
+use actix_web::{post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
 use validator::Validate;
 
@@ -9,9 +9,15 @@ use crate::email::mailer::tests::MailerApp;
 use crate::email::mailer::Mailer;
 use crate::errors::{AppError, ERR_CN_VALIDATION};
 use crate::hash_tools;
+use crate::sessions::session_models;
+#[cfg(not(feature = "mockdata"))]
+use crate::sessions::session_orm::inst::SessionOrmApp;
+#[cfg(feature = "mockdata")]
+use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::{
     config_jwt,
-    tokens::{generate_num_token, pack_token},
+    session_orm::SessionOrm,
+    tokens::{decode_dual_token, encode_dual_token, generate_num_token},
 };
 use crate::users::{
     user_models, user_orm::UserOrm, user_registr_models, user_registr_orm::UserRegistrOrm,
@@ -22,7 +28,7 @@ use crate::users::{user_orm::inst::UserOrmApp, user_registr_orm::inst::UserRegis
 use crate::users::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
 use crate::utils::{
     config_app,
-    err::{self, CD_JSONWEBTOKEN},
+    err::{self, CD_JSONWEBTOKEN, CD_NO_CONFIRM, MSG_CONFIRM_NOT_FOUND},
 };
 
 pub const CD_WRONG_EMAIL: &str = "WrongEmail";
@@ -35,7 +41,9 @@ pub const CD_ERROR_SENDING_EMAIL: &str = "ErrorSendingEmail";
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     POST api/registration
-    cfg.service(registration);
+    cfg.service(registration)
+        // PUT api//registration/{registr_token}
+        .service(confirm_registration);
 }
 
 fn err_database(err: String) -> AppError {
@@ -106,7 +114,7 @@ pub async fn registration(
     let email = registr_user_dto.email.clone();
     let user_registr_orm2 = user_registr_orm.clone();
 
-    // Find in the "user_registration" table an entry with an active date, by nickname or email.
+    // Find in the "user_registr" table an entry with an active date, by nickname or email.
     let user_registr_opt = web::block(move || {
         let existing_user_registr = user_registr_orm2
             .find_user_registr_by_nickname_or_email(&nickname, &email)
@@ -124,8 +132,7 @@ pub async fn registration(
         return Err(err_wrong_email_or_nickname(is_match_nickname));
     }
 
-    // If there is no such record, then add the specified data to the "user_registration" table.
-
+    // If there is no such record, then add the specified data to the "user_registr" table.
     let nickname = registr_user_dto.nickname.clone();
     let email = registr_user_dto.email.clone();
 
@@ -139,8 +146,8 @@ pub async fn registration(
         final_date: final_date_utc,
     };
 
+    // Create a new entity (user).
     let user_registr = web::block(move || {
-        // Create a new entity (user).
         let user_registr = user_registr_orm
             .create_user_registr(&create_user_registr_dto)
             .map_err(|e| err_database(e));
@@ -154,24 +161,23 @@ pub async fn registration(
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Pack two parameters (user_registr.id, num_token) into a registr_token.
-    let registr_token = pack_token(user_registr.id, num_token, jwt_secret, app_registr_duration)
-        .map_err(|err| {
-            log::debug!("{CD_JSONWEBTOKEN}: {}", err);
-            AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
-        })?;
-
-    let target = registr_token;
-    // let target = user_registr.id.to_string(); // #-
+    let registr_token =
+        encode_dual_token(user_registr.id, num_token, jwt_secret, app_registr_duration).map_err(
+            |err| {
+                log::debug!("{CD_JSONWEBTOKEN}: {}", err);
+                AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
+            },
+        )?;
 
     // Prepare a letter confirming this registration.
     let domain = &config_app.app_domain;
     let nickname = registr_user_dto.nickname.clone();
     let receiver = registr_user_dto.email.clone();
 
-    let result = mailer.send_verification_code(&receiver, &domain, &nickname, &target);
+    let result = mailer.send_verification_code(&receiver, &domain, &nickname, &registr_token);
+
     if result.is_err() {
         let err = result.unwrap_err();
-        eprintln!("Failed to send email: {:?}", err); // #-
         log::debug!("{CD_ERROR_SENDING_EMAIL}: {err}");
         return Err(AppError::new(CD_ERROR_SENDING_EMAIL, &err).set_status(500));
     }
@@ -179,10 +185,108 @@ pub async fn registration(
     let registr_user_response_dto = user_models::RegistrUserResponseDto {
         nickname: registr_user_dto.nickname.clone(),
         email: registr_user_dto.email.clone(),
-        target: target.clone(),
+        registr_token: registr_token.clone(),
     };
 
     Ok(HttpResponse::Ok().json(registr_user_response_dto))
+}
+
+// Confirm user registration.
+// PUT api//registration/{registr_token}
+/*#[put("/registration/{registr_token}")]
+pub fn confirm_registration0(
+    request: actix_web::HttpRequest,
+    config_jwt: web::Data<config_jwt::ConfigJwt>,
+
+    user_registr_orm: web::Data<UserRegistrOrmApp>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let registr_token = request.match_info().query("registr_token").to_string();
+
+    Ok(HttpResponse::Ok().finish())
+}*/
+
+// Confirm user registration.
+// PUT api//registration/{registr_token}
+#[put("/registration/{registr_token}")]
+pub async fn confirm_registration(
+    request: actix_web::HttpRequest,
+    config_jwt: web::Data<config_jwt::ConfigJwt>,
+    user_registr_orm: web::Data<UserRegistrOrmApp>,
+    user_orm: web::Data<UserOrmApp>,
+    session_orm: web::Data<SessionOrmApp>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let registr_token = request.match_info().query("registr_token").to_string();
+
+    let config_jwt = config_jwt.get_ref().clone();
+    let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+    // Check the signature and expiration date on the received “registr_token”.
+    let dual_token = decode_dual_token(&registr_token, jwt_secret).map_err(|err| {
+        eprintln!("cr_ decode_dual_token().err {}: {}", err.code, err.message); // #-
+        log::debug!("{}: {}", err.code, err.message);
+        err // 403
+    })?;
+
+    // Get "user_registr ID" from "registr_token".
+    let (user_registr_id, _) = dual_token;
+
+    let user_registr_orm2 = user_registr_orm.clone();
+    // Find a record with the specified ID in the “user_registr” table.
+    let user_registr_opt = web::block(move || {
+        let user_registr = user_registr_orm
+            .find_user_registr_by_id(user_registr_id)
+            .map_err(|e| err_database(e));
+        user_registr
+    })
+    .await
+    .map_err(|e| err_blocking(e.to_string()))??;
+
+    // If no such entry exists, then exit with code 404.
+    let user_registr = user_registr_opt.ok_or_else(|| {
+        eprintln!("cr_ user_registr_opt().err {CD_NO_CONFIRM}: {MSG_CONFIRM_NOT_FOUND}"); // #-
+        log::debug!("{CD_NO_CONFIRM}: {MSG_CONFIRM_NOT_FOUND}");
+        AppError::new(CD_NO_CONFIRM, MSG_CONFIRM_NOT_FOUND).set_status(404)
+    })?;
+
+    // If such an entry exists, then add a new user.
+    let create_user_dto = user_models::CreateUserDto {
+        nickname: user_registr.nickname,
+        email: user_registr.email,
+        password: user_registr.password,
+    };
+    let user = web::block(move || {
+        // Create a new entity (user).
+        let user = user_orm.create_user(&create_user_dto).map_err(|e| err_database(e.to_string()));
+        user
+    })
+    .await
+    .map_err(|e| err_blocking(e.to_string()))??;
+
+    // Create a new entity (session).
+    let session_res = web::block(move || {
+        let session = session_models::Session {
+            user_id: user.clone().id,
+            num_token: None,
+        };
+        session_orm.create_session(&session).map_err(|e| err_database(e.to_string()))
+    })
+    .await
+    .map_err(|e| err_blocking(e.to_string()))?;
+
+    // Delete the registration record for this user in the “user_registr” table.
+    let count_res = web::block(move || {
+        user_registr_orm2
+            .delete_user_registr(user_registr_id)
+            .map_err(|e| err_database(e))
+    })
+    .await
+    .map_err(|e| err_blocking(e.to_string()))?;
+
+    if session_res.is_err() || count_res.is_err() {
+        return Err(err_database("Error saving session.".to_string()));
+    }
+
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[cfg(all(test, feature = "mockdata"))]
@@ -193,7 +297,7 @@ mod tests {
 
     use crate::email::config_smtp;
     use crate::errors::{AppError, ERR_CN_VALIDATION};
-    use crate::sessions::tokens::unpack_token;
+    use crate::sessions::tokens::decode_dual_token;
     use crate::users::{
         user_models::{RegistrUserDto, User, UserRole, UserValidateTest},
         user_orm::tests::{UserOrmApp, USER_ID_1},
@@ -521,7 +625,6 @@ mod tests {
 
         let registr_user_resp: user_models::RegistrUserResponseDto =
             serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        eprintln!("registr_user_resp: {:#?}", registr_user_resp.clone());
 
         let final_date: DateTime<Utc> = Utc::now() + Duration::seconds(20);
         let user_registr = UserRegistrOrmApp::new_user_registr(
@@ -535,12 +638,12 @@ mod tests {
         assert_eq!(user_registr.nickname, registr_user_resp.nickname);
         assert_eq!(user_registr.email, registr_user_resp.email);
 
-        let registr_token = registr_user_resp.target;
+        let registr_token = registr_user_resp.registr_token;
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
-        let (user_registr_id, _) = unpack_token(&registr_token, jwt_secret).unwrap();
+        let (user_registr_id, _) = decode_dual_token(&registr_token, jwt_secret).unwrap();
         assert_eq!(USER_REGISTR_ID_2, user_registr_id);
     }
 }

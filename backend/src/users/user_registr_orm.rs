@@ -1,6 +1,8 @@
 use super::user_registr_models::{CreateUserRegistrDto, UserRegistr};
 
 pub trait UserRegistrOrm {
+    /// Find for an entity (user_registration) by id.
+    fn find_user_registr_by_id(&self, id: i32) -> Result<Option<UserRegistr>, String>;
     /// Find for an entity (user_registration) by nickname or email.
     fn find_user_registr_by_nickname_or_email(
         &self,
@@ -64,6 +66,20 @@ pub mod inst {
     }
 
     impl UserRegistrOrm for UserRegistrOrmApp {
+        /// Find for an entity (user_registration) by id.
+        fn find_user_registr_by_id(&self, id: i32) -> Result<Option<UserRegistr>, String> {
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+            // Run query using Diesel to find user by id and return it.
+            let result = schema::user_registration::table
+                .filter(schema::user_registration::dsl::id.eq(id))
+                .first::<UserRegistr>(&mut conn)
+                .optional()
+                .map_err(|e| format!("{DB_USER_REGISTR}: {}", e.to_string()))?;
+
+            Ok(result)
+        }
+
         /// Find for an entity (user_registration) by nickname or email.
         fn find_user_registr_by_nickname_or_email(
             &self,
@@ -91,10 +107,6 @@ pub mod inst {
                 .first::<UserRegistr>(&mut conn)
                 .optional()
                 .map_err(|e| format!("{DB_USER_REGISTR}: {}", e.to_string()))?;
-
-            #[rustfmt::skip] // #
-            let res = if result.is_some() { "result.is_some();" } else { "result.is_none()" };
-            log::debug!("{res}"); // #
 
             Ok(result)
         }
@@ -192,6 +204,15 @@ pub mod tests {
     }
 
     impl UserRegistrOrm for UserRegistrOrmApp {
+        /// Find for an entity (user_registration) by id.
+        fn find_user_registr_by_id(&self, id: i32) -> Result<Option<UserRegistr>, String> {
+            let result = self
+                .user_registr_vec
+                .iter()
+                .find(|user_registr| user_registr.id == id)
+                .map(|user_registr| user_registr.clone());
+            Ok(result)
+        }
         /// Find for an entity (user_registration) by nickname or email.
         fn find_user_registr_by_nickname_or_email(
             &self,

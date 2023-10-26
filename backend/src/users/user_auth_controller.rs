@@ -12,7 +12,11 @@ use crate::hash_tools;
 use crate::sessions::session_orm::inst::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::sessions::{config_jwt, session_models, session_orm::SessionOrm, tokens};
+use crate::sessions::{
+    config_jwt, session_models,
+    session_orm::SessionOrm,
+    tokens::{decode_dual_token, encode_dual_token, generate_num_token},
+};
 use crate::users::user_models;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::inst::UserOrmApp;
@@ -161,23 +165,23 @@ pub async fn login(
 
     // if (!user.registered) { ForbiddenException('Your registration not confirmed!'); }
 
-    let num_token = tokens::generate_num_token();
+    let num_token = generate_num_token();
     let config_jwt = config_jwt.get_ref().clone();
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Pack two parameters (user.id, num_token) into a access_token.
-    let access_token = tokens::pack_token(user.id, num_token, jwt_secret, config_jwt.jwt_access)
+    let access_token = encode_dual_token(user.id, num_token, jwt_secret, config_jwt.jwt_access)
         .map_err(|err| {
             log::debug!("{CD_JSONWEBTOKEN}: {}", err);
             AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
         })?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
-    let refresh_token = tokens::pack_token(user.id, num_token, jwt_secret, config_jwt.jwt_refresh)
+    let refresh_token = encode_dual_token(user.id, num_token, jwt_secret, config_jwt.jwt_refresh)
         .map_err(|err| {
-            log::debug!("{CD_JSONWEBTOKEN}: {}", err);
-            AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
-        })?;
+        log::debug!("{CD_JSONWEBTOKEN}: {}", err);
+        AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
+    })?;
 
     let session_opt = session_orm.modify_session(user.id, Some(num_token)).map_err(|e| {
         #[rustfmt::skip]
@@ -284,7 +288,7 @@ pub async fn new_token(
     let token = token_user_dto.token;
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
-    let (user_id, num_token) = tokens::unpack_token(&token, jwt_secret)?;
+    let (user_id, num_token) = decode_dual_token(&token, jwt_secret)?;
 
     let session_orm1 = session_orm.clone();
 
@@ -316,23 +320,23 @@ pub async fn new_token(
     }
     eprintln!("$^user_id: {}", user_id.clone());
 
-    let num_token = tokens::generate_num_token();
+    let num_token = generate_num_token();
     let config_jwt = config_jwt.get_ref().clone();
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Pack two parameters (user.id, num_token) into a access_token.
-    let access_token = tokens::pack_token(user_id, num_token, jwt_secret, config_jwt.jwt_access)
+    let access_token = encode_dual_token(user_id, num_token, jwt_secret, config_jwt.jwt_access)
         .map_err(|err| {
             log::debug!("{CD_JSONWEBTOKEN}: {}", err);
             AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
         })?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
-    let refresh_token = tokens::pack_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh)
+    let refresh_token = encode_dual_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh)
         .map_err(|err| {
-            log::debug!("{CD_JSONWEBTOKEN}: {}", err);
-            AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
-        })?;
+        log::debug!("{CD_JSONWEBTOKEN}: {}", err);
+        AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
+    })?;
 
     let session_opt = session_orm1.modify_session(user_id, Some(num_token)).map_err(|e| {
         #[rustfmt::skip]
@@ -364,7 +368,7 @@ mod tests {
     // use serde_json::{json, to_string};
 
     // use crate::errors::AppError;
-    use crate::sessions::config_jwt;
+    use crate::sessions::{config_jwt, tokens::encode_token};
     use crate::users::{
         user_models,
         user_orm::tests::{UserOrmApp, USER_ID_1},
@@ -1308,8 +1312,8 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = tokens::encode_token(&user_id, jwt_secret, -60).unwrap();
-        let data_token = tokens::encode_token(&user_id, jwt_secret, 120).unwrap();
+        let token = encode_token(&user_id, jwt_secret, -60).unwrap();
+        let data_token = encode_token(&user_id, jwt_secret, 120).unwrap();
 
         let data_config_jwt = web::Data::new(config_jwt.clone());
         let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
