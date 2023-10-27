@@ -21,8 +21,8 @@ APP_PORT=8080
 APP_PROTOCOL=http
 # Token activity time in cookies (in seconds) 3600 = 60 minutes.
 APP_MAX_AGE=3600
-# Waiting time for registration confirmation (in seconds) 600 = 10 minutes
-APP_REGISTR_DURATION=600
+# Waiting time for registration confirmation (in minutes) = 15 minutes
+APP_REGISTR_DURATION=15
 
 # -----------------------------------------------------------------------------
 # Database (PostgreSQL)
@@ -40,10 +40,10 @@ DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_D
 # -----------------------------------------------------------------------------
 JWT_SECRET_KEY=jwt_secret_key
 JWT_MAXAGE=60
-#  15 minutes (15*60=900);
-JWT_ACCESS_TOKEN_DURATION=900
-#  14 days - (86400×14=1209600); 7 days - (86400×7=604800)
-JWT_REFRESH_TOKEN_DURATION=604800
+#  15 minutes;
+JWT_ACCESS_TOKEN_DURATION=15
+#  7 days = (60*24)×7=10080 minutes;
+JWT_REFRESH_TOKEN_DURATION=10080
 
 # -----------------------------------------------------------------------------
 # SMTP

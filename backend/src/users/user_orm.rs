@@ -202,8 +202,8 @@ pub mod tests {
 
     use super::*;
 
-    pub const USER_ID_1: i32 = 1201;
-    pub const USER_ID_2: i32 = 1202;
+    pub const USER_ID_1: i32 = 1101;
+    pub const USER_ID_2: i32 = 1102;
 
     #[derive(Debug, Clone)]
     pub struct UserOrmApp {
@@ -237,7 +237,7 @@ pub mod tests {
         /// Create a new entity instance.
         pub fn new_user(id: i32, nickname: &str, email: &str, password: &str) -> User {
             let today = Utc::now();
-            let cr_dt = today + Duration::seconds(-10);
+            let cr_dt = today + Duration::minutes(-10);
 
             User {
                 id,

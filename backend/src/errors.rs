@@ -6,9 +6,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
 use validator::{ValidationError, ValidationErrors};
 
-pub const ERR_CN_SERVER_ERROR: &str = "InternalServerError";
-pub const ERR_MSG_SERVER_ERROR: &str = "An unexpected internal server error occurred.";
-pub const ERR_CN_VALIDATION: &str = "Validation";
+pub const CN_SERVER_ERROR: &str = "InternalServerError";
+pub const MSG_SERVER_ERROR: &str = "An unexpected internal server error occurred.";
+pub const CN_VALIDATION: &str = "Validation";
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct AppError {
@@ -37,9 +37,9 @@ impl fmt::Display for AppError {
 impl AppError {
     pub fn new<'a>(code: &'a str, message: &'a str) -> Self {
         #[rustfmt::skip]
-        let code = if code.len() > 0 { code } else { ERR_CN_SERVER_ERROR };
+        let code = if code.len() > 0 { code } else { CN_SERVER_ERROR };
         #[rustfmt::skip]
-        let message = if message.len() > 0 { message } else { ERR_MSG_SERVER_ERROR };
+        let message = if message.len() > 0 { message } else { MSG_SERVER_ERROR };
         AppError {
             code: Cow::from(code.to_string()),
             message: Cow::from(message.to_string()),
@@ -104,7 +104,7 @@ impl actix_web::ResponseError for AppError {
 
 impl From<ValidationErrors> for AppError {
     fn from(errs: ValidationErrors) -> Self {
-        let mut app_error = AppError::new(ERR_CN_VALIDATION, &errs.to_string()).set_status(400);
+        let mut app_error = AppError::new(CN_VALIDATION, &errs.to_string()).set_status(400);
         for (key, val) in errs.field_errors().into_iter() {
             app_error.add_field_error_params(key, val);
         }

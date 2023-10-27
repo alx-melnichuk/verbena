@@ -16,6 +16,8 @@ pub trait UserRegistrOrm {
     ) -> Result<UserRegistr, String>;
     /// Delete an entity (user_registration).
     fn delete_user_registr(&self, id: i32) -> Result<usize, String>;
+    /// Delete all entities (user_registration) with an inactive "final_date".
+    fn delete_inactive_final_date(&self) -> Result<usize, String>;
 }
 
 pub mod cfg {
@@ -94,11 +96,11 @@ pub mod inst {
             let email2 = email.to_lowercase();
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            let current_now = Utc::now();
+            let today = Utc::now();
             // Run query using Diesel to find user by nickname or email and return it (where final_date > now).
             let result = schema::user_registration::table
                 .filter(
-                    schema::user_registration::dsl::final_date.gt(current_now).and(
+                    schema::user_registration::dsl::final_date.gt(today).and(
                         schema::user_registration::dsl::nickname
                             .eq(nickname2)
                             .or(schema::user_registration::dsl::email.eq(email2)),
@@ -141,6 +143,23 @@ pub mod inst {
                 diesel::delete(schema::user_registration::dsl::user_registration.find(id))
                     .execute(&mut conn)
                     .map_err(|e| format!("{DB_USER_REGISTR}: {}", e.to_string()))?;
+
+            Ok(count)
+        }
+
+        /// Delete all entities (user_registration) with an inactive "final_date".
+        fn delete_inactive_final_date(&self) -> Result<usize, String> {
+            let today = Utc::now();
+
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+            // Run query using Diesel to delete a entry (user_registration).
+            let count: usize = diesel::delete(
+                schema::user_registration::table
+                    .filter(schema::user_registration::dsl::final_date.lt(today)),
+            )
+            .execute(&mut conn)
+            .map_err(|e| format!("{DB_USER_REGISTR}: {}", e.to_string()))?;
 
             Ok(count)
         }
@@ -224,13 +243,13 @@ pub mod tests {
             }
             let nickname2 = nickname.to_lowercase();
             let email2 = email.to_lowercase();
-            let current_now = Utc::now();
+            let today = Utc::now();
 
             let result: Option<UserRegistr> = self
                 .user_registr_vec
                 .iter()
                 .find(|user_registr| {
-                    user_registr.final_date > current_now
+                    user_registr.final_date > today
                         && (user_registr.nickname == nickname2 || user_registr.email == email2)
                 })
                 .map(|user_registr| user_registr.clone());
@@ -273,6 +292,18 @@ pub mod tests {
             } else {
                 Ok(1)
             }
+        }
+        /// Delete all entities (user_registration) with an inactive "final_date".
+        fn delete_inactive_final_date(&self) -> Result<usize, String> {
+            let today = Utc::now();
+
+            let result = self
+                .user_registr_vec
+                .iter()
+                .filter(|user_registr| user_registr.final_date < today)
+                .count();
+
+            Ok(result)
         }
     }
 }

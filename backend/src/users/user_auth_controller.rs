@@ -5,7 +5,7 @@ use actix_web::{
 };
 use validator::Validate;
 
-use crate::errors::{AppError, ERR_CN_VALIDATION};
+use crate::errors::{AppError, CN_VALIDATION};
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::hash_tools;
 #[cfg(not(feature = "mockdata"))]
@@ -76,7 +76,7 @@ pub async fn registration0(
     // Checking the validity of the data model.
     json_user_dto.validate().map_err(|errors| {
         eprintln!("##json_user_dto.validate()"); // #-
-        log::debug!("{}: {}", ERR_CN_VALIDATION, errors.to_string());
+        log::debug!("{}: {}", CN_VALIDATION, errors.to_string());
         AppError::from(errors)
     })?;
 
@@ -127,7 +127,7 @@ pub async fn login(
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Checking the validity of the data model.
     json_user_dto.validate().map_err(|errors| {
-        log::debug!("{}: {}", ERR_CN_VALIDATION, errors.to_string());
+        log::debug!("{}: {}", CN_VALIDATION, errors.to_string());
         AppError::from(errors)
     })?;
 
@@ -417,7 +417,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_MIN);
         assert_eq!(app_err.message, msg_err);
     }*/
@@ -449,7 +449,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_MAX);
         assert_eq!(app_err.message, msg_err);
     }*/
@@ -481,7 +481,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_REGEX);
         assert_eq!(app_err.message, msg_err);
     }*/
@@ -551,7 +551,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_EMAIL_MIN);
         assert_eq!(app_err.message, msg_err);
     }*/
@@ -588,7 +588,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_EMAIL_MAX);
         assert_eq!(app_err.message, msg_err);
     }*/
@@ -623,7 +623,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_EMAIL);
         assert_eq!(app_err.message, msg_err);
     }*/
@@ -690,7 +690,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("password: {}", user_models::MSG_PASSWORD_MIN);
         assert_eq!(app_err.message, msg_err);
     }*/
@@ -722,7 +722,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("password: {}", user_models::MSG_PASSWORD_MAX);
         assert_eq!(app_err.message, msg_err);
     }*/
@@ -1312,8 +1312,8 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(&user_id, jwt_secret, -60).unwrap();
-        let data_token = encode_token(&user_id, jwt_secret, 120).unwrap();
+        let token = encode_token(&user_id, jwt_secret, -6).unwrap();
+        let data_token = encode_token(&user_id, jwt_secret, 12).unwrap();
 
         let data_config_jwt = web::Data::new(config_jwt.clone());
         let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));

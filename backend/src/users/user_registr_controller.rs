@@ -7,20 +7,21 @@ use crate::email::mailer::inst::MailerApp;
 #[cfg(feature = "mockdata")]
 use crate::email::mailer::tests::MailerApp;
 use crate::email::mailer::Mailer;
-use crate::errors::{AppError, ERR_CN_VALIDATION};
+use crate::errors::{AppError, CN_VALIDATION};
 use crate::hash_tools;
-use crate::sessions::session_models;
 #[cfg(not(feature = "mockdata"))]
 use crate::sessions::session_orm::inst::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::{
     config_jwt,
+    session_models::Session,
     session_orm::SessionOrm,
     tokens::{decode_dual_token, encode_dual_token, generate_num_token},
 };
 use crate::users::{
-    user_models, user_orm::UserOrm, user_registr_models, user_registr_orm::UserRegistrOrm,
+    user_models, user_orm::UserOrm, user_registr_models::CreateUserRegistrDto,
+    user_registr_orm::UserRegistrOrm,
 };
 #[cfg(not(feature = "mockdata"))]
 use crate::users::{user_orm::inst::UserOrmApp, user_registr_orm::inst::UserRegistrOrmApp};
@@ -77,7 +78,7 @@ pub async fn registration(
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Checking the validity of the data model.
     json_user_dto.validate().map_err(|errors| {
-        log::debug!("{}: {}", ERR_CN_VALIDATION, errors.to_string());
+        log::debug!("{}: {}", CN_VALIDATION, errors.to_string());
         AppError::from(errors)
     })?;
 
@@ -136,10 +137,10 @@ pub async fn registration(
     let nickname = registr_user_dto.nickname.clone();
     let email = registr_user_dto.email.clone();
 
-    let app_registr_duration = config_app.app_registr_duration.try_into().unwrap();
-    let final_date_utc = Utc::now() + Duration::minutes(app_registr_duration);
+    let app_registr_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
+    let final_date_utc = Utc::now() + Duration::minutes(app_registr_duration.into());
 
-    let create_user_registr_dto = user_registr_models::CreateUserRegistrDto {
+    let create_user_registr_dto = CreateUserRegistrDto {
         nickname,
         email,
         password: password_hashed,
@@ -148,6 +149,9 @@ pub async fn registration(
 
     // Create a new entity (user).
     let user_registr = web::block(move || {
+        // Delete all entities (user_registration) with an inactive "final_date".
+        user_registr_orm.delete_inactive_final_date().ok();
+
         let user_registr = user_registr_orm
             .create_user_registr(&create_user_registr_dto)
             .map_err(|e| err_database(e));
@@ -188,22 +192,8 @@ pub async fn registration(
         registr_token: registr_token.clone(),
     };
 
-    Ok(HttpResponse::Ok().json(registr_user_response_dto))
+    Ok(HttpResponse::Created().json(registr_user_response_dto))
 }
-
-// Confirm user registration.
-// PUT api//registration/{registr_token}
-/*#[put("/registration/{registr_token}")]
-pub fn confirm_registration0(
-    request: actix_web::HttpRequest,
-    config_jwt: web::Data<config_jwt::ConfigJwt>,
-
-    user_registr_orm: web::Data<UserRegistrOrmApp>,
-) -> actix_web::Result<HttpResponse, AppError> {
-    let registr_token = request.match_info().query("registr_token").to_string();
-
-    Ok(HttpResponse::Ok().finish())
-}*/
 
 // Confirm user registration.
 // PUT api//registration/{registr_token}
@@ -227,10 +217,11 @@ pub async fn confirm_registration(
         err // 403
     })?;
 
+    let user_registr_orm2 = user_registr_orm.clone();
+
     // Get "user_registr ID" from "registr_token".
     let (user_registr_id, _) = dual_token;
 
-    let user_registr_orm2 = user_registr_orm.clone();
     // Find a record with the specified ID in the “user_registr” table.
     let user_registr_opt = web::block(move || {
         let user_registr = user_registr_orm
@@ -254,39 +245,33 @@ pub async fn confirm_registration(
         email: user_registr.email,
         password: user_registr.password,
     };
-    let user = web::block(move || {
+    let (user, _) = web::block(move || {
         // Create a new entity (user).
-        let user = user_orm.create_user(&create_user_dto).map_err(|e| err_database(e.to_string()));
-        user
-    })
-    .await
-    .map_err(|e| err_blocking(e.to_string()))??;
-
-    // Create a new entity (session).
-    let session_res = web::block(move || {
-        let session = session_models::Session {
+        let user_res =
+            user_orm.create_user(&create_user_dto).map_err(|e| err_database(e.to_string()));
+        let user = user_res.unwrap();
+        // Create a new entity (session).
+        let session = Session {
             user_id: user.clone().id,
             num_token: None,
         };
-        session_orm.create_session(&session).map_err(|e| err_database(e.to_string()))
+        let session_res =
+            session_orm.create_session(&session).map_err(|e| err_database(e.to_string()));
+        let session = session_res.unwrap();
+
+        user_registr_orm2.delete_user_registr(user_registr_id).ok();
+
+        (user, session)
     })
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
 
     // Delete the registration record for this user in the “user_registr” table.
-    let count_res = web::block(move || {
-        user_registr_orm2
-            .delete_user_registr(user_registr_id)
-            .map_err(|e| err_database(e))
-    })
-    .await
-    .map_err(|e| err_blocking(e.to_string()))?;
+    let _ = web::block(move || {}).await.map_err(|e| err_blocking(e.to_string()))?;
 
-    if session_res.is_err() || count_res.is_err() {
-        return Err(err_database("Error saving session.".to_string()));
-    }
+    let user_dto = user_models::UserDto::from(user);
 
-    Ok(HttpResponse::Ok().finish())
+    Ok(HttpResponse::Created().json(user_dto))
 }
 
 #[cfg(all(test, feature = "mockdata"))]
@@ -296,15 +281,16 @@ mod tests {
     use serde_json::json;
 
     use crate::email::config_smtp;
-    use crate::errors::{AppError, ERR_CN_VALIDATION};
+    use crate::errors::{AppError, CN_VALIDATION};
     use crate::sessions::tokens::decode_dual_token;
     use crate::users::{
-        user_models::{RegistrUserDto, User, UserRole, UserValidateTest},
-        user_orm::tests::{UserOrmApp, USER_ID_1},
-        user_registr_models,
+        user_models::{RegistrUserDto, User, UserDto, UserRole, UserValidateTest},
+        user_orm::tests::{UserOrmApp, USER_ID_1, USER_ID_2},
+        user_registr_models::UserRegistr,
         user_registr_orm::tests::{UserRegistrOrmApp, USER_REGISTR_ID_1, USER_REGISTR_ID_2},
     };
     use crate::utils::config_app;
+    use crate::utils::err::{CD_INVALID_TOKEN, MSG_INVALID_TOKEN};
 
     use super::*;
 
@@ -320,9 +306,9 @@ mod tests {
         user.role = UserRole::User;
         user
     }
-    fn create_user_registr() -> user_registr_models::UserRegistr {
+    fn create_user_registr() -> UserRegistr {
         let today = Utc::now();
-        let final_date: DateTime<Utc> = today + Duration::seconds(20);
+        let final_date: DateTime<Utc> = today + Duration::minutes(20);
 
         let user_registr = UserRegistrOrmApp::new_user_registr(
             USER_REGISTR_ID_1,
@@ -335,9 +321,136 @@ mod tests {
         user_registr
     }
 
+    // ** confirm_registration **
+
+    async fn call_service_conf_registr(
+        user_vec: Vec<User>,
+        user_registr_vec: Vec<UserRegistr>,
+        session_vec: Vec<Session>,
+        test_request: TestRequest,
+        registr_token: &str,
+    ) -> dev::ServiceResponse {
+        let data_config_jwt = web::Data::new(config_jwt::get_test_config());
+        let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
+        let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(user_registr_vec));
+        let data_session_orm = web::Data::new(SessionOrmApp::create(session_vec));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .app_data(web::Data::clone(&data_user_registr_orm))
+                .app_data(web::Data::clone(&data_session_orm))
+                .service(confirm_registration),
+        )
+        .await;
+
+        let req = test_request
+            .uri(&format!("/registration/{registr_token}")) //PUT /confirm_registration
+            .to_request();
+
+        test::call_service(&app, req).await
+    }
+
+    #[test]
+    async fn test_confirm_registration_invalid_registr_token() {
+        let reg_token = "invalid_registr_token";
+
+        let req = test::TestRequest::put();
+        let resp = call_service_conf_registr(vec![], vec![], vec![], req, &reg_token).await;
+        assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, CD_INVALID_TOKEN);
+        assert_eq!(app_err.message, MSG_INVALID_TOKEN);
+    }
+    #[test]
+    async fn test_confirm_registration_final_date_has_expired() {
+        let user_reg1: UserRegistr = create_user_registr();
+        let user_reg1_id = user_reg1.id;
+        let user_reg_v = vec![user_reg1];
+
+        let num_token = 1234;
+
+        let config_app = config_app::get_test_config();
+        let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let registr_token =
+            encode_dual_token(user_reg1_id, num_token, jwt_secret, -reg_duration).unwrap();
+
+        let req = test::TestRequest::put();
+        let resp = call_service_conf_registr(vec![], user_reg_v, vec![], req, &registr_token).await;
+        assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, CD_INVALID_TOKEN);
+        assert_eq!(app_err.message, MSG_INVALID_TOKEN);
+    }
+    #[test]
+    async fn test_confirm_registration_no_exists_in_user_regist() {
+        let user_reg1: UserRegistr = create_user_registr();
+        let user_reg1_id = user_reg1.id;
+        let user_reg_v = vec![user_reg1];
+
+        let num_token = 1234;
+
+        let config_app = config_app::get_test_config();
+        let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let registr_token =
+            encode_dual_token(user_reg1_id + 1, num_token, jwt_secret, reg_duration).unwrap();
+
+        let req = test::TestRequest::put();
+        let resp = call_service_conf_registr(vec![], user_reg_v, vec![], req, &registr_token).await;
+        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, CD_NO_CONFIRM);
+        assert_eq!(app_err.message, MSG_CONFIRM_NOT_FOUND);
+    }
+    #[test]
+    async fn test_confirm_registration_exists_in_user_regist() {
+        let user_reg1: UserRegistr = create_user_registr();
+        let user_reg1_id = user_reg1.id;
+        let user_reg1b = user_reg1.clone();
+        let user_reg_v = vec![user_reg1];
+
+        let num_token = 1234;
+
+        let config_app = config_app::get_test_config();
+        let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let registr_token =
+            encode_dual_token(user_reg1_id, num_token, jwt_secret, reg_duration).unwrap();
+
+        let req = test::TestRequest::put();
+        let resp = call_service_conf_registr(vec![], user_reg_v, vec![], req, &registr_token).await;
+        assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
+
+        let body = test::read_body(resp).await;
+        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(user_dto_res.id, USER_ID_2);
+        assert_eq!(user_dto_res.nickname, user_reg1b.nickname);
+        assert_eq!(user_dto_res.email, user_reg1b.email);
+        assert_eq!(user_dto_res.password, "");
+        assert_eq!(user_dto_res.role, UserRole::User);
+    }
+
+    // ** registration **
+
     async fn call_service_registr(
         user_vec: Vec<User>,
-        user_registr_vec: Vec<user_registr_models::UserRegistr>,
+        user_registr_vec: Vec<UserRegistr>,
         test_request: TestRequest,
     ) -> dev::ServiceResponse {
         let data_config_app = web::Data::new(config_app::get_test_config());
@@ -402,7 +515,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_MIN);
         assert_eq!(app_err.message, msg_err);
     }
@@ -419,7 +532,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_MAX);
         assert_eq!(app_err.message, msg_err);
     }
@@ -436,7 +549,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_REGEX);
         assert_eq!(app_err.message, msg_err);
     }
@@ -453,7 +566,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("email: {}", user_models::MSG_EMAIL_MIN);
         assert_eq!(app_err.message, msg_err);
     }
@@ -470,7 +583,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("email: {}", user_models::MSG_EMAIL_MAX);
         assert_eq!(app_err.message, msg_err);
     }
@@ -487,7 +600,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("email: {}", user_models::MSG_EMAIL);
         assert_eq!(app_err.message, msg_err);
     }
@@ -504,7 +617,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("password: {}", user_models::MSG_PASSWORD_MIN);
         assert_eq!(app_err.message, msg_err);
     }
@@ -521,7 +634,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, ERR_CN_VALIDATION);
+        assert_eq!(app_err.code, CN_VALIDATION);
         let msg_err = format!("password: {}", user_models::MSG_PASSWORD_MAX);
         assert_eq!(app_err.message, msg_err);
     }
@@ -567,7 +680,7 @@ mod tests {
     }
     #[test]
     async fn test_registration_if_nickname_exists_in_registr() {
-        let user_registr1: user_registr_models::UserRegistr = create_user_registr();
+        let user_registr1: UserRegistr = create_user_registr();
         let nickname1: String = user_registr1.nickname.to_string();
 
         let req = test::TestRequest::post().set_json(RegistrUserDto {
@@ -587,7 +700,7 @@ mod tests {
     }
     #[test]
     async fn test_registration_if_email_exists_in_registr() {
-        let user_registr1: user_registr_models::UserRegistr = create_user_registr();
+        let user_registr1: UserRegistr = create_user_registr();
         let email1: String = user_registr1.email.to_string();
 
         let req = test::TestRequest::post().set_json(RegistrUserDto {
@@ -619,14 +732,14 @@ mod tests {
         });
 
         let resp = call_service_registr(vec![], vec![], req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         let body = test::read_body(resp).await;
 
         let registr_user_resp: user_models::RegistrUserResponseDto =
             serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        let final_date: DateTime<Utc> = Utc::now() + Duration::seconds(20);
+        let final_date: DateTime<Utc> = Utc::now() + Duration::minutes(20);
         let user_registr = UserRegistrOrmApp::new_user_registr(
             1,
             &nickname.to_string(),
