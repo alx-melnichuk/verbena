@@ -20,9 +20,12 @@ mod users;
 mod utils;
 
 use crate::email::{config_smtp, mailer};
-use crate::sessions::{config_jwt, session_orm};
+use crate::sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
 use crate::users::{user_auth_controller, user_controller, user_registr_controller};
-use crate::users::{user_orm, user_registr_orm};
+use crate::users::{
+    user_orm::cfg::get_user_orm_app, user_recovery_orm::cfg::get_user_recovery_orm_app,
+    user_registr_orm::cfg::get_user_registr_orm_app,
+};
 
 // ** Funcion Main **
 #[actix_web::main]
@@ -39,36 +42,33 @@ async fn main() -> io::Result<()> {
     }
     env_logger::init();
 
-    let app_host = env::var("APP_HOST").expect("APP_HOST not found.");
-    let app_port = env::var("APP_PORT").expect("APP_PORT not found.");
-    let app_url = format!("{}:{}", &app_host, &app_port);
-    let max_age_str = env::var("APP_MAX_AGE").unwrap_or("".to_string()); // default=3600
-    let app_max_age: usize = max_age_str.parse::<usize>().unwrap_or(3600);
-    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL not found.");
+    let config_app = utils::config_app::ConfigApp::init_by_env();
 
+    let app_host: String = config_app.app_host.clone();
+    let app_port: usize = config_app.app_port.clone();
+    let app_domain: String = config_app.app_domain.clone();
+    // let app_url = format!("{}:{}", &app_host, &app_port);
+    let app_max_age: usize = config_app.app_max_age.clone();
+
+    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL not found.");
     // let domain: String = env::var("DOMAIN").unwrap_or_else(|_| "localhost".to_string());
 
     let pool: dbase::DbPool = dbase::init_db_pool(&db_url);
     dbase::run_migration(&mut pool.get().unwrap());
 
     let data_config_app = web::Data::new(utils::config_app::ConfigApp::init_by_env());
-
     let data_config_jwt = web::Data::new(config_jwt::ConfigJwt::init_by_env());
-
     let config_smtp = config_smtp::ConfigSmtp::init_by_env();
     let data_config_smtp = web::Data::new(config_smtp.clone());
     // data_config_smtp.get_ref().clone()
     let data_mailer = web::Data::new(mailer::cfg::get_mailer_app(config_smtp));
+    let data_user_orm = web::Data::new(get_user_orm_app(pool.clone()));
+    let data_user_registr_orm = web::Data::new(get_user_registr_orm_app(pool.clone()));
+    let data_session_orm = web::Data::new(get_session_orm_app(pool.clone()));
+    let data_user_recovery_orm = web::Data::new(get_user_recovery_orm_app(pool.clone()));
 
-    let data_user_orm = web::Data::new(user_orm::cfg::get_user_orm_app(pool.clone()));
-
-    let user_registr_orm_app = user_registr_orm::cfg::get_user_registr_orm_app(pool.clone());
-    let data_user_registr_orm = web::Data::new(user_registr_orm_app);
-
-    let data_session_orm = web::Data::new(session_orm::cfg::get_session_orm_app(pool.clone()));
-
-    println!("🚀 Server started successfully {}", &app_url);
-    log::info!("starting HTTP server at http://{}", &app_url);
+    println!("🚀 Server started successfully {}", &app_domain);
+    log::info!("starting HTTP server at {}", &app_domain);
 
     HttpServer::new(move || {
         let cors = Cors::default()
@@ -94,6 +94,7 @@ async fn main() -> io::Result<()> {
             .app_data(web::Data::clone(&data_user_orm))
             .app_data(web::Data::clone(&data_user_registr_orm))
             .app_data(web::Data::clone(&data_session_orm))
+            .app_data(web::Data::clone(&data_user_recovery_orm))
             .wrap(cors)
             .wrap(actix_web::middleware::Logger::default())
             .service(Files::new("/static", "static").show_files_listing())
@@ -106,7 +107,8 @@ async fn main() -> io::Result<()> {
                     .configure(user_controller::configure),
             )
     })
-    .bind(&app_url)?
+    // .bind(&app_url)?
+    .bind(&format!("{}:{}", &app_host, &app_port))?
     .run()
     .await
 }

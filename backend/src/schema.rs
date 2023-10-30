@@ -14,6 +14,14 @@ diesel::table! {
 }
 
 diesel::table! {
+    user_recovery (id) {
+        id -> Int4,
+        user_id -> Int4,
+        final_date -> Timestamptz,
+    }
+}
+
+diesel::table! {
     user_registration (id) {
         id -> Int4,
         #[max_length = 255]
@@ -45,9 +53,11 @@ diesel::table! {
 }
 
 diesel::joinable!(sessions -> users (user_id));
+diesel::joinable!(user_recovery -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     sessions,
+    user_recovery,
     user_registration,
     users,
 );

@@ -19,10 +19,13 @@ RUST_LOG=${L_COMM},${L_MAIN},${L_DBASE},${L_USER},${L_USER_AUTH},${L_AUTH}
 APP_HOST=127.0.0.1
 APP_PORT=8080
 APP_PROTOCOL=http
-# Token activity time in cookies (in seconds) 3600 = 60 minutes.
-APP_MAX_AGE=3600
+# Token activity time in cookies (in minutes) = 60 minutes.
+APP_MAX_AGE=60
 # Waiting time for registration confirmation (in minutes) = 15 minutes
 APP_REGISTR_DURATION=15
+# Waiting time for password recovery confirmation (in minutes) = 10 minutes
+APP_RECOVERY_DURATION=10
+
 
 # -----------------------------------------------------------------------------
 # Database (PostgreSQL)

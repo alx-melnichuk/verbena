@@ -141,13 +141,49 @@ pub struct RegistrUserResponseDto {
     pub registr_token: String,
 }
 
-// ** - **
+// ** RecoveryUserDto **
 
 #[derive(Debug, Serialize, Deserialize, Clone, Validate)]
 pub struct RecoveryUserDto {
     #[validate(custom = "UserValidate::email")]
     pub email: String,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RecoveryUserResponseDto {
+    pub email: String,
+    #[serde(rename = "recoveryToken")]
+    pub recovery_token: String,
+}
+
+// ** UserRecovery **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
+#[diesel(table_name = schema::user_recovery)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct UserRecovery {
+    pub id: i32,
+    pub user_id: i32,
+    pub final_date: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Selectable, Insertable, AsChangeset)]
+#[diesel(table_name = schema::user_recovery)]
+pub struct UserRecoveryDto {
+    pub id: i32,
+    pub user_id: i32,
+    #[serde(rename = "finalDate", with = "date_time_rfc2822z")]
+    pub final_date: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
+#[diesel(table_name = schema::user_recovery)]
+pub struct CreateUserRecoveryDto {
+    pub user_id: i32,
+    pub final_date: DateTime<Utc>,
+}
+
+// ** UserValidate **
 
 pub struct UserValidate {}
 

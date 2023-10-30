@@ -10,3 +10,9 @@ CREATE TABLE user_registration (
 
 CREATE INDEX idx_user_registration_nickname_final_date ON user_registration(nickname, final_date);
 CREATE INDEX idx_user_registration_email_final_date ON user_registration(email, final_date);
+
+CREATE TABLE user_recovery (
+    id SERIAL PRIMARY KEY NOT NULL,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    final_date TIMESTAMP WITH TIME ZONE NOT NULL
+);

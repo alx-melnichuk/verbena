@@ -19,6 +19,12 @@ use crate::sessions::{
     session_orm::SessionOrm,
     tokens::{decode_dual_token, encode_dual_token, generate_num_token},
 };
+use crate::users::user_models::CreateUserRecoveryDto;
+#[cfg(not(feature = "mockdata"))]
+use crate::users::user_recovery_orm::inst::UserRecoveryOrmApp;
+#[cfg(feature = "mockdata")]
+use crate::users::user_recovery_orm::tests::UserRecoveryOrmApp;
+use crate::users::user_recovery_orm::UserRecoveryOrm;
 use crate::users::{
     user_models, user_orm::UserOrm, user_registr_models::CreateUserRegistrDto,
     user_registr_orm::UserRegistrOrm,
@@ -29,7 +35,10 @@ use crate::users::{user_orm::inst::UserOrmApp, user_registr_orm::inst::UserRegis
 use crate::users::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
 use crate::utils::{
     config_app,
-    err::{self, CD_JSONWEBTOKEN, CD_NO_CONFIRM, MSG_CONFIRM_NOT_FOUND},
+    err::{
+        self, CD_JSONWEBTOKEN, CD_NOT_FOUND, CD_NO_CONFIRM, MSG_CONFIRM_NOT_FOUND,
+        MSG_NOT_FOUND_BY_EMAIL,
+    },
 };
 
 pub const CD_WRONG_EMAIL: &str = "WrongEmail";
@@ -44,7 +53,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     //     POST api/registration
     cfg.service(registration)
         // PUT api//registration/{registr_token}
-        .service(confirm_registration);
+        .service(confirm_registration)
+        // POST api//recovery
+        .service(recovery);
 }
 
 fn err_database(err: String) -> AppError {
@@ -149,9 +160,6 @@ pub async fn registration(
 
     // Create a new entity (user).
     let user_registr = web::block(move || {
-        // Delete all entities (user_registration) with an inactive "final_date".
-        user_registr_orm.delete_inactive_final_date().ok();
-
         let user_registr = user_registr_orm
             .create_user_registr(&create_user_registr_dto)
             .map_err(|e| err_database(e));
@@ -224,7 +232,7 @@ pub async fn confirm_registration(
 
     // Find a record with the specified ID in the “user_registr” table.
     let user_registr_opt = web::block(move || {
-        let user_registr = user_registr_orm
+        let user_registr = user_registr_orm2
             .find_user_registr_by_id(user_registr_id)
             .map_err(|e| err_database(e));
         user_registr
@@ -239,6 +247,7 @@ pub async fn confirm_registration(
         AppError::new(CD_NO_CONFIRM, MSG_CONFIRM_NOT_FOUND).set_status(404)
     })?;
 
+    let user_registr_orm2 = user_registr_orm.clone();
     // If such an entry exists, then add a new user.
     let create_user_dto = user_models::CreateUserDto {
         nickname: user_registr.nickname,
@@ -267,12 +276,116 @@ pub async fn confirm_registration(
     .map_err(|e| err_blocking(e.to_string()))?;
 
     // Delete the registration record for this user in the “user_registr” table.
-    let _ = web::block(move || {}).await.map_err(|e| err_blocking(e.to_string()))?;
+    let _ = web::block(move || user_registr_orm.delete_inactive_final_date())
+        .await
+        .map_err(|e| err_blocking(e.to_string()))?;
 
     let user_dto = user_models::UserDto::from(user);
 
     Ok(HttpResponse::Created().json(user_dto))
 }
+
+// Send a confirmation email to recover the user's password.
+// POST api//recovery
+#[post("/recovery")]
+//@Post('recovery')
+pub async fn recovery(
+    config_app: web::Data<config_app::ConfigApp>,
+    config_jwt: web::Data<config_jwt::ConfigJwt>,
+    mailer: web::Data<MailerApp>,
+    user_orm: web::Data<UserOrmApp>,
+    user_recovery_orm: web::Data<UserRecoveryOrmApp>,
+    json_user_dto: web::Json<user_models::RecoveryUserDto>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    // Checking the validity of the data model.
+    json_user_dto.validate().map_err(|errors| {
+        log::error!("{}: {}", CN_VALIDATION, errors.to_string());
+        AppError::from(errors)
+    })?;
+
+    let mut recovery_user_dto: user_models::RecoveryUserDto = json_user_dto.0.clone();
+    recovery_user_dto.email = recovery_user_dto.email.to_lowercase();
+
+    let email = recovery_user_dto.email.clone();
+
+    // Find in the "user" table an entry by email.
+    let user_opt = web::block(move || {
+        let existing_user =
+            user_orm.find_user_by_email(&email).map_err(|e| err_database(e.to_string()));
+        existing_user
+    })
+    .await
+    .map_err(|e| err_blocking(e.to_string()))??;
+
+    // If such an entry does not exist, then exit with code 404.
+    let user = match user_opt {
+        Some(v) => v,
+        None => {
+            log::error!("{CD_NOT_FOUND}: {MSG_NOT_FOUND_BY_EMAIL}");
+            return Err(AppError::new(CD_NOT_FOUND, MSG_NOT_FOUND_BY_EMAIL).set_status(404));
+        }
+    };
+
+    let user2 = user.clone();
+
+    // If there is such record, then add the specified data to the "user_recovery" table.
+    let app_recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
+    let final_date_utc = Utc::now() + Duration::minutes(app_recovery_duration.into());
+
+    let create_user_recovery_dto = CreateUserRecoveryDto {
+        user_id: user2.id,
+        final_date: final_date_utc,
+    };
+
+    // Create a new entity (user_recovery).
+    let user_recovery = web::block(move || {
+        let user_recovery = user_recovery_orm
+            .create_user_recovery(&create_user_recovery_dto)
+            .map_err(|e| err_database(e));
+        user_recovery
+    })
+    .await
+    .map_err(|e| err_blocking(e.to_string()))??;
+
+    let num_token = generate_num_token();
+    let config_jwt = config_jwt.get_ref().clone();
+    let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+    // Pack two parameters (user_recovery.id, num_token) into a recovery_token.
+    let recovery_token = encode_dual_token(
+        user_recovery.id,
+        num_token,
+        jwt_secret,
+        app_recovery_duration,
+    )
+    .map_err(|err| {
+        log::error!("{CD_JSONWEBTOKEN}: {}", err);
+        AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
+    })?;
+
+    // Prepare a letter confirming this recovery.
+    let domain = &config_app.app_domain;
+    let nickname = user2.nickname.clone();
+    let receiver = user2.email.clone();
+
+    let result = mailer.send_password_recovery(&receiver, &domain, &nickname, &recovery_token);
+
+    if result.is_err() {
+        let err = result.unwrap_err();
+        log::error!("{CD_ERROR_SENDING_EMAIL}: {err}");
+        return Err(AppError::new(CD_ERROR_SENDING_EMAIL, &err).set_status(500));
+    }
+
+    let recovery_user_response_dto = user_models::RecoveryUserResponseDto {
+        email: user2.email.clone(),
+        recovery_token: recovery_token.clone(),
+    };
+
+    Ok(HttpResponse::Created().json(recovery_user_response_dto))
+}
+
+// Confirm user password recovery.
+// PUT api//recovery/{recovery_token}
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {

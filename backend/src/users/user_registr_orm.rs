@@ -288,7 +288,6 @@ pub mod tests {
             }
 
             let new_id = USER_REGISTR_ID_2;
-
             let nickname = create_user_registr_dto.nickname.clone();
             let email = create_user_registr_dto.email.clone();
             let user_registr_saved: UserRegistr = UserRegistrOrmApp::new_user_registr(

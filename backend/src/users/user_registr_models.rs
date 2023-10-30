@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 use crate::schema;
 use crate::utils::date_time_rfc2822z;
 
+// ** UserRegistr **
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
 #[diesel(table_name = schema::user_registration)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -16,7 +18,7 @@ pub struct UserRegistr {
     pub final_date: DateTime<Utc>,
 }
 
-// ** Section: DTO models. **
+// ** UserRegistr DTO models. **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = schema::user_registration)]

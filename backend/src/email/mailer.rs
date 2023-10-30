@@ -128,11 +128,16 @@ pub mod inst {
             // Create a html_template to send.
             let html_template = render_template("verification_code", params)?;
             // #- temp
-            let receiver = "lg2aam@gmail.com";
-            // Create a message to send.
-            let message = self.new_message(receiver, subject, &html_template)?;
-            // Sending mail (synchronous)
-            self.sending(message)
+            // let receiver = "lg2aam@gmail.com";
+            // // Create a message to send.
+            // let message = self.new_message(receiver, subject, &html_template)?;
+            // // Sending mail (synchronous)
+            // self.sending(message)
+            if html_template.len() > 0 {
+                Ok(())
+            } else {
+                Ok(())
+            }
         }
         /// Send an email to confirm the password change.
         fn send_password_recovery(
@@ -154,10 +159,15 @@ pub mod inst {
             params.insert("target", target);
             // Create a html_template to send.
             let html_template = render_template("password_recovery", params)?;
-            // Create a message to send.
-            let message = self.new_message(receiver, subject, &html_template)?;
-            // Sending mail (synchronous)
-            self.sending(message)
+            // // Create a message to send.
+            // let message = self.new_message(receiver, subject, &html_template)?;
+            // // Sending mail (synchronous)
+            // self.sending(message)
+            if html_template.len() > 0 {
+                Ok(())
+            } else {
+                Ok(())
+            }
         }
     }
 }
