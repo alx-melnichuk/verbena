@@ -32,11 +32,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 }
 
 fn err_database(err: String) -> AppError {
-    log::debug!("{}: {}", err::CD_DATABASE, err);
+    log::error!("{}: {}", err::CD_DATABASE, err);
     AppError::new(err::CD_DATABASE, &err).set_status(500)
 }
 fn err_blocking(err: String) -> AppError {
-    log::debug!("{}: {}", err::CD_BLOCKING, err);
+    log::error!("{}: {}", err::CD_BLOCKING, err);
     AppError::new(err::CD_BLOCKING, &err).set_status(500)
 }
 
@@ -49,7 +49,7 @@ pub async fn get_user_by_id(
     let id_str = request.match_info().query("id").to_string();
 
     let id = parse_i32(&id_str).map_err(|err| {
-        log::debug!("{CD_PARSE_INT_ERROR}: id: {err}");
+        log::error!("{CD_PARSE_INT_ERROR}: id: {err}");
         AppError::new(CD_PARSE_INT_ERROR, &format!("id: {err}")).set_status(400)
     })?;
 
@@ -119,13 +119,13 @@ pub async fn put_user(
     let id_str = request.match_info().query("id").to_string();
 
     let id = parse_i32(&id_str).map_err(|err| {
-        log::debug!("{CD_PARSE_INT_ERROR}: id: {err}");
+        log::error!("{CD_PARSE_INT_ERROR}: id: {err}");
         AppError::new(CD_PARSE_INT_ERROR, &format!("id: {err}")).set_status(400)
     })?;
 
     // Checking the validity of the data model.
     json_user_dto.validate().map_err(|errors| {
-        log::debug!("{}: {}", CN_VALIDATION, errors.to_string());
+        log::error!("{}: {}", CN_VALIDATION, errors.to_string());
         AppError::from(errors)
     })?;
 
@@ -158,14 +158,14 @@ pub async fn patch_user(
     let id_str = request.match_info().query("id").to_string();
 
     let id = parse_i32(&id_str).map_err(|err| {
-        log::debug!("{CD_PARSE_INT_ERROR}: id: {err}");
+        log::error!("{CD_PARSE_INT_ERROR}: id: {err}");
         AppError::new(CD_PARSE_INT_ERROR, &format!("id: {err}")).set_status(400)
     })?;
 
     let mut new_user: user_models::UserDto = json_user_dto.0.clone();
 
     if new_user.verify_for_edit???() {
-        log::debug!("{}: {}", CN_INCORRECT_PARAM, MSG_INCORRECT_PARAM);
+        log::error!("{}: {}", CN_INCORRECT_PARAM, MSG_INCORRECT_PARAM);
         return Err(AppError::new(CN_INCORRECT_PARAM, MSG_INCORRECT_PARAM).set_status(400));
     }
 
@@ -178,7 +178,7 @@ pub async fn patch_user(
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user = user_orm.modify_user(id, new_user).map_err(|e| {
-            log::debug!("{}: {}", err::CD_DATA_BASE, e.to_string());
+            log::error!("{}: {}", err::CD_DATA_BASE, e.to_string());
             AppError::new(err::CD_DATA_BASE, &e.to_string()).set_status(500)
         });
 
@@ -204,7 +204,7 @@ pub async fn delete_user(
     let id_str = request.match_info().query("id").to_string();
 
     let id = parse_i32(&id_str).map_err(|err| {
-        log::debug!("{CD_PARSE_INT_ERROR}: id: {err}");
+        log::error!("{CD_PARSE_INT_ERROR}: id: {err}");
         AppError::new(CD_PARSE_INT_ERROR, &format!("id: {err}")).set_status(400)
     })?;
 

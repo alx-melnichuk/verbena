@@ -90,7 +90,6 @@ pub mod inst {
             email: &str,
         ) -> Result<Option<UserRegistr>, String> {
             if nickname.len() == 0 || email.len() == 0 {
-                log::debug!("nickname or email are empty.");
                 return Ok(None);
             }
             let nickname2 = nickname.to_lowercase();

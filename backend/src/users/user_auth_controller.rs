@@ -58,11 +58,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 }
 
 fn err_database(err: String) -> AppError {
-    log::debug!("{}: {}", err::CD_DATABASE, err);
+    log::error!("{}: {}", err::CD_DATABASE, err);
     AppError::new(err::CD_DATABASE, &err).set_status(500)
 }
 fn err_blocking(err: String) -> AppError {
-    log::debug!("{}: {}", err::CD_BLOCKING, err);
+    log::error!("{}: {}", err::CD_BLOCKING, err);
     AppError::new(err::CD_BLOCKING, &err).set_status(500)
 }
 
@@ -76,7 +76,7 @@ pub async fn registration0(
     // Checking the validity of the data model.
     json_user_dto.validate().map_err(|errors| {
         eprintln!("##json_user_dto.validate()"); // #-
-        log::debug!("{}: {}", CN_VALIDATION, errors.to_string());
+        log::error!("{}: {}", CN_VALIDATION, errors.to_string());
         AppError::from(errors)
     })?;
 
@@ -127,7 +127,7 @@ pub async fn login(
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Checking the validity of the data model.
     json_user_dto.validate().map_err(|errors| {
-        log::debug!("{}: {}", CN_VALIDATION, errors.to_string());
+        log::error!("{}: {}", CN_VALIDATION, errors.to_string());
         AppError::from(errors)
     })?;
 
@@ -148,18 +148,18 @@ pub async fn login(
     .map_err(|e| err_blocking(e.to_string()))??;
 
     let user: user_models::User = user.ok_or_else(|| {
-        log::debug!("{}: {}", CD_WRONG_NICKNAME_EMAIL, MSG_WRONG_NICKNAME_EMAIL);
+        log::error!("{}: {}", CD_WRONG_NICKNAME_EMAIL, MSG_WRONG_NICKNAME_EMAIL);
         AppError::new(CD_WRONG_NICKNAME_EMAIL, MSG_WRONG_NICKNAME_EMAIL).set_status(403)
     })?;
 
     let user_password = user.password.to_string();
     let password_matches = hash_tools::compare_hash(&password, &user_password).map_err(|e| {
-        log::debug!("{CD_INVALID_HASH}: {MSG_INVALID_HASH} {:?}", e.to_string());
+        log::error!("{CD_INVALID_HASH}: {MSG_INVALID_HASH} {:?}", e.to_string());
         AppError::new(CD_INVALID_HASH, MSG_INVALID_HASH).set_status(500)
     })?;
 
     if !password_matches {
-        log::debug!("{CD_WRONG_PASSWORD}: {MSG_WRONG_PASSWORD}");
+        log::error!("{CD_WRONG_PASSWORD}: {MSG_WRONG_PASSWORD}");
         return Err(AppError::new(CD_WRONG_PASSWORD, MSG_WRONG_PASSWORD).set_status(403));
     }
 
@@ -172,25 +172,25 @@ pub async fn login(
     // Pack two parameters (user.id, num_token) into a access_token.
     let access_token = encode_dual_token(user.id, num_token, jwt_secret, config_jwt.jwt_access)
         .map_err(|err| {
-            log::debug!("{CD_JSONWEBTOKEN}: {}", err);
+            log::error!("{CD_JSONWEBTOKEN}: {}", err);
             AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
         })?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let refresh_token = encode_dual_token(user.id, num_token, jwt_secret, config_jwt.jwt_refresh)
         .map_err(|err| {
-        log::debug!("{CD_JSONWEBTOKEN}: {}", err);
+        log::error!("{CD_JSONWEBTOKEN}: {}", err);
         AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
     })?;
 
     let session_opt = session_orm.modify_session(user.id, Some(num_token)).map_err(|e| {
         #[rustfmt::skip]
-        log::debug!("{}: {} {}", CD_SESSION_ERROR, MSG_SESSION_ERROR, e.to_string());
+        log::error!("{}: {} {}", CD_SESSION_ERROR, MSG_SESSION_ERROR, e.to_string());
         AppError::new(CD_SESSION_ERROR, MSG_SESSION_ERROR).set_status(500)
     })?;
     if session_opt.is_none() {
         #[rustfmt::skip]
-        log::debug!("{}: {}{}", CD_USER_NO_SESSION, MSG_USER_NO_SESSION, user.id.to_string());
+        log::error!("{}: {}{}", CD_USER_NO_SESSION, MSG_USER_NO_SESSION, user.id.to_string());
         return Err(AppError::new(CD_USER_NO_SESSION, MSG_USER_NO_SESSION).set_status(500));
     }
 
@@ -220,13 +220,13 @@ pub async fn login(
 
 let access_token =
     tokens::encode_token(sub, &jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
+        log::error!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
         AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
     })?;
 
 let refresh_token =
     tokens::encode_token(&sub, &jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
+        log::error!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
         AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
     })?;
     */
@@ -235,13 +235,13 @@ let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
 let access_token =
     tools_token::collect_token(user_id: i32, num_token: i32, jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
+        log::error!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
         AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
     })?;
 
 let refresh_token =
     tools_token::collect_token(user_id: i32, num_token: i32, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        log::debug!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
+        log::error!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
         AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
     })?;
 */
@@ -258,12 +258,12 @@ pub async fn logout(session_orm: web::Data<SessionOrmApp>, authenticated: Authen
     // Clear "num_token" value.
     let session_opt = session_orm.modify_session(user.id, None).map_err(|e| {
         #[rustfmt::skip]
-        log::debug!("{}: {} {}", CD_SESSION_ERROR, MSG_SESSION_ERROR, e.to_string());
+        log::error!("{}: {} {}", CD_SESSION_ERROR, MSG_SESSION_ERROR, e.to_string());
         AppError::new(CD_SESSION_ERROR, MSG_SESSION_ERROR).set_status(500)
     })?;
     if session_opt.is_none() {
         #[rustfmt::skip]
-        log::debug!("{}: {}{}", CD_USER_NO_SESSION, MSG_USER_NO_SESSION, user.id.to_string());
+        log::error!("{}: {}{}", CD_USER_NO_SESSION, MSG_USER_NO_SESSION, user.id.to_string());
         return Err(AppError::new(CD_USER_NO_SESSION, MSG_USER_NO_SESSION).set_status(500));
     }
 
@@ -294,7 +294,7 @@ pub async fn new_token(
 
     let session_opt = web::block(move || {
         let existing_session = session_orm.find_session_by_id(user_id).map_err(|e| {
-            log::debug!("{}: {}", err::CD_DATABASE, e.to_string());
+            log::error!("{}: {}", err::CD_DATABASE, e.to_string());
             AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500)
         });
         existing_session
@@ -305,7 +305,7 @@ pub async fn new_token(
     let session = session_opt.ok_or_else(|| {
         eprintln!("$^session with {} not found", user_id.clone()); // #-
         #[rustfmt::skip]
-        log::debug!("{}: session with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id.clone());
+        log::error!("{}: session with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id.clone());
         AppError::new(err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN).set_status(403)
     })?;
 
@@ -313,7 +313,7 @@ pub async fn new_token(
     if session_num_token != num_token {
         eprintln!("$^session_num_token != num_token"); // #-
         #[rustfmt::skip]
-        log::debug!("{}: {}", err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN);
+        log::error!("{}: {}", err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN);
         return Err(
             AppError::new(err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN).set_status(403),
         );
@@ -327,25 +327,25 @@ pub async fn new_token(
     // Pack two parameters (user.id, num_token) into a access_token.
     let access_token = encode_dual_token(user_id, num_token, jwt_secret, config_jwt.jwt_access)
         .map_err(|err| {
-            log::debug!("{CD_JSONWEBTOKEN}: {}", err);
+            log::error!("{CD_JSONWEBTOKEN}: {}", err);
             AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
         })?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let refresh_token = encode_dual_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh)
         .map_err(|err| {
-        log::debug!("{CD_JSONWEBTOKEN}: {}", err);
+        log::error!("{CD_JSONWEBTOKEN}: {}", err);
         AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
     })?;
 
     let session_opt = session_orm1.modify_session(user_id, Some(num_token)).map_err(|e| {
         #[rustfmt::skip]
-        log::debug!("{}: {} {}", CD_SESSION_ERROR, MSG_SESSION_ERROR, e.to_string());
+        log::error!("{}: {} {}", CD_SESSION_ERROR, MSG_SESSION_ERROR, e.to_string());
         AppError::new(CD_SESSION_ERROR, MSG_SESSION_ERROR).set_status(500)
     })?;
     if session_opt.is_none() {
         #[rustfmt::skip]
-        log::debug!("{}: {}{}", CD_USER_NO_SESSION, MSG_USER_NO_SESSION, user_id);
+        log::error!("{}: {}{}", CD_USER_NO_SESSION, MSG_USER_NO_SESSION, user_id);
         return Err(AppError::new(CD_USER_NO_SESSION, MSG_USER_NO_SESSION).set_status(500));
     }
 

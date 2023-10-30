@@ -81,7 +81,7 @@ pub fn encode_dual_token(
 pub fn decode_dual_token(token: &str, jwt_secret: &[u8]) -> Result<(i32, i32), AppError> {
     let token_claims = decode_token(token, jwt_secret).map_err(|e| {
         #[rustfmt::skip]
-        log::debug!("{CD_INVALID_TOKEN}: {} {}", MSG_INVALID_TOKEN, e);
+        log::error!("{CD_INVALID_TOKEN}: {} {}", MSG_INVALID_TOKEN, e);
         return AppError::new(CD_INVALID_TOKEN, MSG_INVALID_TOKEN).set_status(403);
     })?;
 
@@ -90,12 +90,12 @@ pub fn decode_dual_token(token: &str, jwt_secret: &[u8]) -> Result<(i32, i32), A
     let num_token_str: &str = list.get(1).unwrap_or(&"").clone();
 
     let user_id = parser::parse_i32(user_id_str).map_err(|err| {
-        log::debug!("{CD_UNALLOWABLE_TOKEN}: {MSG_UNALLOWABLE_TOKEN} - id: {err}");
+        log::error!("{CD_UNALLOWABLE_TOKEN}: {MSG_UNALLOWABLE_TOKEN} - id: {err}");
         return AppError::new(CD_UNALLOWABLE_TOKEN, MSG_UNALLOWABLE_TOKEN).set_status(403);
     })?;
 
     let num_token = parser::parse_i32(num_token_str).map_err(|err| {
-        log::debug!("{CD_UNALLOWABLE_TOKEN}: {MSG_UNALLOWABLE_TOKEN} - num_token: {err}");
+        log::error!("{CD_UNALLOWABLE_TOKEN}: {MSG_UNALLOWABLE_TOKEN} - num_token: {err}");
         return AppError::new(CD_UNALLOWABLE_TOKEN, MSG_UNALLOWABLE_TOKEN).set_status(403);
     })?;
 

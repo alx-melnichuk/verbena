@@ -156,7 +156,7 @@ where
                 let token2 = jwt_from_header(&header_token)
                 .map_err(|e| {
                     eprintln!("a_ jwt_from_header.err: {e}");
-                    log::debug!("{}: {}", "InvalidToken", e);
+                    log::error!("{}: {}", "InvalidToken", e);
                     None::<String>
                 }).ok();
                 // eprintln!("a_ token2: {}", token2.clone().unwrap().to_string());
@@ -166,7 +166,7 @@ where
         // If token is missing, return unauthorized error
         if token.is_none() {
             // eprintln!("a_ token.is_none()"); // #-
-            log::debug!("{}: {}", err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN);
+            log::error!("{}: {}", err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN);
             let json_error =
                 AppError::new(err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN).set_status(401);
             return Box::pin(ready(Err(ErrorUnauthorized(json_error))));
@@ -181,7 +181,7 @@ where
         
         if let Err(e) = token_res {
             // eprintln!("a_ decode_dual_token().err {}: {}", e.code, e.message); // #-
-            log::debug!("{}: {}", e.code, e.message);
+            log::error!("{}: {}", e.code, e.message);
             return Box::pin(ready(Err(ErrorForbidden(e))));
         }
 
@@ -196,7 +196,7 @@ where
             let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap();
             
             let session_opt = session_orm.find_session_by_id(user_id).map_err(|e| {
-                log::debug!("{}: {}", err::CD_DATABASE, e.to_string());
+                log::error!("{}: {}", err::CD_DATABASE, e.to_string());
                 let json_error = AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500);
                 return ErrorInternalServerError(json_error);
             })?;
@@ -204,7 +204,7 @@ where
             let session = session_opt.ok_or_else(|| {
                 // eprintln!("$^session with {} not found", user_id.clone());
                 #[rustfmt::skip]
-                log::debug!("{}: session with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id);
+                log::error!("{}: session with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id);
                 let json_error = AppError::new(err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN)
                     .set_status(403); // ?!?
                 ErrorForbidden(json_error)
@@ -213,7 +213,7 @@ where
             let session_num_token = session.num_token.unwrap_or(0);
             if session_num_token != num_token {
                 // eprintln!("$^session_num_token != num_token");
-                log::debug!("{}: session with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id);
+                log::error!("{}: session with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id);
                 let json_error = AppError::new(err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN)
                     .set_status(403); // ?!?
                 return Err(ErrorForbidden(json_error));
@@ -224,12 +224,12 @@ where
             let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap();
             
             let result = user_orm.find_user_by_id(user_id.clone()).map_err(|e| {
-                log::debug!("{}: {}", err::CD_DATABASE, e.to_string());
+                log::error!("{}: {}", err::CD_DATABASE, e.to_string());
                 ErrorInternalServerError(AppError::new(err::CD_DATABASE, &e.to_string()))
             })?;
 
             let user = result.ok_or_else(|| {
-                log::debug!("{}: user with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id.clone());
+                log::error!("{}: user with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id.clone());
                 let json_error = AppError::new(err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN)
                     .set_status(403); // ?!?
                 ErrorForbidden(json_error)
@@ -244,7 +244,7 @@ where
                 Ok(res)
             } else {
                 #[rustfmt::skip]
-                log::debug!("{}: {}", err::CD_PERMISSION_DENIED,err::MSG_PERMISSION_DENIED);
+                log::error!("{}: {}", err::CD_PERMISSION_DENIED,err::MSG_PERMISSION_DENIED);
                 #[rustfmt::skip]
                 let json_error = AppError::new(err::CD_PERMISSION_DENIED, err::MSG_PERMISSION_DENIED)
                     .set_status(403);
