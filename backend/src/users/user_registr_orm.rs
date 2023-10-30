@@ -42,6 +42,7 @@ pub mod cfg {
 pub mod inst {
 
     use chrono::Utc;
+    // use diesel::{debug_query, pg::Pg};
     use diesel::{self, prelude::*};
 
     use crate::dbase;
@@ -98,18 +99,33 @@ pub mod inst {
             let mut conn = self.get_conn()?;
             let today = Utc::now();
             // Run query using Diesel to find user by nickname or email and return it (where final_date > now).
-            let result = schema::user_registration::table
+            let sql_query_nickname = schema::user_registration::table
                 .filter(
-                    schema::user_registration::dsl::final_date.gt(today).and(
-                        schema::user_registration::dsl::nickname
-                            .eq(nickname2)
-                            .or(schema::user_registration::dsl::email.eq(email2)),
-                    ),
+                    schema::user_registration::dsl::nickname
+                        .eq(nickname2)
+                        .and(schema::user_registration::dsl::final_date.gt(today)),
                 )
-                .first::<UserRegistr>(&mut conn)
-                .optional()
+                .limit(1);
+            let sql_query_email = schema::user_registration::table
+                .filter(
+                    schema::user_registration::dsl::email
+                        .eq(email2)
+                        .and(schema::user_registration::dsl::final_date.gt(today)),
+                )
+                .limit(1);
+
+            // This design (union two queries) allows the use of two separate indexes.
+            let sql_query = sql_query_nickname.union_all(sql_query_email);
+            // eprintln!("sql_quest: `{}`", debug_query::<Pg, _>(&sql_query).to_string());
+            let result_vec: Vec<UserRegistr> = sql_query
+                .load(&mut conn)
                 .map_err(|e| format!("{DB_USER_REGISTR}: {}", e.to_string()))?;
 
+            let result = if result_vec.len() > 0 {
+                Some(result_vec[0].clone())
+            } else {
+                None
+            };
             Ok(result)
         }
 
