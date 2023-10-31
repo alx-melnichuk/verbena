@@ -169,11 +169,12 @@ pub mod tests {
             num_token: Option<i32>,
         ) -> Result<Option<Session>, String> {
             let session_opt: Option<Session> = self.find_session_by_id(user_id)?;
-            if session_opt.is_none() {
-                return Ok(None);
-            }
-
-            let mut res_session = session_opt.unwrap().clone();
+            let mut res_session = match session_opt {
+                Some(v) => v,
+                None => {
+                    return Ok(None);
+                }
+            };
             let new_session = Self::new_session(user_id, num_token);
             res_session.num_token = new_session.num_token;
 

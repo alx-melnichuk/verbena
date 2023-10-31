@@ -151,9 +151,26 @@ pub struct RecoveryUserDto {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RecoveryUserResponseDto {
+    pub id: i32,
     pub email: String,
     #[serde(rename = "recoveryToken")]
     pub recovery_token: String,
+}
+
+// ** RecoveryDataDto **
+
+#[derive(Debug, Serialize, Deserialize, Clone, Validate)]
+pub struct RecoveryDataDto {
+    #[validate(custom = "UserValidate::password")]
+    pub password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RecoveryDataResponseDto {
+    pub nickname: String,
+    pub email: String,
+    #[serde(rename = "registrToken")]
+    pub registr_token: String,
 }
 
 // ** UserRecovery **

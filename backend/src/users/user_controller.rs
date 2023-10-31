@@ -11,12 +11,9 @@ use crate::users::user_orm::inst::UserOrmApp;
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::{user_models, user_orm::UserOrm};
 use crate::utils::{
-    err,
+    err::{CD_BLOCKING, CD_DATABASE, CD_NOT_FOUND, MSG_NOT_FOUND_BY_ID},
     parser::{parse_i32, CD_PARSE_INT_ERROR},
 };
-
-pub const CD_NOT_FOUND: &str = "NotFound";
-pub const MSG_NOT_FOUND: &str = "The user with the specified ID was not found.";
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     GET api/users/{id}
@@ -32,12 +29,12 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 }
 
 fn err_database(err: String) -> AppError {
-    log::error!("{}: {}", err::CD_DATABASE, err);
-    AppError::new(err::CD_DATABASE, &err).set_status(500)
+    log::error!("{CD_DATABASE}: {}", err);
+    AppError::new(CD_DATABASE, &err).set_status(500)
 }
 fn err_blocking(err: String) -> AppError {
-    log::error!("{}: {}", err::CD_BLOCKING, err);
-    AppError::new(err::CD_BLOCKING, &err).set_status(500)
+    log::error!("{CD_BLOCKING}: {}", err);
+    AppError::new(CD_BLOCKING, &err).set_status(500)
 }
 
 // GET api/users/{id}
@@ -219,7 +216,7 @@ pub async fn delete_user(
     .map_err(|e| err_blocking(e.to_string()))??;
 
     if 0 == result_count {
-        Err(AppError::new(CD_NOT_FOUND, MSG_NOT_FOUND).set_status(404))
+        Err(AppError::new(CD_NOT_FOUND, MSG_NOT_FOUND_BY_ID).set_status(404))
     } else {
         Ok(HttpResponse::Ok().finish())
     }
@@ -870,7 +867,7 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, CD_NOT_FOUND);
-        assert_eq!(app_err.message, MSG_NOT_FOUND);
+        assert_eq!(app_err.message, MSG_NOT_FOUND_BY_ID);
     }
 
     #[test]

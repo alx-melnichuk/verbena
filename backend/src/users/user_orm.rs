@@ -160,8 +160,6 @@ pub mod inst {
             id: i32,
             modify_user_dto: ModifyUserDto,
         ) -> Result<Option<User>, String> {
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
             let mut modify_user_dto2: ModifyUserDto = modify_user_dto.clone();
 
             if let Some(nickname) = modify_user_dto2.nickname {
@@ -170,6 +168,8 @@ pub mod inst {
             if let Some(email) = modify_user_dto2.email {
                 modify_user_dto2.email = Some(email.to_lowercase());
             }
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
             // Run query using Diesel to full or partially modify the user entry.
             let result = diesel::update(schema::users::dsl::users.find(id))
                 .set(&modify_user_dto2)
@@ -325,11 +325,13 @@ pub mod tests {
             id: i32,
             modify_user_dto: ModifyUserDto,
         ) -> Result<Option<User>, String> {
-            let user_opt: Option<&User> = self.user_vec.iter().find(|user| user.id == id);
-            if user_opt.is_none() {
-                return Ok(None);
-            }
-            let user = user_opt.unwrap().clone();
+            let user_opt = self.user_vec.iter().find(|user| user.id == id);
+            let user = match user_opt {
+                Some(v) => v.clone(),
+                None => {
+                    return Ok(None);
+                }
+            };
 
             let nickname = modify_user_dto.nickname.unwrap_or(user.nickname.clone());
             let email = modify_user_dto.email.unwrap_or(user.email.clone());
@@ -345,7 +347,7 @@ pub mod tests {
         }
         /// Delete an entity (user).
         fn delete_user(&self, id: i32) -> Result<usize, String> {
-            let user_opt: Option<&User> = self.user_vec.iter().find(|user| user.id == id);
+            let user_opt = self.user_vec.iter().find(|user| user.id == id);
 
             if user_opt.is_none() {
                 Ok(0)

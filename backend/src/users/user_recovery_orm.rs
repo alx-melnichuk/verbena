@@ -10,6 +10,12 @@ pub trait UserRecoveryOrm {
         &self,
         create_user_recovery_dto: &CreateUserRecoveryDto,
     ) -> Result<UserRecovery, String>;
+    /// Modify an entity (user_recovery).
+    fn modify_user_recovery(
+        &self,
+        id: i32,
+        modify_user_recovery_dto: &CreateUserRecoveryDto,
+    ) -> Result<Option<UserRecovery>, String>;
     /// Delete an entity (user_recovery).
     fn delete_user_recovery(&self, id: i32) -> Result<usize, String>;
     /// Delete all entities (user_recovery) with an inactive "final_date".
@@ -120,6 +126,27 @@ pub mod inst {
             Ok(user_recovery)
         }
 
+        /// Modify an entity (user_recovery).
+        fn modify_user_recovery(
+            &self,
+            id: i32,
+            create_user_recovery_dto: &CreateUserRecoveryDto,
+        ) -> Result<Option<UserRecovery>, String> {
+            let create_user_recovery_dto2 = create_user_recovery_dto.clone();
+
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+            // Run query using Diesel to full or partially modify the user entry.
+            let result = diesel::update(schema::user_recovery::dsl::user_recovery.find(id))
+                .set(&create_user_recovery_dto2)
+                .returning(UserRecovery::as_returning())
+                .get_result(&mut conn)
+                .optional()
+                .map_err(|e| format!("{DB_USER_RECOVERY}: {}", e.to_string()))?;
+
+            Ok(result)
+        }
+
         /// Delete an entity (user_recovery).
         fn delete_user_recovery(&self, id: i32) -> Result<usize, String> {
             // Get a connection from the P2D2 pool.
@@ -155,40 +182,40 @@ pub mod inst {
 pub mod tests {
     use chrono::{DateTime, Utc};
 
-    use crate::users::user_registr_models::{CreateUserConfirmDto, UserConfirm};
+    use crate::users::user_models::{CreateUserRecoveryDto, UserRecovery};
 
-    use super::UserConfirmOrm;
+    use super::UserRecoveryOrm;
 
-    pub const USER_CONFIRM_ID_1: i32 = 1301;
-    pub const USER_CONFIRM_ID_2: i32 = 1302;
+    pub const USER_RECOVERY_ID_1: i32 = 1301;
+    pub const USER_RECOVERY_ID_2: i32 = 1302;
 
     #[derive(Debug, Clone)]
-    pub struct UserConfirmOrmApp {
-        pub user_confirm_vec: Vec<UserRecovery>,
+    pub struct UserRecoveryOrmApp {
+        pub user_recovery_vec: Vec<UserRecovery>,
     }
 
-    impl UserConfirmOrmApp {
+    impl UserRecoveryOrmApp {
         /// Create a new instance.
         pub fn new() -> Self {
-            UserConfirmOrmApp {
-                user_confirm_vec: Vec::new(),
+            UserRecoveryOrmApp {
+                user_recovery_vec: Vec::new(),
             }
         }
-        /// Create a new instance with the specified user confirm list.
+        /// Create a new instance with the specified user recovery list.
         #[cfg(test)]
         pub fn create(user_reg_vec: Vec<UserRecovery>) -> Self {
-            let mut user_confirm_vec: Vec<UserRecovery> = Vec::new();
+            let mut user_recovery_vec: Vec<UserRecovery> = Vec::new();
             for user_reg in user_reg_vec.iter() {
-                user_confirm_vec.push(Self::new_user_confirm(
+                user_recovery_vec.push(Self::new_user_recovery(
                     user_reg.id,
                     user_reg.user_id,
                     user_reg.final_date,
                 ));
             }
-            UserConfirmOrmApp { user_confirm_vec }
+            UserRecoveryOrmApp { user_recovery_vec }
         }
         /// Create a new entity instance.
-        pub fn new_user_confirm(id: i32, user_id: i32, final_date: DateTime<Utc>) -> UserRecovery {
+        pub fn new_user_recovery(id: i32, user_id: i32, final_date: DateTime<Utc>) -> UserRecovery {
             UserRecovery {
                 id,
                 user_id,
@@ -197,58 +224,81 @@ pub mod tests {
         }
     }
 
-    impl UserRecoveryOrm for UserConfirmOrmApp {
+    impl UserRecoveryOrm for UserRecoveryOrmApp {
         /// Find for an entity (user_recovery) by id.
-        fn find_user_confirm_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String> {
+        fn find_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String> {
             let result = self
-                .user_confirm_vec
+                .user_recovery_vec
                 .iter()
-                .find(|user_confirm| user_confirm.id == id)
-                .map(|user_confirm| user_confirm.clone());
+                .find(|user_recovery| user_recovery.id == id)
+                .map(|user_recovery| user_recovery.clone());
             Ok(result)
         }
         /// Find for an entity (user_recovery) by user_id.
-        fn find_user_confirm_by_user_id(
+        fn find_user_recovery_by_user_id(
             &self,
             user_id: i32,
         ) -> Result<Option<UserRecovery>, String> {
             let today = Utc::now();
 
             let result: Option<UserRecovery> = self
-                .user_confirm_vec
+                .user_recovery_vec
                 .iter()
-                .find(|user_confirm| {
-                    user_confirm.final_date > today && (user_confirm.user_id == user_id)
+                .find(|user_recovery| {
+                    user_recovery.final_date > today && (user_recovery.user_id == user_id)
                 })
-                .map(|user_confirm| user_confirm.clone());
+                .map(|user_recovery| user_recovery.clone());
 
             Ok(result)
         }
 
         /// Add a new entity (user_recovery).
-        fn create_user_confirm(
+        fn create_user_recovery(
             &self,
-            create_user_confirm_dto: &CreateUserRecoveryDto,
+            create_user_recovery_dto: &CreateUserRecoveryDto,
         ) -> Result<UserRecovery, String> {
-            let final_date = create_user_confirm_dto.final_date.clone();
-            let user_id = create_user_confirm_dto.user_id;
+            let user_id = create_user_recovery_dto.user_id;
+            let final_date = create_user_recovery_dto.final_date.clone();
 
-            let res_user1_opt: Option<UserRecovery> = self.find_user_confirm_by_user_id(user_id)?;
+            let res_user1_opt: Option<UserRecovery> =
+                self.find_user_recovery_by_user_id(user_id)?;
             if res_user1_opt.is_some() {
                 return Err("\"User recovery\" already exists.".to_string());
             }
 
-            let user_confirm_saved: UserRecovery =
-                UserConfirmOrmApp::new_user_confirm(USER_CONFIRM_ID_2, user_id, final_date);
+            let user_recovery_saved: UserRecovery =
+                UserRecoveryOrmApp::new_user_recovery(USER_RECOVERY_ID_2, user_id, final_date);
 
-            Ok(user_confirm_saved)
+            Ok(user_recovery_saved)
         }
-        /// Delete an entity (user_recovery).
-        fn delete_user_confirm(&self, id: i32) -> Result<usize, String> {
-            let exist_user_confirm_opt: Option<&UserRecovery> =
-                self.user_confirm_vec.iter().find(|user_confirm| user_confirm.id == id);
 
-            if exist_user_confirm_opt.is_none() {
+        /// Modify an entity (user_recovery).
+        fn modify_user_recovery(
+            &self,
+            id: i32,
+            create_user_recovery_dto: &CreateUserRecoveryDto,
+        ) -> Result<Option<UserRecovery>, String> {
+            let user_recovery_opt =
+                self.user_recovery_vec.iter().find(|user_recovery| user_recovery.id == id);
+            if user_recovery_opt.is_none() {
+                return Ok(None);
+            }
+
+            let user_recovery_saved: UserRecovery = UserRecoveryOrmApp::new_user_recovery(
+                id,
+                create_user_recovery_dto.user_id,
+                create_user_recovery_dto.final_date.clone(),
+            );
+
+            Ok(Some(user_recovery_saved))
+        }
+
+        /// Delete an entity (user_recovery).
+        fn delete_user_recovery(&self, id: i32) -> Result<usize, String> {
+            let exist_user_recovery_opt =
+                self.user_recovery_vec.iter().find(|user_recovery| user_recovery.id == id);
+
+            if exist_user_recovery_opt.is_none() {
                 Ok(0)
             } else {
                 Ok(1)
@@ -259,9 +309,9 @@ pub mod tests {
             let today = Utc::now();
 
             let result = self
-                .user_confirm_vec
+                .user_recovery_vec
                 .iter()
-                .filter(|user_confirm| user_confirm.final_date < today)
+                .filter(|user_recovery| user_recovery.final_date < today)
                 .count();
 
             Ok(result)
