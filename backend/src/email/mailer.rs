@@ -127,6 +127,7 @@ pub mod inst {
             params.insert("target", target);
             // Create a html_template to send.
             let html_template = render_template("verification_code", params)?;
+            eprintln!("html_template: {:?}", html_template);
             // #- temp
             // let receiver = "lg2aam@gmail.com";
             // // Create a message to send.
@@ -159,6 +160,7 @@ pub mod inst {
             params.insert("target", target);
             // Create a html_template to send.
             let html_template = render_template("password_recovery", params)?;
+            eprintln!("html_template: {:?}", html_template);
             // // Create a message to send.
             // let message = self.new_message(receiver, subject, &html_template)?;
             // // Sending mail (synchronous)

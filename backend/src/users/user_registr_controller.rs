@@ -51,11 +51,11 @@ pub const CD_ERROR_SENDING_EMAIL: &str = "ErrorSendingEmail";
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     POST api/registration
     cfg.service(registration)
-        // PUT api//registration/{registr_token}
+        // PUT api/registration/{registr_token}
         .service(confirm_registration)
-        // POST api//recovery
+        // POST api/recovery
         .service(recovery)
-        // PUT api//recovery/{recovery_token}
+        // PUT api/recovery/{recovery_token}
         .service(confirm_recovery);
 }
 
