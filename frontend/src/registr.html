@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>Verbena site</title>
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon" />
+
+    <style type="text/css">
+      html { height: 100%; }
+      body { margin: 0 !important; padding: 0 !important; height: 100%;
+        -webkit-text-size-adjust: 100% !important; -ms-text-size-adjust: 100% !important; -webkit-font-smoothing: antialiased !important; }
+      [mr-tp-0] { margin-top: 0; }
+      [mr-bt-0] { margin-bottom: 0; }
+      @media only screen and (max-width: 620px) {
+        .panel2 { width: 100%; text-align: center; }
+      }
+
+      [ds-fl] { display: flex; }
+      [fl-dr-col] { flex-direction: column; }
+      [js-cn-cen] { justify-content: center; }
+      [js-cn-bet] { justify-content: space-between; }
+      [al-it-cen] { align-items: center; }
+      [hg-100] { height: 100%; }
+      [cl-inh] { color: inherit; }
+      [bg-ps-cen] { background-position: center; }
+      [bg-no-rep] { background-repeat: no-repeat; }
+      [bg-sz-cov] { background-size: cover; }
+      [pd-lf-05] { padding-left: 0.5em; }
+      [pd-rg-05] { padding-right: 0.5em; }
+
+    </style>
+  </head>
+  <body>
+
+    <style>
+      .root {
+        --header-hg: 4.4em;
+        --footer-hg: 2.3em;
+        --site-header-bg: hsl(140, 40%, 90%);
+        --site-footer-bg: hsl(140, 40%, 90%);
+        font-family: sans-serif;
+      }
+      a, a:visited, a:hover { text-decoration: none; }
+      header {
+        background-color: var(--site-header-bg);
+        border-bottom: 1px solid lightgrey;
+        box-sizing: border-box;
+        flex: 0 0 var(--header-hg);
+      }
+      footer {
+        background-color: var(--site-footer-bg);
+        border-top: 1px solid lightgrey;
+        box-sizing: border-box;
+        flex: 0 0 var(--footer-hg);
+      }
+      main { flex: 1 1 auto; height: fit-content; }
+
+      .hd-logo-mini { height: 4em; width: 4em; background-image: url('assets/images/logo_mini.png'); }
+    </style>
+
+    <div ds-fl fl-dr-col hg-100 class="root">
+      <header ds-fl js-cn-bet>
+        <a ds-fl al-it-cen pd-lf-05 pd-rg-05 id="hd_ref" href="/login">
+          <i bg-sz-cov class="hd-logo-mini"></i>
+          <span style="font-size: x-large; font-weight: 600; margin-left: 0.5em">Verbena</span>
+        </a>
+      </header>
+
+      <main>
+        
+        <style>
+            .content { background-color: honeydew;  border-radius: 1em;
+              min-width: 30vw; min-height: 10vh; padding: 2em 4em; }
+            .err { font-size: calc(100% - 2px); font-style: italic; }
+          </style>
+
+          <div ds-fl js-cn-cen style="margin-top: 20vh;">
+            <div ds-fl fl-dr-col al-it-cen id="panel" class="content">
+
+              <p>Thank you for choosing our site.</p>
+
+              <span id="start">
+                <span>Your registration process has started.</span>
+                <p>Wait a little ...</p>
+              </span>
+
+            </div>
+          </div>
+
+      </main>
+
+      <footer ds-fl al-it-cen style="padding-left: 2em;">
+        <span>Demo site <a id="ft_ref" href="/login" target="_blank">www.verbena</a></span>
+      </footer>
+    </div>
+
+    <template id="tmp_success">
+      <span>Your registration have been completed !</span>
+      <p>
+        <a id="mn_ref_lg" href="/signup">Go to the login page on our website.</a>
+      </p>
+    </template>
+
+    <template id="tmp_failure">
+      <span>Your confirmation is invalid or has expired.</span>
+      <p id="err_text" class="err"></p>
+      <a id="mn_ref_sg" href="/signup">Go to the registration page on our website.</a>
+    </template>
+
+
+    <script type="text/javascript" language="javascript">
+
+      function httpClient(apiUrl, callbackSuccess, callbackFailure) {
+        let xmlHttpReq = new XMLHttpRequest();
+        const xhr = new XMLHttpRequest();
+
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState != xhr.DONE) {
+            return;
+          }
+          if (200 <= xhr.status && xhr.status < 209) {
+            callbackSuccess(xhr.responseText);
+          } else {
+            callbackFailure(xhr.responseText, xhr.status);
+          }
+        };
+        xhr.open("PUT", apiUrl, true); // true for asynchronous
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(null);
+      }
+
+      function successHandler(responseText) {
+        let panel = document.getElementById("panel");
+        let start = panel.querySelector("[id=start]");
+        start?.parentElement.removeChild(start);
+
+        let temp = document.getElementById("tmp_success");
+
+        let clon = temp?.content.cloneNode(true);
+        panel?.appendChild(clon);
+      }
+
+      function failureHandler(responseText, status) {
+
+        let panel = document.getElementById("panel");
+        let start = panel.querySelector("[id=start]");
+        start?.parentElement.removeChild(start);
+
+        let temp = document.getElementById("tmp_failure");
+        let clon = temp?.content.cloneNode(true);
+
+        let errText = clon.querySelector("[id=err_text]");
+        let err = JSON.parse(responseText);
+        errText?.setHTML(`${status} : ${err.errCode}, ${err.errMsg}`);
+
+        panel?.appendChild(clon);
+      }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const url = window.location.origin + "/api/registration/" + urlParams.get('param');
+
+      httpClient(url, successHandler, failureHandler);
+    </script>
+
+  </body>
+</html>
