@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>Verbena site</title>
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon" />
+
+    <style type="text/css">
+      html { height: 100%; }
+      body { margin: 0 !important; padding: 0 !important; height: 100%;
+        -webkit-text-size-adjust: 100% !important; -ms-text-size-adjust: 100% !important; -webkit-font-smoothing: antialiased !important; }
+      [mr-tp-0] { margin-top: 0; }
+      [mr-bt-0] { margin-bottom: 0; }
+      @media only screen and (max-width: 620px) {
+        .panel2 { width: 100%; text-align: center; }
+      }
+      [ds-fl] { display: flex; }
+      [fl-dr-col] { flex-direction: column; }
+      [js-cn-cen] { justify-content: center; }
+      [js-cn-bet] { justify-content: space-between; }
+      [al-it-cen] { align-items: center; }
+      [hg-100] { height: 100%; }
+      [cl-inh] { color: inherit; }
+      [bg-ps-cen] { background-position: center; }
+      [bg-no-rep] { background-repeat: no-repeat; }
+      [bg-sz-cov] { background-size: cover; }
+      [pd-lf-05] { padding-left: 0.5em; }
+      [pd-rg-05] { padding-right: 0.5em; }
+      [mr-lf-05] { margin-left: 0.5em; }
+      [mr-rg-05] { margin-right: 0.5em; }
+      [mr-tp-05] { margin-top: 0.5em; }
+      [mr-bt-05] { margin-bottom: 0.5em; }
+      [fn-sz-inh] { font-size: inherit; }
+    </style>
+  </head>
+  <body>
+    <!-- ==A basic_layout.hbs -->
+    <!-- {{> @partial-block}} -->
+
+    <style>
+      .root {
+        --header-hg: 4.4em;
+        --footer-hg: 2.3em;
+        --site-header-bg: hsl(140, 40%, 90%);
+        --site-footer-bg: hsl(140, 40%, 90%);
+        font-family: sans-serif;
+      }
+      a, a:visited, a:hover { text-decoration: none; }
+      header {
+        background-color: var(--site-header-bg);
+        border-bottom: 1px solid lightgrey;
+        box-sizing: border-box;
+        flex: 0 0 var(--header-hg);
+      }
+      footer {
+        background-color: var(--site-footer-bg);
+        border-top: 1px solid lightgrey;
+        box-sizing: border-box;
+        flex: 0 0 var(--footer-hg);
+      }
+      main { flex: 1 1 auto; height: fit-content; }
+
+      .hd-logo-mini { height: 4em; width: 4em; background-image: url('assets/images/logo_mini.png'); }
+    </style>
+
+    <div ds-fl fl-dr-col hg-100 class="root">
+      <header ds-fl js-cn-bet>
+        <a ds-fl al-it-cen pd-lf-05 pd-rg-05 id="hd_ref" href="/login">
+          <i bg-sz-cov class="hd-logo-mini"></i>
+          <span mr-lf-05 style="font-size: x-large; font-weight: 600;">Verbéna</span>
+        </a>
+      </header>
+
+      <main>
+        
+        <style>
+            .content { background-color: honeydew;  border-radius: 1em;
+              min-width: max(25vw,330px);  min-height: 10vh; padding: 2em 3em; }
+            .err { color: rgb(224, 32, 32); }
+            .err-md { font-size: calc(100% - 2px); font-style: italic; }
+
+            .s-field-wrap {
+              --wd-icon: 1.5em;
+              /* margin-bottom: 0.5em; */
+              /* margin-top: 1em; */
+              position: relative;
+              width: 100%;
+            }
+            .s-field:not(:focus) { --delta: 1px; border-width: 1px; }
+            .s-field:disabled { color: rgba(0,0,0,0.38); caret-color: transparent; }
+
+            .s-field { --br-cl: rgba(0,0,0,0.38); }
+            .s-field:not(:invalid):not(:disabled):hover { --br-cl: rgba(0,0,0,0.87); }
+            .s-field:not(:invalid):focus { --br-cl: rgb(63,81,181); }
+            .s-field:invalid { --br-cl: rgb(244,67,54); }
+
+            .s-field {
+              border-color: var(--br-cl,unset);
+              border-radius: 0.25em;
+              border-style: solid;
+              box-sizing: border-box;
+              height: 3em;
+              min-width: max(25vw, 250px);
+              outline: none;
+              padding-left: calc(1em + var(--delta, 0px));
+              padding-right: calc(1em + var(--delta, 0px));
+              width: 100%;
+            }
+            .s-btn-eye {
+              background-color: transparent;
+              border: none;
+              cursor: pointer;
+              display: flex;
+              padding: 0px;
+              position: absolute;
+              outline: none;
+              right: 0.9em;
+              top: calc(50% - var(--wd-icon) / 2);
+              z-index: 1;
+            }
+            .s-icon {  width: var(--wd-icon); height: var(--wd-icon); }
+            .s-btn {
+              border: none;
+              border-radius: 0.25em;
+              box-shadow: 0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12);
+              height: 2.25em;
+              outline: none;
+              width: 100%;
+            } 
+            .s-btn[disabled] { cursor: default; pointer-events: none; }
+            .s-submit {
+              background-color: #3f51b5;
+              color: #fff;
+              margin: 0.5em 0;
+            }
+            .s-label {
+              font-size: 0.875em;
+            }
+          </style>
+          <!--
+            height: 3em; /* 3em=48px; 2.75em=44px;*/
+            input[type="password"].s-field { font-family: caption; }
+
+            .s-field:not(:focus) { --delta: 1px; border-width: 1px; }
+              
+              margin-left: calc(1px + var(--delta, 0px));
+              margin-right: calc(1px + var(--delta, 0px));
+              
+
+            .s-field:not(:invalid):not(:focus):not(:hover) { border-color: rgba(0,0,0,0.38); }
+            .s-field:not(:invalid):not(:disabled):hover { border-color: rgba(0,0,0,0.87); }
+            .s-field:not(:invalid):focus { border-color: rgb(63,81,181); }
+            .s-field:invalid { border-color: rgb(244,67,54); }
+            
+            .s-field:not(.error):not(:focus) { border: 1px solid rgba(0,0,0,0.38); }
+            .s-field:not(.error):focus { border: 2px solid rgb(63,81,181); }
+            .s-field.error { border: 2px solid rgb(244,67,54); }
+             outline: none;
+            -->
+
+          <div ds-fl js-cn-cen style="margin-top: 20vh;">
+            <div id="panel" class="content">
+              <form ds-fl fl-dr-col al-it-cen id="form-prm">
+                <span mr-tp-05 mr-bt-05>Thank you for choosing our site.</span>
+
+                <span mr-tp-05 mr-bt-05>Enter a new password for your account.</span>
+                <!-- type="password" -->
+                <div mr-tp-05 mr-bt-05 class="s-field-wrap">
+                  <input type="password" name="password" placeholder="New password"
+                    fn-sz-inh class="s-field"
+                    required="" minlength="6" maxlength="64" disabled9 />
+                  <button type="button" fn-sz-inh class="s-btn-eye" title="Toggle password visibility">
+                    <svg class="s-eye-on s-icon">
+                      <g fill="#788393">
+                      <path d="m12.000,5c-6.1608,0 -11.6507,6.4039 -11.8817,6.6769c-0.1580,0.186 -0.1580,0.459 0,0.646c0.138,0.163 2.1559,2.5059 5.0659,4.371l3.1339,-3.134c-0.2039,-0.48 -0.3179,-1.007 -0.3179,-1.5609c0,-2.2059 1.79397,-3.9999 3.9998,-3.9999c0.554,0 1.081,0.114 1.561,0.318l2.577,-2.5769c-1.256,-0.44901 -2.635,-0.7409 -4.138,-0.7409z">
+                      </path>
+                      <path d="m23.911,11.715c-0.128,-0.185 -2.251,-3.1729 -5.8199,-5.0988l2.7629,-2.7629c0.195,-0.1949 0.195,-0.5120 0,-0.707c-0.195,-0.195 -0.512,-0.195 -0.707,0l-16.9996,16.9997c-0.1949,0.195 -0.1949,0.5121 0,0.7071c0.0969,0.098 0.225,0.1469 0.35301,0.1469c0.12802,0 0.2559,-0.0489 0.354,-0.146l3.1349,-3.1349c1.5449,0.754 3.2489,1.281 5.01093,1.281c6.1609,0 11.6508,-6.404 11.8818,-6.6769c0.145,-0.1731 0.158,-0.4221 0.029,-0.6081zm-11.9108,4.285c-0.923,0 -1.762,-0.327 -2.4399,-0.853l5.58687,-5.58686c0.526,0.6779 0.853,1.5169 0.853,2.4399c0,2.2059 -1.794,3.9999 -3.9999,3.9999z">
+                       </path>
+                      </g>
+                    </svg>
+
+                    <!-- <svg class="s-eye-on s-icon">
+                    <g>
+                      <path fill="#2196F3" d="M23.9111 11.7149C23.7221 11.4409 19.1802 5 12.0003 5C5.83942 5 0.349506 11.4039 0.11851 11.6769C-0.0395033 11.8629 -0.0395033 12.1359 0.11851 12.3229C0.349506 12.5959 5.83942 18.9998 12.0003 18.9998C18.1613 18.9998 23.6512 12.5959 23.8822 12.3229C24.0272 12.1499 24.0401 11.9009 23.9111 11.7149ZM12.0003 15.9998C9.79439 15.9998 8.00042 14.2058 8.00042 11.9999C8.00042 9.79393 9.79439 7.99995 12.0003 7.99995C14.2063 7.99995 16.0003 9.79393 16.0003 11.9999C16.0003 14.2058 14.2063 15.9998 12.0003 15.9998Z">
+                      </path>
+                    </g>
+                  </svg> -->
+                  </button>
+
+                </div>
+
+                <span mr-tp-05 mr-bt-05_>
+                </span>
+              </form>
+              <!-- disabled -->
+              <button type="button" fn-sz-inh mr-tp-05 mr-bt-05 class="s-btn s-submit" id="submit" 
+                disabled9 onclick="doSubmit(event, this)">
+                <span class="s-label">Submit</span>
+              </button>
+
+            </div>
+          </div>
+
+      </main>
+
+      <footer ds-fl al-it-cen style="padding-left: 2em;">
+        <span>Demo site <a id="ft_ref" href="/login" target="_blank">www.verbena</a></span>
+      </footer>
+    </div>
+
+    <!--
+:host {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  .container {
+    margin-bottom: 7vh;
+    padding-bottom: 26px;
+    box-sizing: border-box;
+    width: 50vw;
+    font-size: medium;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    p {
+      margin-top: 13px;
+      margin-bottom: 13px;
+    }
+  }
+  .password {
+    width: 40vh;
+  }
+  .submit {
+    width: 20vh;
+  }
+  .failed {
+    color: var(--app-theme-warn);
+  }
+}
+    -->
+    <!-- 
+ 
+<form class="container" *ngIf="!!confirmationId"
+  [formGroup]="formGroup"
+  novalidate
+>
+  <p>Enter new password for Bullpit.</p>
+  < !-- Введите новый пароль для Bullpit. -- >
+  <div class="password">
+    <app-widget-password
+      formControlName="newPassword"
+      [isRequired]="true"
+      [label]="'New password'"
+    ></app-widget-password>
+  </div>
+  <button mat-raised-button class="smd-button submit" color="primary"
+    [disabled]="formGroup.invalid || isDisabledSubmit"
+    (click)="doSubmit()"
+  >Submit
+  </button>
+
+  <div *ngIf="isResponseSuccessful==true">
+    <p>Your password have been changed to new one!</p>
+    < !--Ваш пароль изменен на новый!-- >
+    <p>Please follow to <a href="/login">(login form)</a> for authorization.</p>
+    < !-- Пожалуйста, перейдите по <a href="/login">(форма входа)</a> для авторизации. -- >
+  </div>
+  <div class="failed" *ngIf="isResponseSuccessful==false">
+    <p>Your confirmation have been expired!</p>
+    < !-- Срок действия вашего подтверждения истек! -- >
+  </div>
+</form>
+    -->
+    <template id="tmp_success">
+      <span>Your registration have been completed !</span>
+      <p>
+        <a id="mn_ref_lg" href="/signup">Go to the login page on our website.</a>
+      </p>
+    </template>
+
+    <template id="tmp_failure">
+      <div mr-tp-05 mr-bt-05 class="err">Your confirmation is invalid or has expired.</div>
+      <div mr-tp-05 mr-bt-05 id="err_text" class="err err-md"></div>
+      <a id="mn_ref_sg" href="/signup">Go to the registration page on our website.</a>
+    </template>
+
+
+    <script type="text/javascript" language="javascript">
+
+      function httpClient(apiUrl, callbackSuccess, callbackFailure, recoveryData) {
+        let xmlHttpReq = new XMLHttpRequest();
+        const xhr = new XMLHttpRequest();
+
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState != xhr.DONE) {
+            return;
+          }
+          if (200 <= xhr.status && xhr.status < 209) {
+            callbackSuccess(xhr.responseText);
+          } else {
+            callbackFailure(xhr.responseText, xhr.status);
+            // callbackSuccess(xhr.responseText);
+          }
+        };
+
+        xhr.open("PUT", apiUrl, true); // true for asynchronous
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(JSON.stringify(recoveryData));
+      }
+
+      function successHandler(responseText) {
+        let panel = document.getElementById("panel");
+
+        let temp = document.getElementById("tmp_success");
+
+        let clon = temp?.content.cloneNode(true);
+        panel?.appendChild(clon);
+      }
+
+      function failureHandler(responseText, status) {
+
+        let panel = document.getElementById("panel");
+
+        let temp = document.getElementById("tmp_failure");
+
+        let clon = temp?.content.cloneNode(true);
+
+        let errText = clon.querySelector("[id=err_text]");
+        let err = JSON.parse(responseText);
+        errText?.setHTML(`${status} : ${err.errCode}, ${err.errMsg}`);
+
+        panel?.appendChild(clon);
+      }
+
+
+      //   
+      function doSubmit(event, elem) {
+        const frm = document.getElementById("form-prm");
+        const password = !!frm ? frm[0].value : null;
+        console.log(`password: ${password}`);
+        if (!!password) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const recovery_token = urlParams.get('param')
+
+          const url = window.location.origin + "/api/recovery/" + recovery_token;
+
+          httpClient(url, successHandler, failureHandler, { password });
+        }
+      }
+
+
+
+      /*function send() {
+        var urlvariable;
+        urlvariable = "text";
+
+        var ItemJSON;
+        ItemJSON = '[  {    "Id": 1,    "ProductID": "1",    "Quantity": 1,  },  {    "Id": 1,    "ProductID": "2",    "Quantity": 2,  }]';
+
+        URL = "https://testrestapi.com/additems?var=" + urlvariable;  //Your URL
+
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = callbackFunction(xmlhttp);
+        xmlhttp.open("POST", URL, false);
+        xmlhttp.setRequestHeader("Content-Type", "application/json");
+        // xmlhttp.setRequestHeader('Authorization', 'Basic ' + window.btoa('apiusername:apiuserpassword')); //in prod, you should encrypt user name and password and provide encrypted keys here instead 
+        xmlhttp.onreadystatechange = callbackFunction(xmlhttp);
+        xmlhttp.send(ItemJSON);
+
+        alert(xmlhttp.responseText);
+        document.getElementById("div").innerHTML =
+          xmlhttp.statusText + ":" + xmlhttp.status + "<BR><textarea rows='100' cols='100'>" + xmlhttp.responseText + "</textarea>";
+      }
+
+      function callbackFunction(xmlhttp) {
+        //alert(xmlhttp.responseXML);
+      }*/
+    </script>
+
+
+    <!--<hr />
+    <div class="demo0">
+      <div class="container0">
+        <div *ngIf="isResponseSuccessful==true">
+          <p>{{ 'Your registration have been completed!' }}</p>
+          < !-- Ваша регистрация завершена! -- >
+          <p [innerHTML]="'confirmation.login_for_authorization' | translate: { linkToLogin: linkToLogin }"></p>
+        </div>
+        <div
+          class="failed0"
+          *ngIf="isResponseSuccessful==false"
+        >
+          <p>{{ 'Your confirmation have been expired!' }}</p>
+          < !-- Срок действия вашего подтверждения истек! -- >
+        </div>
+      </div>
+    </div>-->
+
+    <!-- ==V verification_code.hbs  {{#> base}} <hr/>
+  <div>
+    <a href="{{domain}}" target="_blank" style="font-size: 1.375em;">&#706; Verbéna &#707;</a>
+    <p>Hi {{nickname}},</p>
+    <p>Please confirm your account <b>registration</b></p>
+    <div class="panel btn btn-primary">
+      <a href="{{domain}}/confirmation/registration/{{target}}" target="_blank"
+        style="text-decoration: none;color: #fff;">
+        Confirm your registration
+      </a>
+    </div>
+    <p>This link is valid for 15 minutes.</p> < !-- Эта ссылка действительна в течение 15 минут. -- >
+    <p>Demo site <a href="{{domain}}" target="_blank">www.verbena</a></p>
+  </div>
+  ==A verification_code.hbs {{/base}} -->
+
+    <!-- ==V password_recovery.hbs {{#> base}} <hr/>
+  <div>
+    <a href="{{domain}}" target="_blank" style="font-size: 1.375em;">&#706; Verbéna &#707;</a>
+    <p>Hi {{nickname}},</p>
+    <p>Please confirm your account <b>recovery</b></p>
+    <div class="panel btn btn-primary">
+      <a href="{{domain}}/confirmation/recovery/{{target}}" target="_blank"
+        style="text-decoration: none;color: #fff;">
+        Confirm profile recovery on the form
+      </a>
+    </div>
+    <p>This link is valid for 10 minutes.</p> < !-- Эта ссылка действительна в течение 10 минут. -- >
+    <p>Demo site <a href="{{domain}}" target="_blank">www.verbena</a></p>
+  </div>
+  ==A password_recovery.hbs {{/base}} -->
+
+
+    <!--
+<body>
+    Do you want to proceed?
+    <input type="button" value="Proceed" onclick="proceed();" />
+
+    <script type="text/javascript">
+        let header =
+            'POST https://host.com HTTP/1.1' +
+            'Host: host.com' +
+            ...;
+
+        let body = 'param1=value1';
+
+        function proceed() {
+            let response = sendRequest(header, body);
+            replacePageContent(response);
+        }
+
+        function sendRequest(header, body) {
+            let httpRequest = new HttpRequest(header, body); // which JS library can do that?
+            httpRequest.send();
+        }
+
+        function replacePageContent(response) {
+            // how do I replace the page content with the response?
+        }
+    </script>
+</body>
+  -->
+
+    <!-- ==V basic_layout.hbs -->
+  </body>
+</html>

@@ -15,7 +15,6 @@
       @media only screen and (max-width: 620px) {
         .panel2 { width: 100%; text-align: center; }
       }
-
       [ds-fl] { display: flex; }
       [fl-dr-col] { flex-direction: column; }
       [js-cn-cen] { justify-content: center; }
@@ -28,7 +27,8 @@
       [bg-sz-cov] { background-size: cover; }
       [pd-lf-05] { padding-left: 0.5em; }
       [pd-rg-05] { padding-right: 0.5em; }
-
+      [mr-lf-05] { margin-left: 0.5em; }
+      [mr-rg-05] { margin-right: 0.5em; }
     </style>
   </head>
   <body>
@@ -63,7 +63,7 @@
       <header ds-fl js-cn-bet>
         <a ds-fl al-it-cen pd-lf-05 pd-rg-05 id="hd_ref" href="/login">
           <i bg-sz-cov class="hd-logo-mini"></i>
-          <span style="font-size: x-large; font-weight: 600; margin-left: 0.5em">Verbena</span>
+          <span mr-lf-05 style="font-size: x-large; font-weight: 600;">Verbéna</span>
         </a>
       </header>
 
@@ -71,7 +71,7 @@
         
         <style>
             .content { background-color: honeydew;  border-radius: 1em;
-              min-width: 30vw; min-height: 10vh; padding: 2em 4em; }
+              min-width: 25vw; min-height: 10vh; padding: 2em 3em; }
             .err { font-size: calc(100% - 2px); font-style: italic; }
           </style>
 
@@ -98,14 +98,14 @@
     <template id="tmp_success">
       <span>Your registration have been completed !</span>
       <p>
-        <a id="mn_ref_lg" href="/signup">Go to the login page on our website.</a>
+        <a id="mn_ref_lg" href="/login">Go to the login page.</a>
       </p>
     </template>
 
     <template id="tmp_failure">
       <span>Your confirmation is invalid or has expired.</span>
       <p id="err_text" class="err"></p>
-      <a id="mn_ref_sg" href="/signup">Go to the registration page on our website.</a>
+      <a id="mn_ref_sg" href="/signup">Go to the registration page.</a>
     </template>
 
 
@@ -158,7 +158,9 @@
       }
 
       const urlParams = new URLSearchParams(window.location.search);
-      const url = window.location.origin + "/api/registration/" + urlParams.get('param');
+      const registr_token = urlParams.get('param')
+
+      const url = window.location.origin + "/api/registration/" + registr_token;
 
       httpClient(url, successHandler, failureHandler);
     </script>
