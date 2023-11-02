@@ -38,6 +38,12 @@ export interface CreateUserDto {
   locale?: string; // = 'default';
 }*/
 
+// ** Recovery **
+
+export interface RecoveryUserDto {
+  email: string;
+}
+
 // ** RefreshToken **
 
 export interface TokenUserDto {

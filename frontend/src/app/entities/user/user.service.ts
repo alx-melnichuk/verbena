@@ -76,6 +76,13 @@ export class UserService {
     return this.userApiService.registration({ nickname, email, password });
   }
 
+  public recovery(email: string): Promise<null | HttpErrorResponse | undefined> {
+    if (!email) {
+      return Promise.reject();
+    }
+    return this.userApiService.recovery({ email });
+  }
+
   public async getCurrentUser(): Promise<UserDto | HttpErrorResponse> {
     const userDto: UserDto = (await this.userApiService.currentUser()) as UserDto;
     this.userInfo = { ...userDto } as UserDto;

@@ -6,6 +6,8 @@ export const R_LOGIN = 'login';
 export const ROUTE_LOGIN = '/' + R_LOGIN;
 export const R_SIGNUP = 'signup';
 export const ROUTE_SIGNUP = '/' + R_SIGNUP;
+export const R_FORGOT_PASSWORD = 'forgot-password';
+export const ROUTE_FORGOT_PASSWORD = '/' + R_FORGOT_PASSWORD;
 
 export const AUTHORIZATION_REQUIRED = [
   // ROUTE_PROFILE,
@@ -16,6 +18,7 @@ export const AUTHORIZATION_REQUIRED = [
 export const AUTHORIZATION_DENIED = [
   ROUTE_LOGIN,
   ROUTE_SIGNUP,
+  ROUTE_FORGOT_PASSWORD,
   // ROUTE_CONFIRMATION_REGISTRATION,
   // ROUTE_CONFIRMATION_RECOVERY,
   // ROUTE_CONFIRMATION_FORGOT_PASSWORD,

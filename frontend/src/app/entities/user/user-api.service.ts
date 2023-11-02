@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { Uri } from 'src/app/common/uri';
-import { CreateUserDto, LoginUserDto, LoginUserResponseDto, TokenUserDto, UserDto, UserTokensDto } from './user-dto';
+import { CreateUserDto, LoginUserDto, LoginUserResponseDto, RecoveryUserDto, TokenUserDto, UserDto, UserTokensDto } from './user-dto';
 
 @Injectable({
   providedIn: 'root',
@@ -18,6 +18,11 @@ export class UserApiService {
   public registration(createUserDto: CreateUserDto): Promise<null | HttpErrorResponse | undefined> {
     const url = Uri.appUri('appApi://api/registration');
     return this.http.post<null | HttpErrorResponse>(url, createUserDto).toPromise();
+  }
+
+  public recovery(recoveryUserDto: RecoveryUserDto): Promise<null | HttpErrorResponse | undefined> {
+    const url = Uri.appUri('appApi://api/recovery');
+    return this.http.post<null | HttpErrorResponse>(url, recoveryUserDto).toPromise();
   }
 
   public currentUser(): Promise<UserDto | HttpErrorResponse | undefined> {
