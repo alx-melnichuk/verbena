@@ -23,7 +23,7 @@ use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::user_orm::UserOrm;
-use crate::utils::err::{self, CD_JSONWEBTOKEN};
+use crate::utils::err::{self, CD_JSON_WEB_TOKEN};
 
 pub const CD_USER_EXISTS: &str = "NicknameOrEmailExist";
 pub const MSG_USER_EXISTS: &str = "A user with the same nickname or email already exists.";
@@ -172,15 +172,15 @@ pub async fn login(
     // Pack two parameters (user.id, num_token) into a access_token.
     let access_token = encode_dual_token(user.id, num_token, jwt_secret, config_jwt.jwt_access)
         .map_err(|err| {
-            log::error!("{CD_JSONWEBTOKEN}: {}", err);
-            AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
+            log::error!("{CD_JSON_WEB_TOKEN}: {}", err);
+            AppError::new(CD_JSON_WEB_TOKEN, &err).set_status(500)
         })?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let refresh_token = encode_dual_token(user.id, num_token, jwt_secret, config_jwt.jwt_refresh)
         .map_err(|err| {
-        log::error!("{CD_JSONWEBTOKEN}: {}", err);
-        AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
+        log::error!("{CD_JSON_WEB_TOKEN}: {}", err);
+        AppError::new(CD_JSON_WEB_TOKEN, &err).set_status(500)
     })?;
 
     let session_opt = session_orm.modify_session(user.id, Some(num_token)).map_err(|e| {
@@ -220,14 +220,14 @@ pub async fn login(
 
 let access_token =
     tokens::encode_token(sub, &jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        log::error!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
-        AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
+        log::error!("{}: {}", CD_JSON_WEB_TOKEN, e.to_string());
+        AppError::new(CD_JSON_WEB_TOKEN, &e.to_string()).set_status(500)
     })?;
 
 let refresh_token =
     tokens::encode_token(&sub, &jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        log::error!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
-        AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
+        log::error!("{}: {}", CD_JSON_WEB_TOKEN, e.to_string());
+        AppError::new(CD_JSON_WEB_TOKEN, &e.to_string()).set_status(500)
     })?;
     */
 /*
@@ -235,14 +235,14 @@ let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
 let access_token =
     tools_token::collect_token(user_id: i32, num_token: i32, jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        log::error!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
-        AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
+        log::error!("{}: {}", CD_JSON_WEB_TOKEN, e.to_string());
+        AppError::new(CD_JSON_WEB_TOKEN, &e.to_string()).set_status(500)
     })?;
 
 let refresh_token =
     tools_token::collect_token(user_id: i32, num_token: i32, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        log::error!("{}: {}", CD_JSONWEBTOKEN, e.to_string());
-        AppError::new(CD_JSONWEBTOKEN, &e.to_string()).set_status(500)
+        log::error!("{}: {}", CD_JSON_WEB_TOKEN, e.to_string());
+        AppError::new(CD_JSON_WEB_TOKEN, &e.to_string()).set_status(500)
     })?;
 */
 // Ok((access_token, refresh_token))
@@ -327,15 +327,15 @@ pub async fn new_token(
     // Pack two parameters (user.id, num_token) into a access_token.
     let access_token = encode_dual_token(user_id, num_token, jwt_secret, config_jwt.jwt_access)
         .map_err(|err| {
-            log::error!("{CD_JSONWEBTOKEN}: {}", err);
-            AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
+            log::error!("{CD_JSON_WEB_TOKEN}: {}", err);
+            AppError::new(CD_JSON_WEB_TOKEN, &err).set_status(500)
         })?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let refresh_token = encode_dual_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh)
         .map_err(|err| {
-        log::error!("{CD_JSONWEBTOKEN}: {}", err);
-        AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
+        log::error!("{CD_JSON_WEB_TOKEN}: {}", err);
+        AppError::new(CD_JSON_WEB_TOKEN, &err).set_status(500)
     })?;
 
     let session_opt = session_orm1.modify_session(user_id, Some(num_token)).map_err(|e| {

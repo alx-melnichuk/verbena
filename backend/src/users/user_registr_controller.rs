@@ -35,8 +35,8 @@ use crate::users::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserReg
 use crate::utils::{
     config_app,
     err::{
-        CD_BLOCKING, CD_DATABASE, CD_HASHING_PASSWD, CD_JSONWEBTOKEN, CD_NOT_FOUND, CD_NO_CONFIRM,
-        MSG_CONFIRM_NOT_FOUND, MSG_NOT_FOUND_BY_EMAIL,
+        CD_BLOCKING, CD_DATABASE, CD_HASHING_PASSWD, CD_JSON_WEB_TOKEN, CD_NOT_FOUND,
+        CD_NO_CONFIRM, MSG_CONFIRM_NOT_FOUND, MSG_NOT_FOUND_BY_EMAIL,
     },
 };
 
@@ -81,8 +81,8 @@ fn err_validate(error: ValidationErrors) -> AppError {
     AppError::from(error)
 }
 fn err_json_web_token(err: String) -> AppError {
-    log::error!("{CD_JSONWEBTOKEN}: {}", err);
-    AppError::new(CD_JSONWEBTOKEN, &err).set_status(500)
+    log::error!("{CD_JSON_WEB_TOKEN}: {}", err);
+    AppError::new(CD_JSON_WEB_TOKEN, &err).set_status(500)
 }
 fn err_sending_email(err: String) -> AppError {
     log::error!("{CD_ERROR_SENDING_EMAIL}: {err}");
@@ -210,7 +210,7 @@ pub async fn registration(
 }
 
 // Confirm user registration.
-// PUT api//registration/{registr_token}
+// PUT api/registration/{registr_token}
 #[put("/registration/{registr_token}")]
 pub async fn confirm_registration(
     request: actix_web::HttpRequest,
@@ -292,7 +292,8 @@ pub async fn confirm_registration(
 }
 
 // Send a confirmation email to recover the user's password.
-// POST api//recovery
+// POST api/recovery
+// errorCode: [400-"Validation",500-"Database",500-"Blocking",404-"NotFound",500-"ErrorSendingEmail,500-"JsonWebToken"]
 #[post("/recovery")]
 pub async fn recovery(
     config_app: web::Data<config_app::ConfigApp>,
@@ -414,7 +415,7 @@ pub async fn recovery(
 }
 
 // Confirm user password recovery.
-// PUT api//recovery/{recovery_token}
+// PUT api/recovery/{recovery_token}
 #[put("/recovery/{recovery_token}")]
 pub async fn confirm_recovery(
     request: actix_web::HttpRequest,
