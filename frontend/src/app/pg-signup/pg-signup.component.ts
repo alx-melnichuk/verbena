@@ -1,14 +1,15 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SignupComponent } from '../components/signup/signup.component';
-import { StrParams } from '../common/str-params';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { Router } from '@angular/router';
+
+import { AppErrorUtil } from '../common/app-error';
+import { SignupComponent } from '../components/signup/signup.component';
+import { StrParams } from '../common/str-params';
+import { ROUTE_LOGIN } from '../common/routes';
 import { UserService } from '../entities/user/user.service';
 import { DialogService } from '../lib-dialog/dialog.service';
-import { Router } from '@angular/router';
-import { ROUTE_LOGIN } from '../common/routes';
-import { AppErrorUtil } from '../common/app-error';
 
 @Component({
   selector: 'app-pg-signup',
@@ -21,7 +22,6 @@ import { AppErrorUtil } from '../common/app-error';
   providers: [DialogService],
 })
 export class PgSignupComponent {
-  public isLogin = true;
   public isDisabledSubmit = false;
   public errMsgList: string[] = [];
 
@@ -52,12 +52,11 @@ export class PgSignupComponent {
 
     this.isDisabledSubmit = true;
     this.errMsgList = [];
-    this.userService
-      .registration(nickname, email, password)
+    this.userService.registration(nickname, email, password)
       .then(() => {
         const appName = this.translate.instant('app_name');
-        const title = this.translate.instant('login.registration_title', { app_name: appName });
-        const message = this.translate.instant('login.registration_message', { value: email });
+        const title = this.translate.instant('signup.dialog_title', { app_name: appName });
+        const message = this.translate.instant('signup.dialog_message', { value: email });
         this.dialogService.openConfirmation(message, title, null, 'buttons.ok').then(() => {
           this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
         });

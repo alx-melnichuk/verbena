@@ -8,7 +8,7 @@
     "ok": "Ok",
     "cancel": "Cancel"
   },
-  "main_menu": {
+  "main-menu": {
     "my_profile": "My profile",
     "log_out": "Log Out"
   },
@@ -36,14 +36,24 @@
   "login": {
     "title": "Log in to ",
     "email_or_nickname": "Email or Nickname ",
-    "button_ok": "Log in",
-    "err_not_correct_password": "The nickname or password is not correct.",
-    "registration_title": "Welcome to the {{app_name}} !",
-    "registration_message": "We have sent a registration link to {{value}}"
+    "button_login": "Log in",
+    "go_to_signup": "Registration",
+    "go_to_forgot_password": "Forgot password ?",
+    "err_not_correct_password": "The nickname or password is not correct."
   },
   "signup": {
     "title": "Sign up to ",
-    "button_ok": "Sign up",
-    "err_unique_users_nickname_key": "The nickname \"{{nickname}}\" value is not unique."
+    "button_signup": "Sign up",
+    "go_to_login": "go to Login",
+    "dialog_title": "Welcome to the {{app_name}} !",
+    "dialog_message": "We have sent a registration link to \"{{value}}\"."
+  },
+  "forgot-password": {
+    "title": "Forgot your password ?",
+    "email_address": "Email Address",
+    "button_resend": "Resend",
+    "go_to_login": "go to Login",
+    "dialog_title": "Welcome to the {{app_name}} !",
+    "dialog_message": "We have sent a password recovery link to \"{{value}}\"."
   }
 }

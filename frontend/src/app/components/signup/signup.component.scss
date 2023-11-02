@@ -28,10 +28,12 @@ app-signup {
   .su-title {
     font-size: large;
     margin: 1em 0;
+    text-align: center;
   }
 
-  .su-btn {
+  .su-note {
     display: flex;
+    margin: 0.5em 0;
     justify-content: space-between;
   }
 }

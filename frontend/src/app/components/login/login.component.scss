@@ -28,10 +28,13 @@ app-login {
   .lg-title {
     font-size: large;
     margin: 1em 0;
+    text-align: center;
   }
 
-  .btn-login {
+  .lg-note {
     display: flex;
+    margin: 0.5em 0;
     justify-content: space-between;
   }
+
 }

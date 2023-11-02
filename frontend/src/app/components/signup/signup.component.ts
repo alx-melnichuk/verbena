@@ -11,6 +11,7 @@ import { StrParams } from '../../common/str-params';
 import { FieldPasswordComponent } from '../field-password/field-password.component';
 import { FieldEmailComponent } from '../field-email/field-email.component';
 import { FieldNicknameComponent } from '../field-nickname/field-nickname.component';
+import { ROUTE_LOGIN } from 'src/app/common/routes';
 
 const MIN_NICKNAME_LENGTH = 3;
 const MAX_NICKNAME_LENGTH = 10; // 50
@@ -44,25 +45,14 @@ export class SignupComponent {
   @Output()
   readonly signup: EventEmitter<StrParams> = new EventEmitter();
 
-  public linkLogin = 'login'; // ROUTE_LOGIN;
-  // public linkSignup = ROUTE_SIGNUP;
+  public linkLogin = ROUTE_LOGIN;
+  
   public controls = {
     nickname: new FormControl<string | null>(null, []),
     email: new FormControl<string | null>(null, []),
     password: new FormControl<string | null>(null, []),
   };
   public formGroup: FormGroup = new FormGroup(this.controls);
-
-  public minLenNickname = MIN_NICKNAME_LENGTH;
-  public maxLenNickname = MAX_NICKNAME_LENGTH;
-  public patternNickname = PATTERN_NICKNAME;
-
-  // public isNicknameHasEmail = false;
-  // public linkForgotPassword = ROUTE_CONFIRMATION_FORGOT_PASSWORD;
-
-  // public minLenPassword = MIN_PASSWORD_LENGTH;
-  // public maxLenPassword = MAX_PASSWORD_LENGTH;
-  // public patternPassword = PATTERN_PASSWORD;
 
   constructor(public translate: TranslateService) {}
 

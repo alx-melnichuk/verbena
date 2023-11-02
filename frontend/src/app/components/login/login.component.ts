@@ -10,7 +10,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { StrParams } from '../../common/str-params';
 import { FieldNicknameComponent } from '../field-nickname/field-nickname.component';
 import { FieldPasswordComponent } from '../field-password/field-password.component';
-import { ROUTE_LOGIN } from 'src/app/common/routes';
+import { ROUTE_FORGOT_PASSWORD, ROUTE_SIGNUP } from 'src/app/common/routes';
 
 @Component({
   selector: 'app-login',
@@ -39,7 +39,9 @@ export class LoginComponent {
   @Output()
   readonly login: EventEmitter<StrParams> = new EventEmitter();
 
-  public linkLogin = ROUTE_LOGIN;
+  public linkSignup = ROUTE_SIGNUP;
+  public linkForgotPassword = ROUTE_FORGOT_PASSWORD;
+
   public controls = {
     nickname: new FormControl<string | null>(null, []),
     email: new FormControl<string | null>(null, []),
@@ -66,14 +68,6 @@ export class LoginComponent {
     const password = this.controls.password.value;
     this.login.emit({ nickname, password });
   }
-
-  // public doConnectWithFacebook(): void {
-  //   this.connectWithFacebook.emit();
-  // }
-
-  // public doConnectWithGoogle(): void {
-  //   this.connectWithGoogle.emit();
-  // }
 
   public updateErrMsg(errMsgList: string[] = []): void {
     this.errMsgList = errMsgList;

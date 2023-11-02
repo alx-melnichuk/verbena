@@ -39,11 +39,16 @@
       [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
       (click)="doSignup()"
     >
-      {{ 'signup.button_ok' | translate }}
+      {{ 'signup.button_signup' | translate }}
     </button>
 
     <ng-container *ngFor="let errMsg of errMsgList">
       <mat-error>{{ errMsg }}</mat-error>
     </ng-container>
   </form>
+
+  <div class="su-note">
+    <a [href]="linkLogin">{{ 'signup.go_to_login' | translate }}</a>
+  </div>
+
 </div>
