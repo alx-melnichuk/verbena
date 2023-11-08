@@ -1,11 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, Input, Output, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostListener, Input, OnChanges, Output,
+  SimpleChanges, ViewEncapsulation
+} from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslateModule } from '@ngx-translate/core';
 
 import { StrParams } from '../../common/str-params';
 import { FieldEmailComponent } from '../field-email/field-email.component';
@@ -16,6 +19,7 @@ import { ROUTE_LOGIN } from 'src/app/common/routes';
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     TranslateModule,
     ReactiveFormsModule,
     MatButtonModule,
@@ -28,7 +32,7 @@ import { ROUTE_LOGIN } from 'src/app/common/routes';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ForgotPasswordComponent {
+export class ForgotPasswordComponent implements OnChanges {
   @Input()
   public isDisabledSubmit: boolean = false;
   @Input()
@@ -43,12 +47,21 @@ export class ForgotPasswordComponent {
   };
   public formGroup: FormGroup = new FormGroup(this.controls);
 
-  constructor(public translate: TranslateService) {}
+  constructor(private changeDetector: ChangeDetectorRef) {}
 
   @HostListener('document:keypress', ['$event'])
   public keyEvent(event: KeyboardEvent): void {
     if (event.code === 'Enter') {
       this.doResend();
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!!changes['isDisabledSubmit']) {
+      if (this.isDisabledSubmit != this.formGroup.disabled) {
+        this.isDisabledSubmit ? this.formGroup.disable() : this.formGroup.enable();
+        this.changeDetector.markForCheck();
+      }
     }
   }
 

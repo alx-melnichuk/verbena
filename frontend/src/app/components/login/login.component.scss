@@ -1,18 +1,46 @@
 /*# sourceURL=login.component.scss */
 
+@use '../../../styles-variables.scss' as variable;
+
 app-login {
+  align-items: center;
   display: flex;
   flex-direction: column;
   justify-content: center;
   height: 100%;
 
-  .lg-stand {
+  [mr-bt-05] { margin-bottom: 0.5em; }
+  [mr-bt-1] { margin-bottom: 1em; }
+  [mr-tp-05] { margin-top: 0.5em; }
+  [wd-100] { width: 100%; }
+
+  mat-error.mat-mdc-form-field-error {
+    line-height: 1.2;
+  }
+
+  .lg-content {
+    @media screen and (width <= variable.$mobile-480) {
+      --pd: 0.5em; --wd: 100%;
+    }
+    @media screen and (variable.$mobile-480 < width <= variable.$tablet-768) {
+      --pd: 1.5em; --wd: 30em;
+    }
+    @media screen and (variable.$tablet-768 < width <= variable.$laptop-1024) {
+      --pd: 2em; --wd: 32em;
+    }
+    @media screen and (variable.$laptop-1024 < width <= variable.$desktop-1280) {
+      --pd: 2.5em; --wd: 34em;
+    }
+    @media screen and (variable.$desktop-1280 < width) {
+      --pd: 3em; --wd: 36em;
+    }
+  
+    border-radius: var(--pd);
     border: 1px solid var(--app-site-border-cl);
-    border-radius: 1em;
     box-sizing: border-box;
-    margin: 0 auto 7em auto;
-    padding: 1em;
-    width: 30em;
+    margin-bottom: 7em;
+    padding: var(--pd);
+    width: var(--wd);
   }
 
   .lg-form {
@@ -20,21 +48,20 @@ app-login {
     flex-direction: column;
   }
 
-  .lg-field {
-    margin: 0.5em 0;
-    width: 100%;
-  }
-
   .lg-title {
-    font-size: large;
-    margin: 1em 0;
+    font-size: calc(100% + 6px);
+    font-weight: 500;
+    margin-bottom: 1em;
     text-align: center;
   }
 
   .lg-note {
     display: flex;
-    margin: 0.5em 0;
+    margin-top: 0.5em;
     justify-content: space-between;
   }
 
+  .lg-err {
+    font-size: 13px;
+  }
 }

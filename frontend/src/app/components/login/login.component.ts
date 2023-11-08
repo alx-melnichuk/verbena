@@ -1,11 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, Input, Output, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostListener, Input, OnChanges, Output,
+  SimpleChanges, ViewEncapsulation
+} from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslateModule } from '@ngx-translate/core';
 
 import { StrParams } from '../../common/str-params';
 import { FieldNicknameComponent } from '../field-nickname/field-nickname.component';
@@ -31,7 +34,7 @@ import { ROUTE_FORGOT_PASSWORD, ROUTE_SIGNUP } from 'src/app/common/routes';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LoginComponent {
+export class LoginComponent implements OnChanges {
   @Input()
   public isDisabledSubmit: boolean = false;
   @Input()
@@ -49,12 +52,21 @@ export class LoginComponent {
   };
   public formGroup: FormGroup = new FormGroup(this.controls);
 
-  constructor(public translate: TranslateService) {}
+  constructor(private changeDetector: ChangeDetectorRef) {}
 
   @HostListener('document:keypress', ['$event'])
   public keyEvent(event: KeyboardEvent): void {
     if (event.code === 'Enter') {
       this.doLogin();
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!!changes['isDisabledSubmit']) {
+      if (this.isDisabledSubmit != this.formGroup.disabled) {
+        this.isDisabledSubmit ? this.formGroup.disable() : this.formGroup.enable();
+        this.changeDetector.markForCheck();
+      }
     }
   }
 

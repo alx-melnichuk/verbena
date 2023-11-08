@@ -1,13 +1,14 @@
-<div class="lg-stand">
+<div class="lg-content">
   <form
     class="lg-form"
     [formGroup]="formGroup"
     novalidate
   >
-    <div class="lg-title">{{ 'login.title' | translate }}{{ 'app_name' | translate }}</div>
+    <div class="lg-title">{{ 'login.title' | translate }}</div>
 
     <app-field-nickname
-      class="lg-field"
+      mr-bt-1
+      wd-100
       formControlName="nickname"
       [isRequired]="true"
       label="login.email_or_nickname"
@@ -16,7 +17,9 @@
     </app-field-nickname>
 
     <app-field-password
-      class="lg-field"
+      mr-tp-05
+      mr-bt-1
+      wd-100
       formControlName="password"
       [isRequired]="true"
       (input)="updateErrMsg()"
@@ -24,9 +27,11 @@
 
     <button
       type="button"
-      indent
       mat-raised-button
-      class="lg-field mat-primary"
+      mr-bt-05 
+      mr-tp-05
+      wd-100
+      class="mat-primary"
       [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
       (click)="doLogin()"
     >
@@ -34,13 +39,13 @@
     </button>
 
     <ng-container *ngFor="let errMsg of errMsgList">
-      <mat-error>{{ errMsg }}</mat-error>
+      <mat-error class="lg-err">{{ errMsg }}</mat-error>
     </ng-container>
   </form>
 
   <div class="lg-note">
-    <a [href]="linkSignup">{{ 'login.go_to_signup' | translate }}</a>
-    <a [href]="linkForgotPassword">{{ 'login.go_to_forgot_password' | translate }}</a>
+    <a [href]="linkSignup">{{ 'login.create_an_account' | translate }}</a>
+    <a [href]="linkForgotPassword">{{ 'login.forgot_password' | translate }}</a>
   </div>
 
 </div>

@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LoginComponent } from '../components/login/login.component';
-import { StrParams } from '../common/str-params';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { UserService } from '../entities/user/user.service';
-import { AppErrorUtil } from '../common/app-error';
-import { ROUTE_ROOT } from '../common/routes';
 import { Router } from '@angular/router';
+
+import { AppErrorUtil } from '../common/app-error';
+import { StrParams } from '../common/str-params';
+import { ROUTE_ROOT } from '../common/routes';
+import { LoginComponent } from '../components/login/login.component';
+import { UserService } from '../entities/user/user.service';
 
 @Component({
   selector: 'app-pg-login',
@@ -29,8 +30,6 @@ export class PgLoginComponent {
     private changeDetector: ChangeDetectorRef,
     private router: Router,
     private translate: TranslateService,
-    // private dialogService: DialogService,
-    // private profileService: ProfileService,
     private userService: UserService
   ) {
     this.defaultError = this.translate.instant('error.server_api_call');
@@ -39,12 +38,12 @@ export class PgLoginComponent {
   // ** Public API **
 
   public async doLogin(params: StrParams): Promise<void> {
-    console.log('doLogin()', params); // #-
     if (!params) {
       return;
     }
-    const nickname = params['nickname'] as string;
-    const password = params['password'] as string;
+    const nickname: string = params['nickname'] || "";
+    const password: string = params['password'] || "";
+
     if (!nickname || !password) {
       return;
     }
@@ -59,7 +58,7 @@ export class PgLoginComponent {
         if (errRes.status === 403) {
           this.errMsgList = [this.translate.instant('login.err_not_correct_password')];
         } else {
-          this.errMsgList = AppErrorUtil.handleError(errRes, this.defaultError);
+          this.errMsgList = AppErrorUtil.handleError2(errRes, this.defaultError, this.translate);
         }
       } else {
         throw errRes;

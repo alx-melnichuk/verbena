@@ -1,21 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, Input, Output, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostListener, Input, OnChanges, Output,
+  SimpleChanges, ViewEncapsulation
+} from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslateModule } from '@ngx-translate/core';
 
 import { StrParams } from '../../common/str-params';
 import { FieldPasswordComponent } from '../field-password/field-password.component';
 import { FieldEmailComponent } from '../field-email/field-email.component';
 import { FieldNicknameComponent } from '../field-nickname/field-nickname.component';
 import { ROUTE_LOGIN } from 'src/app/common/routes';
-
-const MIN_NICKNAME_LENGTH = 3;
-const MAX_NICKNAME_LENGTH = 10; // 50
-const PATTERN_NICKNAME = '^[a-zA-Z0-9]+$';
 
 @Component({
   selector: 'app-signup',
@@ -37,7 +36,7 @@ const PATTERN_NICKNAME = '^[a-zA-Z0-9]+$';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SignupComponent {
+export class SignupComponent implements OnChanges {
   @Input()
   public isDisabledSubmit: boolean = false;
   @Input()
@@ -54,12 +53,21 @@ export class SignupComponent {
   };
   public formGroup: FormGroup = new FormGroup(this.controls);
 
-  constructor(public translate: TranslateService) {}
+  constructor(private changeDetector: ChangeDetectorRef) {}
 
   @HostListener('document:keypress', ['$event'])
   public keyEvent(event: KeyboardEvent): void {
     if (event.code === 'Enter') {
       this.doSignup();
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!!changes['isDisabledSubmit']) {
+      if (this.isDisabledSubmit != this.formGroup.disabled) {
+        this.isDisabledSubmit ? this.formGroup.disable() : this.formGroup.enable();
+        this.changeDetector.markForCheck();
+      }
     }
   }
 

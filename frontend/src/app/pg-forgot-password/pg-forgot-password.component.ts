@@ -43,7 +43,8 @@ export class PgForgotPasswordComponent {
     if (!params) {
       return;
     }
-    const email: string | null = params['email'];
+    const email: string = params['email'] || "";
+
     if (!email) {
       return;
     }
@@ -60,7 +61,7 @@ export class PgForgotPasswordComponent {
         });
       })
       .catch((error: HttpErrorResponse) => {
-        this.errMsgList = AppErrorUtil.handleError(error, this.defaultError);
+        this.errMsgList = AppErrorUtil.handleError2(error, this.defaultError, this.translate);
       })
       .finally(() => {
         this.changeDetector.markForCheck();

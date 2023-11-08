@@ -43,9 +43,10 @@ export class PgSignupComponent {
     if (!params) {
       return;
     }
-    const nickname: string | null = params['nickname'];
-    const password: string | null = params['password'];
-    const email: string | null = params['email'];
+    const nickname: string = params['nickname'] || "";
+    const password: string = params['password'] || "";
+    const email: string = params['email'] || "";
+
     if (!nickname || !password || !email) {
       return;
     }
@@ -62,7 +63,7 @@ export class PgSignupComponent {
         });
       })
       .catch((error: HttpErrorResponse) => {
-        this.errMsgList = AppErrorUtil.handleError(error, this.defaultError);
+        this.errMsgList = AppErrorUtil.handleError2(error, this.defaultError, this.translate);
       })
       .finally(() => {
         this.changeDetector.markForCheck();
