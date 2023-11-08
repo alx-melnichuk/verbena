@@ -74,11 +74,11 @@ pub async fn registration0(
     json_user_dto: web::Json<user_models::CreateUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Checking the validity of the data model.
-    json_user_dto.validate().map_err(|errors| {
-        eprintln!("##json_user_dto.validate()"); // #-
-        log::error!("{}: {}", CN_VALIDATION, errors.to_string());
-        AppError::from(errors)
-    })?;
+    let validation_res = json_user_dto.validate();
+    if let Err(validation_errors) = validation_res {
+        log::error!("{}: {}", CN_VALIDATION, validation_errors.to_string());
+        return Ok(AppError::validation_response(validation_errors));
+    }
 
     let create_user_dto: user_models::CreateUserDto = json_user_dto.0.clone();
 
@@ -126,11 +126,11 @@ pub async fn login(
     json_user_dto: web::Json<user_models::LoginUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Checking the validity of the data model.
-    json_user_dto.validate().map_err(|errors| {
-        log::error!("{}: {}", CN_VALIDATION, errors.to_string());
-        AppError::from(errors)
-    })?;
-
+    let validation_res = json_user_dto.validate();
+    if let Err(validation_errors) = validation_res {
+        log::error!("{}: {}", CN_VALIDATION, validation_errors.to_string());
+        return Ok(AppError::validation_response(validation_errors));
+    }
     let login_user_dto: user_models::LoginUserDto = json_user_dto.0.clone();
     let nickname = login_user_dto.nickname.clone();
     let email = login_user_dto.nickname.clone();

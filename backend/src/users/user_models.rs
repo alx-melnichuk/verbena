@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use serde_json;
 use std::borrow::Cow;
 use validator::Validate;
 
@@ -69,25 +70,35 @@ impl From<User> for UserDto {
     }
 }
 
+pub const CODE_VALIDATION: &str = "validation";
+
 pub const NICKNAME_MIN: u8 = 3;
-pub const MSG_NICKNAME_MIN: &str = "must be more than 3 characters";
 pub const NICKNAME_MAX: u8 = 64;
-pub const MSG_NICKNAME_MAX: &str = "must be less than 64 characters";
 pub const NICKNAME_REGEX: &str = r"^[a-zA-Z]+[\w]+$";
-pub const MSG_NICKNAME_REGEX: &str = "must match /^[a-zA-Z]+[\\w]+$/";
 // \w   Matches any letter, digit or underscore. Equivalent to [a-zA-Z0-9_].
 // \W - Matches anything other than a letter, digit or underscore. Equivalent to [^a-zA-Z0-9_]
+pub const MSG_NICKNAME_REQUIRED: &str = "nickname:required";
+pub const MSG_NICKNAME_MIN_LENGTH: &str = "nickname:min_length";
+pub const MSG_NICKNAME_MAX_LENGTH: &str = "nickname:max_length";
+pub const MSG_NICKNAME_REGEX: &str = "nickname:regex";
 
 pub const EMAIL_MIN: u8 = 5;
-pub const MSG_EMAIL_MIN: &str = "must be more than 5 characters";
 pub const EMAIL_MAX: u16 = 255;
-pub const MSG_EMAIL_MAX: &str = "must be less than 255 characters";
-pub const MSG_EMAIL: &str = "must match `user@email.com`";
+pub const MSG_EMAIL_REQUIRED: &str = "email:required";
+pub const MSG_EMAIL_MIN_LENGTH: &str = "email:min_length";
+pub const MSG_EMAIL_MAX_LENGTH: &str = "email:max_length";
+pub const MSG_EMAIL_EMAIL_TYPE: &str = "email:email_type";
 
 pub const PASSWORD_MIN: u8 = 6;
-pub const MSG_PASSWORD_MIN: &str = "must be more than 6 characters";
 pub const PASSWORD_MAX: u8 = 64;
-pub const MSG_PASSWORD_MAX: &str = "must be less than 64 characters";
+pub const PASSWORD_LOWERCASE_LETTER_REGEX: &str = r"[a-z]+";
+pub const PASSWORD_CAPITAL_LETTER_REGEX: &str = r"[A-Z]+";
+pub const PASSWORD_NUMBER_REGEX: &str = r"[\d]+";
+// pub const PASSWORD_REGEX: &str = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d\W_]{6,}$";
+pub const MSG_PASSWORD_REQUIRED: &str = "password:required";
+pub const MSG_PASSWORD_MIN_LENGTH: &str = "password:min_length";
+pub const MSG_PASSWORD_MAX_LENGTH: &str = "password:max_length";
+pub const MSG_PASSWORD_REGEX: &str = "password:regex";
 
 #[derive(Debug, Serialize, Deserialize, Clone, Validate, AsChangeset)]
 #[diesel(table_name = schema::users)]
@@ -206,40 +217,50 @@ pub struct UserValidate {}
 
 impl UserValidate {
     #[rustfmt::skip]
-    fn new_err<T: Serialize>(code: &'static str, msg: &'static str, val: &T) -> validator::ValidationError {
-        let mut err = validator::ValidationError::new(code.clone());
-        err.message = Some(Cow::Borrowed(msg));
-        err.add_param(Cow::Borrowed("value"), &val);
-        err
+    fn check_required(value: &str, msg: &'static str) -> Result<(), validator::ValidationError> {
+        let len: usize = value.len();
+        if len == 0 {
+            let mut err = validator::ValidationError::new(CODE_VALIDATION);
+            err.message = Some(Cow::Borrowed(msg));
+            let data = true;
+            err.add_param(Cow::Borrowed("required"), &data);
+            return Err(err);
+        }
+        Ok(())
     }
     #[rustfmt::skip]
-    fn check_min(value: &str, min: usize, msg: &'static str) -> Result<(), validator::ValidationError> {
+    fn check_min_length(value: &str, min: usize, msg: &'static str) -> Result<(), validator::ValidationError> {
         let len: usize = value.len();
         if len < min {
-            let mut err = Self::new_err("length", msg, &value.clone());
-            err.add_param(Cow::Borrowed("min"), &min);
+            let mut err = validator::ValidationError::new(CODE_VALIDATION);
+            err.message = Some(Cow::Borrowed(msg));
+            let json = serde_json::json!({ "actualLength": len, "requiredLength": min });
+            err.add_param(Cow::Borrowed("minlength"), &json);
             return Err(err);
         }
         Ok(())
     }
     #[rustfmt::skip]
-    fn check_max(value: &str, max: usize, msg: &'static str) -> Result<(), validator::ValidationError> {
+    fn check_max_length(value: &str, max: usize, msg: &'static str) -> Result<(), validator::ValidationError> {
         let len: usize = value.len();
         if max < len {
-            let mut err = Self::new_err("length", msg, &value.clone());
-            err.add_param(Cow::Borrowed("max"), &max);
+            let mut err = validator::ValidationError::new(CODE_VALIDATION);
+            err.message = Some(Cow::Borrowed(msg));
+            let json = serde_json::json!({ "actualLength": len, "requiredLength": max });
+            err.add_param(Cow::Borrowed("maxlength"), &json);
             return Err(err);
         }
         Ok(())
     }
     #[rustfmt::skip]
-    fn check_reg_ex(value: &str, reg_ex: &str, msg: &'static str) -> Result<(), validator::ValidationError> {
-        let reg_ex = Regex::new(reg_ex).unwrap(); // /^[\w\W_]+$/
-        let result = reg_ex.captures(value.clone());
+    fn check_regexp(value: &str, reg_exp: &str, msg: &'static str) -> Result<(), validator::ValidationError> {
+        let regex = Regex::new(reg_exp).unwrap();
+        let result = regex.captures(value.clone());
         if result.is_none() {
-            let mut err = validator::ValidationError::new("regex");
+            let mut err = validator::ValidationError::new(CODE_VALIDATION);
             err.message = Some(Cow::Borrowed(msg));
-            err.add_param(Cow::Borrowed("value"), &value.clone());
+            let json = serde_json::json!({ "actualValue": &value.clone(), "requiredPattern": &reg_exp.clone() });
+            err.add_param(Cow::Borrowed("pattern"), &json);
             return Err(err);
         }
         Ok(())
@@ -247,29 +268,37 @@ impl UserValidate {
     #[rustfmt::skip]
     fn check_email(value: &str, msg: &'static str) -> Result<(), validator::ValidationError> {
         if !validator::validate_email(value) {
-            let mut err = validator::ValidationError::new("email");
+            let mut err = validator::ValidationError::new(CODE_VALIDATION);
             err.message = Some(Cow::Borrowed(msg));
-            err.add_param(Cow::Borrowed("value"), &value.clone());
+            let data = true;
+            err.add_param(Cow::Borrowed("email"), &data);
             return Err(err);
         }
         Ok(())
     }
 
     pub fn nickname(value: &str) -> Result<(), validator::ValidationError> {
-        Self::check_min(value, NICKNAME_MIN.into(), MSG_NICKNAME_MIN)?;
-        Self::check_max(value, NICKNAME_MAX.into(), MSG_NICKNAME_MAX)?;
-        Self::check_reg_ex(value, NICKNAME_REGEX, MSG_NICKNAME_REGEX)?; // /^[a-zA-Z]+[\w]+$/
-        Ok(())
-    }
-    pub fn password(value: &str) -> Result<(), validator::ValidationError> {
-        Self::check_min(value, PASSWORD_MIN.into(), MSG_PASSWORD_MIN)?;
-        Self::check_max(value, PASSWORD_MAX.into(), MSG_PASSWORD_MAX)?;
+        Self::check_required(value, MSG_NICKNAME_REQUIRED)?;
+        Self::check_min_length(value, NICKNAME_MIN.into(), MSG_NICKNAME_MIN_LENGTH)?;
+        Self::check_max_length(value, NICKNAME_MAX.into(), MSG_NICKNAME_MAX_LENGTH)?;
+        Self::check_regexp(value, NICKNAME_REGEX, MSG_NICKNAME_REGEX)?; // /^[a-zA-Z]+[\w]+$/
         Ok(())
     }
     pub fn email(value: &str) -> Result<(), validator::ValidationError> {
-        Self::check_min(value, EMAIL_MIN.into(), MSG_EMAIL_MIN)?;
-        Self::check_max(value, EMAIL_MAX.into(), MSG_EMAIL_MAX)?;
-        Self::check_email(value, MSG_EMAIL)?;
+        Self::check_required(value, MSG_EMAIL_REQUIRED)?;
+        Self::check_min_length(value, EMAIL_MIN.into(), MSG_EMAIL_MIN_LENGTH)?;
+        Self::check_max_length(value, EMAIL_MAX.into(), MSG_EMAIL_MAX_LENGTH)?;
+        Self::check_email(value, MSG_EMAIL_EMAIL_TYPE)?;
+        Ok(())
+    }
+
+    pub fn password(value: &str) -> Result<(), validator::ValidationError> {
+        Self::check_required(value, MSG_PASSWORD_REQUIRED)?;
+        Self::check_min_length(value, PASSWORD_MIN.into(), MSG_PASSWORD_MIN_LENGTH)?;
+        Self::check_max_length(value, PASSWORD_MAX.into(), MSG_PASSWORD_MAX_LENGTH)?;
+        Self::check_regexp(value, PASSWORD_LOWERCASE_LETTER_REGEX, MSG_PASSWORD_REGEX)?;
+        Self::check_regexp(value, PASSWORD_CAPITAL_LETTER_REGEX, MSG_PASSWORD_REGEX)?;
+        Self::check_regexp(value, PASSWORD_NUMBER_REGEX, MSG_PASSWORD_REGEX)?;
         Ok(())
     }
     pub fn nickname_or_email(value: &str) -> Result<(), validator::ValidationError> {

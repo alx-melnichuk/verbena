@@ -76,10 +76,6 @@ fn err_wrong_email_or_nickname(is_nickname: bool) -> AppError {
     log::error!("{}: {}", val.0, val.1);
     AppError::new(val.0, val.1).set_status(409)
 }
-fn err_validate(error: ValidationErrors) -> AppError {
-    log::error!("{CN_VALIDATION}: {}", error.to_string());
-    AppError::from(error)
-}
 fn err_json_web_token(err: String) -> AppError {
     log::error!("{CD_JSON_WEB_TOKEN}: {}", err);
     AppError::new(CD_JSON_WEB_TOKEN, &err).set_status(500)
@@ -109,7 +105,11 @@ pub async fn registration(
     json_body: web::Json<user_models::RegistrUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Checking the validity of the data model.
-    json_body.validate().map_err(|error| err_validate(error))?;
+    let validation_res = json_body.validate();
+    if let Err(validation_errors) = validation_res {
+        log::error!("{}: {}", CN_VALIDATION, validation_errors.to_string());
+        return Ok(AppError::validation_response(validation_errors));
+    }
 
     let mut registr_user_dto: user_models::RegistrUserDto = json_body.0.clone();
     registr_user_dto.nickname = registr_user_dto.nickname.to_lowercase();
@@ -304,7 +304,11 @@ pub async fn recovery(
     json_body: web::Json<user_models::RecoveryUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Checking the validity of the data model.
-    json_body.validate().map_err(|error| err_validate(error))?;
+    let validation_res = json_body.validate();
+    if let Err(validation_errors) = validation_res {
+        log::error!("{}: {}", CN_VALIDATION, validation_errors.to_string());
+        return Ok(AppError::validation_response(validation_errors));
+    }
 
     let mut recovery_user_dto: user_models::RecoveryUserDto = json_body.0.clone();
     recovery_user_dto.email = recovery_user_dto.email.to_lowercase();
@@ -426,7 +430,11 @@ pub async fn confirm_recovery(
     json_body: web::Json<user_models::RecoveryDataDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Checking the validity of the data model.
-    json_body.validate().map_err(|error| err_validate(error))?;
+    let validation_res = json_body.validate();
+    if let Err(validation_errors) = validation_res {
+        log::error!("{}: {}", CN_VALIDATION, validation_errors.to_string());
+        return Ok(AppError::validation_response(validation_errors));
+    }
 
     let recovery_data_dto: user_models::RecoveryDataDto = json_body.0.clone();
 

@@ -4,7 +4,7 @@ use std::{borrow::Cow, collections::BTreeMap};
 use actix_web::{http, HttpResponse};
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
-use validator::{ValidationError, ValidationErrors};
+use validator::ValidationErrors;
 
 pub const CN_SERVER_ERROR: &str = "InternalServerError";
 pub const MSG_SERVER_ERROR: &str = "An unexpected internal server error occurred.";
@@ -75,16 +75,30 @@ impl AppError {
     pub fn default_params() -> BTreeMap<Cow<'static, str>, Value> {
         BTreeMap::new()
     }
-    #[rustfmt::skip]
-    pub fn add_field_error_params(&mut self, prefix: &str, field_errors: &Vec<ValidationError>) -> Self {
-        for validation_error in field_errors {
-            let prefix_len = prefix.len();
-            for (key, val) in validation_error.params.clone().into_iter() {
-                let key_param = if prefix_len > 0 { Cow::from(format!("{}:{}", prefix, key)) } else { key };
-                self.add_param(key_param, &val);
+    pub fn validation_response(errors: ValidationErrors) -> HttpResponse {
+        let status_code = http::StatusCode::BAD_REQUEST;
+        let mut app_error_vec: Vec<AppError> = vec![];
+
+        for (name, valid_error_vec) in errors.field_errors().into_iter() {
+            let valid_error_opt = valid_error_vec.get(0);
+            if let Some(valid_error) = valid_error_opt {
+                let message = valid_error.message.clone().unwrap_or(std::borrow::Cow::Borrowed(""));
+                eprintln!("## name: {} message: {}", name.clone(), message.clone());
+                let mut app_error =
+                    AppError::new(&valid_error.code, &message).set_status(status_code.into());
+                for (key, val) in valid_error.params.clone().into_iter() {
+                    eprintln!("## key: {} val: {}", key, val);
+                    if key != "value" {
+                        app_error.add_param(key, &val);
+                    }
+                }
+                app_error_vec.push(app_error);
             }
         }
-        self.to_owned()
+        let json = app_error_vec;
+        HttpResponse::build(status_code)
+            .insert_header(http::header::ContentType::json())
+            .json(json)
     }
 }
 
@@ -105,9 +119,29 @@ impl actix_web::ResponseError for AppError {
 impl From<ValidationErrors> for AppError {
     fn from(errs: ValidationErrors) -> Self {
         let mut app_error = AppError::new(CN_VALIDATION, &errs.to_string()).set_status(400);
-        for (key, val) in errs.field_errors().into_iter() {
-            app_error.add_field_error_params(key, val);
+        let mut err_msg_vec: Vec<String> = vec![];
+        let len = errs.field_errors().len() - 1;
+        for (idx, (key_error, val)) in errs.field_errors().into_iter().enumerate() {
+            let valid_error_opt = val.get(0);
+            if let Some(valid_error) = valid_error_opt {
+                let code = valid_error.code.to_string();
+                let message = valid_error.message.clone().unwrap_or_else(|| Cow::Borrowed(""));
+                eprintln!("key_error: {key_error}, valid_error.code: {code}, message: {message}");
+                let char = if idx < len { "\n" } else { "" };
+                let err_msg = Cow::from(format!("{}{}", message, char));
+                err_msg_vec.push(err_msg.to_string());
+
+                for (key, val) in valid_error.params.clone().into_iter() {
+                    let key_error_param = Cow::from(format!("{}:{}", key_error.to_string(), key));
+                    app_error.add_param(key_error_param, &val);
+                }
+            }
+            // app_error.add_field_error_params(key_error, val);
         }
+
+        let messing = err_msg_vec.into_iter().collect();
+        app_error.message = messing;
+
         app_error
     }
 }
