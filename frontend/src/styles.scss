@@ -6,15 +6,14 @@
 
 html,
 body {
-  height: 100%;
   --scrollbarBG: rgb(207 216 220 / 20%);
   --thumbBG: #90a4ae;
-}
-body {
-  margin: 0;
+  box-sizing: border-box;
   font-family: Roboto, 'Helvetica Neue', sans-serif;
   font-size: 14px;
-  box-sizing: border-box;
+  height: 100%;
+  line-height: 1.5;
+  margin: 0;
 }
 
 h1,

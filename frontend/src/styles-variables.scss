@@ -1,6 +1,14 @@
 /*# sourceURL=styles-variables.scss */
 
+/* 
 $mobile-480: 480px;
 $tablet-768: 768px;
 $laptop-992: 992px;
 $desktop-1024: 1024px;
+*/
+$mobile-480  :  480px;
+$tablet-768  :  768px; // +288
+$laptop-1024 : 1024px; // +256
+$desktop-1280: 1280px; // +256
+$extra-1536  : 1536px; // +256
+
