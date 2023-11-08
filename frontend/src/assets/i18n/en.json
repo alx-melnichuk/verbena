@@ -12,48 +12,57 @@
     "my_profile": "My profile",
     "log_out": "Log Out"
   },
+  "validation": {
+    "nickname:required": "The nickname field is required.",
+    "nickname:min_length": "The nickname should have {{ minlength.requiredLength }} characters or more.",
+    "nickname:max_length": "The nickname should be less than {{ maxlength.requiredLength }} characters.",
+    "nickname:regex": "Available in nickname: lowercase and uppercase letters, numbers and underscores.",
+    "email:required": "The email field is required.",
+    "email:min_length": "The email should have {{ minlength.requiredLength }} characters or more.",
+    "email:max_length": "The email should be less than {{ maxlength.requiredLength }} characters.",
+    "email:email_type": "The email must comply with the standard (john.smith@example.com).",
+    "password:required": "The password field is required.",
+    "password:min_length": "The password should have {{ minlength.requiredLength }} characters or more.",
+    "password:max_length": "The password should be less than {{ maxlength.requiredLength }} characters.",
+    "password:regex": "The password must contain: a lowercase letter, an uppercase letter and a number."
+  },
   "field-email": {
     "err_minlength_symbol_search": "The symbol search should have {{value}} characters or more.",
     "err_maxlength_symbol_search": "The symbol search should be less than {{value}} characters.",
-    "label": "Email ",
-    "err_email": "Please enter an e-mail value according to the norms.",
-    "err_minlength": "The email should have {{ minlength.requiredLength }} characters or more.",
-    "err_maxlength": "The email should be less than {{ maxlength.requiredLength }} characters.",
-    "err_pattern": "Please enter the correct email value."
+    "label": "Email "
   },
   "field-nickname": {
     "label": "Nickname ",
-    "err_minlength": "The nickname should have {{ minlength.requiredLength }} characters or more.",
-    "err_maxlength": "The nickname should be less than {{ maxlength.requiredLength }} characters.",
-    "err_pattern": "Nickname must start with a letter."
+    "nickname_hint": "Used: lowercase letters, uppercase letters, numbers and underscores. Minimum 3 characters."
   },
   "field-password": {
     "label": "Password ",
-    "err_minlength": "The password should have {{ minlength.requiredLength }} characters or more.",
-    "err_maxlength": "The password should be less than {{ maxlength.requiredLength }} characters.",
-    "err_pattern": "The password must consist of min 6 characters, contain a uppercase letter and a number"
+    "password_hint": "Use at least 6 characters, with one lowercase letter, one capital letter and a number."
   },
   "login": {
-    "title": "Log in to ",
+    "title": "Log in",
     "email_or_nickname": "Email or Nickname ",
     "button_login": "Log in",
-    "go_to_signup": "Registration",
-    "go_to_forgot_password": "Forgot password ?",
+    "create_an_account": "Create an account",
+    "forgot_password": "Forgot password ?",
     "err_not_correct_password": "The nickname or password is not correct."
   },
   "signup": {
-    "title": "Sign up to ",
+    "title": "Sign up",
     "button_signup": "Sign up",
-    "go_to_login": "go to Login",
+    "already_registered": "Already registered ?",
+    "log_in": "Log in",
     "dialog_title": "Welcome to the {{app_name}} !",
     "dialog_message": "We have sent a registration link to \"{{value}}\"."
   },
   "forgot-password": {
-    "title": "Forgot your password ?",
+    "title": "Password change request",
+    "you_forgot_password": "If you have forgotten your password, please provide your email address and send a change request to it.",
     "email_address": "Email Address",
-    "button_resend": "Resend",
-    "go_to_login": "go to Login",
+    "button_send": "Send request",
+    "go_to": "Go to",
+    "login": "Log in",
     "dialog_title": "Welcome to the {{app_name}} !",
-    "dialog_message": "We have sent a password recovery link to \"{{value}}\"."
+    "dialog_message": "We have sent a link to change your password to \"{{value}}\"."
   }
 }
