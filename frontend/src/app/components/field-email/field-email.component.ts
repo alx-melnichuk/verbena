@@ -54,9 +54,9 @@ export class FieldEmailComponent implements OnChanges, ControlValueAccessor, Val
   @Input()
   public maxLen: number = EMAIL_MAX_LENGTH;
   @Input()
-  public pattern: string = '';
-  @Input()
   public isDisabled: boolean = false;
+  @Input()
+  public hint: string = '';
 
   @ViewChild(MatInput, { static: false })
   public matInput: MatInput | null = null;
@@ -118,11 +118,10 @@ export class FieldEmailComponent implements OnChanges, ControlValueAccessor, Val
     const errorsProps: string[] = errors != null ? Object.keys(errors) : [];
     for (let index = 0; index < errorsProps.length && !result; index++) {
       const error: string = errorsProps[index];
-      result = !result && 'required' === error ? 'error.required' : result;
-      result = !result && 'email' === error ? 'field-email.err_email' : result;
-      result = !result && 'pattern' === error ? 'field-email.err_pattern' : result;
-      result = !result && 'minlength' === error ? 'field-email.err_minlength' : result;
-      result = !result && 'maxlength' === error ? 'field-email.err_maxlength' : result;
+      result = !result && 'required' === error ? 'validation.email:required' : result;
+      result = !result && 'minlength' === error ? 'validation.email:min_length' : result;
+      result = !result && 'maxlength' === error ? 'validation.email:max_length' : result;
+      result = !result && 'email' === error ? 'validation.email:email_type' : result;
     }
     return result;
   }

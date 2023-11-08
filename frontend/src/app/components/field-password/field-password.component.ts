@@ -28,6 +28,7 @@ import { TranslateModule } from '@ngx-translate/core';
 
 export const PASSWORD_MIN_LENGTH = 6;
 export const PASSWORD_MAX_LENGTH = 64;
+export const PASSWORD_MAX_PATTERN = '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d\\W_]{6,}$';
 
 @Component({
   selector: 'app-field-password',
@@ -54,9 +55,11 @@ export class FieldPasswordComponent implements OnChanges, ControlValueAccessor, 
   @Input()
   public maxLen: number = PASSWORD_MAX_LENGTH;
   @Input()
-  public pattern: string = '';
+  public pattern: string = PASSWORD_MAX_PATTERN;
   @Input()
   public isDisabled: boolean = false;
+  @Input()
+  public hint: string = '';
 
   @ViewChild(MatInput, { static: false })
   public matInput: MatInput | null = null;
@@ -95,7 +98,14 @@ export class FieldPasswordComponent implements OnChanges, ControlValueAccessor, 
   }
 
   public setDisabledState(isDisabled: boolean): void {
-    isDisabled ? this.formGroup.disable() : this.formGroup.enable();
+    if (isDisabled != this.formGroup.disabled) {
+        if (isDisabled) {
+          this.isShowPassword = false;
+          this.formGroup.disable();
+        } else {
+          this.formGroup.enable();
+        }
+      }
   }
 
   // ** ControlValueAccessor - finish **
@@ -119,10 +129,11 @@ export class FieldPasswordComponent implements OnChanges, ControlValueAccessor, 
     const errorsProps: string[] = errors != null ? Object.keys(errors) : [];
     for (let index = 0; index < errorsProps.length && !result; index++) {
       const error: string = errorsProps[index];
-      result = !result && 'required' === error ? 'error.required' : result;
-      result = !result && 'pattern' === error ? 'field-password.err_pattern' : result;
-      result = !result && 'minlength' === error ? 'field-password.err_minlength' : result;
-      result = !result && 'maxlength' === error ? 'field-password.err_maxlength' : result;
+      result = !result && 'required' === error ? 'validation.password:required' : result;
+      result = !result && 'minlength' === error ? 'validation.password:min_length' : result;
+      result = !result && 'maxlength' === error ? 'validation.password:max_length' : result;
+      result = !result && 'pattern' === error ? 'validation.password:regex' : result;
+
     }
     return result;
   }

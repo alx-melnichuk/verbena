@@ -58,6 +58,8 @@ export class FieldNicknameComponent implements OnChanges, ControlValueAccessor, 
   public pattern: string = NICKNAME_PATTERN;
   @Input()
   public isDisabled: boolean = false;
+  @Input()
+  public hint: string = '';
 
   @ViewChild(MatInput, { static: false })
   public matInput: MatInput | null = null;
@@ -119,10 +121,10 @@ export class FieldNicknameComponent implements OnChanges, ControlValueAccessor, 
     const errorsProps: string[] = errors != null ? Object.keys(errors) : [];
     for (let index = 0; index < errorsProps.length && !result; index++) {
       const error: string = errorsProps[index];
-      result = !result && 'required' === error ? 'error.required' : result;
-      result = !result && 'pattern' === error ? 'field-nickname.err_pattern' : result;
-      result = !result && 'minlength' === error ? 'field-nickname.err_minlength' : result;
-      result = !result && 'maxlength' === error ? 'field-nickname.err_maxlength' : result;
+      result = !result && 'required' === error ? 'validation.nickname:required' : result;
+      result = !result && 'minlength' === error ? 'validation.nickname:min_length' : result;
+      result = !result && 'maxlength' === error ? 'validation.nickname:max_length' : result;
+      result = !result && 'pattern' === error ? 'validation.nickname:regex' : result;
     }
     return result;
   }
