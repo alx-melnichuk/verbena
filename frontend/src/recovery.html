@@ -4,7 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <title>Verbena site</title>
-  <link rel="shortcut icon" type="image/x-icon" href="/favicon" />
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
 
     <style type="text/css">
       html { height: 100%; }
@@ -12,7 +12,7 @@
         -webkit-text-size-adjust: 100% !important; -ms-text-size-adjust: 100% !important; -webkit-font-smoothing: antialiased !important;  }
       [al-it-cen] { align-items: center; }
       [bg-sz-cov] { background-size: cover; }
-      [bx-sz-brd] {box-sizing: border-box; }
+      [bx-sz-brd] { box-sizing: border-box; }
       [ds-fl] { display: flex; }
       [fn-sz-inh] { font-size: inherit; }
       [fn-sz-2] { font-size: calc(100% - 2px); }
@@ -23,14 +23,12 @@
       [hg-100] { height: 100%; }
       [js-cn-cen] { justify-content: center; }
       [js-cn-bet] { justify-content: space-between; }
-      [mr-bt-0] { margin-bottom: 0em; }
       [mr-bt-05] { margin-bottom: 0.5em; }
       [mr-lf-05] { margin-left: 0.5em; }
       [mr-rg-05] { margin-right: 0.5em; }
-      [mr-tp-0] { margin-top: 0em; }
       [mr-tp-05] { margin-top: 0.5em; }
-      [mr-ver-05] { margin-top: 0.5em; margin-bottom: 0.5em; }
-      [pd-hor-05] { padding-left: 0.5em; padding-right: 0.5em; }
+      [pd-lf-05] { padding-left: 0.5em; }
+      [pd-rg-05] { padding-right: 0.5em; }
       [ps-rel] { position: relative; }
       [ps-abs] { position: absolute; }
       [tx-al-cen] { text-align: center; }
@@ -50,11 +48,89 @@
       main { flex: 1 1 auto; height: fit-content; }
 
       .hd-logo-mini { height: 4em; width: 4em; background-image: url("assets/images/logo_mini.png"); }
+
+      .s-content {
+        @media screen and (max-width: 480px) { --pd: 0.5em; --wd: 100%; }
+        @media screen and (min-width: 480px) and (max-width: 960px) { --pd: 1.5em; --wd: calc(16 * var(--pd)); }
+        @media screen and (min-width: 960px) { --pd: 2em; --wd: calc(14 * var(--pd)); }
+        background-color: honeydew;
+        border-radius: var(--pd);
+        box-sizing: border-box;
+        margin-bottom: 7em;
+        min-height: 10vh;
+        padding: var(--pd);
+        width: var(--wd);
+      }
+      .s-title {
+        font-size: calc(100% + 4px);
+        font-weight: bold;
+      }
+      .s-text { font-size: calc(100% - 2px); }
+
+      .s-err { color: rgb(224,32,32); }
+      .s-field-wrap { --wd-icon: 1.5em; margin-bottom: 0.25em; }
+      .s-field:not(:focus) { --delta: 1px; border-width: 1px; }
+      .s-field:disabled { color: rgba(0,0,0,0.38); caret-color: transparent; }
+
+      .s-field { --br-cl: rgba(0,0,0,0.38); }
+      .s-field:not(:disabled):not(:focus):hover { --br-cl-hov: rgba(0,0,0,0.87); }
+      .s-field:focus { --br-cl-foc: rgb(63,81,181); }
+      .s-field[d-touched]:invalid { --br-cl-err: rgb(244,67,54); }
+
+      .s-field {
+        border-color: var(--br-cl-err, var(--br-cl-foc, var(--br-cl-hov, var(--br-cl,unset))));
+        border-radius: 0.25em;
+        border-style: solid;
+        height: 3em;
+        outline: none;
+        padding-left: calc(1em + var(--delta, 0px));
+        padding-right: calc(1em + var(--delta, 0px));
+      }
+      .s-btn-eye { 
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        padding: 0px;
+        outline: none;
+        right: 0.9em;
+        top: calc(50% - var(--wd-icon) / 2);
+        z-index: 1;
+      }
+      .s-icon {  width: var(--wd-icon); height: var(--wd-icon); }
+      .s-btn {
+        border: none;
+        border-radius: 0.25em;
+        box-shadow: 0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12);
+        height: 2.25em;
+        outline: none;
+        transition: box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .s-btn:focus {
+        box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
+      }
+      .s-btn:not(:disabled):active {
+        box-shadow: 0px 5px 5px -3px rgba(0,0,0,0.2), 0px 8px 10px 1px rgba(0,0,0,0.14), 0px 3px 14px 2px rgba(0,0,0,0.12);
+        opacity: 0.85;
+      }
+      .s-btn:hover {
+        box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
+      }
+      .s-btn:disabled { cursor: default; pointer-events: none;
+        color: rgba(0,0,0,0.38); background-color: rgba(0,0,0,0.12);
+        box-shadow: 0px 0px 0px 0px rgba(0,0,0,0.2), 0px 0px 0px 0px rgba(0,0,0,0.14), 0px 0px 0px 0px rgba(0,0,0,0.12);
+      }
+
+      .s-hint-wrap { margin-left: 1em; min-height: 2.111em; }
+      .s-hint { line-height: 1.2; font-size: calc(100% - 4px); }
+
+      .s-submit { background-color: #3f51b5; color: #fff; }
+
     </style>
 
     <div ds-fl fl-dr-col hg-100 class="s-desktop">
       <header ds-fl js-cn-bet bx-sz-brd>
-        <a ds-fl al-it-cen pd-hor-05 id="hd_ref" href="/login">
+        <a ds-fl al-it-cen pd-lf-05 pd-rg-05 id="hd_ref" href="/login">
           <i bg-sz-cov class="hd-logo-mini"></i>
           <span mr-lf-05 style="font-size: x-large; font-weight: 600;">Verbéna</span>
         </a>
@@ -62,122 +138,42 @@
 
       <main>
         
-        <style>
-            .s-content {
-              @media screen and (max-width: 480px) { --pd: 0.5em; --wd: 100%; }
-              @media screen and (min-width: 480px) and (max-width: 960px) { --pd: 1.5em; --wd: calc(16 * var(--pd)); }
-              @media screen and (min-width: 960px) { --pd: 2em; --wd: calc(14 * var(--pd)); }
-              background-color: honeydew;
-              border-radius: var(--pd);
-              box-sizing: border-box;
-              margin-bottom: 7em;
-              min-height: 10vh;
-              padding: var(--pd);
-              width: var(--wd);
-            }
-            .s-title {
-              font-size: calc(100% + 4px);
-              font-weight: bold;
-            }
-            .s-text { font-size: calc(100% - 2px); }
+        <div ds-fl fl-dr-col js-cn-cen al-it-cen hg-100>
+          <div id="content_id" class="s-content">
+            <form ds-fl fl-dr-col id="form_prm_id">
 
-            .s-err { color: rgb(224,32,32); }
-            .s-field-wrap { --wd-icon: 1.5em; margin-bottom: 0.25em; }
-            .s-field:not(:focus) { --delta: 1px; border-width: 1px; }
-            .s-field:disabled { color: rgba(0,0,0,0.38); caret-color: transparent; }
+              <div mr-bt-05 tx-al-cen class="s-title">Change password</div>
 
-            .s-field { --br-cl: rgba(0,0,0,0.38); }
-            .s-field:not(:disabled):not(:focus):hover { --br-cl-hov: rgba(0,0,0,0.87); }
-            .s-field:focus { --br-cl-foc: rgb(63,81,181); }
-            .s-field[d-touched]:invalid { --br-cl-err: rgb(244,67,54); }
+              <span mr-bt-05 mr-tp-05 tx-al-cen class="s-text">Enter a new password for your account.</span>
 
-            .s-field {
-              border-color: var(--br-cl-err, var(--br-cl-foc, var(--br-cl-hov, var(--br-cl,unset))));
-              border-radius: 0.25em;
-              border-style: solid;
-              height: 3em;
-              outline: none;
-              padding-left: calc(1em + var(--delta, 0px));
-              padding-right: calc(1em + var(--delta, 0px));
-            }
-            .s-btn-eye { 
-              background-color: transparent;
-              border: none;
-              cursor: pointer;
-              display: flex;
-              padding: 0px;
-              outline: none;
-              right: 0.9em;
-              top: calc(50% - var(--wd-icon) / 2);
-              z-index: 1;
-            }
-            .s-icon {  width: var(--wd-icon); height: var(--wd-icon); }
-            .s-btn {
-              border: none;
-              border-radius: 0.25em;
-              box-shadow: 0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12);
-              height: 2.25em;
-              outline: none;
-              transition: box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);
-            } 
-            .s-btn:focus {
-              box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
-            }
-            .s-btn:not(:disabled):active {
-              box-shadow: 0px 5px 5px -3px rgba(0,0,0,0.2), 0px 8px 10px 1px rgba(0,0,0,0.14), 0px 3px 14px 2px rgba(0,0,0,0.12);
-              opacity: 0.85;
-            }
-            .s-btn:hover {
-              box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
-            }
-            .s-btn:disabled { cursor: default; pointer-events: none;
-              color: rgba(0,0,0,0.38); background-color: rgba(0,0,0,0.12);
-              box-shadow: 0px 0px 0px 0px rgba(0,0,0,0.2), 0px 0px 0px 0px rgba(0,0,0,0.14), 0px 0px 0px 0px rgba(0,0,0,0.12);
-            }
+              <div mr-tp-05 wd-100 ps-rel class="s-field-wrap">
+                <input type="password" fn-sz-inh wd-100 bx-sz-brd class="s-field" placeholder="New password"
+                  id="field_passwd_id" data-dirty="off" autocomplete="off"
+                  required="" minlength="6" maxlength="65" 
+                  onchange="doInputPassword(this, true);"
+                  oninput="elementInput(this); doInputPassword(this, false);"
+                  onblur="elementBlur(this)"
+                  d-untouched
+                  d-pristine
+                />
+                <button type="button" fn-sz-inh ps-abs class="s-btn-eye" title="Toggle password visibility" tabindex="-1"
+                  onclick="doToggleEye(this)" id="btn_eye_id" eye-off>
+                </button>
+              </div>
 
-            .s-hint-wrap { margin-left: 1em; min-height: 2.111em; }
-            .s-hint { line-height: 1.3; font-size: calc(100% - 4px); }
+              <div class="s-hint-wrap">
+                <div class="s-hint" id="err_hint_id"></div>
+              </div>
 
-            .s-submit { background-color: #3f51b5; color: #fff; }
+            </form>
+            
+            <button type="button" fn-sz-inh mr-bt-05 wd-100 
+              class="s-btn s-submit" onclick="doSubmit()">
+              <span fn-sz-2 fn-wg-bold>Change</span>
+            </button>
 
-          </style>
-          <!--
-            -->
-          <div ds-fl fl-dr-col js-cn-cen al-it-cen hg-100>
-            <div id="content_id" class="s-content">
-              <form ds-fl fl-dr-col id="form_prm_id">
-
-                <div mr-bt-05 tx-al-cen class="s-title">Change password</div>
-
-                <span mr-ver-05 tx-al-cen class="s-text">Enter a new password for your account.</span>
-
-                <div mr-tp-05 wd-100 ps-rel class="s-field-wrap">
-                  <input type="password" fn-sz-inh wd-100 bx-sz-brd class="s-field" placeholder="New password"
-                    id="field_passwd_id" data-dirty="off" autocomplete="off"
-                    required="" minlength="6" maxlength="65" 
-                    onchange="doInputPassword(this, true);"
-                    oninput="elementInput(this); doInputPassword(this, false);"
-                    onblur="elementBlur(this)"
-                    d-untouched
-                    d-pristine
-                  />
-                  <button type="button" fn-sz-inh ps-abs class="s-btn-eye" title="Toggle password visibility" tabindex="-1"
-                    onclick="doToggleEye(this)" id="btn_eye_id" eye-off>
-                  </button>
-                </div>
-
-                <div class="s-hint-wrap">
-                  <div class="s-hint" id="err_hint_id"></div>
-                </div>
-
-              </form>
-              <button type="button" fn-sz-inh mr-bt-05 wd-100 
-                class="s-btn s-submit" onclick="doSubmit()">
-                <span fn-sz-2 fn-wg-bold>Change</span>
-              </button>
-
-            </div>
           </div>
+        </div>
 
       </main>
 
@@ -186,28 +182,6 @@
       </footer>
     </div>
 
-    <!--
-:host {
-  height:  100%;
-  display:  flex;
-  align-items:  center;
-  justify-content:  center;
-  .container {
-    margin-bottom:  7vh;
-    padding-bottom:  26px;
-    box-sizing:  border-box;
-    width:  50vw;
-    font-size:  medium;
-    display:  flex;
-    flex-direction:  column;
-    align-items:  center;
-    p {      margin-top:  13px;      margin-bottom:  13px;    }
-  }
-  .password {    width:  40vh;  }
-  .submit {    width:  20vh;  }
-  .failed {    color: var(--app-theme-warn);  }
-}
-    -->
     <!-- 
  
 <form class="container" *ngIf="!!confirmationId"
@@ -268,8 +242,8 @@
     </template>
 
     <template id="tmp_failure_id">
-      <div mr-ver-05 class="s-err">Your confirmation is invalid or has expired.</div>
-      <div mr-ver-05 fn-sz-2 fn-st-italic id="err_msg_id" class="s-err"></div>
+      <div mr-bt-05 mr-tp-05 class="s-err">Your confirmation is invalid or has expired.</div>
+      <div mr-bt-05 mr-tp-05 fn-sz-2 fn-st-italic id="err_msg_id" class="s-err"></div>
       <a href="/signup">Go to the registration page on our website.</a>
     </template>
 
@@ -307,25 +281,19 @@
       
       function checkPasswd(value) {
         let result = "";
-        const regexCheckLowercaseLetter = new RegExp("[a-z]+");
-        const regexCheckCapitalLetter = new RegExp("[A-Z]+");
-        const regexCheckNumber = new RegExp("[\\d]+");
-        const regexCheckSpecialCharacter = new RegExp("[\\W]+");
+        const minlength = 6;
+        const maxlength = 64;
 
         if (!value) {
-          result = "Enter a required field.";
-        } else if (value.length < 6) {
-          result = "The password should have 6 characters or more. The password should have 6 characters or more.";
-        } else if (value.length > 64) {
-          result = "The password should be less than 64 characters.";
-        } else if (!regexCheckLowercaseLetter.test(value)) {
-          result = "The password must contain one lowercase letter.";
-        } else if (!regexCheckCapitalLetter.test(value)) {
-          result = "The password must contain one capital letter.";
-        } else if (!regexCheckNumber.test(value)) {
-          result = "The password must contain one number.";
-        } else if (!regexCheckSpecialCharacter.test(value)) {
-          result = "The password must contain one special character.";
+          result = "The password field is required.";
+        } else if (value.length < minlength) {
+          result = `The password should have ${minlength} characters or more.`
+        } else if (value.length > maxlength) {
+          result = `The password should be less than ${maxlength} characters.`;
+        } else if (!(new RegExp("[a-z]+")).test(value)
+         || !(new RegExp("[A-Z]+")).test(value)
+         || !(new RegExp("[\\d]+")).test(value)) {
+          result = "The password must contain: a lowercase letter, an uppercase letter and a number.";
         }
         return result;
       }

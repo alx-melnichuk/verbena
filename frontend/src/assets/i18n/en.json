@@ -13,7 +13,7 @@
     "my_profile": "My profile",
     "log_out": "Log Out"
   },
-  "validation": {
+  "Validation": {
     "nickname:required": "The nickname field is required.",
     "nickname:min_length": "The nickname should have {{ minlength.requiredLength }} characters or more.",
     "nickname:max_length": "The nickname should be less than {{ maxlength.requiredLength }} characters.",
@@ -26,6 +26,13 @@
     "password:min_length": "The password should have {{ minlength.requiredLength }} characters or more.",
     "password:max_length": "The password should be less than {{ maxlength.requiredLength }} characters.",
     "password:regex": "The password must contain: a lowercase letter, an uppercase letter and a number."
+  },
+  "Conflict": {
+    "email_already_use": "The email address you provided is already in use.",
+    "nickname_already_use": "The nickname you provided is already in use."
+  },
+  "Forbidden": {
+    "invalid_or_expired_token": "Invalid or expired token."
   },
   "field-email": {
     "err_minlength_symbol_search": "The symbol search should have {{value}} characters or more.",
