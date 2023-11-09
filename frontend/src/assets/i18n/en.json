@@ -1,5 +1,6 @@
 {
-  "app_name": "Verbena",
+  "app_name": "Verbéna",
+  "demo_site": " demo site.",
   "error": {
     "required": "Enter a required field.",
     "server_api_call": "An error occurred while calling the server API."
