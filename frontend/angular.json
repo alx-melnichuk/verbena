@@ -43,7 +43,8 @@
               "src/favicon.ico",
               "src/assets",
               "src/404.html",
-              "src/registr.html"
+              "src/registr.html",
+              "src/recovery.html"
             ],
             "styles": [
               "@angular/material/prebuilt-themes/indigo-pink.css",
