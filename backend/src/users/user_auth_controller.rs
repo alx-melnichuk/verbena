@@ -5,7 +5,7 @@ use actix_web::{
 };
 use validator::Validate;
 
-use crate::errors::{AppError, CN_VALIDATION};
+use crate::errors::{AppError, CD_VALIDATION};
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::hash_tools;
 #[cfg(not(feature = "mockdata"))]
@@ -76,7 +76,7 @@ pub async fn registration0(
     // Checking the validity of the data model.
     let validation_res = json_user_dto.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", CN_VALIDATION, validation_errors.to_string());
+        log::error!("{}: {}", CD_VALIDATION, validation_errors.to_string());
         return Ok(AppError::validation_response(validation_errors));
     }
 
@@ -128,7 +128,7 @@ pub async fn login(
     // Checking the validity of the data model.
     let validation_res = json_user_dto.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", CN_VALIDATION, validation_errors.to_string());
+        log::error!("{}: {}", CD_VALIDATION, validation_errors.to_string());
         return Ok(AppError::validation_response(validation_errors));
     }
     let login_user_dto: user_models::LoginUserDto = json_user_dto.0.clone();

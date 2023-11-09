@@ -8,7 +8,7 @@ use validator::ValidationErrors;
 
 pub const CN_SERVER_ERROR: &str = "InternalServerError";
 pub const MSG_SERVER_ERROR: &str = "An unexpected internal server error occurred.";
-pub const CN_VALIDATION: &str = "Validation";
+pub const CD_VALIDATION: &str = "Validation";
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct AppError {
@@ -79,15 +79,13 @@ impl AppError {
         let status_code = http::StatusCode::BAD_REQUEST;
         let mut app_error_vec: Vec<AppError> = vec![];
 
-        for (name, valid_error_vec) in errors.field_errors().into_iter() {
+        for (_, valid_error_vec) in errors.field_errors().into_iter() {
             let valid_error_opt = valid_error_vec.get(0);
             if let Some(valid_error) = valid_error_opt {
                 let message = valid_error.message.clone().unwrap_or(std::borrow::Cow::Borrowed(""));
-                eprintln!("## name: {} message: {}", name.clone(), message.clone());
                 let mut app_error =
                     AppError::new(&valid_error.code, &message).set_status(status_code.into());
                 for (key, val) in valid_error.params.clone().into_iter() {
-                    eprintln!("## key: {} val: {}", key, val);
                     if key != "value" {
                         app_error.add_param(key, &val);
                     }
@@ -116,7 +114,7 @@ impl actix_web::ResponseError for AppError {
     }
 }
 
-impl From<ValidationErrors> for AppError {
+/*impl From<ValidationErrors> for AppError {
     fn from(errs: ValidationErrors) -> Self {
         let mut app_error = AppError::new(CN_VALIDATION, &errs.to_string()).set_status(400);
         let mut err_msg_vec: Vec<String> = vec![];
@@ -126,7 +124,6 @@ impl From<ValidationErrors> for AppError {
             if let Some(valid_error) = valid_error_opt {
                 let code = valid_error.code.to_string();
                 let message = valid_error.message.clone().unwrap_or_else(|| Cow::Borrowed(""));
-                eprintln!("key_error: {key_error}, valid_error.code: {code}, message: {message}");
                 let char = if idx < len { "\n" } else { "" };
                 let err_msg = Cow::from(format!("{}{}", message, char));
                 err_msg_vec.push(err_msg.to_string());
@@ -144,4 +141,4 @@ impl From<ValidationErrors> for AppError {
 
         app_error
     }
-}
+}*/

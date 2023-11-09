@@ -6,7 +6,9 @@ use serde::{Deserialize, Serialize};
 use crate::{
     errors::AppError,
     utils::{
-        err::{CD_INVALID_TOKEN, CD_UNALLOWABLE_TOKEN, MSG_INVALID_TOKEN, MSG_UNALLOWABLE_TOKEN},
+        err::{
+            CD_FORBIDDEN, CD_UNALLOWABLE_TOKEN, MSG_INVALID_OR_EXPIRED_TOKEN, MSG_UNALLOWABLE_TOKEN,
+        },
         parser,
     },
 };
@@ -53,7 +55,7 @@ pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<TokenCla
 
     match decoded {
         Ok(token) => Ok(token.claims),
-        Err(_) => Err(CD_INVALID_TOKEN),
+        Err(_) => Err(CD_FORBIDDEN),
     }
 }
 
@@ -81,8 +83,8 @@ pub fn encode_dual_token(
 pub fn decode_dual_token(token: &str, jwt_secret: &[u8]) -> Result<(i32, i32), AppError> {
     let token_claims = decode_token(token, jwt_secret).map_err(|e| {
         #[rustfmt::skip]
-        log::error!("{CD_INVALID_TOKEN}: {} {}", MSG_INVALID_TOKEN, e);
-        return AppError::new(CD_INVALID_TOKEN, MSG_INVALID_TOKEN).set_status(403);
+        log::error!("{}: {} {}", CD_FORBIDDEN, MSG_INVALID_OR_EXPIRED_TOKEN, e);
+        return AppError::new(CD_FORBIDDEN, MSG_INVALID_OR_EXPIRED_TOKEN).set_status(403);
     })?;
 
     let list: Vec<&str> = token_claims.sub.split('.').collect();
@@ -140,7 +142,7 @@ mod tests {
         let result = decode_token(invalid_token, secret);
 
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), CD_INVALID_TOKEN);
+        assert_eq!(result.unwrap_err(), CD_FORBIDDEN);
     }
 
     #[test]
@@ -151,6 +153,6 @@ mod tests {
         let result = decode_token(expired_token, secret);
 
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), CD_INVALID_TOKEN);
+        assert_eq!(result.unwrap_err(), CD_FORBIDDEN);
     }
 }

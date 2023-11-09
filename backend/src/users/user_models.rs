@@ -6,6 +6,7 @@ use serde_json;
 use std::borrow::Cow;
 use validator::Validate;
 
+use crate::errors::CD_VALIDATION;
 use crate::schema;
 use crate::utils::date_time_rfc2822z;
 
@@ -69,8 +70,6 @@ impl From<User> for UserDto {
         }
     }
 }
-
-pub const CODE_VALIDATION: &str = "validation";
 
 pub const NICKNAME_MIN: u8 = 3;
 pub const NICKNAME_MAX: u8 = 64;
@@ -220,7 +219,7 @@ impl UserValidate {
     fn check_required(value: &str, msg: &'static str) -> Result<(), validator::ValidationError> {
         let len: usize = value.len();
         if len == 0 {
-            let mut err = validator::ValidationError::new(CODE_VALIDATION);
+            let mut err = validator::ValidationError::new(CD_VALIDATION);
             err.message = Some(Cow::Borrowed(msg));
             let data = true;
             err.add_param(Cow::Borrowed("required"), &data);
@@ -232,7 +231,7 @@ impl UserValidate {
     fn check_min_length(value: &str, min: usize, msg: &'static str) -> Result<(), validator::ValidationError> {
         let len: usize = value.len();
         if len < min {
-            let mut err = validator::ValidationError::new(CODE_VALIDATION);
+            let mut err = validator::ValidationError::new(CD_VALIDATION);
             err.message = Some(Cow::Borrowed(msg));
             let json = serde_json::json!({ "actualLength": len, "requiredLength": min });
             err.add_param(Cow::Borrowed("minlength"), &json);
@@ -244,7 +243,7 @@ impl UserValidate {
     fn check_max_length(value: &str, max: usize, msg: &'static str) -> Result<(), validator::ValidationError> {
         let len: usize = value.len();
         if max < len {
-            let mut err = validator::ValidationError::new(CODE_VALIDATION);
+            let mut err = validator::ValidationError::new(CD_VALIDATION);
             err.message = Some(Cow::Borrowed(msg));
             let json = serde_json::json!({ "actualLength": len, "requiredLength": max });
             err.add_param(Cow::Borrowed("maxlength"), &json);
@@ -257,7 +256,7 @@ impl UserValidate {
         let regex = Regex::new(reg_exp).unwrap();
         let result = regex.captures(value.clone());
         if result.is_none() {
-            let mut err = validator::ValidationError::new(CODE_VALIDATION);
+            let mut err = validator::ValidationError::new(CD_VALIDATION);
             err.message = Some(Cow::Borrowed(msg));
             let json = serde_json::json!({ "actualValue": &value.clone(), "requiredPattern": &reg_exp.clone() });
             err.add_param(Cow::Borrowed("pattern"), &json);
@@ -268,7 +267,7 @@ impl UserValidate {
     #[rustfmt::skip]
     fn check_email(value: &str, msg: &'static str) -> Result<(), validator::ValidationError> {
         if !validator::validate_email(value) {
-            let mut err = validator::ValidationError::new(CODE_VALIDATION);
+            let mut err = validator::ValidationError::new(CD_VALIDATION);
             err.message = Some(Cow::Borrowed(msg));
             let data = true;
             err.add_param(Cow::Borrowed("email"), &data);
@@ -322,7 +321,8 @@ impl UserValidateTest {
         (0..(NICKNAME_MAX + 1)).map(|_| 'a').collect()
     }
     pub fn nickname_wrong() -> String {
-        "Oliver_Taylor#".to_string()
+        let nickname: String = (0..(NICKNAME_MIN - 1)).map(|_| 'a').collect();
+        format!("{}#", nickname)
     }
     pub fn email_min() -> String {
         let suffix = "@us".to_string();
@@ -349,6 +349,9 @@ impl UserValidateTest {
     }
     pub fn password_max() -> String {
         (0..(PASSWORD_MAX + 1)).map(|_| 'a').collect()
+    }
+    pub fn password_wrong() -> String {
+        (0..(PASSWORD_MIN)).map(|_| 'a').collect()
     }
 }
 

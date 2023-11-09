@@ -3,9 +3,9 @@ pub const CD_MISSING_TOKEN: &str = "MissingToken";
 pub const MSG_MISSING_TOKEN: &str = "Token value not provided";
 
 // 403 Forbidden
+pub const CD_FORBIDDEN: &str = "Forbidden";
 // Error when decoding token or expired token
-pub const CD_INVALID_TOKEN: &str = "InvalidToken";
-pub const MSG_INVALID_TOKEN: &str = "Invalid or expired token";
+pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token";
 // According to AD in the token, the user was not found
 pub const CD_UNACCEPTABLE_TOKEN: &str = "UnacceptableToken";
 pub const MSG_UNACCEPTABLE_TOKEN: &str = "Token value is unacceptable";
@@ -31,6 +31,9 @@ pub const MSG_CONFIRM_NOT_FOUND: &str = "Confirmation not found!";
 pub const CD_NOT_FOUND: &str = "NotFound";
 pub const MSG_NOT_FOUND_BY_ID: &str = "The user with the specified ID was not found.";
 pub const MSG_NOT_FOUND_BY_EMAIL: &str = "The user with the specified email was not found.";
+
+// 409
+pub const CD_CONFLICT: &str = "Conflict";
 
 // 500
 // Error web::block for waiting for database query to complete.

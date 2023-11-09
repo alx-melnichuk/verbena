@@ -12,13 +12,12 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     .service(Files::new("/assets", "static/assets").show_files_listing())
     .service(web::resource("/login").route(web::get().to(index_root)))
     .service(web::resource("/signup").route(web::get().to(index_root)))
+    .service(web::resource("/forgot-password").route(web::get().to(index_root)))
     .service(web::resource("/").route(web::get().to(index_root)));
 }
 
 /** Loading the `index.html` file. */
 pub async fn index_root(req: HttpRequest) -> Result<HttpResponse, Error> {
-    log::error!("#Loading the `index.html` file. req={req:?}");
-
     Ok(HttpResponse::build(http::StatusCode::OK)
         .content_type("text/html; charset=utf-8")
         .body(include_str!("../static/index.html")))
