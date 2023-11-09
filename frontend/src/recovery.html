@@ -8,30 +8,33 @@
 
     <style type="text/css">
       html { height: 100%; }
-      body { margin: 0 !important; padding: 0 !important; height: 100%;
-        -webkit-text-size-adjust: 100% !important; -ms-text-size-adjust: 100% !important; -webkit-font-smoothing: antialiased !important; }
-      [mr-tp-0] { margin-top: 0; }
-      [mr-bt-0] { margin-bottom: 0; }
-      @media only screen and (max-width: 620px) {
-        .panel2 { width: 100%; text-align: center; }
-      }
+      body { height: 100%; line-height: 1.5; margin: 0 !important; padding: 0 !important;
+        -webkit-text-size-adjust: 100% !important; -ms-text-size-adjust: 100% !important; -webkit-font-smoothing: antialiased !important;  }
+      [al-it-cen] { align-items: center; }
+      [bg-sz-cov] { background-size: cover; }
+      [bx-sz-brd] {box-sizing: border-box; }
       [ds-fl] { display: flex; }
+      [fn-sz-inh] { font-size: inherit; }
+      [fn-sz-2] { font-size: calc(100% - 2px); }
+      [fn-sz\+2] { font-size: calc(100% + 2px); }
+      [fn-st-italic] { font-style: italic; }
+      [fn-wg-bold] { font-weight: bold; }
       [fl-dr-col] { flex-direction: column; }
+      [hg-100] { height: 100%; }
       [js-cn-cen] { justify-content: center; }
       [js-cn-bet] { justify-content: space-between; }
-      [al-it-cen] { align-items: center; }
-      [hg-100] { height: 100%; }
-      [cl-inh] { color: inherit; }
-      [bg-ps-cen] { background-position: center; }
-      [bg-no-rep] { background-repeat: no-repeat; }
-      [bg-sz-cov] { background-size: cover; }
-      [pd-lf-05] { padding-left: 0.5em; }
-      [pd-rg-05] { padding-right: 0.5em; }
+      [mr-bt-0] { margin-bottom: 0em; }
+      [mr-bt-05] { margin-bottom: 0.5em; }
       [mr-lf-05] { margin-left: 0.5em; }
       [mr-rg-05] { margin-right: 0.5em; }
+      [mr-tp-0] { margin-top: 0em; }
       [mr-tp-05] { margin-top: 0.5em; }
-      [mr-bt-05] { margin-bottom: 0.5em; }
-      [fn-sz-inh] { font-size: inherit; }
+      [mr-ver-05] { margin-top: 0.5em; margin-bottom: 0.5em; }
+      [pd-hor-05] { padding-left: 0.5em; padding-right: 0.5em; }
+      [ps-rel] { position: relative; }
+      [ps-abs] { position: absolute; }
+      [tx-al-cen] { text-align: center; }
+      [wd-100] { width: 100%; }
     </style>
   </head>
   <body>
@@ -39,34 +42,19 @@
     <!-- {{> @partial-block}} -->
 
     <style>
-      .root {
-        --header-hg: 4.4em;
-        --footer-hg: 2.3em;
-        --site-header-bg: hsl(140, 40%, 90%);
-        --site-footer-bg: hsl(140, 40%, 90%);
-        font-family: sans-serif;
-      }
+      .s-desktop {  --a-hd-hg: 4.4em; --a-hd-bg: hsl(140, 40%, 90%); --a-ft-hg: 2.3em; --a-ft-bg: hsl(140, 40%, 90%);
+        font-family: sans-serif; }
       a, a:visited, a:hover { text-decoration: none; }
-      header {
-        background-color: var(--site-header-bg);
-        border-bottom: 1px solid lightgrey;
-        box-sizing: border-box;
-        flex: 0 0 var(--header-hg);
-      }
-      footer {
-        background-color: var(--site-footer-bg);
-        border-top: 1px solid lightgrey;
-        box-sizing: border-box;
-        flex: 0 0 var(--footer-hg);
-      }
+      header { background-color: var(--a-hd-bg); border-bottom: 1px solid lightgrey; flex: 0 0 var(--a-hd-hg); }
+      footer { background-color: var(--a-ft-bg); border-top: 1px solid lightgrey; flex: 0 0 var(--a-ft-hg); }
       main { flex: 1 1 auto; height: fit-content; }
 
-      .hd-logo-mini { height: 4em; width: 4em; background-image: url('assets/images/logo_mini.png'); }
+      .hd-logo-mini { height: 4em; width: 4em; background-image: url("assets/images/logo_mini.png"); }
     </style>
 
-    <div ds-fl fl-dr-col hg-100 class="root">
-      <header ds-fl js-cn-bet>
-        <a ds-fl al-it-cen pd-lf-05 pd-rg-05 id="hd_ref" href="/login">
+    <div ds-fl fl-dr-col hg-100 class="s-desktop">
+      <header ds-fl js-cn-bet bx-sz-brd>
+        <a ds-fl al-it-cen pd-hor-05 id="hd_ref" href="/login">
           <i bg-sz-cov class="hd-logo-mini"></i>
           <span mr-lf-05 style="font-size: x-large; font-weight: 600;">Verbéna</span>
         </a>
@@ -75,45 +63,49 @@
       <main>
         
         <style>
-            .content { background-color: honeydew;  border-radius: 1em;
-              min-width: max(25vw,330px);  min-height: 10vh; padding: 2em 3em; }
-            .err { color: rgb(224, 32, 32); }
-            .err-md { font-size: calc(100% - 2px); font-style: italic; }
-
-            .s-field-wrap {
-              --wd-icon: 1.5em;
-              /* margin-bottom: 0.5em; */
-              /* margin-top: 1em; */
-              position: relative;
-              width: 100%;
+            .s-content {
+              @media screen and (max-width: 480px) { --pd: 0.5em; --wd: 100%; }
+              @media screen and (min-width: 480px) and (max-width: 960px) { --pd: 1.5em; --wd: calc(16 * var(--pd)); }
+              @media screen and (min-width: 960px) { --pd: 2em; --wd: calc(14 * var(--pd)); }
+              background-color: honeydew;
+              border-radius: var(--pd);
+              box-sizing: border-box;
+              margin-bottom: 7em;
+              min-height: 10vh;
+              padding: var(--pd);
+              width: var(--wd);
             }
+            .s-title {
+              font-size: calc(100% + 4px);
+              font-weight: bold;
+            }
+            .s-text { font-size: calc(100% - 2px); }
+
+            .s-err { color: rgb(224,32,32); }
+            .s-field-wrap { --wd-icon: 1.5em; margin-bottom: 0.25em; }
             .s-field:not(:focus) { --delta: 1px; border-width: 1px; }
             .s-field:disabled { color: rgba(0,0,0,0.38); caret-color: transparent; }
 
             .s-field { --br-cl: rgba(0,0,0,0.38); }
-            .s-field:not(:invalid):not(:disabled):hover { --br-cl: rgba(0,0,0,0.87); }
-            .s-field:not(:invalid):focus { --br-cl: rgb(63,81,181); }
-            .s-field:invalid { --br-cl: rgb(244,67,54); }
+            .s-field:not(:disabled):not(:focus):hover { --br-cl-hov: rgba(0,0,0,0.87); }
+            .s-field:focus { --br-cl-foc: rgb(63,81,181); }
+            .s-field[d-touched]:invalid { --br-cl-err: rgb(244,67,54); }
 
             .s-field {
-              border-color: var(--br-cl,unset);
+              border-color: var(--br-cl-err, var(--br-cl-foc, var(--br-cl-hov, var(--br-cl,unset))));
               border-radius: 0.25em;
               border-style: solid;
-              box-sizing: border-box;
               height: 3em;
-              min-width: max(25vw, 250px);
               outline: none;
               padding-left: calc(1em + var(--delta, 0px));
               padding-right: calc(1em + var(--delta, 0px));
-              width: 100%;
             }
-            .s-btn-eye {
+            .s-btn-eye { 
               background-color: transparent;
               border: none;
               cursor: pointer;
               display: flex;
               padding: 0px;
-              position: absolute;
               outline: none;
               right: 0.9em;
               top: calc(50% - var(--wd-icon) / 2);
@@ -123,80 +115,65 @@
             .s-btn {
               border: none;
               border-radius: 0.25em;
-              box-shadow: 0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12);
+              box-shadow: 0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12);
               height: 2.25em;
               outline: none;
-              width: 100%;
+              transition: box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);
             } 
-            .s-btn[disabled] { cursor: default; pointer-events: none; }
-            .s-submit {
-              background-color: #3f51b5;
-              color: #fff;
-              margin: 0.5em 0;
+            .s-btn:focus {
+              box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
             }
-            .s-label {
-              font-size: 0.875em;
+            .s-btn:not(:disabled):active {
+              box-shadow: 0px 5px 5px -3px rgba(0,0,0,0.2), 0px 8px 10px 1px rgba(0,0,0,0.14), 0px 3px 14px 2px rgba(0,0,0,0.12);
+              opacity: 0.85;
             }
+            .s-btn:hover {
+              box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
+            }
+            .s-btn:disabled { cursor: default; pointer-events: none;
+              color: rgba(0,0,0,0.38); background-color: rgba(0,0,0,0.12);
+              box-shadow: 0px 0px 0px 0px rgba(0,0,0,0.2), 0px 0px 0px 0px rgba(0,0,0,0.14), 0px 0px 0px 0px rgba(0,0,0,0.12);
+            }
+
+            .s-hint-wrap { margin-left: 1em; min-height: 2.111em; }
+            .s-hint { line-height: 1.3; font-size: calc(100% - 4px); }
+
+            .s-submit { background-color: #3f51b5; color: #fff; }
+
           </style>
           <!--
-            height: 3em; /* 3em=48px; 2.75em=44px;*/
-            input[type="password"].s-field { font-family: caption; }
-
-            .s-field:not(:focus) { --delta: 1px; border-width: 1px; }
-              
-              margin-left: calc(1px + var(--delta, 0px));
-              margin-right: calc(1px + var(--delta, 0px));
-              
-
-            .s-field:not(:invalid):not(:focus):not(:hover) { border-color: rgba(0,0,0,0.38); }
-            .s-field:not(:invalid):not(:disabled):hover { border-color: rgba(0,0,0,0.87); }
-            .s-field:not(:invalid):focus { border-color: rgb(63,81,181); }
-            .s-field:invalid { border-color: rgb(244,67,54); }
-            
-            .s-field:not(.error):not(:focus) { border: 1px solid rgba(0,0,0,0.38); }
-            .s-field:not(.error):focus { border: 2px solid rgb(63,81,181); }
-            .s-field.error { border: 2px solid rgb(244,67,54); }
-             outline: none;
             -->
+          <div ds-fl fl-dr-col js-cn-cen al-it-cen hg-100>
+            <div id="content_id" class="s-content">
+              <form ds-fl fl-dr-col id="form_prm_id">
 
-          <div ds-fl js-cn-cen style="margin-top: 20vh;">
-            <div id="panel" class="content">
-              <form ds-fl fl-dr-col al-it-cen id="form-prm">
-                <span mr-tp-05 mr-bt-05>Thank you for choosing our site.</span>
+                <div mr-bt-05 tx-al-cen class="s-title">Change password</div>
 
-                <span mr-tp-05 mr-bt-05>Enter a new password for your account.</span>
-                <!-- type="password" -->
-                <div mr-tp-05 mr-bt-05 class="s-field-wrap">
-                  <input type="password" name="password" placeholder="New password"
-                    fn-sz-inh class="s-field"
-                    required="" minlength="6" maxlength="64" disabled9 />
-                  <button type="button" fn-sz-inh class="s-btn-eye" title="Toggle password visibility">
-                    <svg class="s-eye-on s-icon">
-                      <g fill="#788393">
-                      <path d="m12.000,5c-6.1608,0 -11.6507,6.4039 -11.8817,6.6769c-0.1580,0.186 -0.1580,0.459 0,0.646c0.138,0.163 2.1559,2.5059 5.0659,4.371l3.1339,-3.134c-0.2039,-0.48 -0.3179,-1.007 -0.3179,-1.5609c0,-2.2059 1.79397,-3.9999 3.9998,-3.9999c0.554,0 1.081,0.114 1.561,0.318l2.577,-2.5769c-1.256,-0.44901 -2.635,-0.7409 -4.138,-0.7409z">
-                      </path>
-                      <path d="m23.911,11.715c-0.128,-0.185 -2.251,-3.1729 -5.8199,-5.0988l2.7629,-2.7629c0.195,-0.1949 0.195,-0.5120 0,-0.707c-0.195,-0.195 -0.512,-0.195 -0.707,0l-16.9996,16.9997c-0.1949,0.195 -0.1949,0.5121 0,0.7071c0.0969,0.098 0.225,0.1469 0.35301,0.1469c0.12802,0 0.2559,-0.0489 0.354,-0.146l3.1349,-3.1349c1.5449,0.754 3.2489,1.281 5.01093,1.281c6.1609,0 11.6508,-6.404 11.8818,-6.6769c0.145,-0.1731 0.158,-0.4221 0.029,-0.6081zm-11.9108,4.285c-0.923,0 -1.762,-0.327 -2.4399,-0.853l5.58687,-5.58686c0.526,0.6779 0.853,1.5169 0.853,2.4399c0,2.2059 -1.794,3.9999 -3.9999,3.9999z">
-                       </path>
-                      </g>
-                    </svg>
+                <span mr-ver-05 tx-al-cen class="s-text">Enter a new password for your account.</span>
 
-                    <!-- <svg class="s-eye-on s-icon">
-                    <g>
-                      <path fill="#2196F3" d="M23.9111 11.7149C23.7221 11.4409 19.1802 5 12.0003 5C5.83942 5 0.349506 11.4039 0.11851 11.6769C-0.0395033 11.8629 -0.0395033 12.1359 0.11851 12.3229C0.349506 12.5959 5.83942 18.9998 12.0003 18.9998C18.1613 18.9998 23.6512 12.5959 23.8822 12.3229C24.0272 12.1499 24.0401 11.9009 23.9111 11.7149ZM12.0003 15.9998C9.79439 15.9998 8.00042 14.2058 8.00042 11.9999C8.00042 9.79393 9.79439 7.99995 12.0003 7.99995C14.2063 7.99995 16.0003 9.79393 16.0003 11.9999C16.0003 14.2058 14.2063 15.9998 12.0003 15.9998Z">
-                      </path>
-                    </g>
-                  </svg> -->
+                <div mr-tp-05 wd-100 ps-rel class="s-field-wrap">
+                  <input type="password" fn-sz-inh wd-100 bx-sz-brd class="s-field" placeholder="New password"
+                    id="field_passwd_id" data-dirty="off" autocomplete="off"
+                    required="" minlength="6" maxlength="65" 
+                    onchange="doInputPassword(this, true);"
+                    oninput="elementInput(this); doInputPassword(this, false);"
+                    onblur="elementBlur(this)"
+                    d-untouched
+                    d-pristine
+                  />
+                  <button type="button" fn-sz-inh ps-abs class="s-btn-eye" title="Toggle password visibility" tabindex="-1"
+                    onclick="doToggleEye(this)" id="btn_eye_id" eye-off>
                   </button>
-
                 </div>
 
-                <span mr-tp-05 mr-bt-05_>
-                </span>
+                <div class="s-hint-wrap">
+                  <div class="s-hint" id="err_hint_id"></div>
+                </div>
+
               </form>
-              <!-- disabled -->
-              <button type="button" fn-sz-inh mr-tp-05 mr-bt-05 class="s-btn s-submit" id="submit" 
-                disabled9 onclick="doSubmit(event, this)">
-                <span class="s-label">Submit</span>
+              <button type="button" fn-sz-inh mr-bt-05 wd-100 
+                class="s-btn s-submit" onclick="doSubmit()">
+                <span fn-sz-2 fn-wg-bold>Change</span>
               </button>
 
             </div>
@@ -204,40 +181,31 @@
 
       </main>
 
-      <footer ds-fl al-it-cen style="padding-left: 2em;">
-        <span>Demo site <a id="ft_ref" href="/login" target="_blank">www.verbena</a></span>
+      <footer ds-fl al-it-cen bx-sz-brd style="padding-left: 2em;">
+        <span><a id="ft_ref" href="/login" target="_blank">Verbéna</a> demo site.</span>
       </footer>
     </div>
 
     <!--
 :host {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  height:  100%;
+  display:  flex;
+  align-items:  center;
+  justify-content:  center;
   .container {
-    margin-bottom: 7vh;
-    padding-bottom: 26px;
-    box-sizing: border-box;
-    width: 50vw;
-    font-size: medium;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    p {
-      margin-top: 13px;
-      margin-bottom: 13px;
-    }
+    margin-bottom:  7vh;
+    padding-bottom:  26px;
+    box-sizing:  border-box;
+    width:  50vw;
+    font-size:  medium;
+    display:  flex;
+    flex-direction:  column;
+    align-items:  center;
+    p {      margin-top:  13px;      margin-bottom:  13px;    }
   }
-  .password {
-    width: 40vh;
-  }
-  .submit {
-    width: 20vh;
-  }
-  .failed {
-    color: var(--app-theme-warn);
-  }
+  .password {    width:  40vh;  }
+  .submit {    width:  20vh;  }
+  .failed {    color: var(--app-theme-warn);  }
 }
     -->
     <!-- 
@@ -252,7 +220,7 @@
     <app-widget-password
       formControlName="newPassword"
       [isRequired]="true"
-      [label]="'New password'"
+      [label]=""New password""
     ></app-widget-password>
   </div>
   <button mat-raised-button class="smd-button submit" color="primary"
@@ -273,24 +241,96 @@
   </div>
 </form>
     -->
-    <template id="tmp_success">
-      <span>Your registration have been completed !</span>
-      <p>
-        <a id="mn_ref_lg" href="/signup">Go to the login page on our website.</a>
-      </p>
+    <template id="tmp_eye_off_id">
+      <svg class="s-eye-off s-icon">
+        <g fill="#788393">
+          <path d="m12.000,5c-6.1608,0 -11.6507,6.4039 -11.8817,6.6769c-0.1580,0.186 -0.1580,0.459 0,0.646c0.138,0.163 2.1559,2.5059 5.0659,4.371l3.1339,-3.134c-0.2039,-0.48 -0.3179,-1.007 -0.3179,-1.5609c0,-2.2059 1.79397,-3.9999 3.9998,-3.9999c0.554,0 1.081,0.114 1.561,0.318l2.577,-2.5769c-1.256,-0.44901 -2.635,-0.7409 -4.138,-0.7409z">
+          </path>
+          <path d="m23.911,11.715c-0.128,-0.185 -2.251,-3.1729 -5.8199,-5.0988l2.7629,-2.7629c0.195,-0.1949 0.195,-0.5120 0,-0.707c-0.195,-0.195 -0.512,-0.195 -0.707,0l-16.9996,16.9997c-0.1949,0.195 -0.1949,0.5121 0,0.7071c0.0969,0.098 0.225,0.1469 0.35301,0.1469c0.12802,0 0.2559,-0.0489 0.354,-0.146l3.1349,-3.1349c1.5449,0.754 3.2489,1.281 5.01093,1.281c6.1609,0 11.6508,-6.404 11.8818,-6.6769c0.145,-0.1731 0.158,-0.4221 0.029,-0.6081zm-11.9108,4.285c-0.923,0 -1.762,-0.327 -2.4399,-0.853l5.58687,-5.58686c0.526,0.6779 0.853,1.5169 0.853,2.4399c0,2.2059 -1.794,3.9999 -3.9999,3.9999z">
+          </path>
+        </g>
+      </svg>
+    </template>
+    <template id="tmp_eye_on_id">
+      <svg class="s-eye-on s-icon">
+        <g>
+          <path
+            fill="#2196F3"
+            d="M23.9111 11.7149C23.7221 11.4409 19.1802 5 12.0003 5C5.83942 5 0.349506 11.4039 0.11851 11.6769C-0.0395033 11.8629 -0.0395033 12.1359 0.11851 12.3229C0.349506 12.5959 5.83942 18.9998 12.0003 18.9998C18.1613 18.9998 23.6512 12.5959 23.8822 12.3229C24.0272 12.1499 24.0401 11.9009 23.9111 11.7149ZM12.0003 15.9998C9.79439 15.9998 8.00042 14.2058 8.00042 11.9999C8.00042 9.79393 9.79439 7.99995 12.0003 7.99995C14.2063 7.99995 16.0003 9.79393 16.0003 11.9999C16.0003 14.2058 14.2063 15.9998 12.0003 15.9998Z"
+          />
+        </g>
+      </svg>
     </template>
 
-    <template id="tmp_failure">
-      <div mr-tp-05 mr-bt-05 class="err">Your confirmation is invalid or has expired.</div>
-      <div mr-tp-05 mr-bt-05 id="err_text" class="err err-md"></div>
-      <a id="mn_ref_sg" href="/signup">Go to the registration page on our website.</a>
+    <template id="tmp_success_id">
+      <span>Your registration have been completed !</span>
+      <p><a href="/signup">Go to the login page on our website.</a></p>
+    </template>
+
+    <template id="tmp_failure_id">
+      <div mr-ver-05 class="s-err">Your confirmation is invalid or has expired.</div>
+      <div mr-ver-05 fn-sz-2 fn-st-italic id="err_msg_id" class="s-err"></div>
+      <a href="/signup">Go to the registration page on our website.</a>
     </template>
 
 
     <script type="text/javascript" language="javascript">
+      function elementInput(element) {
+        element?.removeAttribute("d-pristine");
+        element?.setAttribute("d-dirty", "");
+      }
+      function elementBlur(element) {
+        element?.removeAttribute("d-untouched");
+        element?.setAttribute("d-touched", "");
+      }
+      function getHintPassword() {
+        return "Use at least 6 characters, with one lowercase letter, one capital letter, a number, and a special character.";
+      }
+      function doInputPassword(element, isChange) {
+        if (!element) { return; }
+        const value = element.value;
+        const attrTouched = element.hasAttribute("d-touched");
+        if (isChange || attrTouched) {
+          const value = element.value;
+          const content = document.getElementById("content_id");
+          const elementErrTxt = content?.querySelector("[id=err_hint_id]");
+          let text = checkPasswd(value)
+          if (!!text) {
+            elementErrTxt.classList.add("s-err");
+          } else {
+            elementErrTxt.classList.remove("s-err");
+            text = getHintPassword();
+          }
+          elementErrTxt.innerText = text;
+        }
+      }
+      
+      function checkPasswd(value) {
+        let result = "";
+        const regexCheckLowercaseLetter = new RegExp("[a-z]+");
+        const regexCheckCapitalLetter = new RegExp("[A-Z]+");
+        const regexCheckNumber = new RegExp("[\\d]+");
+        const regexCheckSpecialCharacter = new RegExp("[\\W]+");
+
+        if (!value) {
+          result = "Enter a required field.";
+        } else if (value.length < 6) {
+          result = "The password should have 6 characters or more. The password should have 6 characters or more.";
+        } else if (value.length > 64) {
+          result = "The password should be less than 64 characters.";
+        } else if (!regexCheckLowercaseLetter.test(value)) {
+          result = "The password must contain one lowercase letter.";
+        } else if (!regexCheckCapitalLetter.test(value)) {
+          result = "The password must contain one capital letter.";
+        } else if (!regexCheckNumber.test(value)) {
+          result = "The password must contain one number.";
+        } else if (!regexCheckSpecialCharacter.test(value)) {
+          result = "The password must contain one special character.";
+        }
+        return result;
+      }
 
       function httpClient(apiUrl, callbackSuccess, callbackFailure, recoveryData) {
-        let xmlHttpReq = new XMLHttpRequest();
         const xhr = new XMLHttpRequest();
 
         xhr.onreadystatechange = function () {
@@ -301,7 +341,6 @@
             callbackSuccess(xhr.responseText);
           } else {
             callbackFailure(xhr.responseText, xhr.status);
-            // callbackSuccess(xhr.responseText);
           }
         };
 
@@ -311,45 +350,65 @@
       }
 
       function successHandler(responseText) {
-        let panel = document.getElementById("panel");
-
-        let temp = document.getElementById("tmp_success");
-
-        let clon = temp?.content.cloneNode(true);
-        panel?.appendChild(clon);
+        const content = document.getElementById("content_id");
+        const tmpl = document.getElementById("tmp_success_id");
+        const clon = tmpl?.content.cloneNode(true);
+        content?.appendChild(clon);
       }
 
       function failureHandler(responseText, status) {
+        const content = document.getElementById("content_id");
+        const tmpl = document.getElementById("tmp_failure_id");
+        const clon = tmpl?.content.cloneNode(true);
 
-        let panel = document.getElementById("panel");
-
-        let temp = document.getElementById("tmp_failure");
-
-        let clon = temp?.content.cloneNode(true);
-
-        let errText = clon.querySelector("[id=err_text]");
-        let err = JSON.parse(responseText);
-        errText?.setHTML(`${status} : ${err.errCode}, ${err.errMsg}`);
-
-        panel?.appendChild(clon);
+        const errText = clon.querySelector("[id=err_msg_id]");
+        const err = JSON.parse(responseText);
+        errText.innerText = (`${status} : ${err.errCode}, ${err.errMsg}`);
+        content?.appendChild(clon);
       }
 
+      function doToggleEye(elementEye, isEyeNext = null) {
+        const isEyeOn = elementEye.hasAttribute("eye-on");
+        const isNewEyeOn = isEyeNext != null ? isEyeNext : !isEyeOn;
+        const refix = isNewEyeOn ? "on":"off";
+        if (!!elementEye) {
+          elementEye.removeAttribute("eye-on");
+          elementEye.removeAttribute("eye-off");
+          elementEye.setAttribute(`eye-${refix}`, "");
+          const name = "tmp_eye_" + refix + "_id";
+          const tmpl = document.getElementById(name);
+          const clon = tmpl?.content.cloneNode(true);
+          elementEye.children[0]?.remove();
+          elementEye.appendChild(clon);
+        }
+        const elementPasswd = document.getElementById("field_passwd_id");
+        if (!!elementPasswd) {
+            elementPasswd.classList.remove("s-pass-on");
+            elementPasswd.classList.remove("s-pass-off");
+            elementPasswd.classList.add("s-pass-" + refix);
+            elementPasswd.setAttribute("type", (isNewEyeOn ? "text":"password"));
+        }
+      }
 
-      //   
-      function doSubmit(event, elem) {
-        const frm = document.getElementById("form-prm");
+      function doSubmit() {
+        doToggleEye(document.getElementById("btn_eye_id"), false);
+        const frm = document.getElementById("form_prm_id");
         const password = !!frm ? frm[0].value : null;
         console.log(`password: ${password}`);
         if (!!password) {
           const urlParams = new URLSearchParams(window.location.search);
-          const recovery_token = urlParams.get('param')
-
+          const recovery_token = urlParams.get("param")
           const url = window.location.origin + "/api/recovery/" + recovery_token;
 
           httpClient(url, successHandler, failureHandler, { password });
         }
       }
 
+      // ** Data preparation **
+      doToggleEye(document.getElementById("btn_eye_id"), false);
+
+      const elementErrTxt = document.getElementById("err_hint_id");
+      elementErrTxt.innerText = getHintPassword();
 
 
       /*function send() {
@@ -357,7 +416,7 @@
         urlvariable = "text";
 
         var ItemJSON;
-        ItemJSON = '[  {    "Id": 1,    "ProductID": "1",    "Quantity": 1,  },  {    "Id": 1,    "ProductID": "2",    "Quantity": 2,  }]';
+        ItemJSON = "[  {    "Id": 1,    "ProductID": "1",    "Quantity": 1,  },  {    "Id": 1,    "ProductID": "2",    "Quantity": 2,  }]";
 
         URL = "https://testrestapi.com/additems?var=" + urlvariable;  //Your URL
 
@@ -365,13 +424,13 @@
         xmlhttp.onreadystatechange = callbackFunction(xmlhttp);
         xmlhttp.open("POST", URL, false);
         xmlhttp.setRequestHeader("Content-Type", "application/json");
-        // xmlhttp.setRequestHeader('Authorization', 'Basic ' + window.btoa('apiusername:apiuserpassword')); //in prod, you should encrypt user name and password and provide encrypted keys here instead 
+        // xmlhttp.setRequestHeader("Authorization", "Basic " + window.btoa("apiusername:apiuserpassword")); //in prod, you should encrypt user name and password and provide encrypted keys here instead 
         xmlhttp.onreadystatechange = callbackFunction(xmlhttp);
         xmlhttp.send(ItemJSON);
 
         alert(xmlhttp.responseText);
         document.getElementById("div").innerHTML =
-          xmlhttp.statusText + ":" + xmlhttp.status + "<BR><textarea rows='100' cols='100'>" + xmlhttp.responseText + "</textarea>";
+          xmlhttp.statusText + ":" + xmlhttp.status + "<BR><textarea rows="100" cols="100">" + xmlhttp.responseText + "</textarea>";
       }
 
       function callbackFunction(xmlhttp) {
@@ -384,15 +443,15 @@
     <div class="demo0">
       <div class="container0">
         <div *ngIf="isResponseSuccessful==true">
-          <p>{{ 'Your registration have been completed!' }}</p>
+          <p>{{ "Your registration have been completed!" }}</p>
           < !-- Ваша регистрация завершена! -- >
-          <p [innerHTML]="'confirmation.login_for_authorization' | translate: { linkToLogin: linkToLogin }"></p>
+          <p [innerHTML]=""confirmation.login_for_authorization" | translate: { linkToLogin: linkToLogin }"></p>
         </div>
         <div
           class="failed0"
           *ngIf="isResponseSuccessful==false"
         >
-          <p>{{ 'Your confirmation have been expired!' }}</p>
+          <p>{{ "Your confirmation have been expired!" }}</p>
           < !-- Срок действия вашего подтверждения истек! -- >
         </div>
       </div>
@@ -438,11 +497,11 @@
 
     <script type="text/javascript">
         let header =
-            'POST https://host.com HTTP/1.1' +
-            'Host: host.com' +
+            "POST https://host.com HTTP/1.1" +
+            "Host: host.com" +
             ...;
 
-        let body = 'param1=value1';
+        let body = "param1=value1";
 
         function proceed() {
             let response = sendRequest(header, body);

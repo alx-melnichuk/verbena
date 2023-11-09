@@ -123,8 +123,10 @@
             callbackSuccess(xhr.responseText);
           } else {
             callbackFailure(xhr.responseText, xhr.status);
+            // callbackSuccess(xhr.responseText);
           }
         };
+
         xhr.open("PUT", apiUrl, true); // true for asynchronous
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.send(null);
@@ -148,6 +150,7 @@
         start?.parentElement.removeChild(start);
 
         let temp = document.getElementById("tmp_failure");
+
         let clon = temp?.content.cloneNode(true);
 
         let errText = clon.querySelector("[id=err_text]");
