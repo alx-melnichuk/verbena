@@ -7,7 +7,6 @@
     <div class="su-title">{{ 'signup.title' | translate }}</div>
 
     <app-field-nickname
-      mr-bt-1
       wd-100
       formControlName="nickname"
       [isRequired]="true"
@@ -19,7 +18,6 @@
 
     <app-field-email
       mr-tp-05
-      mr-bt-1
       wd-100
       formControlName="email"
       [isRequired]="true"
@@ -30,7 +28,6 @@
 
     <app-field-password
       mr-tp-05
-      mr-bt-1
       wd-100
       formControlName="password"
       [isRequired]="true"
@@ -41,10 +38,10 @@
     <button
       type="button"
       mat-raised-button
-      mr-bt-05
       mr-tp-05
+      mr-bt-05
       wd-100
-      class=" mat-primary"
+      class="mat-primary"
       [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
       (click)="doSignup()"
     >
