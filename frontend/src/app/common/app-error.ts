@@ -10,15 +10,7 @@ export interface AppError {
 }
 
 export class AppErrorUtil {
-  public static handleError(errRes: HttpErrorResponse, defaultValue: string): string[] {
-    let result: string[] = [defaultValue];
-    if (!!errRes && !!errRes.error && !!errRes.error['errCode'] && !!errRes.error['errMsg']) {
-      result = errRes.error['errMsg'].split('\n');
-    }
-    return result;
-  }
-  
-  public static handleError2(errRes: HttpErrorResponse, defaultValue: string, translate?: TranslateService): string[] {
+  public static handleError(errRes: HttpErrorResponse, defaultValue: string, translate?: TranslateService): string[] {
     let result: string[] = [];
     if (!!errRes && !!errRes.error) {
       const errResList = !Array.isArray(errRes.error) ? [errRes.error] : errRes.error;

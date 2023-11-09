@@ -21,7 +21,6 @@ import { DialogService } from '../lib-dialog/dialog.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PgForgotPasswordComponent {
-
   public isDisabledSubmit = false;
   public errMsgList: string[] = [];
 
@@ -61,12 +60,13 @@ export class PgForgotPasswordComponent {
         });
       })
       .catch((error: HttpErrorResponse) => {
-        this.errMsgList = AppErrorUtil.handleError2(error, this.defaultError, this.translate);
+        this.errMsgList = AppErrorUtil.handleError(error, this.defaultError, this.translate);
       })
       .finally(() => {
-        this.changeDetector.markForCheck();
         this.isDisabledSubmit = false;
+        this.changeDetector.markForCheck();
       });
   }
+
   // ** Private API **
 }

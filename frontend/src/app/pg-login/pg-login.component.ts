@@ -58,7 +58,7 @@ export class PgLoginComponent {
         if (errRes.status === 403) {
           this.errMsgList = [this.translate.instant('login.err_not_correct_password')];
         } else {
-          this.errMsgList = AppErrorUtil.handleError2(errRes, this.defaultError, this.translate);
+          this.errMsgList = AppErrorUtil.handleError(errRes, this.defaultError, this.translate);
         }
       } else {
         throw errRes;
