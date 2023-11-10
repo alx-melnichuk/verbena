@@ -1,6 +1,5 @@
 use actix_files::Files;
 use actix_web::{http, web, HttpRequest, HttpResponse};
-use log;
 use std::io::Error;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
@@ -29,8 +28,8 @@ pub async fn loading_js_css_files(req: HttpRequest) -> Result<actix_files::Named
     let pathstr: &str = path.to_str().unwrap();
     // let path1: String = "static".to_string() + pathstr;
     let path2: std::path::PathBuf = ["static", pathstr].iter().collect();
-    // log::debug!("### path1:\"{}\"", path1);
-    // log::debug!("### path2:\"{}\"", path2.to_string_lossy());
+    // eprintln!("### path1:\"{}\"", path1);
+    // eprintln!("### path2:\"{}\"", path2.to_string_lossy());
     let file: actix_files::NamedFile = actix_files::NamedFile::open(path2)?;
     Ok(file.use_last_modified(true))
 }

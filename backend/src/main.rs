@@ -1,35 +1,14 @@
-use std::{env, io};
-
 use actix_cors::Cors;
-use actix_files::Files;
-use actix_web::{http, web, App, HttpServer};
+use actix_web::{http, App, HttpServer};
 use dotenv;
 use env_logger;
 use log;
 
-mod dbase;
-mod email;
-mod errors;
-mod extractors;
-mod hash_tools;
-mod schema;
-mod sessions;
-mod static_controller;
-mod tools;
-mod users;
-mod utils;
-
-use crate::email::{config_smtp, mailer};
-use crate::sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
-use crate::users::{user_auth_controller, user_controller, user_registr_controller};
-use crate::users::{
-    user_orm::cfg::get_user_orm_app, user_recovery_orm::cfg::get_user_recovery_orm_app,
-    user_registr_orm::cfg::get_user_registr_orm_app,
-};
+use verbena::{configure_server, utils};
 
 // ** Funcion Main **
 #[actix_web::main]
-async fn main() -> io::Result<()> {
+async fn main() -> std::io::Result<()> {
     #[cfg(feature = "mockdata")]
     #[rustfmt::skip]
     assert!(false, "Launch in `mockdata` mode! Disable `default=[test, mockdata]` in Cargo.toml.");
@@ -49,23 +28,6 @@ async fn main() -> io::Result<()> {
     let app_domain: String = config_app.app_domain.clone();
     // let app_url = format!("{}:{}", &app_host, &app_port);
     let app_max_age: usize = config_app.app_max_age.clone();
-
-    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL not found.");
-    // let domain: String = env::var("DOMAIN").unwrap_or_else(|_| "localhost".to_string());
-
-    let pool: dbase::DbPool = dbase::init_db_pool(&db_url);
-    dbase::run_migration(&mut pool.get().unwrap());
-
-    let data_config_app = web::Data::new(utils::config_app::ConfigApp::init_by_env());
-    let data_config_jwt = web::Data::new(config_jwt::ConfigJwt::init_by_env());
-    let config_smtp = config_smtp::ConfigSmtp::init_by_env();
-    let data_config_smtp = web::Data::new(config_smtp.clone());
-    // data_config_smtp.get_ref().clone()
-    let data_mailer = web::Data::new(mailer::cfg::get_mailer_app(config_smtp));
-    let data_user_orm = web::Data::new(get_user_orm_app(pool.clone()));
-    let data_user_registr_orm = web::Data::new(get_user_registr_orm_app(pool.clone()));
-    let data_session_orm = web::Data::new(get_session_orm_app(pool.clone()));
-    let data_user_recovery_orm = web::Data::new(get_user_recovery_orm_app(pool.clone()));
 
     println!("🚀 Server started successfully {}", &app_domain);
     log::info!("starting HTTP server at {}", &app_domain);
@@ -87,27 +49,10 @@ async fn main() -> io::Result<()> {
         // let cors = cors.allow_any_method().allow_any_header()
 
         App::new()
-            .app_data(web::Data::clone(&data_config_app))
-            .app_data(web::Data::clone(&data_config_jwt))
-            .app_data(web::Data::clone(&data_config_smtp))
-            .app_data(web::Data::clone(&data_mailer))
-            .app_data(web::Data::clone(&data_user_orm))
-            .app_data(web::Data::clone(&data_user_registr_orm))
-            .app_data(web::Data::clone(&data_session_orm))
-            .app_data(web::Data::clone(&data_user_recovery_orm))
+            .configure(configure_server())
             .wrap(cors)
             .wrap(actix_web::middleware::Logger::default())
-            .service(Files::new("/static", "static").show_files_listing())
-            .service(Files::new("/assets", "static/assets").show_files_listing())
-            .configure(static_controller::configure)
-            .service(
-                web::scope("/api")
-                    .configure(user_registr_controller::configure)
-                    .configure(user_auth_controller::configure)
-                    .configure(user_controller::configure),
-            )
     })
-    // .bind(&app_url)?
     .bind(&format!("{}:{}", &app_host, &app_port))?
     .run()
     .await

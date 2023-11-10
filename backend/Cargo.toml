@@ -1,7 +1,15 @@
 [package]
-name = "verbena_backend"
+name = "verbena"
 version = "0.1.0"
 edition = "2021"
+
+[[bin]]
+name = "verbena"
+path = "src/main.rs"
+
+[lib]
+name = "verbena"
+path = "src/lib.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

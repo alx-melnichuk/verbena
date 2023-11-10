@@ -1,2 +1,2 @@
-pub(super) mod config_smtp;
-pub(super) mod mailer;
+pub mod config_smtp;
+pub mod mailer;

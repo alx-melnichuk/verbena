@@ -1,2 +1,2 @@
 #[cfg(not(feature = "mockdata"))]
-pub(super) mod template_rendering;
+pub mod template_rendering;
