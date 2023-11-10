@@ -3,15 +3,11 @@ use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, 
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    errors::AppError,
-    utils::{
-        err::{
-            CD_FORBIDDEN, CD_UNALLOWABLE_TOKEN, MSG_INVALID_OR_EXPIRED_TOKEN, MSG_UNALLOWABLE_TOKEN,
-        },
-        parser,
-    },
+use crate::errors::AppError;
+use crate::settings::err::{
+    CD_FORBIDDEN, CD_UNALLOWABLE_TOKEN, MSG_INVALID_OR_EXPIRED_TOKEN, MSG_UNALLOWABLE_TOKEN,
 };
+use crate::utils::parser;
 
 pub const CD_NUM_TOKEN_MIN: usize = 1;
 pub const CD_NUM_TOKEN_MAX: usize = 10000;

@@ -5,15 +5,13 @@ use validator::Validate;
 
 use crate::errors::{AppError, CD_VALIDATION};
 use crate::extractors::authentication::{Authenticated, RequireAuth};
+use crate::settings::err::{CD_BLOCKING, CD_DATABASE, CD_NOT_FOUND, MSG_NOT_FOUND_BY_ID};
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::{user_models, user_orm::UserOrm};
-use crate::utils::{
-    err::{CD_BLOCKING, CD_DATABASE, CD_NOT_FOUND, MSG_NOT_FOUND_BY_ID},
-    parser::{parse_i32, CD_PARSE_INT_ERROR},
-};
+use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     GET api/users/{id}

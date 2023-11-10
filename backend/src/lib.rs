@@ -15,17 +15,18 @@ use users::{
     user_registr_orm::cfg::get_user_registr_orm_app,
 };
 
-pub mod dbase;
-pub mod email;
-pub mod errors;
-pub mod extractors;
-pub mod hash_tools;
-pub mod schema;
-pub mod sessions;
-pub mod static_controller;
-pub mod tools;
-pub mod users;
-pub mod utils;
+pub(crate) mod dbase;
+pub(crate) mod email;
+pub(crate) mod errors;
+pub(crate) mod extractors;
+pub(crate) mod hash_tools;
+pub(crate) mod schema;
+pub(crate) mod sessions;
+pub mod settings;
+pub(crate) mod static_controller;
+pub(crate) mod tools;
+pub(crate) mod users;
+pub(crate) mod utils;
 
 pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
     Box::new(move |cfg: &mut web::ServiceConfig| {
@@ -35,7 +36,7 @@ pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
         let pool: dbase::DbPool = dbase::init_db_pool(&db_url);
         dbase::run_migration(&mut pool.get().unwrap());
 
-        let data_config_app = web::Data::new(utils::config_app::ConfigApp::init_by_env());
+        let data_config_app = web::Data::new(settings::config_app::ConfigApp::init_by_env());
         let data_config_jwt = web::Data::new(config_jwt::ConfigJwt::init_by_env());
         let config_smtp = config_smtp::ConfigSmtp::init_by_env();
         let data_config_smtp = web::Data::new(config_smtp.clone());

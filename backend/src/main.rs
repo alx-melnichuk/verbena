@@ -4,7 +4,7 @@ use dotenv;
 use env_logger;
 use log;
 
-use verbena::{configure_server, utils};
+use verbena::{configure_server, settings};
 
 // ** Funcion Main **
 #[actix_web::main]
@@ -21,7 +21,7 @@ async fn main() -> std::io::Result<()> {
     }
     env_logger::init();
 
-    let config_app = utils::config_app::ConfigApp::init_by_env();
+    let config_app = settings::config_app::ConfigApp::init_by_env();
 
     let app_host: String = config_app.app_host.clone();
     let app_port: usize = config_app.app_port.clone();

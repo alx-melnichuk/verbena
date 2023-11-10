@@ -19,7 +19,7 @@ use crate::users::user_orm::tests::UserOrmApp;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::inst::UserOrmApp;
 use crate::users::user_orm::UserOrm;
-use crate::utils::err;
+use crate::settings::err;
 
 const BEARER: &str = "Bearer ";
 

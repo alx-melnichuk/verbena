@@ -113,32 +113,3 @@ impl actix_web::ResponseError for AppError {
             .json(self)
     }
 }
-
-/*impl From<ValidationErrors> for AppError {
-    fn from(errs: ValidationErrors) -> Self {
-        let mut app_error = AppError::new(CN_VALIDATION, &errs.to_string()).set_status(400);
-        let mut err_msg_vec: Vec<String> = vec![];
-        let len = errs.field_errors().len() - 1;
-        for (idx, (key_error, val)) in errs.field_errors().into_iter().enumerate() {
-            let valid_error_opt = val.get(0);
-            if let Some(valid_error) = valid_error_opt {
-                let code = valid_error.code.to_string();
-                let message = valid_error.message.clone().unwrap_or_else(|| Cow::Borrowed(""));
-                let char = if idx < len { "\n" } else { "" };
-                let err_msg = Cow::from(format!("{}{}", message, char));
-                err_msg_vec.push(err_msg.to_string());
-
-                for (key, val) in valid_error.params.clone().into_iter() {
-                    let key_error_param = Cow::from(format!("{}:{}", key_error.to_string(), key));
-                    app_error.add_param(key_error_param, &val);
-                }
-            }
-            // app_error.add_field_error_params(key_error, val);
-        }
-
-        let messing = err_msg_vec.into_iter().collect();
-        app_error.message = messing;
-
-        app_error
-    }
-}*/

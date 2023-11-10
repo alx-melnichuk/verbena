@@ -19,6 +19,13 @@ use crate::sessions::{
     session_orm::SessionOrm,
     tokens::{decode_dual_token, encode_dual_token, generate_num_token},
 };
+use crate::settings::{
+    config_app,
+    err::{
+        CD_BLOCKING, CD_CONFLICT, CD_DATABASE, CD_HASHING_PASSWD, CD_JSON_WEB_TOKEN, CD_NOT_FOUND,
+        CD_NO_CONFIRM, MSG_CONFIRM_NOT_FOUND, MSG_NOT_FOUND_BY_EMAIL,
+    },
+};
 use crate::users::user_models::CreateUserRecoveryDto;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_recovery_orm::inst::UserRecoveryOrmApp;
@@ -32,13 +39,6 @@ use crate::users::{
 use crate::users::{user_orm::inst::UserOrmApp, user_registr_orm::inst::UserRegistrOrmApp};
 #[cfg(feature = "mockdata")]
 use crate::users::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
-use crate::utils::{
-    config_app,
-    err::{
-        CD_BLOCKING, CD_CONFLICT, CD_DATABASE, CD_HASHING_PASSWD, CD_JSON_WEB_TOKEN, CD_NOT_FOUND,
-        CD_NO_CONFIRM, MSG_CONFIRM_NOT_FOUND, MSG_NOT_FOUND_BY_EMAIL,
-    },
-};
 
 pub const MSG_EMAIL_ALREADY_USE: &str = "email_already_use";
 pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";

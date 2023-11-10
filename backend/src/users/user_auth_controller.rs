@@ -17,13 +17,13 @@ use crate::sessions::{
     session_orm::SessionOrm,
     tokens::{decode_dual_token, encode_dual_token, generate_num_token},
 };
+use crate::settings::err::{self, CD_JSON_WEB_TOKEN};
 use crate::users::user_models;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::user_orm::UserOrm;
-use crate::utils::err::{self, CD_JSON_WEB_TOKEN};
 
 pub const CD_USER_EXISTS: &str = "NicknameOrEmailExist";
 pub const MSG_USER_EXISTS: &str = "A user with the same nickname or email already exists.";
