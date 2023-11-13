@@ -1,7 +1,6 @@
 use actix_web::{delete, get, put, web, HttpResponse};
 use log;
 use std::ops::Deref;
-use validator::Validate;
 
 use crate::errors::{AppError, CD_VALIDATION};
 use crate::extractors::authentication::{Authenticated, RequireAuth};
@@ -12,6 +11,7 @@ use crate::users::user_orm::inst::UserOrmApp;
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::{user_models, user_orm::UserOrm};
 use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
+use crate::validators::Validator;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     GET api/users/{id}
@@ -109,7 +109,7 @@ pub async fn get_user_current(
 pub async fn put_user(
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
-    json_user_dto: web::Json<user_models::ModifyUserDto>,
+    json_body: web::Json<user_models::ModifyUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let id_str = request.match_info().query("id").to_string();
 
@@ -119,13 +119,17 @@ pub async fn put_user(
     })?;
 
     // Checking the validity of the data model.
-    let validation_res = json_user_dto.validate();
+    let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", CD_VALIDATION, validation_errors.to_string());
-        return Ok(AppError::validation_response(validation_errors));
+        let msg: String = validation_errors
+            .iter()
+            .map(|v| format!("{} # ", v.message.to_string()))
+            .collect();
+        log::error!("{}: {}", CD_VALIDATION, msg);
+        return Ok(AppError::validations_to_response(validation_errors));
     }
 
-    let modify_user: user_models::ModifyUserDto = json_user_dto.0.clone();
+    let modify_user: user_models::ModifyUserDto = json_body.0.clone();
 
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
@@ -234,7 +238,7 @@ mod tests {
         tokens::encode_dual_token,
     };
     use crate::users::{
-        user_models::{ModifyUserDto, User, UserDto, UserRole, UserValidateTest},
+        user_models::{ModifyUserDto, User, UserDto, UserModelsTest, UserRole},
         user_orm::tests::{UserOrmApp, USER_ID_1},
     };
     use crate::utils::parser::{CD_PARSE_INT_ERROR, MSG_PARSE_INT_ERROR};
@@ -581,7 +585,7 @@ mod tests {
         let req = test::TestRequest::put()
             .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
             .set_json(user_models::ModifyUserDto {
-                nickname: Some(UserValidateTest::nickname_min()),
+                nickname: Some(UserModelsTest::nickname_min()),
                 email: Some("James_Smith@gmail.com".to_string()),
                 password: Some("passwordD1T1".to_string()),
                 role: Some(UserRole::User),
@@ -616,7 +620,7 @@ mod tests {
         let req = test::TestRequest::put()
             .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
             .set_json(user_models::ModifyUserDto {
-                nickname: Some(UserValidateTest::nickname_max()),
+                nickname: Some(UserModelsTest::nickname_max()),
                 email: Some("James_Smith@gmail.com".to_string()),
                 password: Some("passwordD1T1".to_string()),
                 role: Some(UserRole::User),
@@ -651,7 +655,7 @@ mod tests {
         let req = test::TestRequest::put()
             .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
             .set_json(user_models::ModifyUserDto {
-                nickname: Some(UserValidateTest::nickname_wrong()),
+                nickname: Some(UserModelsTest::nickname_wrong()),
                 email: Some("James_Smith@gmail.com".to_string()),
                 password: Some("passwordD1T1".to_string()),
                 role: Some(UserRole::User),
@@ -720,7 +724,7 @@ mod tests {
             .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
             .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
-                email: Some(UserValidateTest::email_min()),
+                email: Some(UserModelsTest::email_min()),
                 password: Some("passwordD1T1".to_string()),
                 role: Some(UserRole::User),
             });
@@ -754,7 +758,7 @@ mod tests {
             .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
             .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
-                email: Some(UserValidateTest::email_max()),
+                email: Some(UserModelsTest::email_max()),
                 password: Some("passwordD1T1".to_string()),
                 role: Some(UserRole::User),
             });
@@ -788,7 +792,7 @@ mod tests {
             .uri(&format!("/users/{}", &user_id)) // PUT users/{id}
             .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
-                email: Some(UserValidateTest::email_wrong()),
+                email: Some(UserModelsTest::email_wrong()),
                 password: Some("passwordD1T1".to_string()),
                 role: Some(UserRole::User),
             });
@@ -857,7 +861,7 @@ mod tests {
             .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
                 email: Some("James_Smith@gmail.com".to_string()),
-                password: Some(UserValidateTest::password_min()),
+                password: Some(UserModelsTest::password_min()),
                 role: Some(UserRole::User),
             });
         let user_v = vec![user1];
@@ -891,7 +895,7 @@ mod tests {
             .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
                 email: Some("James_Smith@gmail.com".to_string()),
-                password: Some(UserValidateTest::password_max()),
+                password: Some(UserModelsTest::password_max()),
                 role: Some(UserRole::User),
             });
         let user_v = vec![user1];
@@ -925,7 +929,7 @@ mod tests {
             .set_json(user_models::ModifyUserDto {
                 nickname: Some("James_Smith".to_string()),
                 email: Some("James_Smith@gmail.com".to_string()),
-                password: Some(UserValidateTest::password_wrong()),
+                password: Some(UserModelsTest::password_wrong()),
                 role: Some(UserRole::User),
             });
         let user_v = vec![user1];

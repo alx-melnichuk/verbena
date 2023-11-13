@@ -1,14 +1,10 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
-use serde_json;
-use std::borrow::Cow;
-use validator::Validate;
 
-use crate::errors::CD_VALIDATION;
 use crate::schema;
 use crate::utils::date_time_rfc2822z;
+use crate::validators::{ValidationChecks, ValidationError, Validator};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, diesel_derive_enum::DbEnum)]
 #[ExistingTypePath = "crate::schema::sql_types::UserRole"]
@@ -99,48 +95,110 @@ pub const MSG_PASSWORD_MIN_LENGTH: &str = "password:min_length";
 pub const MSG_PASSWORD_MAX_LENGTH: &str = "password:max_length";
 pub const MSG_PASSWORD_REGEX: &str = "password:regex";
 
-#[derive(Debug, Serialize, Deserialize, Clone, Validate, AsChangeset)]
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset)]
 #[diesel(table_name = schema::users)]
 pub struct ModifyUserDto {
-    #[validate(custom = "UserValidate::nickname")]
     pub nickname: Option<String>,
-    #[validate(custom = "UserValidate::email")]
     pub email: Option<String>,
-    #[validate(custom = "UserValidate::password")]
     pub password: Option<String>,
     pub role: Option<UserRole>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Validate, AsChangeset, Insertable)]
+impl Validator for ModifyUserDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        if let Some(nickname_val) = &self.nickname {
+            errors.push(validate_nickname(nickname_val).err());
+        }
+        if let Some(email_val) = &self.email {
+            errors.push(validate_email(email_val).err());
+        }
+        if let Some(password_val) = &self.password {
+            errors.push(validate_password(password_val).err());
+        }
+
+        let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
+        if result.len() > 0 {
+            return Err(result);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
 #[diesel(table_name = schema::users)]
 pub struct CreateUserDto {
-    #[validate(custom = "UserValidate::nickname")]
     pub nickname: String,
-    #[validate(custom = "UserValidate::email")]
     pub email: String,
-    #[validate(custom = "UserValidate::password")]
     pub password: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Validate, AsChangeset)]
+impl Validator for CreateUserDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        errors.push(validate_nickname(&self.nickname).err());
+        errors.push(validate_email(&self.email).err());
+        errors.push(validate_password(&self.password).err());
+
+        let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
+        if result.len() > 0 {
+            return Err(result);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset)]
 #[diesel(table_name = schema::users)]
 pub struct LoginUserDto {
-    #[validate(custom = "UserValidate::nickname_or_email")]
     pub nickname: String,
-    #[validate(custom = "UserValidate::password")]
     pub password: String,
+}
+
+impl Validator for LoginUserDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        errors.push(validate_nickname_or_email(&self.nickname).err());
+        errors.push(validate_password(&self.password).err());
+
+        let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
+        if result.len() > 0 {
+            return Err(result);
+        }
+        Ok(())
+    }
 }
 
 // ** Registration User **
 
-#[derive(Debug, Serialize, Deserialize, Clone, Validate)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RegistrUserDto {
-    #[validate(custom = "UserValidate::nickname")]
     pub nickname: String,
-    #[validate(custom = "UserValidate::email")]
     pub email: String,
-    #[validate(custom = "UserValidate::password")]
     pub password: String,
+}
+
+impl Validator for RegistrUserDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        errors.push(validate_nickname(&self.nickname).err());
+        errors.push(validate_email(&self.email).err());
+        errors.push(validate_password(&self.password).err());
+
+        let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
+        if result.len() > 0 {
+            return Err(result);
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -153,10 +211,24 @@ pub struct RegistrUserResponseDto {
 
 // ** RecoveryUserDto **
 
-#[derive(Debug, Serialize, Deserialize, Clone, Validate)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RecoveryUserDto {
-    #[validate(custom = "UserValidate::email")]
     pub email: String,
+}
+
+impl Validator for RecoveryUserDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        errors.push(validate_email(&self.email).err());
+
+        let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
+        if result.len() > 0 {
+            return Err(result);
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -169,10 +241,24 @@ pub struct RecoveryUserResponseDto {
 
 // ** RecoveryDataDto **
 
-#[derive(Debug, Serialize, Deserialize, Clone, Validate)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RecoveryDataDto {
-    #[validate(custom = "UserValidate::password")]
     pub password: String,
+}
+
+impl Validator for RecoveryDataDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        errors.push(validate_password(&self.password).err());
+
+        let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
+        if result.len() > 0 {
+            return Err(result);
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -210,110 +296,67 @@ pub struct CreateUserRecoveryDto {
     pub final_date: DateTime<Utc>,
 }
 
-// ** UserValidate **
-
-pub struct UserValidate {}
-
-impl UserValidate {
-    #[rustfmt::skip]
-    fn check_required(value: &str, msg: &'static str) -> Result<(), validator::ValidationError> {
-        let len: usize = value.len();
-        if len == 0 {
-            let mut err = validator::ValidationError::new(CD_VALIDATION);
-            err.message = Some(Cow::Borrowed(msg));
-            let data = true;
-            err.add_param(Cow::Borrowed("required"), &data);
-            return Err(err);
-        }
-        Ok(())
-    }
-    #[rustfmt::skip]
-    fn check_min_length(value: &str, min: usize, msg: &'static str) -> Result<(), validator::ValidationError> {
-        let len: usize = value.len();
-        if len < min {
-            let mut err = validator::ValidationError::new(CD_VALIDATION);
-            err.message = Some(Cow::Borrowed(msg));
-            let json = serde_json::json!({ "actualLength": len, "requiredLength": min });
-            err.add_param(Cow::Borrowed("minlength"), &json);
-            return Err(err);
-        }
-        Ok(())
-    }
-    #[rustfmt::skip]
-    fn check_max_length(value: &str, max: usize, msg: &'static str) -> Result<(), validator::ValidationError> {
-        let len: usize = value.len();
-        if max < len {
-            let mut err = validator::ValidationError::new(CD_VALIDATION);
-            err.message = Some(Cow::Borrowed(msg));
-            let json = serde_json::json!({ "actualLength": len, "requiredLength": max });
-            err.add_param(Cow::Borrowed("maxlength"), &json);
-            return Err(err);
-        }
-        Ok(())
-    }
-    #[rustfmt::skip]
-    fn check_regexp(value: &str, reg_exp: &str, msg: &'static str) -> Result<(), validator::ValidationError> {
-        let regex = Regex::new(reg_exp).unwrap();
-        let result = regex.captures(value.clone());
-        if result.is_none() {
-            let mut err = validator::ValidationError::new(CD_VALIDATION);
-            err.message = Some(Cow::Borrowed(msg));
-            let json = serde_json::json!({ "actualValue": &value.clone(), "requiredPattern": &reg_exp.clone() });
-            err.add_param(Cow::Borrowed("pattern"), &json);
-            return Err(err);
-        }
-        Ok(())
-    }
-    #[rustfmt::skip]
-    fn check_email(value: &str, msg: &'static str) -> Result<(), validator::ValidationError> {
-        if !validator::validate_email(value) {
-            let mut err = validator::ValidationError::new(CD_VALIDATION);
-            err.message = Some(Cow::Borrowed(msg));
-            let data = true;
-            err.add_param(Cow::Borrowed("email"), &data);
-            return Err(err);
-        }
-        Ok(())
-    }
-
-    pub fn nickname(value: &str) -> Result<(), validator::ValidationError> {
-        Self::check_required(value, MSG_NICKNAME_REQUIRED)?;
-        Self::check_min_length(value, NICKNAME_MIN.into(), MSG_NICKNAME_MIN_LENGTH)?;
-        Self::check_max_length(value, NICKNAME_MAX.into(), MSG_NICKNAME_MAX_LENGTH)?;
-        Self::check_regexp(value, NICKNAME_REGEX, MSG_NICKNAME_REGEX)?; // /^[a-zA-Z]+[\w]+$/
-        Ok(())
-    }
-    pub fn email(value: &str) -> Result<(), validator::ValidationError> {
-        Self::check_required(value, MSG_EMAIL_REQUIRED)?;
-        Self::check_min_length(value, EMAIL_MIN.into(), MSG_EMAIL_MIN_LENGTH)?;
-        Self::check_max_length(value, EMAIL_MAX.into(), MSG_EMAIL_MAX_LENGTH)?;
-        Self::check_email(value, MSG_EMAIL_EMAIL_TYPE)?;
-        Ok(())
-    }
-
-    pub fn password(value: &str) -> Result<(), validator::ValidationError> {
-        Self::check_required(value, MSG_PASSWORD_REQUIRED)?;
-        Self::check_min_length(value, PASSWORD_MIN.into(), MSG_PASSWORD_MIN_LENGTH)?;
-        Self::check_max_length(value, PASSWORD_MAX.into(), MSG_PASSWORD_MAX_LENGTH)?;
-        Self::check_regexp(value, PASSWORD_LOWERCASE_LETTER_REGEX, MSG_PASSWORD_REGEX)?;
-        Self::check_regexp(value, PASSWORD_CAPITAL_LETTER_REGEX, MSG_PASSWORD_REGEX)?;
-        Self::check_regexp(value, PASSWORD_NUMBER_REGEX, MSG_PASSWORD_REGEX)?;
-        Ok(())
-    }
-    pub fn nickname_or_email(value: &str) -> Result<(), validator::ValidationError> {
-        if value.contains("@") {
-            Self::email(&value.clone()).map_err(|err| err)?;
-        } else {
-            Self::nickname(&value.clone()).map_err(|err| err)?;
-        }
-        Ok(())
-    }
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct UserTokensDto {
+    #[serde(rename = "accessToken")]
+    pub access_token: String,
+    #[serde(rename = "refreshToken")]
+    pub refresh_token: String,
 }
 
-#[cfg(feature = "mockdata")]
-pub struct UserValidateTest {}
-#[cfg(feature = "mockdata")]
-impl UserValidateTest {
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct LoginUserResponseDto {
+    #[serde(rename = "userDto")]
+    pub user_dto: UserDto,
+    #[serde(rename = "userTokensDto")]
+    pub user_tokens_dto: UserTokensDto,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TokenUserDto {
+    // refreshToken
+    pub token: String,
+}
+
+pub fn validate_nickname(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::required(value, MSG_NICKNAME_REQUIRED)?;
+    ValidationChecks::min_length(value, NICKNAME_MIN.into(), MSG_NICKNAME_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, NICKNAME_MAX.into(), MSG_NICKNAME_MAX_LENGTH)?;
+    ValidationChecks::regexp(value, NICKNAME_REGEX, MSG_NICKNAME_REGEX)?; // /^[a-zA-Z]+[\w]+$/
+    Ok(())
+}
+
+pub fn validate_email(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::required(value, MSG_EMAIL_REQUIRED)?;
+    ValidationChecks::min_length(value, EMAIL_MIN.into(), MSG_EMAIL_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, EMAIL_MAX.into(), MSG_EMAIL_MAX_LENGTH)?;
+    ValidationChecks::email(value, MSG_EMAIL_EMAIL_TYPE)?;
+    Ok(())
+}
+
+pub fn validate_nickname_or_email(value: &str) -> Result<(), ValidationError> {
+    if value.contains("@") {
+        validate_email(&value.clone()).map_err(|err| err)?;
+    } else {
+        validate_nickname(&value.clone()).map_err(|err| err)?;
+    }
+    Ok(())
+}
+
+pub fn validate_password(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::required(value, MSG_PASSWORD_REQUIRED)?;
+    ValidationChecks::min_length(value, PASSWORD_MIN.into(), MSG_PASSWORD_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, PASSWORD_MAX.into(), MSG_PASSWORD_MAX_LENGTH)?;
+    ValidationChecks::regexp(value, PASSWORD_LOWERCASE_LETTER_REGEX, MSG_PASSWORD_REGEX)?;
+    ValidationChecks::regexp(value, PASSWORD_CAPITAL_LETTER_REGEX, MSG_PASSWORD_REGEX)?;
+    ValidationChecks::regexp(value, PASSWORD_NUMBER_REGEX, MSG_PASSWORD_REGEX)?;
+    Ok(())
+}
+
+#[cfg(all(test, feature = "mockdata"))]
+pub struct UserModelsTest {}
+#[cfg(all(test, feature = "mockdata"))]
+impl UserModelsTest {
     pub fn nickname_min() -> String {
         (0..(NICKNAME_MIN - 1)).map(|_| 'a').collect()
     }
@@ -353,25 +396,4 @@ impl UserValidateTest {
     pub fn password_wrong() -> String {
         (0..(PASSWORD_MIN)).map(|_| 'a').collect()
     }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct UserTokensDto {
-    #[serde(rename = "accessToken")]
-    pub access_token: String,
-    #[serde(rename = "refreshToken")]
-    pub refresh_token: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct LoginUserResponseDto {
-    #[serde(rename = "userDto")]
-    pub user_dto: UserDto,
-    #[serde(rename = "userTokensDto")]
-    pub user_tokens_dto: UserTokensDto,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct TokenUserDto {
-    pub token: String, // refreshToken
 }

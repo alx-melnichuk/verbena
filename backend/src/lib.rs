@@ -7,7 +7,7 @@ use actix_web::web;
 // use env_logger;
 // use log;
 
-use email::{config_smtp, mailer};
+use send_email::{config_smtp, mailer};
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
 use users::{
     user_auth_controller, user_controller, user_orm::cfg::get_user_orm_app,
@@ -16,17 +16,18 @@ use users::{
 };
 
 pub(crate) mod dbase;
-pub(crate) mod email;
 pub(crate) mod errors;
 pub(crate) mod extractors;
 pub(crate) mod hash_tools;
 pub(crate) mod schema;
+pub(crate) mod send_email;
 pub(crate) mod sessions;
 pub mod settings;
 pub(crate) mod static_controller;
 pub(crate) mod tools;
 pub(crate) mod users;
 pub(crate) mod utils;
+pub mod validators;
 
 pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
     Box::new(move |cfg: &mut web::ServiceConfig| {

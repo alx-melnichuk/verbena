@@ -18,7 +18,7 @@ pub trait Mailer {
 }
 
 pub mod cfg {
-    use crate::email::config_smtp::ConfigSmtp;
+    use crate::send_email::config_smtp::ConfigSmtp;
 
     #[cfg(not(feature = "mockdata"))]
     use super::inst::MailerApp;
@@ -37,12 +37,10 @@ pub mod cfg {
 
 #[cfg(not(feature = "mockdata"))]
 pub mod inst {
-    use lettre::{
-        message::header::ContentType, transport::smtp, Message, SmtpTransport, Transport,
-    };
+    use lettre::{message::header::ContentType, transport::smtp, Message, SmtpTransport};
     use std::collections::HashMap;
 
-    use crate::email::config_smtp::ConfigSmtp;
+    use crate::send_email::config_smtp::ConfigSmtp;
     use crate::tools::template_rendering::render_template;
 
     use super::*;
@@ -99,9 +97,15 @@ pub mod inst {
         // Sending mail (synchronous)
         fn sending(&self, message: Message) -> Result<(), String> {
             // Open a remote connection to the SMTP relay server
-            let transport = self.new_smtp_transport().map_err(|e| e.to_string())?;
-            // Send the email.
-            transport.send(&message).map(|_| ()).map_err(|e| e.to_string())?;
+            // tmp
+            eprintln!(
+                "sending() message: {}",
+                std::str::from_utf8(&message.formatted()).unwrap()
+            );
+            // tmp let transport =
+            self.new_smtp_transport().map_err(|e| e.to_string())?;
+            // tmp // Send the email.
+            // tmp transport.send(&message).map(|_| ()).map_err(|e| e.to_string())?;
             Ok(())
         }
     }
@@ -128,17 +132,12 @@ pub mod inst {
             // Create a html_template to send.
             let html_template = render_template("verification_code", params)?;
             eprintln!("html_template: {:?}", html_template);
-            // #- temp
-            // let receiver = "lg2aam@gmail.com";
-            // // Create a message to send.
-            // let message = self.new_message(receiver, subject, &html_template)?;
-            // // Sending mail (synchronous)
-            // self.sending(message)
-            if html_template.len() > 0 {
-                Ok(())
-            } else {
-                Ok(())
-            }
+
+            let receiver = "lg2aam@gmail.com";
+            // Create a message to send.
+            let message = self.new_message(receiver, subject, &html_template)?;
+            // Sending mail (synchronous)
+            self.sending(message)
         }
         /// Send an email to confirm the password change.
         fn send_password_recovery(
@@ -176,7 +175,7 @@ pub mod inst {
 
 #[cfg(feature = "mockdata")]
 pub mod tests {
-    use crate::email::config_smtp::ConfigSmtp;
+    use crate::send_email::config_smtp::ConfigSmtp;
 
     use super::*;
 

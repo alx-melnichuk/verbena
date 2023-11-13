@@ -1,10 +1,10 @@
-use std::fmt;
 use std::{borrow::Cow, collections::BTreeMap};
 
 use actix_web::{http, HttpResponse};
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
-use validator::ValidationErrors;
+
+use crate::validators::ValidationError;
 
 pub const CN_SERVER_ERROR: &str = "InternalServerError";
 pub const MSG_SERVER_ERROR: &str = "An unexpected internal server error occurred.";
@@ -28,8 +28,8 @@ pub struct AppError {
 
 impl std::error::Error for AppError {}
 
-impl fmt::Display for AppError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl std::fmt::Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", serde_json::to_string(&self).unwrap())
     }
 }
@@ -75,24 +75,21 @@ impl AppError {
     pub fn default_params() -> BTreeMap<Cow<'static, str>, Value> {
         BTreeMap::new()
     }
-    pub fn validation_response(errors: ValidationErrors) -> HttpResponse {
-        let status_code = http::StatusCode::BAD_REQUEST;
+    pub fn validations_to_response(errors: Vec<ValidationError>) -> HttpResponse {
+        let status_code = http::StatusCode::BAD_REQUEST; // 400
         let mut app_error_vec: Vec<AppError> = vec![];
 
-        for (_, valid_error_vec) in errors.field_errors().into_iter() {
-            let valid_error_opt = valid_error_vec.get(0);
-            if let Some(valid_error) = valid_error_opt {
-                let message = valid_error.message.clone().unwrap_or(std::borrow::Cow::Borrowed(""));
-                let mut app_error =
-                    AppError::new(&valid_error.code, &message).set_status(status_code.into());
-                for (key, val) in valid_error.params.clone().into_iter() {
-                    if key != "value" {
-                        app_error.add_param(key, &val);
-                    }
-                }
-                app_error_vec.push(app_error);
+        for error in errors.into_iter() {
+            let code = CD_VALIDATION;
+            let message = error.message.clone();
+            let mut app_error = AppError::new(&code, &message).set_status(status_code.into());
+
+            for (key, val) in error.params.into_iter() {
+                app_error.add_param(key, &val);
             }
+            app_error_vec.push(app_error);
         }
+
         let json = app_error_vec;
         HttpResponse::build(status_code)
             .insert_header(http::header::ContentType::json())

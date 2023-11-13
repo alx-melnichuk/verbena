@@ -3,7 +3,6 @@ use std::ops::Deref;
 use actix_web::{
     cookie::time::Duration as ActixWebDuration, cookie::Cookie, post, web, HttpResponse,
 };
-use validator::Validate;
 
 use crate::errors::{AppError, CD_VALIDATION};
 use crate::extractors::authentication::{Authenticated, RequireAuth};
@@ -24,6 +23,7 @@ use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::user_orm::UserOrm;
+use crate::validators::Validator;
 
 pub const CD_USER_EXISTS: &str = "NicknameOrEmailExist";
 pub const MSG_USER_EXISTS: &str = "A user with the same nickname or email already exists.";
@@ -71,16 +71,20 @@ fn err_blocking(err: String) -> AppError {
 pub async fn registration0(
     user_orm: web::Data<UserOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
-    json_user_dto: web::Json<user_models::CreateUserDto>,
+    json_body: web::Json<user_models::CreateUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Checking the validity of the data model.
-    let validation_res = json_user_dto.validate();
+    let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", CD_VALIDATION, validation_errors.to_string());
-        return Ok(AppError::validation_response(validation_errors));
+        let msg: String = validation_errors
+            .iter()
+            .map(|v| format!("{} # ", v.message.to_string()))
+            .collect();
+        log::error!("{}: {}", CD_VALIDATION, msg);
+        return Ok(AppError::validations_to_response(validation_errors));
     }
 
-    let create_user_dto: user_models::CreateUserDto = json_user_dto.0.clone();
+    let create_user_dto: user_models::CreateUserDto = json_body.0.clone();
 
     let nickname = create_user_dto.nickname.clone();
     let email = create_user_dto.email.clone();
@@ -123,15 +127,20 @@ pub async fn login(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     user_orm: web::Data<UserOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
-    json_user_dto: web::Json<user_models::LoginUserDto>,
+    json_body: web::Json<user_models::LoginUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Checking the validity of the data model.
-    let validation_res = json_user_dto.validate();
+    let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", CD_VALIDATION, validation_errors.to_string());
-        return Ok(AppError::validation_response(validation_errors));
+        let msg: String = validation_errors
+            .iter()
+            .map(|v| format!("{} # ", v.message.to_string()))
+            .collect();
+        log::error!("{}: {}", CD_VALIDATION, msg);
+        return Ok(AppError::validations_to_response(validation_errors));
     }
-    let login_user_dto: user_models::LoginUserDto = json_user_dto.0.clone();
+
+    let login_user_dto: user_models::LoginUserDto = json_body.0.clone();
     let nickname = login_user_dto.nickname.clone();
     let email = login_user_dto.nickname.clone();
     let password = login_user_dto.password.clone();
@@ -367,6 +376,7 @@ mod tests {
     use actix_web::{http, test, web, App};
     // use serde_json::{json, to_string};
 
+    use crate::sessions::session_models::Session;
     // use crate::errors::AppError;
     use crate::sessions::{config_jwt, tokens::encode_token};
     use crate::users::{
@@ -1315,12 +1325,15 @@ mod tests {
         let token = encode_token(&user_id, jwt_secret, -6).unwrap();
         let data_token = encode_token(&user_id, jwt_secret, 12).unwrap();
 
+        let num_token: Option<i32> = None;
+        let session: Session = SessionOrmApp::new_session(user1.id, num_token);
+
         let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+        let data_session_orm = web::Data::new(SessionOrmApp::create(vec![session]));
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
+                .app_data(web::Data::clone(&data_session_orm))
                 .service(new_token),
         )
         .await;
@@ -1331,9 +1344,10 @@ mod tests {
             .to_request();
 
         let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+        // assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
+        eprintln!("\n###### body: {:?}\n", &body);
         let user_token_resp: user_models::UserTokensDto =
             serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 

@@ -442,7 +442,7 @@ mod tests {
 
         let app_err: AppError =
             serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
-        assert_eq!(app_err.code, err::CD_INVALID_TOKEN);
+        assert_eq!(app_err.code, err::CD_FORBIDDEN);
         assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
 
@@ -469,7 +469,7 @@ mod tests {
 
         let app_err: AppError =
             serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
-        assert_eq!(app_err.code, err::CD_INVALID_TOKEN);
+        assert_eq!(app_err.code, err::CD_FORBIDDEN);
         assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
 

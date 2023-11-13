@@ -1,14 +1,13 @@
 use actix_web::{post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
-use validator::Validate;
 
-#[cfg(not(feature = "mockdata"))]
-use crate::email::mailer::inst::MailerApp;
-#[cfg(feature = "mockdata")]
-use crate::email::mailer::tests::MailerApp;
-use crate::email::mailer::Mailer;
 use crate::errors::{AppError, CD_VALIDATION};
 use crate::hash_tools;
+#[cfg(not(feature = "mockdata"))]
+use crate::send_email::mailer::inst::MailerApp;
+#[cfg(feature = "mockdata")]
+use crate::send_email::mailer::tests::MailerApp;
+use crate::send_email::mailer::Mailer;
 #[cfg(not(feature = "mockdata"))]
 use crate::sessions::session_orm::inst::SessionOrmApp;
 #[cfg(feature = "mockdata")]
@@ -39,6 +38,7 @@ use crate::users::{
 use crate::users::{user_orm::inst::UserOrmApp, user_registr_orm::inst::UserRegistrOrmApp};
 #[cfg(feature = "mockdata")]
 use crate::users::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
+use crate::validators::Validator;
 
 pub const MSG_EMAIL_ALREADY_USE: &str = "email_already_use";
 pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";
@@ -103,8 +103,12 @@ pub async fn registration(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", CD_VALIDATION, validation_errors.to_string());
-        return Ok(AppError::validation_response(validation_errors));
+        let msg: String = validation_errors
+            .iter()
+            .map(|v| format!("{} # ", v.message.to_string()))
+            .collect();
+        log::error!("{}: {}", CD_VALIDATION, msg);
+        return Ok(AppError::validations_to_response(validation_errors));
     }
 
     let mut registr_user_dto: user_models::RegistrUserDto = json_body.0.clone();
@@ -302,8 +306,12 @@ pub async fn recovery(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", CD_VALIDATION, validation_errors.to_string());
-        return Ok(AppError::validation_response(validation_errors));
+        let msg: String = validation_errors
+            .iter()
+            .map(|v| format!("{} # ", v.message.to_string()))
+            .collect();
+        log::error!("{}: {}", CD_VALIDATION, msg);
+        return Ok(AppError::validations_to_response(validation_errors));
     }
 
     let mut recovery_user_dto: user_models::RecoveryUserDto = json_body.0.clone();
@@ -428,8 +436,12 @@ pub async fn confirm_recovery(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", CD_VALIDATION, validation_errors.to_string());
-        return Ok(AppError::validation_response(validation_errors));
+        let msg: String = validation_errors
+            .iter()
+            .map(|v| format!("{} # ", v.message.to_string()))
+            .collect();
+        log::error!("{}: {}", CD_VALIDATION, msg);
+        return Ok(AppError::validations_to_response(validation_errors));
     }
 
     let recovery_data_dto: user_models::RecoveryDataDto = json_body.0.clone();
@@ -525,21 +537,20 @@ mod tests {
     use chrono::{DateTime, Duration, Utc};
     use serde_json::json;
 
-    use crate::email::config_smtp;
     use crate::errors::{AppError, CD_VALIDATION};
+    use crate::send_email::config_smtp;
     use crate::sessions::tokens::decode_dual_token;
+    use crate::settings::{config_app, err};
     use crate::users::user_recovery_orm::tests::{USER_RECOVERY_ID_1, USER_RECOVERY_ID_2};
     use crate::users::{
         user_models::{
             RecoveryDataDto, RecoveryUserDto, RecoveryUserResponseDto, RegistrUserDto, User,
-            UserDto, UserRecovery, UserRole, UserValidateTest,
+            UserDto, UserModelsTest, UserRecovery, UserRole,
         },
         user_orm::tests::{UserOrmApp, USER_ID_1, USER_ID_2},
         user_registr_models::UserRegistr,
         user_registr_orm::tests::{UserRegistrOrmApp, USER_REGISTR_ID_1, USER_REGISTR_ID_2},
     };
-    use crate::utils::config_app;
-    use crate::utils::err::{CD_INVALID_TOKEN, MSG_INVALID_OR_EXPIRED_TOKEN};
 
     use super::*;
 
@@ -646,7 +657,7 @@ mod tests {
     #[test]
     async fn test_registration_invalid_dto_nickname_min() {
         let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: UserValidateTest::nickname_min(),
+            nickname: UserModelsTest::nickname_min(),
             email: "Oliver_Taylor@gmail.com".to_string(),
             password: "passwordD1T1".to_string(),
         });
@@ -664,7 +675,7 @@ mod tests {
     #[test]
     async fn test_registration_invalid_dto_nickname_max() {
         let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: UserValidateTest::nickname_max(),
+            nickname: UserModelsTest::nickname_max(),
             email: "Oliver_Taylor@gmail.com".to_string(),
             password: "passwordD1T1".to_string(),
         });
@@ -682,7 +693,7 @@ mod tests {
     #[test]
     async fn test_registration_invalid_dto_nickname_wrong() {
         let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: UserValidateTest::nickname_wrong(),
+            nickname: UserModelsTest::nickname_wrong(),
             email: "Oliver_Taylor@gmail.com".to_string(),
             password: "passwordD1T1".to_string(),
         });
@@ -719,7 +730,7 @@ mod tests {
     async fn test_registration_invalid_dto_email_min() {
         let req = test::TestRequest::post().set_json(RegistrUserDto {
             nickname: "Oliver_Taylor".to_string(),
-            email: UserValidateTest::email_min(),
+            email: UserModelsTest::email_min(),
             password: "passwordD1T1".to_string(),
         });
 
@@ -737,7 +748,7 @@ mod tests {
     async fn test_registration_invalid_dto_email_max() {
         let req = test::TestRequest::post().set_json(RegistrUserDto {
             nickname: "Oliver_Taylor".to_string(),
-            email: UserValidateTest::email_max(),
+            email: UserModelsTest::email_max(),
             password: "passwordD1T1".to_string(),
         });
 
@@ -755,7 +766,7 @@ mod tests {
     async fn test_registration_invalid_dto_email_wrong() {
         let req = test::TestRequest::post().set_json(RegistrUserDto {
             nickname: "Oliver_Taylor".to_string(),
-            email: UserValidateTest::email_wrong(),
+            email: UserModelsTest::email_wrong(),
             password: "passwordD1T1".to_string(),
         });
 
@@ -792,7 +803,7 @@ mod tests {
         let req = test::TestRequest::post().set_json(RegistrUserDto {
             nickname: "Oliver_Taylor".to_string(),
             email: "Oliver_Taylor@gmail.com".to_string(),
-            password: UserValidateTest::password_min(),
+            password: UserModelsTest::password_min(),
         });
 
         let resp = call_service_registr(vec![], vec![], req).await;
@@ -810,7 +821,7 @@ mod tests {
         let req = test::TestRequest::post().set_json(RegistrUserDto {
             nickname: "Oliver_Taylor".to_string(),
             email: "Oliver_Taylor@gmail.com".to_string(),
-            password: UserValidateTest::password_max(),
+            password: UserModelsTest::password_max(),
         });
 
         let resp = call_service_registr(vec![], vec![], req).await;
@@ -828,7 +839,7 @@ mod tests {
         let req = test::TestRequest::post().set_json(RegistrUserDto {
             nickname: "Oliver_Taylor".to_string(),
             email: "Oliver_Taylor@gmail.com".to_string(),
-            password: UserValidateTest::password_wrong(),
+            password: UserModelsTest::password_wrong(),
         });
 
         let resp = call_service_registr(vec![], vec![], req).await;
@@ -1003,8 +1014,8 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CD_INVALID_TOKEN);
-        assert_eq!(app_err.message, MSG_INVALID_TOKEN);
+        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
     #[test]
     async fn test_registration_confirm_final_date_has_expired() {
@@ -1028,8 +1039,8 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CD_INVALID_TOKEN);
-        assert_eq!(app_err.message, MSG_INVALID_TOKEN);
+        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
     #[test]
     async fn test_registration_confirm_no_exists_in_user_regist() {
@@ -1161,7 +1172,7 @@ mod tests {
     #[test]
     async fn test_recovery_invalid_dto_email_min() {
         let req = test::TestRequest::post().set_json(RecoveryUserDto {
-            email: UserValidateTest::email_min(),
+            email: UserModelsTest::email_min(),
         });
 
         let resp = call_service_recovery(vec![], vec![], req).await;
@@ -1177,7 +1188,7 @@ mod tests {
     #[test]
     async fn test_recovery_invalid_dto_email_max() {
         let req = test::TestRequest::post().set_json(RecoveryUserDto {
-            email: UserValidateTest::email_max(),
+            email: UserModelsTest::email_max(),
         });
 
         let resp = call_service_recovery(vec![], vec![], req).await;
@@ -1193,7 +1204,7 @@ mod tests {
     #[test]
     async fn test_recovery_invalid_dto_email_wrong() {
         let req = test::TestRequest::post().set_json(RecoveryUserDto {
-            email: UserValidateTest::email_wrong(),
+            email: UserModelsTest::email_wrong(),
         });
 
         let resp = call_service_recovery(vec![], vec![], req).await;
@@ -1335,7 +1346,7 @@ mod tests {
     #[test]
     async fn test_recovery_confirm_invalid_dto_password_min() {
         let req = test::TestRequest::put().set_json(RecoveryDataDto {
-            password: UserValidateTest::password_min(),
+            password: UserModelsTest::password_min(),
         });
 
         let resp = call_service_conf_recovery(vec![], vec![], vec![], req, &"token").await;
@@ -1351,7 +1362,7 @@ mod tests {
     #[test]
     async fn test_recovery_confirm_invalid_dto_password_max() {
         let req = test::TestRequest::put().set_json(RecoveryDataDto {
-            password: UserValidateTest::password_max(),
+            password: UserModelsTest::password_max(),
         });
 
         let resp = call_service_conf_recovery(vec![], vec![], vec![], req, &"token").await;
@@ -1376,8 +1387,8 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CD_INVALID_TOKEN);
-        assert_eq!(app_err.message, MSG_INVALID_TOKEN);
+        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
     #[test]
     async fn test_recovery_confirm_final_date_has_expired() {
@@ -1411,8 +1422,8 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CD_INVALID_TOKEN);
-        assert_eq!(app_err.message, MSG_INVALID_TOKEN);
+        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
     #[test]
     async fn test_recovery_confirm_no_exists_in_user_recovery() {
