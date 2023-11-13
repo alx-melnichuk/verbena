@@ -16,7 +16,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 }
 
 /** Loading the `index.html` file. */
-pub async fn index_root(req: HttpRequest) -> Result<HttpResponse, Error> {
+pub async fn index_root() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::build(http::StatusCode::OK)
         .content_type("text/html; charset=utf-8")
         .body(include_str!("../static/index.html")))
