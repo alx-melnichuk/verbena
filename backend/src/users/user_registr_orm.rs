@@ -78,7 +78,7 @@ pub mod inst {
                 .filter(schema::user_registration::dsl::id.eq(id))
                 .first::<UserRegistr>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{DB_USER_REGISTR}: {}", e.to_string()))?;
+                .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
 
             Ok(result)
         }
@@ -104,6 +104,7 @@ pub mod inst {
                         .eq(nickname2)
                         .and(schema::user_registration::dsl::final_date.gt(today)),
                 )
+                .select(schema::user_registration::all_columns)
                 .limit(1);
             let sql_query_email = schema::user_registration::table
                 .filter(
@@ -111,6 +112,7 @@ pub mod inst {
                         .eq(email2)
                         .and(schema::user_registration::dsl::final_date.gt(today)),
                 )
+                .select(schema::user_registration::all_columns)
                 .limit(1);
 
             // This design (union two queries) allows the use of two separate indexes.
@@ -118,7 +120,7 @@ pub mod inst {
             // eprintln!("sql_quest: `{}`", debug_query::<Pg, _>(&sql_query).to_string());
             let result_vec: Vec<UserRegistr> = sql_query
                 .load(&mut conn)
-                .map_err(|e| format!("{DB_USER_REGISTR}: {}", e.to_string()))?;
+                .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
 
             let result = if result_vec.len() > 0 {
                 Some(result_vec[0].clone())
@@ -144,7 +146,7 @@ pub mod inst {
                 .values(create_user_registr_dto2)
                 .returning(UserRegistr::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("{DB_USER_REGISTR}: {}", e.to_string()))?;
+                .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
 
             Ok(user_registr)
         }
@@ -157,7 +159,7 @@ pub mod inst {
             let count: usize =
                 diesel::delete(schema::user_registration::dsl::user_registration.find(id))
                     .execute(&mut conn)
-                    .map_err(|e| format!("{DB_USER_REGISTR}: {}", e.to_string()))?;
+                    .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
 
             Ok(count)
         }
