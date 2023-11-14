@@ -120,22 +120,60 @@ pub mod inst {
             nickname: &str,
             email: &str,
         ) -> Result<Option<User>, String> {
-            if nickname.len() == 0 || email.len() == 0 {
+            if nickname.len() == 0 && email.len() == 0 {
                 return Ok(None);
             }
+
             let nickname2 = nickname.to_lowercase();
+            let nickname_len = nickname2.len();
+
             let email2 = email.to_lowercase();
+            // let email2 = "".to_string();
+            let email_len = email2.len();
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            // Run query using Diesel to find user by nickname or email and return it.
-            let user_opt = schema::users::table
-                .filter(schema::users::dsl::nickname.eq(nickname2))
-                .or_filter(schema::users::dsl::email.eq(email2))
-                .first::<User>(&mut conn)
-                .optional()
-                .map_err(|e| format!("{DB_USER}: {}", e.to_string()))?;
 
-            Ok(user_opt)
+            let sql_query_nickname = schema::users::table
+                .filter(schema::users::dsl::nickname.eq(nickname2.clone()))
+                .select(schema::users::all_columns)
+                .limit(1);
+
+            let sql_query_email = schema::users::table
+                .filter(schema::users::dsl::email.eq(email2.clone()))
+                .select(schema::users::all_columns)
+                .limit(1);
+
+            let mut result_vec: Vec<User> = vec![];
+
+            if nickname_len > 0 && email_len == 0 {
+                // Run query using Diesel to find user by nickname and return it.
+                let result_nickname_vec: Vec<User> = sql_query_nickname
+                    .load(&mut conn)
+                    .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
+                result_vec.extend(result_nickname_vec);
+            } else if nickname_len == 0 && email_len > 0 {
+                // Run query using Diesel to find user by email and return it.
+                let result_email_vec: Vec<User> = sql_query_email
+                    .load(&mut conn)
+                    .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
+                result_vec.extend(result_email_vec);
+            } else {
+                // This design (union two queries) allows the use of two separate indexes.
+                let sql_query = sql_query_nickname.union_all(sql_query_email);
+                // eprintln!("#sql_query: `{}`", debug_query::<Pg, _>(&sql_query).to_string());
+                // Run query using Diesel to find user by nickname or email and return it.
+                let result_nickname_email_vec: Vec<User> = sql_query
+                    .load(&mut conn)
+                    .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
+                result_vec.extend(result_nickname_email_vec);
+            }
+
+            let result = if result_vec.len() > 0 {
+                Some(result_vec[0].clone())
+            } else {
+                None
+            };
+            Ok(result)
         }
         /// Add a new entity (user).
         fn create_user(&self, create_user_dto: &CreateUserDto) -> Result<User, String> {
