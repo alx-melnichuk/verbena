@@ -3,15 +3,11 @@ use crate::users::user_models::{CreateUserDto, ModifyUserDto, User};
 pub trait UserOrm {
     /// Find for an entity (user) by id.
     fn find_user_by_id(&self, id: i32) -> Result<Option<User>, String>;
-    /// Find for entity (user) by nickname.
-    fn find_user_by_nickname(&self, nickname: &str) -> Result<Option<User>, String>;
-    /// Find for an entity (user) by email.
-    fn find_user_by_email(&self, email: &str) -> Result<Option<User>, String>;
     /// Find for an entity (user) by nickname or email.
     fn find_user_by_nickname_or_email(
         &self,
-        nickname: &str,
-        email: &str,
+        nickname: Option<&str>,
+        email: Option<&str>,
     ) -> Result<Option<User>, String>;
     /// Add a new entity (user).
     fn create_user(&self, create_user_dto: &CreateUserDto) -> Result<User, String>;
@@ -62,7 +58,7 @@ pub mod inst {
             UserOrmApp { pool }
         }
         pub fn get_conn(&self) -> Result<dbase::DbPooledConnection, String> {
-            (&self.pool).get().map_err(|e| format!("{CONN_POOL}: {}", e.to_string()))
+            (&self.pool).get().map_err(|e| format!("{}: {}", CONN_POOL, e.to_string()))
         }
     }
 
@@ -76,82 +72,47 @@ pub mod inst {
                 .filter(schema::users::dsl::id.eq(id))
                 .first::<User>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{DB_USER}: {}", e.to_string()))?;
-
-            Ok(user_opt)
-        }
-        /// Find for entity (user) by nickname.
-        fn find_user_by_nickname(&self, nickname: &str) -> Result<Option<User>, String> {
-            if nickname.len() == 0 {
-                return Ok(None);
-            }
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            let nickname2 = nickname.to_lowercase();
-            // Run query using Diesel to find user by nickname and return it.
-            let user_opt = schema::users::table
-                .filter(schema::users::dsl::nickname.eq(nickname2))
-                .first::<User>(&mut conn)
-                .optional()
-                .map_err(|e| format!("{DB_USER}: {}", e.to_string()))?;
-
-            Ok(user_opt)
-        }
-        /// Find for an entity (user) by email.
-        fn find_user_by_email(&self, email: &str) -> Result<Option<User>, String> {
-            if email.len() == 0 {
-                return Ok(None);
-            }
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            let email2 = email.to_lowercase();
-            // Run query using Diesel to find user by email and return it.
-            let user_opt = schema::users::table
-                .filter(schema::users::dsl::email.eq(email2))
-                .first::<User>(&mut conn)
-                .optional()
-                .map_err(|e| format!("{DB_USER}: {}", e.to_string()))?;
+                .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
 
             Ok(user_opt)
         }
         /// Find for an entity (user) by nickname or email.
         fn find_user_by_nickname_or_email(
             &self,
-            nickname: &str,
-            email: &str,
+            nickname: Option<&str>,
+            email: Option<&str>,
         ) -> Result<Option<User>, String> {
-            if nickname.len() == 0 && email.len() == 0 {
+            let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase();
+            let nickname2_len = nickname2.len();
+            let email2 = email.unwrap_or(&"".to_string()).to_lowercase();
+            let email2_len = email2.len();
+
+            if nickname2_len == 0 && email2_len == 0 {
                 return Ok(None);
             }
 
-            let nickname2 = nickname.to_lowercase();
-            let nickname_len = nickname2.len();
-
-            let email2 = email.to_lowercase();
-            // let email2 = "".to_string();
-            let email_len = email2.len();
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
             let sql_query_nickname = schema::users::table
-                .filter(schema::users::dsl::nickname.eq(nickname2.clone()))
+                .filter(schema::users::dsl::nickname.eq(nickname2))
                 .select(schema::users::all_columns)
                 .limit(1);
 
             let sql_query_email = schema::users::table
-                .filter(schema::users::dsl::email.eq(email2.clone()))
+                .filter(schema::users::dsl::email.eq(email2))
                 .select(schema::users::all_columns)
                 .limit(1);
 
             let mut result_vec: Vec<User> = vec![];
 
-            if nickname_len > 0 && email_len == 0 {
+            if nickname2_len > 0 && email2_len == 0 {
                 // Run query using Diesel to find user by nickname and return it.
                 let result_nickname_vec: Vec<User> = sql_query_nickname
                     .load(&mut conn)
                     .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
                 result_vec.extend(result_nickname_vec);
-            } else if nickname_len == 0 && email_len > 0 {
+            } else if nickname2_len == 0 && email2_len > 0 {
                 // Run query using Diesel to find user by email and return it.
                 let result_email_vec: Vec<User> = sql_query_email
                     .load(&mut conn)
@@ -188,7 +149,7 @@ pub mod inst {
                 .values(create_user_dto2)
                 .returning(User::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("{DB_USER}: {}", e.to_string()))?;
+                .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
 
             Ok(user)
         }
@@ -214,7 +175,7 @@ pub mod inst {
                 .returning(User::as_returning())
                 .get_result(&mut conn)
                 .optional()
-                .map_err(|e| format!("{DB_USER}: {}", e.to_string()))?;
+                .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
 
             Ok(result)
         }
@@ -225,7 +186,7 @@ pub mod inst {
             // Run query using Diesel to delete a entry (user).
             let count: usize = diesel::delete(schema::users::dsl::users.find(id))
                 .execute(&mut conn)
-                .map_err(|e| format!("{DB_USER}: {}", e.to_string()))?;
+                .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
 
             Ok(count)
         }
@@ -295,49 +256,28 @@ pub mod tests {
             let result = self.user_vec.iter().find(|user| user.id == id).map(|user| user.clone());
             Ok(result)
         }
-        /// Find for entity (user) by nickname.
-        fn find_user_by_nickname(&self, nickname: &str) -> Result<Option<User>, String> {
-            if nickname.len() == 0 {
-                return Ok(None);
-            }
-            let nickname2 = nickname.to_lowercase();
-
-            let result = self
-                .user_vec
-                .iter()
-                .find(|user| user.nickname == nickname2)
-                .map(|user| user.clone());
-
-            Ok(result)
-        }
-        /// Find for an entity (user) by email.
-        fn find_user_by_email(&self, email: &str) -> Result<Option<User>, String> {
-            if email.len() == 0 {
-                return Ok(None);
-            }
-            let email2 = email.to_lowercase();
-
-            let result =
-                self.user_vec.iter().find(|user| user.email == email2).map(|user| user.clone());
-
-            Ok(result)
-        }
         /// Find for an entity (user) by nickname or email.
         fn find_user_by_nickname_or_email(
             &self,
-            nickname: &str,
-            email: &str,
+            nickname: Option<&str>,
+            email: Option<&str>,
         ) -> Result<Option<User>, String> {
-            if nickname.len() == 0 || email.len() == 0 {
+            let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase();
+            let nickname2_len = nickname2.len();
+            let email2 = email.unwrap_or(&"".to_string()).to_lowercase();
+            let email2_len = email2.len();
+
+            if nickname2_len == 0 && email2_len == 0 {
                 return Ok(None);
             }
-            let nickname2 = nickname.to_lowercase();
-            let email2 = email.to_lowercase();
 
             let result = self
                 .user_vec
                 .iter()
-                .find(|user| user.nickname == nickname2 || user.email == email2)
+                .find(|user| {
+                    (nickname2_len > 0 && user.nickname == nickname2)
+                        || (email2_len > 0 && user.email == email2)
+                })
                 .map(|user| user.clone());
 
             Ok(result)
@@ -347,7 +287,7 @@ pub mod tests {
             let nickname = &create_user_dto.nickname.to_lowercase();
             let email = &create_user_dto.email.to_lowercase();
 
-            let user1_opt = self.find_user_by_nickname_or_email(nickname, email)?;
+            let user1_opt = self.find_user_by_nickname_or_email(Some(nickname), Some(email))?;
             if user1_opt.is_some() {
                 return Err("Session already exists".to_string());
             }

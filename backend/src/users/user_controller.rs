@@ -11,7 +11,7 @@ use crate::users::user_orm::inst::UserOrmApp;
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::{user_models, user_orm::UserOrm};
 use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
-use crate::validators::Validator;
+use crate::validators::{msg_validation, Validator};
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     GET api/users/{id}
@@ -26,12 +26,16 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .service(delete_user);
 }
 
+fn err_parse_int(err: String) -> AppError {
+    log::error!("{}: id: {}", CD_PARSE_INT_ERROR, err);
+    AppError::new(CD_PARSE_INT_ERROR, &format!("id: {err}")).set_status(400)
+}
 fn err_database(err: String) -> AppError {
-    log::error!("{CD_DATABASE}: {}", err);
+    log::error!("{}: {}", CD_DATABASE, err);
     AppError::new(CD_DATABASE, &err).set_status(500)
 }
 fn err_blocking(err: String) -> AppError {
-    log::error!("{CD_BLOCKING}: {}", err);
+    log::error!("{}: {}", CD_BLOCKING, err);
     AppError::new(CD_BLOCKING, &err).set_status(500)
 }
 
@@ -43,10 +47,7 @@ pub async fn get_user_by_id(
 ) -> actix_web::Result<HttpResponse, AppError> {
     let id_str = request.match_info().query("id").to_string();
 
-    let id = parse_i32(&id_str).map_err(|err| {
-        log::error!("{CD_PARSE_INT_ERROR}: id: {err}");
-        AppError::new(CD_PARSE_INT_ERROR, &format!("id: {err}")).set_status(400)
-    })?;
+    let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
 
     let result_user = web::block(move || {
         // Find user by id.
@@ -76,7 +77,7 @@ pub async fn get_user_by_nickname(
     let result_user = web::block(move || {
         // Find user by nickname. Result <Vec<user_models::User>>.
         let res_user = user_orm
-            .find_user_by_nickname(&nickname)
+            .find_user_by_nickname_or_email(Some(&nickname), None)
             .map_err(|e| err_database(e.to_string()))
             .ok()?;
 
@@ -113,19 +114,12 @@ pub async fn put_user(
 ) -> actix_web::Result<HttpResponse, AppError> {
     let id_str = request.match_info().query("id").to_string();
 
-    let id = parse_i32(&id_str).map_err(|err| {
-        log::error!("{CD_PARSE_INT_ERROR}: id: {err}");
-        AppError::new(CD_PARSE_INT_ERROR, &format!("id: {err}")).set_status(400)
-    })?;
+    let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
 
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        let msg: String = validation_errors
-            .iter()
-            .map(|v| format!("{} # ", v.message.to_string()))
-            .collect();
-        log::error!("{}: {}", CD_VALIDATION, msg);
+        log::error!("{}: {}", CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
@@ -157,10 +151,7 @@ pub async fn patch_user(
 ) -> actix_web::Result<HttpResponse, AppError> {
     let id_str = request.match_info().query("id").to_string();
 
-    let id = parse_i32(&id_str).map_err(|err| {
-        log::error!("{CD_PARSE_INT_ERROR}: id: {err}");
-        AppError::new(CD_PARSE_INT_ERROR, &format!("id: {err}")).set_status(400)
-    })?;
+    let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
 
     let mut new_user: user_models::UserDto = json_user_dto.0.clone();
 
@@ -203,10 +194,7 @@ pub async fn delete_user(
 ) -> actix_web::Result<HttpResponse, AppError> {
     let id_str = request.match_info().query("id").to_string();
 
-    let id = parse_i32(&id_str).map_err(|err| {
-        log::error!("{CD_PARSE_INT_ERROR}: id: {err}");
-        AppError::new(CD_PARSE_INT_ERROR, &format!("id: {err}")).set_status(400)
-    })?;
+    let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
 
     let result_count = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.

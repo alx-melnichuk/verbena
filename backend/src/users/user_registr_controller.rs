@@ -38,7 +38,7 @@ use crate::users::{
 use crate::users::{user_orm::inst::UserOrmApp, user_registr_orm::inst::UserRegistrOrmApp};
 #[cfg(feature = "mockdata")]
 use crate::users::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
-use crate::validators::Validator;
+use crate::validators::{msg_validation, Validator};
 
 pub const MSG_EMAIL_ALREADY_USE: &str = "email_already_use";
 pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";
@@ -56,11 +56,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 }
 
 fn err_database(err: String) -> AppError {
-    log::error!("{CD_DATABASE}: {}", err);
+    log::error!("{}: {}", CD_DATABASE, err);
     AppError::new(CD_DATABASE, &err).set_status(500)
 }
 fn err_blocking(err: String) -> AppError {
-    log::error!("{CD_BLOCKING}: {}", err);
+    log::error!("{}: {}", CD_BLOCKING, err);
     AppError::new(CD_BLOCKING, &err).set_status(500)
 }
 fn err_wrong_email_or_nickname(is_nickname: bool) -> AppError {
@@ -73,19 +73,19 @@ fn err_wrong_email_or_nickname(is_nickname: bool) -> AppError {
     AppError::new(CD_CONFLICT, val).set_status(409)
 }
 fn err_json_web_token(err: String) -> AppError {
-    log::error!("{CD_JSON_WEB_TOKEN}: {}", err);
+    log::error!("{}: {}", CD_JSON_WEB_TOKEN, err);
     AppError::new(CD_JSON_WEB_TOKEN, &err).set_status(500)
 }
 fn err_sending_email(err: String) -> AppError {
-    log::error!("{CD_ERROR_SENDING_EMAIL}: {err}");
+    log::error!("{}: {}", CD_ERROR_SENDING_EMAIL, err);
     AppError::new(CD_ERROR_SENDING_EMAIL, &err).set_status(500)
 }
 fn err_encode_hash(err: String) -> AppError {
-    log::error!("{CD_HASHING_PASSWD}: {err}");
+    log::error!("{}: {}", CD_HASHING_PASSWD, err);
     AppError::new(CD_HASHING_PASSWD, &err).set_status(500)
 }
 fn err_not_found() -> AppError {
-    log::error!("{CD_NO_CONFIRM}: {MSG_CONFIRM_NOT_FOUND}");
+    log::error!("{}: {}", CD_NO_CONFIRM, MSG_CONFIRM_NOT_FOUND);
     AppError::new(CD_NO_CONFIRM, MSG_CONFIRM_NOT_FOUND).set_status(404)
 }
 
@@ -103,11 +103,7 @@ pub async fn registration(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        let msg: String = validation_errors
-            .iter()
-            .map(|v| format!("{} # ", v.message.to_string()))
-            .collect();
-        log::error!("{}: {}", CD_VALIDATION, msg);
+        log::error!("{}: {}", CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
@@ -124,7 +120,7 @@ pub async fn registration(
     // Find in the "user" table an entry by nickname or email.
     let user_opt = web::block(move || {
         let existing_user = user_orm
-            .find_user_by_nickname_or_email(&nickname, &email)
+            .find_user_by_nickname_or_email(Some(&nickname), Some(&email))
             .map_err(|e| err_database(e.to_string()));
         existing_user
     })
@@ -306,11 +302,7 @@ pub async fn recovery(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        let msg: String = validation_errors
-            .iter()
-            .map(|v| format!("{} # ", v.message.to_string()))
-            .collect();
-        log::error!("{}: {}", CD_VALIDATION, msg);
+        log::error!("{}: {}", CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
@@ -321,8 +313,9 @@ pub async fn recovery(
 
     // Find in the "user" table an entry by email.
     let user_opt = web::block(move || {
-        let existing_user =
-            user_orm.find_user_by_email(&email).map_err(|e| err_database(e.to_string()));
+        let existing_user = user_orm
+            .find_user_by_nickname_or_email(None, Some(&email))
+            .map_err(|e| err_database(e.to_string()));
         existing_user
     })
     .await
@@ -332,7 +325,7 @@ pub async fn recovery(
     let user = match user_opt {
         Some(v) => v,
         None => {
-            log::error!("{CD_NOT_FOUND}: {MSG_NOT_FOUND_BY_EMAIL}");
+            log::error!("{}: {}", CD_NOT_FOUND, MSG_NOT_FOUND_BY_EMAIL);
             return Err(AppError::new(CD_NOT_FOUND, MSG_NOT_FOUND_BY_EMAIL).set_status(404));
         }
     };
@@ -436,11 +429,7 @@ pub async fn confirm_recovery(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        let msg: String = validation_errors
-            .iter()
-            .map(|v| format!("{} # ", v.message.to_string()))
-            .collect();
-        log::error!("{}: {}", CD_VALIDATION, msg);
+        log::error!("{}: {}", CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
