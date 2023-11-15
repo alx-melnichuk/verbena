@@ -140,7 +140,7 @@ pub async fn registration(
     // Find in the "user_registr" table an entry with an active date, by nickname or email.
     let user_registr_opt = web::block(move || {
         let existing_user_registr = user_registr_orm2
-            .find_user_registr_by_nickname_or_email(&nickname, &email)
+            .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
             .map_err(|e| err_database(e.to_string()));
         existing_user_registr
     })
@@ -530,15 +530,15 @@ mod tests {
     use crate::send_email::config_smtp;
     use crate::sessions::tokens::decode_dual_token;
     use crate::settings::{config_app, err};
-    use crate::users::user_recovery_orm::tests::{USER_RECOVERY_ID_1, USER_RECOVERY_ID_2};
     use crate::users::{
         user_models::{
             RecoveryDataDto, RecoveryUserDto, RecoveryUserResponseDto, RegistrUserDto, User,
             UserDto, UserModelsTest, UserRecovery, UserRole,
         },
-        user_orm::tests::{UserOrmApp, USER_ID_1, USER_ID_2},
+        user_orm::tests::{UserOrmApp, USER_ID},
+        user_recovery_orm::tests::USER_RECOVERY_ID,
         user_registr_models::UserRegistr,
-        user_registr_orm::tests::{UserRegistrOrmApp, USER_REGISTR_ID_1, USER_REGISTR_ID_2},
+        user_registr_orm::tests::{UserRegistrOrmApp, USER_REGISTR_ID},
     };
 
     use super::*;
@@ -546,12 +546,8 @@ mod tests {
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 
     fn create_user() -> User {
-        let mut user = UserOrmApp::new_user(
-            USER_ID_1,
-            "Oliver_Taylor",
-            "Oliver_Taylor@gmail.com",
-            "passwdT1R1",
-        );
+        let mut user =
+            UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1");
         user.role = UserRole::User;
         user
     }
@@ -560,16 +556,17 @@ mod tests {
         let final_date: DateTime<Utc> = today + Duration::minutes(20);
 
         let user_registr = UserRegistrOrmApp::new_user_registr(
-            USER_REGISTR_ID_1,
+            1,
             "Oliver_Taylor",
             "Oliver_Taylor@gmail.com",
             "passwdT1R1",
             final_date,
         );
-
         user_registr
     }
-
+    fn create_user_recovery(id: i32, user_id: i32, final_date: DateTime<Utc>) -> UserRecovery {
+        UserRecoveryOrmApp::new_user_recovery(id, user_id, final_date)
+    }
     // ** registration **
 
     async fn call_service_registr(
@@ -843,7 +840,8 @@ mod tests {
     }
     #[test]
     async fn test_registration_if_nickname_exists_in_users() {
-        let user1: User = create_user();
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
         let nickname1: String = user1.nickname.to_string();
 
         let req = test::TestRequest::post().set_json(RegistrUserDto {
@@ -863,7 +861,8 @@ mod tests {
     }
     #[test]
     async fn test_registration_if_email_exists_in_users() {
-        let user1: User = create_user();
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
         let email1: String = user1.email.to_string();
 
         let req = test::TestRequest::post().set_json(RegistrUserDto {
@@ -923,6 +922,8 @@ mod tests {
     }
     #[test]
     async fn test_registration_new_user() {
+        let user_registr1: UserRegistr = create_user_registr();
+
         let nickname = "Mary_Williams".to_string();
         let email = "Mary_Williams@gmail.com".to_string();
         let password = "passwordD2T2".to_string();
@@ -933,7 +934,7 @@ mod tests {
             password: password.to_string(),
         });
 
-        let resp = call_service_registr(vec![], vec![], req).await;
+        let resp = call_service_registr(vec![], vec![user_registr1], req).await;
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         let body = test::read_body(resp).await;
@@ -959,7 +960,7 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
         let (user_registr_id, _) = decode_dual_token(&registr_token, jwt_secret).unwrap();
-        assert_eq!(USER_REGISTR_ID_2, user_registr_id);
+        assert_eq!(USER_REGISTR_ID + 1, user_registr_id);
     }
 
     // ** confirm_registration **
@@ -1008,9 +1009,10 @@ mod tests {
     }
     #[test]
     async fn test_registration_confirm_final_date_has_expired() {
-        let user_reg1: UserRegistr = create_user_registr();
+        let user_reg_orm = UserRegistrOrmApp::create(vec![create_user_registr()]);
+        let user_reg1: UserRegistr = user_reg_orm.user_registr_vec.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
-        let user_reg_v = vec![user_reg1];
+        let user_reg_v = vec![user_reg1.clone()];
 
         let num_token = 1234;
 
@@ -1033,9 +1035,10 @@ mod tests {
     }
     #[test]
     async fn test_registration_confirm_no_exists_in_user_regist() {
-        let user_reg1: UserRegistr = create_user_registr();
+        let user_reg_orm = UserRegistrOrmApp::create(vec![create_user_registr()]);
+        let user_reg1: UserRegistr = user_reg_orm.user_registr_vec.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
-        let user_reg_v = vec![user_reg1];
+        let user_reg_v = vec![user_reg1.clone()];
 
         let num_token = 1234;
 
@@ -1058,10 +1061,10 @@ mod tests {
     }
     #[test]
     async fn test_registration_confirm_exists_in_user_regist() {
-        let user_reg1: UserRegistr = create_user_registr();
+        let user_reg_orm = UserRegistrOrmApp::create(vec![create_user_registr()]);
+        let user_reg1: UserRegistr = user_reg_orm.user_registr_vec.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
-        let user_reg1b = user_reg1.clone();
-        let user_reg_v = vec![user_reg1];
+        let user_reg_v = vec![user_reg1.clone()];
 
         let num_token = 1234;
 
@@ -1080,9 +1083,9 @@ mod tests {
         let body = test::read_body(resp).await;
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(user_dto_res.id, USER_ID_2);
-        assert_eq!(user_dto_res.nickname, user_reg1b.nickname);
-        assert_eq!(user_dto_res.email, user_reg1b.email);
+        assert_eq!(user_dto_res.id, USER_ID);
+        assert_eq!(user_dto_res.nickname, user_reg1.nickname);
+        assert_eq!(user_dto_res.email, user_reg1.email);
         assert_eq!(user_dto_res.password, "");
         assert_eq!(user_dto_res.role, UserRole::User);
     }
@@ -1223,7 +1226,8 @@ mod tests {
     }
     #[test]
     async fn test_recovery_if_user_recovery_does_not_exist() {
-        let user1: User = create_user();
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
         let user1_email = user1.email.to_string();
 
         let req = test::TestRequest::post().set_json(RecoveryUserDto {
@@ -1237,7 +1241,7 @@ mod tests {
         let user_recov_res: RecoveryUserResponseDto =
             serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(user_recov_res.id, USER_RECOVERY_ID_2);
+        assert_eq!(user_recov_res.id, USER_RECOVERY_ID);
         assert_eq!(user_recov_res.email, user1_email.to_string());
 
         let config_jwt = config_jwt::get_test_config();
@@ -1246,20 +1250,21 @@ mod tests {
         // Check the signature and expiration date on the “recovery_token".
         let (user_recovery_id, _) =
             decode_dual_token(&recovery_token, jwt_secret).expect("decode_dual_token error");
-        assert_eq!(USER_RECOVERY_ID_2, user_recovery_id);
+        assert_eq!(USER_RECOVERY_ID, user_recovery_id);
     }
     #[test]
     async fn test_recovery_if_user_recovery_already_exists() {
-        let user1: User = create_user();
-        let user1_id = user1.id;
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
         let user1_email = user1.email.to_string();
 
         let config_app = config_app::get_test_config();
         let app_recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
         let final_date_utc = Utc::now() + Duration::minutes(app_recovery_duration.into());
 
-        let user_recovery1: UserRecovery =
-            UserRecoveryOrmApp::new_user_recovery(USER_RECOVERY_ID_1, user1_id, final_date_utc);
+        let user_recovery_orm =
+            UserRecoveryOrmApp::create(vec![create_user_recovery(1, user1.id, final_date_utc)]);
+        let user_recovery1 = user_recovery_orm.user_recovery_vec.get(0).unwrap().clone();
         let user_recovery1_id = user_recovery1.id;
 
         let req = test::TestRequest::post().set_json(RecoveryUserDto {
@@ -1381,18 +1386,19 @@ mod tests {
     }
     #[test]
     async fn test_recovery_confirm_final_date_has_expired() {
-        let user1: User = create_user();
-        let user1_id = user1.id;
-        let user1_v = vec![user1];
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
         let final_date_utc = Utc::now() + Duration::minutes(-recovery_duration);
 
-        let user_recovery1: UserRecovery =
-            UserRecoveryOrmApp::new_user_recovery(USER_RECOVERY_ID_1, user1_id, final_date_utc);
+        let user_recovery_orm =
+            UserRecoveryOrmApp::create(vec![create_user_recovery(1, user1.id, final_date_utc)]);
+        let user_recovery1 = user_recovery_orm.user_recovery_vec.get(0).unwrap().clone();
         let user_recovery1_id = user_recovery1.id;
         let user_recov1_v = vec![user_recovery1];
+        let user1_v = vec![user1];
 
         let num_token = 1234;
 
@@ -1416,18 +1422,19 @@ mod tests {
     }
     #[test]
     async fn test_recovery_confirm_no_exists_in_user_recovery() {
-        let user1: User = create_user();
-        let user1_id = user1.id;
-        let user1_v = vec![user1];
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
         let final_date_utc = Utc::now() + Duration::minutes(recovery_duration);
 
-        let user_recovery1: UserRecovery =
-            UserRecoveryOrmApp::new_user_recovery(USER_RECOVERY_ID_1, user1_id, final_date_utc);
+        let user_recovery_orm =
+            UserRecoveryOrmApp::create(vec![create_user_recovery(1, user1.id, final_date_utc)]);
+        let user_recovery1 = user_recovery_orm.user_recovery_vec.get(0).unwrap().clone();
         let user_recovery1_id = user_recovery1.id;
         let user_recov1_v = vec![user_recovery1];
+        let user1_v = vec![user1];
 
         let num_token = 1234;
 
@@ -1455,18 +1462,19 @@ mod tests {
     }
     #[test]
     async fn test_recovery_confirm_no_exists_in_user() {
-        let user1: User = create_user();
-        let user1_id = user1.id;
-        let user1_v = vec![user1];
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
         let final_date_utc = Utc::now() + Duration::minutes(recovery_duration);
 
-        let user_recovery1: UserRecovery =
-            UserRecoveryOrmApp::new_user_recovery(USER_RECOVERY_ID_1, user1_id + 1, final_date_utc);
+        let user_recovery_orm =
+            UserRecoveryOrmApp::create(vec![create_user_recovery(1, user1.id + 1, final_date_utc)]);
+        let user_recovery1 = user_recovery_orm.user_recovery_vec.get(0).unwrap().clone();
         let user_recovery1_id = user_recovery1.id;
         let user_recov1_v = vec![user_recovery1];
+        let user1_v = vec![user1];
 
         let num_token = 1234;
 
@@ -1494,7 +1502,8 @@ mod tests {
     }
     #[test]
     async fn test_recovery_confirm_success() {
-        let user1: User = create_user();
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
         let user1_id = user1.id;
         let user1b = user1.clone();
         let user1_v = vec![user1];
@@ -1503,8 +1512,9 @@ mod tests {
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
         let final_date_utc = Utc::now() + Duration::minutes(recovery_duration);
 
-        let user_recovery1: UserRecovery =
-            UserRecoveryOrmApp::new_user_recovery(USER_RECOVERY_ID_1, user1_id, final_date_utc);
+        let user_recovery_orm =
+            UserRecoveryOrmApp::create(vec![create_user_recovery(1, user1_id, final_date_utc)]);
+        let user_recovery1 = user_recovery_orm.user_recovery_vec.get(0).unwrap().clone();
         let user_recovery1_id = user_recovery1.id;
         let user_recov1_v = vec![user_recovery1];
 

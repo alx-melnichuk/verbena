@@ -186,8 +186,7 @@ pub mod tests {
 
     use super::UserRecoveryOrm;
 
-    pub const USER_RECOVERY_ID_1: i32 = 1301;
-    pub const USER_RECOVERY_ID_2: i32 = 1302;
+    pub const USER_RECOVERY_ID: i32 = 1300;
 
     #[derive(Debug, Clone)]
     pub struct UserRecoveryOrmApp {
@@ -203,14 +202,16 @@ pub mod tests {
         }
         /// Create a new instance with the specified user recovery list.
         #[cfg(test)]
-        pub fn create(user_reg_vec: Vec<UserRecovery>) -> Self {
+        pub fn create(user_recov_vec: Vec<UserRecovery>) -> Self {
             let mut user_recovery_vec: Vec<UserRecovery> = Vec::new();
-            for user_reg in user_reg_vec.iter() {
+            let mut idx: i32 = user_recov_vec.len().try_into().unwrap();
+            for user_reg in user_recov_vec.iter() {
                 user_recovery_vec.push(Self::new_user_recovery(
-                    user_reg.id,
+                    USER_RECOVERY_ID + idx,
                     user_reg.user_id,
                     user_reg.final_date,
                 ));
+                idx = idx + 1;
             }
             UserRecoveryOrmApp { user_recovery_vec }
         }
@@ -266,8 +267,11 @@ pub mod tests {
                 return Err("\"User recovery\" already exists.".to_string());
             }
 
+            let idx: i32 = self.user_recovery_vec.len().try_into().unwrap();
+            let new_id: i32 = USER_RECOVERY_ID + idx;
+
             let user_recovery_saved: UserRecovery =
-                UserRecoveryOrmApp::new_user_recovery(USER_RECOVERY_ID_2, user_id, final_date);
+                UserRecoveryOrmApp::new_user_recovery(new_id, user_id, final_date);
 
             Ok(user_recovery_saved)
         }

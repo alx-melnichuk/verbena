@@ -94,11 +94,12 @@ pub mod inst {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
+            // Run query using Diesel to find user by nickname and return it.
             let sql_query_nickname = schema::users::table
                 .filter(schema::users::dsl::nickname.eq(nickname2))
                 .select(schema::users::all_columns)
                 .limit(1);
-
+            // Run query using Diesel to find user by email and return it.
             let sql_query_email = schema::users::table
                 .filter(schema::users::dsl::email.eq(email2))
                 .select(schema::users::all_columns)
@@ -107,13 +108,11 @@ pub mod inst {
             let mut result_vec: Vec<User> = vec![];
 
             if nickname2_len > 0 && email2_len == 0 {
-                // Run query using Diesel to find user by nickname and return it.
                 let result_nickname_vec: Vec<User> = sql_query_nickname
                     .load(&mut conn)
                     .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
                 result_vec.extend(result_nickname_vec);
             } else if nickname2_len == 0 && email2_len > 0 {
-                // Run query using Diesel to find user by email and return it.
                 let result_email_vec: Vec<User> = sql_query_email
                     .load(&mut conn)
                     .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
@@ -201,12 +200,11 @@ pub mod tests {
 
     use super::*;
 
-    pub const USER_ID_1: i32 = 1101;
-    pub const USER_ID_2: i32 = 1102;
+    pub const USER_ID: i32 = 1100;
 
     #[derive(Debug, Clone)]
     pub struct UserOrmApp {
-        user_vec: Vec<User>,
+        pub user_vec: Vec<User>,
     }
 
     impl UserOrmApp {
@@ -220,9 +218,10 @@ pub mod tests {
         #[cfg(test)]
         pub fn create(user_list: Vec<User>) -> Self {
             let mut user_vec: Vec<User> = Vec::new();
+            let mut idx: i32 = user_list.len().try_into().unwrap();
             for user in user_list.iter() {
                 user_vec.push(User {
-                    id: user.id,
+                    id: USER_ID + idx,
                     nickname: user.nickname.to_lowercase(),
                     email: user.email.to_lowercase(),
                     password: user.password.to_string(),
@@ -230,6 +229,7 @@ pub mod tests {
                     updated_at: user.updated_at,
                     role: user.role,
                 });
+                idx = idx + 1;
             }
             UserOrmApp { user_vec }
         }
@@ -284,16 +284,19 @@ pub mod tests {
         }
         /// Add a new entity (user).
         fn create_user(&self, create_user_dto: &CreateUserDto) -> Result<User, String> {
-            let nickname = &create_user_dto.nickname.to_lowercase();
-            let email = &create_user_dto.email.to_lowercase();
+            let nickname = create_user_dto.nickname.to_lowercase();
+            let email = create_user_dto.email.to_lowercase();
 
-            let user1_opt = self.find_user_by_nickname_or_email(Some(nickname), Some(email))?;
+            let user1_opt = self.find_user_by_nickname_or_email(Some(&nickname), Some(&email))?;
             if user1_opt.is_some() {
                 return Err("Session already exists".to_string());
             }
-            let password = &create_user_dto.password.clone();
+            let password = create_user_dto.password.clone();
 
-            let user_saved: User = UserOrmApp::new_user(USER_ID_2, nickname, email, password);
+            let idx: i32 = self.user_vec.len().try_into().unwrap();
+            let new_id: i32 = USER_ID + idx;
+
+            let user_saved: User = UserOrmApp::new_user(new_id, &nickname, &email, &password);
 
             Ok(user_saved)
         }

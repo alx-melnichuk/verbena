@@ -265,9 +265,8 @@ mod tests {
         session_orm::tests::SessionOrmApp};
     use crate::users::{
         user_models::{User, UserRole},
-        user_orm::tests::{UserOrmApp, USER_ID_1},
+        user_orm::tests::UserOrmApp,
     };
-
 
     use super::*;
 
@@ -283,7 +282,7 @@ mod tests {
 
     fn create_user() -> User {
         let mut user = UserOrmApp::new_user(
-            USER_ID_1,
+            1,
             "Oliver_Taylor",
             "Oliver_Taylor@gmail.com",
             "passwordD1T1",
@@ -325,7 +324,8 @@ mod tests {
 
     #[test]
     async fn test_authentication_middelware_valid_token() {
-        let user1: User = create_user();
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
 
         let num_token = 1234;
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
@@ -342,7 +342,8 @@ mod tests {
 
     #[test]
     async fn test_authentication_middelware_valid_token_with_cookie() {
-        let user1: User = create_user();
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
 
         let num_token = 1234;
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
@@ -359,8 +360,10 @@ mod tests {
 
     #[test]
     async fn test_authentication_middleware_access_admin_only_endpoint_success() {
-        let mut user1: User = create_user();
-        user1.role = UserRole::Admin;
+        let mut user1a: User = create_user();
+        user1a.role = UserRole::Admin;
+        let user_orm = UserOrmApp::create(vec![user1a]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
 
         let num_token = 1234;
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
@@ -448,7 +451,8 @@ mod tests {
 
     #[test]
     async fn test_authentication_middelware_expired_token() {
-        let user1: User = create_user();
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
 
         let num_token = 1234;
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
@@ -475,7 +479,8 @@ mod tests {
 
     #[test]
     async fn test_authentication_middelware_valid_token_non_existent_user() {
-        let user1: User = create_user();
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
         let user_id = user1.id + 1;
 
         let num_token = 1234;
@@ -503,7 +508,8 @@ mod tests {
 
     #[test]
     async fn test_authentication_middleware_access_admin_only_endpoint_fail() {
-        let user1: User = create_user();
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
 
         let num_token = 1234;
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];

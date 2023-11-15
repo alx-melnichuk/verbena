@@ -365,10 +365,7 @@ mod tests {
     use crate::sessions::session_models::Session;
     // use crate::errors::AppError;
     use crate::sessions::{config_jwt, tokens::encode_token};
-    use crate::users::{
-        user_models,
-        user_orm::tests::{UserOrmApp, USER_ID_1},
-    };
+    use crate::users::{user_models, user_orm::tests::UserOrmApp};
 
     use super::*;
 
@@ -376,12 +373,8 @@ mod tests {
     // const MSG_FAILED_DESER2: &str = "Failed to deserialize JSON string";
 
     fn create_user() -> user_models::User {
-        let mut user = UserOrmApp::new_user(
-            USER_ID_1,
-            "Oliver_Taylor",
-            "Oliver_Taylor@gmail.com",
-            "passwdT1R1",
-        );
+        let mut user =
+            UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1");
         user.role = user_models::UserRole::User;
         user
     }
