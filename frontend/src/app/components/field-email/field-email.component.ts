@@ -118,10 +118,10 @@ export class FieldEmailComponent implements OnChanges, ControlValueAccessor, Val
     const errorsProps: string[] = errors != null ? Object.keys(errors) : [];
     for (let index = 0; index < errorsProps.length && !result; index++) {
       const error: string = errorsProps[index];
-      result = !result && 'required' === error ? 'validation.email:required' : result;
-      result = !result && 'minlength' === error ? 'validation.email:min_length' : result;
-      result = !result && 'maxlength' === error ? 'validation.email:max_length' : result;
-      result = !result && 'email' === error ? 'validation.email:email_type' : result;
+      result = !result && 'required' === error ? 'Validation.email:required' : result;
+      result = !result && 'minlength' === error ? 'Validation.email:min_length' : result;
+      result = !result && 'maxlength' === error ? 'Validation.email:max_length' : result;
+      result = !result && 'email' === error ? 'Validation.email:email_type' : result;
     }
     return result;
   }

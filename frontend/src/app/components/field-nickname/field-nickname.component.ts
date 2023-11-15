@@ -121,10 +121,10 @@ export class FieldNicknameComponent implements OnChanges, ControlValueAccessor, 
     const errorsProps: string[] = errors != null ? Object.keys(errors) : [];
     for (let index = 0; index < errorsProps.length && !result; index++) {
       const error: string = errorsProps[index];
-      result = !result && 'required' === error ? 'validation.nickname:required' : result;
-      result = !result && 'minlength' === error ? 'validation.nickname:min_length' : result;
-      result = !result && 'maxlength' === error ? 'validation.nickname:max_length' : result;
-      result = !result && 'pattern' === error ? 'validation.nickname:regex' : result;
+      result = !result && 'required' === error ? 'Validation.nickname:required' : result;
+      result = !result && 'minlength' === error ? 'Validation.nickname:min_length' : result;
+      result = !result && 'maxlength' === error ? 'Validation.nickname:max_length' : result;
+      result = !result && 'pattern' === error ? 'Validation.nickname:regex' : result;
     }
     return result;
   }

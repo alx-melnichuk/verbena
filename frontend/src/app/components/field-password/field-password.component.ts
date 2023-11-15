@@ -129,10 +129,10 @@ export class FieldPasswordComponent implements OnChanges, ControlValueAccessor, 
     const errorsProps: string[] = errors != null ? Object.keys(errors) : [];
     for (let index = 0; index < errorsProps.length && !result; index++) {
       const error: string = errorsProps[index];
-      result = !result && 'required' === error ? 'validation.password:required' : result;
-      result = !result && 'minlength' === error ? 'validation.password:min_length' : result;
-      result = !result && 'maxlength' === error ? 'validation.password:max_length' : result;
-      result = !result && 'pattern' === error ? 'validation.password:regex' : result;
+      result = !result && 'required' === error ? 'Validation.password:required' : result;
+      result = !result && 'minlength' === error ? 'Validation.password:min_length' : result;
+      result = !result && 'maxlength' === error ? 'Validation.password:max_length' : result;
+      result = !result && 'pattern' === error ? 'Validation.password:regex' : result;
 
     }
     return result;
