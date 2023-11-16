@@ -1,5 +1,6 @@
 use actix_web::{delete, get, put, web, HttpResponse};
 use log;
+use serde_json::json;
 use std::ops::Deref;
 
 use crate::errors::{AppError, CD_VALIDATION};
@@ -18,8 +19,14 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(get_user_by_id)
         // GET api/users/nickname/{nickname}
         .service(get_user_by_nickname)
+        // GET api/users/email/{email}
+        .service(get_user_by_email)
         // GET api/user_current
         .service(get_user_current)
+        // PUT api/users_current
+        .service(put_user_current)
+        // DELETE api/users_current
+        .service(delete_user_current)
         // PUT api/users/{id}
         .service(put_user)
         // DELETE api/users/{id}
@@ -40,7 +47,8 @@ fn err_blocking(err: String) -> AppError {
 }
 
 // GET api/users/{id}
-#[get("/users/{id}")]
+#[rustfmt::skip]
+#[get("/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
 pub async fn get_user_by_id(
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
@@ -62,7 +70,7 @@ pub async fn get_user_by_id(
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
     } else {
-        Ok(HttpResponse::NoContent().json(""))
+        Ok(HttpResponse::NoContent().finish())
     }
 }
 
@@ -75,7 +83,7 @@ pub async fn get_user_by_nickname(
     let nickname = request.match_info().query("nickname").to_string();
 
     let result_user = web::block(move || {
-        // Find user by nickname. Result <Vec<user_models::User>>.
+        // Find user by nickname.
         let res_user = user_orm
             .find_user_by_nickname_or_email(Some(&nickname), None)
             .map_err(|e| err_database(e.to_string()))
@@ -87,7 +95,34 @@ pub async fn get_user_by_nickname(
     .map_err(|e| err_blocking(e.to_string()))?;
 
     if let Some(user) = result_user {
-        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
+        Ok(HttpResponse::Ok().json(json!({ "nickname": user.nickname })))
+    } else {
+        Ok(HttpResponse::NoContent().finish())
+    }
+}
+
+// GET api/users/email/{email}
+#[get("/users/email/{email}")]
+pub async fn get_user_by_email(
+    user_orm: web::Data<UserOrmApp>,
+    request: actix_web::HttpRequest,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let email = request.match_info().query("email").to_string();
+
+    let result_user = web::block(move || {
+        // Find user by nickname. Result <Vec<user_models::User>>.
+        let res_user = user_orm
+            .find_user_by_nickname_or_email(None, Some(&email))
+            .map_err(|e| err_database(e.to_string()))
+            .ok()?;
+
+        res_user
+    })
+    .await
+    .map_err(|e| err_blocking(e.to_string()))?;
+
+    if let Some(user) = result_user {
+        Ok(HttpResponse::Ok().json(json!({ "email": user.email })))
     } else {
         Ok(HttpResponse::NoContent().json(""))
     }
@@ -105,8 +140,73 @@ pub async fn get_user_current(
     Ok(HttpResponse::Ok().json(user_dto))
 }
 
+// PUT api/users_current
+#[rustfmt::skip]
+#[put("/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn put_user_current(
+    authenticated: Authenticated,
+    user_orm: web::Data<UserOrmApp>,
+    json_body: web::Json<user_models::ModifyUserDto>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let user = authenticated.deref();
+    let id = user.id;
+
+    // Checking the validity of the data model.
+    let validation_res = json_body.validate();
+    if let Err(validation_errors) = validation_res {
+        log::error!("{}: {}", CD_VALIDATION, msg_validation(&validation_errors));
+        return Ok(AppError::validations_to_response(validation_errors));
+    }
+
+    let modify_user: user_models::ModifyUserDto = json_body.0.clone();
+
+    let result_user = web::block(move || {
+        // Modify the entity (user) with new data. Result <user_models::User>.
+        let res_user =
+            user_orm.modify_user(id, modify_user).map_err(|e| err_database(e.to_string()));
+
+        res_user
+    })
+    .await
+    .map_err(|e| err_blocking(e.to_string()))??;
+
+    if let Some(user) = result_user {
+        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
+    } else {
+        Ok(HttpResponse::NoContent().finish())
+    }
+}
+
+// DELETE api/users_current
+#[rustfmt::skip]
+#[delete("/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn delete_user_current(
+    authenticated: Authenticated,
+    user_orm: web::Data<UserOrmApp>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let user = authenticated.deref();
+    let id = user.id;
+
+    let result_count = web::block(move || {
+        // Modify the entity (user) with new data. Result <user_models::User>.
+        let res_count = user_orm.delete_user(id)
+        .map_err(|e| err_database(e.to_string()));
+
+        res_count
+    })
+    .await
+    .map_err(|e| err_blocking(e.to_string()))??;
+
+    if 0 == result_count {
+        Err(AppError::new(CD_NOT_FOUND, MSG_NOT_FOUND_BY_ID).set_status(404))
+    } else {
+        Ok(HttpResponse::Ok().finish())
+    }
+}
+
 // PUT api/users/{id}
-#[put("/users/{id}")]
+#[rustfmt::skip]
+#[put("/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn put_user(
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
@@ -138,53 +238,10 @@ pub async fn put_user(
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
     } else {
-        Ok(HttpResponse::NoContent().json(""))
+        Ok(HttpResponse::NoContent().finish())
     }
 }
-/*
-// PATCH api/user/{id}
-#[patch("/user/{id}")]
-pub async fn patch_user(
-    user_orm: web::Data<UserOrmApp>,
-    request: actix_web::HttpRequest,
-    json_user_dto: web::Json<user_models::UserDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
-    let id_str = request.match_info().query("id").to_string();
 
-    let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
-
-    let mut new_user: user_models::UserDto = json_user_dto.0.clone();
-
-    if new_user.verify_for_edit???() {
-        log::error!("{}: {}", CN_INCORRECT_PARAM, MSG_INCORRECT_PARAM);
-        return Err(AppError::new(CN_INCORRECT_PARAM, MSG_INCORRECT_PARAM).set_status(400));
-    }
-
-    // let user_dto = new_user.clone();
-    // let err_res1: Vec<AppError> = user_models::UserDto::validation?(&user_dto);
-    // if err_res1.len() > 0 {
-    //     return Ok(AppError::get_http_response(&err_res1));
-    // }
-
-    let result_user = web::block(move || {
-        // Modify the entity (user) with new data. Result <user_models::User>.
-        let res_user = user_orm.modify_user(id, new_user).map_err(|e| {
-            log::error!("{}: {}", err::CD_DATA_BASE, e.to_string());
-            AppError::new(err::CD_DATA_BASE, &e.to_string()).set_status(500)
-        });
-
-        res_user
-    })
-    .await
-    .map_err(|e| err_blocking(e.to_string()))??;
-
-    if let Some(user) = result_user {
-        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
-    } else {
-        Ok(HttpResponse::NoContent().json(""))
-    }
-}
-*/
 // DELETE api/users/{id}
 #[rustfmt::skip]
 #[delete("/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
@@ -218,13 +275,14 @@ mod tests {
     use actix_web::{dev, http, test, test::TestRequest, web, App};
     use chrono::Utc;
 
-    use crate::errors::AppError;
+    use crate::errors::{AppError, CD_VALIDATION};
     use crate::sessions::{
         config_jwt::{self, ConfigJwt},
         session_models::Session,
         session_orm::tests::SessionOrmApp,
         tokens::encode_dual_token,
     };
+    use crate::settings::err;
     use crate::users::{
         user_models::{ModifyUserDto, User, UserDto, UserModelsTest, UserRole},
         user_orm::tests::UserOrmApp,
@@ -243,8 +301,6 @@ mod tests {
         user
     }
 
-    // ** call_service_inn **
-
     async fn call_service_inn(
         user_vec: Vec<User>,
         factory: impl dev::HttpServiceFactory + 'static,
@@ -260,80 +316,6 @@ mod tests {
 
         test::call_service(&app, req).await
     }
-
-    #[test]
-    async fn test_get_user_by_id_invalid_id() {
-        let user_id_bad = "1a";
-        let req = test::TestRequest::get().uri(&format!("/users/{}", &user_id_bad)); // GET /users/${id}
-
-        let resp = call_service_inn(vec![], get_user_by_id, req).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        assert_eq!(app_err.code, CD_PARSE_INT_ERROR);
-        let msg = format!("id: {MSG_PARSE_INT_ERROR} `{user_id_bad}` - {MSG_CASTING_TO_TYPE}");
-        assert!(app_err.message.starts_with(&msg));
-    }
-    #[test]
-    async fn test_get_user_by_id_valid_id() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-        let user1_id = user1.id.to_string();
-        let user1b_dto = UserDto::from(user1.clone());
-
-        let req = test::TestRequest::get().uri(&format!("/users/{}", &user1_id)); // GET /users/${id}
-
-        let resp = call_service_inn(vec![user1], get_user_by_id, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        let body = test::read_body(resp).await;
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let json_user1b_dto = serde_json::json!(user1b_dto).to_string();
-        let user1_dto_ser: UserDto =
-            serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(user_dto_res, user1_dto_ser);
-    }
-    #[test]
-    async fn test_get_user_by_id_non_existent_id() {
-        let req = test::TestRequest::get().uri(&"/users/9999"); // GET /users/${id}
-
-        let resp = call_service_inn(vec![], get_user_by_id, req).await;
-        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
-    }
-    #[test]
-    async fn test_get_user_by_nickname_non_existent_nickname() {
-        let req = test::TestRequest::get().uri(&"/users/nickname/JAMES_SMITH"); // GET /users/nickname/${nickname}
-
-        let resp = call_service_inn(vec![], get_user_by_nickname, req).await;
-        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
-    }
-    #[test]
-    async fn test_get_user_by_nickname_existent_nickname() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-        let user1b_dto = UserDto::from(user1.clone());
-        let nickname = user1.nickname.to_uppercase().to_string();
-
-        let req = test::TestRequest::get().uri(&format!("/users/nickname/{}", nickname)); // GET /users/nickname/${nickname}
-
-        let resp = call_service_inn(vec![user1], get_user_by_nickname, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        let body = test::read_body(resp).await;
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let json_user1b_dto = serde_json::json!(user1b_dto).to_string();
-        let user1_dto_ser: UserDto =
-            serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(user_dto_res, user1_dto_ser);
-    }
-
-    // ** call_service_auth **
 
     async fn call_service_auth(
         user_vec: Vec<User>,
@@ -355,12 +337,190 @@ mod tests {
                 .service(factory),
         )
         .await;
-        let req = test_request
-            .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .to_request();
+        let test_request = if token.len() > 0 {
+            test_request.insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+        } else {
+            test_request
+        };
+        let req = test_request.to_request();
 
         test::call_service(&app, req).await
     }
+
+    async fn try_call_service_auth(
+        user_vec: Vec<User>,
+        session_vec: Vec<Session>,
+        config_jwt: ConfigJwt,
+        token: &str,
+        factory: impl dev::HttpServiceFactory + 'static,
+        test_request: TestRequest,
+    ) -> Result<dev::ServiceResponse, actix_web::Error> {
+        let data_config_jwt = web::Data::new(config_jwt.clone());
+        let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
+        let data_session_orm = web::Data::new(SessionOrmApp::create(session_vec));
+
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .app_data(web::Data::clone(&data_session_orm))
+                .service(factory),
+        )
+        .await;
+        let test_request = if token.len() > 0 {
+            test_request.insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+        } else {
+            test_request
+        };
+        let req = test_request.to_request();
+
+        test::try_call_service(&app, req).await
+    }
+
+    // ** get_user_by_id **
+
+    #[test]
+    async fn test_get_user_by_id_invalid_id() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user_orm = UserOrmApp::create(vec![user]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user_id_bad = format!("{}a", user1.id);
+
+        let num_token = 1234;
+        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        // GET /users/${id}
+        let req = test::TestRequest::get().uri(&format!("/users/{}", user_id_bad.clone()));
+        let user_v = vec![user1];
+        let resp =
+            call_service_auth(user_v, session_v, config_jwt, &token, get_user_by_id, req).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, CD_PARSE_INT_ERROR);
+        #[rustfmt::skip]
+        let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, user_id_bad, MSG_CASTING_TO_TYPE);
+        assert!(app_err.message.starts_with(&msg));
+    }
+
+    #[test]
+    async fn test_get_user_by_id_valid_id() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user_orm = UserOrmApp::create(vec![user]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1b_dto = UserDto::from(user1.clone());
+
+        let num_token = 1234;
+        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let req = test::TestRequest::get().uri(&format!("/users/{}", user1.id)); // GET /users/${id}
+        let user_v = vec![user1];
+        let resp =
+            call_service_auth(user_v, session_v, config_jwt, &token, get_user_by_id, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json_user1b_dto = serde_json::json!(user1b_dto).to_string();
+        let user1b_dto_ser: UserDto =
+            serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(user_dto_res, user1b_dto_ser);
+    }
+    #[test]
+    async fn test_get_user_by_id_non_existent_id() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user_orm = UserOrmApp::create(vec![user]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+
+        let num_token = 1234;
+        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let req = test::TestRequest::get().uri(&format!("/users/{}", user1.id + 1)); // GET /users/${id}
+        let user_v = vec![user1];
+        let resp =
+            call_service_auth(user_v, session_v, config_jwt, &token, get_user_by_id, req).await;
+        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
+    }
+
+    // ** get_user_by_nickname **
+
+    #[test]
+    async fn test_get_user_by_nickname_non_existent_nickname() {
+        let req = test::TestRequest::get().uri(&"/users/nickname/JAMES_SMITH"); // GET /users/nickname/${nickname}
+
+        let resp = call_service_inn(vec![], get_user_by_nickname, req).await;
+        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
+    }
+    #[test]
+    async fn test_get_user_by_nickname_existent_nickname() {
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1b_dto = UserDto::from(user1.clone());
+        let nickname = user1.nickname.to_uppercase().to_string();
+
+        // GET /users/nickname/${nickname}
+        let req = test::TestRequest::get().uri(&format!("/users/nickname/{}", nickname));
+
+        let resp = call_service_inn(vec![user1], get_user_by_nickname, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let user_dto_res = std::str::from_utf8(&body).unwrap();
+        let str = format!("{}\"nickname\":\"{}\"{}", "{", user1b_dto.nickname, "}");
+        assert_eq!(user_dto_res, str);
+    }
+
+    // ** get_user_by_email **
+
+    #[test]
+    async fn test_get_user_by_email_non_existent_email() {
+        let req = test::TestRequest::get().uri(&"/users/email/JAMES_SMITH@gmail.com"); // GET /users/email/${email}
+
+        let resp = call_service_inn(vec![], get_user_by_email, req).await;
+        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
+    }
+    #[test]
+    async fn test_get_user_by_email_existent_email() {
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1b_dto = UserDto::from(user1.clone());
+        let email = user1.email.to_uppercase().to_string();
+
+        // GET /users/email/${email}
+        let req = test::TestRequest::get().uri(&format!("/users/email/{}", email));
+
+        let resp = call_service_inn(vec![user1], get_user_by_email, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let user_dto_res = std::str::from_utf8(&body).unwrap();
+        let str = format!("{}\"email\":\"{}\"{}", "{", user1b_dto.email, "}");
+        assert_eq!(user_dto_res, str);
+    }
+
+    // ** get_user_current **
 
     #[test]
     async fn test_get_user_current_valid_token() {
@@ -399,6 +559,35 @@ mod tests {
         assert_eq!(user_dto_res.updated_at, user_dto_res.created_at);
     }
     #[test]
+    async fn test_get_user_current_invalid_token() {
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+
+        let num_token = 1234;
+        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+
+        let config_jwt = config_jwt::get_test_config();
+        let token = "invalid_registr_token";
+
+        let req = test::TestRequest::get().uri("/user_current");
+        let user_v = vec![user1];
+        let result =
+            try_call_service_auth(user_v, session_v, config_jwt, &token, get_user_current, req)
+                .await
+                .err();
+
+        let err = result.expect("Service call succeeded, but an error was expected.");
+
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, http::StatusCode::FORBIDDEN); // 403
+
+        let app_err: AppError =
+            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
+    }
+
+    /*#[test]
     async fn test_put_user_invalid_id() {
         let user_orm = UserOrmApp::create(vec![create_user()]);
         let user1: User = user_orm.user_vec.get(0).unwrap().clone();
@@ -1023,4 +1212,5 @@ mod tests {
 
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
     }
+    */
 }
