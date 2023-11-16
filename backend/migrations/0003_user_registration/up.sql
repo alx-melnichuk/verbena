@@ -1,5 +1,7 @@
 /* Creation of the "user_registration" table. */
 
+/* user_registration */
+
 CREATE TABLE user_registration (
     id SERIAL PRIMARY KEY NOT NULL,
     nickname VARCHAR(255) NOT NULL,
@@ -8,11 +10,15 @@ CREATE TABLE user_registration (
     final_date TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
-CREATE INDEX idx_user_registration_nickname_final_date ON user_registration(nickname, final_date);
-CREATE INDEX idx_user_registration_email_final_date ON user_registration(email, final_date);
+CREATE INDEX idx_user_registration_final_date_nickname ON user_registration(final_date, nickname);
+CREATE INDEX idx_user_registration_final_date_email ON user_registration(final_date, email);
+
+/* user_recovery */
 
 CREATE TABLE user_recovery (
     id SERIAL PRIMARY KEY NOT NULL,
     user_id INT REFERENCES users(id) ON DELETE CASCADE NOT NULL,
     final_date TIMESTAMP WITH TIME ZONE NOT NULL
 );
+
+CREATE INDEX idx_user_recovery_user_id_final_date ON user_recovery(user_id, final_date);
