@@ -11,6 +11,7 @@ pub trait SessionOrm {
         user_id: i32,
         num_token: Option<i32>,
     ) -> Result<Option<Session>, String>;
+    // There is no need to delete the entity (session), since it is deleted cascade when deleting an entry in the users table.
 }
 
 pub mod cfg {
@@ -68,7 +69,7 @@ pub mod inst {
                 .filter(schema::sessions::dsl::user_id.eq(user_id))
                 .first::<Session>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{DB_SESSION}: {}", e.to_string()))?;
+                .map_err(|e| format!("{}: {}", DB_SESSION, e.to_string()))?;
 
             Ok(session_opt)
         }
@@ -81,7 +82,7 @@ pub mod inst {
                 .values(session)
                 .returning(Session::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("{DB_SESSION}: {}", e.to_string()))?;
+                .map_err(|e| format!("{}: {}", DB_SESSION, e.to_string()))?;
 
             Ok(session)
         }
@@ -99,7 +100,7 @@ pub mod inst {
                 .returning(Session::as_returning())
                 .get_result(&mut conn)
                 .optional()
-                .map_err(|e| format!("{DB_SESSION}: {}", e.to_string()))?;
+                .map_err(|e| format!("{}: {}", DB_SESSION, e.to_string()))?;
 
             Ok(result)
         }

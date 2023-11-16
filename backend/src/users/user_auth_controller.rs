@@ -161,8 +161,6 @@ pub async fn login(
         return Err(AppError::new(CD_WRONG_PASSWORD, MSG_WRONG_PASSWORD).set_status(403));
     }
 
-    // if (!user.registered) { ForbiddenException('Your registration not confirmed!'); }
-
     let num_token = generate_num_token();
     let config_jwt = config_jwt.get_ref().clone();
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();

@@ -145,7 +145,7 @@ where
     }
     /// The future type representing the asynchronous response.
     fn call(&self, req: ServiceRequest) -> Self::Future {
-
+        // eprintln!(")( auth()  start");
         // Attempt to extract token from cookie or authorization header
         let token = req.cookie("token")
             .map(|c| c.value().to_string())
@@ -155,7 +155,7 @@ where
                 // eprintln!("a_ header_token: {header_token}");
                 let token2 = jwt_from_header(&header_token)
                 .map_err(|e| {
-                    eprintln!("a_ jwt_from_header.err: {e}");
+                    // eprintln!(")( auth() jwt_from_header.err: {e}");
                     log::error!("{}: {}", "InvalidToken", e);
                     None::<String>
                 }).ok();
@@ -165,7 +165,7 @@ where
 
         // If token is missing, return unauthorized error
         if token.is_none() {
-            // eprintln!("a_ token.is_none()"); // #-
+            // eprintln!(")( auth() token.is_none()"); // #-
             log::error!("{}: {}", err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN);
             let json_error =
                 AppError::new(err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN).set_status(401);
@@ -180,12 +180,12 @@ where
         let token_res = decode_dual_token(&token, jwt_secret);
         
         if let Err(e) = token_res {
-            // eprintln!("a_ decode_dual_token().err {}: {}", e.code, e.message); // #-
+            // eprintln!(")( auth() decode_dual_token().err {}: {}", e.code, e.message); // #-
             log::error!("{}: {}", e.code, e.message);
             return Box::pin(ready(Err(ErrorForbidden(e))));
         }
 
-        // eprintln!("a_ token_res.unwrap();"); // #-
+        // eprintln!(")( auth() token_res.unwrap();"); // #-
         let (user_id, num_token) = token_res.unwrap();
         
         let allowed_roles = self.allowed_roles.clone();
@@ -202,7 +202,7 @@ where
             })?;
             
             let session = session_opt.ok_or_else(|| {
-                // eprintln!("$^session with {} not found", user_id.clone());
+                // eprintln!(")( auth() session with {} not found", user_id.clone());
                 #[rustfmt::skip]
                 log::error!("{}: session with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id);
                 let json_error = AppError::new(err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN)
@@ -212,14 +212,14 @@ where
 
             let session_num_token = session.num_token.unwrap_or(0);
             if session_num_token != num_token {
-                // eprintln!("$^session_num_token != num_token");
+                // eprintln!(")( auth() session_num_token != num_token");
                 log::error!("{}: session with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id);
                 let json_error = AppError::new(err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN)
                     .set_status(403); // ?!?
                 return Err(ErrorForbidden(json_error));
             }
 
-            // eprintln!("$^user_id: {}, num_token: {}", user_id.clone(), num_token);
+            // eprintln!(")( auth() user_id: {}, num_token: {}", user_id.clone(), num_token);
 
             let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap();
             
@@ -244,7 +244,7 @@ where
                 Ok(res)
             } else {
                 #[rustfmt::skip]
-                log::error!("{}: {}", err::CD_PERMISSION_DENIED,err::MSG_PERMISSION_DENIED);
+                log::error!("{}: {}", err::CD_PERMISSION_DENIED, err::MSG_PERMISSION_DENIED);
                 #[rustfmt::skip]
                 let json_error = AppError::new(err::CD_PERMISSION_DENIED, err::MSG_PERMISSION_DENIED)
                     .set_status(403);
@@ -441,7 +441,7 @@ mod tests {
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::FORBIDDEN);
+        assert_eq!(actual_status, http::StatusCode::FORBIDDEN); // 403
 
         let app_err: AppError =
             serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");

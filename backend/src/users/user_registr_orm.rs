@@ -42,8 +42,8 @@ pub mod cfg {
 pub mod inst {
 
     use chrono::Utc;
-    // use diesel::{debug_query, pg::Pg};
     use diesel::{self, prelude::*};
+    use schema::user_registration::dsl;
 
     use crate::dbase;
     use crate::schema;
@@ -75,7 +75,7 @@ pub mod inst {
             let mut conn = self.get_conn()?;
             // Run query using Diesel to find user by id and return it.
             let result = schema::user_registration::table
-                .filter(schema::user_registration::dsl::id.eq(id))
+                .filter(dsl::id.eq(id))
                 .first::<UserRegistr>(&mut conn)
                 .optional()
                 .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
@@ -89,8 +89,6 @@ pub mod inst {
             nickname: Option<&str>,
             email: Option<&str>,
         ) -> Result<Option<UserRegistr>, String> {
-            use schema::user_registration::dsl;
-
             let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase();
             let nickname2_len = nickname2.len();
             let email2 = email.unwrap_or(&"".to_string()).to_lowercase();
@@ -172,10 +170,9 @@ pub mod inst {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to delete a entry (user_registration).
-            let count: usize =
-                diesel::delete(schema::user_registration::dsl::user_registration.find(id))
-                    .execute(&mut conn)
-                    .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
+            let count: usize = diesel::delete(dsl::user_registration.find(id))
+                .execute(&mut conn)
+                .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
 
             Ok(count)
         }
@@ -187,12 +184,10 @@ pub mod inst {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to delete a entry (user_registration).
-            let count: usize = diesel::delete(
-                schema::user_registration::table
-                    .filter(schema::user_registration::dsl::final_date.lt(today)),
-            )
-            .execute(&mut conn)
-            .map_err(|e| format!("{DB_USER_REGISTR}: {}", e.to_string()))?;
+            let count: usize =
+                diesel::delete(schema::user_registration::table.filter(dsl::final_date.lt(today)))
+                    .execute(&mut conn)
+                    .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
 
             Ok(count)
         }

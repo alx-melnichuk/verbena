@@ -567,6 +567,7 @@ mod tests {
     fn create_user_recovery(id: i32, user_id: i32, final_date: DateTime<Utc>) -> UserRecovery {
         UserRecoveryOrmApp::new_user_recovery(id, user_id, final_date)
     }
+
     // ** registration **
 
     async fn call_service_registr(

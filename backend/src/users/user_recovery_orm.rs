@@ -44,8 +44,8 @@ pub mod cfg {
 pub mod inst {
 
     use chrono::Utc;
-    // use diesel::{debug_query, pg::Pg};
     use diesel::{self, prelude::*};
+    use schema::user_recovery::dsl;
 
     use crate::dbase;
     use crate::schema;
@@ -77,10 +77,10 @@ pub mod inst {
             let mut conn = self.get_conn()?;
             // Run query using Diesel to find user by id and return it.
             let result = schema::user_recovery::table
-                .filter(schema::user_recovery::dsl::id.eq(id))
+                .filter(dsl::id.eq(id))
                 .first::<UserRecovery>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{DB_USER_RECOVERY}: {}", e.to_string()))?;
+                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
 
             Ok(result)
         }
@@ -95,14 +95,10 @@ pub mod inst {
             let today = Utc::now();
             // Run query using Diesel to find user by user_id and return it (where final_date > now).
             let result = schema::user_recovery::table
-                .filter(
-                    schema::user_recovery::dsl::user_id
-                        .eq(user_id)
-                        .and(schema::user_recovery::dsl::final_date.gt(today)),
-                )
+                .filter(dsl::user_id.eq(user_id).and(dsl::final_date.gt(today)))
                 .first::<UserRecovery>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{DB_USER_RECOVERY}: {}", e.to_string()))?;
+                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
 
             Ok(result)
         }
@@ -121,7 +117,7 @@ pub mod inst {
                 .values(create_user_recovery_dto2)
                 .returning(UserRecovery::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("{DB_USER_RECOVERY}: {}", e.to_string()))?;
+                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
 
             Ok(user_recovery)
         }
@@ -137,12 +133,12 @@ pub mod inst {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to full or partially modify the user entry.
-            let result = diesel::update(schema::user_recovery::dsl::user_recovery.find(id))
+            let result = diesel::update(dsl::user_recovery.find(id))
                 .set(&create_user_recovery_dto2)
                 .returning(UserRecovery::as_returning())
                 .get_result(&mut conn)
                 .optional()
-                .map_err(|e| format!("{DB_USER_RECOVERY}: {}", e.to_string()))?;
+                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
 
             Ok(result)
         }
@@ -152,9 +148,9 @@ pub mod inst {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to delete a entry (user_recovery).
-            let count: usize = diesel::delete(schema::user_recovery::dsl::user_recovery.find(id))
+            let count: usize = diesel::delete(dsl::user_recovery.find(id))
                 .execute(&mut conn)
-                .map_err(|e| format!("{DB_USER_RECOVERY}: {}", e.to_string()))?;
+                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
 
             Ok(count)
         }
@@ -165,13 +161,14 @@ pub mod inst {
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            // Run query using Diesel to delete a entry (user_recovery).
+            // Run query using Diesel to delete a entry (user_recovery) (where user_id > -1 && final_date < now).
+            // The "user_id" field allows you to use an index.
             let count: usize = diesel::delete(
                 schema::user_recovery::table
-                    .filter(schema::user_recovery::dsl::final_date.lt(today)),
+                    .filter(dsl::user_id.gt(-1).and(dsl::final_date.lt(today))),
             )
             .execute(&mut conn)
-            .map_err(|e| format!("{DB_USER_RECOVERY}: {}", e.to_string()))?;
+            .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
 
             Ok(count)
         }
