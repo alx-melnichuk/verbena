@@ -331,7 +331,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::get();
@@ -349,7 +349,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::get().cookie(Cookie::new("token", token));
@@ -369,7 +369,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let req = test::TestRequest::get();
@@ -458,7 +458,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_dual_token(user1.id, num_token, &jwt_secret, -config_jwt.jwt_access).unwrap();
  
         let req = test::TestRequest::get();
@@ -487,7 +487,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user_id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_dual_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
     
         let req = test::TestRequest::get();
@@ -515,7 +515,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
  
         let req = test::TestRequest::get();

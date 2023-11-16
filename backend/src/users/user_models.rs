@@ -336,9 +336,9 @@ pub fn validate_email(value: &str) -> Result<(), ValidationError> {
 
 pub fn validate_nickname_or_email(value: &str) -> Result<(), ValidationError> {
     if value.contains("@") {
-        validate_email(&value.clone()).map_err(|err| err)?;
+        validate_email(&value).map_err(|err| err)?;
     } else {
-        validate_nickname(&value.clone()).map_err(|err| err)?;
+        validate_nickname(&value).map_err(|err| err)?;
     }
     Ok(())
 }

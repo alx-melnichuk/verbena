@@ -84,8 +84,8 @@ pub fn decode_dual_token(token: &str, jwt_secret: &[u8]) -> Result<(i32, i32), A
     })?;
 
     let list: Vec<&str> = token_claims.sub.split('.').collect();
-    let user_id_str: &str = list.get(0).unwrap_or(&"").clone();
-    let num_token_str: &str = list.get(1).unwrap_or(&"").clone();
+    let user_id_str: &str = list.get(0).unwrap_or(&"");
+    let num_token_str: &str = list.get(1).unwrap_or(&"");
 
     let user_id = parser::parse_i32(user_id_str).map_err(|err| {
         log::error!("{CD_UNALLOWABLE_TOKEN}: {MSG_UNALLOWABLE_TOKEN} - id: {err}");

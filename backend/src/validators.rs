@@ -83,10 +83,10 @@ impl ValidationChecks {
     /// Checking whether a string matches a regular expression.
     pub fn regexp(value: &str, reg_exp: &str, msg: &'static str) -> Result<(), ValidationError> {
         let regex = Regex::new(reg_exp).unwrap();
-        let result = regex.captures(value.clone());
+        let result = regex.captures(value);
         if result.is_none() {
             let mut err = ValidationError::new(msg);
-            let json = serde_json::json!({ "actualValue": &value.clone(), "requiredPattern": &reg_exp.clone() });
+            let json = serde_json::json!({ "actualValue": value, "requiredPattern": reg_exp });
             err.add_param(Cow::Borrowed("pattern"), &json);
             return Err(err);
         }

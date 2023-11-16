@@ -372,7 +372,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
@@ -408,7 +408,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -444,7 +444,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -474,7 +474,7 @@ mod tests {
             user1_id,
             "James_Smith",
             "James_Smith@gmail.com",
-            new_password.clone(),
+            new_password,
         );
         user1b.role = UserRole::Admin;
         user1b.created_at = user1.created_at.clone();
@@ -486,7 +486,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1_id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -533,7 +533,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -568,7 +568,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -604,7 +604,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -640,7 +640,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -675,7 +675,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -709,7 +709,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -743,7 +743,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -777,7 +777,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -811,7 +811,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -845,7 +845,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -879,7 +879,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -913,7 +913,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -951,7 +951,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -983,7 +983,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token =      collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
@@ -1011,7 +1011,7 @@ mod tests {
         let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // let jwt_access = config_jwt.jwt_access;
         // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =

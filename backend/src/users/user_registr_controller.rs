@@ -1020,7 +1020,7 @@ mod tests {
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let registr_token =
             encode_dual_token(user_reg1_id, num_token, jwt_secret, -reg_duration).unwrap();
 
@@ -1046,7 +1046,7 @@ mod tests {
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let registr_token =
             encode_dual_token(user_reg1_id + 1, num_token, jwt_secret, reg_duration).unwrap();
 
@@ -1072,7 +1072,7 @@ mod tests {
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let registr_token =
             encode_dual_token(user_reg1_id, num_token, jwt_secret, reg_duration).unwrap();
 
@@ -1245,7 +1245,7 @@ mod tests {
         assert_eq!(user_recov_res.email, user1_email.to_string());
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = user_recov_res.recovery_token;
         // Check the signature and expiration date on the “recovery_token".
         let (user_recovery_id, _) =
@@ -1282,7 +1282,7 @@ mod tests {
         assert_eq!(user_recov_res.email, user1_email.to_string());
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = user_recov_res.recovery_token;
         // Check the signature and expiration date on the “recovery_token".
         let (user_recovery_id, _) =
@@ -1403,7 +1403,7 @@ mod tests {
         let num_token = 1234;
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token =
             encode_dual_token(user_recovery1_id, num_token, jwt_secret, -recovery_duration)
                 .unwrap();
@@ -1439,7 +1439,7 @@ mod tests {
         let num_token = 1234;
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = encode_dual_token(
             user_recovery1_id + 1,
             num_token,
@@ -1479,7 +1479,7 @@ mod tests {
         let num_token = 1234;
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = encode_dual_token(
             user_recovery1_id + 1,
             num_token,
@@ -1521,7 +1521,7 @@ mod tests {
         let num_token = 1234;
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes().clone();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token =
             encode_dual_token(user_recovery1_id, num_token, jwt_secret, recovery_duration).unwrap();
 
