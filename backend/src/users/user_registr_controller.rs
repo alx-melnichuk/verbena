@@ -551,6 +551,10 @@ mod tests {
         user.role = UserRole::User;
         user
     }
+    fn user_with_id(user: User) -> User {
+        let user_orm = UserOrmApp::create(vec![user]);
+        user_orm.user_vec.get(0).unwrap().clone()
+    }
     fn create_user_registr() -> UserRegistr {
         let today = Utc::now();
         let final_date: DateTime<Utc> = today + Duration::minutes(20);
@@ -564,22 +568,28 @@ mod tests {
         );
         user_registr
     }
+    fn user_registr_with_id(user_registr: UserRegistr) -> UserRegistr {
+        let user_reg_orm = UserRegistrOrmApp::create(vec![user_registr]);
+        user_reg_orm.user_registr_vec.get(0).unwrap().clone()
+    }
+
     fn create_user_recovery(id: i32, user_id: i32, final_date: DateTime<Utc>) -> UserRecovery {
         UserRecoveryOrmApp::new_user_recovery(id, user_id, final_date)
     }
 
-    // ** registration **
-
-    async fn call_service_registr(
-        user_vec: Vec<User>,
-        user_registr_vec: Vec<UserRegistr>,
-        test_request: TestRequest,
+    async fn call_service1(
+        vec: (Vec<User>, Vec<UserRegistr>, Vec<Session>),
+        token: &str,
+        factory: impl dev::HttpServiceFactory + 'static,
+        request: TestRequest,
     ) -> dev::ServiceResponse {
         let data_config_app = web::Data::new(config_app::get_test_config());
         let data_config_jwt = web::Data::new(config_jwt::get_test_config());
         let data_mailer = web::Data::new(MailerApp::new(config_smtp::get_test_config()));
-        let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
-        let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(user_registr_vec));
+
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec.0));
+        let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(vec.1));
+        let data_session_orm = web::Data::new(SessionOrmApp::create(vec.2));
 
         let app = test::init_service(
             App::new()
@@ -588,22 +598,28 @@ mod tests {
                 .app_data(web::Data::clone(&data_mailer))
                 .app_data(web::Data::clone(&data_user_orm))
                 .app_data(web::Data::clone(&data_user_registr_orm))
-                .service(registration),
+                .app_data(web::Data::clone(&data_session_orm))
+                .service(factory),
         )
         .await;
-
-        let req = test_request
-            .uri("/registration") //POST /registration
-            .to_request();
+        let test_request = if token.len() > 0 {
+            request.insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+        } else {
+            request
+        };
+        let req = test_request.to_request();
 
         test::call_service(&app, req).await
     }
 
     #[test]
     async fn test_registration_no_data() {
-        let req = test::TestRequest::post();
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![], req).await;
+        let request = test::TestRequest::post().uri("/registration"); // POST /registration
+        let factory = registration;
+        let vec = (vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -613,9 +629,14 @@ mod tests {
     }
     #[test]
     async fn test_registration_empty_json_object() {
-        let req = test::TestRequest::post().set_json(json!({}));
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(json!({}));
+        let factory = registration;
+        let vec = (vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -625,13 +646,18 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_nickname_empty() {
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: "".to_string(),
-            email: "Oliver_Taylor@gmail.com".to_string(),
-            password: "passwordD1T1".to_string(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: "".to_string(),
+                email: "Oliver_Taylor@gmail.com".to_string(),
+                password: "passwordD1T1".to_string(),
+            });
+        let factory = registration;
+        let vec = (vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -643,13 +669,18 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_nickname_min() {
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: UserModelsTest::nickname_min(),
-            email: "Oliver_Taylor@gmail.com".to_string(),
-            password: "passwordD1T1".to_string(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: UserModelsTest::nickname_min(),
+                email: "Oliver_Taylor@gmail.com".to_string(),
+                password: "passwordD1T1".to_string(),
+            });
+        let factory = registration;
+        let vec = (vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -661,13 +692,18 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_nickname_max() {
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: UserModelsTest::nickname_max(),
-            email: "Oliver_Taylor@gmail.com".to_string(),
-            password: "passwordD1T1".to_string(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: UserModelsTest::nickname_max(),
+                email: "Oliver_Taylor@gmail.com".to_string(),
+                password: "passwordD1T1".to_string(),
+            });
+        let factory = registration;
+        let vec = (vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -679,13 +715,18 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_nickname_wrong() {
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: UserModelsTest::nickname_wrong(),
-            email: "Oliver_Taylor@gmail.com".to_string(),
-            password: "passwordD1T1".to_string(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: UserModelsTest::nickname_wrong(),
+                email: "Oliver_Taylor@gmail.com".to_string(),
+                password: "passwordD1T1".to_string(),
+            });
+        let factory = registration;
+        let vec = (vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -697,13 +738,18 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_email_empty() {
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: "Oliver_Taylor".to_string(),
-            email: "".to_string(),
-            password: "passwordD1T1".to_string(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: "Oliver_Taylor".to_string(),
+                email: "".to_string(),
+                password: "passwordD1T1".to_string(),
+            });
+        let factory = registration;
+        let vec = (vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -715,13 +761,18 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_email_min() {
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: "Oliver_Taylor".to_string(),
-            email: UserModelsTest::email_min(),
-            password: "passwordD1T1".to_string(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: "Oliver_Taylor".to_string(),
+                email: UserModelsTest::email_min(),
+                password: "passwordD1T1".to_string(),
+            });
+        let factory = registration;
+        let vec = (vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -733,13 +784,18 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_email_max() {
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: "Oliver_Taylor".to_string(),
-            email: UserModelsTest::email_max(),
-            password: "passwordD1T1".to_string(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: "Oliver_Taylor".to_string(),
+                email: UserModelsTest::email_max(),
+                password: "passwordD1T1".to_string(),
+            });
+        let factory = registration;
+        let vec = (vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -751,13 +807,18 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_email_wrong() {
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: "Oliver_Taylor".to_string(),
-            email: UserModelsTest::email_wrong(),
-            password: "passwordD1T1".to_string(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: "Oliver_Taylor".to_string(),
+                email: UserModelsTest::email_wrong(),
+                password: "passwordD1T1".to_string(),
+            });
+        let factory = registration;
+        let vec = (vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -769,13 +830,18 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_password_empty() {
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: "Oliver_Taylor".to_string(),
-            email: "Oliver_Taylor@gmail.com".to_string(),
-            password: "".to_string(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: "Oliver_Taylor".to_string(),
+                email: "Oliver_Taylor@gmail.com".to_string(),
+                password: "".to_string(),
+            });
+        let factory = registration;
+        let vec = (vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -787,13 +853,18 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_password_min() {
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: "Oliver_Taylor".to_string(),
-            email: "Oliver_Taylor@gmail.com".to_string(),
-            password: UserModelsTest::password_min(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: "Oliver_Taylor".to_string(),
+                email: "Oliver_Taylor@gmail.com".to_string(),
+                password: UserModelsTest::password_min(),
+            });
+        let factory = registration;
+        let vec = (vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -805,13 +876,18 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_password_max() {
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: "Oliver_Taylor".to_string(),
-            email: "Oliver_Taylor@gmail.com".to_string(),
-            password: UserModelsTest::password_max(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: "Oliver_Taylor".to_string(),
+                email: "Oliver_Taylor@gmail.com".to_string(),
+                password: UserModelsTest::password_max(),
+            });
+        let factory = registration;
+        let vec = (vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -823,13 +899,18 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_password_wrong() {
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: "Oliver_Taylor".to_string(),
-            email: "Oliver_Taylor@gmail.com".to_string(),
-            password: UserModelsTest::password_wrong(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: "Oliver_Taylor".to_string(),
+                email: "Oliver_Taylor@gmail.com".to_string(),
+                password: UserModelsTest::password_wrong(),
+            });
+        let factory = registration;
+        let vec = (vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -841,17 +922,21 @@ mod tests {
     }
     #[test]
     async fn test_registration_if_nickname_exists_in_users() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1: User = user_with_id(create_user());
         let nickname1: String = user1.nickname.to_string();
 
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: nickname1,
-            email: "Mary_Williams@gmail.com".to_string(),
-            password: "passwordD2T2".to_string(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![user1], vec![], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: nickname1,
+                email: "Mary_Williams@gmail.com".to_string(),
+                password: "passwordD2T2".to_string(),
+            });
+        let factory = registration;
+        let vec = (vec![user1], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
         let body = test::read_body(resp).await;
@@ -862,17 +947,21 @@ mod tests {
     }
     #[test]
     async fn test_registration_if_email_exists_in_users() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1: User = user_with_id(create_user());
         let email1: String = user1.email.to_string();
 
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: "Mary_Williams".to_string(),
-            email: email1,
-            password: "passwordD2T2".to_string(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![user1], vec![], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: "Mary_Williams".to_string(),
+                email: email1,
+                password: "passwordD2T2".to_string(),
+            });
+        let factory = registration;
+        let vec = (vec![user1], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
         let body = test::read_body(resp).await;
@@ -886,13 +975,18 @@ mod tests {
         let user_registr1: UserRegistr = create_user_registr();
         let nickname1: String = user_registr1.nickname.to_string();
 
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: nickname1,
-            email: "Mary_Williams@gmail.com".to_string(),
-            password: "passwordD2T2".to_string(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![user_registr1], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: nickname1,
+                email: "Mary_Williams@gmail.com".to_string(),
+                password: "passwordD2T2".to_string(),
+            });
+        let factory = registration;
+        let vec = (vec![], vec![user_registr1], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
         let body = test::read_body(resp).await;
@@ -906,13 +1000,18 @@ mod tests {
         let user_registr1: UserRegistr = create_user_registr();
         let email1: String = user_registr1.email.to_string();
 
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: "Mary_Williams".to_string(),
-            email: email1,
-            password: "passwordD2T2".to_string(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![user_registr1], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: "Mary_Williams".to_string(),
+                email: email1,
+                password: "passwordD2T2".to_string(),
+            });
+        let factory = registration;
+        let vec = (vec![], vec![user_registr1], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
         let body = test::read_body(resp).await;
@@ -929,13 +1028,18 @@ mod tests {
         let email = "Mary_Williams@gmail.com".to_string();
         let password = "passwordD2T2".to_string();
 
-        let req = test::TestRequest::post().set_json(RegistrUserDto {
-            nickname: nickname.to_string(),
-            email: email.to_string(),
-            password: password.to_string(),
-        });
+        let token = "";
 
-        let resp = call_service_registr(vec![], vec![user_registr1], req).await;
+        let request = test::TestRequest::post()
+            .uri("/registration") // POST /registration
+            .set_json(RegistrUserDto {
+                nickname: nickname.to_string(),
+                email: email.to_string(),
+                password: password.to_string(),
+            });
+        let factory = registration;
+        let vec = (vec![], vec![user_registr1], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         let body = test::read_body(resp).await;
@@ -965,42 +1069,18 @@ mod tests {
     }
 
     // ** confirm_registration **
-
-    async fn call_service_conf_registr(
-        user_vec: Vec<User>,
-        user_registr_vec: Vec<UserRegistr>,
-        session_vec: Vec<Session>,
-        test_request: TestRequest,
-        registr_token: &str,
-    ) -> dev::ServiceResponse {
-        let data_config_jwt = web::Data::new(config_jwt::get_test_config());
-        let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
-        let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(user_registr_vec));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(session_vec));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_user_registr_orm))
-                .app_data(web::Data::clone(&data_session_orm))
-                .service(confirm_registration),
-        )
-        .await;
-
-        let req = test_request
-            .uri(&format!("/registration/{registr_token}")) //PUT /registration/{registr_token}
-            .to_request();
-
-        test::call_service(&app, req).await
-    }
-
     #[test]
     async fn test_registration_confirm_invalid_registr_token() {
-        let reg_token = "invalid_registr_token";
+        let registr_token = "invalid_registr_token";
 
-        let req = test::TestRequest::put();
-        let resp = call_service_conf_registr(vec![], vec![], vec![], req, &reg_token).await;
+        let token = "";
+
+        // PUT /registration/{registr_token}
+        let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
+
+        let factory = confirm_registration;
+        let vec = (vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -1010,10 +1090,8 @@ mod tests {
     }
     #[test]
     async fn test_registration_confirm_final_date_has_expired() {
-        let user_reg_orm = UserRegistrOrmApp::create(vec![create_user_registr()]);
-        let user_reg1: UserRegistr = user_reg_orm.user_registr_vec.get(0).unwrap().clone();
+        let user_reg1 = user_registr_with_id(create_user_registr());
         let user_reg1_id = user_reg1.id;
-        let user_reg_v = vec![user_reg1.clone()];
 
         let num_token = 1234;
 
@@ -1025,8 +1103,14 @@ mod tests {
         let registr_token =
             encode_dual_token(user_reg1_id, num_token, jwt_secret, -reg_duration).unwrap();
 
-        let req = test::TestRequest::put();
-        let resp = call_service_conf_registr(vec![], user_reg_v, vec![], req, &registr_token).await;
+        let token = "";
+
+        //PUT /registration/{registr_token}
+        let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
+
+        let factory = confirm_registration;
+        let vec = (vec![], vec![user_reg1], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -1036,10 +1120,8 @@ mod tests {
     }
     #[test]
     async fn test_registration_confirm_no_exists_in_user_regist() {
-        let user_reg_orm = UserRegistrOrmApp::create(vec![create_user_registr()]);
-        let user_reg1: UserRegistr = user_reg_orm.user_registr_vec.get(0).unwrap().clone();
+        let user_reg1 = user_registr_with_id(create_user_registr());
         let user_reg1_id = user_reg1.id;
-        let user_reg_v = vec![user_reg1.clone()];
 
         let num_token = 1234;
 
@@ -1051,8 +1133,14 @@ mod tests {
         let registr_token =
             encode_dual_token(user_reg1_id + 1, num_token, jwt_secret, reg_duration).unwrap();
 
-        let req = test::TestRequest::put();
-        let resp = call_service_conf_registr(vec![], user_reg_v, vec![], req, &registr_token).await;
+        let token = "";
+
+        //PUT /registration/{registr_token}
+        let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
+
+        let factory = confirm_registration;
+        let vec = (vec![], vec![user_reg1], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -1062,10 +1150,9 @@ mod tests {
     }
     #[test]
     async fn test_registration_confirm_exists_in_user_regist() {
-        let user_reg_orm = UserRegistrOrmApp::create(vec![create_user_registr()]);
-        let user_reg1: UserRegistr = user_reg_orm.user_registr_vec.get(0).unwrap().clone();
-        let user_reg1_id = user_reg1.id;
-        let user_reg_v = vec![user_reg1.clone()];
+        let user_reg1 = user_registr_with_id(create_user_registr());
+        let nickname = user_reg1.nickname.to_string();
+        let email = user_reg1.email.to_string();
 
         let num_token = 1234;
 
@@ -1075,18 +1162,24 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let registr_token =
-            encode_dual_token(user_reg1_id, num_token, jwt_secret, reg_duration).unwrap();
+            encode_dual_token(user_reg1.id, num_token, jwt_secret, reg_duration).unwrap();
 
-        let req = test::TestRequest::put();
-        let resp = call_service_conf_registr(vec![], user_reg_v, vec![], req, &registr_token).await;
+        let token = "";
+
+        //PUT /registration/{registr_token}
+        let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
+
+        let factory = confirm_registration;
+        let vec = (vec![], vec![user_reg1], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         let body = test::read_body(resp).await;
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(user_dto_res.id, USER_ID);
-        assert_eq!(user_dto_res.nickname, user_reg1.nickname);
-        assert_eq!(user_dto_res.email, user_reg1.email);
+        assert_eq!(user_dto_res.nickname, nickname);
+        assert_eq!(user_dto_res.email, email);
         assert_eq!(user_dto_res.password, "");
         assert_eq!(user_dto_res.role, UserRole::User);
     }
@@ -1316,7 +1409,7 @@ mod tests {
         .await;
 
         let req = test_request
-            .uri(&format!("/recovery/{recovery_token}")) //PUT /recovery/{recovery_token}
+            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
             .to_request();
 
         test::call_service(&app, req).await
