@@ -22,7 +22,8 @@ pub struct TokenClaims {
 pub fn encode_token(
     sub: &str,
     secret: &[u8],
-    expires_in_minutes: i64,
+    // expires in minutes
+    expires: i64,
 ) -> Result<String, jsonwebtoken::errors::Error> {
     if sub.is_empty() {
         return Err(jsonwebtoken::errors::ErrorKind::InvalidSubject.into());
@@ -30,7 +31,7 @@ pub fn encode_token(
 
     let now = Utc::now();
     let iat = now.timestamp() as usize;
-    let exp = (now + Duration::minutes(expires_in_minutes)).timestamp() as usize;
+    let exp = (now + Duration::minutes(expires)).timestamp() as usize;
     let sub = sub.to_string();
 
     let claims: TokenClaims = TokenClaims { sub, exp, iat };
@@ -66,11 +67,11 @@ pub fn encode_dual_token(
     user_id: i32,
     num_token: i32,
     jwt_secret: &[u8],
-    token_duration_in_minutes: i64,
+    // token duration in minutes
+    duration: i64,
 ) -> Result<String, String> {
     let sub = format!("{}.{}", user_id, num_token);
-    let token =
-        encode_token(&sub, &jwt_secret, token_duration_in_minutes).map_err(|e| e.to_string())?;
+    let token = encode_token(&sub, &jwt_secret, duration).map_err(|e| e.to_string())?;
 
     Ok(token)
 }
