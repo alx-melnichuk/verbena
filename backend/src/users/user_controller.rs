@@ -16,21 +16,21 @@ use crate::validators::{msg_validation, Validator};
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     GET api/users/{id}
-    cfg.service(get_user_by_id)
+    cfg.service(get_users_by_id)
         // GET api/users/nickname/{nickname}
-        .service(get_user_by_nickname)
+        .service(get_users_by_nickname)
         // GET api/users/email/{email}
-        .service(get_user_by_email)
-        // GET api/user_current
-        .service(get_user_current)
+        .service(get_users_by_email)
+        // GET api/users_current
+        .service(get_users_current)
         // PUT api/users_current
-        .service(put_user_current)
+        .service(put_users_current)
         // DELETE api/users_current
-        .service(delete_user_current)
+        .service(delete_users_current)
         // PUT api/users/{id}
-        .service(put_user)
+        .service(put_users_by_id)
         // DELETE api/users/{id}
-        .service(delete_user);
+        .service(delete_users_by_id);
 }
 
 fn err_parse_int(err: String) -> AppError {
@@ -49,7 +49,7 @@ fn err_blocking(err: String) -> AppError {
 // GET api/users/{id}
 #[rustfmt::skip]
 #[get("/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
-pub async fn get_user_by_id(
+pub async fn get_users_by_id(
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -76,7 +76,7 @@ pub async fn get_user_by_id(
 
 // GET api/users/nickname/{nickname}
 #[get("/users/nickname/{nickname}")]
-pub async fn get_user_by_nickname(
+pub async fn get_users_by_nickname(
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -103,7 +103,7 @@ pub async fn get_user_by_nickname(
 
 // GET api/users/email/{email}
 #[get("/users/email/{email}")]
-pub async fn get_user_by_email(
+pub async fn get_users_by_email(
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -128,10 +128,10 @@ pub async fn get_user_by_email(
     }
 }
 
-// GET api/user_current
+// GET api/users_current
 #[rustfmt::skip]
-#[get("/user_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn get_user_current(
+#[get("/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn get_users_current(
     authenticated: Authenticated,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let user = authenticated.deref();
@@ -143,7 +143,7 @@ pub async fn get_user_current(
 // PUT api/users_current
 #[rustfmt::skip]
 #[put("/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn put_user_current(
+pub async fn put_users_current(
     authenticated: Authenticated,
     user_orm: web::Data<UserOrmApp>,
     json_body: web::Json<user_models::ModifyUserDto>,
@@ -180,7 +180,7 @@ pub async fn put_user_current(
 // DELETE api/users_current
 #[rustfmt::skip]
 #[delete("/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn delete_user_current(
+pub async fn delete_users_current(
     authenticated: Authenticated,
     user_orm: web::Data<UserOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -207,7 +207,7 @@ pub async fn delete_user_current(
 // PUT api/users/{id}
 #[rustfmt::skip]
 #[put("/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
-pub async fn put_user(
+pub async fn put_users_by_id(
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
     json_body: web::Json<user_models::ModifyUserDto>,
@@ -238,14 +238,14 @@ pub async fn put_user(
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
     } else {
-        Ok(HttpResponse::NoContent().finish())
+        Err(AppError::new(CD_NOT_FOUND, MSG_NOT_FOUND_BY_ID).set_status(404))
     }
 }
 
 // DELETE api/users/{id}
 #[rustfmt::skip]
 #[delete("/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
-pub async fn delete_user(
+pub async fn delete_users_by_id(
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -277,12 +277,9 @@ mod tests {
 
     use crate::errors::{AppError, CD_VALIDATION};
     use crate::sessions::{
-        config_jwt::{self, ConfigJwt},
-        session_models::Session,
-        session_orm::tests::SessionOrmApp,
+        config_jwt, session_models::Session, session_orm::tests::SessionOrmApp,
         tokens::encode_dual_token,
     };
-    use crate::settings::err;
     use crate::users::{
         user_models::{ModifyUserDto, User, UserDto, UserModelsTest, UserRole},
         user_orm::tests::UserOrmApp,
@@ -300,34 +297,23 @@ mod tests {
         user.role = UserRole::User;
         user
     }
-
-    async fn call_service_inn(
-        user_vec: Vec<User>,
-        factory: impl dev::HttpServiceFactory + 'static,
-        test_request: TestRequest,
-    ) -> dev::ServiceResponse {
-        let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
-
-        let app = test::init_service(
-            App::new().app_data(web::Data::clone(&data_user_orm)).service(factory),
-        )
-        .await;
-        let req = test_request.to_request();
-
-        test::call_service(&app, req).await
+    fn user_with_id(user: User) -> User {
+        let user_orm = UserOrmApp::create(vec![user]);
+        user_orm.user_vec.get(0).unwrap().clone()
+    }
+    fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
+        SessionOrmApp::new_session(user_id, num_token)
     }
 
-    async fn call_service_auth(
-        user_vec: Vec<User>,
-        session_vec: Vec<Session>,
-        config_jwt: ConfigJwt,
+    async fn call_service1(
+        vec: (Vec<User>, Vec<Session>),
         token: &str,
         factory: impl dev::HttpServiceFactory + 'static,
-        test_request: TestRequest,
+        request: TestRequest,
     ) -> dev::ServiceResponse {
-        let data_config_jwt = web::Data::new(config_jwt);
-        let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(session_vec));
+        let data_config_jwt = web::Data::new(config_jwt::get_test_config());
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec.0));
+        let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
 
         let app = test::init_service(
             App::new()
@@ -338,43 +324,13 @@ mod tests {
         )
         .await;
         let test_request = if token.len() > 0 {
-            test_request.insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+            request.insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
         } else {
-            test_request
+            request
         };
         let req = test_request.to_request();
 
         test::call_service(&app, req).await
-    }
-
-    async fn try_call_service_auth(
-        user_vec: Vec<User>,
-        session_vec: Vec<Session>,
-        config_jwt: ConfigJwt,
-        token: &str,
-        factory: impl dev::HttpServiceFactory + 'static,
-        test_request: TestRequest,
-    ) -> Result<dev::ServiceResponse, actix_web::Error> {
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(session_vec));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_session_orm))
-                .service(factory),
-        )
-        .await;
-        let test_request = if token.len() > 0 {
-            test_request.insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-        } else {
-            test_request
-        };
-        let req = test_request.to_request();
-
-        test::try_call_service(&app, req).await
     }
 
     // ** get_user_by_id **
@@ -383,12 +339,11 @@ mod tests {
     async fn test_get_user_by_id_invalid_id() {
         let mut user = create_user();
         user.role = UserRole::Admin;
-        let user_orm = UserOrmApp::create(vec![user]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1: User = user_with_id(user);
         let user_id_bad = format!("{}a", user1.id);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
@@ -396,10 +351,10 @@ mod tests {
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         // GET /users/${id}
-        let req = test::TestRequest::get().uri(&format!("/users/{}", user_id_bad.clone()));
-        let user_v = vec![user1];
-        let resp =
-            call_service_auth(user_v, session_v, config_jwt, &token, get_user_by_id, req).await;
+        let request = test::TestRequest::get().uri(&format!("/users/{}", user_id_bad.clone()));
+        let factory = get_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -415,22 +370,22 @@ mod tests {
     async fn test_get_user_by_id_valid_id() {
         let mut user = create_user();
         user.role = UserRole::Admin;
-        let user_orm = UserOrmApp::create(vec![user]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1: User = user_with_id(user);
         let user1b_dto = UserDto::from(user1.clone());
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::get().uri(&format!("/users/{}", user1.id)); // GET /users/${id}
-        let user_v = vec![user1];
-        let resp =
-            call_service_auth(user_v, session_v, config_jwt, &token, get_user_by_id, req).await;
+        // GET /users/${id}
+        let request = test::TestRequest::get().uri(&format!("/users/{}", user1.id));
+        let factory = get_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -441,105 +396,113 @@ mod tests {
             serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(user_dto_res, user1b_dto_ser);
+        assert_eq!(user_dto_res.password, "");
     }
     #[test]
     async fn test_get_user_by_id_non_existent_id() {
         let mut user = create_user();
         user.role = UserRole::Admin;
-        let user_orm = UserOrmApp::create(vec![user]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::get().uri(&format!("/users/{}", user1.id + 1)); // GET /users/${id}
-        let user_v = vec![user1];
-        let resp =
-            call_service_auth(user_v, session_v, config_jwt, &token, get_user_by_id, req).await;
+        let request = test::TestRequest::get().uri(&format!("/users/{}", user1.id + 1)); // GET /users/${id}
+        let factory = get_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
 
     // ** get_user_by_nickname **
-
     #[test]
     async fn test_get_user_by_nickname_non_existent_nickname() {
-        let req = test::TestRequest::get().uri(&"/users/nickname/JAMES_SMITH"); // GET /users/nickname/${nickname}
+        let user1: User = user_with_id(create_user());
+        let token = "";
 
-        let resp = call_service_inn(vec![], get_user_by_nickname, req).await;
+        let request = test::TestRequest::get().uri(&"/users/nickname/JAMES_SMITH"); // GET /users/nickname/${nickname}
+        let factory = get_users_by_nickname;
+        let vec = (vec![user1], vec![]);
+
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[test]
     async fn test_get_user_by_nickname_existent_nickname() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-        let user1b_dto = UserDto::from(user1.clone());
-        let nickname = user1.nickname.to_uppercase().to_string();
+        let user1: User = user_with_id(create_user());
+        let user1_nickname = user1.nickname.to_string();
+        let nickname = user1_nickname.to_uppercase().to_string();
+        let token = "";
 
         // GET /users/nickname/${nickname}
-        let req = test::TestRequest::get().uri(&format!("/users/nickname/{}", nickname));
-
-        let resp = call_service_inn(vec![user1], get_user_by_nickname, req).await;
+        let request = test::TestRequest::get().uri(&format!("/users/nickname/{}", nickname));
+        let factory = get_users_by_nickname;
+        let vec = (vec![user1], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
         let user_dto_res = std::str::from_utf8(&body).unwrap();
-        let str = format!("{}\"nickname\":\"{}\"{}", "{", user1b_dto.nickname, "}");
+        let str = format!("{}\"nickname\":\"{}\"{}", "{", user1_nickname, "}");
         assert_eq!(user_dto_res, str);
     }
 
     // ** get_user_by_email **
-
     #[test]
     async fn test_get_user_by_email_non_existent_email() {
-        let req = test::TestRequest::get().uri(&"/users/email/JAMES_SMITH@gmail.com"); // GET /users/email/${email}
+        let user1: User = user_with_id(create_user());
+        let token = "";
 
-        let resp = call_service_inn(vec![], get_user_by_email, req).await;
+        // GET /users/email/${email}
+        let request = test::TestRequest::get().uri(&"/users/email/JAMES_SMITH@gmail.com");
+        let factory = get_users_by_email;
+        let vec = (vec![user1], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[test]
     async fn test_get_user_by_email_existent_email() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-        let user1b_dto = UserDto::from(user1.clone());
-        let email = user1.email.to_uppercase().to_string();
+        let user1: User = user_with_id(create_user());
+        let user1_email = user1.email.to_string();
+        let email = user1_email.to_uppercase().to_string();
+        let token = "";
 
         // GET /users/email/${email}
-        let req = test::TestRequest::get().uri(&format!("/users/email/{}", email));
-
-        let resp = call_service_inn(vec![user1], get_user_by_email, req).await;
+        let request = test::TestRequest::get().uri(&format!("/users/email/{}", email));
+        let factory = get_users_by_email;
+        let vec = (vec![user1], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
         let user_dto_res = std::str::from_utf8(&body).unwrap();
-        let str = format!("{}\"email\":\"{}\"{}", "{", user1b_dto.email, "}");
+        let str = format!("{}\"email\":\"{}\"{}", "{", user1_email, "}");
         assert_eq!(user_dto_res, str);
     }
 
-    // ** get_user_current **
-
+    // ** get_users_current **
     #[test]
-    async fn test_get_user_current_valid_token() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+    async fn test_get_users_current_valid_token() {
+        let user1: User = user_with_id(create_user());
         let user1b_dto = UserDto::from(user1.clone());
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::get().uri("/user_current");
-        let user_v = vec![user1];
-        let resp =
-            call_service_auth(user_v, session_v, config_jwt, &token, get_user_current, req).await;
+        let request = test::TestRequest::get().uri("/users_current"); // GET /users_current
+        let factory = get_users_current;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -549,70 +512,112 @@ mod tests {
         let user1b_dto_ser: UserDto =
             serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
 
-        assert_eq!(user_dto_res.id, user1b_dto_ser.id);
-        assert_eq!(user_dto_res.nickname, user1b_dto_ser.nickname);
-        assert_eq!(user_dto_res.email, user1b_dto_ser.email);
-        assert_eq!(user_dto_res.password, user1b_dto_ser.password);
+        assert_eq!(user_dto_res, user1b_dto_ser);
         assert_eq!(user_dto_res.password, "");
-        assert_eq!(user_dto_res.role, user1b_dto_ser.role);
-        assert_eq!(user_dto_res.created_at, user1b_dto_ser.created_at);
-        assert_eq!(user_dto_res.updated_at, user_dto_res.created_at);
     }
+
+    // ** put_users_current **
     #[test]
-    async fn test_get_user_current_invalid_token() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+    async fn test_put_users_current_valid_id() {
+        let user1: User = user_with_id(create_user());
+        let user1_id = user1.id;
+        let new_password = "passwdJ3S9";
+
+        let mut user1mod: User = UserOrmApp::new_user(
+            user1_id,
+            &format!("James_{}", user1.nickname),
+            &format!("James_{}", user1.email),
+            new_password,
+        );
+        user1mod.role = UserRole::Admin;
+        user1mod.created_at = user1.created_at.clone();
+        user1mod.updated_at = Utc::now();
+        let user1mod_dto = UserDto::from(user1mod.clone());
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
-
-        let config_jwt = config_jwt::get_test_config();
-        let token = "invalid_registr_token";
-
-        let req = test::TestRequest::get().uri("/user_current");
-        let user_v = vec![user1];
-        let result =
-            try_call_service_auth(user_v, session_v, config_jwt, &token, get_user_current, req)
-                .await
-                .err();
-
-        let err = result.expect("Service call succeeded, but an error was expected.");
-
-        let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::FORBIDDEN); // 403
-
-        let app_err: AppError =
-            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
-        assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
-    }
-
-    /*#[test]
-    async fn test_put_user_invalid_id() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-        let user_id_bad = format!("{}a", user1.id).to_string();
-
-        let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", &user_id_bad)) // PUT users/{id}a
+        let request = test::TestRequest::put()
+            .uri(&"/users_current") // PUT /users_current
+            .set_json(ModifyUserDto {
+                nickname: Some(user1mod.nickname),
+                email: Some(user1mod.email),
+                password: Some(new_password.to_string()),
+                role: Some(user1mod.role),
+            });
+        let factory = put_users_current;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json_user1mod_dto = serde_json::json!(user1mod_dto).to_string();
+        let user1mod_dto_ser: UserDto =
+            serde_json::from_slice(json_user1mod_dto.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(user_dto_res.id, user1mod_dto_ser.id);
+        assert_eq!(user_dto_res.nickname, user1mod_dto_ser.nickname);
+        assert_eq!(user_dto_res.email, user1mod_dto_ser.email);
+        assert_eq!(user_dto_res.password, user1mod_dto_ser.password);
+        assert_eq!(user_dto_res.password, "");
+        assert_eq!(user_dto_res.role, user1mod_dto_ser.role);
+        assert_eq!(user_dto_res.created_at, user1mod_dto_ser.created_at);
+    }
+
+    // ** delete_users_current **
+    #[test]
+    async fn test_delete_users_current_valid_token() {
+        let user1: User = user_with_id(create_user());
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let request = test::TestRequest::delete().uri("/users_current"); // DELETE /users_current
+        let factory = delete_users_current;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+    }
+
+    // ** put_users_by_id **
+    #[test]
+    async fn test_put_users_by_id_invalid_id() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
+        let user_id_bad = format!("{}a", user1.id);
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let request = test::TestRequest::put()
+            .uri(&format!("/users/{}", user_id_bad.clone())) // PUT users/{id}
             .set_json(ModifyUserDto {
                 nickname: Some("Oliver_Taylor".to_string()),
                 email: Some("Oliver_Taylor@gmail.com".to_string()),
-                password: Some("passwordD1T1".to_string()),
-                role: Some(UserRole::User),
+                password: Some("passwdQ0W0".to_string()),
+                role: Some(UserRole::Admin),
             });
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, put_user, req).await;
+        let factory = put_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -624,120 +629,30 @@ mod tests {
         assert!(app_err.message.starts_with(&msg));
     }
     #[test]
-    async fn test_put_user_non_existent_id() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-        let user1_id = user1.id.to_string();
+    async fn test_put_users_by_id_invalid_dto_nickname_empty() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::put()
-            .uri(&format!("/users/{}9", &user1_id)) // PUT users/{id}9
+        let request = test::TestRequest::put()
+            .uri(&format!("/users/{}", user1.id)) // PUT users/{id}
             .set_json(ModifyUserDto {
-                nickname: Some("James_Smith".to_string()),
-                email: Some("James_Smith@gmail.com".to_string()),
-                password: Some("passwordD1T1".to_string()),
-                role: Some(UserRole::User),
-            });
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, put_user, req).await;
-        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
-    }
-
-    #[test]
-    async fn test_put_user_valid_id() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-        let user1_id = user1.id;
-        let new_password = "passwdJ3S9";
-
-        let mut user1b: User = UserOrmApp::new_user(
-            user1_id,
-            "James_Smith",
-            "James_Smith@gmail.com",
-            new_password,
-        );
-        user1b.role = UserRole::Admin;
-        user1b.created_at = user1.created_at.clone();
-        user1b.updated_at = Utc::now();
-
-        let user1b_dto = UserDto::from(user1b.clone());
-
-        let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1_id, Some(num_token))];
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token =
-            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", &user1_id)) // PUT users/{id}
-            .set_json(ModifyUserDto {
-                nickname: Some(user1b.nickname),
-                email: Some(user1b.email),
-                password: Some(new_password.to_string()),
-                role: Some(user1b.role),
-            });
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, put_user, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        let body = test::read_body(resp).await;
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let json_user1b_dto = serde_json::json!(user1b_dto).to_string();
-        let user1b_dto_ser: UserDto =
-            serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(user_dto_res.id, user1b_dto_ser.id);
-        #[rustfmt::skip]
-        assert_eq!(user_dto_res.nickname, user1b_dto_ser.nickname);
-        assert_eq!(user_dto_res.email, user1b_dto_ser.email);
-        assert_eq!(user_dto_res.password, user1b_dto_ser.password);
-        assert_eq!(user_dto_res.password, "");
-        assert_eq!(user_dto_res.role, user1b_dto_ser.role);
-        #[rustfmt::skip]
-        assert_eq!(user_dto_res.created_at, user1b_dto_ser.created_at);
-        #[rustfmt::skip]
-        assert_ne!(user_dto_res.updated_at, user_dto_res.created_at);
-    }
-    #[test]
-    async fn test_put_user_invalid_dto_nickname_empty() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-        let user1_id = user1.id;
-
-        let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
-        let token =
-            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", user1_id)) // PUT users/{id}
-            .set_json(user_models::ModifyUserDto {
                 nickname: Some("".to_string()),
-                email: Some("James_Smith@gmail.com".to_string()),
-                password: Some("passwordD1T1".to_string()),
-                role: Some(UserRole::User),
+                email: Some("Oliver_Taylor@gmail.com".to_string()),
+                password: Some("passwdQ0W0".to_string()),
+                role: Some(UserRole::Admin),
             });
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, put_user, req).await;
+        let factory = put_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -748,31 +663,30 @@ mod tests {
         assert_eq!(app_err.message, user_models::MSG_NICKNAME_REQUIRED);
     }
     #[test]
-    async fn test_put_user_invalid_dto_nickname_min() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-        let user1_id = user1.id;
+    async fn test_put_users_by_id_invalid_dto_nickname_min() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", user1_id)) // PUT users/{id}
-            .set_json(user_models::ModifyUserDto {
+        let request = test::TestRequest::put()
+            .uri(&format!("/users/{}", user1.id)) // PUT users/{id}
+            .set_json(ModifyUserDto {
                 nickname: Some(UserModelsTest::nickname_min()),
-                email: Some("James_Smith@gmail.com".to_string()),
-                password: Some("passwordD1T1".to_string()),
-                role: Some(UserRole::User),
+                email: Some("Oliver_Taylor@gmail.com".to_string()),
+                password: Some("passwdQ0W0".to_string()),
+                role: Some(UserRole::Admin),
             });
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, put_user, req).await;
+        let factory = put_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -782,33 +696,31 @@ mod tests {
         assert_eq!(app_err.code, CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_NICKNAME_MIN_LENGTH);
     }
-
     #[test]
-    async fn test_put_user_invalid_dto_nickname_max() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-        let user1_id = user1.id;
+    async fn test_put_users_by_id_invalid_dto_nickname_max() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", user1_id)) // PUT users/{id}
-            .set_json(user_models::ModifyUserDto {
+        let request = test::TestRequest::put()
+            .uri(&format!("/users/{}", user1.id)) // PUT users/{id}
+            .set_json(ModifyUserDto {
                 nickname: Some(UserModelsTest::nickname_max()),
-                email: Some("James_Smith@gmail.com".to_string()),
-                password: Some("passwordD1T1".to_string()),
-                role: Some(UserRole::User),
+                email: Some("Oliver_Taylor@gmail.com".to_string()),
+                password: Some("passwdQ0W0".to_string()),
+                role: Some(UserRole::Admin),
             });
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, put_user, req).await;
+        let factory = put_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -818,33 +730,31 @@ mod tests {
         assert_eq!(app_err.code, CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_NICKNAME_MAX_LENGTH);
     }
-
     #[test]
-    async fn test_put_user_invalid_dto_nickname_wrong() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-        let user1_id = user1.id;
+    async fn test_put_users_by_id_invalid_dto_nickname_wrong() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", user1_id)) // PUT users/{id}
-            .set_json(user_models::ModifyUserDto {
+        let request = test::TestRequest::put()
+            .uri(&format!("/users/{}", user1.id)) // PUT users/{id}
+            .set_json(ModifyUserDto {
                 nickname: Some(UserModelsTest::nickname_wrong()),
-                email: Some("James_Smith@gmail.com".to_string()),
-                password: Some("passwordD1T1".to_string()),
-                role: Some(UserRole::User),
+                email: Some("Oliver_Taylor@gmail.com".to_string()),
+                password: Some("passwdQ0W0".to_string()),
+                role: Some(UserRole::Admin),
             });
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, put_user, req).await;
+        let factory = put_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -855,31 +765,30 @@ mod tests {
         assert_eq!(app_err.message, user_models::MSG_NICKNAME_REGEX);
     }
     #[test]
-    async fn test_put_user_invalid_dto_email_empty() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-        let user1_id = user1.id;
+    async fn test_put_users_by_id_invalid_dto_email_empty() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::put()
-            .uri(&format!("/users/{}", user1_id)) // PUT users/{id}
-            .set_json(user_models::ModifyUserDto {
-                nickname: Some("James_Smith".to_string()),
+        let request = test::TestRequest::put()
+            .uri(&format!("/users/{}", user1.id)) // PUT users/{id}
+            .set_json(ModifyUserDto {
+                nickname: Some("Oliver_Taylor".to_string()),
                 email: Some("".to_string()),
-                password: Some("passwordD1T1".to_string()),
-                role: Some(UserRole::User),
+                password: Some("passwdQ0W0".to_string()),
+                role: Some(UserRole::Admin),
             });
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, put_user, req).await;
+        let factory = put_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -890,30 +799,30 @@ mod tests {
         assert_eq!(app_err.message, user_models::MSG_EMAIL_REQUIRED);
     }
     #[test]
-    async fn test_put_user_invalid_dto_email_min() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+    async fn test_put_users_by_id_invalid_dto_email_min() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::put()
+        let request = test::TestRequest::put()
             .uri(&format!("/users/{}", user1.id)) // PUT users/{id}
-            .set_json(user_models::ModifyUserDto {
-                nickname: Some("James_Smith".to_string()),
+            .set_json(ModifyUserDto {
+                nickname: Some("Oliver_Taylor".to_string()),
                 email: Some(UserModelsTest::email_min()),
-                password: Some("passwordD1T1".to_string()),
-                role: Some(UserRole::User),
+                password: Some("passwdQ0W0".to_string()),
+                role: Some(UserRole::Admin),
             });
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, put_user, req).await;
+        let factory = put_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -924,30 +833,30 @@ mod tests {
         assert_eq!(app_err.message, user_models::MSG_EMAIL_MIN_LENGTH);
     }
     #[test]
-    async fn test_put_user_invalid_dto_email_max() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+    async fn test_put_users_by_id_invalid_dto_email_max() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::put()
+        let request = test::TestRequest::put()
             .uri(&format!("/users/{}", user1.id)) // PUT users/{id}
-            .set_json(user_models::ModifyUserDto {
-                nickname: Some("James_Smith".to_string()),
+            .set_json(ModifyUserDto {
+                nickname: Some("Oliver_Taylor".to_string()),
                 email: Some(UserModelsTest::email_max()),
-                password: Some("passwordD1T1".to_string()),
-                role: Some(UserRole::User),
+                password: Some("passwdQ0W0".to_string()),
+                role: Some(UserRole::Admin),
             });
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, put_user, req).await;
+        let factory = put_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -958,30 +867,30 @@ mod tests {
         assert_eq!(app_err.message, user_models::MSG_EMAIL_MAX_LENGTH);
     }
     #[test]
-    async fn test_put_user_invalid_dto_email_wrong() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+    async fn test_put_users_by_id_invalid_dto_email_wrong() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::put()
+        let request = test::TestRequest::put()
             .uri(&format!("/users/{}", user1.id)) // PUT users/{id}
-            .set_json(user_models::ModifyUserDto {
-                nickname: Some("James_Smith".to_string()),
+            .set_json(ModifyUserDto {
+                nickname: Some("Oliver_Taylor".to_string()),
                 email: Some(UserModelsTest::email_wrong()),
-                password: Some("passwordD1T1".to_string()),
-                role: Some(UserRole::User),
+                password: Some("passwdQ0W0".to_string()),
+                role: Some(UserRole::Admin),
             });
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, put_user, req).await;
+        let factory = put_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -992,30 +901,30 @@ mod tests {
         assert_eq!(app_err.message, user_models::MSG_EMAIL_EMAIL_TYPE);
     }
     #[test]
-    async fn test_put_user_invalid_dto_password_empty() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+    async fn test_put_users_by_id_invalid_dto_password_empty() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::put()
+        let request = test::TestRequest::put()
             .uri(&format!("/users/{}", user1.id)) // PUT users/{id}
-            .set_json(user_models::ModifyUserDto {
-                nickname: Some("James_Smith".to_string()),
-                email: Some("James_Smith@gmail.com".to_string()),
+            .set_json(ModifyUserDto {
+                nickname: Some("Oliver_Taylor".to_string()),
+                email: Some("Oliver_Taylor@gmail.com".to_string()),
                 password: Some("".to_string()),
-                role: Some(UserRole::User),
+                role: Some(UserRole::Admin),
             });
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, put_user, req).await;
+        let factory = put_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1026,30 +935,30 @@ mod tests {
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_REQUIRED);
     }
     #[test]
-    async fn test_put_user_invalid_dto_password_min() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+    async fn test_put_users_by_id_invalid_dto_password_min() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::put()
+        let request = test::TestRequest::put()
             .uri(&format!("/users/{}", user1.id)) // PUT users/{id}
-            .set_json(user_models::ModifyUserDto {
-                nickname: Some("James_Smith".to_string()),
-                email: Some("James_Smith@gmail.com".to_string()),
+            .set_json(ModifyUserDto {
+                nickname: Some("Oliver_Taylor".to_string()),
+                email: Some("Oliver_Taylor@gmail.com".to_string()),
                 password: Some(UserModelsTest::password_min()),
-                role: Some(UserRole::User),
+                role: Some(UserRole::Admin),
             });
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, put_user, req).await;
+        let factory = put_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1060,30 +969,30 @@ mod tests {
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_MIN_LENGTH);
     }
     #[test]
-    async fn test_put_user_invalid_dto_password_max() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+    async fn test_put_users_by_id_invalid_dto_password_max() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::put()
+        let request = test::TestRequest::put()
             .uri(&format!("/users/{}", user1.id)) // PUT users/{id}
-            .set_json(user_models::ModifyUserDto {
-                nickname: Some("James_Smith".to_string()),
-                email: Some("James_Smith@gmail.com".to_string()),
+            .set_json(ModifyUserDto {
+                nickname: Some("Oliver_Taylor".to_string()),
+                email: Some("Oliver_Taylor@gmail.com".to_string()),
                 password: Some(UserModelsTest::password_max()),
-                role: Some(UserRole::User),
+                role: Some(UserRole::Admin),
             });
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, put_user, req).await;
+        let factory = put_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1094,30 +1003,30 @@ mod tests {
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_MAX_LENGTH);
     }
     #[test]
-    async fn test_put_user_invalid_dto_password_wrong() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+    async fn test_put_users_by_id_invalid_dto_password_wrong() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::put()
+        let request = test::TestRequest::put()
             .uri(&format!("/users/{}", user1.id)) // PUT users/{id}
-            .set_json(user_models::ModifyUserDto {
-                nickname: Some("James_Smith".to_string()),
-                email: Some("James_Smith@gmail.com".to_string()),
+            .set_json(ModifyUserDto {
+                nickname: Some("Oliver_Taylor".to_string()),
+                email: Some("Oliver_Taylor@gmail.com".to_string()),
                 password: Some(UserModelsTest::password_wrong()),
-                role: Some(UserRole::User),
+                role: Some(UserRole::Admin),
             });
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, put_user, req).await;
+        let factory = put_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1127,28 +1036,116 @@ mod tests {
         assert_eq!(app_err.code, CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_REGEX);
     }
-
     #[test]
-    async fn test_delete_user_invalid_id() {
-        let mut user1a: User = create_user();
-        user1a.role = UserRole::Admin;
-        let user_orm = UserOrmApp::create(vec![user1a]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-        let user1_id_bad = format!("{}a", user1.id).to_string();
+    async fn test_put_users_by_id_user_does_not_exist() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let req = test::TestRequest::delete().uri(&format!("/users/{}", &user1_id_bad)); // DELETE /user/{id}a
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, delete_user, req).await;
+        let request = test::TestRequest::put()
+            .uri(&format!("/users/{}", user1.id + 1)) // PUT users/{id}
+            .set_json(ModifyUserDto {
+                nickname: Some("Oliver_Taylor".to_string()),
+                email: Some("Oliver_Taylor@gmail.com".to_string()),
+                password: Some("passwdQ0W0".to_string()),
+                role: Some(UserRole::Admin),
+            });
+        let factory = put_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, CD_NOT_FOUND);
+        assert_eq!(app_err.message, MSG_NOT_FOUND_BY_ID);
+    }
+    #[test]
+    async fn test_put_users_by_id_valid_id() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
+        let user1_id = user1.id;
+        let new_password = "passwdQ0W0";
+
+        let mut user1mod: User = UserOrmApp::new_user(
+            user1_id,
+            &format!("James_{}", user1.nickname),
+            &format!("James_{}", user1.email),
+            new_password,
+        );
+        user1mod.role = UserRole::Admin;
+        user1mod.created_at = user1.created_at.clone();
+        user1mod.updated_at = Utc::now();
+        let user1mod_dto = UserDto::from(user1mod.clone());
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let request = test::TestRequest::put()
+            .uri(&format!("/users/{}", &user1_id)) // PUT users/{id}
+            .set_json(ModifyUserDto {
+                nickname: Some(user1mod.nickname),
+                email: Some(user1mod.email),
+                password: Some(new_password.to_string()),
+                role: Some(user1mod.role),
+            });
+        let factory = put_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json_user1mod_dto = serde_json::json!(user1mod_dto).to_string();
+        let user1mod_dto_ser: UserDto =
+            serde_json::from_slice(json_user1mod_dto.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(user_dto_res.id, user1mod_dto_ser.id);
+        assert_eq!(user_dto_res.nickname, user1mod_dto_ser.nickname);
+        assert_eq!(user_dto_res.email, user1mod_dto_ser.email);
+        assert_eq!(user_dto_res.password, user1mod_dto_ser.password);
+        assert_eq!(user_dto_res.password, "");
+        assert_eq!(user_dto_res.role, user1mod_dto_ser.role);
+        assert_eq!(user_dto_res.created_at, user1mod_dto_ser.created_at);
+    }
+
+    // ** delete_users_by_id **
+    #[test]
+    async fn test_delete_users_by_id_invalid_id() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
+        let user_id_bad = format!("{}a", user1.id);
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        // DELETE users/{id}
+        let request = test::TestRequest::delete().uri(&format!("/users/{}", user_id_bad.clone()));
+
+        let factory = delete_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1156,61 +1153,55 @@ mod tests {
 
         assert_eq!(app_err.code, CD_PARSE_INT_ERROR);
         #[rustfmt::skip]
-        let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, user1_id_bad, MSG_CASTING_TO_TYPE);
+        let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, user_id_bad, MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
     }
-
     #[test]
-    async fn test_delete_user_non_existent_id() {
-        let mut user1a: User = create_user();
-        user1a.role = UserRole::Admin;
-        let user_orm = UserOrmApp::create(vec![user1a]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-        let user1_id_bad = format!("{}", user1.id + 1).to_string();
+    async fn test_delete_users_by_id_user_does_not_exist() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token =      collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        // DELETE users/{id}
+        let request = test::TestRequest::delete().uri(&format!("/users/{}", user1.id + 1));
 
-        let req = test::TestRequest::delete().uri(&format!("/users/{}", user1_id_bad)); // DELETE /user/1002
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, delete_user, req).await;
+        let factory = delete_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
         assert_eq!(app_err.code, CD_NOT_FOUND);
         assert_eq!(app_err.message, MSG_NOT_FOUND_BY_ID);
     }
-
     #[test]
-    async fn test_delete_user_existent_id() {
-        let mut user1a: User = create_user();
-        user1a.role = UserRole::Admin;
-        let user_orm = UserOrmApp::create(vec![user1a]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+    async fn test_delete_users_by_id_user_exists() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // let jwt_access = config_jwt.jwt_access;
-        // let token = collect_token(user1.id, num_token, jwt_secret, jwt_access).unwrap();
         let token =
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        // DELETE users/{id}
+        let request = test::TestRequest::delete().uri(&format!("/users/{}", user1.id));
 
-        let req = test::TestRequest::delete().uri(&format!("/users/{}", user1.id)); // DELETE /user/{id}
-        let user_v = vec![user1];
-        let resp = call_service_auth(user_v, session_v, config_jwt, &token, delete_user, req).await;
-
+        let factory = delete_users_by_id;
+        let vec = (vec![user1], vec![session1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
     }
-    */
 }
