@@ -572,13 +572,16 @@ mod tests {
         let user_reg_orm = UserRegistrOrmApp::create(vec![user_registr]);
         user_reg_orm.user_registr_vec.get(0).unwrap().clone()
     }
-
     fn create_user_recovery(id: i32, user_id: i32, final_date: DateTime<Utc>) -> UserRecovery {
         UserRecoveryOrmApp::new_user_recovery(id, user_id, final_date)
     }
+    fn create_user_recovery_with_id(user_recovery: UserRecovery) -> UserRecovery {
+        let user_recovery_orm = UserRecoveryOrmApp::create(vec![user_recovery]);
+        user_recovery_orm.user_recovery_vec.get(0).unwrap().clone()
+    }
 
     async fn call_service1(
-        vec: (Vec<User>, Vec<UserRegistr>, Vec<Session>),
+        vec: (Vec<User>, Vec<UserRegistr>, Vec<Session>, Vec<UserRecovery>),
         token: &str,
         factory: impl dev::HttpServiceFactory + 'static,
         request: TestRequest,
@@ -590,6 +593,7 @@ mod tests {
         let data_user_orm = web::Data::new(UserOrmApp::create(vec.0));
         let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(vec.1));
         let data_session_orm = web::Data::new(SessionOrmApp::create(vec.2));
+        let data_user_recovery_orm = web::Data::new(UserRecoveryOrmApp::create(vec.3));
 
         let app = test::init_service(
             App::new()
@@ -599,6 +603,7 @@ mod tests {
                 .app_data(web::Data::clone(&data_user_orm))
                 .app_data(web::Data::clone(&data_user_registr_orm))
                 .app_data(web::Data::clone(&data_session_orm))
+                .app_data(web::Data::clone(&data_user_recovery_orm))
                 .service(factory),
         )
         .await;
@@ -618,7 +623,7 @@ mod tests {
 
         let request = test::TestRequest::post().uri("/registration"); // POST /registration
         let factory = registration;
-        let vec = (vec![], vec![], vec![]);
+        let vec = (vec![], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
@@ -635,7 +640,7 @@ mod tests {
             .uri("/registration") // POST /registration
             .set_json(json!({}));
         let factory = registration;
-        let vec = (vec![], vec![], vec![]);
+        let vec = (vec![], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
@@ -656,7 +661,7 @@ mod tests {
                 password: "passwordD1T1".to_string(),
             });
         let factory = registration;
-        let vec = (vec![], vec![], vec![]);
+        let vec = (vec![], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
@@ -679,7 +684,7 @@ mod tests {
                 password: "passwordD1T1".to_string(),
             });
         let factory = registration;
-        let vec = (vec![], vec![], vec![]);
+        let vec = (vec![], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
@@ -702,7 +707,7 @@ mod tests {
                 password: "passwordD1T1".to_string(),
             });
         let factory = registration;
-        let vec = (vec![], vec![], vec![]);
+        let vec = (vec![], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
@@ -725,7 +730,7 @@ mod tests {
                 password: "passwordD1T1".to_string(),
             });
         let factory = registration;
-        let vec = (vec![], vec![], vec![]);
+        let vec = (vec![], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
@@ -748,7 +753,7 @@ mod tests {
                 password: "passwordD1T1".to_string(),
             });
         let factory = registration;
-        let vec = (vec![], vec![], vec![]);
+        let vec = (vec![], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
@@ -771,7 +776,7 @@ mod tests {
                 password: "passwordD1T1".to_string(),
             });
         let factory = registration;
-        let vec = (vec![], vec![], vec![]);
+        let vec = (vec![], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
@@ -794,7 +799,7 @@ mod tests {
                 password: "passwordD1T1".to_string(),
             });
         let factory = registration;
-        let vec = (vec![], vec![], vec![]);
+        let vec = (vec![], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
@@ -817,7 +822,7 @@ mod tests {
                 password: "passwordD1T1".to_string(),
             });
         let factory = registration;
-        let vec = (vec![], vec![], vec![]);
+        let vec = (vec![], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
@@ -840,7 +845,7 @@ mod tests {
                 password: "".to_string(),
             });
         let factory = registration;
-        let vec = (vec![], vec![], vec![]);
+        let vec = (vec![], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
@@ -863,7 +868,7 @@ mod tests {
                 password: UserModelsTest::password_min(),
             });
         let factory = registration;
-        let vec = (vec![], vec![], vec![]);
+        let vec = (vec![], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
@@ -886,7 +891,7 @@ mod tests {
                 password: UserModelsTest::password_max(),
             });
         let factory = registration;
-        let vec = (vec![], vec![], vec![]);
+        let vec = (vec![], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
@@ -909,7 +914,7 @@ mod tests {
                 password: UserModelsTest::password_wrong(),
             });
         let factory = registration;
-        let vec = (vec![], vec![], vec![]);
+        let vec = (vec![], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
@@ -935,7 +940,7 @@ mod tests {
                 password: "passwordD2T2".to_string(),
             });
         let factory = registration;
-        let vec = (vec![user1], vec![], vec![]);
+        let vec = (vec![user1], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
@@ -960,7 +965,7 @@ mod tests {
                 password: "passwordD2T2".to_string(),
             });
         let factory = registration;
-        let vec = (vec![user1], vec![], vec![]);
+        let vec = (vec![user1], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
@@ -985,7 +990,7 @@ mod tests {
                 password: "passwordD2T2".to_string(),
             });
         let factory = registration;
-        let vec = (vec![], vec![user_registr1], vec![]);
+        let vec = (vec![], vec![user_registr1], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
@@ -1010,7 +1015,7 @@ mod tests {
                 password: "passwordD2T2".to_string(),
             });
         let factory = registration;
-        let vec = (vec![], vec![user_registr1], vec![]);
+        let vec = (vec![], vec![user_registr1], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
@@ -1038,7 +1043,7 @@ mod tests {
                 password: password.to_string(),
             });
         let factory = registration;
-        let vec = (vec![], vec![user_registr1], vec![]);
+        let vec = (vec![], vec![user_registr1], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
@@ -1079,7 +1084,7 @@ mod tests {
         let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
 
         let factory = confirm_registration;
-        let vec = (vec![], vec![], vec![]);
+        let vec = (vec![], vec![], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
@@ -1109,7 +1114,7 @@ mod tests {
         let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
 
         let factory = confirm_registration;
-        let vec = (vec![], vec![user_reg1], vec![]);
+        let vec = (vec![], vec![user_reg1], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
@@ -1139,7 +1144,7 @@ mod tests {
         let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
 
         let factory = confirm_registration;
-        let vec = (vec![], vec![user_reg1], vec![]);
+        let vec = (vec![], vec![user_reg1], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
@@ -1170,7 +1175,7 @@ mod tests {
         let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
 
         let factory = confirm_registration;
-        let vec = (vec![], vec![user_reg1], vec![]);
+        let vec = (vec![], vec![user_reg1], vec![], vec![]);
         let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
@@ -1185,41 +1190,13 @@ mod tests {
     }
 
     // ** recovery **
-
-    async fn call_service_recovery(
-        user_vec: Vec<User>,
-        user_recovery_vec: Vec<UserRecovery>,
-        test_request: TestRequest,
-    ) -> dev::ServiceResponse {
-        let data_config_app = web::Data::new(config_app::get_test_config());
-        let data_config_jwt = web::Data::new(config_jwt::get_test_config());
-        let data_mailer = web::Data::new(MailerApp::new(config_smtp::get_test_config()));
-        let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
-        let data_user_recovery_orm = web::Data::new(UserRecoveryOrmApp::create(user_recovery_vec));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_app))
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_mailer))
-                .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_user_recovery_orm))
-                .service(recovery),
-        )
-        .await;
-
-        let req = test_request
-            .uri("/recovery") //POST /recovery
-            .to_request();
-
-        test::call_service(&app, req).await
-    }
-
     #[test]
     async fn test_recovery_no_data() {
-        let req = test::TestRequest::post();
-
-        let resp = call_service_recovery(vec![], vec![], req).await;
+        let token = "";
+        let request = test::TestRequest::post().uri("/recovery"); //POST /recovery
+        let factory = recovery;
+        let vec = (vec![], vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1229,9 +1206,13 @@ mod tests {
     }
     #[test]
     async fn test_recovery_empty_json_object() {
-        let req = test::TestRequest::post().set_json(json!({}));
-
-        let resp = call_service_recovery(vec![], vec![], req).await;
+        let token = "";
+        let request = test::TestRequest::post()
+            .uri("/recovery") //POST /recovery
+            .set_json(json!({}));
+        let factory = recovery;
+        let vec = (vec![], vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1241,11 +1222,15 @@ mod tests {
     }
     #[test]
     async fn test_recovery_invalid_dto_email_empty() {
-        let req = test::TestRequest::post().set_json(RecoveryUserDto {
-            email: "".to_string(),
-        });
-
-        let resp = call_service_recovery(vec![], vec![], req).await;
+        let token = "";
+        let request = test::TestRequest::post()
+            .uri("/recovery") //POST /recovery
+            .set_json(RecoveryUserDto {
+                email: "".to_string(),
+            });
+        let factory = recovery;
+        let vec = (vec![], vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1257,11 +1242,15 @@ mod tests {
     }
     #[test]
     async fn test_recovery_invalid_dto_email_min() {
-        let req = test::TestRequest::post().set_json(RecoveryUserDto {
-            email: UserModelsTest::email_min(),
-        });
-
-        let resp = call_service_recovery(vec![], vec![], req).await;
+        let token = "";
+        let request = test::TestRequest::post()
+            .uri("/recovery") //POST /recovery
+            .set_json(RecoveryUserDto {
+                email: UserModelsTest::email_min(),
+            });
+        let factory = recovery;
+        let vec = (vec![], vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1273,11 +1262,15 @@ mod tests {
     }
     #[test]
     async fn test_recovery_invalid_dto_email_max() {
-        let req = test::TestRequest::post().set_json(RecoveryUserDto {
-            email: UserModelsTest::email_max(),
-        });
-
-        let resp = call_service_recovery(vec![], vec![], req).await;
+        let token = "";
+        let request = test::TestRequest::post()
+            .uri("/recovery") //POST /recovery
+            .set_json(RecoveryUserDto {
+                email: UserModelsTest::email_max(),
+            });
+        let factory = recovery;
+        let vec = (vec![], vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1289,11 +1282,15 @@ mod tests {
     }
     #[test]
     async fn test_recovery_invalid_dto_email_wrong() {
-        let req = test::TestRequest::post().set_json(RecoveryUserDto {
-            email: UserModelsTest::email_wrong(),
-        });
-
-        let resp = call_service_recovery(vec![], vec![], req).await;
+        let token = "";
+        let request = test::TestRequest::post()
+            .uri("/recovery") //POST /recovery
+            .set_json(RecoveryUserDto {
+                email: UserModelsTest::email_wrong(),
+            });
+        let factory = recovery;
+        let vec = (vec![], vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1305,11 +1302,15 @@ mod tests {
     }
     #[test]
     async fn test_recovery_if_user_with_email_does_not_exist() {
-        let req = test::TestRequest::post().set_json(RecoveryUserDto {
-            email: "Oliver_Taylor@gmail.com".to_string(),
-        });
-
-        let resp = call_service_recovery(vec![], vec![], req).await;
+        let token = "";
+        let request = test::TestRequest::post()
+            .uri("/recovery") //POST /recovery
+            .set_json(RecoveryUserDto {
+                email: "Oliver_Taylor@gmail.com".to_string(),
+            });
+        let factory = recovery;
+        let vec = (vec![], vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -1320,15 +1321,18 @@ mod tests {
     }
     #[test]
     async fn test_recovery_if_user_recovery_does_not_exist() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1: User = user_with_id(create_user());
         let user1_email = user1.email.to_string();
 
-        let req = test::TestRequest::post().set_json(RecoveryUserDto {
-            email: user1_email.to_string(),
-        });
-
-        let resp = call_service_recovery(vec![user1], vec![], req).await;
+        let token = "";
+        let request = test::TestRequest::post()
+            .uri("/recovery") //POST /recovery
+            .set_json(RecoveryUserDto {
+                email: user1_email.to_string(),
+            });
+        let factory = recovery;
+        let vec = (vec![user1], vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         let body = test::read_body(resp).await;
@@ -1348,24 +1352,26 @@ mod tests {
     }
     #[test]
     async fn test_recovery_if_user_recovery_already_exists() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1: User = user_with_id(create_user());
         let user1_email = user1.email.to_string();
 
         let config_app = config_app::get_test_config();
         let app_recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
         let final_date_utc = Utc::now() + Duration::minutes(app_recovery_duration.into());
 
-        let user_recovery_orm =
-            UserRecoveryOrmApp::create(vec![create_user_recovery(1, user1.id, final_date_utc)]);
-        let user_recovery1 = user_recovery_orm.user_recovery_vec.get(0).unwrap().clone();
+        let user_recovery1 =
+            create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
         let user_recovery1_id = user_recovery1.id;
 
-        let req = test::TestRequest::post().set_json(RecoveryUserDto {
-            email: user1_email.to_string(),
-        });
-
-        let resp = call_service_recovery(vec![user1], vec![user_recovery1], req).await;
+        let token = "";
+        let request = test::TestRequest::post()
+            .uri("/recovery") //POST /recovery
+            .set_json(RecoveryUserDto {
+                email: user1_email.to_string(),
+            });
+        let factory = recovery;
+        let vec = (vec![user1], vec![], vec![], vec![user_recovery1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         let body = test::read_body(resp).await;
@@ -1385,43 +1391,18 @@ mod tests {
     }
 
     // ** confirm recovery **
-
-    async fn call_service_conf_recovery(
-        user_vec: Vec<User>,
-        user_recovery_vec: Vec<UserRecovery>,
-        session_vec: Vec<Session>,
-        test_request: TestRequest,
-        recovery_token: &str,
-    ) -> dev::ServiceResponse {
-        let data_config_jwt = web::Data::new(config_jwt::get_test_config());
-        let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
-        let data_user_recovery_orm = web::Data::new(UserRecoveryOrmApp::create(user_recovery_vec));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(session_vec));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_user_recovery_orm))
-                .app_data(web::Data::clone(&data_session_orm))
-                .service(confirm_recovery),
-        )
-        .await;
-
-        let req = test_request
-            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
-            .to_request();
-
-        test::call_service(&app, req).await
-    }
-
     #[test]
     async fn test_recovery_confirm_invalid_dto_password_empty() {
-        let req = test::TestRequest::put().set_json(RecoveryDataDto {
-            password: "".to_string(),
-        });
-
-        let resp = call_service_conf_recovery(vec![], vec![], vec![], req, &"token").await;
+        let recovery_token = "recovery_token";
+        let token = "";
+        let request = test::TestRequest::put()
+            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
+            .set_json(RecoveryDataDto {
+                password: "".to_string(),
+            });
+        let factory = confirm_recovery;
+        let vec = (vec![], vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1433,11 +1414,16 @@ mod tests {
     }
     #[test]
     async fn test_recovery_confirm_invalid_dto_password_min() {
-        let req = test::TestRequest::put().set_json(RecoveryDataDto {
-            password: UserModelsTest::password_min(),
-        });
-
-        let resp = call_service_conf_recovery(vec![], vec![], vec![], req, &"token").await;
+        let recovery_token = "recovery_token";
+        let token = "";
+        let request = test::TestRequest::put()
+            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
+            .set_json(RecoveryDataDto {
+                password: UserModelsTest::password_min(),
+            });
+        let factory = confirm_recovery;
+        let vec = (vec![], vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1449,11 +1435,16 @@ mod tests {
     }
     #[test]
     async fn test_recovery_confirm_invalid_dto_password_max() {
-        let req = test::TestRequest::put().set_json(RecoveryDataDto {
-            password: UserModelsTest::password_max(),
-        });
-
-        let resp = call_service_conf_recovery(vec![], vec![], vec![], req, &"token").await;
+        let recovery_token = "recovery_token";
+        let token = "";
+        let request = test::TestRequest::put()
+            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
+            .set_json(RecoveryDataDto {
+                password: UserModelsTest::password_max(),
+            });
+        let factory = confirm_recovery;
+        let vec = (vec![], vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1465,12 +1456,16 @@ mod tests {
     }
     #[test]
     async fn test_recovery_confirm_invalid_recovery_token() {
-        let reg_token = "invalid_recovery_token";
-
-        let req = test::TestRequest::put().set_json(RecoveryDataDto {
-            password: "passwordQ2V2".to_string(),
-        });
-        let resp = call_service_conf_recovery(vec![], vec![], vec![], req, &reg_token).await;
+        let recovery_token = "invalid_recovery_token";
+        let token = "";
+        let request = test::TestRequest::put()
+            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
+            .set_json(RecoveryDataDto {
+                password: "passwordQ2V2".to_string(),
+            });
+        let factory = confirm_recovery;
+        let vec = (vec![], vec![], vec![], vec![]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -1480,33 +1475,32 @@ mod tests {
     }
     #[test]
     async fn test_recovery_confirm_final_date_has_expired() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1: User = user_with_id(create_user());
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
         let final_date_utc = Utc::now() + Duration::minutes(-recovery_duration);
 
-        let user_recovery_orm =
-            UserRecoveryOrmApp::create(vec![create_user_recovery(1, user1.id, final_date_utc)]);
-        let user_recovery1 = user_recovery_orm.user_recovery_vec.get(0).unwrap().clone();
-        let user_recovery1_id = user_recovery1.id;
-        let user_recov1_v = vec![user_recovery1];
-        let user1_v = vec![user1];
+        let user_recovery1 =
+            create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
 
         let num_token = 1234;
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token =
-            encode_dual_token(user_recovery1_id, num_token, jwt_secret, -recovery_duration)
+            encode_dual_token(user_recovery1.id, num_token, jwt_secret, -recovery_duration)
                 .unwrap();
 
-        let req = test::TestRequest::put().set_json(RecoveryDataDto {
-            password: "passwordQ2V2".to_string(),
-        });
-        let resp =
-            call_service_conf_recovery(user1_v, user_recov1_v, vec![], req, &recovery_token).await;
+        let token = "";
+        let request = test::TestRequest::put()
+            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
+            .set_json(RecoveryDataDto {
+                password: "passwordQ2V2".to_string(),
+            });
+        let factory = confirm_recovery;
+        let vec = (vec![user1], vec![], vec![], vec![user_recovery1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -1516,37 +1510,36 @@ mod tests {
     }
     #[test]
     async fn test_recovery_confirm_no_exists_in_user_recovery() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1: User = user_with_id(create_user());
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
         let final_date_utc = Utc::now() + Duration::minutes(recovery_duration);
 
-        let user_recovery_orm =
-            UserRecoveryOrmApp::create(vec![create_user_recovery(1, user1.id, final_date_utc)]);
-        let user_recovery1 = user_recovery_orm.user_recovery_vec.get(0).unwrap().clone();
-        let user_recovery1_id = user_recovery1.id;
-        let user_recov1_v = vec![user_recovery1];
-        let user1_v = vec![user1];
+        let user_recovery1 =
+            create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
 
         let num_token = 1234;
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = encode_dual_token(
-            user_recovery1_id + 1,
+            user_recovery1.id + 1,
             num_token,
             jwt_secret,
             recovery_duration,
         )
         .unwrap();
 
-        let req = test::TestRequest::put().set_json(RecoveryDataDto {
-            password: "passwordQ2V2".to_string(),
-        });
-        let resp =
-            call_service_conf_recovery(user1_v, user_recov1_v, vec![], req, &recovery_token).await;
+        let token = "";
+        let request = test::TestRequest::put()
+            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
+            .set_json(RecoveryDataDto {
+                password: "passwordQ2V2".to_string(),
+            });
+        let factory = confirm_recovery;
+        let vec = (vec![user1], vec![], vec![], vec![user_recovery1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -1556,37 +1549,36 @@ mod tests {
     }
     #[test]
     async fn test_recovery_confirm_no_exists_in_user() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1: User = user_with_id(create_user());
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
         let final_date_utc = Utc::now() + Duration::minutes(recovery_duration);
 
-        let user_recovery_orm =
-            UserRecoveryOrmApp::create(vec![create_user_recovery(1, user1.id + 1, final_date_utc)]);
-        let user_recovery1 = user_recovery_orm.user_recovery_vec.get(0).unwrap().clone();
-        let user_recovery1_id = user_recovery1.id;
-        let user_recov1_v = vec![user_recovery1];
-        let user1_v = vec![user1];
+        let user_recovery1 =
+            create_user_recovery_with_id(create_user_recovery(1, user1.id + 1, final_date_utc));
 
         let num_token = 1234;
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = encode_dual_token(
-            user_recovery1_id + 1,
+            user_recovery1.id + 1,
             num_token,
             jwt_secret,
             recovery_duration,
         )
         .unwrap();
 
-        let req = test::TestRequest::put().set_json(RecoveryDataDto {
-            password: "passwordQ2V2".to_string(),
-        });
-        let resp =
-            call_service_conf_recovery(user1_v, user_recov1_v, vec![], req, &recovery_token).await;
+        let token = "";
+        let request = test::TestRequest::put()
+            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
+            .set_json(RecoveryDataDto {
+                password: "passwordQ2V2".to_string(),
+            });
+        let factory = confirm_recovery;
+        let vec = (vec![user1], vec![], vec![], vec![user_recovery1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -1596,40 +1588,38 @@ mod tests {
     }
     #[test]
     async fn test_recovery_confirm_success() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-        let user1_id = user1.id;
+        let user1: User = user_with_id(create_user());
         let user1b = user1.clone();
-        let user1_v = vec![user1];
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
         let final_date_utc = Utc::now() + Duration::minutes(recovery_duration);
 
-        let user_recovery_orm =
-            UserRecoveryOrmApp::create(vec![create_user_recovery(1, user1_id, final_date_utc)]);
-        let user_recovery1 = user_recovery_orm.user_recovery_vec.get(0).unwrap().clone();
-        let user_recovery1_id = user_recovery1.id;
-        let user_recov1_v = vec![user_recovery1];
+        let user_recovery1 =
+            create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
 
         let num_token = 1234;
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token =
-            encode_dual_token(user_recovery1_id, num_token, jwt_secret, recovery_duration).unwrap();
+            encode_dual_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
 
-        let req = test::TestRequest::put().set_json(RecoveryDataDto {
-            password: "passwordQ2V2".to_string(),
-        });
-        let resp =
-            call_service_conf_recovery(user1_v, user_recov1_v, vec![], req, &recovery_token).await;
+        let token = "";
+        let request = test::TestRequest::put()
+            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
+            .set_json(RecoveryDataDto {
+                password: "passwordQ2V2".to_string(),
+            });
+        let factory = confirm_recovery;
+        let vec = (vec![user1], vec![], vec![], vec![user_recovery1]);
+        let resp = call_service1(vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(user_dto_res.id, user1_id);
+        assert_eq!(user_dto_res.id, user1b.id);
         assert_eq!(user_dto_res.nickname, user1b.nickname);
         assert_eq!(user_dto_res.email, user1b.email);
         assert_eq!(user_dto_res.password, "");
