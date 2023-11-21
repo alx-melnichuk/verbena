@@ -28,6 +28,9 @@ pub fn encode_token(
     if sub.is_empty() {
         return Err(jsonwebtoken::errors::ErrorKind::InvalidSubject.into());
     }
+    if secret.len() == 0 {
+        return Err(jsonwebtoken::errors::ErrorKind::InvalidEcdsaKey.into());
+    }
 
     let now = Utc::now();
     let iat = now.timestamp() as usize;

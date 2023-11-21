@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{borrow::Cow, ops::Deref};
 
 use actix_web::{
     cookie::time::Duration as ActixWebDuration, cookie::Cookie, post, web, HttpResponse,
@@ -16,38 +16,23 @@ use crate::sessions::{
     session_orm::SessionOrm,
     tokens::{decode_dual_token, encode_dual_token, generate_num_token},
 };
-use crate::settings::err::{self, CD_JSON_WEB_TOKEN};
-use crate::users::user_models;
+use crate::settings::err::{
+    self, CD_BLOCKING, CD_DATABASE, CD_INTER_SRV_ERROR, CD_JSON_WEB_TOKEN, CD_UNAUTHORIZED,
+    MSG_INVALID_HASH, MSG_JSON_WEB_ENCODE_TOKEN, MSG_SESSION_NOT_EXIST,
+};
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
-use crate::users::user_orm::UserOrm;
+use crate::users::{user_models, user_orm::UserOrm};
 use crate::validators::{msg_validation, Validator};
 
-// #- pub const CD_WRONG_NICKNAME: &str = "WrongNickname";
-// #- pub const MSG_WRONG_NICKNAME: &str = "The specified nickname is incorrect!";
-
-pub const CD_WRONG_NICKNAME_EMAIL: &str = "WrongEmailNickname";
-pub const MSG_WRONG_NICKNAME_EMAIL: &str = "The specified nickname or email is incorrect!";
-
-pub const CD_WRONG_PASSWORD: &str = "WrongPassword";
-pub const MSG_WRONG_PASSWORD: &str = "The password specified is incorrect!";
-
-pub const CD_INVALID_HASH: &str = "InvalidHash";
-pub const MSG_INVALID_HASH: &str = "Invalid hash format in the database.";
-
-pub const CD_SESSION_ERROR: &str = "SessionError";
-pub const MSG_SESSION_ERROR: &str = "Session error";
-
-pub const CD_USER_NO_SESSION: &str = "UserNoSession";
-pub const MSG_USER_NO_SESSION: &str = "There is no session for user";
+pub const MSG_WRONG_NICKNAME_EMAIL: &str = "nickname_or_email_incorrect";
+pub const MSG_PASSWORD_INCORRECT: &str = "password_incorrect";
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     // POST api/login
     cfg.service(login)
-        // // POST api/registration0
-        // .service(registration0)
         // POST api/logout
         .service(logout)
         // POST api/token
@@ -55,65 +40,27 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 }
 
 fn err_database(err: String) -> AppError {
-    log::error!("{}: {}", err::CD_DATABASE, err);
-    AppError::new(err::CD_DATABASE, &err).set_status(500)
+    log::error!("{}: {}", CD_DATABASE, err);
+    AppError::new(CD_DATABASE, &err).set_status(500)
 }
 fn err_blocking(err: String) -> AppError {
-    log::error!("{}: {}", err::CD_BLOCKING, err);
-    AppError::new(err::CD_BLOCKING, &err).set_status(500)
+    log::error!("{}: {}", CD_BLOCKING, err);
+    AppError::new(CD_BLOCKING, &err).set_status(500)
 }
-
-// pub const CD_USER_EXISTS: &str = "NicknameOrEmailExist";
-// pub const MSG_USER_EXISTS: &str = "A user with the same nickname or email already exists.";
-// POST api/registration
-// #[post("/registration0")]
-/*pub async fn registration0(
-    user_orm: web::Data<UserOrmApp>,
-    session_orm: web::Data<SessionOrmApp>,
-    json_body: web::Json<user_models::CreateUserDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
-    // Checking the validity of the data model.
-    let validation_res = json_body.validate();
-    if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::validations_to_response(validation_errors));
-    }
-
-    let create_user_dto: user_models::CreateUserDto = json_body.0.clone();
-
-    let nickname = create_user_dto.nickname.clone();
-    let email = create_user_dto.email.clone();
-
-    let result_user = web::block(move || {
-        // Find for a user by nickname or email.
-        let existing_user = user_orm
-            .find_user_by_nickname_or_email(Some(&nickname), Some(&email))
-            .map_err(|e| err_database(e.to_string()))?;
-
-        if existing_user.is_some() {
-            return Err(AppError::new(CD_USER_EXISTS, MSG_USER_EXISTS).set_status(409));
-        }
-
-        // Create a new entity (user).
-        let user = user_orm
-            .create_user(&create_user_dto)
-            .map_err(|e| err_database(e.to_string()))?;
-
-        // Create a new entity (session).
-        #[rustfmt::skip]
-        let session = session_models::Session { user_id: user.clone().id, num_token: None };
-        session_orm.create_session(&session).map_err(|e| err_database(e.to_string()))?;
-
-        Ok(user)
-    })
-    .await
-    .map_err(|e| err_blocking(e.to_string()))??;
-    Ok(HttpResponse::Created().body(()))
-}*/
-
-// PUT('registration2/:confirmationId')
-// userRegistration(confirmationId)
-
+fn err_json_web_encode_token(err: String) -> AppError {
+    #[rustfmt::skip]
+    log::error!("{}: {} - {}", CD_INTER_SRV_ERROR, MSG_JSON_WEB_ENCODE_TOKEN, err);
+    AppError::new(CD_INTER_SRV_ERROR, MSG_JSON_WEB_ENCODE_TOKEN)
+        .set_status(500)
+        .add_param(Cow::Borrowed("error"), &err)
+}
+fn err_session(user_id: i32) -> AppError {
+    #[rustfmt::skip]
+    log::error!("{}: {} - user_id - {}", CD_INTER_SRV_ERROR, MSG_SESSION_NOT_EXIST, user_id);
+    AppError::new(CD_INTER_SRV_ERROR, MSG_SESSION_NOT_EXIST)
+        .set_status(500)
+        .add_param(Cow::Borrowed("user_id"), &user_id)
+}
 // POST api/login
 #[post("/login")]
 pub async fn login(
@@ -145,20 +92,20 @@ pub async fn login(
     .map_err(|e| err_blocking(e.to_string()))??;
 
     let user: user_models::User = user.ok_or_else(|| {
-        log::error!("{}: {}", CD_WRONG_NICKNAME_EMAIL, MSG_WRONG_NICKNAME_EMAIL);
-        AppError::new(CD_WRONG_NICKNAME_EMAIL, MSG_WRONG_NICKNAME_EMAIL).set_status(403)
+        log::error!("{}: {}", CD_UNAUTHORIZED, MSG_WRONG_NICKNAME_EMAIL);
+        AppError::new(CD_UNAUTHORIZED, MSG_WRONG_NICKNAME_EMAIL).set_status(401)
     })?;
 
     let user_password = user.password.to_string();
     let password_matches = hash_tools::compare_hash(&password, &user_password).map_err(|e| {
         #[rustfmt::skip]
-        log::error!("{}: {} {:?}", CD_INVALID_HASH, MSG_INVALID_HASH, e.to_string());
-        AppError::new(CD_INVALID_HASH, MSG_INVALID_HASH).set_status(500)
+        log::error!("{}: {} {:?}", CD_INTER_SRV_ERROR, MSG_INVALID_HASH, e.to_string());
+        AppError::new(CD_INTER_SRV_ERROR, MSG_INVALID_HASH).set_status(500)
     })?;
 
     if !password_matches {
-        log::error!("{}: {}", CD_WRONG_PASSWORD, MSG_WRONG_PASSWORD);
-        return Err(AppError::new(CD_WRONG_PASSWORD, MSG_WRONG_PASSWORD).set_status(403));
+        log::error!("{}: {}", CD_UNAUTHORIZED, MSG_PASSWORD_INCORRECT);
+        return Err(AppError::new(CD_UNAUTHORIZED, MSG_PASSWORD_INCORRECT).set_status(401));
     }
 
     let num_token = generate_num_token();
@@ -167,27 +114,17 @@ pub async fn login(
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let access_token = encode_dual_token(user.id, num_token, jwt_secret, config_jwt.jwt_access)
-        .map_err(|err| {
-            log::error!("{}: {}", CD_JSON_WEB_TOKEN, err);
-            AppError::new(CD_JSON_WEB_TOKEN, &err).set_status(500)
-        })?;
+        .map_err(|err| err_json_web_encode_token(err))?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let refresh_token = encode_dual_token(user.id, num_token, jwt_secret, config_jwt.jwt_refresh)
-        .map_err(|err| {
-        log::error!("{}: {}", CD_JSON_WEB_TOKEN, err);
-        AppError::new(CD_JSON_WEB_TOKEN, &err).set_status(500)
-    })?;
+        .map_err(|err| err_json_web_encode_token(err))?;
 
-    let session_opt = session_orm.modify_session(user.id, Some(num_token)).map_err(|e| {
-        #[rustfmt::skip]
-        log::error!("{}: {} {}", CD_SESSION_ERROR, MSG_SESSION_ERROR, e.to_string());
-        AppError::new(CD_SESSION_ERROR, MSG_SESSION_ERROR).set_status(500)
-    })?;
+    let session_opt = session_orm
+        .modify_session(user.id, Some(num_token))
+        .map_err(|e| err_database(e.to_string()))?;
     if session_opt.is_none() {
-        #[rustfmt::skip]
-        log::error!("{}: {} {}", CD_USER_NO_SESSION, MSG_USER_NO_SESSION, user.id.to_string());
-        return Err(AppError::new(CD_USER_NO_SESSION, MSG_USER_NO_SESSION).set_status(500));
+        return Err(err_session(user.id));
     }
 
     let user_tokens_dto = user_models::UserTokensDto {
@@ -208,42 +145,6 @@ pub async fn login(
     Ok(HttpResponse::Ok().cookie(cookie).json(login_user_response_dto))
 }
 
-// fn create_tokens(
-//     sub: &str,
-//     config_jwt: config_jwt::ConfigJwt,
-// ) -> Result<(String, String), AppError> {
-/*let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-
-let access_token =
-    tokens::encode_token(sub, &jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        log::error!("{}: {}", CD_JSON_WEB_TOKEN, e.to_string());
-        AppError::new(CD_JSON_WEB_TOKEN, &e.to_string()).set_status(500)
-    })?;
-
-let refresh_token =
-    tokens::encode_token(&sub, &jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        log::error!("{}: {}", CD_JSON_WEB_TOKEN, e.to_string());
-        AppError::new(CD_JSON_WEB_TOKEN, &e.to_string()).set_status(500)
-    })?;
-    */
-/*
-let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-
-let access_token =
-    tools_token::collect_token(user_id: i32, num_token: i32, jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        log::error!("{}: {}", CD_JSON_WEB_TOKEN, e.to_string());
-        AppError::new(CD_JSON_WEB_TOKEN, &e.to_string()).set_status(500)
-    })?;
-
-let refresh_token =
-    tools_token::collect_token(user_id: i32, num_token: i32, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        log::error!("{}: {}", CD_JSON_WEB_TOKEN, e.to_string());
-        AppError::new(CD_JSON_WEB_TOKEN, &e.to_string()).set_status(500)
-    })?;
-*/
-// Ok((access_token, refresh_token))
-// }
-
 // POST api/logout
 #[rustfmt::skip]
 #[post("/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
@@ -252,15 +153,11 @@ pub async fn logout(session_orm: web::Data<SessionOrmApp>, authenticated: Authen
     let user = authenticated.deref().clone();
 
     // Clear "num_token" value.
-    let session_opt = session_orm.modify_session(user.id, None).map_err(|e| {
-        #[rustfmt::skip]
-        log::error!("{}: {} {}", CD_SESSION_ERROR, MSG_SESSION_ERROR, e.to_string());
-        AppError::new(CD_SESSION_ERROR, MSG_SESSION_ERROR).set_status(500)
-    })?;
+    let session_opt = session_orm.modify_session(user.id, None)
+        .map_err(|e| err_database(e.to_string()))?;
+
     if session_opt.is_none() {
-        #[rustfmt::skip]
-        log::error!("{}: {} {}", CD_USER_NO_SESSION, MSG_USER_NO_SESSION, user.id.to_string());
-        return Err(AppError::new(CD_USER_NO_SESSION, MSG_USER_NO_SESSION).set_status(500));
+        return Err(err_session(user.id));
     }
 
     let cookie = Cookie::build("token", "")
@@ -331,15 +228,11 @@ pub async fn new_token(
         AppError::new(CD_JSON_WEB_TOKEN, &err).set_status(500)
     })?;
 
-    let session_opt = session_orm1.modify_session(user_id, Some(num_token)).map_err(|e| {
-        #[rustfmt::skip]
-        log::error!("{}: {} {}", CD_SESSION_ERROR, MSG_SESSION_ERROR, e.to_string());
-        AppError::new(CD_SESSION_ERROR, MSG_SESSION_ERROR).set_status(500)
-    })?;
+    let session_opt = session_orm1
+        .modify_session(user_id, Some(num_token))
+        .map_err(|e| err_database(e.to_string()))?;
     if session_opt.is_none() {
-        #[rustfmt::skip]
-        log::error!("{}: {} {}", CD_USER_NO_SESSION, MSG_USER_NO_SESSION, user_id);
-        return Err(AppError::new(CD_USER_NO_SESSION, MSG_USER_NO_SESSION).set_status(500));
+        return Err(err_session(user_id));
     }
 
     let user_tokens_dto = user_models::UserTokensDto {
@@ -354,609 +247,631 @@ pub async fn new_token(
 
     Ok(HttpResponse::Ok().cookie(cookie).json(user_tokens_dto))
 }
+/*fn create_tokens(
+     sub: &str,
+     config_jwt: config_jwt::ConfigJwt,
+) -> Result<(String, String), AppError> {
+let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+let access_token =
+    tokens::encode_token(sub, &jwt_secret, config_jwt.jwt_access).map_err(|e| {
+        log::error!("{}: {}", CD_JSON_WEB_TOKEN, e.to_string());
+        AppError::new(CD_JSON_WEB_TOKEN, &e.to_string()).set_status(500)
+    })?;
+
+let refresh_token =
+    tokens::encode_token(&sub, &jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
+        log::error!("{}: {}", CD_JSON_WEB_TOKEN, e.to_string());
+        AppError::new(CD_JSON_WEB_TOKEN, &e.to_string()).set_status(500)
+    })?;
+
+
+let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+let access_token =
+    tools_token::collect_token(user_id: i32, num_token: i32, jwt_secret, config_jwt.jwt_access).map_err(|e| {
+        log::error!("{}: {}", CD_JSON_WEB_TOKEN, e.to_string());
+        AppError::new(CD_JSON_WEB_TOKEN, &e.to_string()).set_status(500)
+    })?;
+
+let refresh_token =
+    tools_token::collect_token(user_id: i32, num_token: i32, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
+        log::error!("{}: {}", CD_JSON_WEB_TOKEN, e.to_string());
+        AppError::new(CD_JSON_WEB_TOKEN, &e.to_string()).set_status(500)
+    })?;
+
+ Ok((access_token, refresh_token))
+}*/
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use actix_web::{http, test, web, App};
+    use actix_web::{dev, http, test, test::TestRequest, web, App};
+    use serde_json::json;
     // use serde_json::{json, to_string};
 
-    use crate::sessions::session_models::Session;
     // use crate::errors::AppError;
-    use crate::sessions::{config_jwt, tokens::encode_token};
-    use crate::users::{user_models, user_orm::tests::UserOrmApp};
+    // use crate::sessions::{config_jwt, tokens::encode_token};
+    use crate::sessions::{
+        config_jwt::{self, ConfigJwt},
+        session_models::Session,
+    };
+    use crate::users::{
+        user_models::{LoginUserDto, User, UserModelsTest, UserRole},
+        user_orm::tests::UserOrmApp,
+    };
 
     use super::*;
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
     // const MSG_FAILED_DESER2: &str = "Failed to deserialize JSON string";
 
-    fn create_user() -> user_models::User {
+    fn create_user() -> User {
         let mut user =
             UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1");
-        user.role = user_models::UserRole::User;
+        user.role = UserRole::User;
         user
     }
+    fn user_with_id(user: User) -> User {
+        let user_orm = UserOrmApp::create(vec![user]);
+        user_orm.user_vec.get(0).unwrap().clone()
+    }
+    fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
+        SessionOrmApp::new_session(user_id, num_token)
+    }
 
-    //#[test] // !
-    /*async fn test_login_invalid_dto_nickname_min() {
-        let user1: user_models::User = create_user();
-        let nickname: String = (0..(user_models::NICKNAME_MIN - 1)).map(|_| 'a').collect();
+    async fn call_service1(
+        config_jwt: ConfigJwt,
+        vec: (Vec<User>, Vec<Session>),
+        token: &str,
+        factory: impl dev::HttpServiceFactory + 'static,
+        request: TestRequest,
+    ) -> dev::ServiceResponse {
+        let data_config_jwt = web::Data::new(config_jwt);
 
-        let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec.0));
+        let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
+
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
+                .app_data(web::Data::clone(&data_session_orm))
+                .service(factory),
         )
         .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(user_models::LoginUserDto {
-                nickname: nickname,
-                password: "passwordD1T1".to_string(),
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        let test_request = if token.len() > 0 {
+            request.insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+        } else {
+            request
+        };
+        let req = test_request.to_request();
 
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CN_VALIDATION);
-        let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_MIN);
-        assert_eq!(app_err.message, msg_err);
-    }*/
+        test::call_service(&app, req).await
+    }
 
-    //#[test] // !
-    /*async fn test_login_invalid_dto_nickname_max() {
-        let user1: user_models::User = create_user();
-        let nickname: String = (0..(user_models::NICKNAME_MAX + 1)).map(|_| 'a').collect();
-
-        let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(user_models::LoginUserDto {
-                nickname: nickname,
-                password: "passwordD1T1".to_string(),
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CN_VALIDATION);
-        let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_MAX);
-        assert_eq!(app_err.message, msg_err);
-    }*/
-
-    //#[test] // !
-    /*async fn test_login_invalid_dto_wrong_nickname() {
-        let user1: user_models::User = create_user();
-        let nickname: String = "Oliver_Taylor#".to_string();
-
-        let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(user_models::LoginUserDto {
-                nickname: nickname,
-                password: "passwordD1T1".to_string(),
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CN_VALIDATION);
-        let msg_err = format!("nickname: {}", user_models::MSG_NICKNAME_REGEX);
-        assert_eq!(app_err.message, msg_err);
-    }*/
-    /*
+    // ** login **
     #[test]
-    async fn test_login_non_existent_nickname() {
-        let nickname = "Oliver_Taylor".to_string();
-        let email = format!("{}@gmail.com", nickname).to_string();
-        let password = "passwdT1R1".to_string();
-        let mut user1 =
-            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
-        user1.role = user_models::UserRole::User;
+    async fn test_login_no_data() {
+        let token = "";
+
+        let request = test::TestRequest::post().uri("/login"); // POST /login
 
         let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(user_models::LoginUserDto {
-                nickname: format!("{}a", nickname).to_string(),
-                password: password,
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CD_UNAUTHORIZED);
-        assert_eq!(app_err.message, MSG_WRONG_NICKNAME);
-    }*/
-
-    //#[test] // !
-    /*async fn test_login_invalid_dto_email_min() {
-        let user1: user_models::User = create_user();
-        let suffix = "@us".to_string();
-        let email_min: usize = user_models::EMAIL_MIN.into();
-        let email: String = (0..(email_min - 1 - suffix.len())).map(|_| 'a').collect();
-        let email2 = format!("{}{}", email, suffix);
-
-        let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(user_models::LoginUserDto {
-                nickname: email2,
-                password: "passwordD1T1".to_string(),
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
+        let vec = (vec![], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CN_VALIDATION);
-        let msg_err = format!("nickname: {}", user_models::MSG_EMAIL_MIN);
-        assert_eq!(app_err.message, msg_err);
-    }*/
-
-    //#[test] // !
-    /*async fn test_login_invalid_dto_email_max() {
-        let user1: user_models::User = create_user();
-        let email_max: usize = user_models::EMAIL_MAX.into();
-        let prefix: String = (0..64).map(|_| 'a').collect();
-        let domain = ".ua";
-        let len = email_max - prefix.len() - domain.len() + 1;
-        let suffix: String = (0..len).map(|_| 'a').collect();
-        let email2 = format!("{}@{}{}", prefix, suffix, domain);
-
-        let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(user_models::LoginUserDto {
-                nickname: email2,
-                password: "passwordD1T1".to_string(),
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CN_VALIDATION);
-        let msg_err = format!("nickname: {}", user_models::MSG_EMAIL_MAX);
-        assert_eq!(app_err.message, msg_err);
-    }*/
-
-    // #[test] // !
-    /*async fn test_login_invalid_dto_wrong_email() {
-        let user1: user_models::User = create_user();
-        let suffix = "@".to_string();
-        let email_min: usize = user_models::EMAIL_MIN.into();
-        let email: String = (0..(email_min - suffix.len())).map(|_| 'a').collect();
-        let email2 = format!("{}{}", email, suffix);
-
-        let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(user_models::LoginUserDto {
-                nickname: email2,
-                password: "passwordD1T1".to_string(),
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CN_VALIDATION);
-        let msg_err = format!("nickname: {}", user_models::MSG_EMAIL);
-        assert_eq!(app_err.message, msg_err);
-    }*/
-
-    //#[test]
-    /*async fn test_login_non_existent_email() {
-        let nickname = "Oliver_Taylor".to_string();
-        let email = format!("{}@gmail.com", nickname).to_string();
-        let password = "passwdT1R1".to_string();
-        let mut user1 =
-            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
-        user1.role = user_models::UserRole::User;
-
-        let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(user_models::LoginUserDto {
-                nickname: format!("a{}", nickname).to_string(),
-                password: password,
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CD_UNAUTHORIZED);
-        assert_eq!(app_err.message, MSG_WRONG_NICKNAME);
-    }*/
-
-    // #[test] // !
-    /*async fn test_login_invalid_dto_password_min() {
-        let user1: user_models::User = create_user();
-        let password: String = (0..(user_models::PASSWORD_MIN - 1)).map(|_| 'a').collect();
-
-        let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(user_models::LoginUserDto {
-                nickname: "James_Smith".to_string(),
-                password: password,
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CN_VALIDATION);
-        let msg_err = format!("password: {}", user_models::MSG_PASSWORD_MIN);
-        assert_eq!(app_err.message, msg_err);
-    }*/
-
-    // #[test] // !
-    /*async fn test_login_invalid_dto_password_max() {
-        let user1: user_models::User = create_user();
-        let password: String = (0..(user_models::PASSWORD_MAX + 1)).map(|_| 'a').collect();
-
-        let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(user_models::LoginUserDto {
-                nickname: "James_Smith".to_string(),
-                password: password,
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CN_VALIDATION);
-        let msg_err = format!("password: {}", user_models::MSG_PASSWORD_MAX);
-        assert_eq!(app_err.message, msg_err);
-    }*/
-
-    // #[test]
-    /*async fn test_login_wrong_hashed_password() {
-        let nickname = "Oliver_Taylor".to_string();
-        let email = format!("{}@gmail.com", nickname).to_string();
-        let password = "passwdT1R1".to_string();
-        let mut user1 =
-            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
-        user1.role = user_models::UserRole::User;
-        user1.password += "bad";
-
-        let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(user_models::LoginUserDto {
-                nickname: nickname.to_string(),
-                password: password.to_string(),
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CD_UNAUTHORIZED);
-        assert_eq!(app_err.message, MSG_INVALID_HASH_FORMAT);
-    }*/
-
-    // #[test] // no use
-    /*async fn test_login_wrong_password() {
-        let nickname = "Oliver_Taylor".to_string();
-        let email = format!("{}@gmail.com", nickname).to_string();
-        let password = "passwdT1R1".to_string();
-        let mut user1 =
-            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
-        user1.role = user_models::UserRole::User;
-
-        let config_jwt = config_jwt::get_test_config();
-
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(user_models::LoginUserDto {
-                nickname: nickname.to_string(),
-                password: format!("{}a", password),
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CD_UNAUTHORIZED);
-        assert_eq!(app_err.message, MSG_WRONG_PASSWORD);
-    }*/
-
-    // #[test] // !
-    /*async fn test_login_no_data() {
-        let nickname = "Oliver_Taylor".to_string();
-        let email = format!("{}@gmail.com", nickname).to_string();
-        let password = "passwdT1R1".to_string();
-        let mut user1 =
-            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
-        user1.role = user_models::UserRole::User;
-
-        let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST);
 
         let body = test::read_body(resp).await;
         let body_str = String::from_utf8_lossy(&body);
         let expected_message = "Content type error";
         assert!(body_str.contains(expected_message));
-    }*/
+    }
+    #[test]
+    async fn test_login_empty_json_object() {
+        let token = "";
 
-    // #[test] // !
-    /*async fn test_login_empty_json_object() {
-        let nickname = "Oliver_Taylor".to_string();
-        let email = format!("{}@gmail.com", nickname).to_string();
-        let password = "passwdT1R1".to_string();
-        let mut user1 =
-            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
-        user1.role = user_models::UserRole::User;
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(json!({}));
 
         let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(json!({}))
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST);
+        let vec = (vec![], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
         let body_str = String::from_utf8_lossy(&body);
         let expected_message = "Json deserialize error: missing field";
         assert!(body_str.contains(expected_message));
-    }*/
+    }
+    #[test]
+    async fn test_login_invalid_dto_nickname_empty() {
+        let token = "";
 
-    // #[test]
-    /*async fn test_login_valid_credentials() {
-        let nickname = "Oliver_Taylor".to_string();
-        let email = format!("{}@gmail.com", nickname).to_string();
-        let password = "passwdT1R1".to_string();
-        let mut user1 =
-            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
-        user1.role = user_models::UserRole::User;
-        let user1b_dto = user_models::UserDto::from(user1.clone());
-
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: "".to_string(),
+                password: "passwordD1T1".to_string(),
+            });
         let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(user_models::LoginUserDto {
-                nickname: nickname,
-                password: password,
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK);
+        let vec = (vec![], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.message, user_models::MSG_NICKNAME_REQUIRED);
+    }
+    #[test]
+    async fn test_login_invalid_dto_nickname_min() {
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: UserModelsTest::nickname_min(),
+                password: "passwordD1T1".to_string(),
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.message, user_models::MSG_NICKNAME_MIN_LENGTH);
+    }
+    #[test]
+    async fn test_login_invalid_dto_nickname_max() {
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: UserModelsTest::nickname_max(),
+                password: "passwordD1T1".to_string(),
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.message, user_models::MSG_NICKNAME_MAX_LENGTH);
+    }
+    #[test]
+    async fn test_login_invalid_dto_nickname_wrong() {
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: UserModelsTest::nickname_wrong(),
+                password: "passwordD1T1".to_string(),
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.message, user_models::MSG_NICKNAME_REGEX);
+    }
+    #[test]
+    async fn test_login_invalid_dto_email_min() {
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: UserModelsTest::email_min(),
+                password: "passwordD1T1".to_string(),
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.message, user_models::MSG_EMAIL_MIN_LENGTH);
+    }
+    #[test]
+    async fn test_login_invalid_dto_email_max() {
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: UserModelsTest::email_max(),
+                password: "passwordD1T1".to_string(),
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.message, user_models::MSG_EMAIL_MAX_LENGTH);
+    }
+    #[test]
+    async fn test_login_invalid_dto_email_wrong() {
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: UserModelsTest::email_wrong(),
+                password: "passwordD1T1".to_string(),
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.message, user_models::MSG_EMAIL_EMAIL_TYPE);
+    }
+    #[test]
+    async fn test_login_invalid_dto_password_empty() {
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: "James_Smith".to_string(),
+                password: "".to_string(),
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.message, user_models::MSG_PASSWORD_REQUIRED);
+    }
+    #[test]
+    async fn test_login_invalid_dto_password_min() {
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: "James_Smith".to_string(),
+                password: UserModelsTest::password_min(),
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.message, user_models::MSG_PASSWORD_MIN_LENGTH);
+    }
+    #[test]
+    async fn test_login_invalid_dto_password_max() {
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: "James_Smith".to_string(),
+                password: UserModelsTest::password_max(),
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.message, user_models::MSG_PASSWORD_MAX_LENGTH);
+    }
+    #[test]
+    async fn test_login_invalid_dto_password_wrong() {
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: "James_Smith".to_string(),
+                password: UserModelsTest::password_wrong(),
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.message, user_models::MSG_PASSWORD_REGEX);
+    }
+    #[test]
+    async fn test_login_if_nickname_not_exist() {
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: "James_Smith".to_string(),
+                password: "passwordD1T1".to_string(),
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, CD_UNAUTHORIZED);
+        assert_eq!(app_err.message, MSG_WRONG_NICKNAME_EMAIL);
+    }
+    #[test]
+    async fn test_login_if_email_not_exist() {
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: "James_Smith@gmail.com".to_string(),
+                password: "passwordD1T1".to_string(),
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, CD_UNAUTHORIZED);
+        assert_eq!(app_err.message, MSG_WRONG_NICKNAME_EMAIL);
+    }
+    #[test]
+    async fn test_login_if_password_invalid_hash() {
+        let user1: User = user_with_id(create_user());
+        let user1_nickname = user1.nickname.to_string();
+        let user1_password = user1.password.to_string();
+
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: user1_nickname.to_string(),
+                password: user1_password.to_string(),
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![user1], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, CD_INTER_SRV_ERROR);
+        assert_eq!(app_err.message, MSG_INVALID_HASH);
+    }
+    #[test]
+    async fn test_login_if_password_incorrect() {
+        let mut user1: User = user_with_id(create_user());
+        let user1_nickname = user1.nickname.to_string();
+        let user1_password = user1.password.to_string();
+
+        let password = user1.password.to_string();
+        let password_hashed = hash_tools::encode_hash(&password).unwrap();
+        user1.password = password_hashed;
+
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: user1_nickname.to_string(),
+                password: format!("{}a", user1_password),
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![user1], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, CD_UNAUTHORIZED);
+        assert_eq!(app_err.message, MSG_PASSWORD_INCORRECT);
+    }
+    #[test]
+    async fn test_login_err_json_web_encode_token() {
+        let mut user1: User = user_with_id(create_user());
+        let user1_nickname = user1.nickname.to_string();
+        let user1_password = user1.password.to_string();
+
+        let password = user1.password.to_string();
+        let password_hashed = hash_tools::encode_hash(&password).unwrap();
+        user1.password = password_hashed;
+
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: user1_nickname.to_string(),
+                password: user1_password,
+            });
+        let mut config_jwt = config_jwt::get_test_config();
+        config_jwt.jwt_secret = "".to_string();
+        let vec = (vec![user1], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, CD_INTER_SRV_ERROR);
+        assert_eq!(app_err.message, MSG_JSON_WEB_ENCODE_TOKEN);
+    }
+    #[test]
+    async fn test_login_if_session_not_exist() {
+        let mut user1: User = user_with_id(create_user());
+        let user1_nickname = user1.nickname.to_string();
+        let user1_password = user1.password.to_string();
+
+        let password = user1.password.to_string();
+        let password_hashed = hash_tools::encode_hash(&password).unwrap();
+        user1.password = password_hashed;
+
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: user1_nickname.to_string(),
+                password: user1_password,
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![user1], vec![]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, CD_INTER_SRV_ERROR);
+        assert_eq!(app_err.message, MSG_SESSION_NOT_EXIST);
+    }
+    #[test]
+    async fn test_login_valid_credentials() {
+        let mut user1: User = user_with_id(create_user());
+        let user1_nickname = user1.nickname.to_string();
+        let user1_password = user1.password.to_string();
+        let user1_dto = user_models::UserDto::from(user1.clone());
+
+        let password = user1.password.to_string();
+        let password_hashed = hash_tools::encode_hash(&password).unwrap();
+        user1.password = password_hashed;
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+
+        let token = "";
+
+        let request = test::TestRequest::post()
+            .uri("/login") // POST /login
+            .set_json(LoginUserDto {
+                nickname: user1_nickname.to_string(),
+                password: user1_password,
+            });
+        let config_jwt = config_jwt::get_test_config();
+        let vec = (vec![user1], vec![session1]);
+        let factory = login;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let token_cookie = resp.response().cookies().find(|cookie| cookie.name() == "token");
+        assert!(token_cookie.is_some());
 
         let body = test::read_body(resp).await;
         let login_resp: user_models::LoginUserResponseDto =
             serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let user_dto_res = login_resp.user_dto;
-        let json_user1b_dto = serde_json::json!(user1b_dto).to_string();
-        let user1b_dto_ser: user_models::UserDto =
-            serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
-        assert_eq!(user_dto_res, user1b_dto_ser);
 
+        let json_user1_dto = serde_json::json!(user1_dto).to_string();
+        let user1_dto_ser: user_models::UserDto =
+            serde_json::from_slice(json_user1_dto.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(user_dto_res, user1_dto_ser);
         let access_token: String = login_resp.user_tokens_dto.access_token;
         assert!(!access_token.is_empty());
         let refresh_token: String = login_resp.user_tokens_dto.refresh_token;
         assert!(refresh_token.len() > 0);
     }
 
-    #[test]
-    async fn test_login_valid_credentials_receive_cookie() {
-        let nickname = "Oliver_Taylor".to_string();
-        let email = format!("{}@gmail.com", nickname).to_string();
-        let password = "passwdT1R1".to_string();
-        let mut user1 =
-            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
-        user1.role = user_models::UserRole::User;
-
-        let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(user_models::LoginUserDto {
-                nickname: nickname,
-                password: password,
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK);
-
-        let token_cookie = resp.response().cookies().find(|cookie| cookie.name() == "token");
-        assert!(token_cookie.is_some());
-    }
-
+    // ** logout **
     #[test]
     async fn test_logout_valid_token() {
-        let user1: user_models::User = create_user();
-        let user_id: String = user1.id.to_string();
+        let user1: User = user_with_id(create_user());
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
-        let token = tokens::create_token(&user_id, config_jwt.jwt_secret.as_bytes(), 60).unwrap();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(logout),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
-            .uri("/logout") //POST /login
-            .to_request();
-        let resp = test::call_service(&app, req).await;
+        let request = test::TestRequest::post().uri("/logout"); // POST /logout
+
+        let vec = (vec![user1], vec![session1]);
+        let factory = logout;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let token_cookie = resp.response().cookies().find(|cookie| cookie.name() == "token");
-        assert!(token_cookie.is_some());
+        let token_cookie_opt = resp.response().cookies().find(|cookie| cookie.name() == "token");
+        assert!(token_cookie_opt.is_some());
 
-        let token = token_cookie.unwrap();
+        let token = token_cookie_opt.unwrap();
         let token_value = token.value().to_string();
         assert!(token_value.len() == 0);
 
@@ -966,134 +881,14 @@ mod tests {
         let max_age_value = max_age.unwrap();
         assert_eq!(max_age_value, ActixWebDuration::new(0, 0));
 
+        assert_eq!(true, token.http_only().unwrap());
         let body = test::read_body(resp).await;
         let body_str = String::from_utf8_lossy(&body);
         assert_eq!(body_str, "");
     }
 
-    #[test]
-    async fn test_logout_misssing_token() {
-        let user1: user_models::User = create_user();
-        let config_jwt = config_jwt::get_test_config();
-
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(logout),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/logout") //POST /login
-            .to_request();
-        let result = test::try_call_service(&app, req).await.err();
-        let err = result.expect("Service call succeeded, but an error was expected.");
-
-        let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED);
-
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_DESER2);
-        assert_eq!(app_err.code, err::CD_MISSING_TOKEN);
-        assert_eq!(app_err.message, err::MSG_MISSING_TOKEN);
-    }
-
-    #[test]
-    async fn test_logout_invalid_token() {
-        let user1: user_models::User = create_user();
-        let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(logout),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .insert_header((
-                http::header::AUTHORIZATION,
-                format!("Bearer {}", "invalid_token"),
-            ))
-            .uri("/logout") //POST /logout
-            .to_request();
-        let result = test::try_call_service(&app, req).await.err();
-        let err = result.expect("Service call succeeded, but an error was expected.");
-        let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::FORBIDDEN);
-
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_DESER2);
-        assert_eq!(app_err.code, err::CD_INVALID_TOKEN);
-        assert_eq!(app_err.message, err::MSG_INVALID_TOKEN);
-    }
-
-    #[test]
-    async fn test_logout_expired_token() {
-        let user1: user_models::User = create_user();
-        let user_id: String = user1.id.to_string();
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let expired_token = tokens::create_token(&user_id, jwt_secret, -60).unwrap();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(logout),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .insert_header((
-                http::header::AUTHORIZATION,
-                format!("Bearer {}", expired_token),
-            ))
-            .uri("/logout") //POST /login
-            .to_request();
-        let result = test::try_call_service(&app, req).await.err();
-        let err = result.expect("Service call succeeded, but an error was expected.");
-        let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::FORBIDDEN);
-
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_DESER2);
-        assert_eq!(app_err.code, err::CD_INVALID_TOKEN);
-        assert_eq!(app_err.message, err::MSG_INVALID_TOKEN);
-    }
-    */
-    /*#[test]
-    async fn test_new_token_misssing_token() {
-        let user1: user_models::User = create_user();
-        let config_jwt = config_jwt::get_test_config();
-
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(new_token),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/token") //POST /token
-            .set_json(user_models::TokenUserDto {
-                token: "token".to_string(),
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_MISSING_TOKEN);
-        assert_eq!(app_err.message, err::MSG_MISSING_TOKEN);
-    }
-
-    #[test]
-    async fn test_new_token_invalid_token() {
+    //#[test]
+    /*async fn test_new_token_invalid_token() {
         let user1: user_models::User = create_user();
 
         let config_jwt = config_jwt::get_test_config();
@@ -1123,10 +918,10 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_INVALID_TOKEN);
         assert_eq!(app_err.message, err::MSG_INVALID_TOKEN);
-    }
+    }*/
 
-    #[test]
-    async fn test_new_token_expired_token() {
+    //#[test]
+    /*async fn test_new_token_expired_token() {
         let user1: user_models::User = create_user();
         let user_id: String = user1.id.to_string();
 
@@ -1159,10 +954,10 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_INVALID_TOKEN);
         assert_eq!(app_err.message, err::MSG_INVALID_TOKEN);
-    }
+    }*/
 
-    #[test]
-    async fn test_new_token_data_empty_token() {
+    //#[test]
+    /*async fn test_new_token_data_empty_token() {
         let user1: user_models::User = create_user();
         let user_id: String = user1.id.to_string();
 
@@ -1292,7 +1087,7 @@ mod tests {
         assert_eq!(app_err.message, err::MSG_UNALLOWABLE_TOKEN);
     }
     */
-    #[test]
+    /*#[test]
     async fn test_new_token_data_token_valid_user() {
         let user1: user_models::User = create_user();
         let user_id: String = user1.id.to_string();
@@ -1333,7 +1128,7 @@ mod tests {
         let refresh_token: String = user_token_resp.refresh_token;
         assert!(refresh_token.len() > 0);
     }
-
+    */
     /*    #[test]
        async fn test_login_valid_credentials() {
            let nickname = "Oliver_Taylor".to_string();
