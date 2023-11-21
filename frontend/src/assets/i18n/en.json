@@ -34,6 +34,16 @@
   "Forbidden": {
     "invalid_or_expired_token": "Invalid or expired token."
   },
+  "Unauthorized": {
+    "nickname_or_email_incorrect": "The nickname or email address is incorrect.",
+    "password_incorrect": "The password specified is incorrect."
+  },
+  "InternalServerError": {
+    "invalid_hash": "Invalid password hash value.",
+    "json_web_encode_token": "Error encoding web token.",
+    "json_web_decode_token": "Error decoding web token.",
+    "session_not_exist": "There is no session for this user."
+  },
   "field-email": {
     "err_minlength_symbol_search": "The symbol search should have {{value}} characters or more.",
     "err_maxlength_symbol_search": "The symbol search should be less than {{value}} characters.",

@@ -37,7 +37,7 @@ export class PgLoginComponent {
 
   // ** Public API **
 
-  public async doLogin(params: StrParams): Promise<void> {
+  public doLogin(params: StrParams): void {
     if (!params) {
       return;
     }
@@ -50,23 +50,18 @@ export class PgLoginComponent {
 
     this.isDisabledSubmit = true;
     this.errMsgList = [];
-    try {
-      await this.userService.login(nickname, password);
-      this.router.navigateByUrl(ROUTE_ROOT);
-    } catch (errRes) {
-      if (errRes instanceof HttpErrorResponse) {
-        if (errRes.status === 403) {
-          this.errMsgList = [this.translate.instant('login.err_not_correct_password')];
-        } else {
-          this.errMsgList = AppErrorUtil.handleError(errRes, this.defaultError, this.translate);
-        }
-      } else {
-        throw errRes;
-      }
-    } finally {
-      this.isDisabledSubmit = false;
-      this.changeDetector.markForCheck();
-    }
+
+    this.userService.login(nickname, password)
+      .then(() => {
+        this.router.navigateByUrl(ROUTE_ROOT);
+      })
+      .catch((error: HttpErrorResponse) => {
+        this.errMsgList = AppErrorUtil.handleError(error, this.defaultError, this.translate);
+      })
+      .finally(() => {
+        this.isDisabledSubmit = false;
+        this.changeDetector.markForCheck();
+      });
   }
 
   // ** Private API **
