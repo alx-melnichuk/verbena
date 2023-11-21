@@ -35,7 +35,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 
 fn err_parse_int(err: String) -> AppError {
     log::error!("{}: id: {}", CD_PARSE_INT_ERROR, err);
-    AppError::new(CD_PARSE_INT_ERROR, &format!("id: {err}")).set_status(400)
+    AppError::new(CD_PARSE_INT_ERROR, &format!("id: {}", err)).set_status(400)
 }
 fn err_database(err: String) -> AppError {
     log::error!("{}: {}", CD_DATABASE, err);
@@ -1037,7 +1037,7 @@ mod tests {
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_REGEX);
     }
     #[test]
-    async fn test_put_users_by_id_user_does_not_exist() {
+    async fn test_put_users_by_id_user_not_exist() {
         let mut user = create_user();
         user.role = UserRole::Admin;
         let user1: User = user_with_id(user);
@@ -1157,7 +1157,7 @@ mod tests {
         assert!(app_err.message.starts_with(&msg));
     }
     #[test]
-    async fn test_delete_users_by_id_user_does_not_exist() {
+    async fn test_delete_users_by_id_user_not_exist() {
         let mut user = create_user();
         user.role = UserRole::Admin;
         let user1: User = user_with_id(user);
