@@ -3,9 +3,9 @@ use log;
 use serde_json::json;
 use std::ops::Deref;
 
-use crate::errors::{AppError, CD_VALIDATION};
+use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
-use crate::settings::err::{CD_BLOCKING, CD_DATABASE, CD_NOT_FOUND, MSG_NOT_FOUND_BY_ID};
+use crate::settings::err;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
@@ -38,12 +38,12 @@ fn err_parse_int(err: String) -> AppError {
     AppError::new(CD_PARSE_INT_ERROR, &format!("id: {}", err)).set_status(400)
 }
 fn err_database(err: String) -> AppError {
-    log::error!("{}: {}", CD_DATABASE, err);
-    AppError::new(CD_DATABASE, &err).set_status(500)
+    log::error!("{}: {}", err::CD_DATABASE, err);
+    AppError::new(err::CD_DATABASE, &err).set_status(500)
 }
 fn err_blocking(err: String) -> AppError {
-    log::error!("{}: {}", CD_BLOCKING, err);
-    AppError::new(CD_BLOCKING, &err).set_status(500)
+    log::error!("{}: {}", err::CD_BLOCKING, err);
+    AppError::new(err::CD_BLOCKING, &err).set_status(500)
 }
 
 // GET api/users/{id}
@@ -154,7 +154,7 @@ pub async fn put_users_current(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", CD_VALIDATION, msg_validation(&validation_errors));
+        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
@@ -198,7 +198,7 @@ pub async fn delete_users_current(
     .map_err(|e| err_blocking(e.to_string()))??;
 
     if 0 == result_count {
-        Err(AppError::new(CD_NOT_FOUND, MSG_NOT_FOUND_BY_ID).set_status(404))
+        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_NOT_FOUND_BY_ID).set_status(404))
     } else {
         Ok(HttpResponse::Ok().finish())
     }
@@ -219,7 +219,7 @@ pub async fn put_users_by_id(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", CD_VALIDATION, msg_validation(&validation_errors));
+        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
@@ -238,7 +238,7 @@ pub async fn put_users_by_id(
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
     } else {
-        Err(AppError::new(CD_NOT_FOUND, MSG_NOT_FOUND_BY_ID).set_status(404))
+        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_NOT_FOUND_BY_ID).set_status(404))
     }
 }
 
@@ -264,7 +264,7 @@ pub async fn delete_users_by_id(
     .map_err(|e| err_blocking(e.to_string()))??;
 
     if 0 == result_count {
-        Err(AppError::new(CD_NOT_FOUND, MSG_NOT_FOUND_BY_ID).set_status(404))
+        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_NOT_FOUND_BY_ID).set_status(404))
     } else {
         Ok(HttpResponse::Ok().finish())
     }
@@ -275,7 +275,7 @@ mod tests {
     use actix_web::{dev, http, test, test::TestRequest, web, App};
     use chrono::Utc;
 
-    use crate::errors::{AppError, CD_VALIDATION};
+    use crate::errors::AppError;
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp,
         tokens::encode_dual_token,
@@ -334,7 +334,6 @@ mod tests {
     }
 
     // ** get_user_by_id **
-
     #[test]
     async fn test_get_user_by_id_invalid_id() {
         let mut user = create_user();
@@ -365,7 +364,6 @@ mod tests {
         let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, user_id_bad, MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
     }
-
     #[test]
     async fn test_get_user_by_id_valid_id() {
         let mut user = create_user();
@@ -659,7 +657,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_NICKNAME_REQUIRED);
     }
     #[test]
@@ -693,7 +691,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_NICKNAME_MIN_LENGTH);
     }
     #[test]
@@ -727,7 +725,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_NICKNAME_MAX_LENGTH);
     }
     #[test]
@@ -761,7 +759,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_NICKNAME_REGEX);
     }
     #[test]
@@ -795,7 +793,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_EMAIL_REQUIRED);
     }
     #[test]
@@ -829,7 +827,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_EMAIL_MIN_LENGTH);
     }
     #[test]
@@ -863,7 +861,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_EMAIL_MAX_LENGTH);
     }
     #[test]
@@ -897,7 +895,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_EMAIL_EMAIL_TYPE);
     }
     #[test]
@@ -931,7 +929,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_REQUIRED);
     }
     #[test]
@@ -965,7 +963,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_MIN_LENGTH);
     }
     #[test]
@@ -999,7 +997,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_MAX_LENGTH);
     }
     #[test]
@@ -1033,7 +1031,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_REGEX);
     }
     #[test]
@@ -1066,8 +1064,8 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CD_NOT_FOUND);
-        assert_eq!(app_err.message, MSG_NOT_FOUND_BY_ID);
+        assert_eq!(app_err.code, err::CD_NOT_FOUND);
+        assert_eq!(app_err.message, err::MSG_NOT_FOUND_BY_ID);
     }
     #[test]
     async fn test_put_users_by_id_valid_id() {
@@ -1180,8 +1178,8 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CD_NOT_FOUND);
-        assert_eq!(app_err.message, MSG_NOT_FOUND_BY_ID);
+        assert_eq!(app_err.code, err::CD_NOT_FOUND);
+        assert_eq!(app_err.message, err::MSG_NOT_FOUND_BY_ID);
     }
     #[test]
     async fn test_delete_users_by_id_user_exists() {

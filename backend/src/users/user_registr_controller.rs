@@ -1,9 +1,9 @@
-use std::borrow::Cow;
+use std::borrow;
 
 use actix_web::{post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
 
-use crate::errors::{AppError, CD_VALIDATION};
+use crate::errors::AppError;
 use crate::hash_tools;
 #[cfg(not(feature = "mockdata"))]
 use crate::send_email::mailer::inst::MailerApp;
@@ -20,21 +20,14 @@ use crate::sessions::{
     session_orm::SessionOrm,
     tokens::{decode_dual_token, encode_dual_token, generate_num_token},
 };
-use crate::settings::{
-    config_app,
-    err::{
-        CD_BLOCKING, CD_CONFLICT, CD_DATABASE, CD_HASHING_PASSWD, CD_INTER_SRV_ERROR, CD_NOT_FOUND,
-        CD_NO_CONFIRM, MSG_CONFIRM_NOT_FOUND, MSG_JSON_WEB_ENCODE_TOKEN, MSG_NOT_FOUND_BY_EMAIL,
-    },
-};
-use crate::users::user_models::CreateUserRecoveryDto;
+use crate::settings::{config_app, err};
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_recovery_orm::inst::UserRecoveryOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_recovery_orm::tests::UserRecoveryOrmApp;
 use crate::users::{
-    user_models, user_orm::UserOrm, user_recovery_orm::UserRecoveryOrm,
-    user_registr_models::CreateUserRegistrDto, user_registr_orm::UserRegistrOrm,
+    user_models, user_orm::UserOrm, user_recovery_orm::UserRecoveryOrm, user_registr_models,
+    user_registr_orm::UserRegistrOrm,
 };
 #[cfg(not(feature = "mockdata"))]
 use crate::users::{user_orm::inst::UserOrmApp, user_registr_orm::inst::UserRegistrOrmApp};
@@ -44,7 +37,6 @@ use crate::validators::{msg_validation, Validator};
 
 pub const MSG_EMAIL_ALREADY_USE: &str = "email_already_use";
 pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";
-pub const CD_ERROR_SENDING_EMAIL: &str = "ErrorSendingEmail";
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     POST api/registration
@@ -58,12 +50,12 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 }
 
 fn err_database(err: String) -> AppError {
-    log::error!("{}: {}", CD_DATABASE, err);
-    AppError::new(CD_DATABASE, &err).set_status(500)
+    log::error!("{}: {}", err::CD_DATABASE, err);
+    AppError::new(err::CD_DATABASE, &err).set_status(500)
 }
 fn err_blocking(err: String) -> AppError {
-    log::error!("{}: {}", CD_BLOCKING, err);
-    AppError::new(CD_BLOCKING, &err).set_status(500)
+    log::error!("{}: {}", err::CD_BLOCKING, err);
+    AppError::new(err::CD_BLOCKING, &err).set_status(500)
 }
 fn err_wrong_email_or_nickname(is_nickname: bool) -> AppError {
     let val = if is_nickname {
@@ -71,29 +63,46 @@ fn err_wrong_email_or_nickname(is_nickname: bool) -> AppError {
     } else {
         MSG_EMAIL_ALREADY_USE
     };
-    log::error!("{}: {}", CD_CONFLICT, val);
-    AppError::new(CD_CONFLICT, val).set_status(409)
+    log::error!("{}: {}", err::CD_CONFLICT, val);
+    AppError::new(err::CD_CONFLICT, val).set_status(409)
 }
 fn err_json_web_encode_token(err: String) -> AppError {
     #[rustfmt::skip]
-    log::error!("{}: {} - {}", CD_INTER_SRV_ERROR, MSG_JSON_WEB_ENCODE_TOKEN, err);
-    let app_err = AppError::new(CD_INTER_SRV_ERROR, MSG_JSON_WEB_ENCODE_TOKEN)
+    log::error!("{}: {} - {}", err::CD_INTER_SRV_ERROR, err::MSG_JSON_WEB_ENCODE_TOKEN, err);
+    let app_err = AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_JSON_WEB_ENCODE_TOKEN)
         .set_status(500)
-        .add_param(Cow::Borrowed("error"), &err);
+        .add_param(borrow::Cow::Borrowed("error"), &err);
     app_err
 }
 
 fn err_sending_email(err: String) -> AppError {
-    log::error!("{}: {}", CD_ERROR_SENDING_EMAIL, err);
-    AppError::new(CD_ERROR_SENDING_EMAIL, &err).set_status(500)
+    #[rustfmt::skip]
+    log::error!("{}: {} - {}", err::CD_INTER_SRV_ERROR, err::MSG_ERROR_SENDING_EMAIL, &err);
+    AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_ERROR_SENDING_EMAIL)
+        .set_status(500)
+        .add_param(borrow::Cow::Borrowed("error"), &err)
 }
 fn err_encode_hash(err: String) -> AppError {
-    log::error!("{}: {}", CD_HASHING_PASSWD, err);
-    AppError::new(CD_HASHING_PASSWD, &err).set_status(500)
+    #[rustfmt::skip]
+    log::error!("{}: {} - {}", err::CD_INTER_SRV_ERROR, err::MSG_ERROR_HASHING_PASSWORD, err);
+    AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_ERROR_HASHING_PASSWORD)
+        .set_status(500)
+        .add_param(borrow::Cow::Borrowed("error"), &err)
 }
-fn err_not_found() -> AppError {
-    log::error!("{}: {}", CD_NO_CONFIRM, MSG_CONFIRM_NOT_FOUND);
-    AppError::new(CD_NO_CONFIRM, MSG_CONFIRM_NOT_FOUND).set_status(404)
+fn err_registr_not_found(user_registr_id: i32) -> AppError {
+    #[rustfmt::skip]
+    log::error!("{}: {} - user_registr_id - {}", err::CD_NOT_FOUND, err::MSG_REGISTR_NOT_FOUND, user_registr_id);
+    let name = borrow::Cow::Borrowed("user_registr_id");
+    AppError::new(err::CD_NOT_FOUND, err::MSG_REGISTR_NOT_FOUND)
+        .set_status(404)
+        .add_param(name, &user_registr_id)
+}
+fn err_recovery_not_found(user_recovery_id: i32) -> AppError {
+    #[rustfmt::skip]
+    log::error!("{}: {} - user_recovery_id - {}", err::CD_NOT_FOUND, err::MSG_RECOVERY_NOT_FOUND, user_recovery_id);
+    AppError::new(err::CD_NOT_FOUND, err::MSG_RECOVERY_NOT_FOUND)
+        .set_status(404)
+        .add_param(borrow::Cow::Borrowed("user_recovery_id"), &user_recovery_id)
 }
 
 // Send a confirmation email to register the user.
@@ -110,7 +119,8 @@ pub async fn registration(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", CD_VALIDATION, msg_validation(&validation_errors));
+        #[rustfmt::skip]
+        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
@@ -167,7 +177,7 @@ pub async fn registration(
     let app_registr_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
     let final_date_utc = Utc::now() + Duration::minutes(app_registr_duration.into());
 
-    let create_user_registr_dto = CreateUserRegistrDto {
+    let create_user_registr_dto = user_registr_models::CreateUserRegistrDto {
         nickname: registr_user_dto.nickname.clone(),
         email: registr_user_dto.email.clone(),
         password: password_hashed,
@@ -249,7 +259,7 @@ pub async fn confirm_registration(
     .map_err(|e| err_blocking(e.to_string()))??;
 
     // If no such entry exists, then exit with code 404.
-    let user_registr = user_registr_opt.ok_or_else(|| err_not_found())?;
+    let user_registr = user_registr_opt.ok_or_else(|| err_registr_not_found(user_registr_id))?;
 
     let user_registr_orm2 = user_registr_orm.clone();
     // If such an entry exists, then add a new user.
@@ -309,7 +319,11 @@ pub async fn recovery(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", CD_VALIDATION, msg_validation(&validation_errors));
+        log::error!(
+            "{}: {}",
+            err::CD_VALIDATION,
+            msg_validation(&validation_errors)
+        );
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
@@ -332,8 +346,9 @@ pub async fn recovery(
     let user = match user_opt {
         Some(v) => v,
         None => {
-            log::error!("{}: {}", CD_NOT_FOUND, MSG_NOT_FOUND_BY_EMAIL);
-            return Err(AppError::new(CD_NOT_FOUND, MSG_NOT_FOUND_BY_EMAIL).set_status(404));
+            log::error!("{}: {}", err::CD_NOT_FOUND, err::MSG_NOT_FOUND_BY_EMAIL);
+            #[rustfmt::skip]
+            return Err(AppError::new(err::CD_NOT_FOUND, err::MSG_NOT_FOUND_BY_EMAIL).set_status(404));
         }
     };
     let user_id = user.id;
@@ -355,7 +370,7 @@ pub async fn recovery(
     let app_recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
     let final_date_utc = Utc::now() + Duration::minutes(app_recovery_duration.into());
 
-    let create_user_recovery_dto = CreateUserRecoveryDto {
+    let create_user_recovery_dto = user_models::CreateUserRecoveryDto {
         user_id: user_id,
         final_date: final_date_utc,
     };
@@ -436,7 +451,11 @@ pub async fn confirm_recovery(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", CD_VALIDATION, msg_validation(&validation_errors));
+        log::error!(
+            "{}: {}",
+            err::CD_VALIDATION,
+            msg_validation(&validation_errors)
+        );
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
@@ -473,7 +492,8 @@ pub async fn confirm_recovery(
     .map_err(|e| err_blocking(e.to_string()))??;
 
     // If no such entry exists, then exit with code 404.
-    let user_recovery = user_recovery_opt.ok_or_else(|| err_not_found())?;
+    let user_recovery =
+        user_recovery_opt.ok_or_else(|| err_recovery_not_found(user_recovery_id))?;
     let user_id = user_recovery.user_id;
 
     // If there is "user_recovery" with this ID, then move on to the next step.
@@ -487,7 +507,7 @@ pub async fn confirm_recovery(
     .map_err(|e| err_blocking(e.to_string()))??;
 
     // If no such entry exists, then exit with code 404.
-    let user = user_opt.ok_or_else(|| err_not_found())?;
+    let user = user_opt.ok_or_else(|| err_recovery_not_found(user_recovery_id))?;
 
     let user_orm2 = user_orm.clone();
     let modify_user_dto = user_models::ModifyUserDto {
@@ -521,7 +541,7 @@ pub async fn confirm_recovery(
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
 
-    let user = user_opt.ok_or_else(|| err_not_found())?;
+    let user = user_opt.ok_or_else(|| err_recovery_not_found(user_recovery_id))?;
     let user_dto = user_models::UserDto::from(user);
 
     Ok(HttpResponse::Ok().json(user_dto))
@@ -533,7 +553,7 @@ mod tests {
     use chrono::{DateTime, Duration, Utc};
     use serde_json::json;
 
-    use crate::errors::{AppError, CD_VALIDATION};
+    use crate::errors::AppError;
     use crate::send_email::config_smtp;
     use crate::sessions::{config_jwt::ConfigJwt, tokens::decode_dual_token};
     use crate::settings::{config_app, err};
@@ -681,7 +701,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_NICKNAME_REQUIRED);
     }
     #[test]
@@ -705,7 +725,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_NICKNAME_MIN_LENGTH);
     }
     #[test]
@@ -729,7 +749,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_NICKNAME_MAX_LENGTH);
     }
     #[test]
@@ -753,7 +773,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_NICKNAME_REGEX);
     }
     #[test]
@@ -777,7 +797,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_EMAIL_REQUIRED);
     }
     #[test]
@@ -801,7 +821,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_EMAIL_MIN_LENGTH);
     }
     #[test]
@@ -825,7 +845,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_EMAIL_MAX_LENGTH);
     }
     #[test]
@@ -849,7 +869,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_EMAIL_EMAIL_TYPE);
     }
     #[test]
@@ -873,7 +893,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_REQUIRED);
     }
     #[test]
@@ -897,7 +917,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_MIN_LENGTH);
     }
     #[test]
@@ -921,7 +941,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_MAX_LENGTH);
     }
     #[test]
@@ -945,7 +965,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_REGEX);
     }
     #[test]
@@ -971,7 +991,7 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CD_CONFLICT);
+        assert_eq!(app_err.code, err::CD_CONFLICT);
         assert_eq!(app_err.message, MSG_NICKNAME_ALREADY_USE);
     }
     #[test]
@@ -997,7 +1017,7 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CD_CONFLICT);
+        assert_eq!(app_err.code, err::CD_CONFLICT);
         assert_eq!(app_err.message, MSG_EMAIL_ALREADY_USE);
     }
     #[test]
@@ -1023,7 +1043,7 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CD_CONFLICT);
+        assert_eq!(app_err.code, err::CD_CONFLICT);
         assert_eq!(app_err.message, MSG_NICKNAME_ALREADY_USE);
     }
     #[test]
@@ -1049,7 +1069,7 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CD_CONFLICT);
+        assert_eq!(app_err.code, err::CD_CONFLICT);
         assert_eq!(app_err.message, MSG_EMAIL_ALREADY_USE);
     }
     #[test]
@@ -1074,8 +1094,8 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CD_INTER_SRV_ERROR);
-        assert_eq!(app_err.message, MSG_JSON_WEB_ENCODE_TOKEN);
+        assert_eq!(app_err.code, err::CD_INTER_SRV_ERROR);
+        assert_eq!(app_err.message, err::MSG_JSON_WEB_ENCODE_TOKEN);
     }
     #[test]
     async fn test_registration_new_user() {
@@ -1204,8 +1224,8 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CD_NO_CONFIRM);
-        assert_eq!(app_err.message, MSG_CONFIRM_NOT_FOUND);
+        assert_eq!(app_err.code, err::CD_NOT_FOUND);
+        assert_eq!(app_err.message, err::MSG_REGISTR_NOT_FOUND);
     }
     #[test]
     async fn test_registration_confirm_exists_in_user_regist() {
@@ -1294,7 +1314,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_EMAIL_REQUIRED);
     }
     #[test]
@@ -1315,7 +1335,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_EMAIL_MIN_LENGTH);
     }
     #[test]
@@ -1336,7 +1356,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_EMAIL_MAX_LENGTH);
     }
     #[test]
@@ -1357,7 +1377,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_EMAIL_EMAIL_TYPE);
     }
     #[test]
@@ -1377,8 +1397,8 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CD_NOT_FOUND);
-        assert_eq!(app_err.message, MSG_NOT_FOUND_BY_EMAIL);
+        assert_eq!(app_err.code, err::CD_NOT_FOUND);
+        assert_eq!(app_err.message, err::MSG_NOT_FOUND_BY_EMAIL);
     }
     #[test]
     async fn test_recovery_if_user_recovery_not_exist() {
@@ -1480,8 +1500,8 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CD_INTER_SRV_ERROR);
-        assert_eq!(app_err.message, MSG_JSON_WEB_ENCODE_TOKEN);
+        assert_eq!(app_err.code, err::CD_INTER_SRV_ERROR);
+        assert_eq!(app_err.message, err::MSG_JSON_WEB_ENCODE_TOKEN);
     }
 
     // ** confirm recovery **
@@ -1504,7 +1524,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_REQUIRED);
     }
     #[test]
@@ -1526,7 +1546,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_MIN_LENGTH);
     }
     #[test]
@@ -1548,7 +1568,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, CD_VALIDATION);
+        assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, user_models::MSG_PASSWORD_MAX_LENGTH);
     }
     #[test]
@@ -1642,8 +1662,8 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CD_NO_CONFIRM);
-        assert_eq!(app_err.message, MSG_CONFIRM_NOT_FOUND);
+        assert_eq!(app_err.code, err::CD_NOT_FOUND);
+        assert_eq!(app_err.message, err::MSG_RECOVERY_NOT_FOUND);
     }
     #[test]
     async fn test_recovery_confirm_no_exists_in_user() {
@@ -1681,8 +1701,8 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, CD_NO_CONFIRM);
-        assert_eq!(app_err.message, MSG_CONFIRM_NOT_FOUND);
+        assert_eq!(app_err.code, err::CD_NOT_FOUND);
+        assert_eq!(app_err.message, err::MSG_RECOVERY_NOT_FOUND);
     }
     #[test]
     async fn test_recovery_confirm_success() {

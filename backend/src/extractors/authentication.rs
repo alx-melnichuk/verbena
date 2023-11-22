@@ -1,11 +1,11 @@
+use std::{borrow, rc::Rc, task::{Context, Poll}};
+
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::error::{ErrorForbidden, ErrorInternalServerError, ErrorUnauthorized};
 use actix_web::{http, web, FromRequest, HttpMessage};
 use futures_util::future::{ready, LocalBoxFuture, Ready};
 use futures_util::FutureExt;
 use log;
-use std::rc::Rc;
-use std::task::{Context, Poll};
 
 use crate::errors::AppError;
 #[cfg(not(feature = "mockdata"))]
@@ -145,47 +145,47 @@ where
     }
     /// The future type representing the asynchronous response.
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        // eprintln!(")( auth()  start");
+        // eprintln!("##@@ auth()  start");
         // Attempt to extract token from cookie or authorization header
         let token = req.cookie("token")
             .map(|c| c.value().to_string())
             .or_else(|| {
                 let header_token = req.headers().get(http::header::AUTHORIZATION)
                     .map(|h| h.to_str().unwrap().to_string()).unwrap_or("".to_string());
-                // eprintln!("a_ header_token: {header_token}");
+                // eprintln!("##@@ auth() header_token: {header_token}");
                 let token2 = jwt_from_header(&header_token)
                 .map_err(|e| {
-                    // eprintln!(")( auth() jwt_from_header.err: {e}");
+                    // eprintln!("##@@ auth() jwt_from_header.err: {e}");
                     log::error!("{}: {}", "InvalidToken", e);
                     None::<String>
                 }).ok();
-                // eprintln!("a_ token2: {}", token2.clone().unwrap().to_string());
+                // eprintln!("##@@ token2: {}", token2.clone().unwrap().to_string());
                 token2
             });
 
         // If token is missing, return unauthorized error
         if token.is_none() {
-            // eprintln!(")( auth() token.is_none()"); // #-
+            // eprintln!("##@@ auth() token.is_none()"); // #-
             log::error!("{}: {}", err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN);
-            let json_error =
-                AppError::new(err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN).set_status(401);
+            let json_error = AppError::new(err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN)
+                .set_status(401);
             return Box::pin(ready(Err(ErrorUnauthorized(json_error))));
         }
         let token = token.unwrap().to_string();
 
         let config_jwt = req.app_data::<web::Data<ConfigJwt>>().unwrap();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // eprintln!(")( auth() token: `{}`", token.to_string()); // #-
+        // eprintln!("##@@ auth() token: `{}`", token.to_string()); // #-
 
         let token_res = decode_dual_token(&token, jwt_secret);
         
         if let Err(e) = token_res {
-            // eprintln!(")( auth() decode_dual_token().err {}: {}", e.code, e.message); // #-
+            // eprintln!("##@@ auth() decode_dual_token().err {}: {}", e.code, e.message); // #-
             log::error!("{}: {}", e.code, e.message);
             return Box::pin(ready(Err(ErrorForbidden(e))));
         }
 
-        // eprintln!(")( auth() token_res.unwrap();"); // #-
+        // eprintln!("##@@ auth() token_res.unwrap();"); // #-
         let (user_id, num_token) = token_res.unwrap();
         
         let allowed_roles = self.allowed_roles.clone();
@@ -197,42 +197,44 @@ where
             
             let session_opt = session_orm.find_session_by_id(user_id).map_err(|e| {
                 log::error!("{}: {}", err::CD_DATABASE, e.to_string());
-                let json_error = AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500);
-                return ErrorInternalServerError(json_error);
+                let error = AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500);
+                return ErrorInternalServerError(error);
             })?;
             
             let session = session_opt.ok_or_else(|| {
-                // eprintln!(")( auth() session with {} not found", user_id.clone());
+                // eprintln!("##@@ auth() session with {} not found", user_id.clone());
                 #[rustfmt::skip]
-                log::error!("{}: session with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id);
-                let json_error = AppError::new(err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN)
-                    .set_status(403); // ?!?
-                ErrorForbidden(json_error)
+                log::error!("{}: {} - user_id - {}", err::CD_INTER_SRV_ERROR, err::MSG_SESSION_NOT_EXIST, user_id);
+                let error = AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_SESSION_NOT_EXIST)
+                    .set_status(500)
+                    .add_param(borrow::Cow::Borrowed("user_id"), &user_id);
+                ErrorForbidden(error)
             })?;
 
             let session_num_token = session.num_token.unwrap_or(0);
             if session_num_token != num_token {
-                // eprintln!(")( auth() session_num_token != num_token");
-                log::error!("{}: session with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id);
-                let json_error = AppError::new(err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN)
-                    .set_status(403); // ?!?
-                return Err(ErrorForbidden(json_error));
+                // eprintln!("##@@ auth() session_num_token != num_token");
+                log::error!("{}: {} - user_id - {}", err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
+                let error = AppError::new(err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_NUM)
+                    .set_status(403)
+                    .add_param(borrow::Cow::Borrowed("user_id"), &user_id);
+                return Err(ErrorForbidden(error));
             }
-
-            // eprintln!(")( auth() user_id: {}, num_token: {}", user_id.clone(), num_token);
+            // eprintln!("##@@ auth() user_id: {}, num_token: {}", user_id.clone(), num_token);
 
             let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap();
             
-            let result = user_orm.find_user_by_id(user_id.clone()).map_err(|e| {
+            let result = user_orm.find_user_by_id(user_id).map_err(|e| {
                 log::error!("{}: {}", err::CD_DATABASE, e.to_string());
                 ErrorInternalServerError(AppError::new(err::CD_DATABASE, &e.to_string()))
             })?;
 
             let user = result.ok_or_else(|| {
-                log::error!("{}: user with {} not found", err::CD_UNACCEPTABLE_TOKEN, user_id.clone());
-                let json_error = AppError::new(err::CD_UNACCEPTABLE_TOKEN, err::MSG_UNACCEPTABLE_TOKEN)
-                    .set_status(403); // ?!?
-                ErrorForbidden(json_error)
+                log::error!("{}: {} - user_id - {}", err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_ID, user_id);
+                let error = AppError::new(err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_ID)
+                    .set_status(403)
+                    .add_param(borrow::Cow::Borrowed("user_id"), &user_id);
+                ErrorForbidden(error)
             })?;
 
             // Check if user's role matches the required role
@@ -246,9 +248,9 @@ where
                 #[rustfmt::skip]
                 log::error!("{}: {}", err::CD_PERMISSION_DENIED, err::MSG_PERMISSION_DENIED);
                 #[rustfmt::skip]
-                let json_error = AppError::new(err::CD_PERMISSION_DENIED, err::MSG_PERMISSION_DENIED)
+                let error = AppError::new(err::CD_PERMISSION_DENIED, err::MSG_PERMISSION_DENIED)
                     .set_status(403);
-                Err(ErrorForbidden(json_error))
+                Err(ErrorForbidden(error))
             }
         }
         .boxed_local()
@@ -502,8 +504,37 @@ mod tests {
 
         let app_err: AppError =
             serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
-        assert_eq!(app_err.code, err::CD_UNACCEPTABLE_TOKEN);
-        assert_eq!(app_err.message, err::MSG_UNACCEPTABLE_TOKEN);
+        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        assert_eq!(app_err.message, err::MSG_UNACCEPTABLE_TOKEN_ID);
+    }
+
+    #[test]
+    async fn test_authentication_middelware_valid_token_non_existent_num() {
+        let user_orm = UserOrmApp::create(vec![create_user()]);
+        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user_id = user1.id;
+
+        let num_token = 1234;
+        let session_v = vec![SessionOrmApp::new_session(user_id, Some(num_token))];
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token = encode_dual_token(user_id, num_token + 1, &jwt_secret, config_jwt.jwt_access).unwrap();
+    
+        let req = test::TestRequest::get();
+        let user_v = vec![user1];
+        let result =
+            try_call_service_auth(user_v, session_v, config_jwt, &token, handler_with_auth, req).await.err();
+    
+        let err = result.expect("Service call succeeded, but an error was expected.");
+
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, http::StatusCode::FORBIDDEN);
+
+        let app_err: AppError =
+            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        assert_eq!(app_err.message, err::MSG_UNACCEPTABLE_TOKEN_NUM);
     }
 
     #[test]
