@@ -32,7 +32,8 @@
     "nickname_already_use": "The nickname you provided is already in use."
   },
   "Forbidden": {
-    "invalid_or_expired_token": "Invalid or expired token."
+    "invalid_or_expired_token": "Invalid or expired token.",
+    "unacceptable_token": "Unacceptable token value."
   },
   "Unauthorized": {
     "nickname_or_email_incorrect": "The nickname or email address is incorrect.",
@@ -42,7 +43,9 @@
     "invalid_hash": "Invalid password hash value.",
     "json_web_encode_token": "Error encoding web token.",
     "json_web_decode_token": "Error decoding web token.",
-    "session_not_exist": "There is no session for this user."
+    "session_not_exist": "There is no session for this user.",
+    "error_sending_email": "Error when sending email.",
+    "error_hashing_password": "Error when hashing password"
   },
   "field-email": {
     "err_minlength_symbol_search": "The symbol search should have {{value}} characters or more.",
