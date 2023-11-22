@@ -4,11 +4,7 @@ use actix_web::{http, HttpResponse};
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
 
-use crate::validators::ValidationError;
-
-pub const CN_SERVER_ERROR: &str = "InternalServerError";
-pub const MSG_SERVER_ERROR: &str = "An unexpected internal server error occurred.";
-pub const CD_VALIDATION: &str = "Validation";
+use crate::{settings::err, validators::ValidationError};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct AppError {
@@ -37,9 +33,9 @@ impl std::fmt::Display for AppError {
 impl AppError {
     pub fn new<'a>(code: &'a str, message: &'a str) -> Self {
         #[rustfmt::skip]
-        let code = if code.len() > 0 { code } else { CN_SERVER_ERROR };
+        let code = if code.len() > 0 { code } else { err::CD_INTER_SRV_ERROR };
         #[rustfmt::skip]
-        let message = if message.len() > 0 { message } else { MSG_SERVER_ERROR };
+        let message = if message.len() > 0 { message } else { err::MSG_INTER_SRV_ERROR };
         AppError {
             code: Cow::from(code.to_string()),
             message: Cow::from(message.to_string()),
@@ -80,7 +76,7 @@ impl AppError {
         let mut app_error_vec: Vec<AppError> = vec![];
 
         for error in errors.into_iter() {
-            let code = CD_VALIDATION;
+            let code = err::CD_VALIDATION;
             let message = error.message.clone();
             let mut app_error = AppError::new(&code, &message).set_status(status_code.into());
 

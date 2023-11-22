@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::{borrow, collections::HashMap};
 
 use email_address;
 use regex::Regex;
@@ -7,8 +7,8 @@ use serde_json::{to_value, Value};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ValidationError {
-    pub message: Cow<'static, str>,
-    pub params: HashMap<Cow<'static, str>, Value>,
+    pub message: borrow::Cow<'static, str>,
+    pub params: HashMap<borrow::Cow<'static, str>, Value>,
 }
 
 impl std::error::Error for ValidationError {}
@@ -22,11 +22,11 @@ impl std::fmt::Display for ValidationError {
 impl ValidationError {
     pub fn new<'a>(message: &'a str) -> Self {
         ValidationError {
-            message: Cow::from(message.to_string()),
+            message: borrow::Cow::from(message.to_string()),
             params: HashMap::new(),
         }
     }
-    pub fn add_param<'a, T: Serialize>(&mut self, name: Cow<'a, str>, val: &T) -> Self {
+    pub fn add_param<'a, T: Serialize>(&mut self, name: borrow::Cow<'a, str>, val: &T) -> Self {
         self.params.insert(name.to_string().into(), to_value(val).unwrap());
         self.to_owned()
     }
@@ -53,7 +53,7 @@ impl ValidationChecks {
         if len == 0 {
             let mut err = ValidationError::new(msg);
             let data = true;
-            err.add_param(Cow::Borrowed("required"), &data);
+            err.add_param(borrow::Cow::Borrowed("required"), &data);
             return Err(err);
         }
         Ok(())
@@ -64,7 +64,7 @@ impl ValidationChecks {
         if len < min {
             let mut err = ValidationError::new(msg);
             let json = serde_json::json!({ "actualLength": len, "requiredLength": min });
-            err.add_param(Cow::Borrowed("minlength"), &json);
+            err.add_param(borrow::Cow::Borrowed("minlength"), &json);
             return Err(err);
         }
         Ok(())
@@ -75,7 +75,7 @@ impl ValidationChecks {
         if max < len {
             let mut err = ValidationError::new(msg);
             let json = serde_json::json!({ "actualLength": len, "requiredLength": max });
-            err.add_param(Cow::Borrowed("maxlength"), &json);
+            err.add_param(borrow::Cow::Borrowed("maxlength"), &json);
             return Err(err);
         }
         Ok(())
@@ -87,7 +87,7 @@ impl ValidationChecks {
         if result.is_none() {
             let mut err = ValidationError::new(msg);
             let json = serde_json::json!({ "actualValue": value, "requiredPattern": reg_exp });
-            err.add_param(Cow::Borrowed("pattern"), &json);
+            err.add_param(borrow::Cow::Borrowed("pattern"), &json);
             return Err(err);
         }
         Ok(())
@@ -98,7 +98,7 @@ impl ValidationChecks {
         if !is_valid {
             let mut err = ValidationError::new(msg);
             let data = true;
-            err.add_param(Cow::Borrowed("email"), &data);
+            err.add_param(borrow::Cow::Borrowed("email"), &data);
             return Err(err);
         }
         Ok(())
