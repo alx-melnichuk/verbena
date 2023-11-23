@@ -554,8 +554,9 @@ mod tests {
     use serde_json::json;
 
     use crate::errors::AppError;
+    use crate::extractors::authentication::BEARER;
     use crate::send_email::config_smtp;
-    use crate::sessions::{config_jwt::ConfigJwt, tokens::decode_dual_token};
+    use crate::sessions::{config_jwt, tokens::decode_dual_token};
     use crate::settings::{config_app, err};
     use crate::users::{
         user_models::{
@@ -608,7 +609,7 @@ mod tests {
     }
 
     async fn call_service1(
-        config_jwt: ConfigJwt,
+        config_jwt: config_jwt::ConfigJwt,
         vec: (Vec<User>, Vec<UserRegistr>, Vec<Session>, Vec<UserRecovery>),
         token: &str,
         factory: impl dev::HttpServiceFactory + 'static,
@@ -636,7 +637,7 @@ mod tests {
         )
         .await;
         let test_request = if token.len() > 0 {
-            request.insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+            request.insert_header((http::header::AUTHORIZATION, format!("{}{}", BEARER, token)))
         } else {
             request
         };

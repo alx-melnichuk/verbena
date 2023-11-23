@@ -255,6 +255,7 @@ mod tests {
     use actix_web::{dev, http, test, test::TestRequest, web, App};
     use serde_json::json;
 
+    use crate::extractors::authentication::BEARER;
     use crate::sessions::{config_jwt, session_models::Session, tokens::encode_dual_token};
     use crate::users::{
         user_models::{LoginUserDto, User, UserModelsTest, UserRole},
@@ -300,7 +301,7 @@ mod tests {
         )
         .await;
         let test_request = if token.len() > 0 {
-            request.insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+            request.insert_header((http::header::AUTHORIZATION, format!("{}{}", BEARER, token)))
         } else {
             request
         };

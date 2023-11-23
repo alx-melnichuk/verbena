@@ -276,6 +276,7 @@ mod tests {
     use chrono::Utc;
 
     use crate::errors::AppError;
+    use crate::extractors::authentication::BEARER;
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp,
         tokens::encode_dual_token,
@@ -306,12 +307,13 @@ mod tests {
     }
 
     async fn call_service1(
+        config_jwt: config_jwt::ConfigJwt,
         vec: (Vec<User>, Vec<Session>),
         token: &str,
         factory: impl dev::HttpServiceFactory + 'static,
         request: TestRequest,
     ) -> dev::ServiceResponse {
-        let data_config_jwt = web::Data::new(config_jwt::get_test_config());
+        let data_config_jwt = web::Data::new(config_jwt);
         let data_user_orm = web::Data::new(UserOrmApp::create(vec.0));
         let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
 
@@ -324,7 +326,7 @@ mod tests {
         )
         .await;
         let test_request = if token.len() > 0 {
-            request.insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+            request.insert_header((http::header::AUTHORIZATION, format!("{}{}", BEARER, token)))
         } else {
             request
         };
@@ -351,9 +353,9 @@ mod tests {
 
         // GET /users/${id}
         let request = test::TestRequest::get().uri(&format!("/users/{}", user_id_bad.clone()));
-        let factory = get_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = get_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -381,9 +383,9 @@ mod tests {
 
         // GET /users/${id}
         let request = test::TestRequest::get().uri(&format!("/users/{}", user1.id));
-        let factory = get_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = get_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -411,9 +413,9 @@ mod tests {
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::get().uri(&format!("/users/{}", user1.id + 1)); // GET /users/${id}
-        let factory = get_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = get_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
 
@@ -424,10 +426,10 @@ mod tests {
         let token = "";
 
         let request = test::TestRequest::get().uri(&"/users/nickname/JAMES_SMITH"); // GET /users/nickname/${nickname}
-        let factory = get_users_by_nickname;
+        let config_jwt = config_jwt::get_test_config();
         let vec = (vec![user1], vec![]);
-
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = get_users_by_nickname;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[test]
@@ -439,9 +441,10 @@ mod tests {
 
         // GET /users/nickname/${nickname}
         let request = test::TestRequest::get().uri(&format!("/users/nickname/{}", nickname));
-        let factory = get_users_by_nickname;
+        let config_jwt = config_jwt::get_test_config();
         let vec = (vec![user1], vec![]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = get_users_by_nickname;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -458,9 +461,10 @@ mod tests {
 
         // GET /users/email/${email}
         let request = test::TestRequest::get().uri(&"/users/email/JAMES_SMITH@gmail.com");
-        let factory = get_users_by_email;
+        let config_jwt = config_jwt::get_test_config();
         let vec = (vec![user1], vec![]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = get_users_by_email;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[test]
@@ -472,9 +476,10 @@ mod tests {
 
         // GET /users/email/${email}
         let request = test::TestRequest::get().uri(&format!("/users/email/{}", email));
-        let factory = get_users_by_email;
+        let config_jwt = config_jwt::get_test_config();
         let vec = (vec![user1], vec![]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = get_users_by_email;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -498,9 +503,10 @@ mod tests {
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::get().uri("/users_current"); // GET /users_current
-        let factory = get_users_current;
+        let config_jwt = config_jwt::get_test_config();
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = get_users_current;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -548,9 +554,9 @@ mod tests {
                 password: Some(new_password.to_string()),
                 role: Some(user1mod.role),
             });
-        let factory = put_users_current;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_current;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -583,9 +589,9 @@ mod tests {
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::delete().uri("/users_current"); // DELETE /users_current
-        let factory = delete_users_current;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = delete_users_current;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
     }
 
@@ -613,9 +619,9 @@ mod tests {
                 password: Some("passwdQ0W0".to_string()),
                 role: Some(UserRole::Admin),
             });
-        let factory = put_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -648,9 +654,9 @@ mod tests {
                 password: Some("passwdQ0W0".to_string()),
                 role: Some(UserRole::Admin),
             });
-        let factory = put_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -682,9 +688,9 @@ mod tests {
                 password: Some("passwdQ0W0".to_string()),
                 role: Some(UserRole::Admin),
             });
-        let factory = put_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -716,9 +722,9 @@ mod tests {
                 password: Some("passwdQ0W0".to_string()),
                 role: Some(UserRole::Admin),
             });
-        let factory = put_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -750,9 +756,9 @@ mod tests {
                 password: Some("passwdQ0W0".to_string()),
                 role: Some(UserRole::Admin),
             });
-        let factory = put_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -784,9 +790,9 @@ mod tests {
                 password: Some("passwdQ0W0".to_string()),
                 role: Some(UserRole::Admin),
             });
-        let factory = put_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -818,9 +824,9 @@ mod tests {
                 password: Some("passwdQ0W0".to_string()),
                 role: Some(UserRole::Admin),
             });
-        let factory = put_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -852,9 +858,9 @@ mod tests {
                 password: Some("passwdQ0W0".to_string()),
                 role: Some(UserRole::Admin),
             });
-        let factory = put_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -886,9 +892,9 @@ mod tests {
                 password: Some("passwdQ0W0".to_string()),
                 role: Some(UserRole::Admin),
             });
-        let factory = put_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -920,9 +926,9 @@ mod tests {
                 password: Some("".to_string()),
                 role: Some(UserRole::Admin),
             });
-        let factory = put_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -954,9 +960,9 @@ mod tests {
                 password: Some(UserModelsTest::password_min()),
                 role: Some(UserRole::Admin),
             });
-        let factory = put_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -988,9 +994,9 @@ mod tests {
                 password: Some(UserModelsTest::password_max()),
                 role: Some(UserRole::Admin),
             });
-        let factory = put_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1022,9 +1028,9 @@ mod tests {
                 password: Some(UserModelsTest::password_wrong()),
                 role: Some(UserRole::Admin),
             });
-        let factory = put_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1056,9 +1062,9 @@ mod tests {
                 password: Some("passwdQ0W0".to_string()),
                 role: Some(UserRole::Admin),
             });
-        let factory = put_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -1102,9 +1108,9 @@ mod tests {
                 password: Some(new_password.to_string()),
                 role: Some(user1mod.role),
             });
-        let factory = put_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = put_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -1140,10 +1146,9 @@ mod tests {
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         // DELETE users/{id}
         let request = test::TestRequest::delete().uri(&format!("/users/{}", user_id_bad.clone()));
-
-        let factory = delete_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = delete_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1169,10 +1174,9 @@ mod tests {
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         // DELETE users/{id}
         let request = test::TestRequest::delete().uri(&format!("/users/{}", user1.id + 1));
-
-        let factory = delete_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = delete_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -1196,10 +1200,9 @@ mod tests {
             encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         // DELETE users/{id}
         let request = test::TestRequest::delete().uri(&format!("/users/{}", user1.id));
-
-        let factory = delete_users_by_id;
         let vec = (vec![user1], vec![session1]);
-        let resp = call_service1(vec, &token, factory, request).await;
+        let factory = delete_users_by_id;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
     }
 }
