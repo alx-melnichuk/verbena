@@ -45,7 +45,8 @@
     "json_web_decode_token": "Error decoding web token.",
     "session_not_exist": "There is no session for this user.",
     "error_sending_email": "Error when sending email.",
-    "error_hashing_password": "Error when hashing password"
+    "error_hashing_password": "Error when hashing password",
+    "user_not_received_from_request": "The entity \"user\" was not received from the request."
   },
   "field-email": {
     "err_minlength_symbol_search": "The symbol search should have {{value}} characters or more.",
