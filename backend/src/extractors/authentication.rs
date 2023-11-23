@@ -1,10 +1,8 @@
 use std::{borrow, rc::Rc, task::{Context, Poll}};
 
-use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::error::{ErrorForbidden, ErrorInternalServerError, ErrorUnauthorized};
-use actix_web::{http, web, FromRequest, HttpMessage};
-use futures_util::future::{ready, LocalBoxFuture, Ready};
-use futures_util::FutureExt;
+use actix_web::{http, web, FromRequest, HttpMessage, dev::{Service, ServiceRequest, ServiceResponse, Transform}};
+use futures_util::{future::{ready, LocalBoxFuture, Ready}, FutureExt};
 use log;
 
 use crate::errors::AppError;
@@ -12,16 +10,15 @@ use crate::errors::AppError;
 use crate::sessions::session_orm::inst::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::sessions::{session_orm::SessionOrm, tokens::decode_dual_token, config_jwt::ConfigJwt};
-use crate::users::user_models::{User, UserRole};
+use crate::sessions::{session_orm::SessionOrm, tokens::decode_dual_token, config_jwt};
+use crate::settings::err;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::inst::UserOrmApp;
-use crate::users::user_orm::UserOrm;
-use crate::settings::err;
+use crate::users::{user_models::{User, UserRole}, user_orm::UserOrm};
 
-const BEARER: &str = "Bearer ";
+pub const BEARER: &str = "Bearer ";
 
 pub struct Authenticated(User);
 
@@ -37,8 +34,8 @@ impl FromRequest for Authenticated {
         let result = match value {
             Some(user) => Ok(Authenticated(user)),
             None => Err(ErrorInternalServerError(AppError::new(
-                "Authentication",
-                "Authentication Error",
+                err::CD_INTER_SRV_ERROR,
+                err::MSG_USER_NOT_RECEIVED_FROM_REQUEST,
             ))),
         };
         ready(result)
@@ -116,7 +113,7 @@ fn jwt_from_header(header_token: &str) -> Result<String, String> {
     }
     let auth_header = match std::str::from_utf8(header_token.as_bytes()) {
         Ok(v) => v,
-        Err(e) => return Err(format!("{NO_AUTH_HEADER} : {}", e.to_string()) ),
+        Err(e) => return Err(format!("{} : {}", NO_AUTH_HEADER, e.to_string()) ),
     };
     if !auth_header.starts_with(BEARER) {
         return Err("Invalid authentication header".to_string());
@@ -145,21 +142,17 @@ where
     }
     /// The future type representing the asynchronous response.
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        // eprintln!("##@@ auth()  start");
         // Attempt to extract token from cookie or authorization header
         let token = req.cookie("token")
             .map(|c| c.value().to_string())
             .or_else(|| {
                 let header_token = req.headers().get(http::header::AUTHORIZATION)
                     .map(|h| h.to_str().unwrap().to_string()).unwrap_or("".to_string());
-                // eprintln!("##@@ auth() header_token: {header_token}");
                 let token2 = jwt_from_header(&header_token)
                 .map_err(|e| {
-                    // eprintln!("##@@ auth() jwt_from_header.err: {e}");
                     log::error!("{}: {}", "InvalidToken", e);
                     None::<String>
                 }).ok();
-                // eprintln!("##@@ token2: {}", token2.clone().unwrap().to_string());
                 token2
             });
 
@@ -173,19 +166,16 @@ where
         }
         let token = token.unwrap().to_string();
 
-        let config_jwt = req.app_data::<web::Data<ConfigJwt>>().unwrap();
+        let config_jwt = req.app_data::<web::Data<config_jwt::ConfigJwt>>().unwrap();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // eprintln!("##@@ auth() token: `{}`", token.to_string()); // #-
 
         let token_res = decode_dual_token(&token, jwt_secret);
         
         if let Err(e) = token_res {
-            // eprintln!("##@@ auth() decode_dual_token().err {}: {}", e.code, e.message); // #-
             log::error!("{}: {}", e.code, e.message);
             return Box::pin(ready(Err(ErrorForbidden(e))));
         }
 
-        // eprintln!("##@@ auth() token_res.unwrap();"); // #-
         let (user_id, num_token) = token_res.unwrap();
         
         let allowed_roles = self.allowed_roles.clone();
@@ -220,7 +210,6 @@ where
                     .add_param(borrow::Cow::Borrowed("user_id"), &user_id);
                 return Err(ErrorForbidden(error));
             }
-            // eprintln!("##@@ auth() user_id: {}, num_token: {}", user_id.clone(), num_token);
 
             let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap();
             
@@ -260,15 +249,13 @@ where
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{dev, http, test, web, App, test::TestRequest, cookie::Cookie, get, HttpResponse};
+
     use crate::sessions::{
-        config_jwt::{self, ConfigJwt},
+        config_jwt,
         tokens::encode_dual_token,
         session_models::Session,
         session_orm::tests::SessionOrmApp};
-    use crate::users::{
-        user_models::{User, UserRole},
-        user_orm::tests::UserOrmApp,
-    };
+    use crate::users::{user_models::{User, UserRole}, user_orm::tests::UserOrmApp};
 
     use super::*;
 
@@ -283,27 +270,30 @@ mod tests {
     }
 
     fn create_user() -> User {
-        let mut user = UserOrmApp::new_user(
-            1,
-            "Oliver_Taylor",
-            "Oliver_Taylor@gmail.com",
-            "passwordD1T1",
-        );
+        let mut user = 
+            UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwrN1T1");
         user.role = UserRole::User;
         user
     }
+    fn user_with_id(user: User) -> User {
+        let user_orm = UserOrmApp::create(vec![user]);
+        user_orm.user_vec.get(0).unwrap().clone()
+    }
+    fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
+        SessionOrmApp::new_session(user_id, num_token)
+    }
 
-    async fn call_service_auth(
-        user_vec: Vec<User>,
-        session_vec: Vec<Session>,
-        config_jwt: ConfigJwt,
+    async fn call_service1(
+        config_jwt: config_jwt::ConfigJwt,
+        vec: (Vec<User>, Vec<Session>),
         token: &str,
         factory: impl dev::HttpServiceFactory + 'static,
-        test_request: TestRequest,
+        request: TestRequest,
     ) -> dev::ServiceResponse {
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(session_vec));
+        let data_config_jwt = web::Data::new(config_jwt);
+
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec.0));
+        let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
 
         let app = test::init_service(
             App::new()
@@ -314,83 +304,25 @@ mod tests {
         )
         .await;
         let test_request = if token.len() > 0 {
-            test_request.insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+            request.insert_header((http::header::AUTHORIZATION, format!("{}{}", BEARER, token)))
         } else {
-            test_request
+            request
         };
-        let req = test_request
-            .to_request();
+        let req = test_request.to_request();
 
         test::call_service(&app, req).await
     }
-
-    #[test]
-    async fn test_authentication_middelware_valid_token() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-
-        let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let req = test::TestRequest::get();
-        let resp =
-            call_service_auth(vec![user1], session_v, config_jwt, &token, handler_with_auth, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK);
-    }
-
-    #[test]
-    async fn test_authentication_middelware_valid_token_with_cookie() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-
-        let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let req = test::TestRequest::get().cookie(Cookie::new("token", token));
-        let resp =
-            call_service_auth(vec![user1], session_v, config_jwt, &"", handler_with_auth, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK);
-    }
-
-    #[test]
-    async fn test_authentication_middleware_access_admin_only_endpoint_success() {
-        let mut user1a: User = create_user();
-        user1a.role = UserRole::Admin;
-        let user_orm = UserOrmApp::create(vec![user1a]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
-
-        let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let req = test::TestRequest::get();
-        let resp =
-            call_service_auth(vec![user1], session_v, config_jwt, &token, handler_with_requireonlyadmin, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK);
-    }
-
-    async fn try_call_service_auth(
-        user_vec: Vec<User>,
-        session_vec: Vec<Session>,
-        config_jwt: ConfigJwt,
+    async fn call_service2(
+        config_jwt: config_jwt::ConfigJwt,
+        vec: (Vec<User>, Vec<Session>),
         token: &str,
         factory: impl dev::HttpServiceFactory + 'static,
-        test_request: TestRequest,
+        request: TestRequest,
     ) -> Result<dev::ServiceResponse, actix_web::Error> {
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(user_vec));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(session_vec));
+        let data_config_jwt = web::Data::new(config_jwt);
+
+        let data_user_orm = web::Data::new(UserOrmApp::create(vec.0));
+        let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
 
         let app = test::init_service(
             App::new()
@@ -401,24 +333,80 @@ mod tests {
         )
         .await;
         let test_request = if token.len() > 0 {
-            test_request.insert_header((http::header::AUTHORIZATION, format!("Bearer {}", token)))
+            request.insert_header((http::header::AUTHORIZATION, format!("{}{}", BEARER, token)))
         } else {
-            test_request
+            request
         };
-        let req = test_request
-            .to_request();
+        let req = test_request.to_request();
 
         test::try_call_service(&app, req).await
     }
 
     #[test]
+    async fn test_authentication_middelware_valid_token() {
+        let user1: User = user_with_id(create_user());
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token = encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let request = test::TestRequest::get();
+        let vec = (vec![user1], vec![session1]);
+        let factory = handler_with_auth;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK);
+    }
+
+    #[test]
+    async fn test_authentication_middelware_valid_token_with_cookie() {
+        let user1: User = user_with_id(create_user());
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token = "";
+        let token_val = encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let request = test::TestRequest::get().cookie(Cookie::new("token", token_val));
+        let vec = (vec![user1], vec![session1]);
+        let factory = handler_with_auth;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK);
+    }
+
+    #[test]
+    async fn test_authentication_middleware_access_admin_only_endpoint_success() {
+        let mut user1a = create_user();
+        user1a.role = UserRole::Admin;
+        let user1: User = user_with_id(user1a);
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token = encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let request = test::TestRequest::get();
+        let vec = (vec![user1], vec![session1]);
+        let factory = handler_with_auth;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK);
+    }
+
+    #[test]
     async fn test_authentication_middleware_missing_token() {
         let config_jwt = config_jwt::get_test_config();
-
-        let req = test::TestRequest::get();
-        let result =
-            try_call_service_auth(vec![], vec![], config_jwt, &"", handler_with_auth, req).await.err();
-
+        let token = "";
+        let request = test::TestRequest::get();
+        let vec = (vec![], vec![]);
+        let factory = handler_with_auth;
+        let result = call_service2(config_jwt, vec, &token, factory, request).await.err();
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
@@ -429,17 +417,14 @@ mod tests {
         assert_eq!(app_err.code, err::CD_MISSING_TOKEN);
         assert_eq!(app_err.message, err::MSG_MISSING_TOKEN);
     }
-
     #[test]
     async fn test_authentication_middleware_invalid_token() {
-
         let config_jwt = config_jwt::get_test_config();
         let token = "invalid_token";
-        let req = test::TestRequest::get();
-
-        let result =
-            try_call_service_auth(vec![], vec![], config_jwt, &token, handler_with_auth, req).await.err();
-    
+        let request = test::TestRequest::get();
+        let vec = (vec![], vec![]);
+        let factory = handler_with_auth;
+        let result = call_service2(config_jwt, vec, &token, factory, request).await.err();
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
@@ -450,24 +435,21 @@ mod tests {
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
-
     #[test]
     async fn test_authentication_middelware_expired_token() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1: User = user_with_id(create_user());
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_dual_token(user1.id, num_token, &jwt_secret, -config_jwt.jwt_access).unwrap();
  
-        let req = test::TestRequest::get();
-        let user_v = vec![user1];
-        let result =
-            try_call_service_auth(user_v, session_v, config_jwt, &token, handler_with_auth, req).await.err();
- 
+        let request = test::TestRequest::get();
+        let vec = (vec![user1], vec![session1]);
+        let factory = handler_with_auth;
+        let result = call_service2(config_jwt, vec, &token, factory, request).await.err();
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
@@ -478,25 +460,22 @@ mod tests {
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
-
     #[test]
     async fn test_authentication_middelware_valid_token_non_existent_user() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1: User = user_with_id(create_user());
         let user_id = user1.id + 1;
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user_id, Some(num_token))];
+        let session1 = create_session(user_id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_dual_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
     
-        let req = test::TestRequest::get();
-        let user_v = vec![user1];
-        let result =
-            try_call_service_auth(user_v, session_v, config_jwt, &token, handler_with_auth, req).await.err();
-    
+        let request = test::TestRequest::get();
+        let vec = (vec![user1], vec![session1]);
+        let factory = handler_with_auth;
+        let result = call_service2(config_jwt, vec, &token, factory, request).await.err();
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
@@ -507,25 +486,22 @@ mod tests {
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         assert_eq!(app_err.message, err::MSG_UNACCEPTABLE_TOKEN_ID);
     }
-
     #[test]
     async fn test_authentication_middelware_valid_token_non_existent_num() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1: User = user_with_id(create_user());
         let user_id = user1.id;
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user_id, Some(num_token))];
+        let session1 = create_session(user_id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_dual_token(user_id, num_token + 1, &jwt_secret, config_jwt.jwt_access).unwrap();
     
-        let req = test::TestRequest::get();
-        let user_v = vec![user1];
-        let result =
-            try_call_service_auth(user_v, session_v, config_jwt, &token, handler_with_auth, req).await.err();
-    
+        let request = test::TestRequest::get();
+        let vec = (vec![user1], vec![session1]);
+        let factory = handler_with_auth;
+        let result = call_service2(config_jwt, vec, &token, factory, request).await.err();
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
@@ -536,25 +512,21 @@ mod tests {
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         assert_eq!(app_err.message, err::MSG_UNACCEPTABLE_TOKEN_NUM);
     }
-
     #[test]
     async fn test_authentication_middleware_access_admin_only_endpoint_fail() {
-        let user_orm = UserOrmApp::create(vec![create_user()]);
-        let user1: User = user_orm.user_vec.get(0).unwrap().clone();
+        let user1: User = user_with_id(create_user());
 
         let num_token = 1234;
-        let session_v = vec![SessionOrmApp::new_session(user1.id, Some(num_token))];
+        let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
  
-        let req = test::TestRequest::get();
-        let user_v = vec![user1];
+        let request = test::TestRequest::get();
+        let vec = (vec![user1], vec![session1]);
         let factory = handler_with_requireonlyadmin;
-        let result =
-            try_call_service_auth(user_v, session_v, config_jwt, &token, factory, req).await.err();
-
+        let result = call_service2(config_jwt, vec, &token, factory, request).await.err();
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
@@ -565,5 +537,4 @@ mod tests {
         assert_eq!(app_err.code, err::CD_PERMISSION_DENIED);
         assert_eq!(app_err.message, err::MSG_PERMISSION_DENIED);
     }
-
 }

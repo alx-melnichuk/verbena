@@ -63,6 +63,8 @@ pub const MSG_SESSION_NOT_EXIST: &str = "session_not_exist";
 pub const MSG_ERROR_SENDING_EMAIL: &str = "error_sending_email";
 // Error creating password hash.
 pub const MSG_ERROR_HASHING_PASSWORD: &str = "error_hashing_password";
+// Authentication: The entity "user" was not received from the request.
+pub const MSG_USER_NOT_RECEIVED_FROM_REQUEST: &str = "user_not_received_from_request";
 
 // Error creating password hash.
 pub const CD_HASHING_PASSWD: &str = "HashingPassword";
