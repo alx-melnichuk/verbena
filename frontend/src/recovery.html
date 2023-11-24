@@ -142,12 +142,12 @@
           <div id="content_id" class="s-content">
             <form ds-fl fl-dr-col id="form_prm_id">
 
-              <div mr-bt-05 tx-al-cen class="s-title">Change password</div>
+              <div mr-bt-05 tx-al-cen class="s-title" id="title_id">Change password</div>
 
-              <span mr-bt-05 mr-tp-05 tx-al-cen class="s-text">Enter a new password for your account.</span>
+              <span mr-bt-05 mr-tp-05 tx-al-cen class="s-text" id="label_id">Enter a new password for your account.</span>
 
               <div mr-tp-05 wd-100 ps-rel class="s-field-wrap">
-                <input type="password" fn-sz-inh wd-100 bx-sz-brd class="s-field" placeholder="New password"
+                <input type="password" fn-sz-inh wd-100 bx-sz-brd class="s-field"
                   id="field_passwd_id" data-dirty="off" autocomplete="off"
                   required="" minlength="6" maxlength="65" 
                   onchange="doInputPassword(this, true);"
@@ -167,8 +167,8 @@
 
             </form>
             
-            <button type="button" fn-sz-inh mr-bt-05 wd-100 
-              class="s-btn s-submit" onclick="doSubmit()">
+            <button type="button" fn-sz-inh mr-bt-05 wd-100 id="btn_submit_id"
+              class="s-btn s-submit" onclick="doSubmit()" disabled>
               <span fn-sz-2 fn-wg-bold>Change</span>
             </button>
 
@@ -237,14 +237,14 @@
     </template>
 
     <template id="tmp_success_id">
-      <span>Your registration have been completed !</span>
-      <p><a href="/signup">Go to the login page on our website.</a></p>
+      <span id="succ_answ_id"></span>
+      <p><a href="/signup" id="signup_id"></a></p>
     </template>
 
     <template id="tmp_failure_id">
-      <div mr-bt-05 mr-tp-05 class="s-err">Your confirmation is invalid or has expired.</div>
+      <div mr-bt-05 mr-tp-05  id="fail_answ_id"></div>
       <div mr-bt-05 mr-tp-05 fn-sz-2 fn-st-italic id="err_msg_id" class="s-err"></div>
-      <a href="/signup">Go to the registration page on our website.</a>
+      <a href="/signup" id="signup_id"></a>
     </template>
 
 
@@ -257,25 +257,33 @@
         element?.removeAttribute("d-untouched");
         element?.setAttribute("d-touched", "");
       }
-      function getHintPassword() {
-        return "Use at least 6 characters, with one lowercase letter, one capital letter, a number, and a special character.";
-      }
       function doInputPassword(element, isChange) {
         if (!element) { return; }
         const value = element.value;
         const attrTouched = element.hasAttribute("d-touched");
+        console.log(`isChange: ${isChange}, attrTouched: ${attrTouched}`);
+        console.log(`element.validity: ${JSON.stringify(element.validity)}`);
+        // element?.setAttribute("d-dirty", "");
         if (isChange || attrTouched) {
           const value = element.value;
           const content = document.getElementById("content_id");
           const elementErrTxt = content?.querySelector("[id=err_hint_id]");
+          element?.removeAttribute("d-invalid");
           let text = checkPasswd(value)
           if (!!text) {
+            element?.setAttribute("d-invalid", "");
             elementErrTxt.classList.add("s-err");
           } else {
             elementErrTxt.classList.remove("s-err");
-            text = getHintPassword();
+            text = getTranslate("field-password", "password_hint");
           }
           elementErrTxt.innerText = text;
+          const btn_submit = document.getElementById("btn_submit_id");
+          if (element.validity.valid) {
+            btn_submit?.removeAttribute("disabled");
+          } else {
+            btn_submit?.setAttribute("disabled", "");
+          }
         }
       }
       
@@ -285,20 +293,24 @@
         const maxlength = 64;
 
         if (!value) {
-          result = "The password field is required.";
+          result = getTranslate("Validation", "password:required");
         } else if (value.length < minlength) {
-          result = `The password should have ${minlength} characters or more.`
+          result = getTranslate("Validation", "password:min_length");
         } else if (value.length > maxlength) {
-          result = `The password should be less than ${maxlength} characters.`;
+          result = getTranslate("Validation", "password:max_length");
         } else if (!(new RegExp("[a-z]+")).test(value)
          || !(new RegExp("[A-Z]+")).test(value)
          || !(new RegExp("[\\d]+")).test(value)) {
-          result = "The password must contain: a lowercase letter, an uppercase letter and a number.";
+          result = getTranslate("Validation", "password:regex");
         }
         return result;
       }
 
-      function httpClient(apiUrl, callbackSuccess, callbackFailure, recoveryData) {
+      function getTranslate(code, msg) {
+        return !!translate[code] ? (translate[code][msg] || "") : "";
+      }
+
+      function httpClient(method, apiUrl, callbackSuccess, callbackFailure, recoveryData) {
         const xhr = new XMLHttpRequest();
 
         xhr.onreadystatechange = function () {
@@ -312,26 +324,75 @@
           }
         };
 
-        xhr.open("PUT", apiUrl, true); // true for asynchronous
+        xhr.open(method || "GET", apiUrl, true); // true for asynchronous
         xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.send(JSON.stringify(recoveryData));
+        xhr.send(!!recoveryData ? JSON.stringify(recoveryData) : null);
       }
 
-      function successHandler(responseText) {
+
+      let translate = {};
+
+      httpClient("GET", "./assets/extra-i18n/en.json", load_extra_i18n_successful, load_extra_i18n_failed);
+
+      function load_extra_i18n_successful(responseText) {
+        translate = JSON.parse(responseText);
+
+        prepareData();
+        
+        // ** Data preparation **
+        doToggleEye(document.getElementById("btn_eye_id"), false);
+      }
+      function load_extra_i18n_failed(responseText, status) {
+        console.log(`load_extra_i18n_failed();`);
+      }
+
+      function prepareData() {
+        const content = document.getElementById("content_id");
+
+        const title = content.querySelector("[id=title_id]");
+        title.innerText = getTranslate("Change_password", "title");
+
+        const label = content.querySelector("[id=label_id]");
+        label.innerText = getTranslate("Change_password", "label");
+
+        const elementPasswd = document.getElementById("field_passwd_id");
+        elementPasswd.setAttribute("placeholder", getTranslate("field-password", "placeholder"));
+
+        const elementErrTxt = document.getElementById("err_hint_id");
+        elementErrTxt.innerText = getTranslate("field-password", "password_hint");
+      }
+
+      function recoverySuccessful(responseText) {
+        formDisabled(false);
         const content = document.getElementById("content_id");
         const tmpl = document.getElementById("tmp_success_id");
         const clon = tmpl?.content.cloneNode(true);
+
+        const succ_answer = clon.querySelector("[id=succ_answ_id]");
+        succ_answer.innerText = getTranslate("Change_password", "change_successful");
+
+        const signup = clon.querySelector("[id=signup_id]");
+        signup.innerText = getTranslate("Change_password", "link_signup");
+
         content?.appendChild(clon);
       }
 
-      function failureHandler(responseText, status) {
+      function recoveryFailed(responseText, status) {
+        formDisabled(false);
+        const err = JSON.parse(responseText);
         const content = document.getElementById("content_id");
         const tmpl = document.getElementById("tmp_failure_id");
         const clon = tmpl?.content.cloneNode(true);
 
+        const fail_answer = clon.querySelector("[id=fail_answ_id]");
+        fail_answer.innerText = getTranslate("Change_password", "change_failed");
+
         const errText = clon.querySelector("[id=err_msg_id]");
-        const err = JSON.parse(responseText);
-        errText.innerText = (`${status} : ${err.errCode}, ${err.errMsg}`);
+        errText.innerText = getTranslate(err.errCode, err.errMsg);
+
+        const signup = clon.querySelector("[id=signup_id]");
+        signup.innerText = getTranslate("Change_password", "link_signup");
+
         content?.appendChild(clon);
       }
 
@@ -358,52 +419,35 @@
         }
       }
 
+      function formDisabled(isDisabled) {
+        const elementForm = document.getElementById("form_prm_id");
+        const elementPasswd = document.getElementById("field_passwd_id");
+        const elementSubmit = document.getElementById("btn_submit_id");
+        if (isDisabled) {
+          elementForm?.setAttribute("disabled", "");
+          elementPasswd?.setAttribute("disabled", "");
+          elementSubmit?.setAttribute("disabled", "");
+        } else {
+          elementForm?.removeAttribute("disabled");
+          elementPasswd?.removeAttribute("disabled");
+          elementSubmit?.removeAttribute("disabled");
+        }
+      }
+
       function doSubmit() {
         doToggleEye(document.getElementById("btn_eye_id"), false);
         const frm = document.getElementById("form_prm_id");
         const password = !!frm ? frm[0].value : null;
-        console.log(`password: ${password}`);
-        if (!!password) {
+        const elementPasswd = document.getElementById("field_passwd_id");
+        if (elementPasswd.validity.valid && !!password) {
           const urlParams = new URLSearchParams(window.location.search);
           const recovery_token = urlParams.get("param")
           const url = window.location.origin + "/api/recovery/" + recovery_token;
 
-          httpClient(url, successHandler, failureHandler, { password });
+          formDisabled(true);
+          httpClient("PUT", url, recoverySuccessful, recoveryFailed, { password });
         }
       }
-
-      // ** Data preparation **
-      doToggleEye(document.getElementById("btn_eye_id"), false);
-
-      const elementErrTxt = document.getElementById("err_hint_id");
-      elementErrTxt.innerText = getHintPassword();
-
-
-      /*function send() {
-        var urlvariable;
-        urlvariable = "text";
-
-        var ItemJSON;
-        ItemJSON = "[  {    "Id": 1,    "ProductID": "1",    "Quantity": 1,  },  {    "Id": 1,    "ProductID": "2",    "Quantity": 2,  }]";
-
-        URL = "https://testrestapi.com/additems?var=" + urlvariable;  //Your URL
-
-        var xmlhttp = new XMLHttpRequest();
-        xmlhttp.onreadystatechange = callbackFunction(xmlhttp);
-        xmlhttp.open("POST", URL, false);
-        xmlhttp.setRequestHeader("Content-Type", "application/json");
-        // xmlhttp.setRequestHeader("Authorization", "Basic " + window.btoa("apiusername:apiuserpassword")); //in prod, you should encrypt user name and password and provide encrypted keys here instead 
-        xmlhttp.onreadystatechange = callbackFunction(xmlhttp);
-        xmlhttp.send(ItemJSON);
-
-        alert(xmlhttp.responseText);
-        document.getElementById("div").innerHTML =
-          xmlhttp.statusText + ":" + xmlhttp.status + "<BR><textarea rows="100" cols="100">" + xmlhttp.responseText + "</textarea>";
-      }
-
-      function callbackFunction(xmlhttp) {
-        //alert(xmlhttp.responseXML);
-      }*/
     </script>
 
 

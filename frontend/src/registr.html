@@ -82,14 +82,14 @@
       </header>
 
       <main>
-        <div ds-fl fl-dr-col js-cn-cen al-it-cen hg-100 style9="margin-top: 20vh;">
+        <div ds-fl fl-dr-col js-cn-cen al-it-cen hg-100>
             <div id="content_id" class="s-content">
               
-              <div mr-bt-05 tx-al-cen class="s-title">Registration</div>
+              <div mr-bt-05 tx-al-cen class="s-title" id="title_id">Registration</div>
 
               <span mr-bt-05 mr-tp-05 id="start_id">
-                <span class="s-text">Your registration process has started.</span>  
-                <p class="s-text">Wait a little ...</p>
+                <span class="s-text" id="label_id">The registration process has begun.</span>  
+                <p class="s-text" id="text_id">Wait ...</p>
               </span>
   
             </div>
@@ -102,26 +102,22 @@
     </div>
 
     <template id="tmp_success_id">
-      <span>Your registration have been completed !</span>
+      <span id="succ_answ_id"></span>
       <p><a href="/login">Go to the login page.</a></p>
     </template>
   
     <template id="tmp_failure_id">
-      <div mr-bt-05 mr-tp-05 class="s-err">Your confirmation is invalid or has expired.</div>
+      <div mr-bt-05 mr-tp-05 id="fail_answ_id"></div>
       <div mr-bt-05 mr-tp-05 fn-sz-2 fn-st-italic id="err_msg_id" class="s-err"></div>
       <a href="/signup">Go to the registration page on our website.</a>
     </template>
   
-
     <script type="text/javascript" language="javascript">
-      const translate = {
-        "Forbidden": {
-          "invalid_or_expired_token": "Invalid or expired token."
-        },
-      };
-      
-      function httpClient(apiUrl, callbackSuccess, callbackFailure) {
-        let xmlHttpReq = new XMLHttpRequest();
+      function getTranslate(code, msg) {
+        return !!translate[code] ? (translate[code][msg] || "") : "";
+      }
+
+      function httpClient(method, apiUrl, callbackSuccess, callbackFailure, recoveryData) {
         const xhr = new XMLHttpRequest();
 
         xhr.onreadystatechange = function () {
@@ -136,43 +132,76 @@
           }
         };
 
-        xhr.open("PUT", apiUrl, true); // true for asynchronous
+        xhr.open(method || "GET", apiUrl, true); // true for asynchronous
         xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.send(null);
+        xhr.send(!!recoveryData ? JSON.stringify(recoveryData) : null);
       }
 
-      function successHandler(responseText) {
+
+      let translate = {};
+
+      httpClient("GET", "./assets/extra-i18n/en.json", load_extra_i18n_successful, load_extra_i18n_failed);
+
+      function load_extra_i18n_successful(responseText) {
+        translate = JSON.parse(responseText);
+
+        prepareData();
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const registr_token = urlParams.get('param')
+
+        const url = window.location.origin + "/api/registration/" + registr_token;
+        
+        httpClient("PUT", url, registrationSuccessful, registrationFailed);
+      }
+      function load_extra_i18n_failed(responseText, status) {
+        console.error(`load_extra_i18n_failed();`);
+      }
+
+      function prepareData() {
+        const content = document.getElementById("content_id");
+
+        const title = content.querySelector("[id=title_id]");
+        title.innerText = getTranslate("Registration", "title");
+
+        const label = content.querySelector("[id=label_id]");
+        label.innerText = getTranslate("Registration", "label");
+
+        const text = content.querySelector("[id=text_id]");
+        text.innerText = getTranslate("Registration", "text");
+      }
+
+      function registrationSuccessful(responseText) {
         const content = document.getElementById("content_id");
         const tmpl = document.getElementById("tmp_success_id");
+
         const clon = tmpl?.content.cloneNode(true);
+        const succ_answer = clon.querySelector("[id=succ_answ_id]");
+        succ_answer.innerText = getTranslate("Registration", "confirm_successful");
+
         content?.appendChild(clon);
 
         const start = content.querySelector("[id=start_id]");
         start?.parentElement.removeChild(start);
       }
 
-      function failureHandler(responseText, status) {
+      function registrationFailed(responseText, status) {
         const content = document.getElementById("content_id");
         const tmpl = document.getElementById("tmp_failure_id");
         const clon = tmpl?.content.cloneNode(true);
 
+        const fail_answer = clon.querySelector("[id=fail_answ_id]");
+        fail_answer.innerText = getTranslate("Registration", "confirm_failed");
+
         const errText = clon.querySelector("[id=err_msg_id]");
         const err = JSON.parse(responseText);
-        const text = `${status} : ${err.errCode}, ${err.errMsg}`;
-        const textTr = !!translate[err.errCode] ? translate[err.errCode][err.errMsg] : "";
-        errText.innerText = textTr || text;
+        errText.innerText = getTranslate(err.errCode, err.errMsg);
         content?.appendChild(clon);
 
         let start = content.querySelector("[id=start_id]");
         start?.parentElement.removeChild(start);
       }
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const registr_token = urlParams.get('param')
-
-      const url = window.location.origin + "/api/registration/" + registr_token;
-
-      httpClient(url, successHandler, failureHandler);
     </script>
 
   </body>
