@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{borrow, ops::Deref};
 
 use actix_web::{
     cookie::time::Duration as ActixWebDuration, cookie::Cookie, post, web, HttpResponse,
@@ -45,14 +45,14 @@ fn err_json_web_encode_token(err: String) -> AppError {
     log::error!("{}: {} - {}", err::CD_INTER_SRV_ERROR, err::MSG_JSON_WEB_ENCODE_TOKEN, err);
     AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_JSON_WEB_ENCODE_TOKEN)
         .set_status(500)
-        .add_param(std::borrow::Cow::Borrowed("error"), &err)
+        .add_param(borrow::Cow::Borrowed("error"), &err)
 }
 fn err_session(user_id: i32) -> AppError {
     #[rustfmt::skip]
     log::error!("{}: {} - user_id - {}", err::CD_INTER_SRV_ERROR, err::MSG_SESSION_NOT_EXIST, user_id);
     AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_SESSION_NOT_EXIST)
         .set_status(500)
-        .add_param(std::borrow::Cow::Borrowed("user_id"), &user_id)
+        .add_param(borrow::Cow::Borrowed("user_id"), &user_id)
 }
 // POST api/login
 #[post("/login")]
@@ -192,7 +192,7 @@ pub async fn new_token(
         log::error!("{}: {} ~ user_id - {}", err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_ID, user_id);
         let error = AppError::new(err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_ID)
             .set_status(403)
-            .add_param(std::borrow::Cow::Borrowed("user_id"), &user_id);
+            .add_param(borrow::Cow::Borrowed("user_id"), &user_id);
         return Err(error);
     }
 
