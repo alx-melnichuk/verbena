@@ -113,6 +113,7 @@
     </template>
   
     <script type="text/javascript" language="javascript">
+
       function getTranslate(code, msg) {
         return !!translate[code] ? (translate[code][msg] || "") : "";
       }
@@ -137,7 +138,7 @@
         xhr.send(!!recoveryData ? JSON.stringify(recoveryData) : null);
       }
 
-
+      // ** Start of the program **
       let translate = {};
 
       httpClient("GET", "./assets/extra-i18n/en.json", load_extra_i18n_successful, load_extra_i18n_failed);
@@ -146,10 +147,9 @@
         translate = JSON.parse(responseText);
 
         prepareData();
-        
+
         const urlParams = new URLSearchParams(window.location.search);
         const registr_token = urlParams.get('param')
-
         const url = window.location.origin + "/api/registration/" + registr_token;
         
         httpClient("PUT", url, registrationSuccessful, registrationFailed);
@@ -201,7 +201,6 @@
         let start = content.querySelector("[id=start_id]");
         start?.parentElement.removeChild(start);
       }
-
     </script>
 
   </body>

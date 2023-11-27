@@ -144,20 +144,21 @@
 
               <div mr-bt-05 tx-al-cen class="s-title" id="title_id">Change password</div>
 
-              <span mr-bt-05 mr-tp-05 tx-al-cen class="s-text" id="label_id">Enter a new password for your account.</span>
+              <span mr-bt-05 mr-tp-05 tx-al-cen class="s-text" id="label_id">Enter a new password for your account</span>
 
               <div mr-tp-05 wd-100 ps-rel class="s-field-wrap">
                 <input type="password" fn-sz-inh wd-100 bx-sz-brd class="s-field"
                   id="field_passwd_id" data-dirty="off" autocomplete="off"
-                  required="" minlength="6" maxlength="65" 
+                  required="" minlength="6" maxlength="65"
+                  title="Required field"
                   onchange="doInputPassword(this, true);"
-                  oninput="elementInput(this); doInputPassword(this, false);"
+                  oninput="elementInput(this); doInputPassword(this, false); updateSubmitStatus(this);"
                   onblur="elementBlur(this)"
                   d-untouched
                   d-pristine
                 />
-                <button type="button" fn-sz-inh ps-abs class="s-btn-eye" title="Toggle password visibility" tabindex="-1"
-                  onclick="doToggleEye(this)" id="btn_eye_id" eye-off>
+                <button type="button" fn-sz-inh ps-abs class="s-btn-eye" tabindex="-1"
+                  onclick="doToggleEye(this)" id="btn_toggle_id" eye-off>
                 </button>
               </div>
 
@@ -169,7 +170,7 @@
             
             <button type="button" fn-sz-inh mr-bt-05 wd-100 id="btn_submit_id"
               class="s-btn s-submit" onclick="doSubmit()" disabled>
-              <span fn-sz-2 fn-wg-bold>Change</span>
+              <span fn-sz-2 fn-wg-bold id="submit_label_id">Change</span>
             </button>
 
           </div>
@@ -237,12 +238,12 @@
     </template>
 
     <template id="tmp_success_id">
-      <span id="succ_answ_id"></span>
+      <span id="succ_answ_id">Your password have been changed to new one</span>
       <p><a href="/signup" id="signup_id"></a></p>
     </template>
 
     <template id="tmp_failure_id">
-      <div mr-bt-05 mr-tp-05  id="fail_answ_id"></div>
+      <div mr-bt-05 mr-tp-05  id="fail_answ_id">Your password has not been changed</div>
       <div mr-bt-05 mr-tp-05 fn-sz-2 fn-st-italic id="err_msg_id" class="s-err"></div>
       <a href="/signup" id="signup_id"></a>
     </template>
@@ -257,37 +258,37 @@
         element?.removeAttribute("d-untouched");
         element?.setAttribute("d-touched", "");
       }
-      function doInputPassword(element, isChange) {
-        if (!element) { return; }
-        const value = element.value;
-        const attrTouched = element.hasAttribute("d-touched");
-        console.log(`isChange: ${isChange}, attrTouched: ${attrTouched}`);
-        console.log(`element.validity: ${JSON.stringify(element.validity)}`);
-        // element?.setAttribute("d-dirty", "");
-        if (isChange || attrTouched) {
-          const value = element.value;
+      function doInputPassword(inputPassword, isChanged) {
+        if (!inputPassword) { return; }
+        const value = inputPassword.value;
+        const attrTouched = inputPassword.hasAttribute("d-touched");
+        if (isChanged || attrTouched) {
+          const value = inputPassword.value;
           const content = document.getElementById("content_id");
-          const elementErrTxt = content?.querySelector("[id=err_hint_id]");
-          element?.removeAttribute("d-invalid");
-          let text = checkPasswd(value)
+          const divErrTxt = content?.querySelector("[id=err_hint_id]");
+          inputPassword.removeAttribute("d-invalid");
+          let text = checkPassword(value)
           if (!!text) {
-            element?.setAttribute("d-invalid", "");
-            elementErrTxt.classList.add("s-err");
+            inputPassword.setAttribute("d-invalid", "");
+            divErrTxt?.classList.add("s-err");
           } else {
-            elementErrTxt.classList.remove("s-err");
+            divErrTxt?.classList.remove("s-err");
             text = getTranslate("field-password", "password_hint");
           }
-          elementErrTxt.innerText = text;
-          const btn_submit = document.getElementById("btn_submit_id");
-          if (element.validity.valid) {
-            btn_submit?.removeAttribute("disabled");
-          } else {
-            btn_submit?.setAttribute("disabled", "");
-          }
+          divErrTxt.innerText = text;
+        }
+        if (isChanged) {
         }
       }
-      
-      function checkPasswd(value) {
+      function updateSubmitStatus(elementPassword) {
+        const btn_submit = document.getElementById("btn_submit_id");
+        if (elementPassword.validity.valid) {
+          btn_submit?.removeAttribute("disabled");
+        } else {
+          btn_submit?.setAttribute("disabled", "");
+        }
+      }
+      function checkPassword(value) {
         let result = "";
         const minlength = 6;
         const maxlength = 64;
@@ -329,7 +330,7 @@
         xhr.send(!!recoveryData ? JSON.stringify(recoveryData) : null);
       }
 
-
+      // ** Start of the program **
       let translate = {};
 
       httpClient("GET", "./assets/extra-i18n/en.json", load_extra_i18n_successful, load_extra_i18n_failed);
@@ -340,10 +341,10 @@
         prepareData();
         
         // ** Data preparation **
-        doToggleEye(document.getElementById("btn_eye_id"), false);
+        doToggleEye(document.getElementById("btn_toggle_id"), false);
       }
       function load_extra_i18n_failed(responseText, status) {
-        console.log(`load_extra_i18n_failed();`);
+        console.error(`load_extra_i18n_failed();`);
       }
 
       function prepareData() {
@@ -355,11 +356,18 @@
         const label = content.querySelector("[id=label_id]");
         label.innerText = getTranslate("Change_password", "label");
 
-        const elementPasswd = document.getElementById("field_passwd_id");
-        elementPasswd.setAttribute("placeholder", getTranslate("field-password", "placeholder"));
+        const inputPassword = content.querySelector("[id=field_passwd_id]");
+        inputPassword.setAttribute("placeholder", getTranslate("field-password", "placeholder"));
+        inputPassword.setAttribute("title", getTranslate("field-password", "title"));
 
-        const elementErrTxt = document.getElementById("err_hint_id");
-        elementErrTxt.innerText = getTranslate("field-password", "password_hint");
+        const btnPasswordShow = content.querySelector("[id=btn_toggle_id]");
+        btnPasswordShow.setAttribute("title", getTranslate("field-password", "toggle_title"));
+
+        const divErrTxt = content.querySelector("[id=err_hint_id]");
+        divErrTxt.innerText = getTranslate("field-password", "password_hint");
+
+        const submitLabel = content.querySelector("[id=submit_label_id]");
+        submitLabel.innerText = getTranslate("Change_password", "submit_label");
       }
 
       function recoverySuccessful(responseText) {
@@ -435,7 +443,7 @@
       }
 
       function doSubmit() {
-        doToggleEye(document.getElementById("btn_eye_id"), false);
+        doToggleEye(document.getElementById("btn_toggle_id"), false);
         const frm = document.getElementById("form_prm_id");
         const password = !!frm ? frm[0].value : null;
         const elementPasswd = document.getElementById("field_passwd_id");
@@ -449,89 +457,5 @@
         }
       }
     </script>
-
-
-    <!--<hr />
-    <div class="demo0">
-      <div class="container0">
-        <div *ngIf="isResponseSuccessful==true">
-          <p>{{ "Your registration have been completed!" }}</p>
-          < !-- Ваша регистрация завершена! -- >
-          <p [innerHTML]=""confirmation.login_for_authorization" | translate: { linkToLogin: linkToLogin }"></p>
-        </div>
-        <div
-          class="failed0"
-          *ngIf="isResponseSuccessful==false"
-        >
-          <p>{{ "Your confirmation have been expired!" }}</p>
-          < !-- Срок действия вашего подтверждения истек! -- >
-        </div>
-      </div>
-    </div>-->
-
-    <!-- ==V verification_code.hbs  {{#> base}} <hr/>
-  <div>
-    <a href="{{domain}}" target="_blank" style="font-size: 1.375em;">&#706; Verbéna &#707;</a>
-    <p>Hi {{nickname}},</p>
-    <p>Please confirm your account <b>registration</b></p>
-    <div class="panel btn btn-primary">
-      <a href="{{domain}}/confirmation/registration/{{target}}" target="_blank"
-        style="text-decoration: none;color: #fff;">
-        Confirm your registration
-      </a>
-    </div>
-    <p>This link is valid for 15 minutes.</p> < !-- Эта ссылка действительна в течение 15 минут. -- >
-    <p>Demo site <a href="{{domain}}" target="_blank">www.verbena</a></p>
-  </div>
-  ==A verification_code.hbs {{/base}} -->
-
-    <!-- ==V password_recovery.hbs {{#> base}} <hr/>
-  <div>
-    <a href="{{domain}}" target="_blank" style="font-size: 1.375em;">&#706; Verbéna &#707;</a>
-    <p>Hi {{nickname}},</p>
-    <p>Please confirm your account <b>recovery</b></p>
-    <div class="panel btn btn-primary">
-      <a href="{{domain}}/confirmation/recovery/{{target}}" target="_blank"
-        style="text-decoration: none;color: #fff;">
-        Confirm profile recovery on the form
-      </a>
-    </div>
-    <p>This link is valid for 10 minutes.</p> < !-- Эта ссылка действительна в течение 10 минут. -- >
-    <p>Demo site <a href="{{domain}}" target="_blank">www.verbena</a></p>
-  </div>
-  ==A password_recovery.hbs {{/base}} -->
-
-
-    <!--
-<body>
-    Do you want to proceed?
-    <input type="button" value="Proceed" onclick="proceed();" />
-
-    <script type="text/javascript">
-        let header =
-            "POST https://host.com HTTP/1.1" +
-            "Host: host.com" +
-            ...;
-
-        let body = "param1=value1";
-
-        function proceed() {
-            let response = sendRequest(header, body);
-            replacePageContent(response);
-        }
-
-        function sendRequest(header, body) {
-            let httpRequest = new HttpRequest(header, body); // which JS library can do that?
-            httpRequest.send();
-        }
-
-        function replacePageContent(response) {
-            // how do I replace the page content with the response?
-        }
-    </script>
-</body>
-  -->
-
-    <!-- ==V basic_layout.hbs -->
   </body>
 </html>
