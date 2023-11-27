@@ -206,8 +206,10 @@ pub async fn registration(
     let domain = &config_app.app_domain;
     let nickname = registr_user_dto.nickname.clone();
     let receiver = registr_user_dto.email.clone();
-
-    let result = mailer.send_verification_code(&receiver, &domain, &nickname, &registr_token);
+    let target = registr_token.clone();
+    let registr_duration = app_registr_duration.clone();
+    let result =
+        mailer.send_verification_code(&receiver, &domain, &nickname, &target, registr_duration);
 
     if result.is_err() {
         return Err(err_sending_email(result.unwrap_err()));
@@ -319,11 +321,8 @@ pub async fn recovery(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!(
-            "{}: {}",
-            err::CD_VALIDATION,
-            msg_validation(&validation_errors)
-        );
+        #[rustfmt::skip]
+        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
@@ -420,9 +419,11 @@ pub async fn recovery(
     let domain = &config_app.app_domain;
     let nickname = user.nickname.clone();
     let receiver = user.email.clone();
-
+    let target = recovery_token.clone();
+    let recovery_duration = app_recovery_duration.clone();
     // Send an email to this user.
-    let result = mailer.send_password_recovery(&receiver, &domain, &nickname, &recovery_token);
+    let result =
+        mailer.send_password_recovery(&receiver, &domain, &nickname, &target, recovery_duration);
 
     if result.is_err() {
         return Err(err_sending_email(result.unwrap_err()));
@@ -451,11 +452,8 @@ pub async fn confirm_recovery(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!(
-            "{}: {}",
-            err::CD_VALIDATION,
-            msg_validation(&validation_errors)
-        );
+        #[rustfmt::skip]
+        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::validations_to_response(validation_errors));
     }
 

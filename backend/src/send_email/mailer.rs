@@ -6,6 +6,7 @@ pub trait Mailer {
         domain: &str,
         nickname: &str,
         target: &str,
+        registr_duration: i64,
     ) -> Result<(), String>;
     /// Send an email to confirm the password change.
     fn send_password_recovery(
@@ -14,6 +15,7 @@ pub trait Mailer {
         domain: &str,
         nickname: &str,
         target: &str,
+        recovery_duration: i64,
     ) -> Result<(), String>;
 }
 
@@ -118,6 +120,7 @@ pub mod inst {
             domain: &str,
             nickname: &str,
             target: &str,
+            registr_duration: i64,
         ) -> Result<(), String> {
             if receiver.len() == 0 {
                 return Err("Recipient not specified.".to_string());
@@ -129,6 +132,8 @@ pub mod inst {
             params.insert("domain", domain);
             params.insert("nickname", nickname);
             params.insert("target", target);
+            let registr_duration_val = registr_duration.to_string();
+            params.insert("registr_duration", &registr_duration_val);
             // Create a html_template to send.
             let html_template = render_template("verification_code", params)?;
             eprintln!("html_template: {:?}", html_template);
@@ -146,6 +151,7 @@ pub mod inst {
             domain: &str,
             nickname: &str,
             target: &str,
+            recovery_duration: i64,
         ) -> Result<(), String> {
             if receiver.len() == 0 {
                 return Err("Recipient not specified.".to_string());
@@ -157,6 +163,9 @@ pub mod inst {
             params.insert("domain", domain);
             params.insert("nickname", nickname);
             params.insert("target", target);
+            let recovery_duration_val = recovery_duration.to_string();
+            params.insert("recovery_duration", &recovery_duration_val);
+
             // Create a html_template to send.
             let html_template = render_template("password_recovery", params)?;
             eprintln!("html_template: {:?}", html_template);
@@ -199,6 +208,7 @@ pub mod tests {
             domain: &str,
             nickname: &str,
             target: &str,
+            registr_duration: i64,
         ) -> Result<(), String> {
             if receiver.len() == 0 {
                 return Err("Recipient not specified.".to_string());
@@ -230,6 +240,7 @@ pub mod tests {
             domain: &str,
             nickname: &str,
             target: &str,
+            recovery_duration: i64,
         ) -> Result<(), String> {
             if receiver.len() == 0 {
                 return Err("Recipient not specified.".to_string());
