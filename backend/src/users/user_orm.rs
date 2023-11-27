@@ -235,8 +235,8 @@ pub mod tests {
         }
         /// Create a new entity instance.
         pub fn new_user(id: i32, nickname: &str, email: &str, password: &str) -> User {
-            let today = Utc::now();
-            let cr_dt = today + Duration::minutes(-10);
+            let now = Utc::now();
+            let cr_dt = now + Duration::minutes(-10);
 
             User {
                 id,

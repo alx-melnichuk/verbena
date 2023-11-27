@@ -41,6 +41,7 @@ pub mod cfg {
 pub mod inst {
     use lettre::{message::header::ContentType, transport::smtp, Message, SmtpTransport};
     use std::collections::HashMap;
+    use std::{fs::File, io::Write};
 
     use crate::send_email::config_smtp::ConfigSmtp;
     use crate::tools::template_rendering::render_template;
@@ -137,6 +138,13 @@ pub mod inst {
             // Create a html_template to send.
             let html_template = render_template("verification_code", params)?;
             eprintln!("html_template: {:?}", html_template);
+            // TODO del;
+            let path = "res_registration.html";
+            let file_opt = File::create(path).ok();
+            if file_opt.is_some() {
+                let mut file = file_opt.unwrap();
+                let _ = write!(file, "{}", &html_template);
+            }
 
             let receiver = "lg2aam@gmail.com";
             // Create a message to send.
@@ -169,6 +177,13 @@ pub mod inst {
             // Create a html_template to send.
             let html_template = render_template("password_recovery", params)?;
             eprintln!("html_template: {:?}", html_template);
+            // TODO del;
+            let path = "res_recovery.html";
+            let file_opt = File::create(path).ok();
+            if file_opt.is_some() {
+                let mut file = file_opt.unwrap();
+                let _ = write!(file, "{}", &html_template);
+            }
             // // Create a message to send.
             // let message = self.new_message(receiver, subject, &html_template)?;
             // // Sending mail (synchronous)
@@ -213,7 +228,11 @@ pub mod tests {
             if receiver.len() == 0 {
                 return Err("Recipient not specified.".to_string());
             }
-            if domain.len() == 0 || nickname.len() == 0 || target.len() == 0 {
+            if domain.len() == 0
+                || nickname.len() == 0
+                || target.len() == 0
+                || registr_duration == -999
+            {
                 return Err("Recipient params: domain, nickname, target.".to_string());
             }
             /*
@@ -224,6 +243,9 @@ pub mod tests {
             params.insert("domain", domain);
             params.insert("nickname", nickname);
             params.insert("target", target);
+            let registr_duration_val = registr_duration.to_string();
+            params.insert("registr_duration", &registr_duration_val);
+
             // Create a html_template to send.
             let html_template = render_template("verification_code", params)?;
             // Create a message to send.
@@ -245,7 +267,11 @@ pub mod tests {
             if receiver.len() == 0 {
                 return Err("Recipient not specified.".to_string());
             }
-            if domain.len() == 0 || nickname.len() == 0 || target.len() == 0 {
+            if domain.len() == 0
+                || nickname.len() == 0
+                || target.len() == 0
+                || recovery_duration == -999
+            {
                 return Err("Recipient params: domain, nickname, target.".to_string());
             }
             /*
@@ -256,6 +282,9 @@ pub mod tests {
             params.insert("domain", domain);
             params.insert("nickname", nickname);
             params.insert("target", target);
+            let recovery_duration_val = recovery_duration.to_string();
+            params.insert("recovery_duration", &recovery_duration_val);
+
             // Create a html_template to send.
             let html_template = render_template("password_recovery", params)?;
             // Create a message to send.
