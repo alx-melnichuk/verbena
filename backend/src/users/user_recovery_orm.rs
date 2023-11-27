@@ -1,5 +1,7 @@
 use super::user_models::{CreateUserRecoveryDto, UserRecovery};
 
+pub const DURATION_IN_DAYS: u16 = 90;
+
 pub trait UserRecoveryOrm {
     /// Find for an entity (user_recovery) by id.
     fn find_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String>;
@@ -19,7 +21,7 @@ pub trait UserRecoveryOrm {
     /// Delete an entity (user_recovery).
     fn delete_user_recovery(&self, id: i32) -> Result<usize, String>;
     /// Delete all entities (user_recovery) with an inactive "final_date".
-    fn delete_inactive_final_date(&self) -> Result<usize, String>;
+    fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String>;
 }
 
 pub mod cfg {
@@ -43,13 +45,16 @@ pub mod cfg {
 #[cfg(not(feature = "mockdata"))]
 pub mod inst {
 
-    use chrono::Utc;
+    use chrono::{Duration, Utc};
     use diesel::{self, prelude::*};
     use schema::user_recovery::dsl;
 
     use crate::dbase;
     use crate::schema;
-    use crate::users::user_models::{CreateUserRecoveryDto, UserRecovery};
+    use crate::users::{
+        user_models::{CreateUserRecoveryDto, UserRecovery},
+        user_recovery_orm::DURATION_IN_DAYS,
+    };
 
     use super::UserRecoveryOrm;
 
@@ -92,10 +97,10 @@ pub mod inst {
         ) -> Result<Option<UserRecovery>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            let today = Utc::now();
+            let now = Utc::now();
             // Run query using Diesel to find user by user_id and return it (where final_date > now).
             let result = schema::user_recovery::table
-                .filter(dsl::user_id.eq(user_id).and(dsl::final_date.gt(today)))
+                .filter(dsl::user_id.eq(user_id).and(dsl::final_date.gt(now)))
                 .first::<UserRecovery>(&mut conn)
                 .optional()
                 .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
@@ -156,19 +161,29 @@ pub mod inst {
         }
 
         /// Delete all entities (user_recovery) with an inactive "final_date".
-        fn delete_inactive_final_date(&self) -> Result<usize, String> {
-            let today = Utc::now();
-
+        fn delete_inactive_final_date(
+            &self,
+            duration_in_days: Option<u16>,
+        ) -> Result<usize, String> {
+            let now = Utc::now();
+            let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
+            let start_day_time = now - Duration::days(duration.into());
+            let end_day_time = now.clone();
+            let before = std::time::Instant::now();
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            // Run query using Diesel to delete a entry (user_recovery) (where user_id > -1 && final_date < now).
-            // The "user_id" field allows you to use an index.
-            let count: usize = diesel::delete(
-                schema::user_recovery::table
-                    .filter(dsl::user_id.gt(-1).and(dsl::final_date.lt(today))),
-            )
-            .execute(&mut conn)
-            .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
+
+            // Run query using Diesel to delete a entry (user_recovery).
+            let count: usize =
+                diesel::delete(schema::user_recovery::table.filter(
+                    dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time)),
+                ))
+                .execute(&mut conn)
+                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
+
+            let info = format!("{:.2?}", before.elapsed());
+            #[rustfmt::skip]
+            log::info!("user_recovery.delete(expired) time: {}, count: {}", info, count);
 
             Ok(count)
         }
@@ -177,11 +192,11 @@ pub mod inst {
 
 #[cfg(feature = "mockdata")]
 pub mod tests {
-    use chrono::{DateTime, Utc};
+    use chrono::{DateTime, Duration, Utc};
 
     use crate::users::user_models::{CreateUserRecoveryDto, UserRecovery};
 
-    use super::UserRecoveryOrm;
+    use super::{UserRecoveryOrm, DURATION_IN_DAYS};
 
     pub const USER_RECOVERY_ID: i32 = 1300;
 
@@ -237,13 +252,13 @@ pub mod tests {
             &self,
             user_id: i32,
         ) -> Result<Option<UserRecovery>, String> {
-            let today = Utc::now();
+            let now = Utc::now();
 
             let result: Option<UserRecovery> = self
                 .user_recovery_vec
                 .iter()
                 .find(|user_recovery| {
-                    user_recovery.final_date > today && (user_recovery.user_id == user_id)
+                    user_recovery.final_date > now && (user_recovery.user_id == user_id)
                 })
                 .map(|user_recovery| user_recovery.clone());
 
@@ -306,13 +321,22 @@ pub mod tests {
             }
         }
         /// Delete all entities (user_recovery) with an inactive "final_date".
-        fn delete_inactive_final_date(&self) -> Result<usize, String> {
-            let today = Utc::now();
+        fn delete_inactive_final_date(
+            &self,
+            duration_in_days: Option<u16>,
+        ) -> Result<usize, String> {
+            let now = Utc::now();
+            let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
+            let start_day_time = now - Duration::days(duration.into());
+            let end_day_time = now.clone();
 
             let result = self
                 .user_recovery_vec
                 .iter()
-                .filter(|user_recovery| user_recovery.final_date < today)
+                .filter(|user_recovery| {
+                    user_recovery.final_date > start_day_time
+                        && user_recovery.final_date < end_day_time
+                })
                 .count();
 
             Ok(result)

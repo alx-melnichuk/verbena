@@ -1,5 +1,7 @@
 use super::user_registr_models::{CreateUserRegistrDto, UserRegistr};
 
+pub const DURATION_IN_DAYS: u16 = 90;
+
 pub trait UserRegistrOrm {
     /// Find for an entity (user_registration) by id.
     fn find_user_registr_by_id(&self, id: i32) -> Result<Option<UserRegistr>, String>;
@@ -17,7 +19,7 @@ pub trait UserRegistrOrm {
     /// Delete an entity (user_registration).
     fn delete_user_registr(&self, id: i32) -> Result<usize, String>;
     /// Delete all entities (user_registration) with an inactive "final_date".
-    fn delete_inactive_final_date(&self) -> Result<usize, String>;
+    fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String>;
 }
 
 pub mod cfg {
@@ -41,13 +43,16 @@ pub mod cfg {
 #[cfg(not(feature = "mockdata"))]
 pub mod inst {
 
-    use chrono::Utc;
+    use chrono::{Duration, Utc};
     use diesel::{self, prelude::*};
     use schema::user_registration::dsl;
 
     use crate::dbase;
     use crate::schema;
-    use crate::users::user_registr_models::{CreateUserRegistrDto, UserRegistr};
+    use crate::users::{
+        user_registr_models::{CreateUserRegistrDto, UserRegistr},
+        user_registr_orm::DURATION_IN_DAYS,
+    };
 
     use super::UserRegistrOrm;
 
@@ -100,16 +105,16 @@ pub mod inst {
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            let today = Utc::now();
+            let now = Utc::now();
 
             // Run query using Diesel to find user by nickname and return it (where final_date > now).
             let sql_query_nickname = schema::user_registration::table
-                .filter(dsl::nickname.eq(nickname2).and(dsl::final_date.gt(today)))
+                .filter(dsl::nickname.eq(nickname2).and(dsl::final_date.gt(now)))
                 .select(schema::user_registration::all_columns)
                 .limit(1);
             // Run query using Diesel to find user by email and return it (where final_date > now).
             let sql_query_email = schema::user_registration::table
-                .filter(dsl::email.eq(email2).and(dsl::final_date.gt(today)))
+                .filter(dsl::email.eq(email2).and(dsl::final_date.gt(now)))
                 .select(schema::user_registration::all_columns)
                 .limit(1);
 
@@ -178,16 +183,29 @@ pub mod inst {
         }
 
         /// Delete all entities (user_registration) with an inactive "final_date".
-        fn delete_inactive_final_date(&self) -> Result<usize, String> {
-            let today = Utc::now();
-
+        fn delete_inactive_final_date(
+            &self,
+            duration_in_days: Option<u16>,
+        ) -> Result<usize, String> {
+            let now = Utc::now();
+            let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
+            let start_day_time = now - Duration::days(duration.into());
+            let end_day_time = now.clone();
+            let before = std::time::Instant::now();
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
+
             // Run query using Diesel to delete a entry (user_registration).
             let count: usize =
-                diesel::delete(schema::user_registration::table.filter(dsl::final_date.lt(today)))
-                    .execute(&mut conn)
-                    .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
+                diesel::delete(schema::user_registration::table.filter(
+                    dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time)),
+                ))
+                .execute(&mut conn)
+                .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
+
+            let info = format!("{:.2?}", before.elapsed());
+            #[rustfmt::skip]
+            log::info!("user_registration.delete(expired) time: {}, count: {}", info, count);
 
             Ok(count)
         }
@@ -196,11 +214,11 @@ pub mod inst {
 
 #[cfg(feature = "mockdata")]
 pub mod tests {
-    use chrono::{DateTime, Utc};
+    use chrono::{DateTime, Duration, Utc};
 
     use crate::users::user_registr_models::{CreateUserRegistrDto, UserRegistr};
 
-    use super::UserRegistrOrm;
+    use super::{UserRegistrOrm, DURATION_IN_DAYS};
 
     pub const USER_REGISTR_ID: i32 = 1200;
 
@@ -276,13 +294,13 @@ pub mod tests {
                 return Ok(None);
             }
 
-            let today = Utc::now();
+            let now = Utc::now();
 
             let result: Option<UserRegistr> = self
                 .user_registr_vec
                 .iter()
                 .find(|user_registr| {
-                    user_registr.final_date > today
+                    user_registr.final_date > now
                         && (user_registr.nickname == nickname2 || user_registr.email == email2)
                 })
                 .map(|user_registr| user_registr.clone());
@@ -328,13 +346,22 @@ pub mod tests {
             }
         }
         /// Delete all entities (user_registration) with an inactive "final_date".
-        fn delete_inactive_final_date(&self) -> Result<usize, String> {
-            let today = Utc::now();
+        fn delete_inactive_final_date(
+            &self,
+            duration_in_days: Option<u16>,
+        ) -> Result<usize, String> {
+            let now = Utc::now();
+            let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
+            let start_day_time = now - Duration::days(duration.into());
+            let end_day_time = now.clone();
 
             let result = self
                 .user_registr_vec
                 .iter()
-                .filter(|user_registr| user_registr.final_date < today)
+                .filter(|user_registr| {
+                    user_registr.final_date > start_day_time
+                        && user_registr.final_date < end_day_time
+                })
                 .count();
 
             Ok(result)

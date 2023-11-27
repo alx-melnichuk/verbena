@@ -1,9 +1,8 @@
 use std::borrow;
 
-use actix_web::{post, put, web, HttpResponse};
+use actix_web::{get, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
 
-use crate::errors::AppError;
 use crate::hash_tools;
 #[cfg(not(feature = "mockdata"))]
 use crate::send_email::mailer::inst::MailerApp;
@@ -34,6 +33,7 @@ use crate::users::{user_orm::inst::UserOrmApp, user_registr_orm::inst::UserRegis
 #[cfg(feature = "mockdata")]
 use crate::users::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
 use crate::validators::{msg_validation, Validator};
+use crate::{errors::AppError, extractors::authentication::RequireAuth};
 
 pub const MSG_EMAIL_ALREADY_USE: &str = "email_already_use";
 pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";
@@ -296,8 +296,8 @@ pub async fn confirm_registration(
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
 
-    // Delete the registration record for this user in the “user_registr" table.
-    let _ = web::block(move || user_registr_orm.delete_inactive_final_date())
+    // Delete entries in the "user_registr" table, that are already expired.
+    let _ = web::block(move || user_registr_orm.delete_inactive_final_date(None))
         .await
         .map_err(|e| err_blocking(e.to_string()))?;
 
@@ -539,10 +539,51 @@ pub async fn confirm_recovery(
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
 
+    // Delete entries in the "user_recovery" table, that are already expired.
+    let _ = web::block(move || {
+        user_recovery_orm.delete_inactive_final_date(None).map_err(|e| err_database(e))
+    })
+    .await
+    .map_err(|e| err_blocking(e.to_string()))?;
+
     let user = user_opt.ok_or_else(|| err_recovery_not_found(user_recovery_id))?;
     let user_dto = user_models::UserDto::from(user);
 
     Ok(HttpResponse::Ok().json(user_dto))
+}
+
+// Clean up expired requests
+// GET api/clear_for_expired
+#[rustfmt::skip]
+#[get("/clear_for_expired", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
+pub async fn clear_for_expired(
+    user_registr_orm: web::Data<UserRegistrOrmApp>,
+    user_recovery_orm: web::Data<UserRecoveryOrmApp>,
+) -> actix_web::Result<HttpResponse, AppError> {
+
+    // Delete entries in the "user_registr" table, that are already expired.
+    let count_inactive_registr_res = 
+        web::block(move || user_registr_orm.delete_inactive_final_date(None))
+        .await
+        .map_err(|e| err_blocking(e.to_string()))?;
+
+    let count_inactive_registr = count_inactive_registr_res.unwrap_or(0);
+
+    // Delete entries in the "user_recovery" table, that are already expired.
+    let count_inactive_recover_res = 
+        web::block(move || user_recovery_orm.delete_inactive_final_date(None)
+        .map_err(|e| err_database(e)))
+        .await
+        .map_err(|e| err_blocking(e.to_string()))?;
+
+    let count_inactive_recover = count_inactive_recover_res.unwrap_or(0);
+
+    let clear_for_expired_response_dto = user_models::ClearForExpiredResponseDto {
+        count_inactive_registr,
+        count_inactive_recover,
+    };
+    
+    Ok(HttpResponse::Ok().json(clear_for_expired_response_dto))
 }
 
 #[cfg(all(test, feature = "mockdata"))]
@@ -581,9 +622,12 @@ mod tests {
         let user_orm = UserOrmApp::create(vec![user]);
         user_orm.user_vec.get(0).unwrap().clone()
     }
+    fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
+        SessionOrmApp::new_session(user_id, num_token)
+    }
     fn create_user_registr() -> UserRegistr {
-        let today = Utc::now();
-        let final_date: DateTime<Utc> = today + Duration::minutes(20);
+        let now = Utc::now();
+        let final_date: DateTime<Utc> = now + Duration::minutes(20);
 
         let user_registr = UserRegistrOrmApp::new_user_registr(
             1,
@@ -969,7 +1013,7 @@ mod tests {
     }
     #[test]
     async fn test_registration_if_nickname_exists_in_users() {
-        let user1: User = user_with_id(create_user());
+        let user1 = user_with_id(create_user());
         let nickname1: String = user1.nickname.to_string();
 
         let token = "";
@@ -995,7 +1039,7 @@ mod tests {
     }
     #[test]
     async fn test_registration_if_email_exists_in_users() {
-        let user1: User = user_with_id(create_user());
+        let user1 = user_with_id(create_user());
         let email1: String = user1.email.to_string();
 
         let token = "";
@@ -1401,7 +1445,7 @@ mod tests {
     }
     #[test]
     async fn test_recovery_if_user_recovery_not_exist() {
-        let user1: User = user_with_id(create_user());
+        let user1 = user_with_id(create_user());
         let user1_email = user1.email.to_string();
 
         let token = "";
@@ -1433,7 +1477,7 @@ mod tests {
     }
     #[test]
     async fn test_recovery_if_user_recovery_already_exists() {
-        let user1: User = user_with_id(create_user());
+        let user1 = user_with_id(create_user());
         let user1_email = user1.email.to_string();
 
         let config_app = config_app::get_test_config();
@@ -1473,7 +1517,7 @@ mod tests {
     }
     #[test]
     async fn test_recovery_err_json_web_encode_token() {
-        let user1: User = user_with_id(create_user());
+        let user1 = user_with_id(create_user());
         let user1_email = user1.email.to_string();
 
         let config_app = config_app::get_test_config();
@@ -1592,7 +1636,7 @@ mod tests {
     }
     #[test]
     async fn test_recovery_confirm_final_date_has_expired() {
-        let user1: User = user_with_id(create_user());
+        let user1 = user_with_id(create_user());
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
@@ -1627,7 +1671,7 @@ mod tests {
     }
     #[test]
     async fn test_recovery_confirm_no_exists_in_user_recovery() {
-        let user1: User = user_with_id(create_user());
+        let user1 = user_with_id(create_user());
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
@@ -1666,7 +1710,7 @@ mod tests {
     }
     #[test]
     async fn test_recovery_confirm_no_exists_in_user() {
-        let user1: User = user_with_id(create_user());
+        let user1 = user_with_id(create_user());
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
@@ -1705,7 +1749,7 @@ mod tests {
     }
     #[test]
     async fn test_recovery_confirm_success() {
-        let user1: User = user_with_id(create_user());
+        let user1 = user_with_id(create_user());
         let user1b = user1.clone();
 
         let config_app = config_app::get_test_config();
@@ -1741,5 +1785,55 @@ mod tests {
         assert_eq!(user_dto_res.email, user1b.email);
         assert_eq!(user_dto_res.password, "");
         assert_eq!(user_dto_res.role, user1b.role);
+    }
+
+    // ** clear_for_expired **
+    #[test]
+    async fn test_clear_for_expired_user_recovery() {
+        let mut user = create_user();
+        user.role = UserRole::Admin;
+        let user1: User = user_with_id(user);
+
+        let config_app = config_app::get_test_config();
+
+        let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
+        let final_date_recovery = Utc::now() - Duration::minutes(recovery_duration);
+
+        let user_recovery1 =
+            create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_recovery));
+
+        let registr_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
+        let final_date_registr = Utc::now() - Duration::minutes(registr_duration);
+
+        let mut user_registr: UserRegistr = create_user_registr();
+        user_registr.final_date = final_date_registr;
+        let user_registr1 = user_registr_with_id(user_registr);
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token =
+            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let request = test::TestRequest::get().uri(&"/clear_for_expired"); // GET api/clear_for_expired
+
+        let factory = clear_for_expired;
+        let vec = (
+            vec![user1],
+            vec![user_registr1],
+            vec![session1],
+            vec![user_recovery1],
+        );
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let response_dto: user_models::ClearForExpiredResponseDto =
+            serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response_dto.count_inactive_registr, 1);
+        assert_eq!(response_dto.count_inactive_recover, 1);
     }
 }

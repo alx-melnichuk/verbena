@@ -318,6 +318,14 @@ pub struct TokenUserDto {
     pub token: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ClearForExpiredResponseDto {
+    #[serde(rename = "countInactiveRegistr")]
+    pub count_inactive_registr: usize,
+    #[serde(rename = "countInactiveRecover")]
+    pub count_inactive_recover: usize,
+}
+
 pub fn validate_nickname(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_NICKNAME_REQUIRED)?;
     ValidationChecks::min_length(value, NICKNAME_MIN.into(), MSG_NICKNAME_MIN_LENGTH)?;
