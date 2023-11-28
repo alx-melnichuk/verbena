@@ -4,6 +4,7 @@ pub trait Mailer {
         &self,
         receiver: &str,
         domain: &str,
+        subject: &str,
         nickname: &str,
         target: &str,
         registr_duration: i64,
@@ -13,6 +14,7 @@ pub trait Mailer {
         &self,
         receiver: &str,
         domain: &str,
+        subject: &str,
         nickname: &str,
         target: &str,
         recovery_duration: i64,
@@ -119,6 +121,7 @@ pub mod inst {
             &self,
             receiver: &str,
             domain: &str,
+            subject: &str,
             nickname: &str,
             target: &str,
             registr_duration: i64,
@@ -126,8 +129,6 @@ pub mod inst {
             if receiver.len() == 0 {
                 return Err("Recipient not specified.".to_string());
             }
-            let subject = "Your account verification code";
-
             let mut params: HashMap<&str, &str> = HashMap::new();
             params.insert("subject", subject);
             params.insert("domain", domain);
@@ -157,6 +158,7 @@ pub mod inst {
             &self,
             receiver: &str,
             domain: &str,
+            subject: &str,
             nickname: &str,
             target: &str,
             recovery_duration: i64,
@@ -164,8 +166,6 @@ pub mod inst {
             if receiver.len() == 0 {
                 return Err("Recipient not specified.".to_string());
             }
-            let subject = "Your password reset token (valid for only 10 minutes)";
-
             let mut params: HashMap<&str, &str> = HashMap::new();
             params.insert("subject", subject);
             params.insert("domain", domain);
@@ -221,6 +221,7 @@ pub mod tests {
             &self,
             receiver: &str,
             domain: &str,
+            subject: &str,
             nickname: &str,
             target: &str,
             registr_duration: i64,
@@ -229,6 +230,7 @@ pub mod tests {
                 return Err("Recipient not specified.".to_string());
             }
             if domain.len() == 0
+                || subject.len() == 0
                 || nickname.len() == 0
                 || target.len() == 0
                 || registr_duration == -999
@@ -260,6 +262,7 @@ pub mod tests {
             &self,
             receiver: &str,
             domain: &str,
+            subject: &str,
             nickname: &str,
             target: &str,
             recovery_duration: i64,
@@ -268,6 +271,7 @@ pub mod tests {
                 return Err("Recipient not specified.".to_string());
             }
             if domain.len() == 0
+                || subject.len() == 0
                 || nickname.len() == 0
                 || target.len() == 0
                 || recovery_duration == -999

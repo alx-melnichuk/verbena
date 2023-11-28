@@ -204,12 +204,19 @@ pub async fn registration(
 
     // Prepare a letter confirming this registration.
     let domain = &config_app.app_domain;
+    let subject = format!("Account registration in {}", &config_app.app_name);
     let nickname = registr_user_dto.nickname.clone();
     let receiver = registr_user_dto.email.clone();
     let target = registr_token.clone();
     let registr_duration = app_registr_duration.clone();
-    let result =
-        mailer.send_verification_code(&receiver, &domain, &nickname, &target, registr_duration);
+    let result = mailer.send_verification_code(
+        &receiver,
+        &domain,
+        &subject,
+        &nickname,
+        &target,
+        registr_duration,
+    );
 
     if result.is_err() {
         return Err(err_sending_email(result.unwrap_err()));
@@ -417,13 +424,20 @@ pub async fn recovery(
 
     // Prepare a letter confirming this recovery.
     let domain = &config_app.app_domain;
+    let subject = format!("Account recovery on {}", &config_app.app_name);
     let nickname = user.nickname.clone();
     let receiver = user.email.clone();
     let target = recovery_token.clone();
     let recovery_duration = app_recovery_duration.clone();
     // Send an email to this user.
-    let result =
-        mailer.send_password_recovery(&receiver, &domain, &nickname, &target, recovery_duration);
+    let result = mailer.send_password_recovery(
+        &receiver,
+        &domain,
+        &subject,
+        &nickname,
+        &target,
+        recovery_duration,
+    );
 
     if result.is_err() {
         return Err(err_sending_email(result.unwrap_err()));

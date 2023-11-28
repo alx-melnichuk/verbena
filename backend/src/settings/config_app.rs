@@ -9,6 +9,7 @@ pub struct ConfigApp {
     pub app_domain: String,
     pub app_registr_duration: usize,
     pub app_recovery_duration: usize,
+    pub app_name: String,
 }
 
 impl ConfigApp {
@@ -22,6 +23,7 @@ impl ConfigApp {
             env::var("APP_REGISTR_DURATION").expect("APP_REGISTR_DURATION must be set");
         let app_recovery_duration =
             env::var("APP_RECOVERY_DURATION").expect("APP_RECOVERY_DURATION must be set");
+        let app_name = env::var("APP_NAME").expect("APP_NAME must be set");
 
         ConfigApp {
             app_host,
@@ -31,6 +33,7 @@ impl ConfigApp {
             app_domain,
             app_registr_duration: app_registr_duration.parse::<usize>().unwrap(),
             app_recovery_duration: app_recovery_duration.parse::<usize>().unwrap(),
+            app_name,
         }
     }
 }
@@ -50,5 +53,6 @@ pub fn get_test_config() -> ConfigApp {
         app_domain,
         app_registr_duration: 4,
         app_recovery_duration: 2,
+        app_name: "app_name".to_string(),
     }
 }

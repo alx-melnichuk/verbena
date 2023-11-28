@@ -25,7 +25,8 @@ APP_MAX_AGE=60
 APP_REGISTR_DURATION=15
 # Waiting time for password recovery confirmation (in minutes) = 10 minutes
 APP_RECOVERY_DURATION=10
-
+# Site name.
+APP_NAME=Verbéna
 
 # -----------------------------------------------------------------------------
 # Database (PostgreSQL)
