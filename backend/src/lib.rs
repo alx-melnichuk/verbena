@@ -1,11 +1,7 @@
 use std::env;
 
-// use actix_cors::Cors;
 use actix_files::Files;
 use actix_web::web;
-// use dotenv;
-// use env_logger;
-// use log;
 
 use send_email::{config_smtp, mailer};
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
