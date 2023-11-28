@@ -26,11 +26,9 @@ pub async fn index_root() -> Result<HttpResponse, Error> {
 pub async fn loading_js_css_files(req: HttpRequest) -> Result<actix_files::NamedFile, Error> {
     let path: std::path::PathBuf = req.match_info().query("filename").parse().unwrap();
     let pathstr: &str = path.to_str().unwrap();
-    // let path1: String = "static".to_string() + pathstr;
-    let path2: std::path::PathBuf = ["static", pathstr].iter().collect();
-    // eprintln!("### path1:\"{}\"", path1);
-    // eprintln!("### path2:\"{}\"", path2.to_string_lossy());
-    let file: actix_files::NamedFile = actix_files::NamedFile::open(path2)?;
+    let path1: std::path::PathBuf = ["static", pathstr].iter().collect();
+    eprintln!("### path1:\"{}\"", path1.to_string_lossy());
+    let file: actix_files::NamedFile = actix_files::NamedFile::open(path1)?;
     Ok(file.use_last_modified(true))
 }
 
