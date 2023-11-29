@@ -1,7 +1,8 @@
 use std::env;
 
+use actix_cors::Cors;
 use actix_files::Files;
-use actix_web::web;
+use actix_web::{http, web};
 
 use send_email::{config_smtp, mailer};
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
@@ -22,7 +23,7 @@ pub mod settings;
 pub(crate) mod static_controller;
 pub(crate) mod tools;
 pub(crate) mod users;
-pub(crate) mod utils;
+pub mod utils;
 pub mod validators;
 
 pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
@@ -62,4 +63,26 @@ pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
                     .configure(user_controller::configure),
             );
     })
+}
+
+pub fn create_cors(config_app: settings::config_app::ConfigApp) -> Cors {
+    let app_domain = config_app.app_domain;
+    let app_max_age = config_app.app_max_age;
+
+    Cors::default()
+        .allowed_origin("http://localhost:4250") // For "npx ng serve"
+        // .allowed_origin("http://127.0.0.1:8080")
+        // .allowed_origin("https://127.0.0.1:8443")
+        .allowed_origin(&app_domain.to_string())
+        // .allowed_origin("https://fonts.googleapis.com")
+        // "HEAD", "CONNECT", "PATCH", "TRACE",
+        .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+        .allowed_headers(vec![
+            http::header::CONTENT_TYPE,
+            http::header::AUTHORIZATION,
+            http::header::ACCEPT,
+        ])
+        .max_age(app_max_age)
+    // let cors = Cors::permissive();
+    // let cors = cors.allow_any_method().allow_any_header()
 }

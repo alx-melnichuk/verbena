@@ -1,3 +1,5 @@
+# Example .env file
+
 # -----------------------------------------------------------------------------
 # RUST_LOG
 # -----------------------------------------------------------------------------
@@ -15,12 +17,15 @@ L_AUTH=extractors::authentication=debug
 RUST_LOG=${L_COMM},${L_MAIN},${L_DBASE},${L_USER},${L_USER_AUTH},${L_AUTH}
 
 # -----------------------------------------------------------------------------
-
+# Application properties
+# -----------------------------------------------------------------------------
 APP_HOST=127.0.0.1
-APP_PORT=8080
-APP_PROTOCOL=http
-#APP_PORT=8443
-#APP_PROTOCOL=https
+# Takes values: "http" | "https". Default: "http".
+#APP_PROTOCOL=http
+APP_PROTOCOL=https
+# Default: 80 - for the "http" protocol, 443 - for the "https" protocol.
+#APP_PORT=8080
+APP_PORT=8443
 # Token activity time in cookies (in minutes) = 60 minutes.
 APP_MAX_AGE=60
 # Waiting time for registration confirmation (in minutes) = 15 minutes
@@ -29,6 +34,10 @@ APP_REGISTR_DURATION=15
 APP_RECOVERY_DURATION=10
 # Site name.
 APP_NAME=Verbéna
+# SSL certificate and private key (for the "https" protocol)
+APP_CERTIFICATE=example.crt.pem
+# SSL private key (for the "https" protocol)
+APP_PRIVATE_KEY=example.key.pem
 
 # -----------------------------------------------------------------------------
 # Database (PostgreSQL)

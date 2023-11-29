@@ -1,10 +1,9 @@
-use actix_cors::Cors;
-use actix_web::{http, App, HttpServer};
+use actix_web::{App, HttpServer};
 use dotenv;
 use env_logger;
 use log;
 
-use verbena::{configure_server, settings};
+use verbena::{configure_server, create_cors, settings::config_app, utils::ssl_acceptor};
 
 // ** Funcion Main **
 #[actix_web::main]
@@ -21,39 +20,42 @@ async fn main() -> std::io::Result<()> {
     }
     env_logger::init();
 
-    let config_app = settings::config_app::ConfigApp::init_by_env();
+    let config_app = config_app::ConfigApp::init_by_env();
 
-    let app_host: String = config_app.app_host.clone();
-    let app_port: usize = config_app.app_port.clone();
-    let app_domain: String = config_app.app_domain.clone();
-    // let app_url = format!("{}:{}", &app_host, &app_port);
-    let app_max_age: usize = config_app.app_max_age.clone();
+    let app_host = config_app.app_host.clone();
+    let app_protocol = config_app.app_protocol.clone();
+    let app_port = config_app.app_port.clone();
+    let app_domain = config_app.app_domain.clone();
+    let app_url = format!("{}:{}", &app_host, &app_port);
 
-    println!("🚀 Server started successfully {}", &app_domain);
-    log::info!("starting HTTP server at {}", &app_domain);
+    log::info!("Starting server {}", &app_domain);
 
-    HttpServer::new(move || {
-        let cors = Cors::default()
-            .allowed_origin("http://localhost:4250")
-            .allowed_origin("http://127.0.0.1:8080")
-            // .allowed_origin("https://fonts.googleapis.com")
-            // "HEAD", "CONNECT", "PATCH", "TRACE",
-            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-            .allowed_headers(vec![
-                http::header::CONTENT_TYPE,
-                http::header::AUTHORIZATION,
-                http::header::ACCEPT,
-            ])
-            .max_age(app_max_age);
-        // let cors = Cors::permissive();
-        // let cors = cors.allow_any_method().allow_any_header()
+    if config_app::PROTOCOL_HTTP == app_protocol {
+        HttpServer::new(move || {
+            let cors = create_cors(config_app.clone());
+            App::new()
+                .configure(configure_server())
+                .wrap(cors)
+                .wrap(actix_web::middleware::Logger::default())
+        })
+        .bind(&app_url)?
+        .run()
+        .await
+    } else {
+        let builder = ssl_acceptor::create_ssl_acceptor_builder(
+            &config_app.app_certificate,
+            &config_app.app_private_key,
+        );
 
-        App::new()
-            .configure(configure_server())
-            .wrap(cors)
-            .wrap(actix_web::middleware::Logger::default())
-    })
-    .bind(&format!("{}:{}", &app_host, &app_port))?
-    .run()
-    .await
+        HttpServer::new(move || {
+            let cors = create_cors(config_app.clone());
+            App::new()
+                .configure(configure_server())
+                .wrap(cors)
+                .wrap(actix_web::middleware::Logger::default())
+        })
+        .bind_openssl(&app_url, builder)?
+        .run()
+        .await
+    }
 }
