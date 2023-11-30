@@ -21,14 +21,12 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 pub async fn index_root() -> Result<HttpResponse, Error> {
     let body_str = include_str!("../static/index.html");
     let config_app = config_app::ConfigApp::init_by_env();
-    let app_env = format!(
-        "var appEnv = {{appRoot:'{}/', appApi:'{}/'}}",
-        &config_app.app_domain, &config_app.app_domain
-    );
-    let body_str = body_str.replacen("var appEnv={}", &app_env.to_string(), 1);
 
     let app_name = format!("<title>{}</title>", &config_app.app_name);
-    let body_str = body_str.replacen("<title>AppName</title>", &app_name, 1);
+    let body_str = body_str.replacen("<title>APP_NAME</title>", &app_name, 1);
+    #[rustfmt::skip]
+    let app_domain = format!("<script>var APP_DOMAIN='{}/';</script>", &config_app.app_domain );
+    let body_str = body_str.replacen("<script>var APP_DOMAIN;</script>", &app_domain, 1);
 
     Ok(HttpResponse::build(http::StatusCode::OK)
         .content_type("text/html; charset=utf-8")
