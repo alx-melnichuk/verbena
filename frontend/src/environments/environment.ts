@@ -2,13 +2,11 @@
 // `ng build` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
 
-declare var appEnv: any;
-
 export const environment = {
   production: false,
-  appRoot: (appEnv.appRoot || 'http://localhost:4250/'),
-  // appApi: (appEnv.appApi || 'http://127.0.0.1:8080/'),
-  appApi: (appEnv.appApi || 'https://127.0.0.1:8443/'),
+  appRoot: 'http://localhost:4250/',
+  // appApi: 'http://127.0.0.1:8080/',
+  appApi: 'https://127.0.0.1:8443/',
 };
 
 /*
