@@ -1,7 +1,6 @@
 use std::{borrow, rc::Rc, task::{Context, Poll}};
 
-use actix_web::error::{ErrorForbidden, ErrorInternalServerError, ErrorUnauthorized};
-use actix_web::{http, web, FromRequest, HttpMessage, dev::{Service, ServiceRequest, ServiceResponse, Transform}};
+use actix_web::{dev, error, http, web, FromRequest, HttpMessage};
 use futures_util::{future::{ready, LocalBoxFuture, Ready}, FutureExt};
 use log;
 
@@ -28,12 +27,12 @@ impl FromRequest for Authenticated {
 
     fn from_request(
         req: &actix_web::HttpRequest,
-        _payload: &mut actix_web::dev::Payload,
+        _payload: &mut dev::Payload,
     ) -> Self::Future {
         let value = req.extensions().get::<User>().cloned();
         let result = match value {
             Some(user) => Ok(Authenticated(user)),
-            None => Err(ErrorInternalServerError(AppError::new(
+            None => Err(error::ErrorInternalServerError(AppError::new(
                 err::CD_INTER_SRV_ERROR,
                 err::MSG_USER_NOT_RECEIVED_FROM_REQUEST,
             ))),
@@ -71,16 +70,16 @@ impl RequireAuth {
     }
 }
 
-impl<S> Transform<S, ServiceRequest> for RequireAuth
+impl<S> dev::Transform<S, dev::ServiceRequest> for RequireAuth
 where
-    S: Service<
-            ServiceRequest,
-            Response = ServiceResponse<actix_web::body::BoxBody>,
+    S: dev::Service<
+            dev::ServiceRequest,
+            Response = dev::ServiceResponse<actix_web::body::BoxBody>,
             Error = actix_web::Error,
         > + 'static,
 {
     /// The response type produced by the service.
-    type Response = ServiceResponse<actix_web::body::BoxBody>;
+    type Response = dev::ServiceResponse<actix_web::body::BoxBody>;
     /// The error type produced by the service.
     type Error = actix_web::Error;
     /// The `TransformService` value created by this factory.
@@ -107,7 +106,7 @@ pub struct AuthMiddleware<S> {
 
 fn jwt_from_header(header_token: &str) -> Result<String, String> {
     const NO_AUTH_HEADER: &str = "No authentication header";
-
+    eprintln!("jwt_from_header({})", header_token);
     if header_token.len() == 0 {
         return Err(NO_AUTH_HEADER.to_string());
     }
@@ -115,22 +114,23 @@ fn jwt_from_header(header_token: &str) -> Result<String, String> {
         Ok(v) => v,
         Err(e) => return Err(format!("{} : {}", NO_AUTH_HEADER, e.to_string()) ),
     };
+    // eprintln!("@auth_header: {}", auth_header.to_owned());
     if !auth_header.starts_with(BEARER) {
         return Err("Invalid authentication header".to_string());
     }
     Ok(auth_header.trim_start_matches(BEARER).to_owned())
 }
 
-impl<S> Service<ServiceRequest> for AuthMiddleware<S>
+impl<S> dev::Service<dev::ServiceRequest> for AuthMiddleware<S>
 where
-    S: Service<
-            ServiceRequest,
-            Response = ServiceResponse<actix_web::body::BoxBody>,
+    S: dev::Service<
+            dev::ServiceRequest,
+            Response = dev::ServiceResponse<actix_web::body::BoxBody>,
             Error = actix_web::Error,
         > + 'static,
 {
     /// The response type produced by the service.
-    type Response = ServiceResponse<actix_web::body::BoxBody>;
+    type Response = dev::ServiceResponse<actix_web::body::BoxBody>;
     /// The error type that can be produced by the service.
     type Error = actix_web::Error;
     /// The future type representing the asynchronous response.
@@ -141,7 +141,7 @@ where
         self.service.poll_ready(ctx)
     }
     /// The future type representing the asynchronous response.
-    fn call(&self, req: ServiceRequest) -> Self::Future {
+    fn call(&self, req: dev::ServiceRequest) -> Self::Future {
         // Attempt to extract token from cookie or authorization header
         let token = req.cookie("token")
             .map(|c| c.value().to_string())
@@ -150,7 +150,7 @@ where
                     .map(|h| h.to_str().unwrap().to_string()).unwrap_or("".to_string());
                 let token2 = jwt_from_header(&header_token)
                 .map_err(|e| {
-                    log::error!("{}: {}", "InvalidToken", e);
+                    log::error!("InvalidToken: {}", e);
                     None::<String>
                 }).ok();
                 token2
@@ -162,7 +162,7 @@ where
             log::error!("{}: {}", err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN);
             let json_error = AppError::new(err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN)
                 .set_status(401);
-            return Box::pin(ready(Err(ErrorUnauthorized(json_error))));
+            return Box::pin(ready(Err(error::ErrorUnauthorized(json_error))));
         }
         let token = token.unwrap().to_string();
 
@@ -173,7 +173,7 @@ where
         
         if let Err(e) = token_res {
             log::error!("{}: {}", e.code, e.message);
-            return Box::pin(ready(Err(ErrorForbidden(e))));
+            return Box::pin(ready(Err(error::ErrorForbidden(e))));
         }
 
         let (user_id, num_token) = token_res.unwrap();
@@ -188,7 +188,7 @@ where
             let session_opt = session_orm.find_session_by_id(user_id).map_err(|e| {
                 log::error!("{}: {}", err::CD_DATABASE, e.to_string());
                 let error = AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500);
-                return ErrorInternalServerError(error);
+                return error::ErrorInternalServerError(error);
             })?;
             
             let session = session_opt.ok_or_else(|| {
@@ -198,7 +198,7 @@ where
                 let error = AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_SESSION_NOT_EXIST)
                     .set_status(500)
                     .add_param(borrow::Cow::Borrowed("user_id"), &user_id);
-                ErrorForbidden(error)
+                error::ErrorForbidden(error)
             })?;
 
             let session_num_token = session.num_token.unwrap_or(0);
@@ -208,14 +208,14 @@ where
                 let error = AppError::new(err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_NUM)
                     .set_status(403)
                     .add_param(borrow::Cow::Borrowed("user_id"), &user_id);
-                return Err(ErrorForbidden(error));
+                return Err(error::ErrorForbidden(error));
             }
 
             let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap();
             
             let result = user_orm.find_user_by_id(user_id).map_err(|e| {
                 log::error!("{}: {}", err::CD_DATABASE, e.to_string());
-                ErrorInternalServerError(AppError::new(err::CD_DATABASE, &e.to_string()))
+                error::ErrorInternalServerError(AppError::new(err::CD_DATABASE, &e.to_string()))
             })?;
 
             let user = result.ok_or_else(|| {
@@ -223,7 +223,7 @@ where
                 let error = AppError::new(err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_ID)
                     .set_status(403)
                     .add_param(borrow::Cow::Borrowed("user_id"), &user_id);
-                ErrorForbidden(error)
+                error::ErrorForbidden(error)
             })?;
 
             // Check if user's role matches the required role
@@ -239,7 +239,7 @@ where
                 #[rustfmt::skip]
                 let error = AppError::new(err::CD_PERMISSION_DENIED, err::MSG_PERMISSION_DENIED)
                     .set_status(403);
-                Err(ErrorForbidden(error))
+                Err(error::ErrorForbidden(error))
             }
         }
         .boxed_local()

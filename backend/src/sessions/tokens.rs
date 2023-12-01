@@ -1,5 +1,5 @@
 use chrono::{Duration, Utc};
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken as jwt;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -22,35 +22,36 @@ pub struct TokenClaims {
 pub fn encode_token(
     sub: &str,
     secret: &[u8],
-    // expires in minutes
+    // expires in seconds
     expires: i64,
-) -> Result<String, jsonwebtoken::errors::Error> {
+) -> Result<String, jwt::errors::Error> {
     if sub.is_empty() {
-        return Err(jsonwebtoken::errors::ErrorKind::InvalidSubject.into());
+        return Err(jwt::errors::ErrorKind::InvalidSubject.into());
     }
     if secret.len() == 0 {
-        return Err(jsonwebtoken::errors::ErrorKind::InvalidEcdsaKey.into());
+        return Err(jwt::errors::ErrorKind::InvalidEcdsaKey.into());
     }
 
     let now = Utc::now();
     let iat = now.timestamp() as usize;
-    let exp = (now + Duration::minutes(expires)).timestamp() as usize;
+    let exp = (now + Duration::seconds(expires)).timestamp() as usize;
     let sub = sub.to_string();
 
     let claims: TokenClaims = TokenClaims { sub, exp, iat };
 
-    encode(
-        &Header::default(),
+    jwt::encode(
+        // &jwt::Header::new(Algorithm::HS256)  // Header::new(Algorithm::default()) // HS256
+        &jwt::Header::default(),
         &claims,
-        &EncodingKey::from_secret(secret),
+        &jwt::EncodingKey::from_secret(secret),
     )
 }
 
 pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<TokenClaims, &str> {
-    let decoded = decode::<TokenClaims>(
+    let decoded = jwt::decode::<TokenClaims>(
         &token.into(),
-        &DecodingKey::from_secret(secret),
-        &Validation::new(Algorithm::HS256),
+        &jwt::DecodingKey::from_secret(secret),
+        &jwt::Validation::new(jwt::Algorithm::HS256),
     );
 
     match decoded {
@@ -70,7 +71,7 @@ pub fn encode_dual_token(
     user_id: i32,
     num_token: i32,
     jwt_secret: &[u8],
-    // token duration in minutes
+    // token duration in seconds
     duration: i64,
 ) -> Result<String, String> {
     let sub = format!("{}.{}", user_id, num_token);
@@ -130,7 +131,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().into_kind(),
-            jsonwebtoken::errors::ErrorKind::InvalidSubject
+            jwt::errors::ErrorKind::InvalidSubject
         );
     }
 
@@ -148,10 +149,10 @@ mod tests {
     #[test]
     fn test_decode_expired_token() {
         let secret = b"my-secret-key";
-        let expired_token = encode_token("user123", secret, -60).unwrap();
+        let expired_token = encode_token("user123", secret, -61).unwrap();
 
         let result = decode_token(expired_token, secret);
-
+        eprintln!("result: {:?}", result);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), CD_FORBIDDEN);
     }

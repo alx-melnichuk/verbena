@@ -67,22 +67,26 @@ pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
 
 pub fn create_cors(config_app: settings::config_app::ConfigApp) -> Cors {
     let app_domain = config_app.app_domain;
+    // Maximum number of seconds the results can be cached.
     let app_max_age = config_app.app_max_age;
 
-    Cors::default()
-        .allowed_origin("http://localhost:4250") // For "npx ng serve"
-        // .allowed_origin("http://127.0.0.1:8080")
-        // .allowed_origin("https://127.0.0.1:8443")
+    let mut cors = Cors::default()
         .allowed_origin(&app_domain.to_string())
         // .allowed_origin("https://fonts.googleapis.com")
-        // "HEAD", "CONNECT", "PATCH", "TRACE",
         .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
         .allowed_headers(vec![
-            http::header::CONTENT_TYPE,
             http::header::AUTHORIZATION,
             http::header::ACCEPT,
+            http::header::ACCESS_CONTROL_ALLOW_ORIGIN,
         ])
-        .max_age(app_max_age)
-    // let cors = Cors::permissive();
-    // let cors = cors.allow_any_method().allow_any_header()
+        .allowed_header(http::header::CONTENT_TYPE)
+        .max_age(app_max_age);
+
+    let cors_allowed_origin: Vec<&str> = config_app.app_allowed_origin.split(',').collect();
+    if cors_allowed_origin.len() > 0 {
+        for allowed_origin in cors_allowed_origin.into_iter() {
+            cors = cors.allowed_origin(allowed_origin.trim())
+        }
+    }
+    cors
 }

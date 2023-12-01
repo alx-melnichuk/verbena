@@ -17,6 +17,7 @@ pub struct ConfigApp {
     pub app_name: String,
     pub app_certificate: String,
     pub app_private_key: String,
+    pub app_allowed_origin: String,
 }
 
 impl ConfigApp {
@@ -34,12 +35,13 @@ impl ConfigApp {
             PORT_HTTP
         };
         let app_port = env::var("APP_PORT").unwrap_or(port_default.to_string());
-
+        // Maximum number of seconds the results can be cached.
         let app_max_age = env::var("APP_MAX_AGE").expect("APP_MAX_AGE must be set");
         let app_domain = Self::get_domain(&app_protocol, &app_host, &app_port);
-
+        // Waiting time for registration confirmation (in seconds).
         let app_registr_duration =
             env::var("APP_REGISTR_DURATION").expect("APP_REGISTR_DURATION must be set");
+        // Waiting time for password recovery confirmation (in seconds).
         let app_recovery_duration =
             env::var("APP_RECOVERY_DURATION").expect("APP_RECOVERY_DURATION must be set");
         let app_name = env::var("APP_NAME").expect("APP_NAME must be set");
@@ -53,6 +55,8 @@ impl ConfigApp {
             #[rustfmt::skip]
             assert_ne!(0, app_private_key.len(), "For the {} protocol, the value APP_PRIVATE_KEY must be set.", PROTOCOL_HTTPS);
         }
+        // Cors permissions "allowed_origin" (array of values, comma delimited)
+        let app_allowed_origin = env::var("APP_ALLOWED_ORIGIN").unwrap_or("".to_string());
 
         ConfigApp {
             app_host,
@@ -65,6 +69,7 @@ impl ConfigApp {
             app_name,
             app_certificate,
             app_private_key,
+            app_allowed_origin,
         }
     }
     fn get_domain(protocol: &str, host: &str, port: &str) -> String {
@@ -83,12 +88,13 @@ pub fn get_test_config() -> ConfigApp {
         app_host,
         app_port: 8080,
         app_protocol,
-        app_max_age: 60,
+        app_max_age: 120,
         app_domain,
-        app_registr_duration: 4,
-        app_recovery_duration: 2,
+        app_registr_duration: 240,
+        app_recovery_duration: 120,
         app_name: "app_name".to_string(),
         app_certificate: "demo.crt.pem".to_string(),
         app_private_key: "demo.key.pem".to_string(),
+        app_allowed_origin: "".to_string(),
     }
 }

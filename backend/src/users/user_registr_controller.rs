@@ -175,7 +175,8 @@ pub async fn registration(
     // If there is no such record, then add the specified data to the "user_registr" table.
 
     let app_registr_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
-    let final_date_utc = Utc::now() + Duration::minutes(app_registr_duration.into());
+    // Waiting time for registration confirmation (in seconds).
+    let final_date_utc = Utc::now() + Duration::seconds(app_registr_duration.into());
 
     let create_user_registr_dto = user_registr_models::CreateUserRegistrDto {
         nickname: registr_user_dto.nickname.clone(),
@@ -374,7 +375,8 @@ pub async fn recovery(
 
     // Prepare data for writing to the "user_recovery" table.
     let app_recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-    let final_date_utc = Utc::now() + Duration::minutes(app_recovery_duration.into());
+    // Waiting time for password recovery confirmation (in seconds).
+    let final_date_utc = Utc::now() + Duration::seconds(app_recovery_duration.into());
 
     let create_user_recovery_dto = user_models::CreateUserRecoveryDto {
         user_id: user_id,
@@ -1496,7 +1498,7 @@ mod tests {
 
         let config_app = config_app::get_test_config();
         let app_recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let final_date_utc = Utc::now() + Duration::minutes(app_recovery_duration.into());
+        let final_date_utc = Utc::now() + Duration::seconds(app_recovery_duration.into());
 
         let user_recovery1 =
             create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
@@ -1536,7 +1538,7 @@ mod tests {
 
         let config_app = config_app::get_test_config();
         let app_recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let final_date_utc = Utc::now() + Duration::minutes(app_recovery_duration.into());
+        let final_date_utc = Utc::now() + Duration::seconds(app_recovery_duration.into());
 
         let user_recovery1 =
             create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
@@ -1654,7 +1656,7 @@ mod tests {
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let final_date_utc = Utc::now() + Duration::minutes(-recovery_duration);
+        let final_date_utc = Utc::now() + Duration::seconds(-recovery_duration);
 
         let user_recovery1 =
             create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
@@ -1689,7 +1691,7 @@ mod tests {
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let final_date_utc = Utc::now() + Duration::minutes(recovery_duration);
+        let final_date_utc = Utc::now() + Duration::seconds(recovery_duration);
 
         let user_recovery1 =
             create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
@@ -1728,7 +1730,7 @@ mod tests {
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let final_date_utc = Utc::now() + Duration::minutes(recovery_duration);
+        let final_date_utc = Utc::now() + Duration::seconds(recovery_duration);
 
         let user_recovery1 =
             create_user_recovery_with_id(create_user_recovery(1, user1.id + 1, final_date_utc));
@@ -1768,7 +1770,7 @@ mod tests {
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let final_date_utc = Utc::now() + Duration::minutes(recovery_duration);
+        let final_date_utc = Utc::now() + Duration::seconds(recovery_duration);
 
         let user_recovery1 =
             create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
@@ -1811,13 +1813,13 @@ mod tests {
         let config_app = config_app::get_test_config();
 
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let final_date_recovery = Utc::now() - Duration::minutes(recovery_duration);
+        let final_date_recovery = Utc::now() - Duration::seconds(recovery_duration);
 
         let user_recovery1 =
             create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_recovery));
 
         let registr_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
-        let final_date_registr = Utc::now() - Duration::minutes(registr_duration);
+        let final_date_registr = Utc::now() - Duration::seconds(registr_duration);
 
         let mut user_registr: UserRegistr = create_user_registr();
         user_registr.final_date = final_date_registr;
