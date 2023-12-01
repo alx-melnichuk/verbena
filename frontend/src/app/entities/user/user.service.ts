@@ -47,14 +47,13 @@ export class UserService {
     return this.userApiService.login({ nickname, password }).then((response: LoginUserResponseDto | HttpErrorResponse | undefined) => {
       let userResponseDto: LoginUserResponseDto = response as LoginUserResponseDto;
       this.userInfo = { ...userResponseDto.userDto } as UserDto;
-      //   this.userTokensDto = this.setUserTokensDtoToLocalStorage(userResponseDto.userTokensDto);
-      this.userTokensDto = userResponseDto.userTokensDto;
+      this.userTokensDto = this.setUserTokensDtoToLocalStorage(userResponseDto.userTokensDto);
       return userResponseDto;
     });
   }
 
   public refreshToken(): Promise<UserTokensDto | HttpErrorResponse> {
-    if (!this.userTokensDto || !this.userTokensDto.refreshToken) {
+    if (!this.userTokensDto?.refreshToken) {
       return Promise.reject();
     }
     return this.userApiService
@@ -66,6 +65,18 @@ export class UserService {
       .catch((error) => {
         this.userTokensDto = this.setUserTokensDtoToLocalStorage(null);
         throw error;
+      });
+  }
+
+  public logout(): Promise<void | HttpErrorResponse> {
+    if (!this.userTokensDto?.accessToken) {
+      return Promise.reject();
+    }
+    return this.userApiService.logout()
+      .then(() => {
+        this.userInfo = null;
+        this.userTokensDto = this.setUserTokensDtoToLocalStorage(null);
+        return;
       });
   }
 

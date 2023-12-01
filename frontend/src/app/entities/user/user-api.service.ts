@@ -26,7 +26,7 @@ export class UserApiService {
   }
 
   public currentUser(): Promise<UserDto | HttpErrorResponse | undefined> {
-    const url = Uri.appUri('appApi://api/user_current');
+    const url = Uri.appUri('appApi://api/users_current');
     return this.http.get<UserDto | HttpErrorResponse>(url).toPromise();
   }
 
@@ -34,4 +34,10 @@ export class UserApiService {
     const url = Uri.appUri('appApi://api/token');
     return this.http.post<UserTokensDto | HttpErrorResponse>(url, tokenUserDto).toPromise();
   }
+
+  public logout(): Promise<void | HttpErrorResponse | undefined> {
+    const url = Uri.appUri('appApi://api/logout');
+    return this.http.post<void | HttpErrorResponse>(url, null).toPromise();
+  }
+
 }

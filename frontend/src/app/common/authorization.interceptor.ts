@@ -69,7 +69,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
     if (!accessToken || isNotIncludes || publicMethod === request.method) {
       return request;
     }
-    return request.clone({ setHeaders: { authorization: accessToken } });
+    return request.clone({ setHeaders: { authorization: 'Bearer ' + accessToken } });
   }
 
   private refreshAccessToken(): Promise<boolean> {
