@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 
 import { AppErrorUtil } from '../common/app-error';
 import { StrParams } from '../common/str-params';
-import { ROUTE_ROOT } from '../common/routes';
+import { ROUTE_VIEW } from '../common/routes';
 import { LoginComponent } from '../components/login/login.component';
 import { UserService } from '../entities/user/user.service';
 
@@ -53,7 +53,7 @@ export class PgLoginComponent {
 
     this.userService.login(nickname, password)
       .then(() => {
-        this.router.navigateByUrl(ROUTE_ROOT);
+        this.router.navigateByUrl(ROUTE_VIEW);
       })
       .catch((error: HttpErrorResponse) => {
         this.errMsgList = AppErrorUtil.handleError(error, this.defaultError, this.translate);

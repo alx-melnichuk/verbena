@@ -42,8 +42,8 @@
   </form>
 
   <div class="lg-note">
-    <a [href]="linkSignup">{{ 'login.create_an_account' | translate }}</a>
-    <a [href]="linkForgotPassword">{{ 'login.forgot_password' | translate }}</a>
+    <a routerLink="{{linkSignup}}">{{ 'login.create_an_account' | translate }}</a>
+    <a routerLink="{{linkForgotPassword}}">{{ 'login.forgot_password' | translate }}</a>
   </div>
 
 </div>

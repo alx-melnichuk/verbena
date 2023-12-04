@@ -5,6 +5,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from './components/header/header.component';
 import { UserService } from './entities/user/user.service';
+import { ROUTE_LOGIN } from './common/routes';
 
 @Component({
   selector: 'app-root',
@@ -17,5 +18,6 @@ import { UserService } from './entities/user/user.service';
 })
 export class AppComponent {
   title = 'verbena';
+  linkLogin = ROUTE_LOGIN;
   constructor(public translate: TranslateService, public userService: UserService) {}
 }
