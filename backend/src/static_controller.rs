@@ -11,10 +11,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     )
     .service(Files::new("/static", "static").show_files_listing())
     .service(Files::new("/assets", "static/assets").show_files_listing())
-    .service(web::resource("/login").route(web::get().to(index_root)))
-    .service(web::resource("/signup").route(web::get().to(index_root)))
-    .service(web::resource("/forgot-password").route(web::get().to(index_root)))
-    .service(web::resource("/").route(web::get().to(index_root)));
+    // Route returns index.html - FE app
+    .service(web::resource("/ind/{path_url:.*}").route(web::get().to(index_root)));
 }
 
 /** Loading the `index.html` file. */
