@@ -1,5 +1,3 @@
-import { environment } from 'src/environments/environment';
-
 declare var APP_DOMAIN: string;
 
 const TEMPLATES_PATTERN = /[\w]+:\/\/|:[\w]+/g;
@@ -9,8 +7,8 @@ export class Uri {
 
   static {
     // Data Initialization
-    Uri.replace('appRoot://', (APP_DOMAIN || environment.appRoot));
-    Uri.replace('appApi://', (APP_DOMAIN || environment.appApi));
+    Uri.replace('appRoot://', (APP_DOMAIN || (window.location.origin + '/')));
+    Uri.replace('appApi://', (APP_DOMAIN || (window.location.origin + '/')));
   }
 
   /**
