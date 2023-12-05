@@ -37,7 +37,7 @@ export class PgLoginComponent {
 
   // ** Public API **
 
-  public doLogin(params: StrParams): void {
+  public async doLogin(params: StrParams): Promise<void> {
     if (!params) {
       return;
     }
@@ -50,18 +50,20 @@ export class PgLoginComponent {
 
     this.isDisabledSubmit = true;
     this.errMsgList = [];
-
-    this.userService.login(nickname, password)
-      .then(() => {
-        this.router.navigateByUrl(ROUTE_VIEW);
-      })
-      .catch((error: HttpErrorResponse) => {
+    try {
+      await this.userService.login(nickname, password);
+      await this.userService.getCurrentUser();
+      this.router.navigateByUrl(ROUTE_VIEW);
+    } catch (error) {
+      if (error instanceof HttpErrorResponse) {
         this.errMsgList = AppErrorUtil.handleError(error, this.defaultError, this.translate);
-      })
-      .finally(() => {
-        this.isDisabledSubmit = false;
-        this.changeDetector.markForCheck();
-      });
+      } else {
+        throw error;
+      }
+    } finally {
+      this.isDisabledSubmit = false;
+      this.changeDetector.markForCheck();
+    }
   }
 
   // ** Private API **

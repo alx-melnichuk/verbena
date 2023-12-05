@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 // import { Subject } from 'rxjs';
 import { UserApiService } from './user-api.service';
-import { CreateUserDto, LoginUserResponseDto, TokenUserDto, UserDto, UserTokensDto } from './user-dto';
+import { LoginUserResponseDto, UserDto, UserTokensDto } from './user-dto';
 
 export const ACCESS_TOKEN = 'accessToken';
 export const REFRESH_TOKEN = 'refreshToken';
@@ -51,6 +51,10 @@ export class UserService {
       return userResponseDto;
     });
   }
+  
+  public isCeckRefreshToken(method: string, url: string): boolean {
+    return this.userApiService.isCeckRefreshToken(method, url);
+  }
 
   public refreshToken(): Promise<UserTokensDto | HttpErrorResponse> {
     if (!this.userTokensDto?.refreshToken) {
@@ -63,7 +67,9 @@ export class UserService {
         return response as UserTokensDto;
       })
       .catch((error) => {
+        // Clear "Token" values in LocalStorage.
         this.userTokensDto = this.setUserTokensDtoToLocalStorage(null);
+        // Return error.
         throw error;
       });
   }
@@ -94,7 +100,7 @@ export class UserService {
     return this.userApiService.recovery({ email });
   }
 
-  public async getCurrentUser(): Promise<UserDto | HttpErrorResponse> {
+  public async getCurrentUser(): Promise<UserDto | HttpErrorResponse | undefined> {
     const userDto: UserDto = (await this.userApiService.currentUser()) as UserDto;
     this.userInfo = { ...userDto } as UserDto;
     return Promise.resolve(userDto);

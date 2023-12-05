@@ -1,10 +1,14 @@
 import { Injectable } from '@angular/core';
-import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { Observable, throwError, BehaviorSubject } from 'rxjs';
-import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
+import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError, Subject } from 'rxjs';
+import { catchError, switchMap, take } from 'rxjs/operators';
+
 import { Uri } from './uri';
 import { LIST_PUBLIC_METHODS } from './public-methods';
+
 import { UserService } from '../entities/user/user.service';
+
+const CN_BEARER = 'Bearer ';
 
 // @Injectable()
 @Injectable({
@@ -12,7 +16,7 @@ import { UserService } from '../entities/user/user.service';
 })
 export class AuthorizationInterceptor implements HttpInterceptor {
   private refreshTokenInProgress = false;
-  private refreshTokenSubject: BehaviorSubject<boolean | null> = new BehaviorSubject<boolean | null>(null);
+  private refreshTokenSubject: Subject<boolean> = new Subject();
   // List of public methods that do not require authorization.
   private listPublicMethods: { [key: string]: string } = LIST_PUBLIC_METHODS;
 
@@ -26,31 +30,23 @@ export class AuthorizationInterceptor implements HttpInterceptor {
       // tap((evt) => console .log('evt=', evt)),
       catchError((error: HttpErrorResponse) => {
         // 401 Unauthorized, 403 Forbidden
-        if (this.refreshTokenInProgress && request.method === 'POST' && request.url === Uri.appUri('appApi://profile/token')) {
-          return throwError(() => error);
+        if (this.refreshTokenInProgress && this.userService.isCeckRefreshToken(request.method, request.url)) {
+            return throwError(() => error);
         }
-        if (error && [401, 403].includes(error.status) && this.userService.isExistRefreshToken()) {
+        if ([401, 403].includes(error?.status) && this.userService.isExistRefreshToken()) {
           // 401 errors are most likely going to be because we have an expired token that we need to refresh.
           if (!this.refreshTokenInProgress) {
             this.refreshTokenInProgress = true;
-            // Set the refreshTokenSubject to null so that subsequent API calls will wait until the new token has been retrieved
-            this.refreshTokenSubject.next(null);
             // Get a new token.
             this.refreshAccessToken()
-              .then((success) => this.refreshTokenSubject.next(success))
-              // When the call to refreshToken completes we reset the refreshTokenInProgress to false
-              // for the next time the token needs to be refreshed
+              .then(() => this.refreshTokenSubject.next(true))
+              .catch((error) => this.refreshTokenSubject.error(error))
+              // When the call to refreshToken completes we reset the "refreshTokenInProgress" to false
               .finally(() => (this.refreshTokenInProgress = false));
           }
-          // If refreshTokenInProgress is true, we will wait until refreshTokenSubject has a non-null value
-          // which means the new token is ready and we can retry the request again
           return this.refreshTokenSubject.pipe(
-            filter((result) => result !== null),
             take(1),
-            switchMap(() => next.handle(this.addAuthenticationToken(request))),
-            catchError((error2) => {
-              return throwError(() => error2);
-            })
+            switchMap(() => next.handle(this.addAuthenticationToken(request)))
           );
         } else {
           return throwError(() => error);
@@ -69,13 +65,13 @@ export class AuthorizationInterceptor implements HttpInterceptor {
     if (!accessToken || isNotIncludes || publicMethod === request.method) {
       return request;
     }
-    return request.clone({ setHeaders: { authorization: 'Bearer ' + accessToken } });
+    return request.clone({ setHeaders: { authorization: CN_BEARER + accessToken } });
   }
 
-  private refreshAccessToken(): Promise<boolean> {
+  private refreshAccessToken(): Promise<void> {
     return this.userService
       .refreshToken()
-      .then(() => true)
-      .catch(() => false);
+      .then(() => Promise.resolve())
+      .catch((error) => Promise.reject(error))
   }
 }

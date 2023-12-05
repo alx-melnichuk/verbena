@@ -30,6 +30,10 @@ export class UserApiService {
     return this.http.get<UserDto | HttpErrorResponse>(url).toPromise();
   }
 
+  public isCeckRefreshToken(method: string, url: string): boolean {
+    return method === 'POST' && url === Uri.appUri('appApi://api/token');
+  }
+
   public refreshToken(tokenUserDto: TokenUserDto): Promise<UserTokensDto | HttpErrorResponse | undefined> {
     const url = Uri.appUri('appApi://api/token');
     return this.http.post<UserTokensDto | HttpErrorResponse>(url, tokenUserDto).toPromise();
