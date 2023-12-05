@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, SimpleChanges, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, Output, SimpleChanges, ViewEncapsulation } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -22,6 +22,11 @@ export class HeaderComponent {
   readonly logout: EventEmitter<void> = new EventEmitter();
 
   public linkDashboard: string = 'login';
+
+  @HostBinding('class.hd-user-info')
+  get isUserInfo(): boolean {
+    return !!this.userInfo;
+  }
 
   constructor() {
     console.log(`HeaderComponent();`); // #-

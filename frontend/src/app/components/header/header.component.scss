@@ -1,10 +1,18 @@
 /*# sourceURL=header.component.scss */
 
 app-header {
-  background-color: var(--app-site-header-bg);
   display: flex;
   justify-content: space-between;
   height: 100%;
+  
+  &:not(.hd-user-info) {
+    ---hd-bg-cl: var(--app-site-off-header-bg);
+  }
+  &.hd-user-info {
+    ---hd-bg-cl: var(--app-site-header-bg);
+  }
+
+  background-color: var(---hd-bg-cl);
 
   & > div {
     align-items: center;
