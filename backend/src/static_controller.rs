@@ -40,5 +40,3 @@ pub async fn loading_js_css_files(req: HttpRequest) -> Result<actix_files::Named
     let file: actix_files::NamedFile = actix_files::NamedFile::open(path)?;
     Ok(file.use_last_modified(true))
 }
-
-// Loading static files.

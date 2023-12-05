@@ -106,7 +106,7 @@ pub struct AuthMiddleware<S> {
 
 fn jwt_from_header(header_token: &str) -> Result<String, String> {
     const NO_AUTH_HEADER: &str = "No authentication header";
-    eprintln!("jwt_from_header({})", header_token);
+    // eprintln!("jwt_from_header({})", header_token);
     if header_token.len() == 0 {
         return Err(NO_AUTH_HEADER.to_string());
     }
