@@ -40,12 +40,17 @@ fn err_blocking(err: String) -> AppError {
     log::error!("{}: {}", err::CD_BLOCKING, err);
     AppError::new(err::CD_BLOCKING, &err).set_status(500)
 }
-fn err_json_web_encode_token(err: String) -> AppError {
+fn err_jsonwebtoken_encode(err: String) -> AppError {
     #[rustfmt::skip]
-    log::error!("{}: {} - {}", err::CD_INTER_SRV_ERROR, err::MSG_JSON_WEB_ENCODE_TOKEN, err);
-    AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_JSON_WEB_ENCODE_TOKEN)
+    log::error!("{}: {} - {}", err::CD_INTER_SRV_ERROR, err::MSG_JSON_WEB_TOKEN_ENCODE, err);
+    AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_JSON_WEB_TOKEN_ENCODE)
         .set_status(500)
         .add_param(borrow::Cow::Borrowed("error"), &err)
+}
+fn err_jsonwebtoken_decode(err: String) -> AppError {
+    #[rustfmt::skip]
+    log::error!("{}: {} - {}", err::CD_FORBIDDEN, err::MSG_INVALID_OR_EXPIRED_TOKEN, err);
+    AppError::new(err::CD_FORBIDDEN, err::MSG_INVALID_OR_EXPIRED_TOKEN).set_status(403)
 }
 fn err_session(user_id: i32) -> AppError {
     #[rustfmt::skip]
@@ -65,11 +70,8 @@ pub async fn login(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!(
-            "{}: {}",
-            err::CD_VALIDATION,
-            msg_validation(&validation_errors)
-        );
+        #[rustfmt::skip]
+        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
@@ -110,14 +112,13 @@ pub async fn login(
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Pack two parameters (user.id, num_token) into a access_token.
-    let access_token =
-        tokens::encode_dual_token(user.id, num_token, jwt_secret, config_jwt.jwt_access)
-            .map_err(|err| err_json_web_encode_token(err))?;
+    let access_token = tokens::encode_token(user.id, num_token, jwt_secret, config_jwt.jwt_access)
+        .map_err(|err| err_jsonwebtoken_encode(err.to_string()))?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let refresh_token =
-        tokens::encode_dual_token(user.id, num_token, jwt_secret, config_jwt.jwt_refresh)
-            .map_err(|err| err_json_web_encode_token(err))?;
+        tokens::encode_token(user.id, num_token, jwt_secret, config_jwt.jwt_refresh)
+            .map_err(|err| err_jsonwebtoken_encode(err.to_string()))?;
 
     let session_opt = session_orm
         .modify_session(user.id, Some(num_token))
@@ -183,7 +184,8 @@ pub async fn new_token(
     let token = token_user_dto.token;
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
-    let (user_id, num_token) = tokens::decode_dual_token(&token, jwt_secret)?;
+    let (user_id, num_token) = tokens::decode_token(&token, jwt_secret)
+        .map_err(|err| err_jsonwebtoken_decode(err))?;
 
     // Get user ID.
     let user = authenticated.deref().clone();
@@ -222,12 +224,13 @@ pub async fn new_token(
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Pack two parameters (user.id, num_token) into a access_token.
-    let access_token = tokens::encode_dual_token(user_id, num_token, jwt_secret, config_jwt.jwt_access)
-        .map_err(|err| err_json_web_encode_token(err))?;
+    let access_token = tokens::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_access)
+        .map_err(|err| err_jsonwebtoken_encode(err.to_string()))?;
+
 
     // Pack two parameters (user.id, num_token) into a access_token.
-    let refresh_token = tokens::encode_dual_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh)
-        .map_err(|err| err_json_web_encode_token(err))?;
+    let refresh_token = tokens::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh)
+        .map_err(|err| err_jsonwebtoken_encode(err.to_string()))?;
 
     let session_opt = session_orm1
         .modify_session(user_id, Some(num_token))
@@ -256,7 +259,7 @@ mod tests {
     use serde_json::json;
 
     use crate::extractors::authentication::BEARER;
-    use crate::sessions::{config_jwt, session_models::Session, tokens::encode_dual_token};
+    use crate::sessions::{config_jwt, session_models::Session, tokens::encode_token};
     use crate::users::{
         user_models::{LoginUserDto, User, UserModelsTest, UserRole},
         user_orm::tests::UserOrmApp,
@@ -701,7 +704,7 @@ mod tests {
         assert_eq!(app_err.message, MSG_PASSWORD_INCORRECT);
     }
     #[test]
-    async fn test_login_err_json_web_encode_token() {
+    async fn test_login_err_jsonwebtoken_encode() {
         let mut user1: User = user_with_id(create_user());
         let user1_nickname = user1.nickname.to_string();
         let user1_password = user1.password.to_string();
@@ -729,7 +732,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_INTER_SRV_ERROR);
-        assert_eq!(app_err.message, err::MSG_JSON_WEB_ENCODE_TOKEN);
+        assert_eq!(app_err.message, err::MSG_JSON_WEB_TOKEN_ENCODE);
     }
     #[test]
     async fn test_login_if_session_not_exist() {
@@ -831,8 +834,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token =
-            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::post().uri("/logout"); // POST /logout
 
@@ -870,8 +872,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token =
-            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::post().uri("/token"); // POST /token
         let vec = (vec![user1], vec![session1]);
@@ -893,8 +894,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token =
-            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::post()
             .uri("/token") // POST /token
@@ -919,8 +919,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token =
-            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::post()
             .uri("/token") // POST /token
@@ -948,8 +947,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token =
-            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::post()
             .uri("/token") // POST /token
@@ -977,11 +975,10 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token =
-            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let token_bad =
-            encode_dual_token(user1.id + 1, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+            encode_token(user1.id + 1, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::post()
             .uri("/token") // POST /token
@@ -1008,11 +1005,10 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token =
-            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let token_bad =
-            encode_dual_token(user1.id, num_token + 1, &jwt_secret, config_jwt.jwt_access).unwrap();
+            encode_token(user1.id, num_token + 1, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::post()
             .uri("/token") // POST /token
@@ -1040,11 +1036,10 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_access = config_jwt.jwt_access;
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token =
-            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let token_bad =
-            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+            encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::post()
             .uri("/token") // POST /token

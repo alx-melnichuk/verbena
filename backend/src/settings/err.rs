@@ -54,9 +54,9 @@ pub const CD_DATABASE: &str = "Database";
 // Error checking hash value.
 pub const MSG_INVALID_HASH: &str = "invalid_hash";
 // Error encoding web token.
-pub const MSG_JSON_WEB_ENCODE_TOKEN: &str = "json_web_encode_token";
+pub const MSG_JSON_WEB_TOKEN_ENCODE: &str = "json_web_token_encode";
 // Error decoding web token.
-pub const MSG_JSON_WEB_DECODE_TOKEN: &str = "json_web_decode_token";
+pub const MSG_JSON_WEB_TOKEN_DECODE: &str = "json_web_token_decode";
 // There is no session for this user.
 pub const MSG_SESSION_NOT_EXIST: &str = "session_not_exist";
 // Error when sending email

@@ -3,29 +3,29 @@ use jsonwebtoken as jwt;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::errors::AppError;
-use crate::settings::err::{
-    CD_FORBIDDEN, CD_UNALLOWABLE_TOKEN, MSG_INVALID_OR_EXPIRED_TOKEN, MSG_UNALLOWABLE_TOKEN,
-};
+use crate::settings::err;
 use crate::utils::parser;
 
 pub const CD_NUM_TOKEN_MIN: usize = 1;
 pub const CD_NUM_TOKEN_MAX: usize = 10000;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TokenClaims {
-    pub sub: String,
-    pub iat: usize,
+struct TokenClaims {
     pub exp: usize,
+    pub iat: usize,
+    pub iss: String,
+    pub sub: String,
 }
 
+/// Pack two parameters into a token.
 pub fn encode_token(
-    sub: &str,
+    user_id: i32,
+    num_token: i32,
     secret: &[u8],
     // expires in seconds
     expires: i64,
 ) -> Result<String, jwt::errors::Error> {
-    if sub.is_empty() {
+    if num_token == 0 {
         return Err(jwt::errors::ErrorKind::InvalidSubject.into());
     }
     if secret.len() == 0 {
@@ -35,29 +35,46 @@ pub fn encode_token(
     let now = Utc::now();
     let iat = now.timestamp() as usize;
     let exp = (now + Duration::seconds(expires)).timestamp() as usize;
-    let sub = sub.to_string();
+    let iss = num_token.to_string();
+    let sub = user_id.to_string();
 
-    let claims: TokenClaims = TokenClaims { sub, exp, iat };
+    let claims = TokenClaims { exp, iat, iss, sub };
 
     jwt::encode(
-        // &jwt::Header::new(Algorithm::HS256)  // Header::new(Algorithm::default()) // HS256
-        &jwt::Header::default(),
+        &jwt::Header::new(jwt::Algorithm::HS256),
         &claims,
         &jwt::EncodingKey::from_secret(secret),
     )
 }
 
-pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<TokenClaims, &str> {
-    let decoded = jwt::decode::<TokenClaims>(
+/// Unpack two parameters from the token.
+pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<(i32, i32), String> {
+    let token_data = jwt::decode::<TokenClaims>(
         &token.into(),
         &jwt::DecodingKey::from_secret(secret),
         &jwt::Validation::new(jwt::Algorithm::HS256),
-    );
+    )
+    .map_err(|err| {
+        log::error!("decode error: {:?}", err);
+        err::CD_FORBIDDEN
+    })?;
 
-    match decoded {
-        Ok(token) => Ok(token.claims),
-        Err(_) => Err(CD_FORBIDDEN),
-    }
+    let user_id_str = token_data.claims.sub.as_str();
+    let num_token_str = token_data.claims.iss.as_str();
+
+    let user_id = parser::parse_i32(user_id_str).map_err(|err| {
+        #[rustfmt::skip]
+        log::error!("{}: user_id: {} - {}", err::CD_UNALLOWABLE_TOKEN, user_id_str, err);
+        err::CD_UNALLOWABLE_TOKEN
+    })?;
+
+    let num_token = parser::parse_i32(num_token_str).map_err(|err| {
+        #[rustfmt::skip]
+        log::error!("{}: num_token: {} - {}", err::CD_UNALLOWABLE_TOKEN, num_token_str, err);
+        err::CD_UNALLOWABLE_TOKEN
+    })?;
+
+    Ok((user_id, num_token))
 }
 
 pub fn generate_num_token() -> i32 {
@@ -66,67 +83,20 @@ pub fn generate_num_token() -> i32 {
     result as i32
 }
 
-/// Pack two parameters into a token.
-pub fn encode_dual_token(
-    user_id: i32,
-    num_token: i32,
-    jwt_secret: &[u8],
-    // token duration in seconds
-    duration: i64,
-) -> Result<String, String> {
-    let sub = format!("{}.{}", user_id, num_token);
-    let token = encode_token(&sub, &jwt_secret, duration).map_err(|e| e.to_string())?;
-
-    Ok(token)
-}
-
-/// Unpack two parameters from the token.
-pub fn decode_dual_token(token: &str, jwt_secret: &[u8]) -> Result<(i32, i32), AppError> {
-    let token_claims = decode_token(token, jwt_secret).map_err(|e| {
-        #[rustfmt::skip]
-        log::error!("{}: {} {}", CD_FORBIDDEN, MSG_INVALID_OR_EXPIRED_TOKEN, e);
-        return AppError::new(CD_FORBIDDEN, MSG_INVALID_OR_EXPIRED_TOKEN).set_status(403);
-    })?;
-
-    let list: Vec<&str> = token_claims.sub.split('.').collect();
-    let user_id_str: &str = list.get(0).unwrap_or(&"");
-    let num_token_str: &str = list.get(1).unwrap_or(&"");
-
-    let user_id = parser::parse_i32(user_id_str).map_err(|err| {
-        log::error!("{CD_UNALLOWABLE_TOKEN}: {MSG_UNALLOWABLE_TOKEN} - id: {err}");
-        return AppError::new(CD_UNALLOWABLE_TOKEN, MSG_UNALLOWABLE_TOKEN).set_status(403);
-    })?;
-
-    let num_token = parser::parse_i32(num_token_str).map_err(|err| {
-        log::error!("{CD_UNALLOWABLE_TOKEN}: {MSG_UNALLOWABLE_TOKEN} - num_token: {err}");
-        return AppError::new(CD_UNALLOWABLE_TOKEN, MSG_UNALLOWABLE_TOKEN).set_status(403);
-    })?;
-
-    Ok((user_id, num_token))
-}
-
 #[cfg(test)]
 mod tests {
 
     use super::*;
 
-    #[test]
-    fn test_create_and_decoded_valid_token() {
-        let user_id = "user123";
-        let secret = b"my-secret-key";
-
-        let token = encode_token(user_id, secret, 60).unwrap();
-        let decoded_user_id = decode_token(&token, secret).unwrap().sub;
-
-        assert_eq!(decoded_user_id, user_id);
-    }
+    const EXPIRES: i64 = 61;
 
     #[test]
-    fn test_create_token_with_empty_user_id() {
-        let user_id = "";
-        let secret = b"my-secret-key";
+    fn test2_encode_with_0_to_num_token() {
+        let user_id: i32 = 123;
+        let num_token: i32 = 0;
+        let secret = b"super-secret-key";
 
-        let result = encode_token(user_id, secret, 60);
+        let result = encode_token(user_id, num_token, secret, EXPIRES);
 
         assert!(result.is_err());
         assert_eq!(
@@ -134,26 +104,53 @@ mod tests {
             jwt::errors::ErrorKind::InvalidSubject
         );
     }
+    #[test]
+    fn test2_encode_with_empty_secret() {
+        let user_id: i32 = 123;
+        let num_token: i32 = 567;
+        let secret = b"";
+
+        let result = encode_token(user_id, num_token, secret, EXPIRES);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().into_kind(),
+            jwt::errors::ErrorKind::InvalidEcdsaKey
+        );
+    }
+    #[test]
+    fn test2_encode_and_decoded_valid_token() {
+        let user_id: i32 = 123;
+        let num_token: i32 = 567;
+        let secret = b"super-secret-key";
+
+        let token = encode_token(user_id, num_token, secret, EXPIRES).unwrap();
+        let (res_user_id, res_num_token) = decode_token(&token, secret).unwrap();
+
+        assert_eq!(res_user_id, user_id);
+        assert_eq!(res_num_token, num_token);
+    }
 
     #[test]
-    fn test_decoded_invalid_token() {
-        let secret = b"my-secret-key";
+    fn test2_decoded_invalid_token() {
+        let secret = b"super-secret-key";
         let invalid_token = "invalid-token";
 
         let result = decode_token(invalid_token, secret);
 
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), CD_FORBIDDEN);
+        assert_eq!(result.unwrap_err(), err::CD_FORBIDDEN);
     }
-
     #[test]
-    fn test_decode_expired_token() {
-        let secret = b"my-secret-key";
-        let expired_token = encode_token("user123", secret, -61).unwrap();
+    fn test2_decode_expired_token() {
+        let user_id: i32 = 123;
+        let num_token: i32 = 567;
+        let secret = b"super-secret-key";
 
+        let expired_token = encode_token(user_id, num_token, secret, -EXPIRES).unwrap();
         let result = decode_token(expired_token, secret);
-        eprintln!("result: {:?}", result);
+
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), CD_FORBIDDEN);
+        assert_eq!(result.unwrap_err(), err::CD_FORBIDDEN);
     }
 }

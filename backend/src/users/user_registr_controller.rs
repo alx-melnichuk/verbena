@@ -17,7 +17,7 @@ use crate::sessions::{
     config_jwt,
     session_models::Session,
     session_orm::SessionOrm,
-    tokens::{decode_dual_token, encode_dual_token, generate_num_token},
+    tokens::{decode_token, encode_token, generate_num_token},
 };
 use crate::settings::{config_app, err};
 #[cfg(not(feature = "mockdata"))]
@@ -66,15 +66,19 @@ fn err_wrong_email_or_nickname(is_nickname: bool) -> AppError {
     log::error!("{}: {}", err::CD_CONFLICT, val);
     AppError::new(err::CD_CONFLICT, val).set_status(409)
 }
-fn err_json_web_encode_token(err: String) -> AppError {
+fn err_jsonwebtoken_encode(err: String) -> AppError {
     #[rustfmt::skip]
-    log::error!("{}: {} - {}", err::CD_INTER_SRV_ERROR, err::MSG_JSON_WEB_ENCODE_TOKEN, err);
-    let app_err = AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_JSON_WEB_ENCODE_TOKEN)
+    log::error!("{}: {} - {}", err::CD_INTER_SRV_ERROR, err::MSG_JSON_WEB_TOKEN_ENCODE, err);
+    let app_err = AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_JSON_WEB_TOKEN_ENCODE)
         .set_status(500)
         .add_param(borrow::Cow::Borrowed("error"), &err);
     app_err
 }
-
+fn err_jsonwebtoken_decode(err: String) -> AppError {
+    #[rustfmt::skip]
+    log::error!("{}: {} - {}", err::CD_FORBIDDEN, err::MSG_INVALID_OR_EXPIRED_TOKEN, err);
+    AppError::new(err::CD_FORBIDDEN, err::MSG_INVALID_OR_EXPIRED_TOKEN).set_status(403)
+}
 fn err_sending_email(err: String) -> AppError {
     #[rustfmt::skip]
     log::error!("{}: {} - {}", err::CD_INTER_SRV_ERROR, err::MSG_ERROR_SENDING_EMAIL, &err);
@@ -199,9 +203,8 @@ pub async fn registration(
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Pack two parameters (user_registr.id, num_token) into a registr_token.
-    let registr_token =
-        encode_dual_token(user_registr.id, num_token, jwt_secret, app_registr_duration)
-            .map_err(|err| err_json_web_encode_token(err))?;
+    let registr_token = encode_token(user_registr.id, num_token, jwt_secret, app_registr_duration)
+        .map_err(|err| err_jsonwebtoken_encode(err.to_string()))?;
 
     // Prepare a letter confirming this registration.
     let domain = &config_app.app_domain;
@@ -248,10 +251,8 @@ pub async fn confirm_registration(
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Check the signature and expiration date on the received “registr_token".
-    let dual_token = decode_dual_token(&registr_token, jwt_secret).map_err(|err| {
-        log::error!("{}: {}", err.code, err.message);
-        err // 403
-    })?;
+    let dual_token =
+        decode_token(&registr_token, jwt_secret).map_err(|err| err_jsonwebtoken_decode(err))?;
 
     let user_registr_orm2 = user_registr_orm.clone();
 
@@ -416,13 +417,13 @@ pub async fn recovery(
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Pack two parameters (user_recovery_id, num_token) into a recovery_token.
-    let recovery_token = encode_dual_token(
+    let recovery_token = encode_token(
         user_recovery_id,
         num_token,
         jwt_secret,
         app_recovery_duration,
     )
-    .map_err(|err| err_json_web_encode_token(err))?;
+    .map_err(|err| err_jsonwebtoken_encode(err.to_string()))?;
 
     // Prepare a letter confirming this recovery.
     let domain = &config_app.app_domain;
@@ -485,10 +486,8 @@ pub async fn confirm_recovery(
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Check the signature and expiration date on the received “recovery_token".
-    let dual_token = decode_dual_token(&recovery_token, jwt_secret).map_err(|err| {
-        log::error!("{}: {}", err.code, err.message);
-        err // 403
-    })?;
+    let dual_token =
+        decode_token(&recovery_token, jwt_secret).map_err(|err| err_jsonwebtoken_decode(err))?;
 
     let user_recovery_orm2 = user_recovery_orm.clone();
 
@@ -611,7 +610,7 @@ mod tests {
     use crate::errors::AppError;
     use crate::extractors::authentication::BEARER;
     use crate::send_email::config_smtp;
-    use crate::sessions::{config_jwt, tokens::decode_dual_token};
+    use crate::sessions::{config_jwt, tokens::decode_token};
     use crate::settings::{config_app, err};
     use crate::users::{
         user_models::{
@@ -1131,7 +1130,7 @@ mod tests {
         assert_eq!(app_err.message, MSG_EMAIL_ALREADY_USE);
     }
     #[test]
-    async fn test_login_err_json_web_encode_token() {
+    async fn test_login_err_jsonwebtoken_encode() {
         let token = "";
 
         let request = test::TestRequest::post()
@@ -1153,7 +1152,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_INTER_SRV_ERROR);
-        assert_eq!(app_err.message, err::MSG_JSON_WEB_ENCODE_TOKEN);
+        assert_eq!(app_err.message, err::MSG_JSON_WEB_TOKEN_ENCODE);
     }
     #[test]
     async fn test_registration_new_user() {
@@ -1200,7 +1199,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
-        let (user_registr_id, _) = decode_dual_token(&registr_token, jwt_secret).unwrap();
+        let (user_registr_id, _) = decode_token(&registr_token, jwt_secret).unwrap();
         assert_eq!(USER_REGISTR_ID + 1, user_registr_id);
     }
 
@@ -1238,7 +1237,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let registr_token =
-            encode_dual_token(user_reg1_id, num_token, jwt_secret, -reg_duration).unwrap();
+            encode_token(user_reg1_id, num_token, jwt_secret, -reg_duration).unwrap();
 
         let token = "";
 
@@ -1268,7 +1267,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let registr_token =
-            encode_dual_token(user_reg1_id + 1, num_token, jwt_secret, reg_duration).unwrap();
+            encode_token(user_reg1_id + 1, num_token, jwt_secret, reg_duration).unwrap();
 
         let token = "";
 
@@ -1299,7 +1298,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let registr_token =
-            encode_dual_token(user_reg1.id, num_token, jwt_secret, reg_duration).unwrap();
+            encode_token(user_reg1.id, num_token, jwt_secret, reg_duration).unwrap();
 
         let token = "";
 
@@ -1487,7 +1486,7 @@ mod tests {
         let recovery_token = user_recov_res.recovery_token;
         // Check the signature and expiration date on the “recovery_token".
         let (user_recovery_id, _) =
-            decode_dual_token(&recovery_token, jwt_secret).expect("decode_dual_token error");
+            decode_token(&recovery_token, jwt_secret).expect("decode_token error");
         assert_eq!(USER_RECOVERY_ID, user_recovery_id);
     }
     #[test]
@@ -1527,11 +1526,11 @@ mod tests {
         let recovery_token = user_recov_res.recovery_token;
         // Check the signature and expiration date on the “recovery_token".
         let (user_recovery_id, _) =
-            decode_dual_token(&recovery_token, jwt_secret).expect("decode_dual_token error");
+            decode_token(&recovery_token, jwt_secret).expect("decode_token error");
         assert_eq!(user_recovery1_id, user_recovery_id);
     }
     #[test]
-    async fn test_recovery_err_json_web_encode_token() {
+    async fn test_recovery_err_jsonwebtoken_encode() {
         let user1 = user_with_id(create_user());
         let user1_email = user1.email.to_string();
 
@@ -1559,7 +1558,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_INTER_SRV_ERROR);
-        assert_eq!(app_err.message, err::MSG_JSON_WEB_ENCODE_TOKEN);
+        assert_eq!(app_err.message, err::MSG_JSON_WEB_TOKEN_ENCODE);
     }
 
     // ** confirm recovery **
@@ -1665,8 +1664,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token =
-            encode_dual_token(user_recovery1.id, num_token, jwt_secret, -recovery_duration)
-                .unwrap();
+            encode_token(user_recovery1.id, num_token, jwt_secret, -recovery_duration).unwrap();
 
         let token = "";
         let request = test::TestRequest::put()
@@ -1699,7 +1697,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let recovery_token = encode_dual_token(
+        let recovery_token = encode_token(
             user_recovery1.id + 1,
             num_token,
             jwt_secret,
@@ -1738,7 +1736,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let recovery_token = encode_dual_token(
+        let recovery_token = encode_token(
             user_recovery1.id + 1,
             num_token,
             jwt_secret,
@@ -1779,7 +1777,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token =
-            encode_dual_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
+            encode_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
 
         let token = "";
         let request = test::TestRequest::put()
@@ -1829,8 +1827,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token =
-            encode_dual_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::get().uri(&"/clear_for_expired"); // GET api/clear_for_expired
 
