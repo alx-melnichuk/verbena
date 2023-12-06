@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, Output, SimpleChanges, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, Output, ViewEncapsulation } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -29,14 +29,6 @@ export class HeaderComponent {
   }
 
   constructor() {
-    console.log(`HeaderComponent();`); // #-
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (!!changes['userInfo']) {
-      console.log(`changes['userInfo'] ${!!this.userInfo ? this.userInfo.nickname : 'null'}`); // #-
-      // #- this.prepareData();
-    }
   }
 
   // ** Public API **
