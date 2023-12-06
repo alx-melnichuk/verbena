@@ -4,5 +4,4 @@ pub mod user_models;
 pub mod user_orm;
 pub mod user_recovery_orm;
 pub mod user_registr_controller;
-pub mod user_registr_models;
 pub mod user_registr_orm;

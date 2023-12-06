@@ -6,6 +6,69 @@ use crate::schema;
 use crate::utils::date_time_rfc2822z;
 use crate::validators::{ValidationChecks, ValidationError, Validator};
 
+pub const NICKNAME_MIN: u8 = 3;
+pub const NICKNAME_MAX: u8 = 64;
+pub const NICKNAME_REGEX: &str = r"^[a-zA-Z]+[\w]+$";
+// \w   Matches any letter, digit or underscore. Equivalent to [a-zA-Z0-9_].
+// \W - Matches anything other than a letter, digit or underscore. Equivalent to [^a-zA-Z0-9_]
+pub const MSG_NICKNAME_REQUIRED: &str = "nickname:required";
+pub const MSG_NICKNAME_MIN_LENGTH: &str = "nickname:min_length";
+pub const MSG_NICKNAME_MAX_LENGTH: &str = "nickname:max_length";
+pub const MSG_NICKNAME_REGEX: &str = "nickname:regex";
+
+pub const EMAIL_MIN: u8 = 5;
+pub const EMAIL_MAX: u16 = 255;
+pub const MSG_EMAIL_REQUIRED: &str = "email:required";
+pub const MSG_EMAIL_MIN_LENGTH: &str = "email:min_length";
+pub const MSG_EMAIL_MAX_LENGTH: &str = "email:max_length";
+pub const MSG_EMAIL_EMAIL_TYPE: &str = "email:email_type";
+
+pub const PASSWORD_MIN: u8 = 6;
+pub const PASSWORD_MAX: u8 = 64;
+pub const PASSWORD_LOWERCASE_LETTER_REGEX: &str = r"[a-z]+";
+pub const PASSWORD_CAPITAL_LETTER_REGEX: &str = r"[A-Z]+";
+pub const PASSWORD_NUMBER_REGEX: &str = r"[\d]+";
+// pub const PASSWORD_REGEX: &str = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d\W_]{6,}$";
+pub const MSG_PASSWORD_REQUIRED: &str = "password:required";
+pub const MSG_PASSWORD_MIN_LENGTH: &str = "password:min_length";
+pub const MSG_PASSWORD_MAX_LENGTH: &str = "password:max_length";
+pub const MSG_PASSWORD_REGEX: &str = "password:regex";
+
+pub fn validate_nickname(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::required(value, MSG_NICKNAME_REQUIRED)?;
+    ValidationChecks::min_length(value, NICKNAME_MIN.into(), MSG_NICKNAME_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, NICKNAME_MAX.into(), MSG_NICKNAME_MAX_LENGTH)?;
+    ValidationChecks::regexp(value, NICKNAME_REGEX, MSG_NICKNAME_REGEX)?; // /^[a-zA-Z]+[\w]+$/
+    Ok(())
+}
+
+pub fn validate_email(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::required(value, MSG_EMAIL_REQUIRED)?;
+    ValidationChecks::min_length(value, EMAIL_MIN.into(), MSG_EMAIL_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, EMAIL_MAX.into(), MSG_EMAIL_MAX_LENGTH)?;
+    ValidationChecks::email(value, MSG_EMAIL_EMAIL_TYPE)?;
+    Ok(())
+}
+
+pub fn validate_nickname_or_email(value: &str) -> Result<(), ValidationError> {
+    if value.contains("@") {
+        validate_email(&value).map_err(|err| err)?;
+    } else {
+        validate_nickname(&value).map_err(|err| err)?;
+    }
+    Ok(())
+}
+
+pub fn validate_password(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::required(value, MSG_PASSWORD_REQUIRED)?;
+    ValidationChecks::min_length(value, PASSWORD_MIN.into(), MSG_PASSWORD_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, PASSWORD_MAX.into(), MSG_PASSWORD_MAX_LENGTH)?;
+    ValidationChecks::regexp(value, PASSWORD_LOWERCASE_LETTER_REGEX, MSG_PASSWORD_REGEX)?;
+    ValidationChecks::regexp(value, PASSWORD_CAPITAL_LETTER_REGEX, MSG_PASSWORD_REGEX)?;
+    ValidationChecks::regexp(value, PASSWORD_NUMBER_REGEX, MSG_PASSWORD_REGEX)?;
+    Ok(())
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, diesel_derive_enum::DbEnum)]
 #[ExistingTypePath = "crate::schema::sql_types::UserRole"]
 pub enum UserRole {
@@ -24,6 +87,8 @@ impl UserRole {
     }
 }
 
+// ** Section: database "users" **
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
 #[diesel(table_name = schema::users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -36,8 +101,6 @@ pub struct User {
     pub updated_at: DateTime<Utc>,
     pub role: UserRole,
 }
-
-// ** Section: DTO models. **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = schema::users)]
@@ -66,34 +129,6 @@ impl From<User> for UserDto {
         }
     }
 }
-
-pub const NICKNAME_MIN: u8 = 3;
-pub const NICKNAME_MAX: u8 = 64;
-pub const NICKNAME_REGEX: &str = r"^[a-zA-Z]+[\w]+$";
-// \w   Matches any letter, digit or underscore. Equivalent to [a-zA-Z0-9_].
-// \W - Matches anything other than a letter, digit or underscore. Equivalent to [^a-zA-Z0-9_]
-pub const MSG_NICKNAME_REQUIRED: &str = "nickname:required";
-pub const MSG_NICKNAME_MIN_LENGTH: &str = "nickname:min_length";
-pub const MSG_NICKNAME_MAX_LENGTH: &str = "nickname:max_length";
-pub const MSG_NICKNAME_REGEX: &str = "nickname:regex";
-
-pub const EMAIL_MIN: u8 = 5;
-pub const EMAIL_MAX: u16 = 255;
-pub const MSG_EMAIL_REQUIRED: &str = "email:required";
-pub const MSG_EMAIL_MIN_LENGTH: &str = "email:min_length";
-pub const MSG_EMAIL_MAX_LENGTH: &str = "email:max_length";
-pub const MSG_EMAIL_EMAIL_TYPE: &str = "email:email_type";
-
-pub const PASSWORD_MIN: u8 = 6;
-pub const PASSWORD_MAX: u8 = 64;
-pub const PASSWORD_LOWERCASE_LETTER_REGEX: &str = r"[a-z]+";
-pub const PASSWORD_CAPITAL_LETTER_REGEX: &str = r"[A-Z]+";
-pub const PASSWORD_NUMBER_REGEX: &str = r"[\d]+";
-// pub const PASSWORD_REGEX: &str = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d\W_]{6,}$";
-pub const MSG_PASSWORD_REQUIRED: &str = "password:required";
-pub const MSG_PASSWORD_MIN_LENGTH: &str = "password:min_length";
-pub const MSG_PASSWORD_MAX_LENGTH: &str = "password:max_length";
-pub const MSG_PASSWORD_REGEX: &str = "password:regex";
 
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset)]
 #[diesel(table_name = schema::users)]
@@ -175,7 +210,38 @@ impl Validator for LoginUserDto {
     }
 }
 
-// ** Registration User **
+// ** Section: database "user_registration" **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
+#[diesel(table_name = schema::user_registration)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct UserRegistr {
+    pub id: i32,
+    pub nickname: String,
+    pub email: String,
+    pub password: String,
+    pub final_date: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Selectable, Insertable, AsChangeset)]
+#[diesel(table_name = schema::user_registration)]
+pub struct UserRegistrDto {
+    pub id: i32,
+    pub nickname: String,
+    pub email: String,
+    pub password: String,
+    #[serde(rename = "finalDate", with = "date_time_rfc2822z")]
+    pub final_date: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
+#[diesel(table_name = schema::user_registration)]
+pub struct CreateUserRegistrDto {
+    pub nickname: String,
+    pub email: String,
+    pub password: String,
+    pub final_date: DateTime<Utc>,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RegistrUserDto {
@@ -209,7 +275,32 @@ pub struct RegistrUserResponseDto {
     pub registr_token: String,
 }
 
-// ** RecoveryUserDto **
+// ** Section: database "user_recovery" **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
+#[diesel(table_name = schema::user_recovery)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct UserRecovery {
+    pub id: i32,
+    pub user_id: i32,
+    pub final_date: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Selectable, Insertable, AsChangeset)]
+#[diesel(table_name = schema::user_recovery)]
+pub struct UserRecoveryDto {
+    pub id: i32,
+    pub user_id: i32,
+    #[serde(rename = "finalDate", with = "date_time_rfc2822z")]
+    pub final_date: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
+#[diesel(table_name = schema::user_recovery)]
+pub struct CreateUserRecoveryDto {
+    pub user_id: i32,
+    pub final_date: DateTime<Utc>,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RecoveryUserDto {
@@ -239,8 +330,6 @@ pub struct RecoveryUserResponseDto {
     pub recovery_token: String,
 }
 
-// ** RecoveryDataDto **
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RecoveryDataDto {
     pub password: String,
@@ -269,32 +358,7 @@ pub struct RecoveryDataResponseDto {
     pub registr_token: String,
 }
 
-// ** UserRecovery **
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
-#[diesel(table_name = schema::user_recovery)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct UserRecovery {
-    pub id: i32,
-    pub user_id: i32,
-    pub final_date: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Selectable, Insertable, AsChangeset)]
-#[diesel(table_name = schema::user_recovery)]
-pub struct UserRecoveryDto {
-    pub id: i32,
-    pub user_id: i32,
-    #[serde(rename = "finalDate", with = "date_time_rfc2822z")]
-    pub final_date: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
-#[diesel(table_name = schema::user_recovery)]
-pub struct CreateUserRecoveryDto {
-    pub user_id: i32,
-    pub final_date: DateTime<Utc>,
-}
+// ** Section: "User Token" **
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserTokensDto {
@@ -324,41 +388,6 @@ pub struct ClearForExpiredResponseDto {
     pub count_inactive_registr: usize,
     #[serde(rename = "countInactiveRecover")]
     pub count_inactive_recover: usize,
-}
-
-pub fn validate_nickname(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::required(value, MSG_NICKNAME_REQUIRED)?;
-    ValidationChecks::min_length(value, NICKNAME_MIN.into(), MSG_NICKNAME_MIN_LENGTH)?;
-    ValidationChecks::max_length(value, NICKNAME_MAX.into(), MSG_NICKNAME_MAX_LENGTH)?;
-    ValidationChecks::regexp(value, NICKNAME_REGEX, MSG_NICKNAME_REGEX)?; // /^[a-zA-Z]+[\w]+$/
-    Ok(())
-}
-
-pub fn validate_email(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::required(value, MSG_EMAIL_REQUIRED)?;
-    ValidationChecks::min_length(value, EMAIL_MIN.into(), MSG_EMAIL_MIN_LENGTH)?;
-    ValidationChecks::max_length(value, EMAIL_MAX.into(), MSG_EMAIL_MAX_LENGTH)?;
-    ValidationChecks::email(value, MSG_EMAIL_EMAIL_TYPE)?;
-    Ok(())
-}
-
-pub fn validate_nickname_or_email(value: &str) -> Result<(), ValidationError> {
-    if value.contains("@") {
-        validate_email(&value).map_err(|err| err)?;
-    } else {
-        validate_nickname(&value).map_err(|err| err)?;
-    }
-    Ok(())
-}
-
-pub fn validate_password(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::required(value, MSG_PASSWORD_REQUIRED)?;
-    ValidationChecks::min_length(value, PASSWORD_MIN.into(), MSG_PASSWORD_MIN_LENGTH)?;
-    ValidationChecks::max_length(value, PASSWORD_MAX.into(), MSG_PASSWORD_MAX_LENGTH)?;
-    ValidationChecks::regexp(value, PASSWORD_LOWERCASE_LETTER_REGEX, MSG_PASSWORD_REGEX)?;
-    ValidationChecks::regexp(value, PASSWORD_CAPITAL_LETTER_REGEX, MSG_PASSWORD_REGEX)?;
-    ValidationChecks::regexp(value, PASSWORD_NUMBER_REGEX, MSG_PASSWORD_REGEX)?;
-    Ok(())
 }
 
 #[cfg(all(test, feature = "mockdata"))]

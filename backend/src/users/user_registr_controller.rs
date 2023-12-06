@@ -25,7 +25,7 @@ use crate::users::user_recovery_orm::inst::UserRecoveryOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_recovery_orm::tests::UserRecoveryOrmApp;
 use crate::users::{
-    user_models, user_orm::UserOrm, user_recovery_orm::UserRecoveryOrm, user_registr_models,
+    user_models, user_orm::UserOrm, user_recovery_orm::UserRecoveryOrm,
     user_registr_orm::UserRegistrOrm,
 };
 #[cfg(not(feature = "mockdata"))]
@@ -178,7 +178,7 @@ pub async fn registration(
     // Waiting time for registration confirmation (in seconds).
     let final_date_utc = Utc::now() + Duration::seconds(app_registr_duration.into());
 
-    let create_user_registr_dto = user_registr_models::CreateUserRegistrDto {
+    let create_user_registr_dto = user_models::CreateUserRegistrDto {
         nickname: registr_user_dto.nickname.clone(),
         email: registr_user_dto.email.clone(),
         password: password_hashed,
@@ -616,11 +616,10 @@ mod tests {
     use crate::users::{
         user_models::{
             RecoveryDataDto, RecoveryUserDto, RecoveryUserResponseDto, RegistrUserDto, User,
-            UserDto, UserModelsTest, UserRecovery, UserRole,
+            UserDto, UserModelsTest, UserRecovery, UserRegistr, UserRole,
         },
         user_orm::tests::{UserOrmApp, USER_ID},
         user_recovery_orm::tests::USER_RECOVERY_ID,
-        user_registr_models::UserRegistr,
         user_registr_orm::tests::{UserRegistrOrmApp, USER_REGISTR_ID},
     };
 

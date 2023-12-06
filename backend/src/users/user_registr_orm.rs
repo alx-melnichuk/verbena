@@ -1,4 +1,4 @@
-use super::user_registr_models::{CreateUserRegistrDto, UserRegistr};
+use super::user_models::{CreateUserRegistrDto, UserRegistr};
 
 pub const DURATION_IN_DAYS: u16 = 90;
 
@@ -50,7 +50,7 @@ pub mod inst {
     use crate::dbase;
     use crate::schema;
     use crate::users::{
-        user_registr_models::{CreateUserRegistrDto, UserRegistr},
+        user_models::{CreateUserRegistrDto, UserRegistr},
         user_registr_orm::DURATION_IN_DAYS,
     };
 
@@ -216,7 +216,7 @@ pub mod inst {
 pub mod tests {
     use chrono::{DateTime, Duration, Utc};
 
-    use crate::users::user_registr_models::{CreateUserRegistrDto, UserRegistr};
+    use crate::users::user_models::{CreateUserRegistrDto, UserRegistr};
 
     use super::{UserRegistrOrm, DURATION_IN_DAYS};
 
