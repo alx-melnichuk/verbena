@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
+import { FooterComponent } from './components/footer/footer.component';
 import { HeaderComponent } from './components/header/header.component';
 import { UserService } from './entities/user/user.service';
 import { AUTHORIZATION_DENIED, ROUTE_LOGIN, ROUTE_VIEW } from './common/routes';
@@ -10,7 +11,7 @@ import { AUTHORIZATION_DENIED, ROUTE_LOGIN, ROUTE_VIEW } from './common/routes';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterOutlet, TranslateModule, HeaderComponent],
+  imports: [CommonModule, RouterLink, RouterOutlet, TranslateModule, HeaderComponent, FooterComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   encapsulation: ViewEncapsulation.None,

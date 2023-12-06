@@ -35,12 +35,9 @@ app-root {
     flex: 1 1 auto;
   }
   & > footer {
-    align-items: center;
     border-top: 1px solid lightgrey;
     box-sizing: border-box;
-    display: flex;
     flex: 0 0 var(--footer-hg);
-    padding-left: 0.8em;
   }
 
   .main {
@@ -51,6 +48,7 @@ app-root {
   }
   // ** **
   --app-site-off-header-bg: var(--orange-100);
+  --app-site-off-footer-bg: var(--orange-100);
 
   --app-site-footer-bg: var(--green-050);
   --app-site-header-bg: var(--green-050);
