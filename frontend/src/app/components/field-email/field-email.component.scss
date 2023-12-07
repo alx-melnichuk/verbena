@@ -1,0 +1,11 @@
+/*# sourceURL=field-email.component.scss */
+
+app-field-email {
+  display: block;
+  height: 100%;
+
+  mat-form-field {
+    max-width: inherit;
+    width: inherit;
+  }
+}

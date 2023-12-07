@@ -1,1 +1,63 @@
+/*# sourceURL=styles.scss */
 /* You can add global styles to this file, and also import other style files */
+
+@import './styles-colors.scss';
+@import './styles-sme.scss';
+
+html,
+body {
+  --scrollbarBG: rgb(207 216 220 / 20%);
+  --thumbBG: #90a4ae;
+  box-sizing: border-box;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  height: 100%;
+  line-height: 1.5;
+  margin: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 8px 0;
+}
+
+p {
+  margin: 0;
+}
+
+a,
+a:visited,
+a:hover {
+  color: #1976d2;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #125699;
+}
+
+.global-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--thumbBG) var(--scrollbarBG);
+  &::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+  &::-webkit-scrollbar-track {
+    background: var(--scrollbarBG);
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--thumbBG);
+    border-radius: 6px;
+    border: 3px solid var(--scrollbarBG);
+  }
+}
+
+// old
+// .spacer {
+//   flex: 1;
+// }

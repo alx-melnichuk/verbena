@@ -1,0 +1,11 @@
+/*# sourceURL=field-nickname.component.scss */
+
+app-field-nickname {
+  display: block;
+  height: 100%;
+
+  mat-form-field {
+    max-width: inherit;
+    width: inherit;
+  }
+}

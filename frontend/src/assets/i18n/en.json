@@ -1,0 +1,90 @@
+{
+  "app_name": "Verbéna",
+  "demo_site": " demo site.",
+  "error": {
+    "required": "Enter a required field.",
+    "server_api_call": "An error occurred while calling the server API."
+  },
+  "buttons": {
+    "ok": "Ok",
+    "cancel": "Cancel"
+  },
+  "main-menu": {
+    "my_profile": "My profile",
+    "log_out": "Log Out"
+  },
+  "Validation": {
+    "nickname:required": "The nickname field is required.",
+    "nickname:min_length": "The nickname should have {{ minlength.requiredLength }} characters or more.",
+    "nickname:max_length": "The nickname should be less than {{ maxlength.requiredLength }} characters.",
+    "nickname:regex": "Available in nickname: lowercase and uppercase letters, numbers and underscores.",
+    "email:required": "The email field is required.",
+    "email:min_length": "The email should have {{ minlength.requiredLength }} characters or more.",
+    "email:max_length": "The email should be less than {{ maxlength.requiredLength }} characters.",
+    "email:email_type": "The email must comply with the standard (john.smith@example.com).",
+    "password:required": "The password field is required.",
+    "password:min_length": "The password should have {{ minlength.requiredLength }} characters or more.",
+    "password:max_length": "The password should be less than {{ maxlength.requiredLength }} characters.",
+    "password:regex": "The password must contain: a lowercase letter, an uppercase letter and a number."
+  },
+  "Conflict": {
+    "email_already_use": "The email address you provided is already in use.",
+    "nickname_already_use": "The nickname you provided is already in use."
+  },
+  "Forbidden": {
+    "invalid_or_expired_token": "Invalid or expired token.",
+    "unacceptable_token": "Unacceptable token value."
+  },
+  "Unauthorized": {
+    "nickname_or_email_incorrect": "The nickname or email address is incorrect.",
+    "password_incorrect": "The password specified is incorrect."
+  },
+  "InternalServerError": {
+    "invalid_hash": "Invalid password hash value.",
+    "json_web_encode_token": "Error encoding web token.",
+    "json_web_decode_token": "Error decoding web token.",
+    "session_not_exist": "There is no session for this user.",
+    "error_sending_email": "Error when sending email.",
+    "error_hashing_password": "Error when hashing password",
+    "user_not_received_from_request": "The entity \"user\" was not received from the request."
+  },
+  "field-email": {
+    "err_minlength_symbol_search": "The symbol search should have {{value}} characters or more.",
+    "err_maxlength_symbol_search": "The symbol search should be less than {{value}} characters.",
+    "label": "Email "
+  },
+  "field-nickname": {
+    "label": "Nickname ",
+    "nickname_hint": "Used: lowercase letters, uppercase letters, numbers and underscores. Minimum 3 characters."
+  },
+  "field-password": {
+    "label": "Password ",
+    "password_hint": "Use at least 6 characters, with one lowercase letter, one capital letter and a number."
+  },
+  "login": {
+    "title": "Log in",
+    "email_or_nickname": "Email or Nickname ",
+    "button_login": "Log in",
+    "create_an_account": "Create an account",
+    "forgot_password": "Forgot password ?",
+    "err_not_correct_password": "The nickname or password is not correct."
+  },
+  "signup": {
+    "title": "Sign up",
+    "button_signup": "Sign up",
+    "already_registered": "Already registered ?",
+    "log_in": "Log in",
+    "dialog_title": "Welcome to the {{app_name}} !",
+    "dialog_message": "We have sent a registration link to \"{{value}}\"."
+  },
+  "forgot-password": {
+    "title": "Password change request",
+    "you_forgot_password": "If you have forgotten your password, please provide your email address and send a change request to it.",
+    "email_address": "Email Address",
+    "button_send": "Send request",
+    "go_to": "Go to",
+    "login": "Log in",
+    "dialog_title": "Welcome to the {{app_name}} !",
+    "dialog_message": "We have sent a link to change your password to \"{{value}}\"."
+  }
+}

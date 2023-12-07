@@ -1,0 +1,31 @@
+{
+  "Registration": {
+    "title":"Registration",
+    "label":"Your registration process has started.",
+    "text":"Wait a little ...",
+    "confirm_successful":"We inform you that your confirmation was successful !",
+    "confirm_failed":"We inform you that your confirmation failed.",
+    "link_login":"Go to the login page on our website."
+  },
+  "Forbidden": {
+    "invalid_or_expired_token":"Invalid or expired token."
+  },
+  "Change_password": {
+    "title":"Change password",
+    "label":"Enter a new password for your account.",
+    "change_successful":"We inform you that the password change was successful !",
+    "change_failed":"We inform you that the password change failed.",
+    "link_signup":"Go to the registration page on our website."
+  },
+  "field-password": {
+    "label":"Password ",
+    "placeholder":"New password",
+    "password_hint":"Use at least 6 characters, with one lowercase letter, one capital letter and a number."
+  },
+  "Validation": {
+    "password:required":"The password field is required.",
+    "password:min_length":"The password should have 6 characters or more.",
+    "password:max_length":"The password should be less than 64 characters.",
+    "password:regex":"The password must contain: a lowercase letter, an uppercase letter and a number."
+  }
+}

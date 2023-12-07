@@ -1,0 +1,42 @@
+<button
+  class="btn-close"
+  (click)="cancel()"
+>
+  &#215;
+</button>
+<h1 mat-dialog-title>{{ title }}</h1>
+<div
+  mat-dialog-content
+  class="content"
+>
+  <ng-container *ngIf="!!message">
+    {{ message }}
+  </ng-container>
+  <ng-container *ngIf="!!messageHtml">
+    <div [innerHTML]="messageHtml"></div>
+  </ng-container>
+</div>
+<div
+  mat-dialog-actions
+  class="actions"
+>
+  <button
+    mat-stroked-button
+    *ngIf="!!btnNameCancel"
+    class="smd-button slim mat-elevation-z"
+    color="accent"
+    (click)="cancel()"
+    cdkFocusInitial
+  >
+    {{ btnNameCancel }}
+  </button>
+  <button
+    mat-stroked-button
+    *ngIf="!!btnNameAccept"
+    class="smd-button slim mat-elevation-z"
+    color="primary"
+    (click)="accept()"
+  >
+    {{ btnNameAccept }}
+  </button>
+</div>

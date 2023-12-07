@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>Verbena site</title>
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+
+    <style type="text/css">
+      html { height: 100%; }
+      body { height: 100%; line-height: 1.5; margin: 0 !important; padding: 0 !important;
+        -webkit-text-size-adjust: 100% !important; -ms-text-size-adjust: 100% !important; -webkit-font-smoothing: antialiased !important;  }
+      [al-it-cen] { align-items: center; }
+      [bg-sz-cov] { background-size: cover; }
+      [bx-sz-brd] { box-sizing: border-box; }
+      [ds-fl] { display: flex; }
+      [fn-sz-inh] { font-size: inherit; }
+      [fn-sz-2] { font-size: calc(100% - 2px); }
+      [fn-sz\+2] { font-size: calc(100% + 2px); }
+      [fn-st-italic] { font-style: italic; }
+      [fn-wg-bold] { font-weight: bold; }
+      [fl-dr-col] { flex-direction: column; }
+      [hg-100] { height: 100%; }
+      [js-cn-cen] { justify-content: center; }
+      [js-cn-bet] { justify-content: space-between; }
+      [mr-bt-05] { margin-bottom: 0.5em; }
+      [mr-lf-05] { margin-left: 0.5em; }
+      [mr-rg-05] { margin-right: 0.5em; }
+      [mr-tp-05] { margin-top: 0.5em; }
+      [pd-lf-05] { padding-left: 0.5em; }
+      [pd-rg-05] { padding-right: 0.5em; }
+      [ps-rel] { position: relative; }
+      [ps-abs] { position: absolute; }
+      [tx-al-cen] { text-align: center; }
+      [wd-100] { width: 100%; }
+    </style>
+  </head>
+  <body>
+    <!-- ==A basic_layout.hbs -->
+    <!-- {{> @partial-block}} -->
+
+    <style>
+      .s-desktop {  --a-hd-hg: 4.4em; --a-hd-bg: hsl(140, 40%, 90%); --a-ft-hg: 2.3em; --a-ft-bg: hsl(140, 40%, 90%);
+        font-family: sans-serif; }
+      a, a:visited, a:hover { text-decoration: none; }
+      header { background-color: var(--a-hd-bg); border-bottom: 1px solid lightgrey; flex: 0 0 var(--a-hd-hg); }
+      footer { background-color: var(--a-ft-bg); border-top: 1px solid lightgrey; flex: 0 0 var(--a-ft-hg); }
+      main { flex: 1 1 auto; height: fit-content; }
+
+      .hd-logo-mini { height: 4em; width: 4em; background-image: url("assets/images/logo_mini.png"); }
+
+      .s-content {
+        @media screen and (max-width: 480px) { --pd: 0.5em; --wd: 100%; }
+        @media screen and (min-width: 480px) and (max-width: 960px) { --pd: 1.5em; --wd: calc(16 * var(--pd)); }
+        @media screen and (min-width: 960px) { --pd: 2em; --wd: calc(14 * var(--pd)); }
+        background-color: honeydew;
+        border-radius: var(--pd);
+        box-sizing: border-box;
+        margin-bottom: 7em;
+        min-height: 10vh;
+        padding: var(--pd);
+        width: var(--wd);
+      }
+      .s-title {
+        font-size: calc(100% + 4px);
+        font-weight: bold;
+      }
+      .s-text { font-size: calc(100% - 2px); }
+
+      .s-err { color: rgb(224,32,32); }
+      .s-field-wrap { --wd-icon: 1.5em; margin-bottom: 0.25em; }
+      .s-field:not(:focus) { --delta: 1px; border-width: 1px; }
+      .s-field:disabled { color: rgba(0,0,0,0.38); caret-color: transparent; }
+
+      .s-field { --br-cl: rgba(0,0,0,0.38); }
+      .s-field:not(:disabled):not(:focus):hover { --br-cl-hov: rgba(0,0,0,0.87); }
+      .s-field:focus { --br-cl-foc: rgb(63,81,181); }
+      .s-field[d-touched]:invalid { --br-cl-err: rgb(244,67,54); }
+
+      .s-field {
+        border-color: var(--br-cl-err, var(--br-cl-foc, var(--br-cl-hov, var(--br-cl,unset))));
+        border-radius: 0.25em;
+        border-style: solid;
+        height: 3em;
+        outline: none;
+        padding-left: calc(1em + var(--delta, 0px));
+        padding-right: calc(1em + var(--delta, 0px));
+      }
+      .s-btn-eye { 
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        padding: 0px;
+        outline: none;
+        right: 0.9em;
+        top: calc(50% - var(--wd-icon) / 2);
+        z-index: 1;
+      }
+      .s-icon {  width: var(--wd-icon); height: var(--wd-icon); }
+      .s-btn {
+        border: none;
+        border-radius: 0.25em;
+        box-shadow: 0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12);
+        height: 2.25em;
+        outline: none;
+        transition: box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .s-btn:focus {
+        box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
+      }
+      .s-btn:not(:disabled):active {
+        box-shadow: 0px 5px 5px -3px rgba(0,0,0,0.2), 0px 8px 10px 1px rgba(0,0,0,0.14), 0px 3px 14px 2px rgba(0,0,0,0.12);
+        opacity: 0.85;
+      }
+      .s-btn:hover {
+        box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
+      }
+      .s-btn:disabled { cursor: default; pointer-events: none;
+        color: rgba(0,0,0,0.38); background-color: rgba(0,0,0,0.12);
+        box-shadow: 0px 0px 0px 0px rgba(0,0,0,0.2), 0px 0px 0px 0px rgba(0,0,0,0.14), 0px 0px 0px 0px rgba(0,0,0,0.12);
+      }
+
+      .s-hint-wrap { margin-left: 1em; min-height: 2.111em; }
+      .s-hint { line-height: 1.2; font-size: calc(100% - 4px); }
+
+      .s-submit { background-color: #3f51b5; color: #fff; }
+
+    </style>
+
+    <div ds-fl fl-dr-col hg-100 class="s-desktop">
+      <header ds-fl js-cn-bet bx-sz-brd>
+        <a ds-fl al-it-cen pd-lf-05 pd-rg-05 id="hd_ref" href="/login">
+          <i bg-sz-cov class="hd-logo-mini"></i>
+          <span mr-lf-05 style="font-size: x-large; font-weight: 600;">Verbéna</span>
+        </a>
+      </header>
+
+      <main>
+        
+        <div ds-fl fl-dr-col js-cn-cen al-it-cen hg-100>
+          <div id="content_id" class="s-content">
+            <form ds-fl fl-dr-col id="form_prm_id">
+
+              <div mr-bt-05 tx-al-cen class="s-title" id="title_id">Change password</div>
+
+              <span mr-bt-05 mr-tp-05 tx-al-cen class="s-text" id="label_id">Enter a new password for your account</span>
+
+              <div mr-tp-05 wd-100 ps-rel class="s-field-wrap">
+                <input type="password" fn-sz-inh wd-100 bx-sz-brd class="s-field"
+                  id="field_passwd_id" data-dirty="off" autocomplete="off"
+                  required="" minlength="6" maxlength="65"
+                  title="Required field"
+                  onchange="doInputPassword(this, true);"
+                  oninput="elementInput(this); doInputPassword(this, false); updateSubmitStatus(this);"
+                  onblur="elementBlur(this)"
+                  d-untouched
+                  d-pristine
+                />
+                <button type="button" fn-sz-inh ps-abs class="s-btn-eye" tabindex="-1"
+                  onclick="doToggleEye(this)" id="btn_toggle_id" eye-off>
+                </button>
+              </div>
+
+              <div class="s-hint-wrap">
+                <div class="s-hint" id="err_hint_id"></div>
+              </div>
+
+            </form>
+            
+            <button type="button" fn-sz-inh mr-bt-05 wd-100 id="btn_submit_id"
+              class="s-btn s-submit" onclick="doSubmit()" disabled>
+              <span fn-sz-2 fn-wg-bold id="submit_label_id">Change</span>
+            </button>
+
+          </div>
+        </div>
+
+      </main>
+
+      <footer ds-fl al-it-cen bx-sz-brd style="padding-left: 2em;">
+        <span><a id="ft_ref" href="/login" target="_blank">Verbéna</a> demo site.</span>
+      </footer>
+    </div>
+
+    <!-- 
+ 
+<form class="container" *ngIf="!!confirmationId"
+  [formGroup]="formGroup"
+  novalidate
+>
+  <p>Enter new password for Bullpit.</p>
+  < !-- Введите новый пароль для Bullpit. -- >
+  <div class="password">
+    <app-widget-password
+      formControlName="newPassword"
+      [isRequired]="true"
+      [label]=""New password""
+    ></app-widget-password>
+  </div>
+  <button mat-raised-button class="smd-button submit" color="primary"
+    [disabled]="formGroup.invalid || isDisabledSubmit"
+    (click)="doSubmit()"
+  >Submit
+  </button>
+
+  <div *ngIf="isResponseSuccessful==true">
+    <p>Your password have been changed to new one!</p>
+    < !--Ваш пароль изменен на новый!-- >
+    <p>Please follow to <a href="/login">(login form)</a> for authorization.</p>
+    < !-- Пожалуйста, перейдите по <a href="/login">(форма входа)</a> для авторизации. -- >
+  </div>
+  <div class="failed" *ngIf="isResponseSuccessful==false">
+    <p>Your confirmation have been expired!</p>
+    < !-- Срок действия вашего подтверждения истек! -- >
+  </div>
+</form>
+    -->
+    <template id="tmp_eye_off_id">
+      <svg class="s-eye-off s-icon">
+        <g fill="#788393">
+          <path d="m12.000,5c-6.1608,0 -11.6507,6.4039 -11.8817,6.6769c-0.1580,0.186 -0.1580,0.459 0,0.646c0.138,0.163 2.1559,2.5059 5.0659,4.371l3.1339,-3.134c-0.2039,-0.48 -0.3179,-1.007 -0.3179,-1.5609c0,-2.2059 1.79397,-3.9999 3.9998,-3.9999c0.554,0 1.081,0.114 1.561,0.318l2.577,-2.5769c-1.256,-0.44901 -2.635,-0.7409 -4.138,-0.7409z">
+          </path>
+          <path d="m23.911,11.715c-0.128,-0.185 -2.251,-3.1729 -5.8199,-5.0988l2.7629,-2.7629c0.195,-0.1949 0.195,-0.5120 0,-0.707c-0.195,-0.195 -0.512,-0.195 -0.707,0l-16.9996,16.9997c-0.1949,0.195 -0.1949,0.5121 0,0.7071c0.0969,0.098 0.225,0.1469 0.35301,0.1469c0.12802,0 0.2559,-0.0489 0.354,-0.146l3.1349,-3.1349c1.5449,0.754 3.2489,1.281 5.01093,1.281c6.1609,0 11.6508,-6.404 11.8818,-6.6769c0.145,-0.1731 0.158,-0.4221 0.029,-0.6081zm-11.9108,4.285c-0.923,0 -1.762,-0.327 -2.4399,-0.853l5.58687,-5.58686c0.526,0.6779 0.853,1.5169 0.853,2.4399c0,2.2059 -1.794,3.9999 -3.9999,3.9999z">
+          </path>
+        </g>
+      </svg>
+    </template>
+    <template id="tmp_eye_on_id">
+      <svg class="s-eye-on s-icon">
+        <g>
+          <path
+            fill="#2196F3"
+            d="M23.9111 11.7149C23.7221 11.4409 19.1802 5 12.0003 5C5.83942 5 0.349506 11.4039 0.11851 11.6769C-0.0395033 11.8629 -0.0395033 12.1359 0.11851 12.3229C0.349506 12.5959 5.83942 18.9998 12.0003 18.9998C18.1613 18.9998 23.6512 12.5959 23.8822 12.3229C24.0272 12.1499 24.0401 11.9009 23.9111 11.7149ZM12.0003 15.9998C9.79439 15.9998 8.00042 14.2058 8.00042 11.9999C8.00042 9.79393 9.79439 7.99995 12.0003 7.99995C14.2063 7.99995 16.0003 9.79393 16.0003 11.9999C16.0003 14.2058 14.2063 15.9998 12.0003 15.9998Z"
+          />
+        </g>
+      </svg>
+    </template>
+
+    <template id="tmp_success_id">
+      <span id="succ_answ_id">Your password have been changed to new one</span>
+      <p><a href="/signup" id="signup_id"></a></p>
+    </template>
+
+    <template id="tmp_failure_id">
+      <div mr-bt-05 mr-tp-05  id="fail_answ_id">Your password has not been changed</div>
+      <div mr-bt-05 mr-tp-05 fn-sz-2 fn-st-italic id="err_msg_id" class="s-err"></div>
+      <a href="/signup" id="signup_id"></a>
+    </template>
+
+
+    <script type="text/javascript" language="javascript">
+      function elementInput(element) {
+        element?.removeAttribute("d-pristine");
+        element?.setAttribute("d-dirty", "");
+      }
+      function elementBlur(element) {
+        element?.removeAttribute("d-untouched");
+        element?.setAttribute("d-touched", "");
+      }
+      function doInputPassword(inputPassword, isChanged) {
+        if (!inputPassword) { return; }
+        const value = inputPassword.value;
+        const attrTouched = inputPassword.hasAttribute("d-touched");
+        if (isChanged || attrTouched) {
+          const value = inputPassword.value;
+          const content = document.getElementById("content_id");
+          const divErrTxt = content?.querySelector("[id=err_hint_id]");
+          inputPassword.removeAttribute("d-invalid");
+          let text = checkPassword(value)
+          if (!!text) {
+            inputPassword.setAttribute("d-invalid", "");
+            divErrTxt?.classList.add("s-err");
+          } else {
+            divErrTxt?.classList.remove("s-err");
+            text = getTranslate("field-password", "password_hint");
+          }
+          divErrTxt.innerText = text;
+        }
+        if (isChanged) {
+        }
+      }
+      function updateSubmitStatus(elementPassword) {
+        const btn_submit = document.getElementById("btn_submit_id");
+        if (elementPassword.validity.valid) {
+          btn_submit?.removeAttribute("disabled");
+        } else {
+          btn_submit?.setAttribute("disabled", "");
+        }
+      }
+      function checkPassword(value) {
+        let result = "";
+        const minlength = 6;
+        const maxlength = 64;
+
+        if (!value) {
+          result = getTranslate("Validation", "password:required");
+        } else if (value.length < minlength) {
+          result = getTranslate("Validation", "password:min_length");
+        } else if (value.length > maxlength) {
+          result = getTranslate("Validation", "password:max_length");
+        } else if (!(new RegExp("[a-z]+")).test(value)
+         || !(new RegExp("[A-Z]+")).test(value)
+         || !(new RegExp("[\\d]+")).test(value)) {
+          result = getTranslate("Validation", "password:regex");
+        }
+        return result;
+      }
+
+      function getTranslate(code, msg) {
+        return !!translate[code] ? (translate[code][msg] || "") : "";
+      }
+
+      function httpClient(method, apiUrl, callbackSuccess, callbackFailure, recoveryData) {
+        const xhr = new XMLHttpRequest();
+
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState != xhr.DONE) {
+            return;
+          }
+          if (200 <= xhr.status && xhr.status < 209) {
+            callbackSuccess(xhr.responseText);
+          } else {
+            callbackFailure(xhr.responseText, xhr.status);
+          }
+        };
+
+        xhr.open(method || "GET", apiUrl, true); // true for asynchronous
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(!!recoveryData ? JSON.stringify(recoveryData) : null);
+      }
+
+      // ** Start of the program **
+      let translate = {};
+
+      httpClient("GET", "./assets/extra-i18n/en.json", load_extra_i18n_successful, load_extra_i18n_failed);
+
+      function load_extra_i18n_successful(responseText) {
+        translate = JSON.parse(responseText);
+
+        prepareData();
+        
+        // ** Data preparation **
+        doToggleEye(document.getElementById("btn_toggle_id"), false);
+      }
+      function load_extra_i18n_failed(responseText, status) {
+        console.error(`load_extra_i18n_failed();`);
+      }
+
+      function prepareData() {
+        const content = document.getElementById("content_id");
+
+        const title = content.querySelector("[id=title_id]");
+        title.innerText = getTranslate("Change_password", "title");
+
+        const label = content.querySelector("[id=label_id]");
+        label.innerText = getTranslate("Change_password", "label");
+
+        const inputPassword = content.querySelector("[id=field_passwd_id]");
+        inputPassword.setAttribute("placeholder", getTranslate("field-password", "placeholder"));
+        inputPassword.setAttribute("title", getTranslate("field-password", "title"));
+
+        const btnPasswordShow = content.querySelector("[id=btn_toggle_id]");
+        btnPasswordShow.setAttribute("title", getTranslate("field-password", "toggle_title"));
+
+        const divErrTxt = content.querySelector("[id=err_hint_id]");
+        divErrTxt.innerText = getTranslate("field-password", "password_hint");
+
+        const submitLabel = content.querySelector("[id=submit_label_id]");
+        submitLabel.innerText = getTranslate("Change_password", "submit_label");
+      }
+
+      function recoverySuccessful(responseText) {
+        formDisabled(false);
+        const content = document.getElementById("content_id");
+        const tmpl = document.getElementById("tmp_success_id");
+        const clon = tmpl?.content.cloneNode(true);
+
+        const succ_answer = clon.querySelector("[id=succ_answ_id]");
+        succ_answer.innerText = getTranslate("Change_password", "change_successful");
+
+        const signup = clon.querySelector("[id=signup_id]");
+        signup.innerText = getTranslate("Change_password", "link_signup");
+
+        content?.appendChild(clon);
+      }
+
+      function recoveryFailed(responseText, status) {
+        formDisabled(false);
+        const err = JSON.parse(responseText);
+        const content = document.getElementById("content_id");
+        const tmpl = document.getElementById("tmp_failure_id");
+        const clon = tmpl?.content.cloneNode(true);
+
+        const fail_answer = clon.querySelector("[id=fail_answ_id]");
+        fail_answer.innerText = getTranslate("Change_password", "change_failed");
+
+        const errText = clon.querySelector("[id=err_msg_id]");
+        errText.innerText = getTranslate(err.errCode, err.errMsg);
+
+        const signup = clon.querySelector("[id=signup_id]");
+        signup.innerText = getTranslate("Change_password", "link_signup");
+
+        content?.appendChild(clon);
+      }
+
+      function doToggleEye(elementEye, isEyeNext = null) {
+        const isEyeOn = elementEye.hasAttribute("eye-on");
+        const isNewEyeOn = isEyeNext != null ? isEyeNext : !isEyeOn;
+        const refix = isNewEyeOn ? "on":"off";
+        if (!!elementEye) {
+          elementEye.removeAttribute("eye-on");
+          elementEye.removeAttribute("eye-off");
+          elementEye.setAttribute(`eye-${refix}`, "");
+          const name = "tmp_eye_" + refix + "_id";
+          const tmpl = document.getElementById(name);
+          const clon = tmpl?.content.cloneNode(true);
+          elementEye.children[0]?.remove();
+          elementEye.appendChild(clon);
+        }
+        const elementPasswd = document.getElementById("field_passwd_id");
+        if (!!elementPasswd) {
+            elementPasswd.classList.remove("s-pass-on");
+            elementPasswd.classList.remove("s-pass-off");
+            elementPasswd.classList.add("s-pass-" + refix);
+            elementPasswd.setAttribute("type", (isNewEyeOn ? "text":"password"));
+        }
+      }
+
+      function formDisabled(isDisabled) {
+        const elementForm = document.getElementById("form_prm_id");
+        const elementPasswd = document.getElementById("field_passwd_id");
+        const elementSubmit = document.getElementById("btn_submit_id");
+        if (isDisabled) {
+          elementForm?.setAttribute("disabled", "");
+          elementPasswd?.setAttribute("disabled", "");
+          elementSubmit?.setAttribute("disabled", "");
+        } else {
+          elementForm?.removeAttribute("disabled");
+          elementPasswd?.removeAttribute("disabled");
+          elementSubmit?.removeAttribute("disabled");
+        }
+      }
+
+      function doSubmit() {
+        doToggleEye(document.getElementById("btn_toggle_id"), false);
+        const frm = document.getElementById("form_prm_id");
+        const password = !!frm ? frm[0].value : null;
+        const elementPasswd = document.getElementById("field_passwd_id");
+        if (elementPasswd.validity.valid && !!password) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const recovery_token = urlParams.get("param")
+          const url = window.location.origin + "/api/recovery/" + recovery_token;
+
+          formDisabled(true);
+          httpClient("PUT", url, recoverySuccessful, recoveryFailed, { password });
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,20 @@
+<ng-container [formGroup]="formGroup">
+  <mat-form-field
+    appearance="outline"
+    color="primary"
+  >
+    <mat-label>{{ label | translate }}</mat-label>
+    <input
+      matInput
+      type="email"
+      [email]="true"
+      formControlName="email"
+      [required]="isRequired"
+      [attr.maxlength]="maxLen > 0 ? maxLen + 1 : undefined"
+      autocomplete="off"
+      (input)="onChange(formControl.value)"
+    />
+    <mat-hint>{{ hint  | translate }}</mat-hint>
+    <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
+  </mat-form-field>
+</ng-container>

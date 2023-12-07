@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>Verbena site</title>
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+
+    <style type="text/css">
+      html { height: 100%; }
+      body { height: 100%; line-height: 1.5; margin: 0 !important; padding: 0 !important;
+        -webkit-text-size-adjust: 100% !important; -ms-text-size-adjust: 100% !important; -webkit-font-smoothing: antialiased !important;  }
+      [al-it-cen] { align-items: center; }
+      [bg-sz-cov] { background-size: cover; }
+      [bx-sz-brd] { box-sizing: border-box; }
+      [ds-fl] { display: flex; }
+      [fn-sz-inh] { font-size: inherit; }
+      [fn-sz-2] { font-size: calc(100% - 2px); }
+      [fn-sz\+2] { font-size: calc(100% + 2px); }
+      [fn-st-italic] { font-style: italic; }
+      [fn-wg-bold] { font-weight: bold; }
+      [fl-dr-col] { flex-direction: column; }
+      [hg-100] { height: 100%; }
+      [js-cn-cen] { justify-content: center; }
+      [js-cn-bet] { justify-content: space-between; }
+      [mr-bt-05] { margin-bottom: 0.5em; }
+      [mr-lf-05] { margin-left: 0.5em; }
+      [mr-rg-05] { margin-right: 0.5em; }
+      [mr-tp-05] { margin-top: 0.5em; }
+      [pd-lf-05] { padding-left: 0.5em; }
+      [pd-rg-05] { padding-right: 0.5em; }
+      [ps-rel] { position: relative; }
+      [ps-abs] { position: absolute; }
+      [tx-al-cen] { text-align: center; }
+      [wd-100] { width: 100%; }
+    </style>
+  </head>
+  <body>
+
+    <style>
+      .s-desktop {  --a-hd-hg: 4.4em; --a-hd-bg: hsl(140, 40%, 90%); --a-ft-hg: 2.3em; --a-ft-bg: hsl(140, 40%, 90%);
+        font-family: sans-serif; }
+      a, a:visited, a:hover { text-decoration: none; }
+      header { background-color: var(--a-hd-bg); border-bottom: 1px solid lightgrey; flex: 0 0 var(--a-hd-hg); }
+      footer { background-color: var(--a-ft-bg); border-top: 1px solid lightgrey; flex: 0 0 var(--a-ft-hg); }
+      main { flex: 1 1 auto; height: fit-content; }
+  
+      .hd-logo-mini { height: 4em; width: 4em; background-image: url("assets/images/logo_mini.png"); }
+
+      .s-content {
+        @media screen and (max-width: 480px) { --pd: 0.5em; --wd: 100%; }
+        @media screen and (min-width: 480px) and (max-width: 960px) { --pd: 1.5em; --wd: calc(16 * var(--pd)); }
+        @media screen and (min-width: 960px) { --pd: 2em; --wd: calc(14 * var(--pd)); }
+        background-color: honeydew;
+        border-radius: var(--pd);
+        box-sizing: border-box;
+        margin-bottom: 7em;
+        min-height: 10vh;
+        padding: var(--pd);
+        width: var(--wd);
+      }
+      .s-title {
+        font-size: calc(100% + 4px);
+        font-weight: bold;
+      }
+      .s-text { font-size: calc(100% - 2px); }
+
+      .s-hint-wrap { margin-left: 1em; min-height: 2.111em; }
+      .s-hint { line-height: 1.2; font-size: calc(100% - 4px); }
+
+      .s-err { color: rgb(224,32,32); }
+
+    </style>
+  
+
+    <div ds-fl fl-dr-col hg-100 class="s-desktop">
+      <header ds-fl js-cn-bet bx-sz-brd>
+        <a ds-fl al-it-cen pd-lf-05 pd-rg-05 id="hd_ref" href="/login">
+          <i bg-sz-cov class="hd-logo-mini"></i>
+          <span mr-lf-05 style="font-size: x-large; font-weight: 600;">Verbéna</span>
+        </a>
+      </header>
+
+      <main>
+        <div ds-fl fl-dr-col js-cn-cen al-it-cen hg-100>
+            <div id="content_id" class="s-content">
+              
+              <div mr-bt-05 tx-al-cen class="s-title" id="title_id">Registration</div>
+
+              <span mr-bt-05 mr-tp-05 id="start_id">
+                <span class="s-text" id="label_id">The registration process has begun.</span>  
+                <p class="s-text" id="text_id">Wait ...</p>
+              </span>
+  
+            </div>
+          </div>
+      </main>
+
+      <footer ds-fl al-it-cen bx-sz-brd style="padding-left: 2em;">
+        <span><a id="ft_ref" href="/login" target="_blank">Verbéna</a> demo site.</span>
+      </footer>
+    </div>
+
+    <template id="tmp_success_id">
+      <span id="succ_answ_id"></span>
+      <p><a href="/login">Go to the login page.</a></p>
+    </template>
+  
+    <template id="tmp_failure_id">
+      <div mr-bt-05 mr-tp-05 id="fail_answ_id"></div>
+      <div mr-bt-05 mr-tp-05 fn-sz-2 fn-st-italic id="err_msg_id" class="s-err"></div>
+      <a href="/signup">Go to the registration page on our website.</a>
+    </template>
+  
+    <script type="text/javascript" language="javascript">
+
+      function getTranslate(code, msg) {
+        return !!translate[code] ? (translate[code][msg] || "") : "";
+      }
+
+      function httpClient(method, apiUrl, callbackSuccess, callbackFailure, recoveryData) {
+        const xhr = new XMLHttpRequest();
+
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState != xhr.DONE) {
+            return;
+          }
+          if (200 <= xhr.status && xhr.status < 209) {
+            callbackSuccess(xhr.responseText);
+          } else {
+            callbackFailure(xhr.responseText, xhr.status);
+            // callbackSuccess(xhr.responseText);
+          }
+        };
+
+        xhr.open(method || "GET", apiUrl, true); // true for asynchronous
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(!!recoveryData ? JSON.stringify(recoveryData) : null);
+      }
+
+      // ** Start of the program **
+      let translate = {};
+
+      httpClient("GET", "./assets/extra-i18n/en.json", load_extra_i18n_successful, load_extra_i18n_failed);
+
+      function load_extra_i18n_successful(responseText) {
+        translate = JSON.parse(responseText);
+
+        prepareData();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const registr_token = urlParams.get('param')
+        const url = window.location.origin + "/api/registration/" + registr_token;
+        
+        httpClient("PUT", url, registrationSuccessful, registrationFailed);
+      }
+      function load_extra_i18n_failed(responseText, status) {
+        console.error(`load_extra_i18n_failed();`);
+      }
+
+      function prepareData() {
+        const content = document.getElementById("content_id");
+
+        const title = content.querySelector("[id=title_id]");
+        title.innerText = getTranslate("Registration", "title");
+
+        const label = content.querySelector("[id=label_id]");
+        label.innerText = getTranslate("Registration", "label");
+
+        const text = content.querySelector("[id=text_id]");
+        text.innerText = getTranslate("Registration", "text");
+      }
+
+      function registrationSuccessful(responseText) {
+        const content = document.getElementById("content_id");
+        const tmpl = document.getElementById("tmp_success_id");
+
+        const clon = tmpl?.content.cloneNode(true);
+        const succ_answer = clon.querySelector("[id=succ_answ_id]");
+        succ_answer.innerText = getTranslate("Registration", "confirm_successful");
+
+        content?.appendChild(clon);
+
+        const start = content.querySelector("[id=start_id]");
+        start?.parentElement.removeChild(start);
+      }
+
+      function registrationFailed(responseText, status) {
+        const content = document.getElementById("content_id");
+        const tmpl = document.getElementById("tmp_failure_id");
+        const clon = tmpl?.content.cloneNode(true);
+
+        const fail_answer = clon.querySelector("[id=fail_answ_id]");
+        fail_answer.innerText = getTranslate("Registration", "confirm_failed");
+
+        const errText = clon.querySelector("[id=err_msg_id]");
+        const err = JSON.parse(responseText);
+        errText.innerText = getTranslate(err.errCode, err.errMsg);
+        content?.appendChild(clon);
+
+        let start = content.querySelector("[id=start_id]");
+        start?.parentElement.removeChild(start);
+      }
+    </script>
+
+  </body>
+</html>
