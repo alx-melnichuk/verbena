@@ -1,30 +1,31 @@
-# verbena
+## Verbena
 
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Introduction
 
-$ cd /home/aleksey/Projects/verbena/frontend
+This project is a demonstration project.
+When developing the backend, I used rust 1.73.0.
+When developing the frontend, I used angular 16.1.7.
 
-Собрать и стратовать приложение frontend
+
+### Frontend build
+
 ```bash
-$ npx ng serve -o --port 4250
+$ cd ~/Projects/verbena/frontend/
+$ npx ng serve -o --port 4250 --proxy-config proxy.conf.json
 ```
-http://127.0.0.1:4250/
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Собрать проект для релиза
-# удалить все файлы в каталоге ../backend/static/
 ```bash
-$ npx ng build --configuration=production --base-href / --output-path ../backend/static/
+http://localhost:4250/login
 ```
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-$ cd /home/aleksey/Projects/verbena/backend
+### Backend build
 
+```bash
+$ cd ~/Projects/verbena/backend/
 $ cargo build
 $ cargo run
+```
 
-http://127.0.0.1:8080/api/healthchecker
-http://127.0.0.1:8080/404
-
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
+```bash
+http://127.0.0.1:8080/ind/login
+```
