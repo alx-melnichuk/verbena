@@ -29,7 +29,7 @@ pub fn encode_token(
         return Err(jwt::errors::ErrorKind::InvalidSubject.into());
     }
     if secret.len() == 0 {
-        return Err(jwt::errors::ErrorKind::InvalidEcdsaKey.into());
+        return Err(jwt::errors::ErrorKind::InvalidKeyFormat.into());
     }
 
     let now = Utc::now();
@@ -115,7 +115,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().into_kind(),
-            jwt::errors::ErrorKind::InvalidEcdsaKey
+            jwt::errors::ErrorKind::InvalidKeyFormat
         );
     }
     #[test]
