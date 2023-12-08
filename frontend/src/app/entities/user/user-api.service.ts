@@ -2,7 +2,10 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { Uri } from 'src/app/common/uri';
-import { CreateUserDto, LoginUserDto, LoginUserResponseDto, RecoveryUserDto, TokenUserDto, UserDto, UserTokensDto } from './user-dto';
+import {
+  CreateUserDto, LoginUserDto, LoginUserResponseDto, RecoveryUserDto, TokenUserDto, UserDto, UserDtoUtil, UserTokensDto
+} from './user-dto';
+import { HttpObservableUtil } from 'src/app/utils/http-observable.util';
 
 @Injectable({
   providedIn: 'root',
@@ -27,7 +30,10 @@ export class UserApiService {
 
   public currentUser(): Promise<UserDto | HttpErrorResponse | undefined> {
     const url = Uri.appUri('appApi://api/users_current');
-    return this.http.get<UserDto | HttpErrorResponse>(url).toPromise();
+    return HttpObservableUtil.toPromise<UserDto>(this.http.get<UserDto | HttpErrorResponse>(url))
+    .then((response: UserDto | HttpErrorResponse | undefined) => {
+      return UserDtoUtil.new(response as UserDto)
+    });
   }
 
   public isCeckRefreshToken(method: string, url: string): boolean {
