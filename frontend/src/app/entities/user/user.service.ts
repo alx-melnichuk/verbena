@@ -67,7 +67,7 @@ export class UserService {
         return response as UserTokensDto;
       })
       .catch((error) => {
-        // Clear "Token" values in LocalStorage.
+        // Remove "Token" values in LocalStorage.
         this.userTokensDto = this.setUserTokensDtoToLocalStorage(null);
         // Return error.
         throw error;
