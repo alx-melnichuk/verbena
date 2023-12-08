@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::schema;
-use crate::utils::date_time_rfc2822z;
+use crate::utils::datetime_format;
 use crate::validators::{ValidationChecks, ValidationError, Validator};
 
 pub const NICKNAME_MIN: u8 = 3;
@@ -33,7 +33,7 @@ pub const MSG_PASSWORD_REQUIRED: &str = "password:required";
 pub const MSG_PASSWORD_MIN_LENGTH: &str = "password:min_length";
 pub const MSG_PASSWORD_MAX_LENGTH: &str = "password:max_length";
 pub const MSG_PASSWORD_REGEX: &str = "password:regex";
-
+// MIN=3,MAX=64,"^[a-zA-Z]+[\\w]+$"
 pub fn validate_nickname(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_NICKNAME_REQUIRED)?;
     ValidationChecks::min_length(value, NICKNAME_MIN.into(), MSG_NICKNAME_MIN_LENGTH)?;
@@ -41,7 +41,7 @@ pub fn validate_nickname(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::regexp(value, NICKNAME_REGEX, MSG_NICKNAME_REGEX)?; // /^[a-zA-Z]+[\w]+$/
     Ok(())
 }
-
+// MIN=5,MAX=255,"email:email_type"
 pub fn validate_email(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_EMAIL_REQUIRED)?;
     ValidationChecks::min_length(value, EMAIL_MIN.into(), MSG_EMAIL_MIN_LENGTH)?;
@@ -58,7 +58,7 @@ pub fn validate_nickname_or_email(value: &str) -> Result<(), ValidationError> {
     }
     Ok(())
 }
-
+// MIN=6,MAX=64,"[a-z]+","[A-Z]+","[\\d]+"
 pub fn validate_password(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_PASSWORD_REQUIRED)?;
     ValidationChecks::min_length(value, PASSWORD_MIN.into(), MSG_PASSWORD_MIN_LENGTH)?;
@@ -110,9 +110,9 @@ pub struct UserDto {
     pub email: String,
     pub password: String,
     pub role: UserRole,
-    #[serde(rename = "createdAt", with = "date_time_rfc2822z")]
+    #[serde(rename = "createdAt", with = "datetime_format")]
     pub created_at: DateTime<Utc>,
-    #[serde(rename = "updatedAt", with = "date_time_rfc2822z")]
+    #[serde(rename = "updatedAt", with = "datetime_format")]
     pub updated_at: DateTime<Utc>,
 }
 
@@ -187,6 +187,8 @@ impl Validator for CreateUserDto {
     }
 }
 
+// ** Section: "Login User" **
+
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset)]
 #[diesel(table_name = schema::users)]
 pub struct LoginUserDto {
@@ -210,6 +212,14 @@ impl Validator for LoginUserDto {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct LoginUserResponseDto {
+    #[serde(rename = "userDto")]
+    pub user_dto: UserDto,
+    #[serde(rename = "userTokensDto")]
+    pub user_tokens_dto: UserTokensDto,
+}
+
 // ** Section: database "user_registration" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
@@ -230,7 +240,7 @@ pub struct UserRegistrDto {
     pub nickname: String,
     pub email: String,
     pub password: String,
-    #[serde(rename = "finalDate", with = "date_time_rfc2822z")]
+    #[serde(rename = "finalDate", with = "datetime_format")]
     pub final_date: DateTime<Utc>,
 }
 
@@ -291,7 +301,7 @@ pub struct UserRecovery {
 pub struct UserRecoveryDto {
     pub id: i32,
     pub user_id: i32,
-    #[serde(rename = "finalDate", with = "date_time_rfc2822z")]
+    #[serde(rename = "finalDate", with = "datetime_format")]
     pub final_date: DateTime<Utc>,
 }
 
@@ -366,14 +376,6 @@ pub struct UserTokensDto {
     pub access_token: String,
     #[serde(rename = "refreshToken")]
     pub refresh_token: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct LoginUserResponseDto {
-    #[serde(rename = "userDto")]
-    pub user_dto: UserDto,
-    #[serde(rename = "userTokensDto")]
-    pub user_tokens_dto: UserTokensDto,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

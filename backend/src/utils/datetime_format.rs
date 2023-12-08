@@ -1,13 +1,15 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, SecondsFormat, Utc};
 use serde::{self, Deserialize, Deserializer, Serializer};
 
-const FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S.%3fZ%z";
+// const FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S.%3fZ"; // "YYYY-mm-ddTHH:MM:SS.fffZ"
 
 pub fn serialize<S>(date: &DateTime<Utc>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    let buff = format!("{}", date.format(FORMAT));
+    // rfc3339: '2023-11-14T14:01:56.323Z'
+    let buff = date.to_rfc3339_opts(SecondsFormat::Millis, true);
+    // let buff = format!("{}", date.format(FORMAT));
     serializer.serialize_str(&buff)
 }
 
@@ -19,8 +21,11 @@ where
     Ok(if buff.len() == 0 {
         Utc::now()
     } else {
+        // rfc3339: '2023-11-14T14:01:56.323Z'
         let datetime_fixed =
-            DateTime::parse_from_str(buff.as_str(), FORMAT).map_err(serde::de::Error::custom)?;
+            DateTime::parse_from_rfc3339(buff.as_str()).map_err(serde::de::Error::custom)?;
+        // let datetime_fixed =
+        //     DateTime::parse_from_str(buff.as_str(), FORMAT).map_err(serde::de::Error::custom)?;
         let datetime_utc =
             DateTime::<Utc>::try_from(datetime_fixed).map_err(serde::de::Error::custom)?;
         datetime_utc
