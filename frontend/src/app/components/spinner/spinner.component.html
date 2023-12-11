@@ -1,0 +1,11 @@
+<p>spinner works!</p>
+<ng-container *ngIf="isFullOwner">
+  <div class="sp-back">
+  </div>
+  <div class="sp-front">
+    <mat-spinner [color]="color" [diameter]="diameter"></mat-spinner>
+  </div>
+</ng-container>
+<ng-container *ngIf="!isFullOwner">
+  <mat-spinner [color]="color"></mat-spinner>
+</ng-container>
