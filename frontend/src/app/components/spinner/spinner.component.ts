@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding, Input, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ThemePalette } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -24,5 +24,13 @@ export class SpinnerComponent {
   @Input()
   public isFullOwner = false;
   @Input()
+  public isFullscreen = false;
+  @Input()
   public diameter = DEAULT_DIAMETER;
+
+  @HostBinding('class.fullscreen')
+  public get isFullscreenVal(): boolean {
+    return !!this.isFullscreen;
+  }
+
 }

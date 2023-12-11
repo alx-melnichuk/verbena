@@ -1,9 +1,15 @@
-/*# sourceURL=main-menu.component.scss */
+/*# sourceURL=panel-view-list.component.scss */
 
 app-spinner {
   display: contents;
   height: 100%;
 
+  &.fullscreen {
+    align-items: center;
+    display: flex;
+    inset: 0 0 0 0;
+    justify-content: center;
+  }
   .sp-back {
     background-color: grey;
     bottom: 0;
