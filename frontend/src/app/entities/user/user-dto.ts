@@ -4,7 +4,8 @@ export interface LoginUserDto {
   // nickname: MIN=3,MAX=64,"^[a-zA-Z]+[\\w]+$"
   // email: MIN=5,MAX=255,"email_type"
   nickname: string; 
-  // password: MIN=6,MAX=64,"[a-z]+","[A-Z]+","[\\d]+" // Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d\W_]{6,64}$/)
+  // Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d\W_]{6,64}$/)
+  // password: MIN=6,MAX=64,"[a-z]+","[A-Z]+","[\\d]+" 
   password: string;
 }
   
@@ -18,7 +19,8 @@ export interface LoginUserResponseDto {
 export interface CreateUserDto {
   nickname: string; // nickname: MIN=3,MAX=64,"^[a-zA-Z]+[\\w]+$"
   email: string; // email: MIN=5,MAX=255,"email_type"
-  // password: MIN=6,MAX=64,"[a-z]+","[A-Z]+","[\\d]+" // Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d\W_]{6,64}$/)
+  // Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d\W_]{6,64}$/)
+  // password: MIN=6,MAX=64,"[a-z]+","[A-Z]+","[\\d]+" 
   password: string;
 }
 
@@ -38,8 +40,6 @@ export interface UserDto {
   role: string; // UserRole ["User","Admin"]
   createdAt: string; // DateTime<Utc> "rfc2822z"
   updatedAt: string; // DateTime<Utc> "rfc2822z"
-//   avatar: string;
-//   description: string;
 }
 
 export class UserDtoUtil {
