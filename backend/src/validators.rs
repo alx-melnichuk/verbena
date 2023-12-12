@@ -42,6 +42,17 @@ pub fn msg_validation(validation_errors: &Vec<ValidationError>) -> String {
 pub trait Validator {
     /// Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>>;
+    /// filter the list of errors
+    fn filter_errors(
+        &self,
+        errors: Vec<Option<ValidationError>>,
+    ) -> Result<(), Vec<ValidationError>> {
+        let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
+        if result.len() > 0 {
+            return Err(result);
+        }
+        Ok(())
+    }
 }
 
 pub struct ValidationChecks {}
