@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::schema;
-use crate::utils::datetime_format;
+use crate::utils::serial_datetime;
 use crate::validators::{ValidationChecks, ValidationError, Validator};
 
 pub const NICKNAME_MIN: u8 = 3;
@@ -110,9 +110,9 @@ pub struct UserDto {
     pub email: String,
     pub password: String,
     pub role: UserRole,
-    #[serde(rename = "createdAt", with = "datetime_format")]
+    #[serde(rename = "createdAt", with = "serial_datetime")]
     pub created_at: DateTime<Utc>,
-    #[serde(rename = "updatedAt", with = "datetime_format")]
+    #[serde(rename = "updatedAt", with = "serial_datetime")]
     pub updated_at: DateTime<Utc>,
 }
 
@@ -240,7 +240,7 @@ pub struct UserRegistrDto {
     pub nickname: String,
     pub email: String,
     pub password: String,
-    #[serde(rename = "finalDate", with = "datetime_format")]
+    #[serde(rename = "finalDate", with = "serial_datetime")]
     pub final_date: DateTime<Utc>,
 }
 
@@ -301,7 +301,7 @@ pub struct UserRecovery {
 pub struct UserRecoveryDto {
     pub id: i32,
     pub user_id: i32,
-    #[serde(rename = "finalDate", with = "datetime_format")]
+    #[serde(rename = "finalDate", with = "serial_datetime")]
     pub final_date: DateTime<Utc>,
 }
 
