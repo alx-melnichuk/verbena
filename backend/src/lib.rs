@@ -21,6 +21,7 @@ pub(crate) mod send_email;
 pub(crate) mod sessions;
 pub mod settings;
 pub(crate) mod static_controller;
+pub(crate) mod streams;
 pub(crate) mod tools;
 pub(crate) mod users;
 pub mod utils;
