@@ -23,20 +23,20 @@ diesel::table! {
 
     streams (id) {
         id -> Int4,
-        user_id -> Nullable<Int4>,
+        user_id -> Int4,
         #[max_length = 255]
         title -> Varchar,
-        descript -> Nullable<Text>,
+        descript -> Text,
         #[max_length = 255]
         logo -> Nullable<Varchar>,
         starttime -> Timestamptz,
-        live -> Nullable<Bool>,
+        live -> Bool,
         state -> StreamState,
         started -> Nullable<Timestamptz>,
         stopped -> Nullable<Timestamptz>,
-        status -> Nullable<Bool>,
+        status -> Bool,
         #[max_length = 255]
-        source -> Nullable<Varchar>,
+        source -> Varchar,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
     }
