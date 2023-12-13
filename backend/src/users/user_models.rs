@@ -154,11 +154,7 @@ impl Validator for ModifyUserDto {
             errors.push(validate_password(password_val).err());
         }
 
-        let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
-        if result.len() > 0 {
-            return Err(result);
-        }
-        Ok(())
+        self.filter_errors(errors)
     }
 }
 
@@ -179,11 +175,7 @@ impl Validator for CreateUserDto {
         errors.push(validate_email(&self.email).err());
         errors.push(validate_password(&self.password).err());
 
-        let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
-        if result.len() > 0 {
-            return Err(result);
-        }
-        Ok(())
+        self.filter_errors(errors)
     }
 }
 
@@ -204,11 +196,7 @@ impl Validator for LoginUserDto {
         errors.push(validate_nickname_or_email(&self.nickname).err());
         errors.push(validate_password(&self.password).err());
 
-        let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
-        if result.len() > 0 {
-            return Err(result);
-        }
-        Ok(())
+        self.filter_errors(errors)
     }
 }
 
@@ -269,11 +257,7 @@ impl Validator for RegistrUserDto {
         errors.push(validate_email(&self.email).err());
         errors.push(validate_password(&self.password).err());
 
-        let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
-        if result.len() > 0 {
-            return Err(result);
-        }
-        Ok(())
+        self.filter_errors(errors)
     }
 }
 
@@ -324,11 +308,7 @@ impl Validator for RecoveryUserDto {
 
         errors.push(validate_email(&self.email).err());
 
-        let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
-        if result.len() > 0 {
-            return Err(result);
-        }
-        Ok(())
+        self.filter_errors(errors)
     }
 }
 
@@ -352,11 +332,7 @@ impl Validator for RecoveryDataDto {
 
         errors.push(validate_password(&self.password).err());
 
-        let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
-        if result.len() > 0 {
-            return Err(result);
-        }
-        Ok(())
+        self.filter_errors(errors)
     }
 }
 

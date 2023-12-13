@@ -330,11 +330,9 @@ pub mod tests {
         fn delete_user(&self, id: i32) -> Result<usize, String> {
             let user_opt = self.user_vec.iter().find(|user| user.id == id);
 
-            if user_opt.is_none() {
-                Ok(0)
-            } else {
-                Ok(1)
-            }
+            #[rustfmt::skip]
+            let result = if user_opt.is_none() { 0 } else { 1 };
+            Ok(result)
         }
     }
 }
