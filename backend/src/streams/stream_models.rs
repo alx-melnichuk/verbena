@@ -7,8 +7,8 @@ use crate::utils::{serial_datetime, serial_datetime_option};
 use crate::validators::{ValidationChecks, ValidationError, Validator};
 
 pub const TITLE_MIN: u8 = 3;
-pub const TITLE_MAX: u8 = 255;
 pub const MSG_TITLE_MIN_LENGTH: &str = "title:min_length";
+pub const TITLE_MAX: u8 = 255;
 pub const MSG_TITLE_MAX_LENGTH: &str = "title:max_length";
 
 pub const LOGO_MAX: u8 = 255;
@@ -16,6 +16,20 @@ pub const MSG_LOGO_MAX_LENGTH: &str = "logo:max_length";
 
 pub const SOURCE_MAX: u8 = 255;
 pub const MSG_SOURCE_MAX_LENGTH: &str = "source:max_length";
+
+pub fn validate_title(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::min_length(value, TITLE_MIN.into(), MSG_TITLE_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, TITLE_MAX.into(), MSG_TITLE_MAX_LENGTH)?;
+    Ok(())
+}
+pub fn validate_logo(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::max_length(value, LOGO_MAX.into(), MSG_LOGO_MAX_LENGTH)?;
+    Ok(())
+}
+pub fn validate_source(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::max_length(&value, SOURCE_MAX.into(), MSG_SOURCE_MAX_LENGTH)?;
+    Ok(())
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, diesel_derive_enum::DbEnum)]
 #[ExistingTypePath = "crate::schema::sql_types::StreamState"]
@@ -49,7 +63,7 @@ pub struct Stream {
     pub user_id: i32,
     pub title: String,        // max_length = 255
     pub descript: String,     // type: Text
-    pub logo: Option<String>, // max_length = 255
+    pub logo: Option<String>, // max_length = 255 Nullable
     pub starttime: DateTime<Utc>,
     pub live: bool,
     pub state: StreamState,
@@ -66,22 +80,19 @@ pub struct Stream {
 pub struct StreamDto {
     pub id: i32,
     pub user_id: i32,
-    pub title: String,        // max_length = 255
-    pub descript: String,     // type: Text
-    pub logo: Option<String>, // max_length = 255
+    pub title: String,    // max_length = 255
+    pub descript: String, // type: Text
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub logo: Option<String>, // max_length = 255 Nullable
     #[serde(with = "serial_datetime")]
     pub starttime: DateTime<Utc>,
     pub live: bool,
     pub state: StreamState,
-    #[serde(
-        with = "serial_datetime_option",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[rustfmt::skip]
+    #[serde(with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
     pub started: Option<DateTime<Utc>>, // Nullable
-    #[serde(
-        with = "serial_datetime_option",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[rustfmt::skip]
+    #[serde(with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
     pub stopped: Option<DateTime<Utc>>, // Nullable
     pub status: bool,
     pub source: String, // max_length = 255
@@ -112,64 +123,8 @@ impl From<Stream> for StreamDto {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset)]
-#[diesel(table_name = schema::streams)]
-pub struct ModifyStreamDto {
-    pub user_id: i32,
-    pub title: String, // max_length = 255
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub descript: Option<String>, // type: Text DEFAULT ''
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub logo: Option<String>, // max_length = 255
-    #[serde(with = "serial_datetime")]
-    pub starttime: DateTime<Utc>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub live: Option<bool>, // DEFAULT FALSE
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<StreamState>, // DEFAULT 'waiting'
-    #[serde(
-        with = "serial_datetime_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub started: Option<DateTime<Utc>>, // Nullable
-    #[serde(
-        with = "serial_datetime_option",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub stopped: Option<DateTime<Utc>>, // Nullable
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<bool>, // DEFAULT TRUE
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub source: Option<String>, // max_length = 255 // NOT NULL DEFAULT 'obs'
-}
-
-impl Validator for ModifyStreamDto {
-    // Check the model against the required conditions.
-    fn validate(&self) -> Result<(), Vec<ValidationError>> {
-        let mut errors: Vec<Option<ValidationError>> = vec![];
-
-        let msg = MSG_TITLE_MIN_LENGTH;
-        errors.push(ValidationChecks::min_length(&self.title, TITLE_MIN.into(), msg).err());
-        let msg = MSG_TITLE_MAX_LENGTH;
-        errors.push(ValidationChecks::max_length(&self.title, TITLE_MAX.into(), msg).err());
-
-        if let Some(logo) = &self.logo {
-            let msg = MSG_LOGO_MAX_LENGTH;
-            errors.push(ValidationChecks::max_length(&logo, LOGO_MAX.into(), msg).err());
-        }
-        if let Some(source) = &self.source {
-            let msg = MSG_SOURCE_MAX_LENGTH;
-            errors.push(ValidationChecks::max_length(&source, SOURCE_MAX.into(), msg).err());
-        }
-
-        // let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
-        // if result.len() > 0 {
-        //     return Err(result);
-        // }
-        // Ok(())
-        self.filter_errors(errors)
-    }
-}
+pub const DEF_SOURCE: &str = "obs";
+pub const DEF_STATUS: bool = true;
 
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
 #[diesel(table_name = schema::streams)]
@@ -179,22 +134,18 @@ pub struct CreateStreamDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub descript: Option<String>, // type: Text DEFAULT ''
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub logo: Option<String>, // max_length = 255
+    pub logo: Option<String>, // max_length = 255 Nullable
     #[serde(with = "serial_datetime")]
     pub starttime: DateTime<Utc>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub live: Option<bool>, // DEFAULT FALSE
     #[serde(skip_serializing_if = "Option::is_none")]
     pub state: Option<StreamState>, // DEFAULT 'waiting'
-    #[serde(
-        with = "serial_datetime_option",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[rustfmt::skip]
+    #[serde(with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
     pub started: Option<DateTime<Utc>>, // Nullable
-    #[serde(
-        with = "serial_datetime_option",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[rustfmt::skip]
+    #[serde(with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
     pub stopped: Option<DateTime<Utc>>, // Nullable
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<bool>, // DEFAULT TRUE
@@ -207,24 +158,50 @@ impl Validator for CreateStreamDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        let msg = MSG_TITLE_MIN_LENGTH;
-        errors.push(ValidationChecks::min_length(&self.title, TITLE_MIN.into(), msg).err());
-        let msg = MSG_TITLE_MAX_LENGTH;
-        errors.push(ValidationChecks::max_length(&self.title, TITLE_MAX.into(), msg).err());
-
-        if let Some(logo) = &self.logo {
-            let msg = MSG_LOGO_MAX_LENGTH;
-            errors.push(ValidationChecks::max_length(&logo, LOGO_MAX.into(), msg).err());
+        errors.push(validate_title(&self.title).err());
+        if let Some(value) = &self.logo {
+            errors.push(validate_logo(&value).err());
         }
-        if let Some(source) = &self.source {
-            let msg = MSG_SOURCE_MAX_LENGTH;
-            errors.push(ValidationChecks::max_length(&source, SOURCE_MAX.into(), msg).err());
+        if let Some(value) = &self.source {
+            errors.push(validate_source(&value).err());
         }
 
-        let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
-        if result.len() > 0 {
-            return Err(result);
+        self.filter_errors(errors)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset)]
+#[diesel(table_name = schema::streams)]
+pub struct ModifyStreamDto {
+    pub title: String,    // max_length = 255
+    pub descript: String, // type: Text
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub logo: Option<String>, // max_length = 255 Nullable
+    #[serde(with = "serial_datetime")]
+    pub starttime: DateTime<Utc>,
+    pub live: bool,
+    pub state: StreamState,
+    #[rustfmt::skip]
+    #[serde(with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
+    pub started: Option<DateTime<Utc>>, // Nullable
+    #[rustfmt::skip]
+    #[serde(with = "serial_datetime_option", skip_serializing_if = "Option::is_none" )]
+    pub stopped: Option<DateTime<Utc>>, // Nullable
+    pub status: bool,
+    pub source: String, // max_length = 255
+}
+
+impl Validator for ModifyStreamDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        errors.push(validate_title(&self.title).err());
+        if let Some(value) = &self.logo {
+            errors.push(validate_logo(&value).err());
         }
-        Ok(())
+        errors.push(validate_source(&self.source).err());
+
+        self.filter_errors(errors)
     }
 }
