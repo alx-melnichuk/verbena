@@ -1,3 +1,23 @@
+/* Remove the "view_stream_tags_by_streams" view. */
+DROP VIEW IF EXISTS view_stream_tags_by_streams;
+
+
+/* Remove the indexes on the "link_stream_tags_to_streams" table. */
+DROP INDEX IF EXISTS idx_link_stream_tags_to_streams_stream_id_stream_tag_id;
+
+/* Remove the "link_stream_tags_to_streams" table. */
+DROP TABLE IF EXISTS link_stream_tags_to_streams;
+
+
+/* Remove the indexes on the "stream_tags" table. */
+DROP INDEX IF EXISTS uq_idx_stream_tags_user_id_name;
+DROP INDEX IF EXISTS idx_stream_tags_user_id;
+DROP INDEX IF EXISTS idx_stream_tags_name;
+
+/* Remove the "stream_tags" table. */
+DROP TABLE IF EXISTS stream_tags;
+
+
 /* Remove the indexes on the "streams" table. */
 DROP INDEX IF EXISTS idx_streams_user_id;
 DROP INDEX IF EXISTS idx_streams_live;

@@ -2,8 +2,9 @@
  * Add test data
  */
 
-CREATE OR REPLACE PROCEDURE add_user(nickname1 VARCHAR, email1 VARCHAR, passwd1 VARCHAR, user_id INOUT INTEGER) 
-LANGUAGE plpgsql
+CREATE OR REPLACE PROCEDURE add_user(
+  nickname1 VARCHAR, email1 VARCHAR, passwd1 VARCHAR, user_id INOUT INTEGER
+) LANGUAGE plpgsql
 AS $$
 BEGIN
   INSERT INTO users(nickname, email, "password", "role")
@@ -12,12 +13,35 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE PROCEDURE add_stream(user_id1 INTEGER, title1 VARCHAR, logo1 VARCHAR, num_days INTEGER) 
-LANGUAGE plpgsql
+CREATE OR REPLACE PROCEDURE add_stream(
+  user_id1 INTEGER, title1 VARCHAR, logo1 VARCHAR, num_days INTEGER, stream_id INOUT INTEGER
+) LANGUAGE plpgsql
 AS $$
 BEGIN
   INSERT INTO streams(user_id, title, logo, starttime)
-  VALUES(user_id1, title1, logo1, now() + interval '1 day' * num_days);
+  VALUES(user_id1, title1, logo1, now() + interval '1 day' * num_days)
+  RETURNING id INTO stream_id;
+END;
+$$;
+
+CREATE OR REPLACE PROCEDURE add_stream_tag(
+  user_id1 INTEGER, tag_name VARCHAR, stream_tag_id INOUT INTEGER
+) LANGUAGE plpgsql
+AS $$
+BEGIN
+  INSERT INTO stream_tags(user_id, "name")
+  VALUES(user_id1, tag_name)
+  RETURNING id INTO stream_tag_id;
+END;
+$$;
+
+CREATE OR REPLACE PROCEDURE add_link_stream_tags_to_streams(
+  stream_tag_id1 INTEGER, stream_id1 INTEGER
+) LANGUAGE plpgsql
+AS $$
+BEGIN
+  INSERT INTO link_stream_tags_to_streams(stream_tag_id, stream_id)
+  VALUES(stream_tag_id1, stream_id1);
 END;
 $$;
 
@@ -31,10 +55,14 @@ DECLARE
   name_list VARCHAR[];
   nick VARCHAR := '';
   title VARCHAR := '';
+  stream_id INTEGER := 0;
+  stream_tag_id INTEGER := 0;
+  tourism_tag_id INTEGER := 0;
   trip_index INTEGER := 0;
   trip_list VARCHAR[];
   trip VARCHAR := '';
   logo VARCHAR := '';
+  tag_name VARCHAR := '';
   idx INTEGER := 0;
 BEGIN
   RAISE NOTICE 'Start';
@@ -65,16 +93,27 @@ BEGIN
 
     RAISE NOTICE 'nick: %, user_id: %', nick, user_id;
     
+    CALL add_stream_tag(user_id, 'tourism', tourism_tag_id);
+
     trip_index := ARRAY_LENGTH(trip_list, 1);
     WHILE trip_index > 0 LOOP
       
       trip := trip_list[trip_index];
+
+      CALL add_stream_tag(user_id, trip, stream_tag_id);
+
       idx := 1;
       WHILE idx <= 7 LOOP
         logo := CONCAT('/assets/images/trip_', trip, '0', idx, '.jpg');
         title := CONCAT(UPPER(LEFT(SPLIT_PART(nick,'_',1),1)), '.', INITCAP(SPLIT_PART(nick,'_',2)));
-        CALL add_stream(user_id, CONCAT('trip to ', trip, ' ', idx, ' - ', title), logo, idx + 2);
-        RAISE NOTICE 'idx: %  CALL add_stream(user_id: %)', idx, user_id;
+        CALL add_stream(user_id, CONCAT('trip to ', trip, ' ', idx, ' - ', title), logo, idx + 2, stream_id);
+
+        RAISE NOTICE 'idx: %  CALL add_stream(user_id: %) stream_id: %', idx, user_id, stream_id;
+
+        CALL add_link_stream_tags_to_streams(tourism_tag_id, stream_id);
+
+        CALL add_link_stream_tags_to_streams(stream_tag_id, stream_id);
+
         idx := idx + 1;
       END LOOP;
 
@@ -96,4 +135,6 @@ CALL add_data_test();
 DROP PROCEDURE IF EXISTS add_data_test;
 DROP PROCEDURE IF EXISTS add_user;
 DROP PROCEDURE IF EXISTS add_stream;
+DROP PROCEDURE IF EXISTS add_stream_tag;
+DROP PROCEDURE IF EXISTS add_link_stream_tags_to_streams;
 
