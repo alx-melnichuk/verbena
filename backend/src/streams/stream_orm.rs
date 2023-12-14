@@ -43,7 +43,7 @@ pub mod inst {
 
     use crate::dbase;
     use crate::schema;
-    use crate::streams::stream_models::{CreateStreamDto, Stream};
+    use crate::streams::stream_models::{CreateStreamDto, ModifyStreamDto, Stream};
 
     use super::StreamOrm;
 
@@ -95,13 +95,11 @@ pub mod inst {
 
         /// Add a new entity (stream).
         fn create_stream(&self, create_stream_dto: &CreateStreamDto) -> Result<Stream, String> {
-            let create_stream_dto2 = create_stream_dto.clone();
-
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to add a new user entry.
             let stream: Stream = diesel::insert_into(schema::streams::table)
-                .values(create_stream_dto2)
+                .values(create_stream_dto)
                 .returning(Stream::as_returning())
                 .get_result(&mut conn)
                 .map_err(|e| format!("{}: {}", DB_STREAM, e.to_string()))?;
@@ -115,13 +113,11 @@ pub mod inst {
             id: i32,
             modify_stream_dto: &ModifyStreamDto,
         ) -> Result<Option<Stream>, String> {
-            let modify_stream_dto2 = create_stream_dto.clone();
-
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to full or partially modify the user entry.
             let result = diesel::update(dsl::streams.find(id))
-                .set(&modify_stream_dto2)
+                .set(&*modify_stream_dto)
                 .returning(Stream::as_returning())
                 .get_result(&mut conn)
                 .optional()
