@@ -531,7 +531,7 @@ pub async fn confirm_recovery(
     };
     // Update the password hash for the entry in the "user" table.
     let user_opt = web::block(move || {
-        let user = user_orm2.modify_user(user.id, modify_user_dto).map_err(|e| err_database(e));
+        let user = user_orm2.modify_user(user.id, &modify_user_dto).map_err(|e| err_database(e));
         user
     })
     .await

@@ -12,7 +12,8 @@ pub trait UserOrm {
     /// Add a new entity (user).
     fn create_user(&self, create_user_dto: &CreateUserDto) -> Result<User, String>;
     /// Modify an entity (user).
-    fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String>;
+    fn modify_user(&self, id: i32, modify_user_dto: &ModifyUserDto)
+        -> Result<Option<User>, String>;
     /// Delete an entity (user).
     fn delete_user(&self, id: i32) -> Result<usize, String>;
 }
@@ -156,7 +157,7 @@ pub mod inst {
         fn modify_user(
             &self,
             id: i32,
-            modify_user_dto: ModifyUserDto,
+            modify_user_dto: &ModifyUserDto,
         ) -> Result<Option<User>, String> {
             let mut modify_user_dto2: ModifyUserDto = modify_user_dto.clone();
 
@@ -304,7 +305,7 @@ pub mod tests {
         fn modify_user(
             &self,
             id: i32,
-            modify_user_dto: ModifyUserDto,
+            modify_user_dto: &ModifyUserDto,
         ) -> Result<Option<User>, String> {
             let user_opt = self.user_vec.iter().find(|user| user.id == id);
             let user = match user_opt {
@@ -314,10 +315,10 @@ pub mod tests {
                 }
             };
 
-            let nickname = modify_user_dto.nickname.unwrap_or(user.nickname.clone());
-            let email = modify_user_dto.email.unwrap_or(user.email.clone());
-            let password = modify_user_dto.password.unwrap_or(user.password.clone());
-            let role = modify_user_dto.role.unwrap_or(user.role.clone());
+            let nickname = *modify_user_dto.nickname.unwrap_or(user.nickname.clone());
+            let email = *modify_user_dto.email.unwrap_or(user.email.clone());
+            let password = *modify_user_dto.password.unwrap_or(user.password.clone());
+            let role = *modify_user_dto.role.unwrap_or(user.role.clone());
 
             let mut user_saved: User = UserOrmApp::new_user(id, &nickname, &email, &password);
             user_saved.role = role;

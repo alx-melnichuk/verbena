@@ -200,7 +200,7 @@ where
                 log::error!("{}: {} - user_id - {}", err::CD_INTER_SRV_ERROR, err::MSG_SESSION_NOT_EXIST, user_id);
                 let error = AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_SESSION_NOT_EXIST)
                     .set_status(500)
-                    .add_param(borrow::Cow::Borrowed("user_id"), &user_id);
+                    .add_param(borrow::Cow::Borrowed("userId"), &user_id);
                 error::ErrorForbidden(error)
             })?;
 
@@ -210,7 +210,7 @@ where
                 log::error!("{}: {} - user_id - {}", err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
                 let error = AppError::new(err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_NUM)
                     .set_status(403)
-                    .add_param(borrow::Cow::Borrowed("user_id"), &user_id);
+                    .add_param(borrow::Cow::Borrowed("userId"), &user_id);
                 return Err(error::ErrorForbidden(error));
             }
 
@@ -225,7 +225,7 @@ where
                 log::error!("{}: {} - user_id - {}", err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_ID, user_id);
                 let error = AppError::new(err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_ID)
                     .set_status(403)
-                    .add_param(borrow::Cow::Borrowed("user_id"), &user_id);
+                    .add_param(borrow::Cow::Borrowed("userId"), &user_id);
                 error::ErrorForbidden(error)
             })?;
 

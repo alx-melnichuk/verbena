@@ -163,7 +163,7 @@ pub async fn put_users_current(
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user =
-            user_orm.modify_user(id, modify_user).map_err(|e| err_database(e.to_string()));
+            user_orm.modify_user(id, &modify_user).map_err(|e| err_database(e.to_string()));
 
         res_user
     })
@@ -228,7 +228,7 @@ pub async fn put_users_by_id(
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user =
-            user_orm.modify_user(id, modify_user).map_err(|e| err_database(e.to_string()));
+            user_orm.modify_user(id, &modify_user).map_err(|e| err_database(e.to_string()));
 
         res_user
     })
