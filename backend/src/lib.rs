@@ -6,7 +6,8 @@ use actix_web::{http, web};
 
 use send_email::{config_smtp, mailer};
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
-use streams::stream_orm::cfg::get_stream_orm_app;
+use streams::stream_tag_orm::cfg::get_stream_tag_orm_app;
+use streams::{stream_controller, stream_orm::cfg::get_stream_orm_app};
 use users::{
     user_auth_controller, user_controller, user_orm::cfg::get_user_orm_app,
     user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_controller,
@@ -47,6 +48,7 @@ pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
         let data_session_orm = web::Data::new(get_session_orm_app(pool.clone()));
         let data_user_recovery_orm = web::Data::new(get_user_recovery_orm_app(pool.clone()));
         let data_stream_orm = web::Data::new(get_stream_orm_app(pool.clone()));
+        let data_stream_tag_orm = web::Data::new(get_stream_tag_orm_app(pool.clone()));
 
         cfg.app_data(web::Data::clone(&data_config_app))
             .app_data(web::Data::clone(&data_config_jwt))
@@ -57,6 +59,7 @@ pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
             .app_data(web::Data::clone(&data_session_orm))
             .app_data(web::Data::clone(&data_user_recovery_orm))
             .app_data(web::Data::clone(&data_stream_orm))
+            .app_data(web::Data::clone(&data_stream_tag_orm))
             .service(Files::new("/static", "static").show_files_listing())
             .service(Files::new("/assets", "static/assets").show_files_listing())
             .configure(static_controller::configure)
@@ -64,7 +67,8 @@ pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
                 web::scope("/api")
                     .configure(user_registr_controller::configure)
                     .configure(user_auth_controller::configure)
-                    .configure(user_controller::configure),
+                    .configure(user_controller::configure)
+                    .configure(stream_controller::configure),
             );
     })
 }
