@@ -3,13 +3,17 @@
  */
 
 CREATE OR REPLACE PROCEDURE add_user(
-  nickname1 VARCHAR, email1 VARCHAR, passwd1 VARCHAR, user_id INOUT INTEGER
+  nickname1 VARCHAR, email1 VARCHAR, passwd1 VARCHAR, user_id1 INOUT INTEGER
 ) LANGUAGE plpgsql
 AS $$
 BEGIN
+  -- Add a new user.
   INSERT INTO users(nickname, email, "password", "role")
   VALUES(LOWER(nickname1), LOWER(email1), passwd1, 'user'::public."user_role")
-  RETURNING id INTO user_id;
+  RETURNING id INTO user_id1;
+  -- Add a session for a new user.
+  INSERT INTO sessions(user_id)
+  VALUES(user_id1);
 END;
 $$;
 
