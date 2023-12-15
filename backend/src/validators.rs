@@ -91,6 +91,30 @@ impl ValidationChecks {
         }
         Ok(())
     }
+    /// Checking the amount of elements of a array with a minimum value.
+    #[rustfmt::skip]
+    pub fn min_amount_of_elem(amount: usize, min: usize, msg: &'static str) -> Result<(), ValidationError> {
+        if amount < min {
+            let mut err = ValidationError::new(msg);
+            let json =
+                serde_json::json!({ "actualAmountOfElem": amount, "requiredAmountOfElem": min });
+            err.add_param(borrow::Cow::Borrowed("minAmountOfElem"), &json);
+            return Err(err);
+        }
+        Ok(())
+    }
+    /// Checking the amount of elements of a array with a maximum value.
+    #[rustfmt::skip]
+    pub fn max_amount_of_elem(amount: usize, max: usize, msg: &'static str) -> Result<(), ValidationError> {
+        if max < amount {
+            let mut err = ValidationError::new(msg);
+            let json =
+                serde_json::json!({ "actualAmountOfElem": amount, "requiredAmountOfElem": max });
+            err.add_param(borrow::Cow::Borrowed("maxAmountOfElem"), &json);
+            return Err(err);
+        }
+        Ok(())
+    }
     /// Checking whether a string matches a regular expression.
     pub fn regexp(value: &str, reg_exp: &str, msg: &'static str) -> Result<(), ValidationError> {
         let regex = Regex::new(reg_exp).unwrap();
