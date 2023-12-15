@@ -18,7 +18,9 @@ use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     GET api/streams/{stream_id}
-    cfg.service(get_stream_by_id_user_id);
+    cfg.service(get_stream_by_stream_id)
+        // POST api/streams/
+        .service(create_stream);
 }
 
 fn err_parse_int(err: String) -> AppError {
@@ -34,31 +36,11 @@ fn err_blocking(err: String) -> AppError {
     AppError::new(err::CD_BLOCKING, &err).set_status(500)
 }
 
-/* Name: 'Get stream'
-    * @route streams/:streamId
-    * @example streams/385e0469-7143-4915-88d0-f23f5b27ed36
-    * @type get
-    * @params streamId
-    * @required streamId
-    * @access public
-@Get(':streamId')
-@Public()
-async getStream (@Req() request: RequestSession, @Param('streamId', new ParseUUIDPipe()) streamId: string): Promise<StreamDTO> {
-    try {
-        if (request.get('auth')) {
-            const userData = await this.jwtService.verify(request.get('auth'));
-            request.user = new UserSession(userData);
-        }
-    } catch (e) {
-        request.user = null;
-    }
-    return await this.streamsService.getStream(request.user, streamId);
-}*/
 // GET api/streams/{stream_id}
 #[rustfmt::skip]
 // #[get("/streams/{stream_id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())" )]
 #[get("/streams/{stream_id}")]
-pub async fn get_stream_by_id_user_id(
+pub async fn get_stream_by_stream_id(
     // authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     stream_tag_orm: web::Data<StreamTagOrmApp>,
@@ -70,7 +52,7 @@ pub async fn get_stream_by_id_user_id(
 
     // let user = authenticated.deref();
     // let user_id = user.id;
-    let user_id = 162;
+    let user_id = 182;
 
     let result_stream = web::block(move || {
         // Find 'stream' by id.
@@ -84,12 +66,12 @@ pub async fn get_stream_by_id_user_id(
 
     if let Some(stream) = result_stream {
 
-        let result_stream_tags = web::block(move || {
+        let mut stream_tag_dto = stream_models::StreamInfoDto::from(stream);
+
+        let stream_tags_opt = web::block(move || {
             // Find 'stream_tag' by stream_id.
             let stream_tags_opt =
-                stream_tag_orm.find_stream_tag_by_user_id_stream_id(user_id, stream_id)
-                // ) -> Result<Vec<StreamTag>, String> {
-                // find_stream_tag_by_user_id_stream_id(user_id, stream_id)
+                stream_tag_orm.find_tag_names_by_user_id_stream_id(user_id, stream_id)
                 .map_err(|e| err_database(e.to_string())).ok();
     
             stream_tags_opt
@@ -97,15 +79,44 @@ pub async fn get_stream_by_id_user_id(
         .await
         .map_err(|e| err_blocking(e.to_string()))?;
         
-        let mut stream_tag_dto = stream_models::StreamTagDto::from(stream);
-
-        if let Some(stream_tags) = result_stream_tags {
-            let tags: Vec<String> = stream_tags.iter().map(|stream_tag| stream_tag.name.to_owned()).collect();
-            stream_tag_dto.tags.extend(tags);
+        if let Some(stream_tags) = stream_tags_opt {
+            stream_tag_dto.tags.extend(stream_tags);
         }
 
-        Ok(HttpResponse::Ok().json(stream_tag_dto))
+        Ok(HttpResponse::Ok().json(stream_tag_dto)) // 200
     } else {
-        Ok(HttpResponse::NoContent().finish())
+        Ok(HttpResponse::NoContent().finish()) // 204
     }
+}
+
+/* Name: 'Add stream'
+    * @route streams
+    * @type post
+    * @body title, description, starttime, tags (array stringify, 3 max)
+    * @files logo (jpg, png and gif only, 5MB)
+    * @required title, description
+    * @access protected
+@Post()
+@UseInterceptors(FileInterceptor('logo', UploadStreamLogoDTO))
+async addStream (
+    @Req() request: RequestSession,
+    @Body() data: AddStreamDTO,
+    @UploadedFile() logo: Express.Multer.File
+): Promise<StreamDTO> {
+    return await this.streamsService.addStream(request.user.getId(), data, logo);
+}*/
+
+// POST api/streams/
+#[rustfmt::skip]
+// #[get("/streams/{stream_id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())" )]
+#[get("/streams/")]
+pub async fn create_stream(
+    // authenticated: Authenticated,
+    stream_orm: web::Data<StreamOrmApp>,
+    stream_tag_orm: web::Data<StreamTagOrmApp>,
+    request: actix_web::HttpRequest,
+) -> actix_web::Result<HttpResponse, AppError> {
+
+    // let post = diesel::update(posts.find(id)).set(published.eq(true)).get_result::<Post>(&connection).expect(&format!("Unable to find post {}", id));
+    Ok(HttpResponse::NoContent().finish()) // 204
 }

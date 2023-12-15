@@ -1,17 +1,22 @@
-use super::stream_models::{CreateStreamDto, ModifyStreamDto, Stream};
+use super::stream_models::{CreateStreamInfoDto, ModifyStreamInfoDto, Stream};
 
 pub trait StreamOrm {
     /// Find for an entity (stream) by id.
     fn find_stream_by_id(&self, id: i32) -> Result<Option<Stream>, String>;
     /// Find for an entity (stream) by user_id.
-    fn find_stream_by_user_id(&self, user_id: i32) -> Result<Option<Stream>, String>;
+    fn find_streams_by_user_id(&self, user_id: i32) -> Result<Vec<Stream>, String>;
     /// Add a new entity (stream).
-    fn create_stream(&self, create_stream_dto: &CreateStreamDto) -> Result<Stream, String>;
+    fn create_stream(
+        &self,
+        user_id: i32,
+        create_stream_dto: &CreateStreamInfoDto,
+    ) -> Result<Stream, String>;
     /// Modify an entity (stream).
     fn modify_stream(
         &self,
         id: i32,
-        modify_stream_dto: &ModifyStreamDto,
+        user_id: i32,
+        modify_stream_dto: &ModifyStreamInfoDto,
     ) -> Result<Option<Stream>, String>;
     /// Delete an entity (stream).
     fn delete_stream(&self, id: i32) -> Result<usize, String>;
@@ -43,7 +48,7 @@ pub mod inst {
 
     use crate::dbase;
     use crate::schema;
-    use crate::streams::stream_models::{CreateStreamDto, ModifyStreamDto, Stream};
+    use crate::streams::stream_models::{self, CreateStreamInfoDto, ModifyStreamDto, Stream};
 
     use super::StreamOrm;
 
@@ -80,26 +85,32 @@ pub mod inst {
         }
 
         /// Find for an entity (stream) by user_id.
-        fn find_stream_by_user_id(&self, user_id: i32) -> Result<Option<Stream>, String> {
+        fn find_streams_by_user_id(&self, user_id: i32) -> Result<Vec<Stream>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to find user by user_id and return it (where final_date > now).
             let result = schema::streams::table
                 .filter(dsl::user_id.eq(user_id))
-                .first::<Stream>(&mut conn)
-                .optional()
+                .load::<Stream>(&mut conn)
                 .map_err(|e| format!("{}: {}", DB_STREAM, e.to_string()))?;
 
             Ok(result)
         }
 
         /// Add a new entity (stream).
-        fn create_stream(&self, create_stream_dto: &CreateStreamDto) -> Result<Stream, String> {
+        fn create_stream(
+            &self,
+            user_id: i32,
+            create_stream_info_dto: &CreateStreamInfoDto,
+        ) -> Result<Stream, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            // Run query using Diesel to add a new user entry.
-            let stream: Stream = diesel::insert_into(schema::streams::table)
-                .values(create_stream_dto)
+            let mut create_stream =
+                stream_models::CreateStream::from(create_stream_info_dto.to_owned());
+            create_stream.user_id = user_id;
+            // Run query using Diesel to add a new entry (stream).
+            let stream = diesel::insert_into(schema::streams::table)
+                .values(create_stream)
                 .returning(Stream::as_returning())
                 .get_result(&mut conn)
                 .map_err(|e| format!("{}: {}", DB_STREAM, e.to_string()))?;
@@ -111,7 +122,8 @@ pub mod inst {
         fn modify_stream(
             &self,
             id: i32,
-            modify_stream_dto: &ModifyStreamDto,
+            user_id: i32,
+            modify_stream_dto: &ModifyStreamInfoDto,
         ) -> Result<Option<Stream>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
@@ -145,12 +157,17 @@ pub mod tests {
     use chrono::Utc;
 
     use crate::streams::stream_models::{
-        self, CreateStreamDto, ModifyStreamDto, Stream, StreamState,
+        self, CreateStreamInfoDto, ModifyStreamInfoDto, Stream, StreamState,
     };
 
     use super::StreamOrm;
 
-    pub const STREAM_ID: i32 = 1300;
+    pub const STREAM_ID: i32 = 1400;
+    pub const DEF_DESCRIPT: &str = "";
+    pub const DEF_LIVE: bool = false;
+    pub const DEF_STATE: StreamState = StreamState::Waiting;
+    pub const DEF_STATUS: bool = true;
+    pub const DEF_SOURCE: &str = "obs";
 
     #[derive(Debug, Clone)]
     pub struct StreamOrmApp {
@@ -164,31 +181,6 @@ pub mod tests {
                 stream_vec: Vec::new(),
             }
         }
-        /*/// Create a new instance with the specified user recovery list.
-        #[cfg(test)]
-        pub fn create(stream_vec: Vec<Stream>) -> Self {
-            let mut stream_vec: Vec<Stream> = Vec::new();
-            let mut idx: i32 = stream_vec.len().try_into().unwrap();
-            for user_reg in stream_vec.iter() {
-                stream_vec.push(Self::new_stream(
-                    USER_RECOVERY_ID + idx,
-                    user_reg.user_id,
-                    user_reg.final_date,
-                ));
-                idx = idx + 1;
-            }
-            StreamOrmApp {
-                stream_vec: stream_vec,
-            }
-        }*/
-        /*/// Create a new entity instance.
-        pub fn new_stream(id: i32, user_id: i32, final_date: DateTime<Utc>) -> Stream {
-            Stream {
-                id,
-                user_id,
-                final_date,
-            }
-        }*/
     }
 
     impl StreamOrm for StreamOrmApp {
@@ -202,35 +194,45 @@ pub mod tests {
             Ok(result)
         }
         /// Find for an entity (stream) by user_id.
-        fn find_stream_by_user_id(&self, user_id: i32) -> Result<Option<Stream>, String> {
-            let result: Option<Stream> = self
+        fn find_streams_by_user_id(&self, user_id: i32) -> Result<Vec<Stream>, String> {
+            let result = self
                 .stream_vec
                 .iter()
-                .find(|stream| stream.user_id == user_id)
-                .map(|stream| stream.clone());
+                .filter(|stream| stream.user_id == user_id)
+                .map(|stream| stream.clone())
+                .collect();
             Ok(result)
         }
 
         /// Add a new entity (stream).
-        fn create_stream(&self, create_stream_dto: &CreateStreamDto) -> Result<Stream, String> {
+        fn create_stream(
+            &self,
+            user_id: i32,
+            create_stream_info_dto: &CreateStreamInfoDto,
+        ) -> Result<Stream, String> {
             let now = Utc::now();
             let idx: i32 = self.stream_vec.len().try_into().unwrap();
             let new_id: i32 = STREAM_ID + idx;
-            let source_copy = create_stream_dto.source.clone();
+
+            let mut create_stream =
+                stream_models::CreateStream::from(create_stream_info_dto.to_owned());
+            create_stream.user_id = user_id;
+
+            let source_copy = create_stream.source.clone();
 
             let stream_saved = Stream {
                 id: new_id,
-                user_id: create_stream_dto.user_id,
-                title: create_stream_dto.title.to_owned(),
-                descript: create_stream_dto.descript.clone().unwrap_or("".to_string()),
-                logo: create_stream_dto.logo.clone(),
-                starttime: create_stream_dto.starttime,
-                live: create_stream_dto.live.unwrap_or(false),
-                state: create_stream_dto.state.unwrap_or(StreamState::Waiting),
-                started: create_stream_dto.started.clone(),
-                stopped: create_stream_dto.stopped.clone(),
-                status: create_stream_dto.status.unwrap_or(stream_models::DEF_STATUS),
-                source: source_copy.unwrap_or(stream_models::DEF_SOURCE.to_string()),
+                user_id: create_stream.user_id,
+                title: create_stream.title.to_owned(),
+                descript: create_stream.descript.clone().unwrap_or(DEF_DESCRIPT.to_string()),
+                logo: create_stream.logo.clone(),
+                starttime: create_stream.starttime,
+                live: create_stream.live.unwrap_or(DEF_LIVE),
+                state: create_stream.state.unwrap_or(DEF_STATE),
+                started: create_stream.started.clone(),
+                stopped: create_stream.stopped.clone(),
+                status: create_stream.status.unwrap_or(DEF_STATUS),
+                source: source_copy.unwrap_or(DEF_SOURCE.to_string()),
                 created_at: now,
                 updated_at: now,
             };
@@ -241,9 +243,13 @@ pub mod tests {
         fn modify_stream(
             &self,
             id: i32,
-            modify_stream_dto: &ModifyStreamDto,
+            user_id: i32,
+            modify_stream_dto: &ModifyStreamInfoDto,
         ) -> Result<Option<Stream>, String> {
-            let stream_opt = self.stream_vec.iter().find(|stream| stream.id == id);
+            let stream_opt = self
+                .stream_vec
+                .iter()
+                .find(|stream| stream.id == id && stream.user_id == user_id);
             if stream_opt.is_none() {
                 return Ok(None);
             }
