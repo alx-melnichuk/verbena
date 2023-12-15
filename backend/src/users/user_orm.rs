@@ -315,10 +315,10 @@ pub mod tests {
                 }
             };
 
-            let nickname = *modify_user_dto.nickname.unwrap_or(user.nickname.clone());
-            let email = *modify_user_dto.email.unwrap_or(user.email.clone());
-            let password = *modify_user_dto.password.unwrap_or(user.password.clone());
-            let role = *modify_user_dto.role.unwrap_or(user.role.clone());
+            let nickname = (*modify_user_dto).nickname.unwrap_or(user.nickname.clone());
+            let email = (*modify_user_dto).email.unwrap_or(user.email.clone());
+            let password = (*modify_user_dto).password.unwrap_or(user.password.clone());
+            let role = (*modify_user_dto).role.unwrap_or(user.role.clone());
 
             let mut user_saved: User = UserOrmApp::new_user(id, &nickname, &email, &password);
             user_saved.role = role;
