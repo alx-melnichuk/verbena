@@ -141,8 +141,8 @@ pub struct StreamInfoDto {
     pub updated_at: DateTime<Utc>,
 }
 
-impl From<Stream> for StreamInfoDto {
-    fn from(stream: Stream) -> Self {
+impl StreamInfoDto {
+    pub fn convert(stream: Stream, user_id: i32, tags: Vec<String>) -> Self {
         StreamInfoDto {
             id: stream.id,
             user_id: stream.user_id,
@@ -156,8 +156,8 @@ impl From<Stream> for StreamInfoDto {
             stopped: stream.stopped.clone(),
             status: stream.status.clone(),
             source: stream.source.to_owned(),
-            tags: vec![],
-            is_my_stream: false,
+            tags: tags.clone(),
+            is_my_stream: stream.user_id == user_id,
             created_at: stream.created_at.to_owned(),
             updated_at: stream.updated_at.to_owned(),
         }
@@ -182,10 +182,10 @@ pub struct CreateStream {
     pub source: Option<String>,         // min_len=2 max_len=255 default "obs"
 }
 
-impl From<CreateStreamInfoDto> for CreateStream {
-    fn from(create_stream_info: CreateStreamInfoDto) -> Self {
+impl CreateStream {
+    pub fn convert(create_stream_info: CreateStreamInfoDto, user_id: i32) -> Self {
         CreateStream {
-            user_id: 0,
+            user_id: user_id,
             title: create_stream_info.title.to_owned(),
             descript: create_stream_info.descript.clone(),
             logo: create_stream_info.logo.clone(),
@@ -200,7 +200,7 @@ impl From<CreateStreamInfoDto> for CreateStream {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateStreamInfoDto {
     pub title: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -232,10 +232,13 @@ impl Validator for CreateStreamInfoDto {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
         errors.push(validate_title(&self.title).err());
+
         if let Some(value) = &self.logo {
             errors.push(validate_logo(&value).err());
         }
+
         errors.push(validate_tag_names(&self.tags).err());
+
         if let Some(value) = &self.source {
             errors.push(validate_source(&value).err());
         }
@@ -263,7 +266,25 @@ pub struct ModifyStream {
     pub source: String,                 // min_len=2 max_len=255 default "obs"
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+impl ModifyStream {
+    pub fn convert(modify_stream_info: ModifyStreamInfoDto, user_id: i32) -> Self {
+        ModifyStream {
+            user_id: user_id,
+            title: modify_stream_info.title.to_owned(),
+            descript: modify_stream_info.descript.clone(),
+            logo: modify_stream_info.logo.clone(),
+            starttime: modify_stream_info.starttime.to_owned(),
+            live: modify_stream_info.live.clone(),
+            state: modify_stream_info.state.clone(),
+            started: modify_stream_info.started.clone(),
+            stopped: modify_stream_info.stopped.clone(),
+            status: modify_stream_info.status.clone(),
+            source: modify_stream_info.source.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ModifyStreamInfoDto {
     pub title: String,
     pub descript: String,
@@ -301,24 +322,9 @@ impl Validator for ModifyStreamInfoDto {
     }
 }
 
-// **  Section: table "streams" deleting data **
+// **  Section: table "stream_tags" receiving data **
 
-// ** **
-// OLD
-// ** Section: "link_stream_tags_to_streams" table **
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
-#[diesel(table_name = schema::link_stream_tags_to_streams)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct LinkStreamTagsToStreams {
-    pub id: i32,
-    pub stream_id: i32,
-    pub stream_tag_id: i32,
-}
-
-// ** Section: "stream_tags" table **
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
+#[derive(Debug, Serialize, Deserialize, Clone, Queryable, Selectable)]
 #[diesel(table_name = schema::stream_tags)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StreamTag {
@@ -328,6 +334,29 @@ pub struct StreamTag {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone, QueryableByName)]
+#[diesel(table_name = schema::stream_tags)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct StreamTagName {
+    pub name: String,
+}
+
+// **  Section: table "link_stream_tags_to_streams" receiving data **
+
+#[derive(Debug, Serialize, Deserialize, Clone, Queryable, Selectable)]
+#[diesel(table_name = schema::link_stream_tags_to_streams)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct LinkStreamTagsToStreams {
+    pub id: i32,
+    pub stream_id: i32,
+    pub stream_tag_id: i32,
+}
+
+// ** **
+// OLD
+
+// ** Section: "stream_tags" table **
 
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
 #[diesel(table_name = schema::stream_tags)]
