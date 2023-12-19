@@ -1,16 +1,6 @@
 use super::stream_models::{CreateStreamTagDto, ModifyStreamTagDto, StreamTag};
 
 pub trait StreamTagOrm {
-    // /// Find for an entity (stream_tag) by id.
-    // fn find_stream_by_id(&self, id: i32) -> Result<Option<Stream>, String>;
-    // /// Find for an entity (stream_tag) by user_id.
-    // fn find_stream_by_user_id(&self, user_id: i32) -> Result<Option<Stream>, String>;
-    /// Find tag names (stream_tag) by user_id and stream_id.
-    fn find_tag_names_by_user_id_stream_id(
-        &self,
-        user_id: i32,
-        stream_id: i32,
-    ) -> Result<Vec<String>, String>;
     /// Find for an entity (stream_tag) by user_id and stream_id.
     fn find_streamtags_by_userid_streamid(
         &self,
@@ -56,16 +46,17 @@ pub mod inst {
     use diesel::{self, prelude::*};
     use diesel::{debug_query, pg::Pg};
     use schema::stream_tags::dsl;
+    // use serde_json::to_string;
 
     use crate::dbase;
     use crate::schema::{self, link_stream_tags_to_streams as link_stream_tags};
-    use crate::streams::stream_models::{CreateStreamTagDto, ModifyStreamTagDto, StreamTag};
+    use crate::streams::stream_models::{self, CreateStreamTagDto, ModifyStreamTagDto, StreamTag};
 
     use super::StreamTagOrm;
 
     pub const CONN_POOL: &str = "ConnectionPool";
     pub const DB_STREAM_TAG: &str = "Db_StreamTag";
-    pub const MAX_LIMIT_STREAM_TAGS: i64 = 32;
+    pub const MAX_LIMIT_STREAM_TAGS: i64 = stream_models::TAG_NAME_MAX_AMOUNT as i64;
 
     #[derive(Debug, Clone)]
     pub struct StreamTagOrmApp {
@@ -82,35 +73,6 @@ pub mod inst {
     }
 
     impl StreamTagOrm for StreamTagOrmApp {
-        /// Find tag names (stream_tag) by user_id and stream_id.
-        fn find_tag_names_by_user_id_stream_id(
-            &self,
-            user_id: i32,
-            stream_id: i32,
-        ) -> Result<Vec<String>, String> {
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-
-            let query = schema::stream_tags::table
-                .inner_join(link_stream_tags::table)
-                .filter(
-                    schema::stream_tags::dsl::user_id
-                        .eq(user_id)
-                        .and(link_stream_tags::dsl::stream_id.eq(stream_id)),
-                )
-                .select(schema::stream_tags::name)
-                .limit(MAX_LIMIT_STREAM_TAGS);
-
-            let query_sql = debug_query::<Pg, _>(&query).to_string();
-            eprintln!("query_sql: {}", query_sql);
-
-            let result2: Vec<String> = query
-                .load(&mut conn)
-                .map_err(|e| format!("{}: {}", DB_STREAM_TAG, e.to_string()))?;
-            eprintln!("##result2.len(): {}", result2.len());
-            eprintln!("##result2: {:?}", result2);
-            Ok(result2)
-        }
         /// Find for an entity (stream_tag) by user_id and stream_id.
         fn find_streamtags_by_userid_streamid(
             &self,
