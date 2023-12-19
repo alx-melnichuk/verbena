@@ -56,7 +56,6 @@ CREATE INDEX idx_stream_tags_user_id ON stream_tags(user_id);
 CREATE INDEX idx_stream_tags_name ON stream_tags("name");
 
 
-
 /* Create "link_stream_tags_to_streams" table. */
 
 CREATE TABLE link_stream_tags_to_streams (
@@ -70,22 +69,150 @@ CREATE TABLE link_stream_tags_to_streams (
 CREATE INDEX idx_link_stream_tags_to_streams_stream_id_stream_tag_id ON link_stream_tags_to_streams(stream_id, stream_tag_id);
 
 
-/* Create "view_stream_tags_by_streams" view. */
-
-CREATE OR REPLACE VIEW view_stream_tags_by_streams
-AS
-SELECT
-  L.stream_id, T.user_id, T."name", L.stream_tag_id
-FROM 
-  link_stream_tags_to_streams L,
-  stream_tags T
-WHERE L.stream_tag_id = T.id;
-
-
 /*
-SELECT
-  L.stream_id,
-FROM 
-  link_stream_tags_to_streams L
-    INNER JOIN stream_tags T USING (stream_tag_id)
-*/
+ * Stored procedures for working with data from the "stream_tags" table.
+ */
+
+/* Add a link to "tag" for "stream". */
+CREATE OR REPLACE PROCEDURE add_stream_tag_to_stream(
+  user_id1 INTEGER, tag_name1 VARCHAR, stream_id1 INTEGER
+) LANGUAGE plpgsql
+AS $$
+DECLARE
+  stream_tag_id1 INTEGER;
+  link_tag_stream_id1 INTEGER;
+BEGIN
+  -- Find for "stream tag" with the value "name tag".
+  SELECT id INTO stream_tag_id1
+  FROM stream_tags
+  WHERE user_id = user_id1 AND "name" = tag_name1;
+
+  -- If "stream tag" is not found, then add it.
+  IF NOT FOUND THEN
+    INSERT INTO stream_tags(user_id, "name")
+    VALUES(user_id1, tag_name1)
+    RETURNING id INTO stream_tag_id1;
+  ELSE
+    -- Find "link_stream_tags_to_streams" with the given: stream_id1 and stream_tag_id1.
+    SELECT id INTO link_tag_stream_id1
+    FROM link_stream_tags_to_streams
+    WHERE stream_id = stream_id1 AND stream_tag_id = stream_tag_id1;
+  END IF;
+
+  -- If "link_stream_tags_to_streams" is not found, then add it.
+  IF (link_tag_stream_id1 IS NULL) THEN
+    INSERT INTO link_stream_tags_to_streams(stream_tag_id, stream_id)
+    VALUES(stream_tag_id1, stream_id1)
+    RETURNING id INTO link_tag_stream_id1;
+  END IF;
+  -- raise notice 'stream_tag_id1: %, link_tag_stream_id1: %', stream_tag_id1, link_tag_stream_id1;
+END;
+$$;
+
+/* Add links to the "tag" list for "stream". */
+CREATE OR REPLACE PROCEDURE add_list_stream_tag_to_stream(
+  user_id1 INTEGER, stream_id1 INTEGER, tag_name_list1 VARCHAR
+) LANGUAGE plpgsql
+AS $$
+DECLARE
+  tag_index INTEGER;
+  tag_name_buf VARCHAR[];
+  tag_name VARCHAR;
+BEGIN
+  tag_name_buf := string_to_array(tag_name_list1, ',');
+  tag_index := ARRAY_LENGTH(tag_name_buf, 1);
+  WHILE tag_index > 0 LOOP
+    tag_name = TRIM(tag_name_buf[tag_index]);
+    -- raise notice 'tag_index: %, tag_name: %', tag_index, tag_name;
+    CALL add_stream_tag_to_stream(user_id1, tag_name, stream_id1);
+    tag_index := tag_index - 1;
+  END LOOP;
+END;
+$$;
+
+/* Remove link to "tag" for "stream". */
+CREATE OR REPLACE PROCEDURE remove_stream_tag_to_stream(
+  user_id1 INTEGER, tag_name1 VARCHAR, stream_id1 INTEGER
+) LANGUAGE plpgsql
+AS $$
+DECLARE
+  stream_tag_id1 INTEGER;
+  link_tag_stream_id1 INTEGER;
+  count_id INTEGER;
+  exist_val INTEGER;
+BEGIN
+  -- Find for "stream tag" with the value "name tag".
+  SELECT id INTO stream_tag_id1
+  FROM stream_tags
+  WHERE user_id = user_id1 AND "name" = tag_name1;
+  raise notice 'A: stream_tag_id1: %', stream_tag_id1;
+
+  -- If "stream tag" is not found, then exit.
+  IF (stream_tag_id1 IS NULL) THEN
+    RETURN;
+  END IF;
+  
+  -- Find "link_stream_tags_to_streams" with the given: stream_id1 and stream_tag_id1.
+  SELECT id INTO link_tag_stream_id1
+  FROM link_stream_tags_to_streams
+  WHERE stream_tag_id = stream_tag_id1 AND stream_id = stream_id1;
+  raise notice 'B: link_tag_stream_id1: %', link_tag_stream_id1;
+
+  -- If "link_stream_tags_to_streams" is found, then remove it.
+  IF (link_tag_stream_id1 IS NOT NULL) THEN
+    DELETE
+    FROM link_stream_tags_to_streams
+    WHERE id = link_tag_stream_id1;
+    raise notice 'C: delete link_stream link_tag_stream_id1: %', link_tag_stream_id1;
+  END IF;
+
+  -- If there are no more entries for stream_tag_id in the link table, then delete the tag itself.
+  IF NOT EXISTS(SELECT 1 FROM link_stream_tags_to_streams WHERE stream_tag_id = stream_tag_id1 LIMIT 1) THEN
+    DELETE
+    FROM stream_tags
+    WHERE id = stream_tag_id1;
+    raise notice 'D: delete stream_tags stream_tag_id1: %', stream_tag_id1;
+  END IF;
+END;
+$$;
+
+/* Remove links to the "tag" list for "stream". */
+CREATE OR REPLACE PROCEDURE remove_list_stream_tag_to_stream(
+  user_id1 INTEGER, stream_id1 INTEGER, tag_name_list1 VARCHAR
+) LANGUAGE plpgsql
+AS $$
+DECLARE
+  tag_index INTEGER := 0;
+  tag_name_buf VARCHAR[];
+  tag_name VARCHAR := '';
+BEGIN
+  tag_name_buf := string_to_array(tag_name_list1, ',');
+  tag_index := ARRAY_LENGTH(tag_name_buf, 1);
+  WHILE tag_index > 0 LOOP
+    tag_name = TRIM(tag_name_buf[tag_index]);
+    -- raise notice 'tag_index: %, tag_name: %', tag_index, tag_name;
+    CALL remove_stream_tag_to_stream(user_id1, tag_name, stream_id1);
+    tag_index := tag_index - 1;
+  END LOOP;
+END;
+$$;
+
+/* The function returns the "stream_tags" data for the specified "user" and "stream". */
+CREATE OR REPLACE FUNCTION get_stream_tags_by_streams(
+  user_id1 INTEGER, stream_id1 INTEGER    
+) RETURNS SETOF stream_tags LANGUAGE sql
+AS $$
+  -- Get the "stream_tags" data for the specified "user" and "stream".
+  SELECT 
+    T.*
+  FROM
+    stream_tags T,
+    link_stream_tags_to_streams L
+  WHERE
+    T.user_id = user_id1
+    AND T.id = L.stream_tag_id
+    AND L.stream_id = stream_id1;
+$$;
+
+-- select * from get_stream_tags_by_streams(182, 562);
+
