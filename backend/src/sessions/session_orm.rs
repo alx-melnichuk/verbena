@@ -4,7 +4,7 @@ pub trait SessionOrm {
     /// Find for an entity (session) by id.
     fn find_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String>;
     /// Add a new entity (session).
-    fn create_session(&self, session: &Session) -> Result<Session, String>;
+    fn create_session(&self, session: Session) -> Result<Session, String>;
     /// Modify the entity (session).
     fn modify_session(
         &self,
@@ -69,12 +69,12 @@ pub mod inst {
                 .filter(schema::sessions::dsl::user_id.eq(user_id))
                 .first::<Session>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}: {}", DB_SESSION, e.to_string()))?;
+                .map_err(|e| format!("{}-find_session_by_id: {}", DB_SESSION, e.to_string()))?;
 
             Ok(session_opt)
         }
         /// Add a new session entry.
-        fn create_session(&self, session: &Session) -> Result<Session, String> {
+        fn create_session(&self, session: Session) -> Result<Session, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to add a new session entry.
@@ -82,7 +82,7 @@ pub mod inst {
                 .values(session)
                 .returning(Session::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("{}: {}", DB_SESSION, e.to_string()))?;
+                .map_err(|e| format!("{}-create_session: {}", DB_SESSION, e.to_string()))?;
 
             Ok(session)
         }
@@ -100,7 +100,7 @@ pub mod inst {
                 .returning(Session::as_returning())
                 .get_result(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}: {}", DB_SESSION, e.to_string()))?;
+                .map_err(|e| format!("{}-modify_session: {}", DB_SESSION, e.to_string()))?;
 
             Ok(result)
         }
@@ -152,7 +152,7 @@ pub mod tests {
             Ok(session_opt)
         }
         /// Add a new entity (session).
-        fn create_session(&self, session: &Session) -> Result<Session, String> {
+        fn create_session(&self, session: Session) -> Result<Session, String> {
             let id = session.user_id;
             // Check the availability of the user ID.
             let user_opt = self.find_session_by_id(id)?;

@@ -10,10 +10,9 @@ pub trait UserOrm {
         email: Option<&str>,
     ) -> Result<Option<User>, String>;
     /// Add a new entity (user).
-    fn create_user(&self, create_user_dto: &CreateUserDto) -> Result<User, String>;
+    fn create_user(&self, create_user_dto: CreateUserDto) -> Result<User, String>;
     /// Modify an entity (user).
-    fn modify_user(&self, id: i32, modify_user_dto: &ModifyUserDto)
-        -> Result<Option<User>, String>;
+    fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String>;
     /// Delete an entity (user).
     fn delete_user(&self, id: i32) -> Result<usize, String>;
 }
@@ -73,7 +72,7 @@ pub mod inst {
                 .filter(schema::users::dsl::id.eq(id))
                 .first::<User>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
+                .map_err(|e| format!("{}-find_user_by_id: {}", DB_USER, e.to_string()))?;
 
             Ok(user_opt)
         }
@@ -107,16 +106,17 @@ pub mod inst {
                 .limit(1);
 
             let mut result_vec: Vec<User> = vec![];
+            let table = "find_user_by_nickname_or_email";
 
             if nickname2_len > 0 && email2_len == 0 {
                 let result_nickname_vec: Vec<User> = sql_query_nickname
                     .load(&mut conn)
-                    .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
+                    .map_err(|e| format!("{}-{}: {}", DB_USER, table, e.to_string()))?;
                 result_vec.extend(result_nickname_vec);
             } else if nickname2_len == 0 && email2_len > 0 {
                 let result_email_vec: Vec<User> = sql_query_email
                     .load(&mut conn)
-                    .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
+                    .map_err(|e| format!("{}-{}: {}", DB_USER, table, e.to_string()))?;
                 result_vec.extend(result_email_vec);
             } else {
                 // This design (union two queries) allows the use of two separate indexes.
@@ -125,7 +125,7 @@ pub mod inst {
                 // Run query using Diesel to find user by nickname or email and return it.
                 let result_nickname_email_vec: Vec<User> = sql_query
                     .load(&mut conn)
-                    .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
+                    .map_err(|e| format!("{}-{}: {}", DB_USER, table, e.to_string()))?;
                 result_vec.extend(result_nickname_email_vec);
             }
 
@@ -137,7 +137,7 @@ pub mod inst {
             Ok(result)
         }
         /// Add a new entity (user).
-        fn create_user(&self, create_user_dto: &CreateUserDto) -> Result<User, String> {
+        fn create_user(&self, create_user_dto: CreateUserDto) -> Result<User, String> {
             let mut create_user_dto2 = create_user_dto.clone();
             create_user_dto2.nickname = create_user_dto2.nickname.to_lowercase();
             create_user_dto2.email = create_user_dto2.email.to_lowercase();
@@ -149,7 +149,7 @@ pub mod inst {
                 .values(create_user_dto2)
                 .returning(User::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
+                .map_err(|e| format!("{}-create_user: {}", DB_USER, e.to_string()))?;
 
             Ok(user)
         }
@@ -157,7 +157,7 @@ pub mod inst {
         fn modify_user(
             &self,
             id: i32,
-            modify_user_dto: &ModifyUserDto,
+            modify_user_dto: ModifyUserDto,
         ) -> Result<Option<User>, String> {
             let mut modify_user_dto2: ModifyUserDto = modify_user_dto.clone();
 
@@ -175,7 +175,7 @@ pub mod inst {
                 .returning(User::as_returning())
                 .get_result(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
+                .map_err(|e| format!("{}-modify_user: {}", DB_USER, e.to_string()))?;
 
             Ok(result)
         }
@@ -186,7 +186,7 @@ pub mod inst {
             // Run query using Diesel to delete a entry (user).
             let count: usize = diesel::delete(schema::users::dsl::users.find(id))
                 .execute(&mut conn)
-                .map_err(|e| format!("{}: {}", DB_USER, e.to_string()))?;
+                .map_err(|e| format!("{}-delete_user: {}", DB_USER, e.to_string()))?;
 
             Ok(count)
         }
@@ -284,7 +284,7 @@ pub mod tests {
             Ok(result)
         }
         /// Add a new entity (user).
-        fn create_user(&self, create_user_dto: &CreateUserDto) -> Result<User, String> {
+        fn create_user(&self, create_user_dto: CreateUserDto) -> Result<User, String> {
             let nickname = create_user_dto.nickname.to_lowercase();
             let email = create_user_dto.email.to_lowercase();
 
@@ -305,7 +305,7 @@ pub mod tests {
         fn modify_user(
             &self,
             id: i32,
-            modify_user_dto: &ModifyUserDto,
+            modify_user_dto: ModifyUserDto,
         ) -> Result<Option<User>, String> {
             let user_opt = self.user_vec.iter().find(|user| user.id == id);
             let user = match user_opt {
@@ -315,10 +315,10 @@ pub mod tests {
                 }
             };
 
-            let nickname = (*modify_user_dto).nickname.unwrap_or(user.nickname.clone());
-            let email = (*modify_user_dto).email.unwrap_or(user.email.clone());
-            let password = (*modify_user_dto).password.unwrap_or(user.password.clone());
-            let role = (*modify_user_dto).role.unwrap_or(user.role.clone());
+            let nickname = modify_user_dto.nickname.unwrap_or(user.nickname.clone());
+            let email = modify_user_dto.email.unwrap_or(user.email.clone());
+            let password = modify_user_dto.password.unwrap_or(user.password.clone());
+            let role = modify_user_dto.role.unwrap_or(user.role.clone());
 
             let mut user_saved: User = UserOrmApp::new_user(id, &nickname, &email, &password);
             user_saved.role = role;

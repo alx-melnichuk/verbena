@@ -10,13 +10,13 @@ pub trait UserRecoveryOrm {
     /// Add a new entity (user_recovery).
     fn create_user_recovery(
         &self,
-        create_user_recovery_dto: &CreateUserRecoveryDto,
+        create_user_recovery_dto: CreateUserRecoveryDto,
     ) -> Result<UserRecovery, String>;
     /// Modify an entity (user_recovery).
     fn modify_user_recovery(
         &self,
         id: i32,
-        modify_user_recovery_dto: &CreateUserRecoveryDto,
+        modify_user_recovery_dto: CreateUserRecoveryDto,
     ) -> Result<Option<UserRecovery>, String>;
     /// Delete an entity (user_recovery).
     fn delete_user_recovery(&self, id: i32) -> Result<usize, String>;
@@ -80,12 +80,13 @@ pub mod inst {
         fn find_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
+            let table = "find_user_recovery_by_id";
             // Run query using Diesel to find user by id and return it.
             let result = schema::user_recovery::table
                 .filter(dsl::id.eq(id))
                 .first::<UserRecovery>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
+                .map_err(|e| format!("{}-{}: {}", DB_USER_RECOVERY, table, e.to_string()))?;
 
             Ok(result)
         }
@@ -97,13 +98,14 @@ pub mod inst {
         ) -> Result<Option<UserRecovery>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
+            let table = "find_user_recovery_by_user_id";
             let now = Utc::now();
             // Run query using Diesel to find user by user_id and return it (where final_date > now).
             let result = schema::user_recovery::table
                 .filter(dsl::user_id.eq(user_id).and(dsl::final_date.gt(now)))
                 .first::<UserRecovery>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
+                .map_err(|e| format!("{}-{}: {}", DB_USER_RECOVERY, table, e.to_string()))?;
 
             Ok(result)
         }
@@ -111,18 +113,17 @@ pub mod inst {
         /// Add a new entity (user_recovery).
         fn create_user_recovery(
             &self,
-            create_user_recovery_dto: &CreateUserRecoveryDto,
+            create_user_recovery_dto: CreateUserRecoveryDto,
         ) -> Result<UserRecovery, String> {
-            let create_user_recovery_dto2 = create_user_recovery_dto.clone();
-
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
+            let table = "create_user_recovery";
             // Run query using Diesel to add a new user entry.
             let user_recovery: UserRecovery = diesel::insert_into(schema::user_recovery::table)
-                .values(create_user_recovery_dto2)
+                .values(create_user_recovery_dto)
                 .returning(UserRecovery::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
+                .map_err(|e| format!("{}-{}: {}", DB_USER_RECOVERY, table, e.to_string()))?;
 
             Ok(user_recovery)
         }
@@ -131,19 +132,18 @@ pub mod inst {
         fn modify_user_recovery(
             &self,
             id: i32,
-            create_user_recovery_dto: &CreateUserRecoveryDto,
+            create_user_recovery_dto: CreateUserRecoveryDto,
         ) -> Result<Option<UserRecovery>, String> {
-            let create_user_recovery_dto2 = create_user_recovery_dto.clone();
-
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
+            let table = "modify_user_recovery";
             // Run query using Diesel to full or partially modify the user entry.
             let result = diesel::update(dsl::user_recovery.find(id))
-                .set(&create_user_recovery_dto2)
+                .set(&create_user_recovery_dto)
                 .returning(UserRecovery::as_returning())
                 .get_result(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
+                .map_err(|e| format!("{}-{}: {}", DB_USER_RECOVERY, table, e.to_string()))?;
 
             Ok(result)
         }
@@ -152,10 +152,11 @@ pub mod inst {
         fn delete_user_recovery(&self, id: i32) -> Result<usize, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
+            let table = "delete_user_recovery";
             // Run query using Diesel to delete a entry (user_recovery).
             let count: usize = diesel::delete(dsl::user_recovery.find(id))
                 .execute(&mut conn)
-                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
+                .map_err(|e| format!("{}-{}: {}", DB_USER_RECOVERY, table, e.to_string()))?;
 
             Ok(count)
         }
@@ -169,21 +170,17 @@ pub mod inst {
             let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
             let start_day_time = now - Duration::days(duration.into());
             let end_day_time = now.clone();
-            let before = std::time::Instant::now();
+
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-
+            let table = "delete_inactive_final_date";
             // Run query using Diesel to delete a entry (user_recovery).
             let count: usize =
                 diesel::delete(schema::user_recovery::table.filter(
                     dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time)),
                 ))
                 .execute(&mut conn)
-                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
-
-            let info = format!("{:.2?}", before.elapsed());
-            #[rustfmt::skip]
-            log::info!("user_recovery.delete(expired) time: {}, count: {}", info, count);
+                .map_err(|e| format!("{}-{}: {}", DB_USER_RECOVERY, table, e.to_string()))?;
 
             Ok(count)
         }
@@ -268,7 +265,7 @@ pub mod tests {
         /// Add a new entity (user_recovery).
         fn create_user_recovery(
             &self,
-            create_user_recovery_dto: &CreateUserRecoveryDto,
+            create_user_recovery_dto: CreateUserRecoveryDto,
         ) -> Result<UserRecovery, String> {
             let user_id = create_user_recovery_dto.user_id;
             let final_date = create_user_recovery_dto.final_date.clone();
@@ -292,7 +289,7 @@ pub mod tests {
         fn modify_user_recovery(
             &self,
             id: i32,
-            create_user_recovery_dto: &CreateUserRecoveryDto,
+            create_user_recovery_dto: CreateUserRecoveryDto,
         ) -> Result<Option<UserRecovery>, String> {
             let user_recovery_opt =
                 self.user_recovery_vec.iter().find(|user_recovery| user_recovery.id == id);

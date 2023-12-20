@@ -14,7 +14,7 @@ pub trait UserRegistrOrm {
     /// Add a new entity (user_registration).
     fn create_user_registr(
         &self,
-        create_user_registr_dto: &CreateUserRegistrDto,
+        create_user_registr_dto: CreateUserRegistrDto,
     ) -> Result<UserRegistr, String>;
     /// Delete an entity (user_registration).
     fn delete_user_registr(&self, id: i32) -> Result<usize, String>;
@@ -78,12 +78,13 @@ pub mod inst {
         fn find_user_registr_by_id(&self, id: i32) -> Result<Option<UserRegistr>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
+            let table = "find_user_registr_by_id";
             // Run query using Diesel to find user by id and return it.
             let result = schema::user_registration::table
                 .filter(dsl::id.eq(id))
                 .first::<UserRegistr>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
+                .map_err(|e| format!("{}-{}: {}", DB_USER_REGISTR, table, e.to_string()))?;
 
             Ok(result)
         }
@@ -119,16 +120,16 @@ pub mod inst {
                 .limit(1);
 
             let mut result_vec: Vec<UserRegistr> = vec![];
-
+            let table = "find_user_registr_by_nickname_or_email";
             if nickname2_len > 0 && email2_len == 0 {
                 let result_nickname_vec: Vec<UserRegistr> = sql_query_nickname
                     .load(&mut conn)
-                    .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
+                    .map_err(|e| format!("{}-{}: {}", DB_USER_REGISTR, table, e.to_string()))?;
                 result_vec.extend(result_nickname_vec);
             } else if nickname2_len == 0 && email2_len > 0 {
                 let result_email_vec: Vec<UserRegistr> = sql_query_email
                     .load(&mut conn)
-                    .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
+                    .map_err(|e| format!("{}-{}: {}", DB_USER_REGISTR, table, e.to_string()))?;
                 result_vec.extend(result_email_vec);
             } else {
                 // This design (union two queries) allows the use of two separate indexes.
@@ -137,7 +138,7 @@ pub mod inst {
                 // Run query using Diesel to find user by nickname or email and return it (where final_date > now).
                 let result_nickname_email_vec: Vec<UserRegistr> = sql_query
                     .load(&mut conn)
-                    .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
+                    .map_err(|e| format!("{}-{}: {}", DB_USER_REGISTR, table, e.to_string()))?;
                 result_vec.extend(result_nickname_email_vec);
             }
 
@@ -152,7 +153,7 @@ pub mod inst {
         /// Add a new entity (user_registration).
         fn create_user_registr(
             &self,
-            create_user_registr_dto: &CreateUserRegistrDto,
+            create_user_registr_dto: CreateUserRegistrDto,
         ) -> Result<UserRegistr, String> {
             let mut create_user_registr_dto2 = create_user_registr_dto.clone();
             create_user_registr_dto2.nickname = create_user_registr_dto2.nickname.to_lowercase();
@@ -160,12 +161,13 @@ pub mod inst {
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
+            let table = "create_user_registr";
             // Run query using Diesel to add a new user entry.
             let user_registr: UserRegistr = diesel::insert_into(schema::user_registration::table)
                 .values(create_user_registr_dto2)
                 .returning(UserRegistr::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
+                .map_err(|e| format!("{}-{}: {}", DB_USER_REGISTR, table, e.to_string()))?;
 
             Ok(user_registr)
         }
@@ -174,10 +176,12 @@ pub mod inst {
         fn delete_user_registr(&self, id: i32) -> Result<usize, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
+            let table = "delete_user_registr";
             // Run query using Diesel to delete a entry (user_registration).
-            let count: usize = diesel::delete(dsl::user_registration.find(id))
-                .execute(&mut conn)
-                .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
+            let count: usize =
+                diesel::delete(dsl::user_registration.find(id))
+                    .execute(&mut conn)
+                    .map_err(|e| format!("{}-{}: {}", DB_USER_REGISTR, table, e.to_string()))?;
 
             Ok(count)
         }
@@ -191,21 +195,17 @@ pub mod inst {
             let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
             let start_day_time = now - Duration::days(duration.into());
             let end_day_time = now.clone();
-            let before = std::time::Instant::now();
+
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-
+            let table = "delete_inactive_final_date";
             // Run query using Diesel to delete a entry (user_registration).
             let count: usize =
                 diesel::delete(schema::user_registration::table.filter(
                     dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time)),
                 ))
                 .execute(&mut conn)
-                .map_err(|e| format!("{}: {}", DB_USER_REGISTR, e.to_string()))?;
-
-            let info = format!("{:.2?}", before.elapsed());
-            #[rustfmt::skip]
-            log::info!("user_registration.delete(expired) time: {}, count: {}", info, count);
+                .map_err(|e| format!("{}-{}: {}", DB_USER_REGISTR, table, e.to_string()))?;
 
             Ok(count)
         }
@@ -310,7 +310,7 @@ pub mod tests {
         /// Add a new entity (user_registration).
         fn create_user_registr(
             &self,
-            create_user_registr_dto: &CreateUserRegistrDto,
+            create_user_registr_dto: CreateUserRegistrDto,
         ) -> Result<UserRegistr, String> {
             let nickname = create_user_registr_dto.nickname.clone();
             let email = create_user_registr_dto.email.clone();

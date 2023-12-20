@@ -191,7 +191,7 @@ pub async fn registration(
     // Create a new entity (user).
     let user_registr = web::block(move || {
         let user_registr = user_registr_orm
-            .create_user_registr(&create_user_registr_dto)
+            .create_user_registr(create_user_registr_dto)
             .map_err(|e| err_database(e));
         user_registr
     })
@@ -283,7 +283,7 @@ pub async fn confirm_registration(
     let user = web::block(move || {
         // Create a new entity (user).
         let user_res =
-            user_orm.create_user(&create_user_dto).map_err(|e| err_database(e.to_string()));
+            user_orm.create_user(create_user_dto).map_err(|e| err_database(e.to_string()));
         user_res
     })
     .await
@@ -296,7 +296,7 @@ pub async fn confirm_registration(
     let _ = web::block(move || {
         // Create a new entity (session).
         let session_res =
-            session_orm.create_session(&session).map_err(|e| err_database(e.to_string()));
+            session_orm.create_session(session).map_err(|e| err_database(e.to_string()));
 
         user_registr_orm2.delete_user_registr(user_registr_id).ok();
 
@@ -391,7 +391,7 @@ pub async fn recovery(
         user_recovery_id = user_recovery.id;
         let _ = web::block(move || {
             let user_recovery = user_recovery_orm2
-                .modify_user_recovery(user_recovery_id, &create_user_recovery_dto)
+                .modify_user_recovery(user_recovery_id, create_user_recovery_dto)
                 .map_err(|e| err_database(e));
             user_recovery
         })
@@ -402,7 +402,7 @@ pub async fn recovery(
         // Create a new entity (user_recovery).
         let user_recovery = web::block(move || {
             let user_recovery = user_recovery_orm2
-                .create_user_recovery(&create_user_recovery_dto)
+                .create_user_recovery(create_user_recovery_dto)
                 .map_err(|e| err_database(e));
             user_recovery
         })
@@ -531,7 +531,7 @@ pub async fn confirm_recovery(
     };
     // Update the password hash for the entry in the "user" table.
     let user_opt = web::block(move || {
-        let user = user_orm2.modify_user(user.id, &modify_user_dto).map_err(|e| err_database(e));
+        let user = user_orm2.modify_user(user.id, modify_user_dto).map_err(|e| err_database(e));
         user
     })
     .await
