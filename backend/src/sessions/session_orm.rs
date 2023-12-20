@@ -43,7 +43,6 @@ pub mod inst {
     use super::*;
 
     pub const CONN_POOL: &str = "ConnectionPool";
-    pub const DB_SESSION: &str = "Db_Session";
 
     #[derive(Debug, Clone)]
     pub struct SessionOrmApp {
@@ -69,7 +68,7 @@ pub mod inst {
                 .filter(schema::sessions::dsl::user_id.eq(user_id))
                 .first::<Session>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}-find_session_by_id: {}", DB_SESSION, e.to_string()))?;
+                .map_err(|e| format!("DB-find_session_by_id: {}", e.to_string()))?;
 
             Ok(session_opt)
         }
@@ -82,7 +81,7 @@ pub mod inst {
                 .values(session)
                 .returning(Session::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("{}-create_session: {}", DB_SESSION, e.to_string()))?;
+                .map_err(|e| format!("DB-create_session: {}", e.to_string()))?;
 
             Ok(session)
         }
@@ -100,7 +99,7 @@ pub mod inst {
                 .returning(Session::as_returning())
                 .get_result(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}-modify_session: {}", DB_SESSION, e.to_string()))?;
+                .map_err(|e| format!("DB-modify_session: {}", e.to_string()))?;
 
             Ok(result)
         }

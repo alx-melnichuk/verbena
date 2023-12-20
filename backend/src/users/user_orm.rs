@@ -46,7 +46,6 @@ pub mod inst {
     use super::*;
 
     pub const CONN_POOL: &str = "ConnectionPool";
-    pub const DB_USER: &str = "Db_User";
 
     #[derive(Debug, Clone)]
     pub struct UserOrmApp {
@@ -72,7 +71,7 @@ pub mod inst {
                 .filter(schema::users::dsl::id.eq(id))
                 .first::<User>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}-find_user_by_id: {}", DB_USER, e.to_string()))?;
+                .map_err(|e| format!("DB-find_user_by_id: {}", e.to_string()))?;
 
             Ok(user_opt)
         }
@@ -111,12 +110,12 @@ pub mod inst {
             if nickname2_len > 0 && email2_len == 0 {
                 let result_nickname_vec: Vec<User> = sql_query_nickname
                     .load(&mut conn)
-                    .map_err(|e| format!("{}-{}: {}", DB_USER, table, e.to_string()))?;
+                    .map_err(|e| format!("DB-{}: {}", table, e.to_string()))?;
                 result_vec.extend(result_nickname_vec);
             } else if nickname2_len == 0 && email2_len > 0 {
                 let result_email_vec: Vec<User> = sql_query_email
                     .load(&mut conn)
-                    .map_err(|e| format!("{}-{}: {}", DB_USER, table, e.to_string()))?;
+                    .map_err(|e| format!("DB-{}: {}", table, e.to_string()))?;
                 result_vec.extend(result_email_vec);
             } else {
                 // This design (union two queries) allows the use of two separate indexes.
@@ -125,7 +124,7 @@ pub mod inst {
                 // Run query using Diesel to find user by nickname or email and return it.
                 let result_nickname_email_vec: Vec<User> = sql_query
                     .load(&mut conn)
-                    .map_err(|e| format!("{}-{}: {}", DB_USER, table, e.to_string()))?;
+                    .map_err(|e| format!("DB-{}: {}", table, e.to_string()))?;
                 result_vec.extend(result_nickname_email_vec);
             }
 
@@ -149,7 +148,7 @@ pub mod inst {
                 .values(create_user_dto2)
                 .returning(User::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("{}-create_user: {}", DB_USER, e.to_string()))?;
+                .map_err(|e| format!("DB-create_user: {}", e.to_string()))?;
 
             Ok(user)
         }
@@ -175,7 +174,7 @@ pub mod inst {
                 .returning(User::as_returning())
                 .get_result(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}-modify_user: {}", DB_USER, e.to_string()))?;
+                .map_err(|e| format!("DB-modify_user: {}", e.to_string()))?;
 
             Ok(result)
         }
@@ -186,7 +185,7 @@ pub mod inst {
             // Run query using Diesel to delete a entry (user).
             let count: usize = diesel::delete(schema::users::dsl::users.find(id))
                 .execute(&mut conn)
-                .map_err(|e| format!("{}-delete_user: {}", DB_USER, e.to_string()))?;
+                .map_err(|e| format!("DB-delete_user: {}", e.to_string()))?;
 
             Ok(count)
         }

@@ -59,7 +59,6 @@ pub mod inst {
     use super::UserRecoveryOrm;
 
     pub const CONN_POOL: &str = "ConnectionPool";
-    pub const DB_USER_RECOVERY: &str = "Db_UserRecovery";
 
     #[derive(Debug, Clone)]
     pub struct UserRecoveryOrmApp {
@@ -80,13 +79,12 @@ pub mod inst {
         fn find_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            let table = "find_user_recovery_by_id";
             // Run query using Diesel to find user by id and return it.
             let result = schema::user_recovery::table
                 .filter(dsl::id.eq(id))
                 .first::<UserRecovery>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}-{}: {}", DB_USER_RECOVERY, table, e.to_string()))?;
+                .map_err(|e| format!("DB-find_user_recovery_by_id: {}", e.to_string()))?;
 
             Ok(result)
         }
@@ -98,14 +96,13 @@ pub mod inst {
         ) -> Result<Option<UserRecovery>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            let table = "find_user_recovery_by_user_id";
             let now = Utc::now();
             // Run query using Diesel to find user by user_id and return it (where final_date > now).
             let result = schema::user_recovery::table
                 .filter(dsl::user_id.eq(user_id).and(dsl::final_date.gt(now)))
                 .first::<UserRecovery>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}-{}: {}", DB_USER_RECOVERY, table, e.to_string()))?;
+                .map_err(|e| format!("DB-find_user_recovery_by_user_id: {}", e.to_string()))?;
 
             Ok(result)
         }
@@ -117,13 +114,12 @@ pub mod inst {
         ) -> Result<UserRecovery, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            let table = "create_user_recovery";
             // Run query using Diesel to add a new user entry.
             let user_recovery: UserRecovery = diesel::insert_into(schema::user_recovery::table)
                 .values(create_user_recovery_dto)
                 .returning(UserRecovery::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("{}-{}: {}", DB_USER_RECOVERY, table, e.to_string()))?;
+                .map_err(|e| format!("DB-create_user_recovery: {}", e.to_string()))?;
 
             Ok(user_recovery)
         }
@@ -136,14 +132,13 @@ pub mod inst {
         ) -> Result<Option<UserRecovery>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            let table = "modify_user_recovery";
             // Run query using Diesel to full or partially modify the user entry.
             let result = diesel::update(dsl::user_recovery.find(id))
                 .set(&create_user_recovery_dto)
                 .returning(UserRecovery::as_returning())
                 .get_result(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}-{}: {}", DB_USER_RECOVERY, table, e.to_string()))?;
+                .map_err(|e| format!("DB-modify_user_recovery: {}", e.to_string()))?;
 
             Ok(result)
         }
@@ -152,11 +147,10 @@ pub mod inst {
         fn delete_user_recovery(&self, id: i32) -> Result<usize, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            let table = "delete_user_recovery";
             // Run query using Diesel to delete a entry (user_recovery).
             let count: usize = diesel::delete(dsl::user_recovery.find(id))
                 .execute(&mut conn)
-                .map_err(|e| format!("{}-{}: {}", DB_USER_RECOVERY, table, e.to_string()))?;
+                .map_err(|e| format!("DB-delete_user_recovery: {}", e.to_string()))?;
 
             Ok(count)
         }
@@ -173,14 +167,13 @@ pub mod inst {
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            let table = "delete_inactive_final_date";
             // Run query using Diesel to delete a entry (user_recovery).
             let count: usize =
                 diesel::delete(schema::user_recovery::table.filter(
                     dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time)),
                 ))
                 .execute(&mut conn)
-                .map_err(|e| format!("{}-{}: {}", DB_USER_RECOVERY, table, e.to_string()))?;
+                .map_err(|e| format!("DB-delete_inactive_final_date: {}", e.to_string()))?;
 
             Ok(count)
         }

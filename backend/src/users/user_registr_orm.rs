@@ -57,7 +57,6 @@ pub mod inst {
     use super::UserRegistrOrm;
 
     pub const CONN_POOL: &str = "ConnectionPool";
-    pub const DB_USER_REGISTR: &str = "Db_UserRegistr";
 
     #[derive(Debug, Clone)]
     pub struct UserRegistrOrmApp {
@@ -78,13 +77,12 @@ pub mod inst {
         fn find_user_registr_by_id(&self, id: i32) -> Result<Option<UserRegistr>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            let table = "find_user_registr_by_id";
             // Run query using Diesel to find user by id and return it.
             let result = schema::user_registration::table
                 .filter(dsl::id.eq(id))
                 .first::<UserRegistr>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}-{}: {}", DB_USER_REGISTR, table, e.to_string()))?;
+                .map_err(|e| format!("DB-find_user_registr_by_id: {}", e.to_string()))?;
 
             Ok(result)
         }
@@ -124,12 +122,12 @@ pub mod inst {
             if nickname2_len > 0 && email2_len == 0 {
                 let result_nickname_vec: Vec<UserRegistr> = sql_query_nickname
                     .load(&mut conn)
-                    .map_err(|e| format!("{}-{}: {}", DB_USER_REGISTR, table, e.to_string()))?;
+                    .map_err(|e| format!("DB-{}: {}", table, e.to_string()))?;
                 result_vec.extend(result_nickname_vec);
             } else if nickname2_len == 0 && email2_len > 0 {
                 let result_email_vec: Vec<UserRegistr> = sql_query_email
                     .load(&mut conn)
-                    .map_err(|e| format!("{}-{}: {}", DB_USER_REGISTR, table, e.to_string()))?;
+                    .map_err(|e| format!("DB-{}: {}", table, e.to_string()))?;
                 result_vec.extend(result_email_vec);
             } else {
                 // This design (union two queries) allows the use of two separate indexes.
@@ -138,7 +136,7 @@ pub mod inst {
                 // Run query using Diesel to find user by nickname or email and return it (where final_date > now).
                 let result_nickname_email_vec: Vec<UserRegistr> = sql_query
                     .load(&mut conn)
-                    .map_err(|e| format!("{}-{}: {}", DB_USER_REGISTR, table, e.to_string()))?;
+                    .map_err(|e| format!("DB-{}: {}", table, e.to_string()))?;
                 result_vec.extend(result_nickname_email_vec);
             }
 
@@ -161,13 +159,12 @@ pub mod inst {
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            let table = "create_user_registr";
             // Run query using Diesel to add a new user entry.
             let user_registr: UserRegistr = diesel::insert_into(schema::user_registration::table)
                 .values(create_user_registr_dto2)
                 .returning(UserRegistr::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("{}-{}: {}", DB_USER_REGISTR, table, e.to_string()))?;
+                .map_err(|e| format!("DB-create_user_registr: {}", e.to_string()))?;
 
             Ok(user_registr)
         }
@@ -176,12 +173,10 @@ pub mod inst {
         fn delete_user_registr(&self, id: i32) -> Result<usize, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            let table = "delete_user_registr";
             // Run query using Diesel to delete a entry (user_registration).
-            let count: usize =
-                diesel::delete(dsl::user_registration.find(id))
-                    .execute(&mut conn)
-                    .map_err(|e| format!("{}-{}: {}", DB_USER_REGISTR, table, e.to_string()))?;
+            let count: usize = diesel::delete(dsl::user_registration.find(id))
+                .execute(&mut conn)
+                .map_err(|e| format!("DB-delete_user_registr: {}", e.to_string()))?;
 
             Ok(count)
         }
@@ -198,14 +193,13 @@ pub mod inst {
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            let table = "delete_inactive_final_date";
             // Run query using Diesel to delete a entry (user_registration).
             let count: usize =
                 diesel::delete(schema::user_registration::table.filter(
                     dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time)),
                 ))
                 .execute(&mut conn)
-                .map_err(|e| format!("{}-{}: {}", DB_USER_REGISTR, table, e.to_string()))?;
+                .map_err(|e| format!("DB-delete_inactive_final_date: {}", e.to_string()))?;
 
             Ok(count)
         }
