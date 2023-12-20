@@ -6,6 +6,7 @@ DROP PROCEDURE IF EXISTS add_list_stream_tag_to_stream;
 DROP PROCEDURE IF EXISTS remove_list_stream_tag_to_stream;
 DROP PROCEDURE IF EXISTS add_stream_tag_to_stream;
 DROP PROCEDURE IF EXISTS remove_stream_tag_to_stream;
+DROP PROCEDURE IF EXISTS update_list_stream_tag_to_stream;
 DROP FUNCTION IF EXISTS get_stream_tags_by_streams;
 
 /* ###Delete Remove the "view_stream_tags_by_streams" view. */

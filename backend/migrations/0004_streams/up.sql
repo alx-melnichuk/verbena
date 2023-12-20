@@ -75,7 +75,7 @@ CREATE INDEX idx_link_stream_tags_to_streams_stream_id_stream_tag_id ON link_str
 
 /* Add a link to "tag" for "stream". */
 CREATE OR REPLACE PROCEDURE add_stream_tag_to_stream(
-  user_id1 INTEGER, tag_name1 VARCHAR, stream_id1 INTEGER
+  stream_id1 INTEGER, user_id1 INTEGER, tag_name1 VARCHAR
 ) LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -86,32 +86,37 @@ BEGIN
   SELECT id INTO stream_tag_id1
   FROM stream_tags
   WHERE user_id = user_id1 AND "name" = tag_name1;
+  raise notice 'SELECT id INTO stream_tag_id1: %', stream_tag_id1;
 
   -- If "stream tag" is not found, then add it.
-  IF NOT FOUND THEN
+  IF (stream_tag_id1 IS NULL) THEN
+    raise notice 'INSERT INTO stream_tags(user_id: %, "name": %)', user_id1, tag_name1;
     INSERT INTO stream_tags(user_id, "name")
     VALUES(user_id1, tag_name1)
     RETURNING id INTO stream_tag_id1;
   ELSE
     -- Find "link_stream_tags_to_streams" with the given: stream_id1 and stream_tag_id1.
+    raise notice 'SELECT id INTO link_tag_stream_id1';
     SELECT id INTO link_tag_stream_id1
     FROM link_stream_tags_to_streams
     WHERE stream_id = stream_id1 AND stream_tag_id = stream_tag_id1;
+    raise notice 'link_tag_stream_id1: %', link_tag_stream_id1;
   END IF;
 
   -- If "link_stream_tags_to_streams" is not found, then add it.
   IF (link_tag_stream_id1 IS NULL) THEN
+    raise notice 'INSERT INTO link_stream(stream_tag_id: %, stream_id: %)', stream_tag_id1, stream_id1;
     INSERT INTO link_stream_tags_to_streams(stream_tag_id, stream_id)
     VALUES(stream_tag_id1, stream_id1)
     RETURNING id INTO link_tag_stream_id1;
   END IF;
-  -- raise notice 'stream_tag_id1: %, link_tag_stream_id1: %', stream_tag_id1, link_tag_stream_id1;
+  raise notice 'stream_tag_id1: %, link_tag_stream_id1: %', stream_tag_id1, link_tag_stream_id1;
 END;
 $$;
 
 /* Add links to the "tag" list for "stream". */
 CREATE OR REPLACE PROCEDURE add_list_stream_tag_to_stream(
-  user_id1 INTEGER, stream_id1 INTEGER, tag_name_list1 VARCHAR
+  id1 INTEGER, user_id1 INTEGER, tag_names1 VARCHAR
 ) LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -119,12 +124,12 @@ DECLARE
   tag_name_buf VARCHAR[];
   tag_name VARCHAR;
 BEGIN
-  tag_name_buf := string_to_array(tag_name_list1, ',');
+  tag_name_buf := string_to_array(tag_names1, ',');
   tag_index := ARRAY_LENGTH(tag_name_buf, 1);
   WHILE tag_index > 0 LOOP
     tag_name = TRIM(tag_name_buf[tag_index]);
-    -- raise notice 'tag_index: %, tag_name: %', tag_index, tag_name;
-    CALL add_stream_tag_to_stream(user_id1, tag_name, stream_id1);
+    raise notice 'tag_index: %, id1: %, user_id1: %, tag_name: %', tag_index, id1, user_id1, tag_name;
+    CALL add_stream_tag_to_stream(id1, user_id1, tag_name);
     tag_index := tag_index - 1;
   END LOOP;
 END;
@@ -132,7 +137,7 @@ $$;
 
 /* Remove link to "tag" for "stream". */
 CREATE OR REPLACE PROCEDURE remove_stream_tag_to_stream(
-  user_id1 INTEGER, tag_name1 VARCHAR, stream_id1 INTEGER
+  stream_id1 INTEGER, user_id1 INTEGER, tag_name1 VARCHAR
 ) LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -178,24 +183,65 @@ $$;
 
 /* Remove links to the "tag" list for "stream". */
 CREATE OR REPLACE PROCEDURE remove_list_stream_tag_to_stream(
-  user_id1 INTEGER, stream_id1 INTEGER, tag_name_list1 VARCHAR
+  id1 INTEGER, user_id1 INTEGER, tag_name_list1 VARCHAR
 ) LANGUAGE plpgsql
 AS $$
 DECLARE
-  tag_index INTEGER := 0;
+  tag_index INTEGER;
   tag_name_buf VARCHAR[];
-  tag_name VARCHAR := '';
+  tag_name VARCHAR;
 BEGIN
   tag_name_buf := string_to_array(tag_name_list1, ',');
   tag_index := ARRAY_LENGTH(tag_name_buf, 1);
   WHILE tag_index > 0 LOOP
     tag_name = TRIM(tag_name_buf[tag_index]);
     -- raise notice 'tag_index: %, tag_name: %', tag_index, tag_name;
-    CALL remove_stream_tag_to_stream(user_id1, tag_name, stream_id1);
+    CALL remove_stream_tag_to_stream(id1, user_id1, tag_name);
     tag_index := tag_index - 1;
   END LOOP;
 END;
 $$;
+
+/* Update links to the "tag" list for "stream". */
+CREATE OR REPLACE PROCEDURE update_list_stream_tag_to_stream(
+  id1 INTEGER, user_id1 INTEGER, tag_name_list1 VARCHAR
+) LANGUAGE plpgsql
+AS $$
+DECLARE
+  tags_old VARCHAR[];
+  tags_new VARCHAR[];
+  tags_comm VARCHAR[];
+  tags_add VARCHAR[];
+  tags_remove VARCHAR[];
+BEGIN
+  tags_new := string_to_array(tag_name_list1, ',');
+  -- tags_old =[       'tag2','tag3','tag4'       ,'tag6']
+  -- tags_new =['tag1','tag2',      ,'tag4','tag5']
+  -- tags_comm=[       'tag2',       'tag4'       ]
+  tags_old := string_to_array('tag2,tag3,tag4,tag6', ',');
+
+  -- Get common elements in both arrays
+  SELECT 
+    ARRAY(SELECT unnest(tags_old) INTERSECT SELECT unnest(tags_new)) INTO tags_comm;
+  raise notice 'tags_comm: %', tags_comm; -- {'tag2,tag4'}
+
+  SELECT 
+    ARRAY(SELECT unnest(tags_old) EXCEPT SELECT unnest(tags_comm)) INTO tags_remove;
+  raise notice 'tags_remove: %', tags_remove;  -- {'tag6','tag3'}
+
+  SELECT 
+    ARRAY(SELECT unnest(tags_new) EXCEPT SELECT unnest(tags_comm)) INTO tags_add;
+  raise notice 'tags_add: %', tags_add;  -- 'tag1','tag5'
+
+  CALL remove_list_stream_tag_to_stream(id1, user_id1, tags_remove);
+  CALL add_list_stream_tag_to_stream(id1, user_id1, tags_add);
+END;
+$$;
+
+-- call update_list_stream_tag_to_stream(562, 182, 'tag1,tag2,tag4,tag5')
+-- tags_comm: {tag2,tag4}
+-- tags_remove: {tag6,tag3}
+-- tags_add: {tag5,tag1}
 
 /* The function returns the "stream_tags" data for the specified "user" and "stream". */
 CREATE OR REPLACE FUNCTION get_stream_tags_by_streams(
