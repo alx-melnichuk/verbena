@@ -84,7 +84,7 @@ pub mod inst {
                 .filter(dsl::id.eq(id))
                 .first::<UserRecovery>(&mut conn)
                 .optional()
-                .map_err(|e| format!("DB-find_user_recovery_by_id: {}", e.to_string()))?;
+                .map_err(|e| format!("find_user_recovery_by_id: {}", e.to_string()))?;
 
             Ok(result)
         }
@@ -102,7 +102,7 @@ pub mod inst {
                 .filter(dsl::user_id.eq(user_id).and(dsl::final_date.gt(now)))
                 .first::<UserRecovery>(&mut conn)
                 .optional()
-                .map_err(|e| format!("DB-find_user_recovery_by_user_id: {}", e.to_string()))?;
+                .map_err(|e| format!("find_user_recovery_by_user_id: {}", e.to_string()))?;
 
             Ok(result)
         }
@@ -119,7 +119,7 @@ pub mod inst {
                 .values(create_user_recovery_dto)
                 .returning(UserRecovery::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("DB-create_user_recovery: {}", e.to_string()))?;
+                .map_err(|e| format!("create_user_recovery: {}", e.to_string()))?;
 
             Ok(user_recovery)
         }
@@ -138,7 +138,7 @@ pub mod inst {
                 .returning(UserRecovery::as_returning())
                 .get_result(&mut conn)
                 .optional()
-                .map_err(|e| format!("DB-modify_user_recovery: {}", e.to_string()))?;
+                .map_err(|e| format!("modify_user_recovery: {}", e.to_string()))?;
 
             Ok(result)
         }
@@ -150,7 +150,7 @@ pub mod inst {
             // Run query using Diesel to delete a entry (user_recovery).
             let count: usize = diesel::delete(dsl::user_recovery.find(id))
                 .execute(&mut conn)
-                .map_err(|e| format!("DB-delete_user_recovery: {}", e.to_string()))?;
+                .map_err(|e| format!("delete_user_recovery: {}", e.to_string()))?;
 
             Ok(count)
         }
@@ -173,7 +173,7 @@ pub mod inst {
                     dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time)),
                 ))
                 .execute(&mut conn)
-                .map_err(|e| format!("DB-delete_inactive_final_date: {}", e.to_string()))?;
+                .map_err(|e| format!("delete_inactive_final_date: {}", e.to_string()))?;
 
             Ok(count)
         }

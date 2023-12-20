@@ -82,7 +82,7 @@ pub mod inst {
                 .filter(dsl::id.eq(id))
                 .first::<UserRegistr>(&mut conn)
                 .optional()
-                .map_err(|e| format!("DB-find_user_registr_by_id: {}", e.to_string()))?;
+                .map_err(|e| format!("find_user_registr_by_id: {}", e.to_string()))?;
 
             Ok(result)
         }
@@ -122,12 +122,12 @@ pub mod inst {
             if nickname2_len > 0 && email2_len == 0 {
                 let result_nickname_vec: Vec<UserRegistr> = sql_query_nickname
                     .load(&mut conn)
-                    .map_err(|e| format!("DB-{}: {}", table, e.to_string()))?;
+                    .map_err(|e| format!("{}: {}", table, e.to_string()))?;
                 result_vec.extend(result_nickname_vec);
             } else if nickname2_len == 0 && email2_len > 0 {
                 let result_email_vec: Vec<UserRegistr> = sql_query_email
                     .load(&mut conn)
-                    .map_err(|e| format!("DB-{}: {}", table, e.to_string()))?;
+                    .map_err(|e| format!("{}: {}", table, e.to_string()))?;
                 result_vec.extend(result_email_vec);
             } else {
                 // This design (union two queries) allows the use of two separate indexes.
@@ -136,7 +136,7 @@ pub mod inst {
                 // Run query using Diesel to find user by nickname or email and return it (where final_date > now).
                 let result_nickname_email_vec: Vec<UserRegistr> = sql_query
                     .load(&mut conn)
-                    .map_err(|e| format!("DB-{}: {}", table, e.to_string()))?;
+                    .map_err(|e| format!("{}: {}", table, e.to_string()))?;
                 result_vec.extend(result_nickname_email_vec);
             }
 
@@ -164,7 +164,7 @@ pub mod inst {
                 .values(create_user_registr_dto2)
                 .returning(UserRegistr::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("DB-create_user_registr: {}", e.to_string()))?;
+                .map_err(|e| format!("create_user_registr: {}", e.to_string()))?;
 
             Ok(user_registr)
         }
@@ -176,7 +176,7 @@ pub mod inst {
             // Run query using Diesel to delete a entry (user_registration).
             let count: usize = diesel::delete(dsl::user_registration.find(id))
                 .execute(&mut conn)
-                .map_err(|e| format!("DB-delete_user_registr: {}", e.to_string()))?;
+                .map_err(|e| format!("delete_user_registr: {}", e.to_string()))?;
 
             Ok(count)
         }
@@ -199,7 +199,7 @@ pub mod inst {
                     dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time)),
                 ))
                 .execute(&mut conn)
-                .map_err(|e| format!("DB-delete_inactive_final_date: {}", e.to_string()))?;
+                .map_err(|e| format!("delete_inactive_final_date: {}", e.to_string()))?;
 
             Ok(count)
         }
