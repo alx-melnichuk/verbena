@@ -2,25 +2,24 @@ use super::stream_models::{CreateStream, ModifyStream, Stream};
 
 pub trait StreamOrm {
     /// Find for an entity (stream) by id.
-    fn find_stream(&self, id: i32) -> Result<Option<Stream>, String>;
+    fn find_stream_by_id(&self, id: i32) -> Result<Option<Stream>, String>;
     /// Find for an entity (stream) by user_id.
-    fn find_streams(&self, user_id: i32) -> Result<Vec<Stream>, String>;
-    /// Find tag names (stream_tag) by user_id and stream_id.
-    fn find_stream_tag_names(&self, user_id: i32, stream_id: i32) -> Result<Vec<String>, String>;
+    fn find_streams_by_user_id(&self, user_id: i32) -> Result<Vec<Stream>, String>;
+    /// Find tag names (stream_tag) by id and user_id.
+    fn find_stream_tags(&self, id: i32, user_id: i32) -> Result<Vec<String>, String>;
     /// Add a new entity (stream).
     fn create_stream(&self, create_stream: CreateStream) -> Result<Stream, String>;
     /// Add a list of "stream_tags" for the entity (stream).
-    fn add_stream_tag(
-        &self,
-        user_id: i32,
-        stream_id: i32,
-        stream_tags: Vec<String>,
-    ) -> Result<(), String>;
+    fn add_stream_tags(&self, id: i32, user_id: i32, tags: Vec<String>) -> Result<(), String>;
     /// Modify an entity (stream).
     fn modify_stream(&self, id: i32, modify_stream: ModifyStream)
         -> Result<Option<Stream>, String>;
+    /// Update a list of "stream_tags" for the entity (stream).
+    fn update_stream_tags(&self, id: i32, user_id: i32, tags: Vec<String>) -> Result<(), String>;
     /// Delete an entity (stream).
     fn delete_stream(&self, id: i32) -> Result<usize, String>;
+    /// Remove a list of "stream_tags" for the entity (stream).
+    fn remove_stream_tags(&self, id: i32, user_id: i32, tags: Vec<String>) -> Result<(), String>;
 }
 
 pub mod cfg {
@@ -55,8 +54,6 @@ pub mod inst {
     use super::StreamOrm;
 
     pub const CONN_POOL: &str = "ConnectionPool";
-    pub const DB_STREAM: &str = "Db_Stream";
-    pub const DB_STREAM_TAG: &str = "Db_StreamTag";
     pub const MAX_LIMIT_STREAM_TAGS: i64 = stream_models::TAG_NAME_MAX_AMOUNT as i64;
 
     #[derive(Debug, Clone)]
@@ -75,7 +72,7 @@ pub mod inst {
 
     impl StreamOrm for StreamOrmApp {
         /// Find for an entity (stream) by id.
-        fn find_stream(&self, id: i32) -> Result<Option<Stream>, String> {
+        fn find_stream_by_id(&self, id: i32) -> Result<Option<Stream>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to find user by id and return it.
@@ -83,30 +80,26 @@ pub mod inst {
                 .filter(dsl::id.eq(id))
                 .first::<Stream>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}-find_stream: {}", DB_STREAM, e.to_string()))?;
+                .map_err(|e| format!("find_stream_by_id: {}", e.to_string()))?;
 
             Ok(result)
         }
 
         /// Find for an entity (stream) by user_id.
-        fn find_streams(&self, user_id: i32) -> Result<Vec<Stream>, String> {
+        fn find_streams_by_user_id(&self, user_id: i32) -> Result<Vec<Stream>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to find user by user_id and return it (where final_date > now).
             let result = schema::streams::table
                 .filter(dsl::user_id.eq(user_id))
                 .load::<Stream>(&mut conn)
-                .map_err(|e| format!("{}-find_streams: {}", DB_STREAM, e.to_string()))?;
+                .map_err(|e| format!("find_streams_by_user_id: {}", e.to_string()))?;
 
             Ok(result)
         }
 
-        /// Find tag names (stream_tag) by user_id and stream_id.
-        fn find_stream_tag_names(
-            &self,
-            user_id: i32,
-            stream_id: i32,
-        ) -> Result<Vec<String>, String> {
+        /// Find tag names (stream_tag) by id and user_id.
+        fn find_stream_tags(&self, id: i32, user_id: i32) -> Result<Vec<String>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -114,13 +107,12 @@ pub mod inst {
                 "SELECT \"name\" FROM get_stream_tags_by_streams($1, $2) LIMIT($3)",
             )
             .bind::<sql_types::Integer, _>(user_id)
-            .bind::<sql_types::Integer, _>(stream_id)
+            .bind::<sql_types::Integer, _>(id)
             .bind::<sql_types::BigInt, _>(MAX_LIMIT_STREAM_TAGS);
 
-            let result =
-                query.get_results::<stream_models::StreamTagName>(&mut conn).map_err(|e| {
-                    format!("{}-find_stream_tag_names: {}", DB_STREAM_TAG, e.to_string())
-                })?;
+            let result = query
+                .get_results::<stream_models::StreamTagName>(&mut conn)
+                .map_err(|e| format!("find_stream_tags: {}", e.to_string()))?;
 
             let result: Vec<String> = result.into_iter().map(|tag_name| tag_name.name).collect();
 
@@ -137,35 +129,28 @@ pub mod inst {
                 .values(create_stream)
                 .returning(Stream::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("{}-create_stream: {}", DB_STREAM, e.to_string()))?;
+                .map_err(|e| format!("create_stream: {}", e.to_string()))?;
 
             Ok(stream)
         }
 
         /// Add a list of "stream_tags" for the entity (stream).
-        fn add_stream_tag(
-            &self,
-            user_id: i32,
-            stream_id: i32,
-            stream_tags: Vec<String>,
-        ) -> Result<(), String> {
+        fn add_stream_tags(&self, id: i32, user_id: i32, tags: Vec<String>) -> Result<(), String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let tag_names = stream_tags.join(",");
-            // add_list_stream_tag_to_stream(user_id1 INTEGER, stream_id1 INTEGER, tag_name_list1 VARCHAR)
+            let tag_names = tags.join(",");
             // Run query using Diesel to add a list of "stream_tags" for the entity (stream).
             let query = diesel::sql_query("CALL add_list_stream_tag_to_stream($1, $2, $3)")
+                .bind::<sql_types::Integer, _>(id)
                 .bind::<sql_types::Integer, _>(user_id)
-                .bind::<sql_types::Integer, _>(stream_id)
                 .bind::<sql_types::VarChar, _>(tag_names);
             let query_sql = debug_query::<Pg, _>(&query).to_string();
             eprintln!("query_sql: {}", query_sql);
 
             query
                 .execute(&mut conn)
-                // .get_results::<stream_models::StreamTagName>(&mut conn)
-                .map_err(|e| format!("{}-add_stream_tag: {}", DB_STREAM_TAG, e.to_string()))?;
+                .map_err(|e| format!("add_stream_tag: {}", e.to_string()))?;
 
             Ok(())
         }
@@ -185,9 +170,35 @@ pub mod inst {
                 .returning(Stream::as_returning())
                 .get_result(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}-modify_stream: {}", DB_STREAM, e.to_string()))?;
+                .map_err(|e| format!("modify_stream: {}", e.to_string()))?;
 
             Ok(result)
+        }
+
+        /// Update a list of "stream_tags" for the entity (stream).
+        fn update_stream_tags(
+            &self,
+            id: i32,
+            user_id: i32,
+            tags: Vec<String>,
+        ) -> Result<(), String> {
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let tag_names = tags.join(",");
+            // Run query using Diesel to add a list of "stream_tags" for the entity (stream).
+            let query = diesel::sql_query("CALL update_list_stream_tag_to_stream($1, $2, $3)")
+                .bind::<sql_types::Integer, _>(id)
+                .bind::<sql_types::Integer, _>(user_id)
+                .bind::<sql_types::VarChar, _>(tag_names);
+            let query_sql = debug_query::<Pg, _>(&query).to_string();
+            eprintln!("query_sql: {}", query_sql);
+
+            query
+                .execute(&mut conn)
+                .map_err(|e| format!("update_stream_tags: {}", e.to_string()))?;
+
+            Ok(())
         }
 
         /// Delete an entity (stream).
@@ -198,9 +209,36 @@ pub mod inst {
             // Run query using Diesel to delete a entry (stream).
             let count: usize = diesel::delete(dsl::streams.find(id))
                 .execute(&mut conn)
-                .map_err(|e| format!("{}-delete_stream: {}", DB_STREAM, e.to_string()))?;
+                .map_err(|e| format!("delete_stream: {}", e.to_string()))?;
 
             Ok(count)
+        }
+
+        /// Remove a list of "stream_tags" for the entity (stream).
+        fn remove_stream_tags(
+            &self,
+            id: i32,
+            user_id: i32,
+            tags: Vec<String>,
+        ) -> Result<(), String> {
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let tag_names = tags.join(",");
+            // Run query using Diesel to add a list of "stream_tags" for the entity (stream).
+            let query = diesel::sql_query("CALL remove_list_stream_tag_to_stream($1, $2, $3)")
+                .bind::<sql_types::Integer, _>(id)
+                .bind::<sql_types::Integer, _>(user_id)
+                .bind::<sql_types::VarChar, _>(tag_names);
+            let query_sql = debug_query::<Pg, _>(&query).to_string();
+            eprintln!("query_sql: {}", query_sql);
+
+            query
+                .execute(&mut conn)
+                // .get_results::<stream_models::StreamTagName>(&mut conn)
+                .map_err(|e| format!("remove_stream_tag: {}", e.to_string()))?;
+
+            Ok(())
         }
     }
 }
@@ -236,7 +274,7 @@ pub mod tests {
 
     impl StreamOrm for StreamOrmApp {
         /// Find for an entity (stream) by id.
-        fn find_stream(&self, id: i32) -> Result<Option<Stream>, String> {
+        fn find_stream_by_id(&self, id: i32) -> Result<Option<Stream>, String> {
             let result = self
                 .stream_vec
                 .iter()
@@ -245,7 +283,7 @@ pub mod tests {
             Ok(result)
         }
         /// Find for an entity (stream) by user_id.
-        fn find_streams(&self, user_id: i32) -> Result<Vec<Stream>, String> {
+        fn find_streams_by_user_id(&self, user_id: i32) -> Result<Vec<Stream>, String> {
             let result = self
                 .stream_vec
                 .iter()
@@ -255,12 +293,8 @@ pub mod tests {
             Ok(result)
         }
 
-        /// Find tag names (stream_tag) by user_id and stream_id.
-        fn find_stream_tag_names(
-            &self,
-            user_id: i32,
-            stream_id: i32,
-        ) -> Result<Vec<String>, String> {
+        /// Find tag names (stream_tag) by id and user_id.
+        fn find_stream_tags(&self, id: i32, user_id: i32) -> Result<Vec<String>, String> {
             let result: Vec<String> = vec![];
             Ok(result)
         }
@@ -288,6 +322,21 @@ pub mod tests {
                 updated_at: now,
             };
             Ok(stream_saved)
+        }
+
+        /// Add a list of "stream_tags" for the entity (stream).
+        fn add_stream_tags(&self, id: i32, user_id: i32, tags: Vec<String>) -> Result<(), String> {
+            Ok(())
+        }
+
+        /// Remove a list of "stream_tags" for the entity (stream).
+        fn remove_stream_tags(
+            &self,
+            id: i32,
+            user_id: i32,
+            tags: Vec<String>,
+        ) -> Result<(), String> {
+            Ok(())
         }
 
         /// Modify an entity (stream).
