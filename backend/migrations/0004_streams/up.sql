@@ -69,138 +69,7 @@ CREATE TABLE link_stream_tags_to_streams (
 CREATE INDEX idx_link_stream_tags_to_streams_stream_id_stream_tag_id ON link_stream_tags_to_streams(stream_id, stream_tag_id);
 
 
-/*
- * Stored procedures for working with data from the "stream_tags" table.
- */
-
-/* Add a link to "tag" for "stream". */
-CREATE OR REPLACE PROCEDURE add_stream_tag_to_stream(
-  stream_id1 INTEGER, user_id1 INTEGER, tag_name1 VARCHAR
-) LANGUAGE plpgsql
-AS $$
-DECLARE
-  stream_tag_id1 INTEGER;
-  link_tag_stream_id1 INTEGER;
-BEGIN
-  -- Find for "stream tag" with the value "name tag".
-  SELECT id INTO stream_tag_id1
-  FROM stream_tags
-  WHERE user_id = user_id1 AND "name" = tag_name1;
-  raise notice 'SELECT id INTO stream_tag_id1: %', stream_tag_id1;
-
-  -- If "stream tag" is not found, then add it.
-  IF (stream_tag_id1 IS NULL) THEN
-    raise notice 'INSERT INTO stream_tags(user_id: %, "name": %)', user_id1, tag_name1;
-    INSERT INTO stream_tags(user_id, "name")
-    VALUES(user_id1, tag_name1)
-    RETURNING id INTO stream_tag_id1;
-  ELSE
-    -- Find "link_stream_tags_to_streams" with the given: stream_id1 and stream_tag_id1.
-    raise notice 'SELECT id INTO link_tag_stream_id1';
-    SELECT id INTO link_tag_stream_id1
-    FROM link_stream_tags_to_streams
-    WHERE stream_id = stream_id1 AND stream_tag_id = stream_tag_id1;
-    raise notice 'link_tag_stream_id1: %', link_tag_stream_id1;
-  END IF;
-
-  -- If "link_stream_tags_to_streams" is not found, then add it.
-  IF (link_tag_stream_id1 IS NULL) THEN
-    raise notice 'INSERT INTO link_stream(stream_tag_id: %, stream_id: %)', stream_tag_id1, stream_id1;
-    INSERT INTO link_stream_tags_to_streams(stream_tag_id, stream_id)
-    VALUES(stream_tag_id1, stream_id1)
-    RETURNING id INTO link_tag_stream_id1;
-  END IF;
-  raise notice 'stream_tag_id1: %, link_tag_stream_id1: %', stream_tag_id1, link_tag_stream_id1;
-END;
-$$;
-
-/* Add links to the "tag" list for "stream". */
-CREATE OR REPLACE PROCEDURE add_list_stream_tag_to_stream(
-  id1 INTEGER, user_id1 INTEGER, tag_names1 VARCHAR
-) LANGUAGE plpgsql
-AS $$
-DECLARE
-  tag_index INTEGER;
-  tag_name_buf VARCHAR[];
-  tag_name VARCHAR;
-BEGIN
-  tag_name_buf := string_to_array(tag_names1, ',');
-  tag_index := ARRAY_LENGTH(tag_name_buf, 1);
-  WHILE tag_index > 0 LOOP
-    tag_name = TRIM(tag_name_buf[tag_index]);
-    raise notice 'tag_index: %, id1: %, user_id1: %, tag_name: %', tag_index, id1, user_id1, tag_name;
-    CALL add_stream_tag_to_stream(id1, user_id1, tag_name);
-    tag_index := tag_index - 1;
-  END LOOP;
-END;
-$$;
-
-/* Remove link to "tag" for "stream". */
-CREATE OR REPLACE PROCEDURE remove_stream_tag_to_stream(
-  stream_id1 INTEGER, user_id1 INTEGER, tag_name1 VARCHAR
-) LANGUAGE plpgsql
-AS $$
-DECLARE
-  stream_tag_id1 INTEGER;
-  link_tag_stream_id1 INTEGER;
-  count_id INTEGER;
-  exist_val INTEGER;
-BEGIN
-  -- Find for "stream tag" with the value "name tag".
-  SELECT id INTO stream_tag_id1
-  FROM stream_tags
-  WHERE user_id = user_id1 AND "name" = tag_name1;
-  raise notice 'A: stream_tag_id1: %', stream_tag_id1;
-
-  -- If "stream tag" is not found, then exit.
-  IF (stream_tag_id1 IS NULL) THEN
-    RETURN;
-  END IF;
-  
-  -- Find "link_stream_tags_to_streams" with the given: stream_id1 and stream_tag_id1.
-  SELECT id INTO link_tag_stream_id1
-  FROM link_stream_tags_to_streams
-  WHERE stream_tag_id = stream_tag_id1 AND stream_id = stream_id1;
-  raise notice 'B: link_tag_stream_id1: %', link_tag_stream_id1;
-
-  -- If "link_stream_tags_to_streams" is found, then remove it.
-  IF (link_tag_stream_id1 IS NOT NULL) THEN
-    DELETE
-    FROM link_stream_tags_to_streams
-    WHERE id = link_tag_stream_id1;
-    raise notice 'C: delete link_stream link_tag_stream_id1: %', link_tag_stream_id1;
-  END IF;
-
-  -- If there are no more entries for stream_tag_id in the link table, then delete the tag itself.
-  IF NOT EXISTS(SELECT 1 FROM link_stream_tags_to_streams WHERE stream_tag_id = stream_tag_id1 LIMIT 1) THEN
-    DELETE
-    FROM stream_tags
-    WHERE id = stream_tag_id1;
-    raise notice 'D: delete stream_tags stream_tag_id1: %', stream_tag_id1;
-  END IF;
-END;
-$$;
-
-/* Remove links to the "tag" list for "stream". */
-CREATE OR REPLACE PROCEDURE remove_list_stream_tag_to_stream(
-  id1 INTEGER, user_id1 INTEGER, tag_name_list1 VARCHAR
-) LANGUAGE plpgsql
-AS $$
-DECLARE
-  tag_index INTEGER;
-  tag_name_buf VARCHAR[];
-  tag_name VARCHAR;
-BEGIN
-  tag_name_buf := string_to_array(tag_name_list1, ',');
-  tag_index := ARRAY_LENGTH(tag_name_buf, 1);
-  WHILE tag_index > 0 LOOP
-    tag_name = TRIM(tag_name_buf[tag_index]);
-    -- raise notice 'tag_index: %, tag_name: %', tag_index, tag_name;
-    CALL remove_stream_tag_to_stream(id1, user_id1, tag_name);
-    tag_index := tag_index - 1;
-  END LOOP;
-END;
-$$;
+/* Stored procedures for working with data from the "stream_tags" table. */
 
 /* Update links to the "tag" list for "stream". */
 CREATE OR REPLACE PROCEDURE update_list_stream_tag_to_stream(
@@ -208,40 +77,91 @@ CREATE OR REPLACE PROCEDURE update_list_stream_tag_to_stream(
 ) LANGUAGE plpgsql
 AS $$
 DECLARE
-  tags_old VARCHAR[];
-  tags_new VARCHAR[];
-  tags_comm VARCHAR[];
-  tags_add VARCHAR[];
-  tags_remove VARCHAR[];
+  tags_old VARCHAR[];   tags_new VARCHAR[];    tags_comm VARCHAR[];
+  tags_add VARCHAR[];   tags_remove VARCHAR[];
+  ids_remove INTEGER[]; tags_names_new VARCHAR[];
 BEGIN
-  tags_new := string_to_array(tag_name_list1, ',');
-  -- tags_old =[       'tag2','tag3','tag4'       ,'tag6']
-  -- tags_new =['tag1','tag2',      ,'tag4','tag5']
-  -- tags_comm=[       'tag2',       'tag4'       ]
-  tags_old := string_to_array('tag2,tag3,tag4,tag6', ',');
+  raise notice '';
+  IF (id1 IS NULL OR user_id1 IS NULL OR tag_name_list1 IS NULL) THEN
+    RETURN;
+  END IF;
 
+  tags_new := STRING_TO_ARRAY(tag_name_list1, ',');
+  tags_old := ARRAY(
+    SELECT T."name"
+    FROM stream_tags T, link_stream_tags_to_streams L
+    WHERE T.user_id = user_id1 AND T.id = L.stream_tag_id  AND L.stream_id = id1
+  );
+  raise notice 'tags_new: %, tags_old: %', tags_new, tags_old;
+ 
   -- Get common elements in both arrays
-  SELECT 
-    ARRAY(SELECT unnest(tags_old) INTERSECT SELECT unnest(tags_new)) INTO tags_comm;
-  raise notice 'tags_comm: %', tags_comm; -- {'tag2,tag4'}
+  tags_comm := ARRAY(SELECT UNNEST(tags_old) INTERSECT SELECT UNNEST(tags_new));
+  -- Get the elements to be removed from an set.
+  tags_remove := ARRAY(SELECT UNNEST(tags_old) EXCEPT SELECT UNNEST(tags_comm)); 
+  -- Get the elements to be added to the set.
+  tags_add := ARRAY(SELECT UNNEST(tags_new) EXCEPT SELECT UNNEST(tags_comm)); 
+  raise notice 'tags_add: %, tags_remove: %', tags_add, tags_remove;
 
-  SELECT 
-    ARRAY(SELECT unnest(tags_old) EXCEPT SELECT unnest(tags_comm)) INTO tags_remove;
-  raise notice 'tags_remove: %', tags_remove;  -- {'tag6','tag3'}
+  -- Adding new elements
+  IF ARRAY_LENGTH(tags_add, 1) > 0 THEN
+    -- Get a list of tag names missing in the "stream_tags" table.
+    tags_names_new := ARRAY(
+      SELECT N."name"
+      FROM (SELECT UNNEST(tags_add) AS "name") N
+        LEFT JOIN stream_tags T ON T.user_id = user_id1 AND N."name" = T."name" 
+      WHERE T.id IS NULL
+    );
+    -- Add these missing tag names to the "stream_tags" table.
+    IF ARRAY_LENGTH(tags_names_new, 1) > 0 THEN
+      INSERT INTO stream_tags(user_id, "name")
+      SELECT user_id1, N."name"
+      FROM (SELECT UNNEST(tags_names_new) AS "name") N;
+      raise notice 'INSERT INTO stream_tags() tags_names_new: %', tags_names_new;
+    END IF;
+   -- Add information on all new tag names to the links table "link_stream_tags_to_streams".
+    INSERT INTO link_stream_tags_to_streams(stream_tag_id, stream_id)
+    SELECT T.id, id1
+    FROM stream_tags T, (SELECT UNNEST(tags_add) AS "name") N  
+    WHERE T.user_id = user_id1 AND T."name" = N."name";
+  END IF;
+ 
+  -- Removing old elements
+  IF ARRAY_LENGTH(tags_remove, 1) > 0 THEN
+    -- Get an array of identifiers of legacy tag names.
+    ids_remove := ARRAY(
+      SELECT T.id FROM stream_tags T, (SELECT UNNEST(tags_remove) AS "name") N
+      WHERE T.user_id = user_id1 AND T."name" = N."name"
+    );
+    raise notice 'ids_remove: %', ids_remove;
+    -- Delete information about all obsolete tag names in the links table "link_stream_tags_to_streams".
+    DELETE
+    FROM link_stream_tags_to_streams L
+    WHERE L.id IN (
+      SELECT L.id FROM link_stream_tags_to_streams L, (SELECT UNNEST(ids_remove) AS id) I
+      WHERE L.stream_id = id1 AND L.stream_tag_id = I.id
+    );
+    raise notice 'DELETE FROM link_stream_tags_to_streams() tags_remove: %', tags_remove;
+    -- Get an array of identifiers of tag names that are no longer used.
+    ids_remove := ARRAY(
+      SELECT T.id
+      FROM stream_tags T
+      WHERE T.user_id = user_id1 AND
+        NOT EXISTS(SELECT 1 FROM link_stream_tags_to_streams L WHERE  L.stream_tag_id = T.id LIMIT 1)
+    );
+   
+    IF ARRAY_LENGTH(ids_remove, 1) > 0 THEN
+      -- Removing tag names that are no longer used.
+      DELETE
+      FROM stream_tags
+      WHERE id IN (SELECT UNNEST(ids_remove) AS id);
+      raise notice 'DELETE FROM stream_tags() ids_remove2: %', ids_remove;
+    END IF;
+   
+  END IF;
 
-  SELECT 
-    ARRAY(SELECT unnest(tags_new) EXCEPT SELECT unnest(tags_comm)) INTO tags_add;
-  raise notice 'tags_add: %', tags_add;  -- 'tag1','tag5'
-
-  CALL remove_list_stream_tag_to_stream(id1, user_id1, tags_remove);
-  CALL add_list_stream_tag_to_stream(id1, user_id1, tags_add);
 END;
 $$;
 
--- call update_list_stream_tag_to_stream(562, 182, 'tag1,tag2,tag4,tag5')
--- tags_comm: {tag2,tag4}
--- tags_remove: {tag6,tag3}
--- tags_add: {tag5,tag1}
 
 /* The function returns the "stream_tags" data for the specified "user" and "stream". */
 CREATE OR REPLACE FUNCTION get_stream_tags_by_streams(
@@ -259,6 +179,4 @@ AS $$
     AND T.id = L.stream_tag_id
     AND L.stream_id = stream_id1;
 $$;
-
--- select * from get_stream_tags_by_streams(182, 562);
 

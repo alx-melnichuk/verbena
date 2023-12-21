@@ -1,17 +1,6 @@
-/*
- * Drop stored procedures for working with data from the "stream_tags" table.
- */
-
-DROP PROCEDURE IF EXISTS add_list_stream_tag_to_stream;
-DROP PROCEDURE IF EXISTS remove_list_stream_tag_to_stream;
-DROP PROCEDURE IF EXISTS add_stream_tag_to_stream;
-DROP PROCEDURE IF EXISTS remove_stream_tag_to_stream;
+/* Drop stored procedures for working with data from the "stream_tags" table. */
 DROP PROCEDURE IF EXISTS update_list_stream_tag_to_stream;
 DROP FUNCTION IF EXISTS get_stream_tags_by_streams;
-
-/* ###Delete Remove the "view_stream_tags_by_streams" view. */
- DROP VIEW IF EXISTS view_stream_tags_by_streams;
-
 
 /* Remove the indexes on the "link_stream_tags_to_streams" table. */
 DROP INDEX IF EXISTS idx_link_stream_tags_to_streams_stream_id_stream_tag_id;
