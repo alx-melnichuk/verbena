@@ -9,8 +9,6 @@ pub trait StreamOrm {
     fn find_stream_tags(&self, id: i32, user_id: i32) -> Result<Vec<String>, String>;
     /// Add a new entity (stream).
     fn create_stream(&self, create_stream: CreateStream) -> Result<Stream, String>;
-    /// Add a list of "stream_tags" for the entity (stream).
-    fn add_stream_tags(&self, id: i32, user_id: i32, tags: Vec<String>) -> Result<(), String>;
     /// Modify an entity (stream).
     fn modify_stream(&self, id: i32, modify_stream: ModifyStream)
         -> Result<Option<Stream>, String>;
@@ -18,8 +16,6 @@ pub trait StreamOrm {
     fn update_stream_tags(&self, id: i32, user_id: i32, tags: Vec<String>) -> Result<(), String>;
     /// Delete an entity (stream).
     fn delete_stream(&self, id: i32) -> Result<usize, String>;
-    /// Remove a list of "stream_tags" for the entity (stream).
-    fn remove_stream_tags(&self, id: i32, user_id: i32, tags: Vec<String>) -> Result<(), String>;
 }
 
 pub mod cfg {
@@ -134,27 +130,6 @@ pub mod inst {
             Ok(stream)
         }
 
-        /// Add a list of "stream_tags" for the entity (stream).
-        fn add_stream_tags(&self, id: i32, user_id: i32, tags: Vec<String>) -> Result<(), String> {
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-
-            let tag_names = tags.join(",");
-            // Run query using Diesel to add a list of "stream_tags" for the entity (stream).
-            let query = diesel::sql_query("CALL add_list_stream_tag_to_stream($1, $2, $3)")
-                .bind::<sql_types::Integer, _>(id)
-                .bind::<sql_types::Integer, _>(user_id)
-                .bind::<sql_types::VarChar, _>(tag_names);
-            let query_sql = debug_query::<Pg, _>(&query).to_string();
-            eprintln!("query_sql: {}", query_sql);
-
-            query
-                .execute(&mut conn)
-                .map_err(|e| format!("add_stream_tag: {}", e.to_string()))?;
-
-            Ok(())
-        }
-
         /// Modify an entity (stream).
         fn modify_stream(
             &self,
@@ -187,7 +162,7 @@ pub mod inst {
 
             let tag_names = tags.join(",");
             // Run query using Diesel to add a list of "stream_tags" for the entity (stream).
-            let query = diesel::sql_query("CALL update_list_stream_tag_to_stream($1, $2, $3)")
+            let query = diesel::sql_query("CALL update_list_stream_tag_to_stream($1, $2, $3);")
                 .bind::<sql_types::Integer, _>(id)
                 .bind::<sql_types::Integer, _>(user_id)
                 .bind::<sql_types::VarChar, _>(tag_names);
@@ -212,33 +187,6 @@ pub mod inst {
                 .map_err(|e| format!("delete_stream: {}", e.to_string()))?;
 
             Ok(count)
-        }
-
-        /// Remove a list of "stream_tags" for the entity (stream).
-        fn remove_stream_tags(
-            &self,
-            id: i32,
-            user_id: i32,
-            tags: Vec<String>,
-        ) -> Result<(), String> {
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-
-            let tag_names = tags.join(",");
-            // Run query using Diesel to add a list of "stream_tags" for the entity (stream).
-            let query = diesel::sql_query("CALL remove_list_stream_tag_to_stream($1, $2, $3)")
-                .bind::<sql_types::Integer, _>(id)
-                .bind::<sql_types::Integer, _>(user_id)
-                .bind::<sql_types::VarChar, _>(tag_names);
-            let query_sql = debug_query::<Pg, _>(&query).to_string();
-            eprintln!("query_sql: {}", query_sql);
-
-            query
-                .execute(&mut conn)
-                // .get_results::<stream_models::StreamTagName>(&mut conn)
-                .map_err(|e| format!("remove_stream_tag: {}", e.to_string()))?;
-
-            Ok(())
         }
     }
 }
@@ -322,21 +270,6 @@ pub mod tests {
                 updated_at: now,
             };
             Ok(stream_saved)
-        }
-
-        /// Add a list of "stream_tags" for the entity (stream).
-        fn add_stream_tags(&self, id: i32, user_id: i32, tags: Vec<String>) -> Result<(), String> {
-            Ok(())
-        }
-
-        /// Remove a list of "stream_tags" for the entity (stream).
-        fn remove_stream_tags(
-            &self,
-            id: i32,
-            user_id: i32,
-            tags: Vec<String>,
-        ) -> Result<(), String> {
-            Ok(())
         }
 
         /// Modify an entity (stream).

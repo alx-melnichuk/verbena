@@ -143,8 +143,8 @@ pub async fn create_stream(
     let id = stream.id;
 
     let stream_orm2 = stream_orm.clone();
-    // Add a list of "stream_tags" for the entity (stream). 
-    let res_tags = stream_orm2.add_stream_tags(id, user_id, tags.clone())
+    // Update a list of "stream_tags" for the entity (stream).
+    let res_tags = stream_orm2.update_stream_tags(id, user_id, tags.clone())
         .map_err(|e| err_database(e.to_string()));
     
     if let Err(err) = res_tags {
