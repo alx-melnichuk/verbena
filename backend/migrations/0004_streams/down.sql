@@ -11,8 +11,6 @@ DROP TABLE IF EXISTS link_stream_tags_to_streams;
 
 /* Remove the indexes on the "stream_tags" table. */
 DROP INDEX IF EXISTS uq_idx_stream_tags_user_id_name;
-DROP INDEX IF EXISTS idx_stream_tags_user_id;
-DROP INDEX IF EXISTS idx_stream_tags_name;
 
 /* Remove the "stream_tags" table. */
 DROP TABLE IF EXISTS stream_tags;

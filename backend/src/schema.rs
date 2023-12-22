@@ -13,8 +13,8 @@ pub mod sql_types {
 diesel::table! {
     link_stream_tags_to_streams (id) {
         id -> Int4,
-        stream_id -> Int4,
         stream_tag_id -> Int4,
+        stream_id -> Int4,
     }
 }
 
@@ -31,8 +31,6 @@ diesel::table! {
         user_id -> Int4,
         #[max_length = 255]
         name -> Varchar,
-        created_at -> Timestamptz,
-        updated_at -> Timestamptz,
     }
 }
 

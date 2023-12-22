@@ -331,8 +331,6 @@ pub struct StreamTag {
     pub id: i32,
     pub user_id: i32,
     pub name: String, // min_len=2 max_len=255
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, QueryableByName)]

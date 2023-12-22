@@ -78,6 +78,10 @@ pub mod inst {
                 .optional()
                 .map_err(|e| format!("find_stream_by_id: {}", e.to_string()))?;
 
+            let query = schema::streams::table.filter(dsl::id.eq(id));
+            let query_sql = debug_query::<Pg, _>(&query).to_string();
+            eprintln!("query_sql: {}", query_sql);
+
             Ok(result)
         }
 
@@ -102,8 +106,8 @@ pub mod inst {
             let query = diesel::sql_query(
                 "SELECT \"name\" FROM get_stream_tags_by_streams($1, $2) LIMIT($3)",
             )
-            .bind::<sql_types::Integer, _>(user_id)
             .bind::<sql_types::Integer, _>(id)
+            .bind::<sql_types::Integer, _>(user_id)
             .bind::<sql_types::BigInt, _>(MAX_LIMIT_STREAM_TAGS);
 
             let result = query

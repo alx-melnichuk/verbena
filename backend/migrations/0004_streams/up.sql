@@ -44,16 +44,10 @@ CREATE TABLE stream_tags (
     /* Owner id */
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     /* Custom tag name */
-    "name" VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "name" VARCHAR(255) NOT NULL
 );
 
-SELECT diesel_manage_updated_at('stream_tags');
-
 CREATE UNIQUE INDEX uq_idx_stream_tags_user_id_name ON stream_tags(user_id, "name");
-CREATE INDEX idx_stream_tags_user_id ON stream_tags(user_id);
-CREATE INDEX idx_stream_tags_name ON stream_tags("name");
 
 
 /* Create "link_stream_tags_to_streams" table. */
@@ -108,7 +102,7 @@ BEGIN
     tags_names_new := ARRAY(
       SELECT N."name"
       FROM (SELECT UNNEST(tags_add) AS "name") N
-        LEFT JOIN stream_tags T ON T.user_id = user_id1 AND N."name" = T."name" 
+        LEFT JOIN stream_tags T ON T.user_id = user_id1 AND T."name" = N."name"
       WHERE T.id IS NULL
     );
     -- Add these missing tag names to the "stream_tags" table.
@@ -165,7 +159,7 @@ $$;
 
 /* The function returns the "stream_tags" data for the specified "user" and "stream". */
 CREATE OR REPLACE FUNCTION get_stream_tags_by_streams(
-  user_id1 INTEGER, stream_id1 INTEGER    
+  id1 INTEGER, user_id1 INTEGER
 ) RETURNS SETOF stream_tags LANGUAGE sql
 AS $$
   -- Get the "stream_tags" data for the specified "user" and "stream".
@@ -177,6 +171,6 @@ AS $$
   WHERE
     T.user_id = user_id1
     AND T.id = L.stream_tag_id
-    AND L.stream_id = stream_id1;
+    AND L.stream_id = id1;
 $$;
 
