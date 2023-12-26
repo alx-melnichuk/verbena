@@ -142,7 +142,7 @@ pub struct StreamInfoDto {
 }
 
 impl StreamInfoDto {
-    pub fn convert(stream: Stream, user_id: i32, tags: Vec<String>) -> Self {
+    pub fn convert(stream: Stream, user_id: i32, tags: &[&str]) -> Self {
         StreamInfoDto {
             id: stream.id,
             user_id: stream.user_id,
@@ -156,7 +156,7 @@ impl StreamInfoDto {
             stopped: stream.stopped.clone(),
             status: stream.status.clone(),
             source: stream.source.to_owned(),
-            tags: tags.clone(),
+            tags: tags.iter().map(|tag| tag.to_string()).collect(),
             is_my_stream: stream.user_id == user_id,
             created_at: stream.created_at.to_owned(),
             updated_at: stream.updated_at.to_owned(),

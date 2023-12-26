@@ -84,7 +84,6 @@ pub mod inst {
 
             Ok(result)
         }
-
         /// Find for an entity (stream) by user_id.
         fn find_streams_by_user_id(&self, user_id: i32) -> Result<Vec<Stream>, String> {
             // Get a connection from the P2D2 pool.
@@ -197,11 +196,10 @@ pub mod inst {
 
 #[cfg(feature = "mockdata")]
 pub mod tests {
-    use std::{cell::RefCell, collections::HashMap};
+    // cell::RefCell, rc::Rc, collections::HashMap,
+    use chrono::{DateTime, Utc};
 
-    use chrono::Utc;
-
-    use crate::streams::stream_models::{self, CreateStream, ModifyStream, Stream, StreamState};
+    use crate::streams::stream_models::{CreateStream, ModifyStream, Stream, StreamState};
 
     use super::StreamOrm;
 
@@ -214,60 +212,103 @@ pub mod tests {
 
     #[derive(Debug, Clone)]
     pub struct StreamOrmApp {
-        pub stream_vec: RefCell<Vec<Stream>>,
-        // pub stream_tags_map: HashMap<i32, Vec<String>>,
+        pub stream_vec: Vec<Stream>,
+        pub tags_vec: Vec<String>,
     }
 
     impl StreamOrmApp {
         /// Create a new instance.
         pub fn new() -> Self {
             StreamOrmApp {
-                stream_vec: RefCell::new(Vec::new()),
-                // stream_tags_map: HashMap::new(),
+                stream_vec: Vec::new(),
+                tags_vec: Vec::new(),
             }
         }
-        fn get_mut(&mut self) -> &mut Self {
-            self
+        /// Create a new instance with the specified user list.
+        #[cfg(test)]
+        pub fn create(streams_tags: &[(Stream, &str)]) -> Self {
+            let mut stream_vec: Vec<Stream> = Vec::new();
+            let mut tags_vec: Vec<String> = Vec::new();
+            // let mut idx: i32 = stream_list.len().try_into().unwrap();
+            for (idx, (stream, tags)) in streams_tags.iter().enumerate() {
+                let mut stream2 = stream.clone();
+                let delta: i32 = idx.try_into().unwrap();
+                stream2.id = STREAM_ID + delta;
+                stream_vec.push(stream2);
+                tags_vec.push(tags.to_string());
+            }
+            StreamOrmApp {
+                stream_vec,
+                tags_vec,
+            }
+        }
+        // Create a new entity instance.
+        #[cfg(test)]
+        pub fn new_stream(id: i32, user_id: i32, title: &str, starttime: DateTime<Utc>) -> Stream {
+            let now = Utc::now();
+            Stream {
+                id: id,
+                user_id: user_id,
+                title: title.to_owned(),
+                descript: DEF_DESCRIPT.to_string(),
+                logo: None,
+                starttime: starttime.clone(),
+                live: DEF_LIVE,
+                state: DEF_STATE,
+                started: None,
+                stopped: None,
+                status: DEF_STATUS,
+                source: DEF_SOURCE.to_string(),
+                created_at: now,
+                updated_at: now,
+            }
         }
     }
 
     impl StreamOrm for StreamOrmApp {
         /// Find for an entity (stream) by id.
         fn find_stream_by_id(&self, id: i32) -> Result<Option<Stream>, String> {
+            eprintln!("find_stream_by_id(id: {})", id);
             let result = self
                 .stream_vec
-                .borrow()
                 .iter()
                 .find(|stream| stream.id == id)
                 .map(|stream| stream.clone());
+            eprintln!("find_stream_by_id(): {:?}", &result);
             Ok(result)
         }
         /// Find for an entity (stream) by user_id.
         fn find_streams_by_user_id(&self, user_id: i32) -> Result<Vec<Stream>, String> {
             let result = self
                 .stream_vec
-                .borrow()
                 .iter()
                 .filter(|stream| stream.user_id == user_id)
                 .map(|stream| stream.clone())
                 .collect();
             Ok(result)
         }
-
         /// Find tag names (stream_tag) by id and user_id.
         fn find_stream_tags(&self, id: i32, user_id: i32) -> Result<Vec<String>, String> {
-            let result: Vec<String> = vec![];
-            // ??
-            Ok(result)
-        }
+            let index_opt = self
+                .stream_vec
+                .iter()
+                .position(|stream| stream.id == id && stream.user_id == user_id);
 
+            if let Some(index) = index_opt {
+                let names = self.tags_vec.get(index).unwrap();
+                let result: Vec<String> = names.split(',').map(|name| name.to_string()).collect();
+                Ok(result)
+            } else {
+                Err(format!("Not found id: {}, user_id: {}", id, user_id).to_string())
+            }
+        }
         /// Add a new entity (stream).
         fn create_stream(&self, create_stream: CreateStream) -> Result<Stream, String> {
             let now = Utc::now();
-            let idx: i32 = self.stream_vec.borrow().len().try_into().unwrap(); // convert usize as i32
+            let len: i32 = self.stream_vec.len().try_into().unwrap(); // convert usize as i32
 
             let stream_saved = Stream {
-                id: STREAM_ID + idx,
+                id: STREAM_ID + len,
                 user_id: create_stream.user_id,
                 title: create_stream.title.to_owned(),
                 descript: create_stream.descript.clone().unwrap_or(DEF_DESCRIPT.to_string()),
@@ -282,7 +323,6 @@ pub mod tests {
                 created_at: now,
                 updated_at: now,
             };
-            self.stream_vec.borrow_mut().push(stream_saved);
             Ok(stream_saved)
         }
 
@@ -293,14 +333,14 @@ pub mod tests {
             modify_stream: ModifyStream,
         ) -> Result<Option<Stream>, String> {
             let user_id = modify_stream.user_id;
-            let index_opt = self
-                .stream_vec
-                .borrow()
-                .iter()
-                .position(|stream| stream.id == id && stream.user_id == user_id);
-            if let Some(index) = index_opt {
-                let stream = self.stream_vec.borrow()[index];
 
+            let stream_opt = self
+                .stream_vec
+                .iter()
+                .find(|stream| stream.id == id && stream.user_id == user_id)
+                .map(|stream| stream.clone());
+
+            if let Some(stream) = stream_opt {
                 let stream_saved = Stream {
                     id: stream.id,
                     user_id: stream.user_id,
@@ -315,48 +355,33 @@ pub mod tests {
                     status: modify_stream.status,
                     source: modify_stream.source.to_owned(),
                     created_at: stream.created_at,
-                    updated_at: stream.updated_at,
+                    updated_at: Utc::now(),
                 };
-
-                self.stream_vec.borrow_mut()[index] = stream_saved;
                 Ok(Some(stream_saved))
             } else {
                 Ok(None)
             }
         }
-
         /// Update a list of "stream_tags" for the entity (stream).
-        fn update_stream_tags(
-            &self,
-            id: i32,
-            user_id: i32,
-            tags: Vec<String>,
-        ) -> Result<(), String> {
-            let stream_opt = self
+        fn update_stream_tags(&self, id: i32, user_id: i32, _: Vec<String>) -> Result<(), String> {
+            let index_opt = self
                 .stream_vec
-                .borrow()
                 .iter()
-                .find(|stream| stream.id == id && stream.user_id == user_id)
-                .map(|stream| stream.clone());
-            if let Some(stream) = stream_opt {
-                // if let Some(tag_list) = self.stream_tags_map.get_mut(&id) {
-                //     *tag_list = tags.clone();
-                // }
+                .position(|stream| stream.id == id && stream.user_id == user_id);
+
+            if index_opt.is_some() {
                 Ok(())
             } else {
-                Err("Not found".to_string())
+                Err(format!("Not found id: {}, user_id: {}", id, user_id).to_string())
             }
         }
-
         /// Delete an entity (stream).
         fn delete_stream(&self, id: i32) -> Result<usize, String> {
-            let index_opt = self.stream_vec.borrow().iter().position(|stream| stream.id == id);
-            if let Some(index) = index_opt {
-                self.stream_vec.borrow_mut().remove(index);
-                Ok(1)
-            } else {
-                Ok(0)
-            }
+            let stream_opt = self.stream_vec.iter().find(|stream| stream.id == id);
+
+            #[rustfmt::skip]
+            let result = if stream_opt.is_none() { 0 } else { 1 };
+            Ok(result)
         }
     }
 }
