@@ -281,10 +281,7 @@ mod tests {
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp,
         tokens::encode_token,
     };
-    use crate::users::{
-        user_models::{ModifyUserDto, User, UserDto, UserModelsTest, UserRole},
-        user_orm::tests::UserOrmApp,
-    };
+    use crate::users::user_models::{ModifyUserDto, User, UserDto, UserModelsTest, UserRole};
     use crate::utils::parser::{CD_PARSE_INT_ERROR, MSG_PARSE_INT_ERROR};
 
     use super::*;
@@ -299,7 +296,7 @@ mod tests {
         user
     }
     fn user_with_id(user: User) -> User {
-        let user_orm = UserOrmApp::create(vec![user]);
+        let user_orm = UserOrmApp::create(&vec![user]);
         user_orm.user_vec.get(0).unwrap().clone()
     }
     fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
@@ -314,7 +311,7 @@ mod tests {
         request: TestRequest,
     ) -> dev::ServiceResponse {
         let data_config_jwt = web::Data::new(config_jwt);
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec.0));
+        let data_user_orm = web::Data::new(UserOrmApp::create(&vec.0));
         let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
 
         let app = test::init_service(
@@ -350,7 +347,7 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        // GET /users/${id}
+        // GET /users/{id}
         let request = test::TestRequest::get().uri(&format!("/users/{}", user_id_bad.clone()));
         let vec = (vec![user1], vec![session1]);
         let factory = get_users_by_id;
@@ -379,7 +376,7 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        // GET /users/${id}
+        // GET /users/{id}
         let request = test::TestRequest::get().uri(&format!("/users/{}", user1.id));
         let vec = (vec![user1], vec![session1]);
         let factory = get_users_by_id;
@@ -409,7 +406,7 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let request = test::TestRequest::get().uri(&format!("/users/{}", user1.id + 1)); // GET /users/${id}
+        let request = test::TestRequest::get().uri(&format!("/users/{}", user1.id + 1)); // GET /users/{id}
         let vec = (vec![user1], vec![session1]);
         let factory = get_users_by_id;
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;

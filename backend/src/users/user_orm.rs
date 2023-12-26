@@ -216,12 +216,12 @@ pub mod tests {
         }
         /// Create a new instance with the specified user list.
         #[cfg(test)]
-        pub fn create(user_list: Vec<User>) -> Self {
+        pub fn create(user_list: &[User]) -> Self {
             let mut user_vec: Vec<User> = Vec::new();
-            let mut idx: i32 = user_list.len().try_into().unwrap();
-            for user in user_list.iter() {
+            for (idx, user) in user_list.iter().enumerate() {
+                let delta: i32 = idx.try_into().unwrap();
                 user_vec.push(User {
-                    id: USER_ID + idx,
+                    id: USER_ID + delta,
                     nickname: user.nickname.to_lowercase(),
                     email: user.email.to_lowercase(),
                     password: user.password.to_string(),
@@ -229,7 +229,6 @@ pub mod tests {
                     updated_at: user.updated_at,
                     role: user.role,
                 });
-                idx = idx + 1;
             }
             UserOrmApp { user_vec }
         }

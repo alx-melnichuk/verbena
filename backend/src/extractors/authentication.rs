@@ -279,7 +279,7 @@ mod tests {
         user
     }
     fn user_with_id(user: User) -> User {
-        let user_orm = UserOrmApp::create(vec![user]);
+        let user_orm = UserOrmApp::create(&vec![user]);
         user_orm.user_vec.get(0).unwrap().clone()
     }
     fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
@@ -295,7 +295,7 @@ mod tests {
     ) -> dev::ServiceResponse {
         let data_config_jwt = web::Data::new(config_jwt);
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec.0));
+        let data_user_orm = web::Data::new(UserOrmApp::create(&vec.0));
         let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
 
         let app = test::init_service(
@@ -324,7 +324,7 @@ mod tests {
     ) -> Result<dev::ServiceResponse, actix_web::Error> {
         let data_config_jwt = web::Data::new(config_jwt);
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec.0));
+        let data_user_orm = web::Data::new(UserOrmApp::create(&vec.0));
         let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
 
         let app = test::init_service(

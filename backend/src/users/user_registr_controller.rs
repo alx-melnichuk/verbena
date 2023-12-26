@@ -633,7 +633,7 @@ mod tests {
         user
     }
     fn user_with_id(user: User) -> User {
-        let user_orm = UserOrmApp::create(vec![user]);
+        let user_orm = UserOrmApp::create(&vec![user]);
         user_orm.user_vec.get(0).unwrap().clone()
     }
     fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
@@ -675,7 +675,7 @@ mod tests {
         let data_config_jwt = web::Data::new(config_jwt);
         let data_mailer = web::Data::new(MailerApp::new(config_smtp::get_test_config()));
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec.0));
+        let data_user_orm = web::Data::new(UserOrmApp::create(&vec.0));
         let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(vec.1));
         let data_session_orm = web::Data::new(SessionOrmApp::create(vec.2));
         let data_user_recovery_orm = web::Data::new(UserRecoveryOrmApp::create(vec.3));
