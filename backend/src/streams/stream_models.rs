@@ -126,10 +126,10 @@ pub struct StreamInfoDto {
     pub live: bool,
     pub state: StreamState,
     #[rustfmt::skip]
-    #[serde(with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
+    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
     pub started: Option<DateTime<Utc>>,
     #[rustfmt::skip]
-    #[serde(with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
+    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
     pub stopped: Option<DateTime<Utc>>,
     pub status: bool,
     pub source: String,
@@ -214,10 +214,10 @@ pub struct CreateStreamInfoDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub state: Option<StreamState>,
     #[rustfmt::skip]
-    #[serde(with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
+    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
     pub started: Option<DateTime<Utc>>,
     #[rustfmt::skip]
-    #[serde(with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
+    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
     pub stopped: Option<DateTime<Utc>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<bool>,
@@ -295,10 +295,10 @@ pub struct ModifyStreamInfoDto {
     pub live: bool,
     pub state: StreamState,
     #[rustfmt::skip]
-    #[serde(with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
+    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
     pub started: Option<DateTime<Utc>>,
     #[rustfmt::skip]
-    #[serde(with = "serial_datetime_option", skip_serializing_if = "Option::is_none" )]
+    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none" )]
     pub stopped: Option<DateTime<Utc>>,
     pub status: bool,
     pub source: String,
