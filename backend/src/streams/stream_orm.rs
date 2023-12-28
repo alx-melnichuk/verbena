@@ -1,8 +1,8 @@
-use super::stream_models::{CreateStream, ModifyStream, Stream};
+use super::stream_models::{CreateStream, ModifyStream, Stream, StreamInfoDto};
 
 pub trait StreamOrm {
-    /// Find for an entity (stream) by id.
-    fn find_stream_by_id(&self, id: i32) -> Result<Option<Stream>, String>;
+    /// Find for an entity (stream) by id and user_id.
+    fn find_stream_by_id(&self, id: i32, user_id: i32) -> Result<Option<StreamInfoDto>, String>;
     /// Find for an entity (stream) by user_id.
     fn find_streams_by_user_id(&self, user_id: i32) -> Result<Vec<Stream>, String>;
     /// Find tag names (stream_tag) by id and user_id.
@@ -45,9 +45,9 @@ pub mod inst {
 
     use crate::dbase;
     use crate::schema;
-    use crate::streams::stream_models::{self, CreateStream, ModifyStream, Stream};
+    use crate::streams::stream_models::{self, CreateStream};
 
-    use super::StreamOrm;
+    use super::*;
 
     pub const CONN_POOL: &str = "ConnectionPool";
     pub const MAX_LIMIT_STREAM_TAGS: i64 = stream_models::TAG_NAME_MAX_AMOUNT as i64;
@@ -64,25 +64,82 @@ pub mod inst {
         pub fn get_conn(&self) -> Result<dbase::DbPooledConnection, String> {
             (&self.pool).get().map_err(|e| format!("{CONN_POOL}: {}", e.to_string()))
         }
+        fn get_stream_tags_by_id(
+            &self,
+            conn: &mut dbase::DbPooledConnection,
+            id: i32,
+        ) -> Result<Vec<stream_models::StreamTagStreamId>, String> {
+            let query = diesel::sql_query(format!(
+                "{}{}{}{}",
+                // "SELECT T.*",
+                "SELECT L.stream_id, T.* ",
+                " FROM link_stream_tags_to_streams L, stream_tags T ",
+                " WHERE L.stream_tag_id = T.id and L.stream_id = $1 ",
+                " ORDER BY L.stream_id, T.id "
+            ))
+            .bind::<sql_types::Integer, _>(id);
+
+            let result = query
+                .get_results::<stream_models::StreamTagStreamId>(conn)
+                .map_err(|e| format!("get_stream_tags_by_id: {}", e.to_string()))?;
+
+            Ok(result)
+        }
+        fn merge_streams_and_tags<'a>(
+            &self,
+            streams: &[Stream],
+            stream_tags: &[stream_models::StreamTagStreamId],
+            user_id: i32,
+        ) -> Vec<StreamInfoDto> {
+            let mut result: Vec<StreamInfoDto> = Vec::new();
+
+            let tags_len = stream_tags.len();
+            let mut tag_idx: usize = 0;
+
+            for stream in streams.iter() {
+                let stream = stream.clone();
+
+                while tag_idx < tags_len && stream_tags[tag_idx].stream_id < stream.id {
+                    tag_idx += 1;
+                }
+                let mut tag_list: Vec<String> = vec![];
+                while tag_idx < tags_len && stream_tags[tag_idx].stream_id == stream.id {
+                    tag_list.push(stream_tags[tag_idx].name.to_string());
+                    tag_idx += 1;
+                }
+                let tags: Vec<&str> = tag_list.iter_mut().map(|v| v.as_str()).collect();
+                let stream_info_dto = StreamInfoDto::convert(stream, user_id, &tags);
+                result.push(stream_info_dto);
+            }
+            result
+        }
     }
 
     impl StreamOrm for StreamOrmApp {
-        /// Find for an entity (stream) by id.
-        fn find_stream_by_id(&self, id: i32) -> Result<Option<Stream>, String> {
+        /// Find for an entity (stream) by id and user_id.
+        fn find_stream_by_id(
+            &self,
+            id: i32,
+            user_id: i32,
+        ) -> Result<Option<StreamInfoDto>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
+
             // Run query using Diesel to find user by id and return it.
-            let result = schema::streams::table
+            let stream_opt = schema::streams::table
                 .filter(dsl::id.eq(id))
                 .first::<Stream>(&mut conn)
                 .optional()
                 .map_err(|e| format!("find_stream_by_id: {}", e.to_string()))?;
 
-            let query = schema::streams::table.filter(dsl::id.eq(id));
-            let query_sql = debug_query::<Pg, _>(&query).to_string();
-            eprintln!("query_sql: {}", query_sql);
+            if let Some(stream) = stream_opt {
+                let stream_tags = self.get_stream_tags_by_id(&mut conn, id)?;
+                let result = self.merge_streams_and_tags(&[stream], &stream_tags, user_id);
 
-            Ok(result)
+                Ok(Some(result[0].clone()))
+            } else {
+                Ok(None)
+            }
         }
         /// Find for an entity (stream) by user_id.
         fn find_streams_by_user_id(&self, user_id: i32) -> Result<Vec<Stream>, String> {
@@ -266,16 +323,29 @@ pub mod tests {
     }
 
     impl StreamOrm for StreamOrmApp {
-        /// Find for an entity (stream) by id.
-        fn find_stream_by_id(&self, id: i32) -> Result<Option<Stream>, String> {
+        /// Find for an entity (stream) by id and user_id.
+        fn find_stream_by_id(
+            &self,
+            id: i32,
+            user_id: i32,
+        ) -> Result<Option<StreamInfoDto>, String> {
             eprintln!("find_stream_by_id(id: {})", id);
-            let result = self
+            let stream_opt = self
                 .stream_vec
                 .iter()
                 .find(|stream| stream.id == id)
                 .map(|stream| stream.clone());
-            eprintln!("find_stream_by_id(): {:?}", &result);
-            Ok(result)
+
+            eprintln!("find_stream_by_id(): {:?}", &stream_opt);
+
+            if let Some(stream) = stream_opt {
+                // let res2 = self.get_stream_tags_by_id(&mut conn, id);
+
+                let stream_info_dto = StreamInfoDto::convert(stream, user_id, &[]);
+                Ok(Some(stream_info_dto))
+            } else {
+                Ok(None)
+            }
         }
         /// Find for an entity (stream) by user_id.
         fn find_streams_by_user_id(&self, user_id: i32) -> Result<Vec<Stream>, String> {

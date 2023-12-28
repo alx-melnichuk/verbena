@@ -15,7 +15,7 @@ use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     GET api/streams/{id}
-    cfg.service(get_stream_by_stream_id)
+    cfg.service(get_stream_by_id)
         // // POST api/streams
         // .service(create_stream)
         // // PUT api/streams/{id}
@@ -39,32 +39,31 @@ fn err_blocking(err: String) -> AppError {
 // GET api/streams/{id}
 #[rustfmt::skip]
 #[get("/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())" )]
-pub async fn get_stream_by_stream_id(
+pub async fn get_stream_by_id(
     authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
-    let stream_id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
+    let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
 
     let user = authenticated.deref();
     let user_id = user.id;
-    // let user_id = 182;
 
     let stream_orm2 = stream_orm.clone();
     let res_stream = web::block(move || {
         // Find 'stream' by id.
         let stream_opt =
-            stream_orm2.find_stream_by_id(stream_id).map_err(|e| err_database(e.to_string()));
+            stream_orm2.find_stream_by_id(id, user_id).map_err(|e| err_database(e.to_string()));
         stream_opt
     })
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
 
-    let opt_stream = match res_stream { Ok(v) => v, Err(e) => return Err(e) };
+    let stream_tag_dto_opt = match res_stream { Ok(v) => v, Err(e) => return Err(e) };
 
-    if let Some(stream) = opt_stream {
+    if let Some(stream_tag_dto) = stream_tag_dto_opt {
 
         /*let res_stream_tags= web::block(move || {
             // Find 'stream_tag' by stream_id.
@@ -78,8 +77,8 @@ pub async fn get_stream_by_stream_id(
         
         let stream_tags = match res_stream_tags { Ok(v) => v, Err(e) => return Err(e) };
         */
-        let tags = vec![];
-        let stream_tag_dto = stream_models::StreamInfoDto::convert(stream, user_id, &tags);
+        // let tags = vec![];
+        // let stream_tag_dto = stream_models::StreamInfoDto::convert(stream, user_id, &tags);
 
         Ok(HttpResponse::Ok().json(stream_tag_dto)) // 200
     } else {
@@ -309,10 +308,10 @@ mod tests {
         test::call_service(&app, req).await
     }
 
-    // ** get_stream_by_stream_id **
+    // ** get_stream_by_id **
 
     #[test]
-    async fn test_get_stream_by_stream_id_valid_id() {
+    async fn test_get_stream_by_id_valid_id() {
         let user1: User = user_with_id(create_user());
         // let user1b_dto = UserDto::from(user1.clone());
 
@@ -335,7 +334,7 @@ mod tests {
         // GET api/streams/{id}
         let request = test::TestRequest::get().uri(&format!("/streams/{}", stream1_id));
         let vec = (vec![user1], vec![session1], vec![(stream1, tags)]);
-        let factory = get_stream_by_stream_id;
+        let factory = get_stream_by_id;
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
@@ -343,15 +342,15 @@ mod tests {
         eprintln!("\n###### body: {:?}\n", &body);
         // ###### body: b"{\"errCode\":\"InternalServerError\",\"errMsg\":\"user_not_received_from_request\"}"
 
-        // let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        // eprintln!("\n stream_dto_res: {:?}\n", &stream_dto_res);
+        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        eprintln!("\n stream_dto_res: {:?}\n", &stream_dto_res);
 
         let json_stream1b_dto = serde_json::json!(stream1b_dto).to_string();
         eprintln!("\n json_stream1b_dto: {:?}\n", &json_stream1b_dto);
-        // let stream1b_dto_ser: StreamInfoDto =
-        //     serde_json::from_slice(json_stream1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
-        // eprintln!("\n stream1b_dto_ser: {:?}\n", &stream1b_dto_ser);
+        let stream1b_dto_ser: StreamInfoDto =
+            serde_json::from_slice(json_stream1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
+        eprintln!("\n stream1b_dto_ser: {:?}\n", &stream1b_dto_ser);
 
-        // assert_eq!(stream_dto_res, stream1b_dto_ser);
+        assert_eq!(stream_dto_res, stream1b_dto_ser);
     }
 }

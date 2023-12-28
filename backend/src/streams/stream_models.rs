@@ -336,6 +336,18 @@ pub struct StreamTag {
 #[derive(Debug, Serialize, Deserialize, Clone, QueryableByName)]
 #[diesel(table_name = schema::stream_tags)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct StreamTagStreamId {
+    #[diesel(sql_type = diesel::sql_types::Integer)]
+    #[diesel(column_name = "stream_id")]
+    pub stream_id: i32,
+    pub id: i32,
+    pub user_id: i32,
+    pub name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, QueryableByName)]
+#[diesel(table_name = schema::stream_tags)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StreamTagName {
     pub name: String,
 }
