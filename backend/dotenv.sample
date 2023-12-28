@@ -58,9 +58,10 @@ DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_D
 JWT_SECRET_KEY=jwt_secret_key
 JWT_MAXAGE=60
 #  15 minutes;
-JWT_ACCESS_TOKEN_DURATION=15
-#  7 days = (60*24)×7=10080 minutes;
-JWT_REFRESH_TOKEN_DURATION=10080
+# Access token duration (in seconds). (900 seconds = 15 minutes)
+JWT_ACCESS_TOKEN_DURATION=900
+# Refresh token duration (in seconds). (345600 seconds = 4 days  60sec*60min*24hour*4days)
+JWT_REFRESH_TOKEN_DURATION=345600
 
 # -----------------------------------------------------------------------------
 # SMTP
