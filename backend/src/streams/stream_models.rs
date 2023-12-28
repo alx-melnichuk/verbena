@@ -119,7 +119,7 @@ pub struct StreamInfoDto {
     pub user_id: i32,
     pub title: String,
     pub descript: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub logo: Option<String>,
     #[serde(with = "serial_datetime")]
     pub starttime: DateTime<Utc>,
@@ -203,15 +203,15 @@ impl CreateStream {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateStreamInfoDto {
     pub title: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub descript: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub logo: Option<String>,
     #[serde(with = "serial_datetime")]
     pub starttime: DateTime<Utc>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub live: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<StreamState>,
     #[rustfmt::skip]
     #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
@@ -219,9 +219,9 @@ pub struct CreateStreamInfoDto {
     #[rustfmt::skip]
     #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
     pub stopped: Option<DateTime<Utc>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
     pub tags: Vec<String>,
 }
@@ -288,7 +288,7 @@ impl ModifyStream {
 pub struct ModifyStreamInfoDto {
     pub title: String,
     pub descript: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub logo: Option<String>,
     #[serde(with = "serial_datetime")]
     pub starttime: DateTime<Utc>,
@@ -324,7 +324,7 @@ impl Validator for ModifyStreamInfoDto {
 
 // **  Section: table "stream_tags" receiving data **
 
-#[derive(Debug, Serialize, Deserialize, Clone, Queryable, Selectable)]
+#[derive(Debug, Serialize, Deserialize, Clone, Queryable, Selectable, QueryableByName)]
 #[diesel(table_name = schema::stream_tags)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StreamTag {
