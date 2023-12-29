@@ -155,22 +155,3 @@ BEGIN
 
 END;
 $$;
-
-
-/* The function returns the "stream_tags" data for the specified "user" and "stream". */
-CREATE OR REPLACE FUNCTION get_stream_tags_by_streams(
-  id1 INTEGER, user_id1 INTEGER
-) RETURNS SETOF stream_tags LANGUAGE sql
-AS $$
-  -- Get the "stream_tags" data for the specified "user" and "stream".
-  SELECT 
-    T.*
-  FROM
-    stream_tags T,
-    link_stream_tags_to_streams L
-  WHERE
-    T.user_id = user_id1
-    AND T.id = L.stream_tag_id
-    AND L.stream_id = id1;
-$$;
-
