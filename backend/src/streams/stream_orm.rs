@@ -1,12 +1,16 @@
-use super::stream_models::{CreateStream, ModifyStream, Stream, StreamInfoDto};
+use super::stream_models::{
+    self, CreateStream, ModifyStream, SearchStreamInfoDto, Stream, StreamInfoDto,
+};
 
 pub trait StreamOrm {
     /// Find for an entity (stream) by id and user_id.
     fn find_stream_by_id(&self, id: i32, user_id: i32) -> Result<Option<StreamInfoDto>, String>;
-    /// Find for an entity (stream) by user_id.
-    fn find_streams_by_user_id(&self, user_id: i32) -> Result<Vec<Stream>, String>;
-    /// Find tag names (stream_tag) by id and user_id.
-    fn find_stream_tags(&self, id: i32, user_id: i32) -> Result<Vec<String>, String>;
+    /// Find for an entity (stream) by SearchStreamInfoDto.
+    fn find_streams(
+        &self,
+        search_stream: SearchStreamInfoDto,
+        user_id: i32,
+    ) -> Result<Vec<StreamInfoDto>, String>;
     /// Add a new entity (stream).
     fn create_stream(&self, create_stream: CreateStream) -> Result<Stream, String>;
     /// Modify an entity (stream).
@@ -38,6 +42,7 @@ pub mod cfg {
 
 #[cfg(not(feature = "mockdata"))]
 pub mod inst {
+    use std::collections::HashMap;
 
     use diesel::{self, prelude::*, sql_types};
     use diesel::{debug_query, pg::Pg};
@@ -50,7 +55,7 @@ pub mod inst {
     use super::*;
 
     pub const CONN_POOL: &str = "ConnectionPool";
-    pub const MAX_LIMIT_STREAM_TAGS: i64 = stream_models::TAG_NAME_MAX_AMOUNT as i64;
+    // pub const MAX_LIMIT_STREAM_TAGS: i64 = stream_models::TAG_NAME_MAX_AMOUNT as i64;
 
     #[derive(Debug, Clone)]
     pub struct StreamOrmApp {
@@ -64,20 +69,21 @@ pub mod inst {
         pub fn get_conn(&self) -> Result<dbase::DbPooledConnection, String> {
             (&self.pool).get().map_err(|e| format!("{CONN_POOL}: {}", e.to_string()))
         }
+        /// Get a list of "tags" for the specified "stream".
         fn get_stream_tags_by_id(
             &self,
             conn: &mut dbase::DbPooledConnection,
-            id: i32,
+            ids: &[i32],
         ) -> Result<Vec<stream_models::StreamTagStreamId>, String> {
             let query = diesel::sql_query(format!(
-                "{}{}{}{}",
-                // "SELECT T.*",
+                "{}{}{}{}{}",
                 "SELECT L.stream_id, T.* ",
-                " FROM link_stream_tags_to_streams L, stream_tags T ",
-                " WHERE L.stream_tag_id = T.id and L.stream_id = $1 ",
-                " ORDER BY L.stream_id, T.id "
+                " FROM link_stream_tags_to_streams L, stream_tags T, ",
+                " (SELECT a AS id FROM unnest($1) AS a) B ",
+                " WHERE L.stream_tag_id = T.id and L.stream_id = B.id ",
+                " ORDER BY L.stream_id ASC, T.id ASC "
             ))
-            .bind::<sql_types::Integer, _>(id);
+            .bind::<sql_types::Array<sql_types::Integer>, _>(ids);
 
             let result = query
                 .get_results::<stream_models::StreamTagStreamId>(conn)
@@ -85,7 +91,8 @@ pub mod inst {
 
             Ok(result)
         }
-        fn merge_streams_and_tags<'a>(
+        /// Merge a "stream" and a corresponding list of "tags".
+        fn merge_streams_and_tags(
             &self,
             streams: &[Stream],
             stream_tags: &[stream_models::StreamTagStreamId],
@@ -93,21 +100,28 @@ pub mod inst {
         ) -> Vec<StreamInfoDto> {
             let mut result: Vec<StreamInfoDto> = Vec::new();
 
-            let tags_len = stream_tags.len();
-            let mut tag_idx: usize = 0;
+            let mut tags_map: HashMap<i32, Vec<String>> = HashMap::new();
+            #[rustfmt::skip]
+            let mut curr_stream_id: i32 = if stream_tags.len() > 0 { stream_tags[0].stream_id } else { -1 };
+            let mut tags: Vec<String> = vec![];
+            for stream_tag in stream_tags.iter() {
+                if curr_stream_id != stream_tag.stream_id {
+                    tags_map.insert(curr_stream_id, tags.clone());
+                    tags.clear();
+                    curr_stream_id = stream_tag.stream_id;
+                }
+                tags.push(stream_tag.name.to_string());
+            }
+            tags_map.insert(curr_stream_id, tags.clone());
 
             for stream in streams.iter() {
                 let stream = stream.clone();
-
-                while tag_idx < tags_len && stream_tags[tag_idx].stream_id < stream.id {
-                    tag_idx += 1;
+                let mut tags: Vec<&str> = Vec::new();
+                let tags_opt = tags_map.get(&stream.id);
+                if let Some(tags_vec) = tags_opt {
+                    let tags2: Vec<&str> = tags_vec.iter().map(|v| v.as_str()).collect();
+                    tags.extend(tags2);
                 }
-                let mut tag_list: Vec<String> = vec![];
-                while tag_idx < tags_len && stream_tags[tag_idx].stream_id == stream.id {
-                    tag_list.push(stream_tags[tag_idx].name.to_string());
-                    tag_idx += 1;
-                }
-                let tags: Vec<&str> = tag_list.iter_mut().map(|v| v.as_str()).collect();
                 let stream_info_dto = StreamInfoDto::convert(stream, user_id, &tags);
                 result.push(stream_info_dto);
             }
@@ -133,7 +147,9 @@ pub mod inst {
                 .map_err(|e| format!("find_stream_by_id: {}", e.to_string()))?;
 
             if let Some(stream) = stream_opt {
-                let stream_tags = self.get_stream_tags_by_id(&mut conn, id)?;
+                // Get a list of "tags" for the specified "stream".
+                let stream_tags = self.get_stream_tags_by_id(&mut conn, &[id])?;
+                // Merge a "stream" and a corresponding list of "tags".
                 let result = self.merge_streams_and_tags(&[stream], &stream_tags, user_id);
 
                 Ok(Some(result[0].clone()))
@@ -141,36 +157,66 @@ pub mod inst {
                 Ok(None)
             }
         }
-        /// Find for an entity (stream) by user_id.
-        fn find_streams_by_user_id(&self, user_id: i32) -> Result<Vec<Stream>, String> {
+        /// Find for an entity (stream) by SearchStreamInfoDto.
+        fn find_streams(
+            &self,
+            search_stream: SearchStreamInfoDto,
+            user_id: i32,
+        ) -> Result<Vec<StreamInfoDto>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            // Run query using Diesel to find user by user_id and return it (where final_date > now).
-            let result = schema::streams::table
-                .filter(dsl::user_id.eq(user_id))
-                .load::<Stream>(&mut conn)
+
+            let page: i64 = search_stream.page.unwrap_or(1).into();
+            let limit: i64 =
+                search_stream.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT).into();
+            let offset: i64 = (page - 1) * limit;
+
+            // let queryCount = this.streamRepository
+            // .createQueryBuilder('streams')
+            // .where('streams.status = :status', { status: true });
+
+            // Build a query to find a list of "streams".
+            let mut query_list = schema::streams::table.into_boxed();
+            query_list =
+                query_list.select(schema::streams::all_columns).filter(dsl::status.eq(true));
+
+            if let Some(user_id) = search_stream.user_id {
+                query_list = query_list.filter(dsl::user_id.eq(user_id));
+            }
+            // is_future
+            if let Some(live) = search_stream.live {
+                query_list = query_list.filter(dsl::live.eq(live));
+            }
+
+            query_list = query_list
+                // .order_by(dsl::id.asc())
+                // .then_order_by(dsl::user_id.asc())
+                .offset(offset)
+                .limit(limit);
+
+            let query_list_sql = debug_query::<Pg, _>(&query_list).to_string();
+            eprintln!("\nquery_list_sql: {}\n", query_list_sql);
+
+            let stream_vec: Vec<Stream> = query_list
+                .load(&mut conn)
                 .map_err(|e| format!("find_streams_by_user_id: {}", e.to_string()))?;
 
-            Ok(result)
-        }
+            eprintln!("\nstream_vec.len(): {:?}\n", stream_vec.len());
+            for stream in stream_vec.iter() {
+                eprintln!("    stream: {:?}", stream);
+            }
+            // Get a list of "stream" identifiers.
+            let ids: Vec<i32> = stream_vec.iter().map(|stream| stream.id).collect();
+            // Get a list of "tags" for the specified "stream".
+            let stream_tags = self.get_stream_tags_by_id(&mut conn, &ids)?;
+            // Merge a "stream" and a corresponding list of "tags".
+            let result = self.merge_streams_and_tags(&stream_vec, &stream_tags, user_id);
 
-        /// Find tag names (stream_tag) by id and user_id.
-        fn find_stream_tags(&self, id: i32, user_id: i32) -> Result<Vec<String>, String> {
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-
-            let query = diesel::sql_query(
-                "SELECT \"name\" FROM get_stream_tags_by_streams($1, $2) LIMIT($3)",
-            )
-            .bind::<sql_types::Integer, _>(id)
-            .bind::<sql_types::Integer, _>(user_id)
-            .bind::<sql_types::BigInt, _>(MAX_LIMIT_STREAM_TAGS);
-
-            let result = query
-                .get_results::<stream_models::StreamTagName>(&mut conn)
-                .map_err(|e| format!("find_stream_tags: {}", e.to_string()))?;
-
-            let result: Vec<String> = result.into_iter().map(|tag_name| tag_name.name).collect();
+            // // Run query using Diesel to find user by user_id and return it (where final_date > now).
+            // let result = schema::streams::table
+            //     .filter(dsl::user_id.eq(user_id))
+            //     .load::<Stream>(&mut conn)
+            //     .map_err(|e| format!("find_streams_by_user_id: {}", e.to_string()))?;
 
             Ok(result)
         }
@@ -347,8 +393,12 @@ pub mod tests {
                 Ok(None)
             }
         }
-        /// Find for an entity (stream) by user_id.
-        fn find_streams_by_user_id(&self, user_id: i32) -> Result<Vec<Stream>, String> {
+        /// Find for an entity (stream) by SearchStreamInfoDto.
+        fn find_streams(
+            &self,
+            search_stream: SearchStreamInfoDto,
+            user_id: i32,
+        ) -> Result<Vec<StreamInfoDto>, String> {
             let result = self
                 .stream_vec
                 .iter()
@@ -356,21 +406,6 @@ pub mod tests {
                 .map(|stream| stream.clone())
                 .collect();
             Ok(result)
-        }
-        /// Find tag names (stream_tag) by id and user_id.
-        fn find_stream_tags(&self, id: i32, user_id: i32) -> Result<Vec<String>, String> {
-            let index_opt = self
-                .stream_vec
-                .iter()
-                .position(|stream| stream.id == id && stream.user_id == user_id);
-
-            if let Some(index) = index_opt {
-                let names = self.tags_vec.get(index).unwrap();
-                let result: Vec<String> = names.split(',').map(|name| name.to_string()).collect();
-                Ok(result)
-            } else {
-                Err(format!("Not found id: {}, user_id: {}", id, user_id).to_string())
-            }
         }
         /// Add a new entity (stream).
         fn create_stream(&self, create_stream: CreateStream) -> Result<Stream, String> {

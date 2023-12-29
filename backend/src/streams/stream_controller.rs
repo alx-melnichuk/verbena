@@ -16,6 +16,8 @@ use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     GET api/streams/{id}
     cfg.service(get_stream_by_id)
+        // GET api/streams
+        .service(get_streams)
         // // POST api/streams
         // .service(create_stream)
         // // PUT api/streams/{id}
@@ -44,18 +46,19 @@ pub async fn get_stream_by_id(
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    // Get current user details.
+    let curr_user = authenticated.deref();
+    let curr_user_id = curr_user.id;
+
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
-
-    let user = authenticated.deref();
-    let user_id = user.id;
 
     let stream_orm2 = stream_orm.clone();
     let res_stream = web::block(move || {
         // Find 'stream' by id.
         let stream_opt =
-            stream_orm2.find_stream_by_id(id, user_id).map_err(|e| err_database(e.to_string()));
+            stream_orm2.find_stream_by_id(id, curr_user_id).map_err(|e| err_database(e.to_string()));
         stream_opt
     })
     .await
@@ -64,35 +67,70 @@ pub async fn get_stream_by_id(
     let stream_tag_dto_opt = match res_stream { Ok(v) => v, Err(e) => return Err(e) };
 
     if let Some(stream_tag_dto) = stream_tag_dto_opt {
-
-        /*let res_stream_tags= web::block(move || {
-            // Find 'stream_tag' by stream_id.
-            let stream_tags =
-                stream_orm.find_stream_tags(user_id, stream_id)
-                .map_err(|e| err_database(e.to_string()));
-            stream_tags
-        })
-        .await
-        .map_err(|e| err_blocking(e.to_string()))?;
-        
-        let stream_tags = match res_stream_tags { Ok(v) => v, Err(e) => return Err(e) };
-        */
-        // let tags = vec![];
-        // let stream_tag_dto = stream_models::StreamInfoDto::convert(stream, user_id, &tags);
-
         Ok(HttpResponse::Ok().json(stream_tag_dto)) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
     }
 }
 
+/* Name:
+* @route streams
+* @example streams?groupBy=date&userId=385e0469-7143-4915-88d0-f23f5b27ed28/9/2022&orderColumn=title&orderDirection=desc&live=true
+* @type get
+* @query pagination (optional):
+* - userId (only for groupBy "date")
+* - key (keyword by tag or date, the date should be YYYY-MM-DD)
+* - live (false, true)
+* - starttime (none, past, future)
+* - groupBy (none / tag / date, none by default)
+* - page (number, 1 by default)
+* - limit (number, 10 by default)
+* - orderColumn (starttime / title, starttime by default)
+* - orderDirection (asc / desc, asc by default)
+* @access public
+*/
+// GET api/streams
+#[rustfmt::skip]
+#[get("/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())" )]
+pub async fn get_streams(
+    authenticated: Authenticated,
+    stream_orm: web::Data<StreamOrmApp>,
+    query_params: web::Query<stream_models::SearchStreamInfoDto>,
+    // request: actix_web::HttpRequest,
+) -> actix_web::Result<HttpResponse, AppError> {
+    // Get current user details.
+    let curr_user = authenticated.deref();
+    let curr_user_id = curr_user.id;
+    
+    // Get search parameters.
+    let search_stream_info_dto: stream_models::SearchStreamInfoDto = query_params.0.clone();
+
+    // Prepare search parameters.
+    // let mut search_stream = stream_models::SearchStreamInfoDto::new(Some(1), Some(5));
+    // search_stream.user_id = Some(curr_user_id);
+
+    let stream_orm2 = stream_orm.clone();
+    let res_streams = web::block(move || {
+        // A query to obtain a list of "streams" based on the specified search parameters.
+        let res_streams =
+            stream_orm2.find_streams(search_stream_info_dto, curr_user_id).map_err(|e| err_database(e.to_string()));
+            res_streams
+        })
+        .await
+        .map_err(|e| err_blocking(e.to_string()))?;
+
+    let stream_dto_vec = match res_streams { Ok(v) => v, Err(e) => return Err(e) };
+
+    Ok(HttpResponse::Ok().json(stream_dto_vec)) // 200
+}
+
 /* Name: 'Add stream'
-    * @route streams
-    * @type post
-    * @body title, description, starttime, tags (array stringify, 3 max)
-    * @files logo (jpg, png and gif only, 5MB)
-    * @required title, description
-    * @access protected
+* @route streams
+* @type post
+* @body title, description, starttime, tags (array stringify, 3 max)
+* @files logo (jpg, png and gif only, 5MB)
+* @required title, description
+* @access protected
 @Post()
 @UseInterceptors(FileInterceptor('logo', UploadStreamLogoDTO))
 async addStream (

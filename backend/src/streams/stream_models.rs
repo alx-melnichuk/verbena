@@ -363,7 +363,31 @@ pub struct LinkStreamTagsToStreams {
     pub stream_tag_id: i32,
 }
 
+// **  Section: Search StreamInfoDto. **
+
+pub const SEARCH_STREAM_LIMIT: i32 = 5;
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchStreamInfoDto {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<i32>,
+    // pub key: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_future: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub live: Option<bool>,
+    // groupBy?: 'none' | 'tag' | 'date' = 'none';
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub page: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i32>,
+    // orderColumn?: 'starttime' | 'title' = 'starttime';
+    // orderDirection?: 'ASC' | 'DESC' = 'ASC';
+}
+
 // ** **
+
 // OLD
 
 // ** Section: "stream_tags" table **
