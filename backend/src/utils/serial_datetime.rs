@@ -2,6 +2,8 @@ use chrono::{DateTime, SecondsFormat, Utc};
 use serde::{self, Deserialize, Deserializer, Serializer};
 
 // const FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S.%3fZ"; // "YYYY-mm-ddTHH:MM:SS.fffZ"
+// dt.to_rfc3339_opts(SecondsFormat::Millis, false)); // : 2018-01-26T18:30:09.453+00:00
+// dt.to_rfc3339_opts(SecondsFormat::Millis, true));  // : 2018-01-26T18:30:09.453Z
 
 pub fn serialize<S>(date: &DateTime<Utc>, serializer: S) -> Result<S::Ok, S::Error>
 where
