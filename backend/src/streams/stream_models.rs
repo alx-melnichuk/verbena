@@ -142,6 +142,7 @@ pub struct StreamInfoDto {
 }
 
 impl StreamInfoDto {
+    #[cfg(test)]
     pub fn convert(stream: Stream, user_id: i32, tags: &[&str]) -> Self {
         StreamInfoDto {
             id: stream.id,
@@ -345,13 +346,6 @@ pub struct StreamTagStreamId {
     pub name: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, QueryableByName)]
-#[diesel(table_name = schema::stream_tags)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct StreamTagName {
-    pub name: String,
-}
-
 // **  Section: table "link_stream_tags_to_streams" receiving data **
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable, Selectable)]
@@ -365,6 +359,7 @@ pub struct LinkStreamTagsToStreams {
 
 // **  Section: Search StreamInfoDto. **
 
+pub const SEARCH_STREAM_PAGE: i32 = 1;
 pub const SEARCH_STREAM_LIMIT: i32 = 5;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -374,9 +369,10 @@ pub struct SearchStreamInfoDto {
     pub user_id: Option<i32>,
     // pub key: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub is_future: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub live: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    // true - (starttime >= now), false - (starttime < now)
+    pub is_future: Option<bool>,
     // groupBy?: 'none' | 'tag' | 'date' = 'none';
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub page: Option<i32>,

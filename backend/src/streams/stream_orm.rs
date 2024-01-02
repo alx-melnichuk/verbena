@@ -1,21 +1,14 @@
-use super::stream_models::{
-    self, CreateStream, ModifyStream, SearchStreamInfoDto, Stream, StreamInfoDto,
-};
+use super::stream_models::{self, CreateStream, ModifyStream, SearchStreamInfoDto, Stream, StreamInfoDto};
 
 pub trait StreamOrm {
     /// Find for an entity (stream) by id and user_id.
     fn find_stream_by_id(&self, id: i32, user_id: i32) -> Result<Option<StreamInfoDto>, String>;
     /// Find for an entity (stream) by SearchStreamInfoDto.
-    fn find_streams(
-        &self,
-        search_stream: SearchStreamInfoDto,
-        user_id: i32,
-    ) -> Result<Vec<StreamInfoDto>, String>;
+    fn find_streams(&self, search_stream: SearchStreamInfoDto, user_id: i32) -> Result<Vec<StreamInfoDto>, String>;
     /// Add a new entity (stream).
     fn create_stream(&self, create_stream: CreateStream) -> Result<Stream, String>;
     /// Modify an entity (stream).
-    fn modify_stream(&self, id: i32, modify_stream: ModifyStream)
-        -> Result<Option<Stream>, String>;
+    fn modify_stream(&self, id: i32, modify_stream: ModifyStream) -> Result<Option<Stream>, String>;
     /// Update a list of "stream_tags" for the entity (stream).
     fn update_stream_tags(&self, id: i32, user_id: i32, tags: Vec<String>) -> Result<(), String>;
     /// Delete an entity (stream).
@@ -131,11 +124,7 @@ pub mod inst {
 
     impl StreamOrm for StreamOrmApp {
         /// Find for an entity (stream) by id and user_id.
-        fn find_stream_by_id(
-            &self,
-            id: i32,
-            user_id: i32,
-        ) -> Result<Option<StreamInfoDto>, String> {
+        fn find_stream_by_id(&self, id: i32, user_id: i32) -> Result<Option<StreamInfoDto>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -158,17 +147,12 @@ pub mod inst {
             }
         }
         /// Find for an entity (stream) by SearchStreamInfoDto.
-        fn find_streams(
-            &self,
-            search_stream: SearchStreamInfoDto,
-            user_id: i32,
-        ) -> Result<Vec<StreamInfoDto>, String> {
+        fn find_streams(&self, search_stream: SearchStreamInfoDto, user_id: i32) -> Result<Vec<StreamInfoDto>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
             let page: i64 = search_stream.page.unwrap_or(1).into();
-            let limit: i64 =
-                search_stream.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT).into();
+            let limit: i64 = search_stream.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT).into();
             let offset: i64 = (page - 1) * limit;
 
             // let queryCount = this.streamRepository
@@ -177,8 +161,7 @@ pub mod inst {
 
             // Build a query to find a list of "streams".
             let mut query_list = schema::streams::table.into_boxed();
-            query_list =
-                query_list.select(schema::streams::all_columns).filter(dsl::status.eq(true));
+            query_list = query_list.select(schema::streams::all_columns).filter(dsl::status.eq(true));
 
             if let Some(user_id) = search_stream.user_id {
                 query_list = query_list.filter(dsl::user_id.eq(user_id));
@@ -237,11 +220,7 @@ pub mod inst {
         }
 
         /// Modify an entity (stream).
-        fn modify_stream(
-            &self,
-            id: i32,
-            modify_stream: ModifyStream,
-        ) -> Result<Option<Stream>, String> {
+        fn modify_stream(&self, id: i32, modify_stream: ModifyStream) -> Result<Option<Stream>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -257,12 +236,7 @@ pub mod inst {
         }
 
         /// Update a list of "stream_tags" for the entity (stream).
-        fn update_stream_tags(
-            &self,
-            id: i32,
-            user_id: i32,
-            tags: Vec<String>,
-        ) -> Result<(), String> {
+        fn update_stream_tags(&self, id: i32, user_id: i32, tags: Vec<String>) -> Result<(), String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -299,12 +273,13 @@ pub mod inst {
 
 #[cfg(feature = "mockdata")]
 pub mod tests {
-    // cell::RefCell, rc::Rc, collections::HashMap,
-    use chrono::{DateTime, Utc};
+    #[cfg(test)]
+    use chrono::DateTime;
+    use chrono::Utc;
 
     use crate::streams::stream_models::{CreateStream, ModifyStream, Stream, StreamState};
 
-    use super::StreamOrm;
+    use super::*;
 
     pub const STREAM_ID: i32 = 1400;
     pub const DEF_DESCRIPT: &str = "";
@@ -315,37 +290,30 @@ pub mod tests {
 
     #[derive(Debug, Clone)]
     pub struct StreamOrmApp {
-        pub stream_vec: Vec<Stream>,
-        pub tags_vec: Vec<String>,
+        pub stream_info_vec: Vec<StreamInfoDto>,
     }
 
     impl StreamOrmApp {
         /// Create a new instance.
         pub fn new() -> Self {
             StreamOrmApp {
-                stream_vec: Vec::new(),
-                tags_vec: Vec::new(),
+                stream_info_vec: Vec::new(),
             }
         }
         /// Create a new instance with the specified user list.
         #[cfg(test)]
-        pub fn create(streams_tags: &[(Stream, &str)]) -> Self {
-            let mut stream_vec: Vec<Stream> = Vec::new();
-            let mut tags_vec: Vec<String> = Vec::new();
-            // let mut idx: i32 = stream_list.len().try_into().unwrap();
-            for (idx, (stream, tags)) in streams_tags.iter().enumerate() {
+        pub fn create(stream_vec: &[StreamInfoDto]) -> Self {
+            let mut stream_info_vec: Vec<StreamInfoDto> = Vec::new();
+
+            for (idx, stream) in stream_vec.iter().enumerate() {
                 let mut stream2 = stream.clone();
                 let delta: i32 = idx.try_into().unwrap();
                 stream2.id = STREAM_ID + delta;
-                stream_vec.push(stream2);
-                tags_vec.push(tags.to_string());
+                stream_info_vec.push(stream2);
             }
-            StreamOrmApp {
-                stream_vec,
-                tags_vec,
-            }
+            StreamOrmApp { stream_info_vec }
         }
-        // Create a new entity instance.
+        /// Create a new entity (Stream) instance.
         #[cfg(test)]
         pub fn new_stream(id: i32, user_id: i32, title: &str, starttime: DateTime<Utc>) -> Stream {
             let now = Utc::now();
@@ -370,47 +338,81 @@ pub mod tests {
 
     impl StreamOrm for StreamOrmApp {
         /// Find for an entity (stream) by id and user_id.
-        fn find_stream_by_id(
-            &self,
-            id: i32,
-            user_id: i32,
-        ) -> Result<Option<StreamInfoDto>, String> {
-            eprintln!("find_stream_by_id(id: {})", id);
-            let stream_opt = self
-                .stream_vec
+        fn find_stream_by_id(&self, id: i32, user_id: i32) -> Result<Option<StreamInfoDto>, String> {
+            let stream_info_opt = self
+                .stream_info_vec
                 .iter()
                 .find(|stream| stream.id == id)
                 .map(|stream| stream.clone());
 
-            eprintln!("find_stream_by_id(): {:?}", &stream_opt);
-
-            if let Some(stream) = stream_opt {
-                // let res2 = self.get_stream_tags_by_id(&mut conn, id);
-
-                let stream_info_dto = StreamInfoDto::convert(stream, user_id, &[]);
-                Ok(Some(stream_info_dto))
+            if let Some(mut stream_info) = stream_info_opt {
+                stream_info.is_my_stream = stream_info.user_id == user_id;
+                Ok(Some(stream_info))
             } else {
                 Ok(None)
             }
         }
         /// Find for an entity (stream) by SearchStreamInfoDto.
-        fn find_streams(
-            &self,
-            search_stream: SearchStreamInfoDto,
-            user_id: i32,
-        ) -> Result<Vec<StreamInfoDto>, String> {
-            let result = self
-                .stream_vec
-                .iter()
-                .filter(|stream| stream.user_id == user_id)
-                .map(|stream| stream.clone())
-                .collect();
+        fn find_streams(&self, search_stream: SearchStreamInfoDto, user_id: i32) -> Result<Vec<StreamInfoDto>, String> {
+            // #eprintln!("find_streams(search_stream: {:?})", &search_stream);
+            let mut result: Vec<StreamInfoDto> = vec![];
+
+            let is_user_id = search_stream.user_id.is_some();
+            let is_live = search_stream.live.is_some();
+            let is_future = search_stream.is_future.is_some();
+            #[rustfmt::skip]
+            let is_future_value = if is_future { search_stream.is_future.unwrap() } else { false };
+            let page = search_stream.page.unwrap_or(stream_models::SEARCH_STREAM_PAGE);
+            let limit = search_stream.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT);
+            let now = Utc::now();
+            let now_date = now.date_naive();
+
+            for stream in self.stream_info_vec.iter() {
+                if !stream.status {
+                    continue;
+                }
+                let mut is_check = false;
+
+                if !is_check && is_user_id && stream.user_id == search_stream.user_id.unwrap() {
+                    is_check = true;
+                }
+                if !is_check && is_live && stream.live == search_stream.live.unwrap() {
+                    is_check = true;
+                }
+                let starttime_date = stream.starttime.date_naive();
+                if !is_check
+                    && is_future
+                    && ((!is_future_value && starttime_date < now_date)
+                        || (is_future_value && starttime_date >= now_date))
+                {
+                    is_check = true;
+                }
+
+                if is_check {
+                    let mut stream2 = stream.clone();
+                    stream2.is_my_stream = stream2.user_id == user_id;
+                    result.push(stream.clone());
+                }
+            }
+
+            let min_idx = (page - 1) * limit;
+            let max_idx = min_idx + limit;
+            let mut idx = 0;
+            result.retain(|_| {
+                let res = min_idx <= idx && idx < max_idx;
+                idx += 1;
+                res
+            });
+            for stream in result.iter_mut() {
+                stream.is_my_stream = stream.user_id == user_id;
+            }
+
             Ok(result)
         }
         /// Add a new entity (stream).
         fn create_stream(&self, create_stream: CreateStream) -> Result<Stream, String> {
             let now = Utc::now();
-            let len: i32 = self.stream_vec.len().try_into().unwrap(); // convert usize as i32
+            let len: i32 = self.stream_info_vec.len().try_into().unwrap(); // convert usize as i32
 
             let stream_saved = Stream {
                 id: STREAM_ID + len,
@@ -432,15 +434,11 @@ pub mod tests {
         }
 
         /// Modify an entity (stream).
-        fn modify_stream(
-            &self,
-            id: i32,
-            modify_stream: ModifyStream,
-        ) -> Result<Option<Stream>, String> {
+        fn modify_stream(&self, id: i32, modify_stream: ModifyStream) -> Result<Option<Stream>, String> {
             let user_id = modify_stream.user_id;
 
             let stream_opt = self
-                .stream_vec
+                .stream_info_vec
                 .iter()
                 .find(|stream| stream.id == id && stream.user_id == user_id)
                 .map(|stream| stream.clone());
@@ -470,7 +468,7 @@ pub mod tests {
         /// Update a list of "stream_tags" for the entity (stream).
         fn update_stream_tags(&self, id: i32, user_id: i32, _: Vec<String>) -> Result<(), String> {
             let index_opt = self
-                .stream_vec
+                .stream_info_vec
                 .iter()
                 .position(|stream| stream.id == id && stream.user_id == user_id);
 
@@ -482,7 +480,7 @@ pub mod tests {
         }
         /// Delete an entity (stream).
         fn delete_stream(&self, id: i32) -> Result<usize, String> {
-            let stream_opt = self.stream_vec.iter().find(|stream| stream.id == id);
+            let stream_opt = self.stream_info_vec.iter().find(|stream| stream.id == id);
 
             #[rustfmt::skip]
             let result = if stream_opt.is_none() { 0 } else { 1 };
