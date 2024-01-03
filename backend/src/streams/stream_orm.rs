@@ -1,4 +1,4 @@
-use super::stream_models::{self, CreateStream, ModifyStream, SearchStreamInfoDto, Stream, StreamInfoDto};
+use super::stream_models::{CreateStream, ModifyStream, SearchStreamInfoDto, Stream, StreamInfoDto};
 
 pub trait StreamOrm {
     /// Find for an entity (stream) by id and user_id.
@@ -37,6 +37,7 @@ pub mod cfg {
 pub mod inst {
     use std::collections::HashMap;
 
+    use chrono::Utc;
     use diesel::{self, prelude::*, sql_types};
     use diesel::{debug_query, pg::Pg};
     use schema::streams::dsl;
@@ -62,31 +63,8 @@ pub mod inst {
         pub fn get_conn(&self) -> Result<dbase::DbPooledConnection, String> {
             (&self.pool).get().map_err(|e| format!("{CONN_POOL}: {}", e.to_string()))
         }
-        /// Get a list of "tags" for the specified "stream".
-        fn get_stream_tags_by_id(
-            &self,
-            conn: &mut dbase::DbPooledConnection,
-            ids: &[i32],
-        ) -> Result<Vec<stream_models::StreamTagStreamId>, String> {
-            let query = diesel::sql_query(format!(
-                "{}{}{}{}{}",
-                "SELECT L.stream_id, T.* ",
-                " FROM link_stream_tags_to_streams L, stream_tags T, ",
-                " (SELECT a AS id FROM unnest($1) AS a) B ",
-                " WHERE L.stream_tag_id = T.id and L.stream_id = B.id ",
-                " ORDER BY L.stream_id ASC, T.id ASC "
-            ))
-            .bind::<sql_types::Array<sql_types::Integer>, _>(ids);
-
-            let result = query
-                .get_results::<stream_models::StreamTagStreamId>(conn)
-                .map_err(|e| format!("get_stream_tags_by_id: {}", e.to_string()))?;
-
-            Ok(result)
-        }
         /// Merge a "stream" and a corresponding list of "tags".
         fn merge_streams_and_tags(
-            &self,
             streams: &[Stream],
             stream_tags: &[stream_models::StreamTagStreamId],
             user_id: i32,
@@ -120,6 +98,29 @@ pub mod inst {
             }
             result
         }
+
+        /// Get a list of "tags" for the specified "stream".
+        fn get_stream_tags_by_id(
+            &self,
+            conn: &mut dbase::DbPooledConnection,
+            ids: &[i32],
+        ) -> Result<Vec<stream_models::StreamTagStreamId>, String> {
+            let query = diesel::sql_query(format!(
+                "{}{}{}{}{}",
+                "SELECT L.stream_id, T.* ",
+                " FROM link_stream_tags_to_streams L, stream_tags T, ",
+                " (SELECT a AS id FROM unnest($1) AS a) B ",
+                " WHERE L.stream_tag_id = T.id and L.stream_id = B.id ",
+                " ORDER BY L.stream_id ASC, T.id ASC "
+            ))
+            .bind::<sql_types::Array<sql_types::Integer>, _>(ids);
+
+            let result = query
+                .get_results::<stream_models::StreamTagStreamId>(conn)
+                .map_err(|e| format!("get_stream_tags_by_id: {}", e.to_string()))?;
+
+            Ok(result)
+        }
     }
 
     impl StreamOrm for StreamOrmApp {
@@ -139,7 +140,7 @@ pub mod inst {
                 // Get a list of "tags" for the specified "stream".
                 let stream_tags = self.get_stream_tags_by_id(&mut conn, &[id])?;
                 // Merge a "stream" and a corresponding list of "tags".
-                let result = self.merge_streams_and_tags(&[stream], &stream_tags, user_id);
+                let result = Self::merge_streams_and_tags(&[stream], &stream_tags, user_id);
 
                 Ok(Some(result[0].clone()))
             } else {
@@ -166,9 +167,18 @@ pub mod inst {
             if let Some(user_id) = search_stream.user_id {
                 query_list = query_list.filter(dsl::user_id.eq(user_id));
             }
-            // is_future
             if let Some(live) = search_stream.live {
                 query_list = query_list.filter(dsl::live.eq(live));
+            }
+            if let Some(is_future) = search_stream.is_future {
+                let now_date = Utc::now().date_naive().and_hms_opt(0, 0, 0).unwrap();
+                if !is_future {
+                    // starttime < now_date
+                    query_list = query_list.filter(dsl::starttime.lt(now_date));
+                } else {
+                    // starttime >= now_date
+                    query_list = query_list.filter(dsl::starttime.ge(now_date));
+                }
             }
 
             query_list = query_list
@@ -193,7 +203,7 @@ pub mod inst {
             // Get a list of "tags" for the specified "stream".
             let stream_tags = self.get_stream_tags_by_id(&mut conn, &ids)?;
             // Merge a "stream" and a corresponding list of "tags".
-            let result = self.merge_streams_and_tags(&stream_vec, &stream_tags, user_id);
+            let result = Self::merge_streams_and_tags(&stream_vec, &stream_tags, user_id);
 
             // // Run query using Diesel to find user by user_id and return it (where final_date > now).
             // let result = schema::streams::table
@@ -277,16 +287,11 @@ pub mod tests {
     use chrono::DateTime;
     use chrono::Utc;
 
-    use crate::streams::stream_models::{CreateStream, ModifyStream, Stream, StreamState};
+    use crate::streams::stream_models::{self, CreateStream, ModifyStream, Stream};
 
     use super::*;
 
     pub const STREAM_ID: i32 = 1400;
-    pub const DEF_DESCRIPT: &str = "";
-    pub const DEF_LIVE: bool = false;
-    pub const DEF_STATE: StreamState = StreamState::Waiting;
-    pub const DEF_STATUS: bool = true;
-    pub const DEF_SOURCE: &str = "obs";
 
     #[derive(Debug, Clone)]
     pub struct StreamOrmApp {
@@ -300,7 +305,7 @@ pub mod tests {
                 stream_info_vec: Vec::new(),
             }
         }
-        /// Create a new instance with the specified user list.
+        /// Create a new instance with the specified `stream` list.
         #[cfg(test)]
         pub fn create(stream_vec: &[StreamInfoDto]) -> Self {
             let mut stream_info_vec: Vec<StreamInfoDto> = Vec::new();
@@ -321,15 +326,15 @@ pub mod tests {
                 id: id,
                 user_id: user_id,
                 title: title.to_owned(),
-                descript: DEF_DESCRIPT.to_string(),
+                descript: stream_models::STREAM_DESCRIPT_DEF.to_string(),
                 logo: None,
                 starttime: starttime.clone(),
-                live: DEF_LIVE,
-                state: DEF_STATE,
+                live: stream_models::STREAM_LIVE_DEF,
+                state: stream_models::STREAM_STATE_DEF,
                 started: None,
                 stopped: None,
-                status: DEF_STATUS,
-                source: DEF_SOURCE.to_string(),
+                status: stream_models::STREAM_STATUS_DEF,
+                source: stream_models::STREAM_SOURCE_DEF.to_string(),
                 created_at: now,
                 updated_at: now,
             }
@@ -413,20 +418,22 @@ pub mod tests {
         fn create_stream(&self, create_stream: CreateStream) -> Result<Stream, String> {
             let now = Utc::now();
             let len: i32 = self.stream_info_vec.len().try_into().unwrap(); // convert usize as i32
+            let stream_descript_def = stream_models::STREAM_DESCRIPT_DEF;
+            let stream_source_def = stream_models::STREAM_SOURCE_DEF;
 
             let stream_saved = Stream {
                 id: STREAM_ID + len,
                 user_id: create_stream.user_id,
                 title: create_stream.title.to_owned(),
-                descript: create_stream.descript.clone().unwrap_or(DEF_DESCRIPT.to_string()),
+                descript: create_stream.descript.clone().unwrap_or(stream_descript_def.to_string()),
                 logo: create_stream.logo.clone(),
                 starttime: create_stream.starttime,
-                live: create_stream.live.unwrap_or(DEF_LIVE),
-                state: create_stream.state.unwrap_or(DEF_STATE),
+                live: create_stream.live.unwrap_or(stream_models::STREAM_LIVE_DEF),
+                state: create_stream.state.unwrap_or(stream_models::STREAM_STATE_DEF),
                 started: create_stream.started.clone(),
                 stopped: create_stream.stopped.clone(),
-                status: create_stream.status.unwrap_or(DEF_STATUS),
-                source: create_stream.source.clone().unwrap_or(DEF_SOURCE.to_string()),
+                status: create_stream.status.unwrap_or(stream_models::STREAM_STATUS_DEF),
+                source: create_stream.source.clone().unwrap_or(stream_source_def.to_string()),
                 created_at: now,
                 updated_at: now,
             };

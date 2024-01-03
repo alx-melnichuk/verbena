@@ -142,7 +142,7 @@ pub struct StreamInfoDto {
 }
 
 impl StreamInfoDto {
-    #[cfg(test)]
+    #[allow(dead_code)]
     pub fn convert(stream: Stream, user_id: i32, tags: &[&str]) -> Self {
         StreamInfoDto {
             id: stream.id,
@@ -166,6 +166,12 @@ impl StreamInfoDto {
 }
 
 // **  Section: table "streams" data creation **
+
+pub const STREAM_DESCRIPT_DEF: &str = "";
+pub const STREAM_LIVE_DEF: bool = false;
+pub const STREAM_STATE_DEF: StreamState = StreamState::Waiting;
+pub const STREAM_STATUS_DEF: bool = true;
+pub const STREAM_SOURCE_DEF: &str = "obs";
 
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
 #[diesel(table_name = schema::streams)]
