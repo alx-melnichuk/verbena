@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use serde_json;
 
 use crate::schema;
 use crate::utils::{serial_datetime, serial_datetime_option};
@@ -363,10 +364,38 @@ pub struct LinkStreamTagsToStreams {
     pub stream_tag_id: i32,
 }
 
-// **  Section: Search StreamInfoDto. **
+// **  Section: Search "StreamInfoDto". **
 
-pub const SEARCH_STREAM_PAGE: i32 = 1;
-pub const SEARCH_STREAM_LIMIT: i32 = 5;
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum OrderColumn {
+    Starttime, // default
+    Title,
+}
+
+impl std::fmt::Display for OrderColumn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", serde_json::to_string(&self).unwrap().replace("\"", ""))
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum OrderDirection {
+    Asc, // default
+    Desc,
+}
+
+impl std::fmt::Display for OrderDirection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", serde_json::to_string(&self).unwrap().replace("\"", ""))
+    }
+}
+
+pub const SEARCH_STREAM_PAGE: u32 = 1;
+pub const SEARCH_STREAM_LIMIT: u32 = 5;
+pub const SEARCH_STREAM_ORDER_COLUMN: OrderColumn = OrderColumn::Starttime;
+pub const SEARCH_STREAM_ORDER_DIRECTION: OrderDirection = OrderDirection::Asc;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -381,11 +410,24 @@ pub struct SearchStreamInfoDto {
     pub is_future: Option<bool>,
     // groupBy?: 'none' | 'tag' | 'date' = 'none';
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub page: Option<i32>,
+    pub order_column: Option<OrderColumn>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<i32>,
-    // orderColumn?: 'starttime' | 'title' = 'starttime';
-    // orderDirection?: 'ASC' | 'DESC' = 'ASC';
+    pub order_direction: Option<OrderDirection>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub page: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+}
+
+// ** SearchResponseDto<T> **
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SearchStreamInfoResponseDto {
+    pub list: Vec<StreamInfoDto>,
+    pub limit: u32,
+    pub count: u32,
+    pub page: u32,
+    pub pages: u32,
 }
 
 // ** **

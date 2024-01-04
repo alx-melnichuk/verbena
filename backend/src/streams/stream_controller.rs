@@ -101,8 +101,9 @@ pub async fn get_streams(
     let curr_user = authenticated.deref();
     let curr_user_id = curr_user.id;
     
+    // dbg!(query_params.clone().into_inner()); // #
     // Get search parameters.
-    let search_stream_info_dto: stream_models::SearchStreamInfoDto = query_params.0.clone();
+    let search_stream_info_dto: stream_models::SearchStreamInfoDto = query_params.into_inner();
 
     let stream_orm2 = stream_orm.clone();
     let res_streams = web::block(move || {
@@ -272,12 +273,14 @@ mod tests {
     use actix_web::{dev, http, test, test::TestRequest, web, App};
     use chrono::{DateTime, Duration, Utc};
 
-    // use crate::errors::AppError;
     use crate::extractors::authentication::BEARER;
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
     };
-    use crate::streams::{stream_models::StreamInfoDto, stream_orm::tests::STREAM_ID};
+    use crate::streams::{
+        stream_models::{SearchStreamInfoResponseDto, StreamInfoDto},
+        stream_orm::tests::STREAM_ID,
+    };
     use crate::users::{
         user_models::{User, UserRole},
         user_orm::tests::UserOrmApp,
@@ -456,8 +459,8 @@ mod tests {
         let stream_info1 = stream_orm.stream_info_vec.get(1).unwrap().clone();
         let stream1b_vec: Vec<StreamInfoDto> = vec![stream_info0, stream_info1];
         let limit = 2;
-
-        let uri = format!("/streams?userId={}&page={}&limit={}", user1.id, 1, limit);
+        let page = 1;
+        let uri = format!("/streams?userId={}&page={}&limit={}", user1.id, page, limit);
 
         // GET api/streams
         let request = test::TestRequest::get().uri(&uri.to_string());
@@ -468,16 +471,17 @@ mod tests {
         assert_eq!(resp_status, http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let stream_dto_res: Vec<StreamInfoDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamInfoDto> =
             serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
 
-        assert_eq!(stream_dto_res, stream1b_vec_ser);
-        assert_eq!(limit, stream1b_vec_ser.len());
+        assert_eq!(response.list, stream1b_vec_ser);
+        assert_eq!(response.list.len(), limit as usize);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.page, page);
     }
-
     #[test]
     async fn test_get_streams_search_by_user_id_page2() {
         let user1: User = user_with_id(create_user());
@@ -503,7 +507,6 @@ mod tests {
         let stream1b_vec: Vec<StreamInfoDto> = vec![stream_info4, stream_info5];
         let page = 2;
         let limit = 2;
-
         let uri = format!("/streams?userId={}&page={}&limit={}", user1.id, page, limit);
 
         // GET api/streams
@@ -515,16 +518,17 @@ mod tests {
         assert_eq!(resp_status, http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let stream_dto_res: Vec<StreamInfoDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamInfoDto> =
             serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
 
-        assert_eq!(stream_dto_res, stream1b_vec_ser);
-        assert_eq!(limit, stream1b_vec_ser.len());
+        assert_eq!(response.list, stream1b_vec_ser);
+        assert_eq!(response.list.len(), limit as usize);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.page, page);
     }
-
     #[test]
     async fn test_get_streams_search_by_live() {
         let user1: User = user_with_id(create_user());
@@ -535,23 +539,25 @@ mod tests {
         // Create token values.
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
+        let live = true;
         let now = Utc::now();
         let mut stream_vec: Vec<StreamInfoDto> = Vec::new();
         let mut stream = create_stream(0, user1.id, "demo11", "tag11,tag12", now);
-        stream.live = true;
+        stream.live = live;
         stream_vec.push(stream);
         let mut stream = create_stream(1, user1.id, "demo12", "tag14,tag15", now);
-        stream.live = true;
+        stream.live = live;
         stream_vec.push(stream);
         stream_vec.push(create_stream(2, user1.id + 1, "demo21", "tag21,tag22", now));
         stream_vec.push(create_stream(3, user1.id + 1, "demo22", "tag24,tag25", now));
-        /* */
+
         let stream_orm = StreamOrmApp::create(&stream_vec);
         let stream_info0 = stream_orm.stream_info_vec.get(0).unwrap().clone();
         let stream_info1 = stream_orm.stream_info_vec.get(1).unwrap().clone();
         let stream1b_vec: Vec<StreamInfoDto> = vec![stream_info0, stream_info1];
-
-        let uri = format!("/streams?live={}&page={}&limit={}", true, 1, 2);
+        let limit = 2;
+        let page = 1;
+        let uri = format!("/streams?live={}&page={}&limit={}", live, page, limit);
 
         // GET api/streams
         let request = test::TestRequest::get().uri(&uri.to_string());
@@ -562,15 +568,17 @@ mod tests {
         assert_eq!(resp_status, http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let stream_dto_res: Vec<StreamInfoDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamInfoDto> =
             serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
 
-        assert_eq!(stream_dto_res, stream1b_vec_ser);
+        assert_eq!(response.list, stream1b_vec_ser);
+        assert_eq!(response.list[0].live, live);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.page, page);
     }
-
     #[test]
     async fn test_get_streams_search_by_is_future() {
         let user1: User = user_with_id(create_user());
@@ -594,8 +602,9 @@ mod tests {
         let stream_info0 = stream_orm.stream_info_vec.get(0).unwrap().clone();
         let stream_info1 = stream_orm.stream_info_vec.get(1).unwrap().clone();
         let stream1b_vec: Vec<StreamInfoDto> = vec![stream_info0, stream_info1];
-
-        let uri = format!("/streams?isFuture={}&page={}&limit={}", true, 1, 2);
+        let limit = 2;
+        let page = 1;
+        let uri = format!("/streams?isFuture={}&page={}&limit={}", true, page, limit);
 
         // GET api/streams
         let request = test::TestRequest::get().uri(&uri.to_string());
@@ -606,15 +615,16 @@ mod tests {
         assert_eq!(resp_status, http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let stream_dto_res: Vec<StreamInfoDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamInfoDto> =
             serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
 
-        assert_eq!(stream_dto_res, stream1b_vec_ser);
+        assert_eq!(response.list, stream1b_vec_ser);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.page, page);
     }
-
     #[test]
     async fn test_get_streams_search_by_is_not_future() {
         let user1: User = user_with_id(create_user());
@@ -638,8 +648,9 @@ mod tests {
         let stream_info0 = stream_orm.stream_info_vec.get(0).unwrap().clone();
         let stream_info1 = stream_orm.stream_info_vec.get(1).unwrap().clone();
         let stream1b_vec: Vec<StreamInfoDto> = vec![stream_info0, stream_info1];
-
-        let uri = format!("/streams?isFuture={}&page={}&limit={}", false, 1, 2);
+        let limit = 2;
+        let page = 1;
+        let uri = format!("/streams?isFuture={}&page={}&limit={}", false, page, limit);
 
         // GET api/streams
         let request = test::TestRequest::get().uri(&uri.to_string());
@@ -650,12 +661,126 @@ mod tests {
         assert_eq!(resp_status, http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let stream_dto_res: Vec<StreamInfoDto> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamInfoDto> =
             serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
 
-        assert_eq!(stream_dto_res, stream1b_vec_ser);
+        assert_eq!(response.list, stream1b_vec_ser);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.page, page);
+    }
+    #[test]
+    async fn test_get_streams_search_by_user_id_and_order_starttime_asc() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let now = Utc::now();
+        let next_2_day = now + Duration::days(2);
+        let next_1_day = now + Duration::days(1);
+        let prev_2_day = now - Duration::days(2);
+        let prev_1_day = now - Duration::days(1);
+        let mut stream_vec: Vec<StreamInfoDto> = Vec::new();
+        stream_vec.push(create_stream(0, user1.id, "demo11", "tag11,tag12", next_2_day));
+        stream_vec.push(create_stream(1, user1.id, "demo13", "tag13,tag14", next_1_day));
+        stream_vec.push(create_stream(2, user1.id, "demo15", "tag15,tag16", prev_1_day));
+        stream_vec.push(create_stream(3, user1.id, "demo17", "tag17,tag18", prev_2_day));
+
+        let stream_orm = StreamOrmApp::create(&stream_vec);
+        let stream1b_vec: Vec<StreamInfoDto> = vec![
+            stream_orm.stream_info_vec.get(3).unwrap().clone(),
+            stream_orm.stream_info_vec.get(2).unwrap().clone(),
+            stream_orm.stream_info_vec.get(1).unwrap().clone(),
+            stream_orm.stream_info_vec.get(0).unwrap().clone(),
+        ];
+
+        let order_column = stream_models::OrderColumn::Starttime.to_string();
+        let order_dir = stream_models::OrderDirection::Asc.to_string();
+        let limit = 4;
+        let page = 1;
+        let uri = format!(
+            "/streams?orderColumn={}&orderDirection={}&page={}&limit={}",
+            order_column, order_dir, page, limit
+        );
+        // GET api/streams
+        let request = test::TestRequest::get().uri(&uri.to_string());
+        let vec = (vec![user1], vec![session1], stream_vec);
+        let factory = get_streams;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp_status = resp.status();
+        assert_eq!(resp_status, http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
+        let stream1b_vec_ser: Vec<StreamInfoDto> =
+            serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.list, stream1b_vec_ser);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.page, page);
+    }
+    #[test]
+    async fn test_get_streams_search_by_user_id_and_order_starttime_desc() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let now = Utc::now();
+        let next_2_day = now + Duration::days(2);
+        let next_1_day = now + Duration::days(1);
+        let prev_2_day = now - Duration::days(2);
+        let prev_1_day = now - Duration::days(1);
+        let mut stream_vec: Vec<StreamInfoDto> = Vec::new();
+        stream_vec.push(create_stream(0, user1.id, "demo21", "tag21,tag22", prev_2_day));
+        stream_vec.push(create_stream(1, user1.id, "demo23", "tag23,tag24", prev_1_day));
+        stream_vec.push(create_stream(2, user1.id, "demo25", "tag25,tag26", next_1_day));
+        stream_vec.push(create_stream(3, user1.id, "demo27", "tag27,tag28", next_2_day));
+
+        let stream_orm = StreamOrmApp::create(&stream_vec);
+        let stream1b_vec: Vec<StreamInfoDto> = vec![
+            stream_orm.stream_info_vec.get(3).unwrap().clone(),
+            stream_orm.stream_info_vec.get(2).unwrap().clone(),
+            stream_orm.stream_info_vec.get(1).unwrap().clone(),
+            stream_orm.stream_info_vec.get(0).unwrap().clone(),
+        ];
+
+        let order_column = stream_models::OrderColumn::Starttime.to_string();
+        let order_dir = stream_models::OrderDirection::Desc.to_string();
+        let limit = 4;
+        let page = 1;
+        let uri = format!(
+            "/streams?orderColumn={}&orderDirection={}&page={}&limit={}",
+            order_column, order_dir, page, limit
+        );
+        // GET api/streams
+        let request = test::TestRequest::get().uri(&uri.to_string());
+        let vec = (vec![user1], vec![session1], stream_vec);
+        let factory = get_streams;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp_status = resp.status();
+        assert_eq!(resp_status, http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
+        let stream1b_vec_ser: Vec<StreamInfoDto> =
+            serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.list, stream1b_vec_ser);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.page, page);
     }
 }
