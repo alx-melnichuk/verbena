@@ -114,9 +114,9 @@ pub struct Stream {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct StreamInfoDto {
     pub id: i32,
-    #[serde(rename = "userId")]
     pub user_id: i32,
     pub title: String,
     pub descript: String,
@@ -136,9 +136,9 @@ pub struct StreamInfoDto {
     pub source: String,
     pub tags: Vec<String>,
     pub is_my_stream: bool,
-    #[serde(rename = "createdAt", with = "serial_datetime")]
+    #[serde(with = "serial_datetime")]
     pub created_at: DateTime<Utc>,
-    #[serde(rename = "updatedAt", with = "serial_datetime")]
+    #[serde(with = "serial_datetime")]
     pub updated_at: DateTime<Utc>,
 }
 
@@ -167,11 +167,15 @@ impl StreamInfoDto {
 }
 
 // **  Section: table "streams" data creation **
-
+#[cfg(feature = "mockdata")]
 pub const STREAM_DESCRIPT_DEF: &str = "";
+#[cfg(feature = "mockdata")]
 pub const STREAM_LIVE_DEF: bool = false;
+#[cfg(feature = "mockdata")]
 pub const STREAM_STATE_DEF: StreamState = StreamState::Waiting;
+#[cfg(feature = "mockdata")]
 pub const STREAM_STATUS_DEF: bool = true;
+#[cfg(feature = "mockdata")]
 pub const STREAM_SOURCE_DEF: &str = "obs";
 
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
@@ -438,8 +442,8 @@ pub struct SearchStreamInfoResponseDto {
 
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
 #[diesel(table_name = schema::stream_tags)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateStreamTagDto {
-    #[serde(rename = "userId")]
     pub user_id: i32,
     pub name: String, // min_len=2 max_len=255
 }

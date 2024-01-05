@@ -7,15 +7,11 @@ use serde_json::{to_value, Value};
 use crate::{settings::err, validators::ValidationError};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct AppError {
-    #[serde(rename = "errCode")]
     pub code: Cow<'static, str>,
-    #[serde(rename = "errMsg")]
     pub message: Cow<'static, str>,
-    #[serde(
-        skip_serializing_if = "BTreeMap::is_empty",
-        default = "AppError::default_params"
-    )]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty", default = "AppError::default_params")]
     // Parameters must be sorted by key.
     pub params: BTreeMap<Cow<'static, str>, Value>,
     #[serde(skip, default = "AppError::default_status")]

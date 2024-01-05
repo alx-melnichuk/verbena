@@ -104,15 +104,16 @@ pub struct User {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = schema::users)]
+#[serde(rename_all = "camelCase")]
 pub struct UserDto {
     pub id: i32,
     pub nickname: String,
     pub email: String,
     pub password: String,
     pub role: UserRole,
-    #[serde(rename = "createdAt", with = "serial_datetime")]
+    #[serde(with = "serial_datetime")]
     pub created_at: DateTime<Utc>,
-    #[serde(rename = "updatedAt", with = "serial_datetime")]
+    #[serde(with = "serial_datetime")]
     pub updated_at: DateTime<Utc>,
 }
 
@@ -201,10 +202,9 @@ impl Validator for LoginUserDto {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct LoginUserResponseDto {
-    #[serde(rename = "userDto")]
     pub user_dto: UserDto,
-    #[serde(rename = "userTokensDto")]
     pub user_tokens_dto: UserTokensDto,
 }
 
@@ -223,12 +223,13 @@ pub struct UserRegistr {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = schema::user_registration)]
+#[serde(rename_all = "camelCase")]
 pub struct UserRegistrDto {
     pub id: i32,
     pub nickname: String,
     pub email: String,
     pub password: String,
-    #[serde(rename = "finalDate", with = "serial_datetime")]
+    #[serde(with = "serial_datetime")]
     pub final_date: DateTime<Utc>,
 }
 
@@ -262,10 +263,10 @@ impl Validator for RegistrUserDto {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct RegistrUserResponseDto {
     pub nickname: String,
     pub email: String,
-    #[serde(rename = "registrToken")]
     pub registr_token: String,
 }
 
@@ -282,10 +283,11 @@ pub struct UserRecovery {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = schema::user_recovery)]
+#[serde(rename_all = "camelCase")]
 pub struct UserRecoveryDto {
     pub id: i32,
     pub user_id: i32,
-    #[serde(rename = "finalDate", with = "serial_datetime")]
+    #[serde(with = "serial_datetime")]
     pub final_date: DateTime<Utc>,
 }
 
@@ -313,10 +315,10 @@ impl Validator for RecoveryUserDto {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct RecoveryUserResponseDto {
     pub id: i32,
     pub email: String,
-    #[serde(rename = "recoveryToken")]
     pub recovery_token: String,
 }
 
@@ -337,20 +339,19 @@ impl Validator for RecoveryDataDto {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct RecoveryDataResponseDto {
     pub nickname: String,
     pub email: String,
-    #[serde(rename = "registrToken")]
     pub registr_token: String,
 }
 
 // ** Section: "User Token" **
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserTokensDto {
-    #[serde(rename = "accessToken")]
     pub access_token: String,
-    #[serde(rename = "refreshToken")]
     pub refresh_token: String,
 }
 
@@ -361,10 +362,9 @@ pub struct TokenUserDto {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ClearForExpiredResponseDto {
-    #[serde(rename = "countInactiveRegistr")]
     pub count_inactive_registr: usize,
-    #[serde(rename = "countInactiveRecover")]
     pub count_inactive_recover: usize,
 }
 
