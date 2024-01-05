@@ -480,7 +480,9 @@ mod tests {
         assert_eq!(response.list, stream1b_vec_ser);
         assert_eq!(response.list.len(), limit as usize);
         assert_eq!(response.limit, limit);
+        assert_eq!(response.count, 2);
         assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
     }
     #[test]
     async fn test_get_streams_search_by_user_id_page2() {
@@ -527,7 +529,9 @@ mod tests {
         assert_eq!(response.list, stream1b_vec_ser);
         assert_eq!(response.list.len(), limit as usize);
         assert_eq!(response.limit, limit);
+        assert_eq!(response.count, 4);
         assert_eq!(response.page, page);
+        assert_eq!(response.pages, 2);
     }
     #[test]
     async fn test_get_streams_search_by_live() {
@@ -577,7 +581,9 @@ mod tests {
         assert_eq!(response.list, stream1b_vec_ser);
         assert_eq!(response.list[0].live, live);
         assert_eq!(response.limit, limit);
+        assert_eq!(response.count, 2);
         assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
     }
     #[test]
     async fn test_get_streams_search_by_is_future() {
@@ -623,7 +629,9 @@ mod tests {
 
         assert_eq!(response.list, stream1b_vec_ser);
         assert_eq!(response.limit, limit);
+        assert_eq!(response.count, 2);
         assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
     }
     #[test]
     async fn test_get_streams_search_by_is_not_future() {
@@ -669,7 +677,9 @@ mod tests {
 
         assert_eq!(response.list, stream1b_vec_ser);
         assert_eq!(response.limit, limit);
+        assert_eq!(response.count, 2);
         assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
     }
     #[test]
     async fn test_get_streams_search_by_user_id_and_order_starttime_asc() {
@@ -725,7 +735,9 @@ mod tests {
 
         assert_eq!(response.list, stream1b_vec_ser);
         assert_eq!(response.limit, limit);
+        assert_eq!(response.count, 4);
         assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
     }
     #[test]
     async fn test_get_streams_search_by_user_id_and_order_starttime_desc() {
@@ -781,6 +793,8 @@ mod tests {
 
         assert_eq!(response.list, stream1b_vec_ser);
         assert_eq!(response.limit, limit);
+        assert_eq!(response.count, 4);
         assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
     }
 }

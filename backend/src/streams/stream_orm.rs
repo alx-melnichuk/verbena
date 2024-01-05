@@ -428,6 +428,7 @@ pub mod tests {
                 }
             }
 
+            let amount = result.len();
             let page = search_stream.page.unwrap_or(stream_models::SEARCH_STREAM_PAGE);
             let limit = search_stream.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT);
             let min_idx = (page - 1) * limit;
@@ -466,7 +467,10 @@ pub mod tests {
                 }
                 result
             });
-            // eprintln!("\n  _result after sort:");
+            let count: u32 = amount.try_into().unwrap();
+            let pages: u32 = count / limit;
+
+            // eprintln!("\n  _result after sort:  count: {}, pages: {}", count, pages);
             // for stream in result.iter_mut() {
             //     stream.is_my_stream = stream.user_id == user_id;
             //     eprintln!("  stream: {:?}", &stream);
@@ -475,9 +479,9 @@ pub mod tests {
             Ok(SearchStreamInfoResponseDto {
                 list: result,
                 limit: limit,
-                count: 0, // ?
-                page: page,
-                pages: 0, // ?
+                count,
+                page,
+                pages,
             })
         }
         /// Add a new entity (stream).
