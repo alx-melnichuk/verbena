@@ -1,6 +1,6 @@
 use actix_web::{get, web, HttpResponse};
 // use actix_web::{get, post, put, web, HttpResponse};
-use std::ops::Deref;
+use std::{ops::Deref, time::Instant};
 
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
@@ -46,6 +46,7 @@ pub async fn get_stream_by_id(
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     // Get current user details.
     let curr_user = authenticated.deref();
     let curr_user_id = curr_user.id;
@@ -66,6 +67,7 @@ pub async fn get_stream_by_id(
 
     let stream_tag_dto_opt = match res_stream { Ok(v) => v, Err(e) => return Err(e) };
 
+    log::info!("get_stream_by_id() elapsed time: {:.2?}", now.elapsed());
     if let Some(stream_tag_dto) = stream_tag_dto_opt {
         Ok(HttpResponse::Ok().json(stream_tag_dto)) // 200
     } else {
@@ -97,13 +99,14 @@ pub async fn get_streams(
     stream_orm: web::Data<StreamOrmApp>,
     query_params: web::Query<stream_models::SearchStreamInfoDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     // Get current user details.
     let curr_user = authenticated.deref();
     let curr_user_id = curr_user.id;
-    
-    // dbg!(query_params.clone().into_inner()); // #
+
     // Get search parameters.
     let search_stream_info_dto: stream_models::SearchStreamInfoDto = query_params.into_inner();
+    // dbg!(&search_stream_info_dto);
 
     let stream_orm2 = stream_orm.clone();
     let res_streams = web::block(move || {
@@ -115,6 +118,7 @@ pub async fn get_streams(
         .await
         .map_err(|e| err_blocking(e.to_string()))?;
 
+    log::info!("get_streams() elapsed time: {:.2?}", now.elapsed());
     let stream_dto_vec = match res_streams { Ok(v) => v, Err(e) => return Err(e) };
 
     Ok(HttpResponse::Ok().json(stream_dto_vec)) // 200

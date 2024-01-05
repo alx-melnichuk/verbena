@@ -161,10 +161,10 @@ pub mod inst {
         ) -> Result<SearchStreamInfoResponseDto, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-
-            let page: i64 = search_stream.page.unwrap_or(stream_models::SEARCH_STREAM_PAGE).into();
-            let limit: i64 = search_stream.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT).into();
-            let offset: i64 = (page - 1) * limit;
+            dbg!(&search_stream);
+            let page: u32 = search_stream.page.unwrap_or(stream_models::SEARCH_STREAM_PAGE);
+            let limit: u32 = search_stream.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT);
+            let offset: u32 = (page - 1) * limit;
 
             let order_column = search_stream.order_column.unwrap_or(stream_models::SEARCH_STREAM_ORDER_COLUMN);
             let order_direction = search_stream
@@ -174,24 +174,37 @@ pub mod inst {
 
             // Build a query to find a list of "streams".
             let mut query_list = schema::streams::table.into_boxed();
-            query_list = query_list.select(schema::streams::all_columns).filter(dsl::status.eq(true));
+            query_list = query_list
+                .select(schema::streams::all_columns)
+                .filter(dsl::status.eq(true))
+                .offset(offset.into())
+                .limit(limit.into());
+
+            // Create a query to get the number of elements in the list of "threads".
+            let mut query_count = schema::streams::table.into_boxed();
+            query_count = query_count.filter(dsl::status.eq(true));
 
             if let Some(user_id) = search_stream.user_id {
                 query_list = query_list.filter(dsl::user_id.eq(user_id));
+                query_count = query_count.filter(dsl::user_id.eq(user_id));
             }
             if let Some(live) = search_stream.live {
                 query_list = query_list.filter(dsl::live.eq(live));
+                query_count = query_count.filter(dsl::live.eq(live));
             }
             if let Some(is_future) = search_stream.is_future {
                 let now_date = Utc::now().date_naive().and_hms_opt(0, 0, 0).unwrap();
                 if !is_future {
                     // starttime < now_date
                     query_list = query_list.filter(dsl::starttime.lt(now_date));
+                    query_count = query_count.filter(dsl::starttime.lt(now_date));
                 } else {
                     // starttime >= now_date
                     query_list = query_list.filter(dsl::starttime.ge(now_date));
+                    query_count = query_count.filter(dsl::starttime.ge(now_date));
                 }
             }
+
             if order_column == stream_models::OrderColumn::Starttime {
                 if is_asc {
                     query_list = query_list.order_by(dsl::starttime.asc());
@@ -206,19 +219,27 @@ pub mod inst {
                 }
             }
 
-            query_list = query_list.offset(offset).limit(limit);
+            // let query_count_sql = debug_query::<Pg, _>(&query_count).to_string();
+            // eprintln!("\nquery_count_sql: {}\n", query_count_sql);
+            // let query_list_sql = debug_query::<Pg, _>(&query_list).to_string();
+            // eprintln!("\nquery_list_sql: {}\n", query_list_sql);
 
-            let query_list_sql = debug_query::<Pg, _>(&query_list).to_string();
-            eprintln!("\nquery_list_sql: {}\n", query_list_sql);
+            let amount_res = query_count.count().get_result::<i64>(&mut conn);
+            if let Err(err) = amount_res {
+                return Err(format!("find_streams_by_user_id: (query_count) {}", err));
+            }
+            let amount: i64 = amount_res.unwrap();
+            let count: u32 = amount.try_into().unwrap();
+            let pages: u32 = count / limit + if (count % limit) > 0 { 1 } else { 0 };
 
             let stream_vec: Vec<Stream> = query_list
                 .load(&mut conn)
-                .map_err(|e| format!("find_streams_by_user_id: {}", e.to_string()))?;
+                .map_err(|e| format!("find_streams_by_user_id: (query_list) {}", e.to_string()))?;
 
-            eprintln!("\nstream_vec.len(): {:?}\n", stream_vec.len());
-            for stream in stream_vec.iter() {
-                eprintln!("    stream: {:?}", stream);
-            }
+            // eprintln!("\nstream_vec.len(): {:?}\n", stream_vec.len());
+            // for stream in stream_vec.iter() {
+            //     eprintln!("    stream: {:?}", stream);
+            // }
             // Get a list of "stream" identifiers.
             let ids: Vec<i32> = stream_vec.iter().map(|stream| stream.id).collect();
             // Get a list of "tags" for the specified "stream".
@@ -229,9 +250,9 @@ pub mod inst {
             let result = SearchStreamInfoResponseDto {
                 list: stream_info_list,
                 limit: limit,
-                count: 0,
-                page: page,
-                pages: 0,
+                count,
+                page,
+                pages,
             };
             Ok(result)
         }
@@ -468,7 +489,7 @@ pub mod tests {
                 result
             });
             let count: u32 = amount.try_into().unwrap();
-            let pages: u32 = count / limit;
+            let pages: u32 = count / limit + if (count % limit) > 0 { 1 } else { 0 };
 
             // eprintln!("\n  _result after sort:  count: {}, pages: {}", count, pages);
             // for stream in result.iter_mut() {
