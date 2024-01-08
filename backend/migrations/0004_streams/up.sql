@@ -34,6 +34,7 @@ CREATE TABLE streams (
 SELECT diesel_manage_updated_at('streams');
 
 CREATE INDEX idx_streams_user_id ON streams(user_id);
+CREATE INDEX idx_streams_starttime ON streams(starttime);
 CREATE INDEX idx_streams_live ON streams(live);
 CREATE INDEX idx_streams_status ON streams("status");
 

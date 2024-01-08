@@ -17,6 +17,7 @@ DROP TABLE IF EXISTS stream_tags;
 
 /* Remove the indexes on the "streams" table. */
 DROP INDEX IF EXISTS idx_streams_user_id;
+DROP INDEX IF EXISTS idx_streams_starttime;
 DROP INDEX IF EXISTS idx_streams_live;
 DROP INDEX IF EXISTS idx_streams_status;
 
