@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -113,6 +115,40 @@ pub struct Stream {
     pub updated_at: DateTime<Utc>,
 }
 
+#[cfg(test)]
+pub const STREAM_DESCRIPT_DEF: &str = "";
+#[cfg(test)]
+pub const STREAM_LIVE_DEF: bool = false;
+#[cfg(test)]
+pub const STREAM_STATE_DEF: StreamState = StreamState::Waiting;
+#[cfg(test)]
+pub const STREAM_STATUS_DEF: bool = true;
+#[cfg(test)]
+pub const STREAM_SOURCE_DEF: &str = "obs";
+
+impl Stream {
+    #[cfg(test)]
+    pub fn new(id: i32, user_id: i32, title: &str, starttime: DateTime<Utc>) -> Stream {
+        let now = Utc::now();
+        Stream {
+            id: id,
+            user_id: user_id,
+            title: title.to_owned(),
+            descript: STREAM_DESCRIPT_DEF.to_string(),
+            logo: None,
+            starttime: starttime.clone(),
+            live: STREAM_LIVE_DEF,
+            state: STREAM_STATE_DEF,
+            started: None,
+            stopped: None,
+            status: STREAM_STATUS_DEF,
+            source: STREAM_SOURCE_DEF.to_string(),
+            created_at: now,
+            updated_at: now,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamInfoDto {
@@ -164,19 +200,44 @@ impl StreamInfoDto {
             updated_at: stream.updated_at.to_owned(),
         }
     }
+    /// Merge a "stream" and a corresponding list of "tags".
+    pub fn merge_streams_and_tags(
+        streams: &[Stream],
+        stream_tags: &[StreamTagStreamId],
+        user_id: i32,
+    ) -> Vec<StreamInfoDto> {
+        let mut result: Vec<StreamInfoDto> = Vec::new();
+
+        let mut tags_map: HashMap<i32, Vec<String>> = HashMap::new();
+        #[rustfmt::skip]
+        let mut curr_stream_id: i32 = if stream_tags.len() > 0 { stream_tags[0].stream_id } else { -1 };
+        let mut tags: Vec<String> = vec![];
+        for stream_tag in stream_tags.iter() {
+            if curr_stream_id != stream_tag.stream_id {
+                tags_map.insert(curr_stream_id, tags.clone());
+                tags.clear();
+                curr_stream_id = stream_tag.stream_id;
+            }
+            tags.push(stream_tag.name.to_string());
+        }
+        tags_map.insert(curr_stream_id, tags.clone());
+
+        for stream in streams.iter() {
+            let stream = stream.clone();
+            let mut tags: Vec<&str> = Vec::new();
+            let tags_opt = tags_map.get(&stream.id);
+            if let Some(tags_vec) = tags_opt {
+                let tags2: Vec<&str> = tags_vec.iter().map(|v| v.as_str()).collect();
+                tags.extend(tags2);
+            }
+            let stream_info_dto = StreamInfoDto::convert(stream, user_id, &tags);
+            result.push(stream_info_dto);
+        }
+        result
+    }
 }
 
 // **  Section: table "streams" data creation **
-#[cfg(feature = "mockdata")]
-pub const STREAM_DESCRIPT_DEF: &str = "";
-#[cfg(feature = "mockdata")]
-pub const STREAM_LIVE_DEF: bool = false;
-#[cfg(feature = "mockdata")]
-pub const STREAM_STATE_DEF: StreamState = StreamState::Waiting;
-#[cfg(feature = "mockdata")]
-pub const STREAM_STATUS_DEF: bool = true;
-#[cfg(feature = "mockdata")]
-pub const STREAM_SOURCE_DEF: &str = "obs";
 
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
 #[diesel(table_name = schema::streams)]
@@ -477,3 +538,115 @@ impl Validator for ModifyStreamTagDto {
 }
 
 // ** Section: "StreamDto" **
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    // ** StreamInfoDto **
+
+    #[test]
+    fn test_merge_streams_and_tags_with_one_item() {
+        let user_id: i32 = 123;
+        let mut tag_id = 0;
+
+        let mut streams: Vec<Stream> = Vec::new();
+        let mut stream_tags: Vec<StreamTagStreamId> = Vec::new();
+
+        let stream = Stream::new(0, user_id, "title1", Utc::now());
+        streams.push(stream.clone());
+        let tags: Vec<&str> = "tag11".split(',').collect();
+        for tag in tags.iter() {
+            #[rustfmt::skip]
+            stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
+            tag_id += 1;
+        }
+        let streams_info: Vec<StreamInfoDto> = vec![StreamInfoDto::convert(stream, user_id, &tags)];
+
+        let result = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, user_id);
+
+        assert_eq!(result.len(), 1);
+        assert_eq!(result, streams_info);
+    }
+
+    #[test]
+    fn test_merge_streams_and_tags_with_two_items() {
+        let user_id: i32 = 123;
+        let mut tag_id = 0;
+
+        let mut streams: Vec<Stream> = Vec::new();
+        let mut stream_tags: Vec<StreamTagStreamId> = Vec::new();
+        let mut streams_info: Vec<StreamInfoDto> = Vec::new();
+
+        let stream = Stream::new(0, user_id, "title1", Utc::now());
+        streams.push(stream.clone());
+        let tags: Vec<&str> = "tag11,tag12".split(',').collect();
+        for tag in tags.iter() {
+            #[rustfmt::skip]
+            stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
+            tag_id += 1;
+        }
+        streams_info.push(StreamInfoDto::convert(stream, user_id, &tags));
+
+        let stream = Stream::new(1, user_id, "title2", Utc::now());
+        streams.push(stream.clone());
+        let tags: Vec<&str> = "tag21,tag22".split(',').collect();
+        for tag in tags.iter() {
+            #[rustfmt::skip]
+            stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
+            tag_id += 1;
+        }
+        streams_info.push(StreamInfoDto::convert(stream, user_id, &tags));
+
+        let result = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, user_id);
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result, streams_info);
+    }
+
+    #[test]
+    fn test_merge_streams_and_tags_with_three_items() {
+        let user_id: i32 = 123;
+        let mut tag_id = 0;
+
+        let mut streams: Vec<Stream> = Vec::new();
+        let mut stream_tags: Vec<StreamTagStreamId> = Vec::new();
+        let mut streams_info: Vec<StreamInfoDto> = Vec::new();
+
+        let stream = Stream::new(0, user_id, "title1", Utc::now());
+        streams.push(stream.clone());
+        let tags: Vec<&str> = "tag11,tag12,tag13".split(',').collect();
+        for tag in tags.iter() {
+            #[rustfmt::skip]
+            stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
+            tag_id += 1;
+        }
+        streams_info.push(StreamInfoDto::convert(stream, user_id, &tags));
+
+        let stream = Stream::new(1, user_id, "title2", Utc::now());
+        streams.push(stream.clone());
+        let tags: Vec<&str> = "tag21,tag22,tag23".split(',').collect();
+        for tag in tags.iter() {
+            #[rustfmt::skip]
+            stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
+            tag_id += 1;
+        }
+        streams_info.push(StreamInfoDto::convert(stream, user_id, &tags));
+
+        let stream = Stream::new(2, user_id, "title3", Utc::now());
+        streams.push(stream.clone());
+        let tags: Vec<&str> = "tag31,tag32,tag33".split(',').collect();
+        for tag in tags.iter() {
+            #[rustfmt::skip]
+            stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
+            tag_id += 1;
+        }
+        streams_info.push(StreamInfoDto::convert(stream, user_id, &tags));
+
+        let result = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, user_id);
+
+        assert_eq!(result.len(), 3);
+        assert_eq!(result, streams_info);
+    }
+}

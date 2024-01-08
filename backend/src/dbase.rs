@@ -8,7 +8,7 @@ pub type Connection = PgConnection;
 
 pub type DbPool = r2d2::Pool<r2d2::ConnectionManager<Connection>>;
 
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 pub type DbPooledConnection = r2d2::PooledConnection<r2d2::ConnectionManager<Connection>>;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();

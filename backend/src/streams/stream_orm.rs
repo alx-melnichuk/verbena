@@ -41,8 +41,6 @@ pub mod cfg {
 
 #[cfg(not(feature = "mockdata"))]
 pub mod inst {
-    use std::collections::HashMap;
-
     use chrono::Utc;
     use diesel::{self, prelude::*, sql_types};
     use diesel::{debug_query, pg::Pg};
@@ -69,42 +67,6 @@ pub mod inst {
         pub fn get_conn(&self) -> Result<dbase::DbPooledConnection, String> {
             (&self.pool).get().map_err(|e| format!("{CONN_POOL}: {}", e.to_string()))
         }
-        /// Merge a "stream" and a corresponding list of "tags".
-        fn merge_streams_and_tags(
-            streams: &[Stream],
-            stream_tags: &[stream_models::StreamTagStreamId],
-            user_id: i32,
-        ) -> Vec<StreamInfoDto> {
-            let mut result: Vec<StreamInfoDto> = Vec::new();
-
-            let mut tags_map: HashMap<i32, Vec<String>> = HashMap::new();
-            #[rustfmt::skip]
-            let mut curr_stream_id: i32 = if stream_tags.len() > 0 { stream_tags[0].stream_id } else { -1 };
-            let mut tags: Vec<String> = vec![];
-            for stream_tag in stream_tags.iter() {
-                if curr_stream_id != stream_tag.stream_id {
-                    tags_map.insert(curr_stream_id, tags.clone());
-                    tags.clear();
-                    curr_stream_id = stream_tag.stream_id;
-                }
-                tags.push(stream_tag.name.to_string());
-            }
-            tags_map.insert(curr_stream_id, tags.clone());
-
-            for stream in streams.iter() {
-                let stream = stream.clone();
-                let mut tags: Vec<&str> = Vec::new();
-                let tags_opt = tags_map.get(&stream.id);
-                if let Some(tags_vec) = tags_opt {
-                    let tags2: Vec<&str> = tags_vec.iter().map(|v| v.as_str()).collect();
-                    tags.extend(tags2);
-                }
-                let stream_info_dto = StreamInfoDto::convert(stream, user_id, &tags);
-                result.push(stream_info_dto);
-            }
-            result
-        }
-
         /// Get a list of "tags" for the specified "stream".
         fn get_stream_tags_by_id(
             &self,
@@ -146,7 +108,7 @@ pub mod inst {
                 // Get a list of "tags" for the specified "stream".
                 let stream_tags = self.get_stream_tags_by_id(&mut conn, &[id])?;
                 // Merge a "stream" and a corresponding list of "tags".
-                let result = Self::merge_streams_and_tags(&[stream], &stream_tags, user_id);
+                let result = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, user_id);
 
                 Ok(Some(result[0].clone()))
             } else {
@@ -245,7 +207,7 @@ pub mod inst {
             // Get a list of "tags" for the specified "stream".
             let stream_tags = self.get_stream_tags_by_id(&mut conn, &ids)?;
             // Merge a "stream" and a corresponding list of "tags".
-            let stream_info_list = Self::merge_streams_and_tags(&stream_vec, &stream_tags, user_id);
+            let stream_info_list = StreamInfoDto::merge_streams_and_tags(&stream_vec, &stream_tags, user_id);
 
             let result = SearchStreamInfoResponseDto {
                 list: stream_info_list,
@@ -324,7 +286,11 @@ pub mod inst {
     }
 }
 
-#[cfg(feature = "mockdata")]
+// #[cfg(feature = "mockdata")]
+// #[cfg(all(test, feature = "mockdata"))]
+// #[cfg(any(test, feature = "mockdata"))]
+// #[cfg(not(all(test, feature = "mockdata")))]
+#[cfg(test)]
 pub mod tests {
     use std::cmp::Ordering;
 
@@ -363,9 +329,9 @@ pub mod tests {
             }
             StreamOrmApp { stream_info_vec }
         }
-        /// Create a new entity (Stream) instance.
-        #[cfg(test)]
-        pub fn new_stream(id: i32, user_id: i32, title: &str, starttime: DateTime<Utc>) -> Stream {
+        // Create a new entity (Stream) instance.
+        // #[cfg(test)]
+        /*pub fn new_stream(id: i32, user_id: i32, title: &str, starttime: DateTime<Utc>) -> Stream {
             let now = Utc::now();
             Stream {
                 id: id,
@@ -383,7 +349,7 @@ pub mod tests {
                 created_at: now,
                 updated_at: now,
             }
-        }
+        }*/
     }
 
     impl StreamOrm for StreamOrmApp {

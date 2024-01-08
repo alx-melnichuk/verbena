@@ -143,15 +143,15 @@ async addStream (
 
 // POST api/streams
 // #[rustfmt::skip]
-// #[post("/streams", /*wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())"*/ )]
-/*pub async fn create_stream(
-    // authenticated: Authenticated,
+// #[post("/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())" )]
+/*pub async fn post_stream(
+    authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     json_body: web::Json<stream_models::CreateStreamInfoDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    // let user = authenticated.deref();
-    // let user_id = user.id;
-    let user_id = 182;
+    let now = Instant::now();
+    let user = authenticated.deref();
+    let user_id = user.id;
 
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
@@ -189,6 +189,7 @@ async addStream (
         return Err(err);
     }
     let result = stream_models::StreamInfoDto::convert(stream, user_id, tags);
+    log::info!("post_stream() elapsed time: {:.2?}", now.elapsed());
 
     Ok(HttpResponse::Ok().json(result)) // 200
 }*/
@@ -282,7 +283,7 @@ mod tests {
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
     };
     use crate::streams::{
-        stream_models::{SearchStreamInfoResponseDto, StreamInfoDto},
+        stream_models::{SearchStreamInfoResponseDto, Stream, StreamInfoDto},
         stream_orm::tests::STREAM_ID,
     };
     use crate::users::{
@@ -310,7 +311,7 @@ mod tests {
     }
     fn create_stream(idx: i32, user_id: i32, title: &str, tags: &str, starttime: DateTime<Utc>) -> StreamInfoDto {
         let tags1: Vec<&str> = tags.split(',').collect();
-        let stream = StreamOrmApp::new_stream(STREAM_ID + idx, user_id, title, starttime);
+        let stream = Stream::new(STREAM_ID + idx, user_id, title, starttime);
         StreamInfoDto::convert(stream, user_id, &tags1)
     }
 
