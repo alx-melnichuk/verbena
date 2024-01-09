@@ -286,11 +286,7 @@ pub mod inst {
     }
 }
 
-// #[cfg(feature = "mockdata")]
-// #[cfg(all(test, feature = "mockdata"))]
-// #[cfg(any(test, feature = "mockdata"))]
-// #[cfg(not(all(test, feature = "mockdata")))]
-#[cfg(test)]
+#[cfg(feature = "mockdata")]
 pub mod tests {
     use std::cmp::Ordering;
 

@@ -115,15 +115,10 @@ pub struct Stream {
     pub updated_at: DateTime<Utc>,
 }
 
-#[cfg(test)]
 pub const STREAM_DESCRIPT_DEF: &str = "";
-#[cfg(test)]
 pub const STREAM_LIVE_DEF: bool = false;
-#[cfg(test)]
 pub const STREAM_STATE_DEF: StreamState = StreamState::Waiting;
-#[cfg(test)]
 pub const STREAM_STATUS_DEF: bool = true;
-#[cfg(test)]
 pub const STREAM_SOURCE_DEF: &str = "obs";
 
 impl Stream {
