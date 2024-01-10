@@ -27,6 +27,8 @@ BEGIN
 
     user_index := user_index - 1;
   END LOOP;
+
+  SELECT setval('users_id_seq', (SELECT MAX(id) FROM users)) INTO user_index;
 END;
 $$;
 
