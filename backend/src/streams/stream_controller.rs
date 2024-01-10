@@ -135,7 +135,7 @@ pub async fn get_streams(
     let res_data = web::block(move || {
         // A query to obtain a list of "streams" based on the specified search parameters.
         let res_streams =
-            stream_orm2.find_streams2(search_stream).map_err(|e| err_database(e.to_string()));
+            stream_orm2.find_streams(search_stream).map_err(|e| err_database(e.to_string()));
             res_streams
         })
         .await
@@ -330,7 +330,7 @@ mod tests {
         SessionOrmApp::new_session(user_id, num_token)
     }
     fn create_stream(idx: i32, user_id: i32, title: &str, tags: &str, starttime: DateTime<Utc>) -> StreamInfoDto {
-        let tags1: Vec<&str> = tags.split(',').collect();
+        let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
         let stream = Stream::new(STREAM_ID + idx, user_id, title, starttime);
         StreamInfoDto::convert(stream, user_id, &tags1)
     }

@@ -3,12 +3,10 @@ use super::stream_models::{CreateStream, ModifyStream, SearchStream, Stream, Str
 pub trait StreamOrm {
     /// Find for an entity (stream) by id.
     fn find_stream_by_id(&self, id: i32) -> Result<Option<Stream>, String>;
-    /// Find for an entity (stream) by SearchStreamInfoDto.
-    fn find_streams(&self, search_stream: SearchStream) -> Result<(Vec<Stream>, u32), String>;
     /// Get a list of "tags" for the specified "stream".
     fn get_stream_tags_by_id(&self, ids: &[i32]) -> Result<Vec<StreamTagStreamId>, String>;
     /// Find for an entity (stream) by SearchStreamInfoDto.
-    fn find_streams2(&self, search_stream: SearchStream) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String>;
+    fn find_streams(&self, search_stream: SearchStream) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String>;
     /// Add a new entity (stream).
     fn create_stream(&self, create_stream: CreateStream, tags: &[String]) -> Result<Stream, String>;
     /// Modify an entity (stream).
@@ -82,85 +80,6 @@ pub mod inst {
 
             Ok(opt_stream)
         }
-        /// Find for an entity (stream) by SearchStream.
-        fn find_streams(&self, search_stream: SearchStream) -> Result<(Vec<Stream>, u32), String> {
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            dbg!(&search_stream);
-            let page: u32 = search_stream.page.unwrap_or(stream_models::SEARCH_STREAM_PAGE);
-            let limit: u32 = search_stream.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT);
-            let offset: u32 = (page - 1) * limit;
-
-            let order_column = search_stream.order_column.unwrap_or(stream_models::SEARCH_STREAM_ORDER_COLUMN);
-            let order_direction = search_stream
-                .order_direction
-                .unwrap_or(stream_models::SEARCH_STREAM_ORDER_DIRECTION);
-            let is_asc = order_direction == stream_models::OrderDirection::Asc;
-
-            // Build a query to find a list of "streams".
-            let mut query_list = schema::streams::table.into_boxed();
-            query_list = query_list
-                .select(schema::streams::all_columns)
-                .filter(dsl::status.eq(true))
-                .offset(offset.into())
-                .limit(limit.into());
-
-            // Create a query to get the number of elements in the list of "threads".
-            let mut query_count = schema::streams::table.into_boxed();
-            query_count = query_count.filter(dsl::status.eq(true));
-
-            if let Some(user_id) = search_stream.user_id {
-                query_list = query_list.filter(dsl::user_id.eq(user_id));
-                query_count = query_count.filter(dsl::user_id.eq(user_id));
-            }
-            if let Some(live) = search_stream.live {
-                query_list = query_list.filter(dsl::live.eq(live));
-                query_count = query_count.filter(dsl::live.eq(live));
-            }
-            if let Some(is_future) = search_stream.is_future {
-                let now_date = Utc::now().date_naive().and_hms_opt(0, 0, 0).unwrap();
-                if !is_future {
-                    // starttime < now_date
-                    query_list = query_list.filter(dsl::starttime.lt(now_date));
-                    query_count = query_count.filter(dsl::starttime.lt(now_date));
-                } else {
-                    // starttime >= now_date
-                    query_list = query_list.filter(dsl::starttime.ge(now_date));
-                    query_count = query_count.filter(dsl::starttime.ge(now_date));
-                }
-            }
-
-            if order_column == stream_models::OrderColumn::Starttime {
-                if is_asc {
-                    query_list = query_list.order_by(dsl::starttime.asc());
-                } else {
-                    query_list = query_list.order_by(dsl::starttime.desc());
-                }
-            } else {
-                if is_asc {
-                    query_list = query_list.order_by(dsl::title.asc());
-                } else {
-                    query_list = query_list.order_by(dsl::title.desc());
-                }
-            }
-
-            // #eprintln!("\nquery_count_sql: {}\n", debug_query::<Pg, _>(&query_count).to_string());
-            // #let query_list_sql = debug_query::<Pg, _>(&query_list).to_string();
-            // #eprintln!("\nquery_list_sql: {}\n", query_list_sql);
-
-            let amount_res = query_count.count().get_result::<i64>(&mut conn);
-            if let Err(err) = amount_res {
-                return Err(format!("find_streams_by_user_id: (query_count) {}", err));
-            }
-            let amount: i64 = amount_res.unwrap();
-            let count: u32 = amount.try_into().unwrap();
-
-            let stream_vec: Vec<Stream> = query_list
-                .load(&mut conn)
-                .map_err(|e| format!("find_streams_by_user_id: (query_list) {}", e.to_string()))?;
-
-            Ok((stream_vec, count))
-        }
         /// Get a list of "tags" for the specified "stream".
         fn get_stream_tags_by_id(&self, ids: &[i32]) -> Result<Vec<StreamTagStreamId>, String> {
             // Get a connection from the P2D2 pool.
@@ -183,7 +102,7 @@ pub mod inst {
             Ok(result)
         }
         /// Find for an entity (stream) by SearchStream.
-        fn find_streams2(
+        fn find_streams(
             &self,
             search_stream: SearchStream,
         ) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String> {
@@ -247,10 +166,6 @@ pub mod inst {
                 }
             }
 
-            // #eprintln!("\nquery_count_sql: {}\n", debug_query::<Pg, _>(&query_count).to_string());
-            // #let query_list_sql = debug_query::<Pg, _>(&query_list).to_string();
-            // #eprintln!("\nquery_list_sql: {}\n", query_list_sql);
-
             let amount_res = query_count.count().get_result::<i64>(&mut conn);
             if let Err(err) = amount_res {
                 return Err(format!("find_streams_by_user_id: (query_count) {}", err));
@@ -262,14 +177,8 @@ pub mod inst {
                 .load(&mut conn)
                 .map_err(|e| format!("find_streams_by_user_id: (query_list) {}", e.to_string()))?;
 
-            // let (streams, count) = match res_streams {
-            //     Ok(v) => v,
-            //     Err(e) => return Err(e),
-            // };
             // Get a list of "stream" identifiers.
             let ids: Vec<i32> = streams.iter().map(|stream| stream.id).collect();
-            // Get a list of "tags" for the specified "stream".
-            // let ids: &[i32] = vec![];
             let query = diesel::sql_query(format!(
                 "{}{}{}{}{}",
                 "SELECT L.stream_id, T.* ",
@@ -330,16 +239,6 @@ pub mod inst {
                     Err(format!("{}: {}", msg, err.to_string()))
                 }
             }
-            /*
-            // Run query using Diesel to add a new entry (stream).
-            let stream = diesel::insert_into(schema::streams::table)
-                .values(create_stream)
-                .returning(Stream::as_returning())
-                .get_result(&mut conn)
-                .map_err(|e| format!("create_stream: {}", e.to_string()))?;
-
-            Ok(stream)
-            */
         }
         /// Modify an entity (stream).
         fn modify_stream(&self, id: i32, modify_stream: ModifyStream) -> Result<Option<Stream>, String> {
@@ -397,7 +296,7 @@ pub mod tests {
 
     use chrono::Utc;
 
-    use crate::streams::stream_models;
+    use crate::streams::stream_models::{self, StreamInfoDto};
 
     use super::*;
 
@@ -458,14 +357,14 @@ pub mod tests {
                 .find(|stream| stream.id == id)
                 .map(|stream| stream.clone());
 
-            if let Some(mut stream_info) = stream_info_opt {
+            if let Some(stream_info) = stream_info_opt {
                 Ok(Some(Self::to_stream(stream_info)))
             } else {
                 Ok(None)
             }
         }
-        /// Find for an entity (stream) by SearchStream.
-        fn find_streams(&self, search_stream: SearchStream) -> Result<(Vec<Stream>, u32), String> {
+        // Find for an entity (stream) by SearchStream.
+        /*fn find_streams(&self, search_stream: SearchStream) -> Result<(Vec<Stream>, u32), String> {
             let mut stream_vec: Vec<Stream> = vec![];
 
             let is_user_id = search_stream.user_id.is_some();
@@ -542,7 +441,7 @@ pub mod tests {
             let count: u32 = amount.try_into().unwrap();
 
             Ok((stream_vec, count))
-        }
+        }*/
         /// Get a list of "tags" for the specified "stream".
         fn get_stream_tags_by_id(&self, ids: &[i32]) -> Result<Vec<StreamTagStreamId>, String> {
             let mut result: Vec<StreamTagStreamId> = Vec::new();
@@ -569,14 +468,103 @@ pub mod tests {
             Ok(result)
         }
         /// Find for an entity (stream) by SearchStreamInfoDto.
-        fn find_streams2(
+        fn find_streams(
             &self,
             search_stream: SearchStream,
         ) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String> {
-            Ok((0, vec![], vec![]))
+            let mut streams_info: Vec<StreamInfoDto> = vec![];
+
+            let is_user_id = search_stream.user_id.is_some();
+            let is_live = search_stream.live.is_some();
+            let is_future = search_stream.is_future.is_some();
+            #[rustfmt::skip]
+            let is_future_value = if is_future { search_stream.is_future.unwrap() } else { false };
+
+            let is_check = is_user_id || is_live || is_future;
+            let now = Utc::now();
+            let now_date = now.date_naive();
+
+            for stream in self.stream_info_vec.iter() {
+                if !stream.status {
+                    continue;
+                }
+                let mut is_add_value = !is_check;
+
+                if !is_add_value && is_user_id && stream.user_id == search_stream.user_id.unwrap() {
+                    is_add_value = true;
+                }
+                if !is_add_value && is_live && stream.live == search_stream.live.unwrap() {
+                    is_add_value = true;
+                }
+                let starttime_date = stream.starttime.date_naive();
+                if !is_add_value
+                    && is_future
+                    && ((!is_future_value && starttime_date < now_date)
+                        || (is_future_value && starttime_date >= now_date))
+                {
+                    is_add_value = true;
+                }
+
+                if is_add_value {
+                    streams_info.push(stream.clone());
+                }
+            }
+
+            let order_column = search_stream.order_column.unwrap_or(stream_models::SEARCH_STREAM_ORDER_COLUMN);
+            let is_order_starttime = order_column == stream_models::OrderColumn::Starttime;
+            let order_direction = search_stream
+                .order_direction
+                .unwrap_or(stream_models::SEARCH_STREAM_ORDER_DIRECTION);
+            let is_order_asc = order_direction == stream_models::OrderDirection::Asc;
+
+            streams_info.sort_by(|a, b| {
+                let mut result = if is_order_starttime {
+                    a.starttime.partial_cmp(&b.starttime).unwrap_or(Ordering::Equal)
+                } else {
+                    a.title.to_lowercase().cmp(&b.title.to_lowercase())
+                };
+                if !is_order_asc {
+                    result = match result {
+                        Ordering::Less => Ordering::Greater,
+                        Ordering::Greater => Ordering::Less,
+                        Ordering::Equal => Ordering::Equal,
+                    };
+                }
+                result
+            });
+
+            let amount = streams_info.len();
+            let page = search_stream.page.unwrap_or(stream_models::SEARCH_STREAM_PAGE);
+            let limit = search_stream.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT);
+            let min_idx = (page - 1) * limit;
+            let max_idx = min_idx + limit;
+            let mut idx = 0;
+            streams_info.retain(|_| {
+                let res = min_idx <= idx && idx < max_idx;
+                idx += 1;
+                res
+            });
+
+            let count: u32 = amount.try_into().unwrap();
+
+            let mut streams: Vec<Stream> = vec![];
+            let mut stream_tags: Vec<StreamTagStreamId> = vec![];
+            let mut tag_id = 0;
+            for stream in streams_info.iter() {
+                streams.push(Self::to_stream(stream.clone()));
+                for tag in stream.tags.iter() {
+                    #[rustfmt::skip]
+                    stream_tags.push(StreamTagStreamId {
+                        stream_id: stream.id, id: tag_id, user_id: stream.user_id, name: tag.to_string()
+                    });
+                    tag_id += 1;
+                }
+            }
+
+            Ok((count, streams, stream_tags))
         }
         /// Add a new entity (stream).
-        fn create_stream(&self, create_stream: CreateStream, tags: &[String]) -> Result<Stream, String> {
+        fn create_stream(&self, create_stream: CreateStream, _tags: &[String]) -> Result<Stream, String> {
             let now = Utc::now();
             let len: i32 = self.stream_info_vec.len().try_into().unwrap(); // convert usize as i32
             let stream_descript_def = stream_models::STREAM_DESCRIPT_DEF;
