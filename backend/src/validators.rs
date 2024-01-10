@@ -43,10 +43,7 @@ pub trait Validator {
     /// Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>>;
     /// filter the list of errors
-    fn filter_errors(
-        &self,
-        errors: Vec<Option<ValidationError>>,
-    ) -> Result<(), Vec<ValidationError>> {
+    fn filter_errors(&self, errors: Vec<Option<ValidationError>>) -> Result<(), Vec<ValidationError>> {
         let result: Vec<ValidationError> = errors.into_iter().filter_map(|err| err).collect();
         if result.len() > 0 {
             return Err(result);
@@ -134,6 +131,26 @@ impl ValidationChecks {
             let mut err = ValidationError::new(msg);
             let data = true;
             err.add_param(borrow::Cow::Borrowed("email"), &data);
+            return Err(err);
+        }
+        Ok(())
+    }
+    /// Checking that the string contains a pattern.
+    pub fn must_contain_pattern(value: &str, pattern: &str, msg: &'static str) -> Result<(), ValidationError> {
+        if !value.contains(pattern) {
+            let mut err = ValidationError::new(msg);
+            let json = serde_json::json!({ "actualValue": value, "containsPattern": pattern });
+            err.add_param(borrow::Cow::Borrowed("mustContainPattern"), &json);
+            return Err(err);
+        }
+        Ok(())
+    }
+    /// Checking that the string does not contain a pattern.
+    pub fn must_not_contain_pattern(value: &str, pattern: &str, msg: &'static str) -> Result<(), ValidationError> {
+        if value.contains(pattern) {
+            let mut err = ValidationError::new(msg);
+            let json = serde_json::json!({ "actualValue": value, "containsPattern": pattern });
+            err.add_param(borrow::Cow::Borrowed("mustNotContainPattern"), &json);
             return Err(err);
         }
         Ok(())

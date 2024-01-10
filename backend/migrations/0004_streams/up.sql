@@ -76,18 +76,18 @@ DECLARE
   tags_add VARCHAR[];   tags_remove VARCHAR[];
   ids_remove INTEGER[]; tags_names_new VARCHAR[];
 BEGIN
-  raise notice '';
+  -- raise notice '';
   IF (id1 IS NULL OR user_id1 IS NULL OR tag_name_list1 IS NULL) THEN
     RETURN;
   END IF;
 
-  tags_new := STRING_TO_ARRAY(tag_name_list1, ',');
+  tags_new := STRING_TO_ARRAY(tag_name_list1, '@@~~##');
   tags_old := ARRAY(
     SELECT T."name"
     FROM stream_tags T, link_stream_tags_to_streams L
     WHERE T.user_id = user_id1 AND T.id = L.stream_tag_id  AND L.stream_id = id1
   );
-  raise notice 'tags_new: %, tags_old: %', tags_new, tags_old;
+  -- raise notice 'tags_new: %, tags_old: %', tags_new, tags_old;
  
   -- Get common elements in both arrays
   tags_comm := ARRAY(SELECT UNNEST(tags_old) INTERSECT SELECT UNNEST(tags_new));
@@ -95,7 +95,7 @@ BEGIN
   tags_remove := ARRAY(SELECT UNNEST(tags_old) EXCEPT SELECT UNNEST(tags_comm)); 
   -- Get the elements to be added to the set.
   tags_add := ARRAY(SELECT UNNEST(tags_new) EXCEPT SELECT UNNEST(tags_comm)); 
-  raise notice 'tags_add: %, tags_remove: %', tags_add, tags_remove;
+  -- raise notice 'tags_add: %, tags_remove: %', tags_add, tags_remove;
 
   -- Adding new elements
   IF ARRAY_LENGTH(tags_add, 1) > 0 THEN
@@ -111,7 +111,7 @@ BEGIN
       INSERT INTO stream_tags(user_id, "name")
       SELECT user_id1, N."name"
       FROM (SELECT UNNEST(tags_names_new) AS "name") N;
-      raise notice 'INSERT INTO stream_tags() tags_names_new: %', tags_names_new;
+      -- raise notice 'INSERT INTO stream_tags() tags_names_new: %', tags_names_new;
     END IF;
    -- Add information on all new tag names to the links table "link_stream_tags_to_streams".
     INSERT INTO link_stream_tags_to_streams(stream_tag_id, stream_id)
@@ -127,7 +127,7 @@ BEGIN
       SELECT T.id FROM stream_tags T, (SELECT UNNEST(tags_remove) AS "name") N
       WHERE T.user_id = user_id1 AND T."name" = N."name"
     );
-    raise notice 'ids_remove: %', ids_remove;
+    -- raise notice 'ids_remove: %', ids_remove;
     -- Delete information about all obsolete tag names in the links table "link_stream_tags_to_streams".
     DELETE
     FROM link_stream_tags_to_streams L
@@ -135,7 +135,7 @@ BEGIN
       SELECT L.id FROM link_stream_tags_to_streams L, (SELECT UNNEST(ids_remove) AS id) I
       WHERE L.stream_id = id1 AND L.stream_tag_id = I.id
     );
-    raise notice 'DELETE FROM link_stream_tags_to_streams() tags_remove: %', tags_remove;
+    -- raise notice 'DELETE FROM link_stream_tags_to_streams() tags_remove: %', tags_remove;
     -- Get an array of identifiers of tag names that are no longer used.
     ids_remove := ARRAY(
       SELECT T.id
@@ -149,7 +149,7 @@ BEGIN
       DELETE
       FROM stream_tags
       WHERE id IN (SELECT UNNEST(ids_remove) AS id);
-      raise notice 'DELETE FROM stream_tags() ids_remove2: %', ids_remove;
+      -- raise notice 'DELETE FROM stream_tags() ids_remove2: %', ids_remove;
     END IF;
    
   END IF;

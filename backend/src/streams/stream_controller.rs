@@ -1,5 +1,4 @@
-use actix_web::{get, web, HttpResponse};
-// use actix_web::{get, post, put, web, HttpResponse};
+use actix_web::{get, post, web, HttpResponse};
 use std::{ops::Deref, time::Instant};
 
 use crate::errors::AppError;
@@ -11,15 +10,15 @@ use crate::streams::stream_orm::inst::StreamOrmApp;
 use crate::streams::stream_orm::tests::StreamOrmApp;
 use crate::streams::{stream_models, stream_orm::StreamOrm};
 use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
-// use crate::validators::{msg_validation, Validator};
+use crate::validators::{msg_validation, Validator};
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     GET api/streams/{id}
     cfg.service(get_stream_by_id)
         // GET api/streams
         .service(get_streams)
-        // // POST api/streams
-        // .service(create_stream)
+        // POST api/streams
+        .service(post_stream)
         // // PUT api/streams/{id}
         // .service(update_stream)
         ;
@@ -59,16 +58,37 @@ pub async fn get_stream_by_id(
     let res_stream = web::block(move || {
         // Find 'stream' by id.
         let stream_opt =
-            stream_orm2.find_stream_by_id(id, curr_user_id).map_err(|e| err_database(e.to_string()));
+            stream_orm2.find_stream_by_id(id).map_err(|e| err_database(e.to_string()));
         stream_opt
     })
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
 
-    let stream_tag_dto_opt = match res_stream { Ok(v) => v, Err(e) => return Err(e) };
+    let mut opt_stream_tag_dto: Option<stream_models::StreamInfoDto> = None;
+    
+    let opt_stream = match res_stream { Ok(v) => v, Err(e) => return Err(e) };
+
+    if let Some(stream) = opt_stream {
+        let stream_orm2 = stream_orm.clone();
+        let res_stream_tags = web::block(move || {
+            // Get a list of "tags" for the specified "stream".
+            let stream_tags =
+                stream_orm2.get_stream_tags_by_id(&[stream.id]).map_err(|e| err_database(e.to_string()));
+            stream_tags
+        })
+        .await
+        .map_err(|e| err_blocking(e.to_string()))?;
+
+        let stream_tags = match res_stream_tags { Ok(v) => v, Err(e) => return Err(e) };
+
+        // Merge a "stream" and a corresponding list of "tags".
+        let stream_tag_dto = 
+            stream_models::StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
+        opt_stream_tag_dto = stream_tag_dto.get(0).cloned();
+    }
 
     log::info!("get_stream_by_id() elapsed time: {:.2?}", now.elapsed());
-    if let Some(stream_tag_dto) = stream_tag_dto_opt {
+    if let Some(stream_tag_dto) = opt_stream_tag_dto {
         Ok(HttpResponse::Ok().json(stream_tag_dto)) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
@@ -106,22 +126,32 @@ pub async fn get_streams(
 
     // Get search parameters.
     let search_stream_info_dto: stream_models::SearchStreamInfoDto = query_params.into_inner();
-    // dbg!(&search_stream_info_dto);
+
+    let page: u32 = search_stream_info_dto.page.unwrap_or(stream_models::SEARCH_STREAM_PAGE);
+    let limit: u32 = search_stream_info_dto.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT);
+    let search_stream = stream_models::SearchStream::convert(search_stream_info_dto);
 
     let stream_orm2 = stream_orm.clone();
-    let res_streams = web::block(move || {
+    let res_data = web::block(move || {
         // A query to obtain a list of "streams" based on the specified search parameters.
         let res_streams =
-            stream_orm2.find_streams(search_stream_info_dto, curr_user_id).map_err(|e| err_database(e.to_string()));
+            stream_orm2.find_streams2(search_stream).map_err(|e| err_database(e.to_string()));
             res_streams
         })
         .await
         .map_err(|e| err_blocking(e.to_string()))?;
 
-    log::info!("get_streams() elapsed time: {:.2?}", now.elapsed());
-    let stream_dto_vec = match res_streams { Ok(v) => v, Err(e) => return Err(e) };
+    let (count, streams, stream_tags) = match res_data { Ok(v) => v, Err(e) => return Err(e) };
 
-    Ok(HttpResponse::Ok().json(stream_dto_vec)) // 200
+    // Merge a "stream" and a corresponding list of "tags".
+    let list = stream_models::StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, curr_user_id);
+
+    let pages: u32 = count / limit + if (count % limit) > 0 { 1 } else { 0 };
+
+    let result = stream_models::SearchStreamInfoResponseDto { list, limit, count, page, pages };
+
+    log::info!("get_streams() elapsed time: {:.2?}", now.elapsed());
+    Ok(HttpResponse::Ok().json(result)) // 200
 }
 
 /* Name: 'Add stream'
@@ -142,16 +172,17 @@ async addStream (
 }*/
 
 // POST api/streams
-// #[rustfmt::skip]
-// #[post("/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())" )]
-/*pub async fn post_stream(
+#[rustfmt::skip]
+#[post("/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())" )]
+pub async fn post_stream(
     authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     json_body: web::Json<stream_models::CreateStreamInfoDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let now = Instant::now();
-    let user = authenticated.deref();
-    let user_id = user.id;
+    // Get current user details.
+    let curr_user = authenticated.deref();
+    let curr_user_id = curr_user.id;
 
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
@@ -160,39 +191,28 @@ async addStream (
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
-    let create_stream_info: stream_models::CreateStreamInfoDto = json_body.0.clone();
-    let create_stream = stream_models::CreateStream::convert(create_stream_info.clone(), user_id);
+    let create_stream_info: stream_models::CreateStreamInfoDto = json_body.into_inner();
+    let create_stream = stream_models::CreateStream::convert(create_stream_info.clone(), curr_user_id);
     let tags = create_stream_info.tags.clone();
 
-    let stream_orm2 = stream_orm.clone();
     let res_stream = web::block(move || {
         // Add a new entity (stream).
-        let stream_opt =
-            stream_orm2.create_stream(create_stream)
+        let res_stream =
+            stream_orm.create_stream(create_stream, &tags)
             .map_err(|e| err_database(e.to_string()));
-        stream_opt
+        
+        res_stream
     })
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
 
     let stream = res_stream?;
-    let id = stream.id;
-
-    let stream_orm2 = stream_orm.clone();
-    // Update a list of "stream_tags" for the entity (stream).
-    let res_tags = stream_orm2.update_stream_tags(id, user_id, tags.clone())
-        .map_err(|e| err_database(e.to_string()));
-
-    if let Err(err) = res_tags {
-        // If an error occurred when adding "stream tags", then delete the "stream".
-        let _ = stream_orm.delete_stream(id).map_err(|e| err_database(e.to_string()));
-        return Err(err);
-    }
-    let result = stream_models::StreamInfoDto::convert(stream, user_id, tags);
+    let tags = create_stream_info.tags.clone();
+    let stream_info_dto = stream_models::StreamInfoDto::convert(stream, curr_user_id, &tags);
     log::info!("post_stream() elapsed time: {:.2?}", now.elapsed());
 
-    Ok(HttpResponse::Ok().json(result)) // 200
-}*/
+    Ok(HttpResponse::Created().json(stream_info_dto)) // 201
+}
 
 // PUT api/streams/{id}
 // #[rustfmt::skip]

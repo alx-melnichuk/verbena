@@ -35,6 +35,8 @@ pub const TAG_NAME_MIN: u8 = 2;
 pub const MSG_TAG_NAME_MIN_LENGTH: &str = "name:min_len";
 pub const TAG_NAME_MAX: u8 = 255;
 pub const MSG_TAG_NAME_MAX_LENGTH: &str = "name:max_len";
+pub const TAG_NAME_SEPARATOR: &str = "@@~~##";
+pub const MSG_TAG_NAME_MUST_NOT_CONTAIN_SEPARATOR: &str = "name:must_not_contain_separator";
 
 pub fn validate_title(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_TITLE_REQUIRED)?;
@@ -57,6 +59,7 @@ pub fn validate_tag_name(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_TAG_NAME_REQUIRED)?;
     ValidationChecks::min_length(value, TAG_NAME_MIN.into(), MSG_TAG_NAME_MIN_LENGTH)?;
     ValidationChecks::max_length(value, TAG_NAME_MAX.into(), MSG_TAG_NAME_MAX_LENGTH)?;
+    ValidationChecks::must_not_contain_pattern(value, TAG_NAME_SEPARATOR, MSG_TAG_NAME_MUST_NOT_CONTAIN_SEPARATOR)?;
     Ok(())
 }
 pub fn validate_tag_names(tags: &Vec<String>) -> Result<(), ValidationError> {
@@ -115,10 +118,15 @@ pub struct Stream {
     pub updated_at: DateTime<Utc>,
 }
 
+#[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_DESCRIPT_DEF: &str = "";
+#[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_LIVE_DEF: bool = false;
+#[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_STATE_DEF: StreamState = StreamState::Waiting;
+#[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_STATUS_DEF: bool = true;
+#[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_SOURCE_DEF: &str = "obs";
 
 impl Stream {
@@ -175,7 +183,7 @@ pub struct StreamInfoDto {
 
 impl StreamInfoDto {
     #[allow(dead_code)]
-    pub fn convert(stream: Stream, user_id: i32, tags: &[&str]) -> Self {
+    pub fn convert(stream: Stream, user_id: i32, tags: &[String]) -> Self {
         StreamInfoDto {
             id: stream.id,
             user_id: stream.user_id,
@@ -219,11 +227,10 @@ impl StreamInfoDto {
 
         for stream in streams.iter() {
             let stream = stream.clone();
-            let mut tags: Vec<&str> = Vec::new();
+            let mut tags: Vec<String> = Vec::new();
             let tags_opt = tags_map.get(&stream.id);
             if let Some(tags_vec) = tags_opt {
-                let tags2: Vec<&str> = tags_vec.iter().map(|v| v.as_str()).collect();
-                tags.extend(tags2);
+                tags.extend(tags_vec.clone());
             }
             let stream_info_dto = StreamInfoDto::convert(stream, user_id, &tags);
             result.push(stream_info_dto);
@@ -458,6 +465,31 @@ pub const SEARCH_STREAM_ORDER_COLUMN: OrderColumn = OrderColumn::Starttime;
 pub const SEARCH_STREAM_ORDER_DIRECTION: OrderDirection = OrderDirection::Asc;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SearchStream {
+    pub user_id: Option<i32>,
+    pub live: Option<bool>,
+    pub is_future: Option<bool>,
+    pub order_column: Option<OrderColumn>,
+    pub order_direction: Option<OrderDirection>,
+    pub page: Option<u32>,
+    pub limit: Option<u32>,
+}
+
+impl SearchStream {
+    pub fn convert(search_stream_info: SearchStreamInfoDto) -> Self {
+        SearchStream {
+            user_id: search_stream_info.user_id.clone(),
+            live: search_stream_info.live.clone(),
+            is_future: search_stream_info.is_future.clone(),
+            order_column: search_stream_info.order_column.clone(),
+            order_direction: search_stream_info.order_direction.clone(),
+            page: search_stream_info.page.clone(),
+            limit: search_stream_info.limit.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchStreamInfoDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -551,7 +583,7 @@ mod tests {
 
         let stream = Stream::new(0, user_id, "title1", Utc::now());
         streams.push(stream.clone());
-        let tags: Vec<&str> = "tag11".split(',').collect();
+        let tags: Vec<String> = "tag11".split(',').map(|v| v.to_string()).collect();
         for tag in tags.iter() {
             #[rustfmt::skip]
             stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
@@ -576,7 +608,7 @@ mod tests {
 
         let stream = Stream::new(0, user_id, "title1", Utc::now());
         streams.push(stream.clone());
-        let tags: Vec<&str> = "tag11,tag12".split(',').collect();
+        let tags: Vec<String> = "tag11,tag12".split(',').map(|v| v.to_string()).collect();
         for tag in tags.iter() {
             #[rustfmt::skip]
             stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
@@ -586,7 +618,7 @@ mod tests {
 
         let stream = Stream::new(1, user_id, "title2", Utc::now());
         streams.push(stream.clone());
-        let tags: Vec<&str> = "tag21,tag22".split(',').collect();
+        let tags: Vec<String> = "tag21,tag22".split(',').map(|v| v.to_string()).collect();
         for tag in tags.iter() {
             #[rustfmt::skip]
             stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
@@ -611,7 +643,7 @@ mod tests {
 
         let stream = Stream::new(0, user_id, "title1", Utc::now());
         streams.push(stream.clone());
-        let tags: Vec<&str> = "tag11,tag12,tag13".split(',').collect();
+        let tags: Vec<String> = "tag11,tag12,tag13".split(',').map(|v| v.to_string()).collect();
         for tag in tags.iter() {
             #[rustfmt::skip]
             stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
@@ -621,7 +653,7 @@ mod tests {
 
         let stream = Stream::new(1, user_id, "title2", Utc::now());
         streams.push(stream.clone());
-        let tags: Vec<&str> = "tag21,tag22,tag23".split(',').collect();
+        let tags: Vec<String> = "tag21,tag22,tag23".split(',').map(|v| v.to_string()).collect();
         for tag in tags.iter() {
             #[rustfmt::skip]
             stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
@@ -631,7 +663,7 @@ mod tests {
 
         let stream = Stream::new(2, user_id, "title3", Utc::now());
         streams.push(stream.clone());
-        let tags: Vec<&str> = "tag31,tag32,tag33".split(',').collect();
+        let tags: Vec<String> = "tag31,tag32,tag33".split(',').map(|v| v.to_string()).collect();
         for tag in tags.iter() {
             #[rustfmt::skip]
             stream_tags.push(StreamTagStreamId { stream_id: stream.id, id: tag_id, user_id, name: tag.to_string() });
