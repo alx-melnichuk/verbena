@@ -370,6 +370,7 @@ pub struct ClearForExpiredResponseDto {
 
 #[cfg(all(test, feature = "mockdata"))]
 pub struct UserModelsTest {}
+
 #[cfg(all(test, feature = "mockdata"))]
 impl UserModelsTest {
     pub fn nickname_min() -> String {
