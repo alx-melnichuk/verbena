@@ -12,36 +12,46 @@ use crate::validators::{ValidationChecks, ValidationError, Validator};
 pub const MSG_TITLE_REQUIRED: &str = "title:required";
 pub const TITLE_MIN: u8 = 2;
 pub const MSG_TITLE_MIN_LENGTH: &str = "title:min_len";
-pub const TITLE_MAX: u8 = 255;
+pub const TITLE_MAX: u16 = 255;
 pub const MSG_TITLE_MAX_LENGTH: &str = "title:max_len";
+
+pub const DESCRIPT_MIN: u8 = 2;
+pub const MSG_DESCRIPT_MIN_LENGTH: &str = "descript:min_len";
+pub const DESCRIPT_MAX: u16 = 10240; // 10*1024
+pub const MSG_DESCRIPT_MAX_LENGTH: &str = "descript:max_len";
 
 pub const LOGO_MIN: u8 = 2;
 pub const MSG_LOGO_MIN_LENGTH: &str = "logo:min_len";
-pub const LOGO_MAX: u8 = 255;
+pub const LOGO_MAX: u16 = 255;
 pub const MSG_LOGO_MAX_LENGTH: &str = "logo:max_len";
 
 pub const MSG_SOURCE_REQUIRED: &str = "source:required";
 pub const SOURCE_MIN: u8 = 2;
 pub const MSG_SOURCE_MIN_LENGTH: &str = "source:min_len";
-pub const SOURCE_MAX: u8 = 255;
+pub const SOURCE_MAX: u16 = 255;
 pub const MSG_SOURCE_MAX_LENGTH: &str = "source:max_len";
 
 pub const TAG_NAME_MIN_AMOUNT: u8 = 1;
-pub const MSG_TAG_NAME_MIN_AMOUNT: &str = "name:min_amount";
+pub const MSG_TAG_NAME_MIN_AMOUNT: &str = "tagName:min_amount";
 pub const TAG_NAME_MAX_AMOUNT: u8 = 4;
-pub const MSG_TAG_NAME_MAX_AMOUNT: &str = "name:max_amount";
-pub const MSG_TAG_NAME_REQUIRED: &str = "name:required";
+pub const MSG_TAG_NAME_MAX_AMOUNT: &str = "tagName:max_amount";
+pub const MSG_TAG_NAME_REQUIRED: &str = "tagName:required";
 pub const TAG_NAME_MIN: u8 = 2;
-pub const MSG_TAG_NAME_MIN_LENGTH: &str = "name:min_len";
-pub const TAG_NAME_MAX: u8 = 255;
-pub const MSG_TAG_NAME_MAX_LENGTH: &str = "name:max_len";
+pub const MSG_TAG_NAME_MIN_LENGTH: &str = "tagName:min_len";
+pub const TAG_NAME_MAX: u16 = 255;
+pub const MSG_TAG_NAME_MAX_LENGTH: &str = "tagName:max_len";
 pub const TAG_NAME_SEPARATOR: &str = "@@~~##";
-pub const MSG_TAG_NAME_MUST_NOT_CONTAIN_SEPARATOR: &str = "name:must_not_contain_separator";
+pub const MSG_TAG_NAME_MUST_NOT_CONTAIN_SEPARATOR: &str = "tagName:must_not_contain_separator";
 
 pub fn validate_title(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_TITLE_REQUIRED)?;
     ValidationChecks::min_length(value, TITLE_MIN.into(), MSG_TITLE_MIN_LENGTH)?;
     ValidationChecks::max_length(value, TITLE_MAX.into(), MSG_TITLE_MAX_LENGTH)?;
+    Ok(())
+}
+pub fn validate_descript(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::min_length(value, DESCRIPT_MIN.into(), MSG_DESCRIPT_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, DESCRIPT_MAX.into(), MSG_DESCRIPT_MAX_LENGTH)?;
     Ok(())
 }
 pub fn validate_logo(value: &str) -> Result<(), ValidationError> {
@@ -146,6 +156,26 @@ impl Stream {
             stopped: None,
             status: STREAM_STATUS_DEF,
             source: STREAM_SOURCE_DEF.to_string(),
+            created_at: now,
+            updated_at: now,
+        }
+    }
+    #[cfg(feature = "mockdata")]
+    pub fn create(create_stream: CreateStream, id: i32) -> Stream {
+        let now = Utc::now();
+        Stream {
+            id: id,
+            user_id: create_stream.user_id,
+            title: create_stream.title.to_owned(),
+            descript: create_stream.descript.clone().unwrap_or(STREAM_DESCRIPT_DEF.to_string()),
+            logo: create_stream.logo.clone(),
+            starttime: create_stream.starttime.clone(),
+            live: create_stream.live.unwrap_or(STREAM_LIVE_DEF),
+            state: create_stream.state.unwrap_or(STREAM_STATE_DEF),
+            started: create_stream.started.clone(),
+            stopped: create_stream.stopped.clone(),
+            status: create_stream.status.unwrap_or(STREAM_STATUS_DEF),
+            source: create_stream.source.clone().unwrap_or(STREAM_SOURCE_DEF.to_string()),
             created_at: now,
             updated_at: now,
         }
@@ -308,6 +338,9 @@ impl Validator for CreateStreamInfoDto {
 
         errors.push(validate_title(&self.title).err());
 
+        if let Some(value) = &self.descript {
+            errors.push(validate_descript(&value).err());
+        }
         if let Some(value) = &self.logo {
             errors.push(validate_logo(&value).err());
         }
@@ -675,5 +708,64 @@ mod tests {
 
         assert_eq!(result.len(), 3);
         assert_eq!(result, streams_info);
+    }
+}
+
+#[cfg(all(test, feature = "mockdata"))]
+pub struct StreamModelsTest {}
+
+#[cfg(all(test, feature = "mockdata"))]
+impl StreamModelsTest {
+    pub fn title_min() -> String {
+        (0..(TITLE_MIN - 1)).map(|_| 'a').collect()
+    }
+    pub fn title_max() -> String {
+        (0..(TITLE_MAX + 1)).map(|_| 'a').collect()
+    }
+    pub fn descript_min() -> String {
+        (0..(DESCRIPT_MIN - 1)).map(|_| 'a').collect()
+    }
+    pub fn descript_max() -> String {
+        (0..(DESCRIPT_MAX + 1)).map(|_| 'a').collect()
+    }
+    pub fn logo_min() -> String {
+        (0..(LOGO_MIN - 1)).map(|_| 'a').collect()
+    }
+    pub fn logo_max() -> String {
+        (0..(LOGO_MAX + 1)).map(|_| 'a').collect()
+    }
+    pub fn source_min() -> String {
+        (0..(SOURCE_MIN - 1)).map(|_| 'a').collect()
+    }
+    pub fn source_max() -> String {
+        (0..(SOURCE_MAX + 1)).map(|_| 'a').collect()
+    }
+    pub fn tag_name_min() -> String {
+        (0..(TAG_NAME_MIN - 1)).map(|_| 'a').collect()
+    }
+    pub fn tag_name_max() -> String {
+        (0..(TAG_NAME_MAX + 1)).map(|_| 'a').collect()
+    }
+    pub fn tag_names_min() -> Vec<String> {
+        let mut result: Vec<String> = Vec::new();
+        let tag_name: String = (0..TAG_NAME_MIN).map(|_| 'a').collect();
+        let min_value = TAG_NAME_MIN_AMOUNT - 1;
+        let mut idx = 0;
+        while idx < min_value {
+            result.push(format!("{}{}", tag_name, idx));
+            idx += 1;
+        }
+        result
+    }
+    pub fn tag_names_max() -> Vec<String> {
+        let mut result: Vec<String> = Vec::new();
+        let tag_name: String = (0..TAG_NAME_MIN).map(|_| 'a').collect();
+        let max_value = TAG_NAME_MAX_AMOUNT + 1;
+        let mut idx = 0;
+        while idx < max_value {
+            result.push(format!("{}{}", tag_name, idx));
+            idx += 1;
+        }
+        result
     }
 }
