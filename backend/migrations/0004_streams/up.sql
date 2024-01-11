@@ -64,10 +64,10 @@ CREATE TABLE link_stream_tags_to_streams (
 CREATE INDEX idx_link_stream_tags_to_streams_stream_id_stream_tag_id ON link_stream_tags_to_streams(stream_id, stream_tag_id);
 
 
-/* Stored procedures for working with data from the "stream_tags" table. */
+/* Stored procedure for working with data from the "stream_tags" table. */
 
 /* Update links to the "tag" list for "stream". */
-CREATE OR REPLACE PROCEDURE update_list_stream_tag_to_stream(
+CREATE OR REPLACE PROCEDURE update_list_stream_tags(
   id1 INTEGER, user_id1 INTEGER, tag_name_list1 VARCHAR
 ) LANGUAGE plpgsql
 AS $$
@@ -155,4 +155,23 @@ BEGIN
   END IF;
 
 END;
+$$;
+
+
+/* Stored function to retrieve data from the "stream_tags" table. */
+CREATE OR REPLACE FUNCTION get_stream_tags_names(
+  IN ids INTEGER[],
+  OUT stream_id INTEGER, OUT id INTEGER, OUT user_id INTEGER, OUT "name" VARCHAR
+) RETURNS SETOF record LANGUAGE sql
+AS $$
+  SELECT
+    L.stream_id, T.id, T.user_id, T."name"
+  FROM
+    link_stream_tags_to_streams L,
+    stream_tags T,
+  (SELECT a AS id FROM unnest(ids) AS a) B
+  WHERE
+    L.stream_tag_id = T.id and L.stream_id = B.id
+  ORDER BY
+   L.stream_id ASC, T.user_id  ASC, T.id ASC;
 $$;
