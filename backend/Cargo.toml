@@ -15,7 +15,7 @@ path = "src/lib.rs"
 
 [dependencies]
 actix = "0.13.0"
-actix-cors = "0.6.4"
+actix-cors = "0.7.0"
 actix-files = "0.6.2"
 actix-web = { version = "4.3.1", features = ["openssl"] }
 argon2 = "0.5.2"
@@ -27,7 +27,7 @@ dotenv = "0.15.0"
 email_address = "0.2.4"
 env_logger = "0.10.0"
 futures-util = "0.3.28"
-handlebars = "4.4.0"
+handlebars = "5.0.0"
 jsonwebtoken = "9.1.0"
 lettre = { version = "0.11.0", features = ["tokio1", "tokio1-native-tls"] }
 log = "0.4.20"
