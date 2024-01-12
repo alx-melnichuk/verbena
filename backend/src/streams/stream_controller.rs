@@ -858,8 +858,8 @@ mod tests {
         let expected_message = "Json deserialize error: missing field";
         assert!(body_str.contains(expected_message));
     }
-    #[test]
-    async fn test_post_stream_title_empty() {
+
+    async fn test_post_stream_validate(create_stream: CreateStreamInfoDto, err_msg: &str) {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
@@ -867,11 +867,27 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        let starttime = Utc::now();
-        let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
 
         // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(CreateStreamInfoDto {
+        let request = test::TestRequest::post().uri("/streams").set_json(create_stream);
+
+        let vec = (vec![user1], vec![session1], vec![]);
+        let factory = post_stream;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.code, err::CD_VALIDATION);
+        assert_eq!(app_err.message, err_msg);
+    }
+    #[test]
+    async fn test_post_stream_title_empty() {
+        let starttime = Utc::now();
+        let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
+        let create_stream = CreateStreamInfoDto {
             title: "".to_string(),
             descript: None,
             logo: None,
@@ -883,34 +899,14 @@ mod tests {
             status: None,
             source: None,
             tags: tags.clone(),
-        });
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, stream_models::MSG_TITLE_REQUIRED);
+        };
+        test_post_stream_validate(create_stream, stream_models::MSG_TITLE_REQUIRED).await;
     }
     #[test]
     async fn test_post_stream_title_min() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         let starttime = Utc::now();
         let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(CreateStreamInfoDto {
+        let create_stream = CreateStreamInfoDto {
             title: StreamModelsTest::title_min(),
             descript: None,
             logo: None,
@@ -922,34 +918,14 @@ mod tests {
             status: None,
             source: None,
             tags: tags.clone(),
-        });
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, stream_models::MSG_TITLE_MIN_LENGTH);
+        };
+        test_post_stream_validate(create_stream, stream_models::MSG_TITLE_MIN_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_title_max() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         let starttime = Utc::now();
         let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(CreateStreamInfoDto {
+        let create_stream = CreateStreamInfoDto {
             title: StreamModelsTest::title_max(),
             descript: None,
             logo: None,
@@ -961,34 +937,14 @@ mod tests {
             status: None,
             source: None,
             tags: tags.clone(),
-        });
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, stream_models::MSG_TITLE_MAX_LENGTH);
+        };
+        test_post_stream_validate(create_stream, stream_models::MSG_TITLE_MAX_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_descript_min() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         let starttime = Utc::now();
         let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(CreateStreamInfoDto {
+        let create_stream = CreateStreamInfoDto {
             title: "title".to_string(),
             descript: Some(StreamModelsTest::descript_min()),
             logo: None,
@@ -1000,34 +956,14 @@ mod tests {
             status: None,
             source: None,
             tags: tags.clone(),
-        });
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, stream_models::MSG_DESCRIPT_MIN_LENGTH);
+        };
+        test_post_stream_validate(create_stream, stream_models::MSG_DESCRIPT_MIN_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_descript_max() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         let starttime = Utc::now();
         let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(CreateStreamInfoDto {
+        let create_stream = CreateStreamInfoDto {
             title: "title".to_string(),
             descript: Some(StreamModelsTest::descript_max()),
             logo: None,
@@ -1039,34 +975,14 @@ mod tests {
             status: None,
             source: None,
             tags: tags.clone(),
-        });
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, stream_models::MSG_DESCRIPT_MAX_LENGTH);
+        };
+        test_post_stream_validate(create_stream, stream_models::MSG_DESCRIPT_MAX_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_logo_min() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         let starttime = Utc::now();
         let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(CreateStreamInfoDto {
+        let create_stream = CreateStreamInfoDto {
             title: "title".to_string(),
             descript: None,
             logo: Some(StreamModelsTest::logo_min()),
@@ -1078,34 +994,14 @@ mod tests {
             status: None,
             source: None,
             tags: tags.clone(),
-        });
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, stream_models::MSG_LOGO_MIN_LENGTH);
+        };
+        test_post_stream_validate(create_stream, stream_models::MSG_LOGO_MIN_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_logo_max() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         let starttime = Utc::now();
         let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(CreateStreamInfoDto {
+        let create_stream = CreateStreamInfoDto {
             title: "title".to_string(),
             descript: None,
             logo: Some(StreamModelsTest::logo_max()),
@@ -1117,34 +1013,14 @@ mod tests {
             status: None,
             source: None,
             tags: tags.clone(),
-        });
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, stream_models::MSG_LOGO_MAX_LENGTH);
+        };
+        test_post_stream_validate(create_stream, stream_models::MSG_LOGO_MAX_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_source_min() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         let starttime = Utc::now();
         let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(CreateStreamInfoDto {
+        let create_stream = CreateStreamInfoDto {
             title: "title".to_string(),
             descript: None,
             logo: None,
@@ -1156,34 +1032,14 @@ mod tests {
             status: None,
             source: Some(StreamModelsTest::source_min()),
             tags: tags.clone(),
-        });
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, stream_models::MSG_SOURCE_MIN_LENGTH);
+        };
+        test_post_stream_validate(create_stream, stream_models::MSG_SOURCE_MIN_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_source_max() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         let starttime = Utc::now();
         let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(CreateStreamInfoDto {
+        let create_stream = CreateStreamInfoDto {
             title: "title".to_string(),
             descript: None,
             logo: None,
@@ -1195,33 +1051,13 @@ mod tests {
             status: None,
             source: Some(StreamModelsTest::source_max()),
             tags: tags.clone(),
-        });
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, stream_models::MSG_SOURCE_MAX_LENGTH);
+        };
+        test_post_stream_validate(create_stream, stream_models::MSG_SOURCE_MAX_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_tags_min_amount() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         let starttime = Utc::now();
-
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(CreateStreamInfoDto {
+        let create_stream = CreateStreamInfoDto {
             title: "title".to_string(),
             descript: None,
             logo: None,
@@ -1233,33 +1069,13 @@ mod tests {
             status: None,
             source: None,
             tags: StreamModelsTest::tag_names_min(),
-        });
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, stream_models::MSG_TAG_NAME_MIN_AMOUNT);
+        };
+        test_post_stream_validate(create_stream, stream_models::MSG_TAG_NAME_MIN_AMOUNT).await;
     }
     #[test]
     async fn test_post_stream_tags_max_amount() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         let starttime = Utc::now();
-
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(CreateStreamInfoDto {
+        let create_stream = CreateStreamInfoDto {
             title: "title".to_string(),
             descript: None,
             logo: None,
@@ -1271,35 +1087,15 @@ mod tests {
             status: None,
             source: None,
             tags: StreamModelsTest::tag_names_max(),
-        });
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, stream_models::MSG_TAG_NAME_MAX_AMOUNT);
+        };
+        test_post_stream_validate(create_stream, stream_models::MSG_TAG_NAME_MAX_AMOUNT).await;
     }
     #[test]
     async fn test_post_stream_tag_name_empty() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         let starttime = Utc::now();
         let mut tags: Vec<String> = StreamModelsTest::tag_names_min();
         tags.push("".to_string());
-
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(CreateStreamInfoDto {
+        let create_stream = CreateStreamInfoDto {
             title: "title".to_string(),
             descript: None,
             logo: None,
@@ -1310,36 +1106,16 @@ mod tests {
             stopped: None,
             status: None,
             source: None,
-            tags: tags,
-        });
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, stream_models::MSG_TAG_NAME_REQUIRED);
+            tags,
+        };
+        test_post_stream_validate(create_stream, stream_models::MSG_TAG_NAME_REQUIRED).await;
     }
     #[test]
     async fn test_post_stream_tag_name_min() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         let starttime = Utc::now();
         let mut tags: Vec<String> = StreamModelsTest::tag_names_min();
         tags.push(StreamModelsTest::tag_name_min());
-
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(CreateStreamInfoDto {
+        let create_stream = CreateStreamInfoDto {
             title: "title".to_string(),
             descript: None,
             logo: None,
@@ -1350,36 +1126,16 @@ mod tests {
             stopped: None,
             status: None,
             source: None,
-            tags: tags,
-        });
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, stream_models::MSG_TAG_NAME_MIN_LENGTH);
+            tags,
+        };
+        test_post_stream_validate(create_stream, stream_models::MSG_TAG_NAME_MIN_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_tag_name_max() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         let starttime = Utc::now();
         let mut tags: Vec<String> = StreamModelsTest::tag_names_min();
         tags.push(StreamModelsTest::tag_name_max());
-
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(CreateStreamInfoDto {
+        let create_stream = CreateStreamInfoDto {
             title: "title".to_string(),
             descript: None,
             logo: None,
@@ -1390,20 +1146,9 @@ mod tests {
             stopped: None,
             status: None,
             source: None,
-            tags: tags,
-        });
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, stream_models::MSG_TAG_NAME_MAX_LENGTH);
+            tags,
+        };
+        test_post_stream_validate(create_stream, stream_models::MSG_TAG_NAME_MAX_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_valid_data() {

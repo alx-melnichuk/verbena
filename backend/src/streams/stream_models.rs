@@ -344,12 +344,10 @@ impl Validator for CreateStreamInfoDto {
         if let Some(value) = &self.logo {
             errors.push(validate_logo(&value).err());
         }
-
-        errors.push(validate_tag_names(&self.tags).err());
-
         if let Some(value) = &self.source {
             errors.push(validate_source(&value).err());
         }
+        errors.push(validate_tag_names(&self.tags).err());
 
         self.filter_errors(errors)
     }
