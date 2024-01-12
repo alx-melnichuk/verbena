@@ -22,11 +22,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         // GET api/users/email/{email}
         .service(get_users_by_email)
         // GET api/users_current
-        .service(get_users_current)
+        .service(get_user_current)
         // PUT api/users_current
-        .service(put_users_current)
+        .service(put_user_current)
         // DELETE api/users_current
-        .service(delete_users_current)
+        .service(delete_user_current)
         // PUT api/users/{id}
         .service(put_user)
         // DELETE api/users/{id}
@@ -131,7 +131,7 @@ pub async fn get_users_by_email(
 // GET api/users_current
 #[rustfmt::skip]
 #[get("/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn get_users_current(
+pub async fn get_user_current(
     authenticated: Authenticated,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let user = authenticated.deref();
@@ -143,7 +143,7 @@ pub async fn get_users_current(
 // PUT api/users_current
 #[rustfmt::skip]
 #[put("/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn put_users_current(
+pub async fn put_user_current(
     authenticated: Authenticated,
     user_orm: web::Data<UserOrmApp>,
     json_body: web::Json<user_models::ModifyUserDto>,
@@ -180,7 +180,7 @@ pub async fn put_users_current(
 // DELETE api/users_current
 #[rustfmt::skip]
 #[delete("/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn delete_users_current(
+pub async fn delete_user_current(
     authenticated: Authenticated,
     user_orm: web::Data<UserOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -479,9 +479,9 @@ mod tests {
         assert_eq!(user_dto_res, str);
     }
 
-    // ** get_users_current **
+    // ** get_user_current **
     #[test]
-    async fn test_get_users_current_valid_token() {
+    async fn test_get_user_current_valid_token() {
         let user1: User = user_with_id(create_user());
         let user1b_dto = UserDto::from(user1.clone());
 
@@ -495,7 +495,7 @@ mod tests {
         let request = test::TestRequest::get().uri("/users_current"); // GET /users_current
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![user1], vec![session1]);
-        let factory = get_users_current;
+        let factory = get_user_current;
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
@@ -509,9 +509,9 @@ mod tests {
         assert_eq!(user_dto_res.password, "");
     }
 
-    // ** put_users_current **
+    // ** put_user_current **
     #[test]
-    async fn test_put_users_current_valid_id() {
+    async fn test_put_user_current_valid_id() {
         let user1: User = user_with_id(create_user());
         let user1_id = user1.id;
         let new_password = "passwdJ3S9";
@@ -543,7 +543,7 @@ mod tests {
                 role: Some(user1mod.role),
             });
         let vec = (vec![user1], vec![session1]);
-        let factory = put_users_current;
+        let factory = put_user_current;
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
@@ -562,9 +562,9 @@ mod tests {
         assert_eq!(user_dto_res.created_at, user1mod_dto_ser.created_at);
     }
 
-    // ** delete_users_current **
+    // ** delete_user_current **
     #[test]
-    async fn test_delete_users_current_valid_token() {
+    async fn test_delete_user_current_valid_token() {
         let user1: User = user_with_id(create_user());
 
         let num_token = 1234;
@@ -576,7 +576,7 @@ mod tests {
 
         let request = test::TestRequest::delete().uri("/users_current"); // DELETE /users_current
         let vec = (vec![user1], vec![session1]);
-        let factory = delete_users_current;
+        let factory = delete_user_current;
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
     }
