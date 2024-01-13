@@ -72,21 +72,6 @@ pub mod inst {
             &self,
             conn: &mut dbase::DbPooledConnection,
             ids: &[i32],
-        ) -> Result<Vec<StreamTagStreamId>, String> {
-            let query = diesel::sql_query("select * from get_stream_tags_names($1);")
-                .bind::<sql_types::Array<sql_types::Integer>, _>(ids);
-
-            let result = query
-                .get_results::<StreamTagStreamId>(conn)
-                .map_err(|e| format!("get_stream_tags: {}", e.to_string()))?;
-
-            Ok(result)
-        }
-        /// Get a list of "tags" for the specified "stream".
-        fn get_stream_tags2(
-            &self,
-            conn: &mut dbase::DbPooledConnection,
-            ids: &[i32],
         ) -> Result<Vec<StreamTagStreamId>, diesel::result::Error> {
             let query = diesel::sql_query("select * from get_stream_tags_names($1);")
                 .bind::<sql_types::Array<sql_types::Integer>, _>(ids);
@@ -126,7 +111,9 @@ pub mod inst {
                 .map_err(|e| format!("find_stream_by_id: {}", e.to_string()))?;
 
             if let Some(stream) = opt_stream {
-                let stream_tags = self.get_stream_tags(&mut conn, &[stream.id])?;
+                let stream_tags = self
+                    .get_stream_tags(&mut conn, &[stream.id])
+                    .map_err(|e| format!("get_stream_tags: {}", e.to_string()))?;
                 Ok(Some((stream, stream_tags)))
             } else {
                 Ok(None)
@@ -210,7 +197,9 @@ pub mod inst {
 
             // Get a list of "stream" identifiers.
             let ids: Vec<i32> = streams.iter().map(|stream| stream.id).collect();
-            let stream_tags = self.get_stream_tags(&mut conn, &ids)?;
+            let stream_tags = self
+                .get_stream_tags(&mut conn, &ids)
+                .map_err(|e| format!("get_stream_tags: {}", e.to_string()))?;
 
             Ok((count, streams, stream_tags))
         }
@@ -248,7 +237,7 @@ pub mod inst {
 
                 let now3 = Instant::now();
                 // Get a list of "tags" for the specified "stream".
-                let res_stream_tags = self.get_stream_tags2(conn, &[stream_id]);
+                let res_stream_tags = self.get_stream_tags(conn, &[stream_id]);
                 eprintln!("get_stream_tags2   () elapsed time: {:.2?}", now3.elapsed());
                 eprintln!("total              () elapsed time: {:.2?}", now1.elapsed());
 
