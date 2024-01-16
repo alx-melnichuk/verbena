@@ -1,4 +1,4 @@
-use actix_web::{get, post, web, HttpResponse};
+use actix_web::{get, post, put, web, HttpResponse};
 use std::{ops::Deref, time::Instant};
 
 use crate::errors::AppError;
@@ -19,9 +19,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .service(get_streams)
         // POST api/streams
         .service(post_stream)
-        // // PUT api/streams/{id}
-        // .service(update_stream)
-        ;
+        // PUT api/streams/{id}
+        .service(put_stream);
 }
 
 fn err_parse_int(err: String) -> AppError {
@@ -39,7 +38,7 @@ fn err_blocking(err: String) -> AppError {
 
 // GET api/streams/{id}
 #[rustfmt::skip]
-#[get("/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())" )]
+#[get("/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_stream_by_id(
     authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
@@ -100,7 +99,7 @@ pub async fn get_stream_by_id(
 */
 // GET api/streams
 #[rustfmt::skip]
-#[get("/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())" )]
+#[get("/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_streams(
     authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
@@ -159,7 +158,7 @@ async addStream (
 
 // POST api/streams
 #[rustfmt::skip]
-#[post("/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())" )]
+#[post("/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn post_stream(
     authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
@@ -201,21 +200,22 @@ pub async fn post_stream(
 }
 
 // PUT api/streams/{id}
-// #[rustfmt::skip]
-// #[put("/streams/{id}", /*wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())"*/ )]
-/*pub async fn update_stream(
-    // authenticated: Authenticated,
+#[rustfmt::skip]
+#[put("/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn put_stream(
+    authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
     json_body: web::Json<stream_models::ModifyStreamInfoDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
+    // Get current user details.
+    let curr_user = authenticated.deref();
+    let curr_user_id = curr_user.id;
+    
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
-
-    // let user = authenticated.deref();
-    // let user_id = user.id;
-    let user_id = 182;
 
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
@@ -224,60 +224,32 @@ pub async fn post_stream(
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
-    let modify_stream_info: stream_models::ModifyStreamInfoDto = json_body.0.clone();
-    let modify_stream = stream_models::ModifyStream::convert(modify_stream_info.clone(), user_id);
-    // let tags = modify_stream_info.tags.clone();
+    let modify_stream_info: stream_models::ModifyStreamInfoDto = json_body.into_inner();
+    let modify_stream = stream_models::ModifyStream::convert(modify_stream_info.clone(), curr_user_id);
+    let opt_tags = modify_stream_info.tags.clone();
 
-    let stream_orm2 = stream_orm.clone();
-    let res_stream = web::block(move || {
-        // Start transaction
-        // let mut is_commit = false;
-        // eprintln!("Start transaction");
-
-        // Modify an entity (stream).
-        let res_stream_opt =
-            stream_orm2.modify_stream(id, modify_stream)
+    let res_data = web::block(move || {
+        // Add a new entity (stream).
+        let res_data =
+            stream_orm.modify_stream(id, modify_stream, opt_tags)
             .map_err(|e| err_database(e.to_string()));
-
-        /*let res_stream_opt2 = res_stream_opt.clone();
-        if let Ok(opt_stream) = res_stream_opt2 {
-            if opt_stream.is_some() {
-                let stream_orm2 = stream_orm.clone();
-                // Update a list of "stream_tags" for the entity (stream).
-                let res_tags = stream_orm2.update_stream_tags(id, user_id, tags.clone())
-                    .map_err(|e| err_database(e.to_string()));
-                if res_tags.is_ok() {
-                    // Commit transaction
-                    is_commit = true;
-                    eprintln!("Commit transaction");
-                }
-            }
-        }*/
-        // if !is_commit {
-        //     // Rollback transaction
-        //     eprintln!("Rollback transaction");
-        // }
-        res_stream_opt
+            res_data
     })
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
 
-    let opt_stream = res_stream?;
-
-    if let Some(stream) = opt_stream {
-
-        // let stream_orm2 = stream_orm.clone();
-        // // Update a list of "stream_tags" for the entity (stream).
-        // let res_tags = stream_orm2.update_stream_tags(id, user_id, tags.clone())
-        //     .map_err(|e| err_database(e.to_string()));
-        let tags = modify_stream_info.tags.clone();
-        let stream_tag_dto = stream_models::StreamInfoDto::convert(stream, user_id, tags);
-
-        Ok(HttpResponse::Ok().json(stream_tag_dto)) // 200
+    log::info!("put_stream() elapsed time: {:.2?}", now.elapsed());
+    let opt_data = res_data?;
+    
+    if let Some((stream, stream_tags)) = opt_data {
+        // Merge a "stream" and a corresponding list of "tags".
+        let list = stream_models::StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
+        let stream_info_dto = list[0].clone();
+        Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
     }
-}*/
+}
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
@@ -290,7 +262,10 @@ mod tests {
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
     };
     use crate::streams::{
-        stream_models::{CreateStreamInfoDto, SearchStreamInfoResponseDto, Stream, StreamInfoDto, StreamModelsTest},
+        stream_models::{
+            CreateStreamInfoDto, ModifyStreamInfoDto, SearchStreamInfoResponseDto, Stream, StreamInfoDto,
+            StreamModelsTest,
+        },
         stream_orm::tests::STREAM_ID,
     };
     use crate::users::{
@@ -1214,6 +1189,197 @@ mod tests {
         let res_updated_at = stream_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
         let ser_updated_at = stream1b_dto_ser.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
         assert_eq!(res_updated_at, ser_updated_at);
-        // assert_eq!(stream_dto_res.id, stream1b_dto_ser.id);
+        assert_eq!(stream_dto_res.id, stream1b_dto_ser.id);
+    }
+
+    // ** put_stream **
+
+    #[test]
+    async fn test_put_stream_no_data() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let now = Utc::now();
+        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+
+        // PUT api/put_stream
+        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
+
+        let vec = (vec![user1], vec![session1], vec![stream_dto]);
+        let factory = put_stream;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let body_str = String::from_utf8_lossy(&body);
+        let expected_message = "Content type error";
+        assert!(body_str.contains(expected_message));
+    }
+
+    async fn test_put_stream_validate(modify_stream: ModifyStreamInfoDto, err_msg: &str) {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let now = Utc::now();
+        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+
+        // PUT api/put_stream
+        let request = test::TestRequest::put()
+            .uri(&format!("/streams/{}", stream_dto.id))
+            .set_json(modify_stream);
+
+        let vec = (vec![user1], vec![session1], vec![stream_dto]);
+        let factory = put_stream;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        dbg!(&body);
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.code, err::CD_VALIDATION);
+        assert_eq!(app_err.message, err_msg);
+    }
+    #[test]
+    async fn test_put_stream_no_required_fields() {
+        let modify_stream = ModifyStreamInfoDto {
+            title: None,
+            descript: None,
+            logo: None,
+            starttime: None,
+            source: None,
+            tags: None,
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_NO_REQUIRED_FIELDS).await;
+    }
+    #[test]
+    async fn test_put_stream_title_empty() {
+        let modify_stream = ModifyStreamInfoDto {
+            title: Some("".to_string()),
+            descript: None,
+            logo: None,
+            starttime: None,
+            source: None,
+            tags: None,
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_TITLE_REQUIRED).await;
+    }
+    #[test]
+    async fn test_put_stream_title_min() {
+        let modify_stream = ModifyStreamInfoDto {
+            title: Some(StreamModelsTest::title_min()),
+            descript: None,
+            logo: None,
+            starttime: None,
+            source: None,
+            tags: None,
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_TITLE_MIN_LENGTH).await;
+    }
+    #[test]
+    async fn test_put_stream_title_max() {
+        // let starttime = Utc::now();
+        // let tags: Vec<String> = vec!["tag11".to_string(), "tag14".to_string()];
+        let modify_stream = ModifyStreamInfoDto {
+            title: Some(StreamModelsTest::title_max()),
+            descript: None,
+            logo: None,
+            starttime: None,
+            source: None,
+            tags: None,
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_TITLE_MAX_LENGTH).await;
+    }
+
+    #[test]
+    async fn test_put_stream_valid_data() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let now = Utc::now();
+        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+        let mut stream2_dto = stream_dto.clone();
+        stream2_dto.title = "title2".to_string();
+        stream2_dto.descript = "descript2".to_string();
+        stream2_dto.starttime = now + Duration::days(1);
+        stream2_dto.source = format!("{}_2", stream_models::STREAM_SOURCE_DEF.to_string());
+        stream2_dto.tags.clear();
+        stream2_dto.tags.push("tag11".to_string());
+        stream2_dto.tags.push("tag14".to_string());
+        stream2_dto.updated_at = Utc::now();
+        let stream2b_dto = stream2_dto.clone();
+
+        // PUT api/put_stream
+        let request =
+            test::TestRequest::put()
+                .uri(&format!("/streams/{}", stream_dto.id))
+                .set_json(ModifyStreamInfoDto {
+                    title: Some(stream2_dto.title.to_string()),
+                    descript: Some(stream2_dto.descript.to_string()),
+                    logo: None,
+                    starttime: Some(stream2_dto.starttime.clone()),
+                    source: Some(stream2_dto.source.to_string()),
+                    tags: Some(stream2_dto.tags.clone()),
+                });
+
+        let vec = (vec![user1], vec![session1], vec![stream_dto]);
+        let factory = put_stream;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json_stream2b_dto = serde_json::json!(stream2b_dto).to_string();
+        let stream2b_dto_ser: StreamInfoDto =
+            serde_json::from_slice(json_stream2b_dto.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(stream_dto_res.id, stream2b_dto_ser.id);
+        assert_eq!(stream_dto_res.user_id, stream2b_dto_ser.user_id);
+        assert_eq!(stream_dto_res.title, stream2b_dto_ser.title);
+        assert_eq!(stream_dto_res.descript, stream2b_dto_ser.descript);
+        assert_eq!(stream_dto_res.logo, stream2b_dto_ser.logo);
+        assert_eq!(stream_dto_res.starttime, stream2b_dto_ser.starttime);
+        assert_eq!(stream_dto_res.live, stream2b_dto_ser.live);
+        assert_eq!(stream_dto_res.state, stream2b_dto_ser.state);
+        assert_eq!(stream_dto_res.started, stream2b_dto_ser.started);
+        assert_eq!(stream_dto_res.stopped, stream2b_dto_ser.stopped);
+        assert_eq!(stream_dto_res.status, stream2b_dto_ser.status);
+        assert_eq!(stream_dto_res.source, stream2b_dto_ser.source);
+        assert_eq!(stream_dto_res.tags, stream2b_dto_ser.tags);
+        assert_eq!(stream_dto_res.is_my_stream, stream2b_dto_ser.is_my_stream);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
+        let res_created_at = stream_dto_res.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        let ser_created_at = stream2b_dto_ser.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        assert_eq!(res_created_at, ser_created_at);
+        let res_updated_at = stream_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        let ser_updated_at = stream2b_dto_ser.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        assert_eq!(res_updated_at, ser_updated_at);
+        assert_eq!(stream_dto_res.id, stream2b_dto_ser.id);
     }
 }

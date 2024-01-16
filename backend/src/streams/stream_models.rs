@@ -1,3 +1,4 @@
+use std::borrow;
 use std::collections::HashMap;
 
 use chrono::{DateTime, Utc};
@@ -42,6 +43,13 @@ pub const TAG_NAME_MAX: u16 = 255;
 pub const MSG_TAG_NAME_MAX_LENGTH: &str = "tagName:max_len";
 pub const TAG_NAME_SEPARATOR: &str = "@@~~##";
 pub const MSG_TAG_NAME_MUST_NOT_CONTAIN_SEPARATOR: &str = "tagName:must_not_contain_separator";
+
+// ** ModifyStreamInfoDto **
+
+pub const MSG_NO_REQUIRED_FIELDS: &str = "Nothing to update! One of the required fields is missing.";
+pub const MSG_CANNOT_SET_PAST_START_DATE: &str = "Cannot update stream with the past starttime!";
+
+//  ** CreateStreamInfoDto **
 
 pub fn validate_title(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_TITLE_REQUIRED)?;
@@ -355,36 +363,26 @@ impl Validator for CreateStreamInfoDto {
 
 // **  Section: table "streams" data editing **
 
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset)]
 #[diesel(table_name = schema::streams)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ModifyStream {
     pub user_id: i32,
-    pub title: String,                  // min_len=2 max_len=255
-    pub descript: String,               // type: Text default ""
-    pub logo: Option<String>,           // min_len=2 max_len=255 Nullable
-    pub starttime: DateTime<Utc>,       //
-    pub live: bool,                     // default false
-    pub state: StreamState,             // default Waiting
-    pub started: Option<DateTime<Utc>>, // Nullable
-    pub stopped: Option<DateTime<Utc>>, // Nullable
-    pub status: bool,                   // default true
-    pub source: String,                 // min_len=2 max_len=255 default "obs"
+    pub title: Option<String>,            // min_len=2 max_len=255
+    pub descript: Option<String>,         // type: Text default ""
+    pub logo: Option<String>,             // min_len=2 max_len=255 Nullable
+    pub starttime: Option<DateTime<Utc>>, //
+    pub source: Option<String>,           // min_len=2 max_len=255 default "obs"
 }
 
 impl ModifyStream {
     pub fn convert(modify_stream_info: ModifyStreamInfoDto, user_id: i32) -> Self {
         ModifyStream {
             user_id: user_id,
-            title: modify_stream_info.title.to_owned(),
+            title: modify_stream_info.title.clone(),
             descript: modify_stream_info.descript.clone(),
             logo: modify_stream_info.logo.clone(),
-            starttime: modify_stream_info.starttime.to_owned(),
-            live: modify_stream_info.live.clone(),
-            state: modify_stream_info.state.clone(),
-            started: modify_stream_info.started.clone(),
-            stopped: modify_stream_info.stopped.clone(),
-            status: modify_stream_info.status.clone(),
+            starttime: modify_stream_info.starttime.clone(),
             source: modify_stream_info.source.clone(),
         }
     }
@@ -392,23 +390,15 @@ impl ModifyStream {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ModifyStreamInfoDto {
-    pub title: String,
-    pub descript: String,
+    pub title: Option<String>,
+    pub descript: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub logo: Option<String>,
-    #[serde(with = "serial_datetime")]
-    pub starttime: DateTime<Utc>,
-    pub live: bool,
-    pub state: StreamState,
-    #[rustfmt::skip]
     #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
-    pub started: Option<DateTime<Utc>>,
-    #[rustfmt::skip]
-    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none" )]
-    pub stopped: Option<DateTime<Utc>>,
-    pub status: bool,
-    pub source: String,
-    pub tags: Vec<String>,
+    pub starttime: Option<DateTime<Utc>>,
+    pub source: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Vec<String>>,
 }
 
 impl Validator for ModifyStreamInfoDto {
@@ -416,13 +406,41 @@ impl Validator for ModifyStreamInfoDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        errors.push(validate_title(&self.title).err());
+        let mut no_required_fields = false;
+        if self.title.is_none() && self.descript.is_none() && self.starttime.is_none() && self.tags.is_none() {
+            let mut err = ValidationError::new(MSG_NO_REQUIRED_FIELDS);
+            let data = true;
+            no_required_fields = true;
+            err.add_param(borrow::Cow::Borrowed("noRequiredFields"), &data);
+            errors.push(Some(err));
+        }
 
+        if let Some(value) = &self.title {
+            errors.push(validate_title(&value).err());
+        }
+        if let Some(value) = &self.descript {
+            errors.push(validate_descript(&value).err());
+        }
         if let Some(value) = &self.logo {
             errors.push(validate_logo(&value).err());
         }
-        errors.push(validate_tag_names(&self.tags).err());
-        errors.push(validate_source(&self.source).err());
+        if let Some(starttime) = &self.starttime {
+            let now_date = Utc::now().date_naive().and_hms_opt(0, 0, 0).unwrap();
+            if starttime.naive_utc() < now_date {
+                let mut err = ValidationError::new(MSG_CANNOT_SET_PAST_START_DATE);
+                let data = true;
+                err.add_param(borrow::Cow::Borrowed("starttimeIsPast"), &data);
+                errors.push(Some(err));
+            }
+        }
+        if let Some(value) = &self.source {
+            errors.push(validate_source(&value).err());
+        }
+        if !no_required_fields && self.tags.is_some() {
+            if let Some(tags) = &self.tags {
+                errors.push(validate_tag_names(tags).err());
+            }
+        }
 
         self.filter_errors(errors)
     }

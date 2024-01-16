@@ -155,4 +155,14 @@ impl ValidationChecks {
         }
         Ok(())
     }
+    /// Checking for required fields
+    pub fn no_required_fields(is_required_fields: bool, msg: &'static str) -> Result<(), ValidationError> {
+        if !is_required_fields {
+            let mut err = ValidationError::new(msg);
+            let data = true;
+            err.add_param(borrow::Cow::Borrowed("noRequiredFields"), &data);
+            return Err(err);
+        }
+        Ok(())
+    }
 }
