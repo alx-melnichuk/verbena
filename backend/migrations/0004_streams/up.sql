@@ -67,21 +67,19 @@ CREATE INDEX idx_link_stream_tags_to_streams_stream_id_stream_tag_id ON link_str
 /* Stored procedure for working with data from the "stream_tags" table. */
 
 /* Update links to the "tag" list for "stream". */
-CREATE OR REPLACE PROCEDURE update_list_stream_tags(
-  id1 INTEGER, user_id1 INTEGER, tag_name_list1 VARCHAR
-) LANGUAGE plpgsql
+CREATE OR REPLACE PROCEDURE update_list_stream_tags(id1 INTEGER, user_id1 INTEGER, tags_new TEXT[]) 
+LANGUAGE plpgsql
 AS $$
 DECLARE
-  tags_old VARCHAR[];   tags_new VARCHAR[];    tags_comm VARCHAR[];
+  tags_old VARCHAR[];   tags_comm VARCHAR[];
   tags_add VARCHAR[];   tags_remove VARCHAR[];
   ids_remove INTEGER[]; tags_names_new VARCHAR[];
 BEGIN
-  -- raise notice '';
-  IF (id1 IS NULL OR user_id1 IS NULL OR tag_name_list1 IS NULL) THEN
+   -- raise notice 'id1: %, user_id1: %, tags_new: %', id1, user_id1, tags_new;
+  IF (id1 IS NULL OR user_id1 IS NULL OR tags_new IS NULL) THEN
     RETURN;
   END IF;
-
-  tags_new := STRING_TO_ARRAY(tag_name_list1, '@@~~##');
+  
   tags_old := ARRAY(
     SELECT T."name"
     FROM stream_tags T, link_stream_tags_to_streams L
@@ -128,6 +126,7 @@ BEGIN
       WHERE T.user_id = user_id1 AND T."name" = N."name"
     );
     -- raise notice 'ids_remove: %', ids_remove;
+   
     -- Delete information about all obsolete tag names in the links table "link_stream_tags_to_streams".
     DELETE
     FROM link_stream_tags_to_streams L
@@ -136,6 +135,7 @@ BEGIN
       WHERE L.stream_id = id1 AND L.stream_tag_id = I.id
     );
     -- raise notice 'DELETE FROM link_stream_tags_to_streams() tags_remove: %', tags_remove;
+    
     -- Get an array of identifiers of tag names that are no longer used.
     ids_remove := ARRAY(
       SELECT T.id

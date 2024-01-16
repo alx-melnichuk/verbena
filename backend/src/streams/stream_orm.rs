@@ -12,9 +12,12 @@ pub trait StreamOrm {
         tags: &[String],
     ) -> Result<(Stream, Vec<StreamTagStreamId>), String>;
     /// Modify an entity (stream).
-    fn modify_stream(&self, id: i32, modify_stream: ModifyStream) -> Result<Option<Stream>, String>;
-    /// Update a list of "stream_tags" for the entity (stream).
-    fn update_stream_tags(&self, id: i32, user_id: i32, tags: Vec<String>) -> Result<(), String>;
+    fn modify_stream(
+        &self,
+        id: i32,
+        modify_stream: ModifyStream,
+        opt_tags: Option<Vec<String>>,
+    ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
     /// Delete an entity (stream).
     fn delete_stream(&self, id: i32) -> Result<usize, String>;
 }
@@ -86,12 +89,12 @@ pub mod inst {
             user_id: i32,
             tags: &[String],
         ) -> Result<usize, diesel::result::Error> {
-            let tag_names = tags.join(stream_models::TAG_NAME_SEPARATOR);
+            let stream_tags: Vec<String> = tags.iter().map(|tag| tag.to_lowercase().trim().to_string()).collect();
             // Run query using Diesel to add a list of "stream_tags" for the entity (stream).
             let query = diesel::sql_query("CALL update_list_stream_tags($1, $2, $3);")
                 .bind::<sql_types::Integer, _>(stream_id)
                 .bind::<sql_types::Integer, _>(user_id)
-                .bind::<sql_types::VarChar, _>(tag_names);
+                .bind::<sql_types::Array<sql_types::Text>, _>(stream_tags);
 
             query.execute(conn)
         }
@@ -225,20 +228,16 @@ pub mod inst {
                 let stream_id = stream.id;
                 let user_id = stream.user_id;
                 let now1 = Instant::now();
-                let now2 = Instant::now();
                 // Update the list of "tags" for the specified "stream".
                 let res_update_stream_tags = self.update_stream_tags(conn, stream_id, user_id, tags);
-                eprintln!("update_stream_tags () elapsed time: {:.2?}", now2.elapsed());
 
                 if let Err(err) = res_update_stream_tags {
                     err_table = "update_list_stream_tags";
                     return Err(err);
                 };
 
-                let now3 = Instant::now();
                 // Get a list of "tags" for the specified "stream".
                 let res_stream_tags = self.get_stream_tags(conn, &[stream_id]);
-                eprintln!("get_stream_tags2   () elapsed time: {:.2?}", now3.elapsed());
                 eprintln!("total              () elapsed time: {:.2?}", now1.elapsed());
 
                 let stream_tags = match res_stream_tags {
@@ -258,39 +257,61 @@ pub mod inst {
             }
         }
         /// Modify an entity (stream).
-        fn modify_stream(&self, id: i32, modify_stream: ModifyStream) -> Result<Option<Stream>, String> {
+        fn modify_stream(
+            &self,
+            id: i32,
+            modify_stream: ModifyStream,
+            opt_tags: Option<Vec<String>>,
+        ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
+            let mut err_table = "modify_stream";
+            let now1 = Instant::now();
+            let res_data = conn.transaction::<_, diesel::result::Error, _>(|conn| {
+                // Run query using Diesel to add a new entry (stream). schema::streams::dsl
+                let res_stream = diesel::update(dsl::streams)
+                    .filter(dsl::id.eq(id).and(dsl::user_id.eq(modify_stream.user_id)))
+                    .set(&modify_stream)
+                    .returning(Stream::as_returning())
+                    .get_result(conn)
+                    .optional();
 
-            // Run query using Diesel to full or partially modify the user entry.
-            let result = diesel::update(dsl::streams.find(id))
-                .set(&modify_stream)
-                .returning(Stream::as_returning())
-                .get_result(&mut conn)
-                .optional()
-                .map_err(|e| format!("modify_stream: {}", e.to_string()))?;
+                let opt_stream = res_stream?;
+                if let Some(stream) = opt_stream {
+                    let stream_id = stream.id;
+                    let user_id = stream.user_id;
 
-            Ok(result)
-        }
-        /// Update a list of "stream_tags" for the entity (stream).
-        fn update_stream_tags(&self, id: i32, user_id: i32, tags: Vec<String>) -> Result<(), String> {
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
+                    if let Some(tags) = opt_tags {
+                        // Update the list of "tags" for the specified "stream".
+                        let res_update_stream_tags = self.update_stream_tags(conn, stream_id, user_id, &tags);
 
-            let tag_names = tags.join(stream_models::TAG_NAME_SEPARATOR);
-            // Run query using Diesel to add a list of "stream_tags" for the entity (stream).
-            let query = diesel::sql_query("CALL update_list_stream_tags($1, $2, $3);")
-                .bind::<sql_types::Integer, _>(id)
-                .bind::<sql_types::Integer, _>(user_id)
-                .bind::<sql_types::VarChar, _>(tag_names);
-            let query_sql = debug_query::<Pg, _>(&query).to_string();
-            eprintln!("query_sql: {}", query_sql);
+                        if let Err(err) = res_update_stream_tags {
+                            err_table = "update_list_stream_tags";
+                            return Err(err);
+                        };
+                    }
 
-            query
-                .execute(&mut conn)
-                .map_err(|e| format!("update_stream_tags: {}", e.to_string()))?;
+                    // Get a list of "tags" for the specified "stream".
+                    let res_stream_tags = self.get_stream_tags(conn, &[stream_id]);
 
-            Ok(())
+                    let stream_tags = match res_stream_tags {
+                        Ok(v) => v,
+                        Err(err) => {
+                            err_table = "get_stream_tags_names";
+                            return Err(err);
+                        }
+                    };
+                    Ok(Some((stream, stream_tags)))
+                } else {
+                    Ok(None)
+                }
+            });
+            eprintln!("total              () elapsed time: {:.2?}", now1.elapsed());
+            eprintln!("res_data: {:?}", res_data);
+            match res_data {
+                Ok(value) => Ok(value),
+                Err(err) => Err(format!("{}: {}", err_table, err.to_string())),
+            }
         }
         /// Delete an entity (stream).
         fn delete_stream(&self, id: i32) -> Result<usize, String> {
@@ -364,29 +385,20 @@ pub mod tests {
             }
         }
         /// Get a list of "tags" for the specified "stream".
-        fn get_stream_tags(&self, ids: &[i32]) -> Result<Vec<StreamTagStreamId>, String> {
+        fn get_tags(&self, stream_info: StreamInfoDto) -> Vec<StreamTagStreamId> {
             let mut result: Vec<StreamTagStreamId> = Vec::new();
-
-            let iter_streams_info = self
-                .stream_info_vec
-                .iter()
-                .filter(|stream| ids.contains(&stream.id))
-                .map(|stream| stream.clone());
-
             let mut id = 0;
-            for stream_info in iter_streams_info {
-                for tag in stream_info.tags {
-                    let value = StreamTagStreamId {
-                        stream_id: stream_info.id,
-                        id,
-                        user_id: stream_info.user_id,
-                        name: tag.to_owned(),
-                    };
-                    result.push(value);
-                    id += 1;
-                }
+            for tag in stream_info.tags.iter() {
+                let value = StreamTagStreamId {
+                    stream_id: stream_info.id,
+                    id,
+                    user_id: stream_info.user_id,
+                    name: tag.to_owned(),
+                };
+                result.push(value);
+                id += 1;
             }
-            Ok(result)
+            result
         }
         /// Create entity "StreamTagStreamId" from "Stream".
         fn create_stream_tags(stream_id: i32, user_id: i32, tags: &[String]) -> Vec<StreamTagStreamId> {
@@ -415,7 +427,7 @@ pub mod tests {
                 .map(|stream| stream.clone());
 
             if let Some(stream_info) = stream_info_opt {
-                let stream_tags = self.get_stream_tags(&[stream_info.id])?;
+                let stream_tags = self.get_tags(stream_info.clone());
                 Ok(Some((Self::to_stream(stream_info), stream_tags)))
             } else {
                 Ok(None)
@@ -531,7 +543,12 @@ pub mod tests {
         }
 
         /// Modify an entity (stream).
-        fn modify_stream(&self, id: i32, modify_stream: ModifyStream) -> Result<Option<Stream>, String> {
+        fn modify_stream(
+            &self,
+            id: i32,
+            modify_stream: ModifyStream,
+            opt_tags: Option<Vec<String>>,
+        ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             let user_id = modify_stream.user_id;
 
             let stream_opt = self
@@ -544,35 +561,31 @@ pub mod tests {
                 let stream_saved = Stream {
                     id: stream.id,
                     user_id: stream.user_id,
-                    title: modify_stream.title.to_owned(),
-                    descript: modify_stream.descript.to_owned(),
-                    logo: modify_stream.logo.clone(),
-                    starttime: modify_stream.starttime,
-                    live: modify_stream.live,
-                    state: modify_stream.state,
-                    started: modify_stream.started.clone(),
-                    stopped: modify_stream.stopped.clone(),
-                    status: modify_stream.status,
-                    source: modify_stream.source.to_owned(),
+                    title: modify_stream.title.unwrap_or(stream.title.to_string()),
+                    descript: modify_stream.descript.unwrap_or(stream.descript.to_string()),
+                    logo: match modify_stream.logo {
+                        Some(logo) => Some(logo),
+                        None => stream.logo,
+                    },
+                    starttime: modify_stream.starttime.unwrap_or(stream.starttime.clone()),
+                    live: stream.live,
+                    state: stream.state.clone(),
+                    started: stream.started.clone(),
+                    stopped: stream.stopped.clone(),
+                    status: stream.status,
+                    source: modify_stream.source.unwrap_or(stream.source.to_string()),
                     created_at: stream.created_at,
                     updated_at: Utc::now(),
                 };
-                Ok(Some(stream_saved))
+                let new_tags: Vec<String> = match opt_tags {
+                    Some(value) => value,
+                    None => stream.tags.clone(),
+                };
+                let stream_tags = Self::create_stream_tags(stream.id, stream.user_id, &new_tags);
+
+                Ok(Some((stream_saved, stream_tags)))
             } else {
                 Ok(None)
-            }
-        }
-        /// Update a list of "stream_tags" for the entity (stream).
-        fn update_stream_tags(&self, id: i32, user_id: i32, _: Vec<String>) -> Result<(), String> {
-            let index_opt = self
-                .stream_info_vec
-                .iter()
-                .position(|stream| stream.id == id && stream.user_id == user_id);
-
-            if index_opt.is_some() {
-                Ok(())
-            } else {
-                Err(format!("Not found id: {}, user_id: {}", id, user_id).to_string())
             }
         }
         /// Delete an entity (stream).
