@@ -1307,7 +1307,190 @@ mod tests {
         };
         test_put_stream_validate(modify_stream, stream_models::MSG_TITLE_MAX_LENGTH).await;
     }
+    #[test]
+    async fn test_put_stream_descript_min() {
+        let modify_stream = ModifyStreamInfoDto {
+            title: None,
+            descript: Some(StreamModelsTest::descript_min()),
+            logo: None,
+            starttime: None,
+            source: None,
+            tags: None,
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_DESCRIPT_MIN_LENGTH).await;
+    }
+    #[test]
+    async fn test_put_stream_descript_max() {
+        let modify_stream = ModifyStreamInfoDto {
+            title: None,
+            descript: Some(StreamModelsTest::descript_max()),
+            logo: None,
+            starttime: None,
+            source: None,
+            tags: None,
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_DESCRIPT_MAX_LENGTH).await;
+    }
+    #[test]
+    async fn test_put_stream_logo_min() {
+        let modify_stream = ModifyStreamInfoDto {
+            title: None,
+            descript: None,
+            logo: Some(StreamModelsTest::logo_min()),
+            starttime: None,
+            source: None,
+            tags: None,
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_LOGO_MIN_LENGTH).await;
+    }
+    #[test]
+    async fn test_put_stream_logo_max() {
+        let modify_stream = ModifyStreamInfoDto {
+            title: None,
+            descript: None,
+            logo: Some(StreamModelsTest::logo_max()),
+            starttime: None,
+            source: None,
+            tags: None,
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_LOGO_MAX_LENGTH).await;
+    }
+    #[test]
+    async fn test_put_stream_starttime_past() {
+        let dt = Utc::now() - Duration::days(1);
+        let modify_stream = ModifyStreamInfoDto {
+            title: None,
+            descript: None,
+            logo: None,
+            starttime: Some(dt),
+            source: None,
+            tags: None,
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_CANNOT_SET_PAST_START_DATE).await;
+    }
+    #[test]
+    async fn test_put_stream_source_min() {
+        let modify_stream = ModifyStreamInfoDto {
+            title: None,
+            descript: None,
+            logo: None,
+            starttime: None,
+            source: Some(StreamModelsTest::source_min()),
+            tags: None,
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_SOURCE_MIN_LENGTH).await;
+    }
+    #[test]
+    async fn test_put_stream_source_max() {
+        let modify_stream = ModifyStreamInfoDto {
+            title: None,
+            descript: None,
+            logo: None,
+            starttime: None,
+            source: Some(StreamModelsTest::source_max()),
+            tags: None,
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_SOURCE_MAX_LENGTH).await;
+    }
+    #[test]
+    async fn test_put_stream_tags_min_amount() {
+        let modify_stream = ModifyStreamInfoDto {
+            title: None,
+            descript: None,
+            logo: None,
+            starttime: None,
+            source: None,
+            tags: Some(StreamModelsTest::tag_names_min()),
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_TAG_NAME_MIN_AMOUNT).await;
+    }
+    #[test]
+    async fn test_put_stream_tags_max_amount() {
+        let modify_stream = ModifyStreamInfoDto {
+            title: None,
+            descript: None,
+            logo: None,
+            starttime: None,
+            source: None,
+            tags: Some(StreamModelsTest::tag_names_max()),
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_TAG_NAME_MAX_AMOUNT).await;
+    }
+    #[test]
+    async fn test_put_stream_tag_name_empty() {
+        let mut tags: Vec<String> = StreamModelsTest::tag_names_min();
+        tags.push("".to_string());
+        let modify_stream = ModifyStreamInfoDto {
+            title: None,
+            descript: None,
+            logo: None,
+            starttime: None,
+            source: None,
+            tags: Some(tags),
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_TAG_NAME_REQUIRED).await;
+    }
+    #[test]
+    async fn test_put_stream_tag_name_min() {
+        let mut tags: Vec<String> = StreamModelsTest::tag_names_min();
+        tags.push(StreamModelsTest::tag_name_min());
+        let modify_stream = ModifyStreamInfoDto {
+            title: None,
+            descript: None,
+            logo: None,
+            starttime: None,
+            source: None,
+            tags: Some(tags),
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_TAG_NAME_MIN_LENGTH).await;
+    }
+    #[test]
+    async fn test_put_stream_tag_name_max() {
+        let mut tags: Vec<String> = StreamModelsTest::tag_names_min();
+        tags.push(StreamModelsTest::tag_name_max());
+        let modify_stream = ModifyStreamInfoDto {
+            title: None,
+            descript: None,
+            logo: None,
+            starttime: None,
+            source: None,
+            tags: Some(tags),
+        };
+        test_put_stream_validate(modify_stream, stream_models::MSG_TAG_NAME_MAX_LENGTH).await;
+    }
+    #[test]
+    async fn test_put_stream_invalid_id() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
+        let now = Utc::now();
+        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+
+        // PUT api/put_stream
+        let request = test::TestRequest::put()
+            .uri(&format!("/streams/{}", stream_dto.id + 1))
+            .set_json(ModifyStreamInfoDto {
+                title: Some("title2".to_string()),
+                descript: Some("descript2".to_string()),
+                logo: None,
+                starttime: Some(now + Duration::days(1)),
+                source: Some(format!("{}_2", stream_models::STREAM_SOURCE_DEF.to_string())),
+                tags: Some(vec!["tag11".to_string(), "tag14".to_string()]),
+            });
+
+        let vec = (vec![user1], vec![session1], vec![stream_dto]);
+        let factory = put_stream;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
+    }
     #[test]
     async fn test_put_stream_valid_data() {
         let user1: User = user_with_id(create_user());
