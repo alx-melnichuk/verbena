@@ -41,8 +41,6 @@ pub const TAG_NAME_MIN: u8 = 2;
 pub const MSG_TAG_NAME_MIN_LENGTH: &str = "tagName:min_len";
 pub const TAG_NAME_MAX: u16 = 255;
 pub const MSG_TAG_NAME_MAX_LENGTH: &str = "tagName:max_len";
-pub const TAG_NAME_SEPARATOR: &str = "@@~~##";
-pub const MSG_TAG_NAME_MUST_NOT_CONTAIN_SEPARATOR: &str = "tagName:must_not_contain_separator";
 
 // ** ModifyStreamInfoDto **
 
@@ -77,7 +75,6 @@ pub fn validate_tag_name(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_TAG_NAME_REQUIRED)?;
     ValidationChecks::min_length(value, TAG_NAME_MIN.into(), MSG_TAG_NAME_MIN_LENGTH)?;
     ValidationChecks::max_length(value, TAG_NAME_MAX.into(), MSG_TAG_NAME_MAX_LENGTH)?;
-    ValidationChecks::must_not_contain_pattern(value, TAG_NAME_SEPARATOR, MSG_TAG_NAME_MUST_NOT_CONTAIN_SEPARATOR)?;
     Ok(())
 }
 pub fn validate_tag_names(tags: &Vec<String>) -> Result<(), ValidationError> {
@@ -407,7 +404,13 @@ impl Validator for ModifyStreamInfoDto {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
         let mut no_required_fields = false;
-        if self.title.is_none() && self.descript.is_none() && self.starttime.is_none() && self.tags.is_none() {
+        if self.title.is_none()
+            && self.descript.is_none()
+            && self.logo.is_none()
+            && self.starttime.is_none()
+            && self.source.is_none()
+            && self.tags.is_none()
+        {
             let mut err = ValidationError::new(MSG_NO_REQUIRED_FIELDS);
             let data = true;
             no_required_fields = true;
@@ -425,8 +428,8 @@ impl Validator for ModifyStreamInfoDto {
             errors.push(validate_logo(&value).err());
         }
         if let Some(starttime) = &self.starttime {
-            let now_date = Utc::now().date_naive().and_hms_opt(0, 0, 0).unwrap();
-            if starttime.naive_utc() < now_date {
+            let now_date = Utc::now();
+            if starttime.naive_utc() < now_date.naive_utc() {
                 let mut err = ValidationError::new(MSG_CANNOT_SET_PAST_START_DATE);
                 let data = true;
                 err.add_param(borrow::Cow::Borrowed("starttimeIsPast"), &data);
