@@ -135,26 +135,6 @@ impl ValidationChecks {
         }
         Ok(())
     }
-    /// Checking that the string contains a pattern.
-    pub fn must_contain_pattern(value: &str, pattern: &str, msg: &'static str) -> Result<(), ValidationError> {
-        if !value.contains(pattern) {
-            let mut err = ValidationError::new(msg);
-            let json = serde_json::json!({ "actualValue": value, "containsPattern": pattern });
-            err.add_param(borrow::Cow::Borrowed("mustContainPattern"), &json);
-            return Err(err);
-        }
-        Ok(())
-    }
-    /// Checking that the string does not contain a pattern.
-    pub fn must_not_contain_pattern(value: &str, pattern: &str, msg: &'static str) -> Result<(), ValidationError> {
-        if value.contains(pattern) {
-            let mut err = ValidationError::new(msg);
-            let json = serde_json::json!({ "actualValue": value, "containsPattern": pattern });
-            err.add_param(borrow::Cow::Borrowed("mustNotContainPattern"), &json);
-            return Err(err);
-        }
-        Ok(())
-    }
     /// Checking for required fields
     pub fn no_required_fields(is_required_fields: bool, msg: &'static str) -> Result<(), ValidationError> {
         if !is_required_fields {
