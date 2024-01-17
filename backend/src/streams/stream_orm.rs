@@ -46,7 +46,6 @@ pub mod inst {
 
     use chrono::Utc;
     use diesel::{self, prelude::*, sql_types};
-    use diesel::{debug_query, pg::Pg};
     use schema::streams::dsl;
 
     use crate::dbase;
