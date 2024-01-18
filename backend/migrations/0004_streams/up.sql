@@ -64,7 +64,39 @@ CREATE TABLE link_stream_tags_to_streams (
 CREATE INDEX idx_link_stream_tags_to_streams_stream_id_stream_tag_id ON link_stream_tags_to_streams(stream_id, stream_tag_id);
 
 
-/* Stored procedure for working with data from the "stream_tags" table. */
+/* Stored procedures for working with data from the "stream_tags" table. */
+
+/* Update the "stream_tags" data for user. */
+CREATE OR REPLACE PROCEDURE update_stream_tags_for_user(user_id1 INTEGER) 
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  ids_remove INTEGER[];
+BEGIN
+   -- raise notice 'user_id1: %', user_id1;
+  IF (user_id1 IS NULL) THEN
+    RETURN;
+  END IF;
+  
+  -- Get an array of identifiers of tag names that are no longer used.
+  ids_remove := ARRAY(
+    SELECT T.id
+    FROM stream_tags T
+    WHERE T.user_id = user_id1 AND
+      NOT EXISTS(SELECT 1 FROM link_stream_tags_to_streams L WHERE  L.stream_tag_id = T.id LIMIT 1)
+  );
+   
+  IF ARRAY_LENGTH(ids_remove, 1) > 0 THEN
+    -- Removing tag names that are no longer used.
+    DELETE
+    FROM stream_tags
+    WHERE id IN (SELECT UNNEST(ids_remove) AS id);
+    -- raise notice 'DELETE FROM stream_tags() ids_remove2: %', ids_remove;
+  END IF;
+
+END;
+$$;
+
 
 /* Update links to the "tag" list for "stream". */
 CREATE OR REPLACE PROCEDURE update_list_stream_tags(id1 INTEGER, user_id1 INTEGER, tags_new TEXT[]) 
@@ -136,22 +168,8 @@ BEGIN
     );
     -- raise notice 'DELETE FROM link_stream_tags_to_streams() tags_remove: %', tags_remove;
     
-    -- Get an array of identifiers of tag names that are no longer used.
-    ids_remove := ARRAY(
-      SELECT T.id
-      FROM stream_tags T
-      WHERE T.user_id = user_id1 AND
-        NOT EXISTS(SELECT 1 FROM link_stream_tags_to_streams L WHERE  L.stream_tag_id = T.id LIMIT 1)
-    );
-   
-    IF ARRAY_LENGTH(ids_remove, 1) > 0 THEN
-      -- Removing tag names that are no longer used.
-      DELETE
-      FROM stream_tags
-      WHERE id IN (SELECT UNNEST(ids_remove) AS id);
-      -- raise notice 'DELETE FROM stream_tags() ids_remove2: %', ids_remove;
-    END IF;
-   
+    -- Update the "stream_tags" data for "stream".
+    CALL update_stream_tags_for_user(user_id1);
   END IF;
 
 END;

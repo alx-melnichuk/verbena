@@ -1,5 +1,6 @@
 /* Drop stored procedures for working with data from the "stream_tags" table. */
 DROP PROCEDURE IF EXISTS update_list_stream_tags;
+DROP PROCEDURE IF EXISTS update_stream_tags_for_user;
 
 /* Drop stored function to retrieve data from the "stream_tags" table. */
 DROP FUNCTION IF EXISTS get_stream_tags_names;
