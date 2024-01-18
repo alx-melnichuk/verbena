@@ -278,6 +278,7 @@ mod tests {
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
     const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
+    const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
 
     fn create_user() -> User {
         let mut user = UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1");
@@ -807,8 +808,7 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let body_str = String::from_utf8_lossy(&body);
-        let expected_message = "Content type error";
-        assert!(body_str.contains(expected_message));
+        assert!(body_str.contains(MSG_CONTENT_TYPE_ERROR));
     }
     #[test]
     async fn test_post_stream_empty_json_object() {
@@ -1220,8 +1220,37 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let body_str = String::from_utf8_lossy(&body);
-        let expected_message = "Content type error";
-        assert!(body_str.contains(expected_message));
+        assert!(body_str.contains(MSG_CONTENT_TYPE_ERROR));
+    }
+    #[test]
+    async fn test_put_stream_invalid_id() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let stream_id_bad = "100a".to_string();
+
+        // PUT api/put_stream
+        let request = test::TestRequest::put()
+            .uri(&format!("/streams/{}", stream_id_bad))
+            .set_json(json!({}));
+
+        let vec = (vec![user1], vec![session1], vec![]);
+        let factory = put_stream;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, CD_PARSE_INT_ERROR);
+        #[rustfmt::skip]
+        let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, stream_id_bad, MSG_CASTING_TO_TYPE);
+        assert!(app_err.message.starts_with(&msg));
     }
 
     async fn test_put_stream_validate(modify_stream: ModifyStreamInfoDto, err_msg: &str) {
@@ -1250,7 +1279,6 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
-        dbg!(&body);
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
@@ -1459,7 +1487,7 @@ mod tests {
         test_put_stream_validate(modify_stream, stream_models::MSG_TAG_NAME_MAX_LENGTH).await;
     }
     #[test]
-    async fn test_put_stream_invalid_id() {
+    async fn test_put_stream_non_existent_id() {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
