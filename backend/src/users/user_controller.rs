@@ -198,7 +198,7 @@ pub async fn delete_user_current(
     .map_err(|e| err_blocking(e.to_string()))??;
 
     if 0 == result_count {
-        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_NOT_FOUND_BY_ID).set_status(404))
+        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_USER_NOT_FOUND_BY_ID).set_status(404))
     } else {
         Ok(HttpResponse::Ok().finish())
     }
@@ -238,7 +238,7 @@ pub async fn put_user(
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
     } else {
-        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_NOT_FOUND_BY_ID).set_status(404))
+        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_USER_NOT_FOUND_BY_ID).set_status(404))
     }
 }
 
@@ -264,7 +264,7 @@ pub async fn delete_user(
     .map_err(|e| err_blocking(e.to_string()))??;
 
     if 0 == result_count {
-        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_NOT_FOUND_BY_ID).set_status(404))
+        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_USER_NOT_FOUND_BY_ID).set_status(404))
     } else {
         Ok(HttpResponse::Ok().finish())
     }
@@ -796,7 +796,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
-        assert_eq!(app_err.message, err::MSG_NOT_FOUND_BY_ID);
+        assert_eq!(app_err.message, err::MSG_USER_NOT_FOUND_BY_ID);
     }
     #[test]
     async fn test_put_user_valid_id() {
@@ -904,7 +904,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
-        assert_eq!(app_err.message, err::MSG_NOT_FOUND_BY_ID);
+        assert_eq!(app_err.message, err::MSG_USER_NOT_FOUND_BY_ID);
     }
     #[test]
     async fn test_delete_user_user_exists() {

@@ -38,8 +38,8 @@ pub const MSG_RECOVERY_NOT_FOUND: &str = "recovery_not_found";
 pub const CD_NO_CONFIRM: &str = "No Confirmation";
 pub const MSG_CONFIRM_NOT_FOUND: &str = "Confirmation not found!";
 
-pub const MSG_NOT_FOUND_BY_ID: &str = "The user with the specified ID was not found.";
-pub const MSG_NOT_FOUND_BY_EMAIL: &str = "The user with the specified email was not found.";
+pub const MSG_USER_NOT_FOUND_BY_ID: &str = "The user with the specified ID was not found.";
+pub const MSG_USER_NOT_FOUND_BY_EMAIL: &str = "The user with the specified email was not found.";
 
 pub const MSG_STREAM_NOT_FOUND_BY_ID: &str = "The stream with the specified ID was not found.";
 

@@ -354,9 +354,9 @@ pub async fn recovery(
     let user = match user_opt {
         Some(v) => v,
         None => {
-            log::error!("{}: {}", err::CD_NOT_FOUND, err::MSG_NOT_FOUND_BY_EMAIL);
+            log::error!("{}: {}", err::CD_NOT_FOUND, err::MSG_USER_NOT_FOUND_BY_EMAIL);
             #[rustfmt::skip]
-            return Err(AppError::new(err::CD_NOT_FOUND, err::MSG_NOT_FOUND_BY_EMAIL).set_status(404));
+            return Err(AppError::new(err::CD_NOT_FOUND, err::MSG_USER_NOT_FOUND_BY_EMAIL).set_status(404));
         }
     };
     let user_id = user.id;
@@ -1455,7 +1455,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
-        assert_eq!(app_err.message, err::MSG_NOT_FOUND_BY_EMAIL);
+        assert_eq!(app_err.message, err::MSG_USER_NOT_FOUND_BY_EMAIL);
     }
     #[test]
     async fn test_recovery_if_user_recovery_not_exist() {
