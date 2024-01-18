@@ -30,7 +30,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         // PUT api/users/{id}
         .service(put_user)
         // DELETE api/users/{id}
-        .service(delete_users_by_id);
+        .service(delete_user);
 }
 
 fn err_parse_int(err: String) -> AppError {
@@ -245,7 +245,7 @@ pub async fn put_user(
 // DELETE api/users/{id}
 #[rustfmt::skip]
 #[delete("/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
-pub async fn delete_users_by_id(
+pub async fn delete_user(
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -852,9 +852,9 @@ mod tests {
         assert_eq!(user_dto_res.created_at, user1mod_dto_ser.created_at);
     }
 
-    // ** delete_users_by_id **
+    // ** delete_user **
     #[test]
-    async fn test_delete_users_by_id_invalid_id() {
+    async fn test_delete_user_invalid_id() {
         let mut user = create_user();
         user.role = UserRole::Admin;
         let user1: User = user_with_id(user);
@@ -869,7 +869,7 @@ mod tests {
         // DELETE users/{id}
         let request = test::TestRequest::delete().uri(&format!("/users/{}", user_id_bad.clone()));
         let vec = (vec![user1], vec![session1]);
-        let factory = delete_users_by_id;
+        let factory = delete_user;
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
@@ -882,7 +882,7 @@ mod tests {
         assert!(app_err.message.starts_with(&msg));
     }
     #[test]
-    async fn test_delete_users_by_id_user_not_exist() {
+    async fn test_delete_user_user_not_exist() {
         let mut user = create_user();
         user.role = UserRole::Admin;
         let user1: User = user_with_id(user);
@@ -896,7 +896,7 @@ mod tests {
         // DELETE users/{id}
         let request = test::TestRequest::delete().uri(&format!("/users/{}", user1.id + 1));
         let vec = (vec![user1], vec![session1]);
-        let factory = delete_users_by_id;
+        let factory = delete_user;
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
@@ -907,7 +907,7 @@ mod tests {
         assert_eq!(app_err.message, err::MSG_NOT_FOUND_BY_ID);
     }
     #[test]
-    async fn test_delete_users_by_id_user_exists() {
+    async fn test_delete_user_user_exists() {
         let mut user = create_user();
         user.role = UserRole::Admin;
         let user1: User = user_with_id(user);
@@ -921,7 +921,7 @@ mod tests {
         // DELETE users/{id}
         let request = test::TestRequest::delete().uri(&format!("/users/{}", user1.id));
         let vec = (vec![user1], vec![session1]);
-        let factory = delete_users_by_id;
+        let factory = delete_user;
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
     }
