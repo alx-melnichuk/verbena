@@ -19,7 +19,7 @@ pub trait StreamOrm {
         opt_tags: Option<Vec<String>>,
     ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
     /// Delete an entity (stream).
-    fn delete_stream(&self, id: i32) -> Result<usize, String>;
+    fn delete_stream(&self, id: i32, user_id: i32) -> Result<usize, String>;
 }
 
 pub mod cfg {
@@ -81,7 +81,7 @@ pub mod inst {
             query.get_results::<StreamTagStreamId>(conn)
         }
         /// Update the list of "tags" for the specified "stream".
-        fn update_stream_tags(
+        fn update_list_stream_tags(
             &self,
             conn: &mut dbase::DbPooledConnection,
             stream_id: i32,
@@ -96,6 +96,19 @@ pub mod inst {
                 .bind::<sql_types::Array<sql_types::Text>, _>(stream_tags);
 
             query.execute(conn)
+        }
+        /// Update the "stream_tags" data for user.
+        fn update_stream_tags_for_user(
+            &self,
+            conn: &mut dbase::DbPooledConnection,
+            user_id: i32,
+        ) -> Result<(), diesel::result::Error> {
+            // Run a query using Diesel to update the list of "stream_tags" for the user.
+            let query =
+                diesel::sql_query("CALL update_stream_tags_for_user($1);").bind::<sql_types::Integer, _>(user_id);
+
+            query.execute(conn);
+            Ok(())
         }
     }
 
@@ -228,7 +241,7 @@ pub mod inst {
                 let user_id = stream.user_id;
                 let now1 = Instant::now();
                 // Update the list of "tags" for the specified "stream".
-                let res_update_stream_tags = self.update_stream_tags(conn, stream_id, user_id, tags);
+                let res_update_stream_tags = self.update_list_stream_tags(conn, stream_id, user_id, tags);
 
                 if let Err(err) = res_update_stream_tags {
                     err_table = "update_list_stream_tags";
@@ -282,7 +295,7 @@ pub mod inst {
 
                     if let Some(tags) = opt_tags {
                         // Update the list of "tags" for the specified "stream".
-                        let res_update_stream_tags = self.update_stream_tags(conn, stream_id, user_id, &tags);
+                        let res_update_stream_tags = self.update_list_stream_tags(conn, stream_id, user_id, &tags);
 
                         if let Err(err) = res_update_stream_tags {
                             err_table = "update_list_stream_tags";
@@ -313,7 +326,7 @@ pub mod inst {
             }
         }
         /// Delete an entity (stream).
-        fn delete_stream(&self, id: i32) -> Result<usize, String> {
+        fn delete_stream(&self, id: i32, user_id: i32) -> Result<usize, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -321,6 +334,9 @@ pub mod inst {
             let count: usize = diesel::delete(dsl::streams.find(id))
                 .execute(&mut conn)
                 .map_err(|e| format!("delete_stream: {}", e.to_string()))?;
+
+            // Update the "stream_tags" data for user.
+            let _ = self.update_stream_tags_for_user(&mut conn, user_id);
 
             Ok(count)
         }
@@ -588,7 +604,7 @@ pub mod tests {
             }
         }
         /// Delete an entity (stream).
-        fn delete_stream(&self, id: i32) -> Result<usize, String> {
+        fn delete_stream(&self, id: i32, _: i32) -> Result<usize, String> {
             let stream_opt = self.stream_info_vec.iter().find(|stream| stream.id == id);
 
             #[rustfmt::skip]

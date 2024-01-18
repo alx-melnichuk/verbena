@@ -1,4 +1,4 @@
-use actix_web::{get, post, put, web, HttpResponse};
+use actix_web::{delete, get, post, put, web, HttpResponse};
 use std::{ops::Deref, time::Instant};
 
 use crate::errors::AppError;
@@ -20,7 +20,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         // POST api/streams
         .service(post_stream)
         // PUT api/streams/{id}
-        .service(put_stream);
+        .service(put_stream)
+        // DELETE api/streams/{id}
+        .service(delete_stream);
 }
 
 fn err_parse_int(err: String) -> AppError {
@@ -199,6 +201,25 @@ pub async fn post_stream(
     Ok(HttpResponse::Created().json(stream_info_dto)) // 201
 }
 
+/* Name: 'Update stream'
+* @route streams/:streamId
+* @example streams/385e0469-7143-4915-88d0-f23f5b27ed36
+* @type put
+* @params streamId
+* @body title, description, starttime, tags (array stringify, 3 max)
+* @required streamId
+* @access protected
+@Put(':streamId')
+@UseInterceptors(FileInterceptor('logo', UploadStreamLogoDTO))
+async updateStream (
+    @Req() request: RequestSession,
+        @Param('streamId', new ParseUUIDPipe()) streamId: string,
+        @Body() data: UpdateStreamDTO,
+        @UploadedFile() logo: Express.Multer.File
+): Promise<StreamDTO> {
+    return await this.streamsService.updateStream(streamId, request.user.getId(), data, logo);
+} */
+
 // PUT api/streams/{id}
 #[rustfmt::skip]
 #[put("/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
@@ -248,6 +269,56 @@ pub async fn put_stream(
         Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
+    }
+}
+
+/* Name: 'Delete stream'
+* @route streams/:streamId
+* @example streams/385e0469-7143-4915-88d0-f23f5b27ed36
+* @type delete
+* @params streamId
+* @required streamId
+* @access protected
+@Delete(':streamId')
+async deleteStream (
+    @Req() request: RequestSession,
+    @Param('streamId', new ParseUUIDPipe()) streamId: string
+): Promise<StreamDTO> {
+    return await this.streamsService.deleteStream(streamId, request.user.getId());
+} */
+// DELETE api/streams/{id}
+#[rustfmt::skip]
+#[delete("/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn delete_stream(
+    authenticated: Authenticated,
+    stream_orm: web::Data<StreamOrmApp>,
+    request: actix_web::HttpRequest,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
+    // Get current user details.
+    let curr_user = authenticated.deref();
+    let curr_user_id = curr_user.id;
+
+    // Get data from request.
+    let id_str = request.match_info().query("id").to_string();
+    let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
+
+    let res_data = web::block(move || {
+        // Add a new entity (stream).
+        let res_data =
+            stream_orm.delete_stream(id, curr_user_id)
+            .map_err(|e| err_database(e.to_string()));
+            res_data
+    })
+    .await
+    .map_err(|e| err_blocking(e.to_string()))?;
+
+    let result_count = res_data?;
+    log::info!("delete_stream() elapsed time: {:.2?}", now.elapsed());
+    if 0 == result_count {
+        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_STREAM_NOT_FOUND_BY_ID).set_status(404))
+    } else {
+        Ok(HttpResponse::Ok().finish())
     }
 }
 
