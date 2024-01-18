@@ -107,7 +107,7 @@ pub mod inst {
             let query =
                 diesel::sql_query("CALL update_stream_tags_for_user($1);").bind::<sql_types::Integer, _>(user_id);
 
-            query.execute(conn);
+            query.execute(conn)?;
             Ok(())
         }
     }
