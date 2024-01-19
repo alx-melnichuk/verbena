@@ -1755,7 +1755,5 @@ mod tests {
         let factory = delete_stream;
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        let body = test::read_body(resp).await;
     }
 }
