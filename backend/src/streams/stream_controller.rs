@@ -315,6 +315,9 @@ pub async fn delete_stream(
 
     let result_count = res_data?;
     log::info!("delete_stream() elapsed time: {:.2?}", now.elapsed());
+    // if result_count == 1 {
+    //     stream.logo && await this.appFileService.remove(stream.logo, userId);  
+    // }
 
     if 0 == result_count {
         Err(AppError::new(err::CD_NOT_FOUND, err::MSG_STREAM_NOT_FOUND_BY_ID).set_status(404))
