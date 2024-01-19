@@ -268,7 +268,7 @@ pub async fn put_stream(
         let stream_info_dto = list[0].clone();
         Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
     } else {
-        Ok(HttpResponse::NoContent().finish()) // 204
+        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_STREAM_NOT_FOUND_BY_ID).set_status(404))
     }
 }
 
@@ -315,6 +315,7 @@ pub async fn delete_stream(
 
     let result_count = res_data?;
     log::info!("delete_stream() elapsed time: {:.2?}", now.elapsed());
+
     if 0 == result_count {
         Err(AppError::new(err::CD_NOT_FOUND, err::MSG_STREAM_NOT_FOUND_BY_ID).set_status(404))
     } else {
@@ -1281,7 +1282,7 @@ mod tests {
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
 
-        // PUT api/put_stream
+        // PUT api/streams/{id}
         let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
 
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
@@ -1305,7 +1306,7 @@ mod tests {
 
         let stream_id_bad = "100a".to_string();
 
-        // PUT api/put_stream
+        // PUT api/streams/{id}
         let request = test::TestRequest::put()
             .uri(&format!("/streams/{}", stream_id_bad))
             .set_json(json!({}));
@@ -1339,7 +1340,7 @@ mod tests {
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
 
-        // PUT api/put_stream
+        // PUT api/streams/{id}
         let request = test::TestRequest::put()
             .uri(&format!("/streams/{}", stream_dto.id))
             .set_json(modify_stream);
@@ -1573,7 +1574,7 @@ mod tests {
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
 
-        // PUT api/put_stream
+        // PUT api/streams/{id}
         let request = test::TestRequest::put()
             .uri(&format!("/streams/{}", stream_dto.id + 1))
             .set_json(ModifyStreamInfoDto {
@@ -1588,7 +1589,13 @@ mod tests {
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
         let factory = put_stream;
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
+        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, err::CD_NOT_FOUND);
+        assert_eq!(app_err.message, err::MSG_STREAM_NOT_FOUND_BY_ID);
     }
     #[test]
     async fn test_put_stream_valid_data() {
@@ -1616,7 +1623,7 @@ mod tests {
         stream2_dto.updated_at = Utc::now();
         let stream2b_dto = stream2_dto.clone();
 
-        // PUT api/put_stream
+        // PUT api/streams/{id}
         let request =
             test::TestRequest::put()
                 .uri(&format!("/streams/{}", stream_dto.id))
@@ -1663,5 +1670,92 @@ mod tests {
         let ser_updated_at = stream2b_dto_ser.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
         assert_eq!(res_updated_at, ser_updated_at);
         assert_eq!(stream_dto_res.id, stream2b_dto_ser.id);
+    }
+
+    // ** delete_stream **
+
+    #[test]
+    async fn test_delete_stream_invalid_id() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let stream_id_bad = "100a".to_string();
+
+        // DELETE api/streams/{id}
+        let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_id_bad));
+
+        let vec = (vec![user1], vec![session1], vec![]);
+        let factory = delete_stream;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, CD_PARSE_INT_ERROR);
+        #[rustfmt::skip]
+        let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, stream_id_bad, MSG_CASTING_TO_TYPE);
+        assert!(app_err.message.starts_with(&msg));
+    }
+    #[test]
+    async fn test_delete_stream_non_existent_id() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let now = Utc::now();
+        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+
+        // DELETE api/streams/{id}
+        let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_dto.id + 1));
+
+        let vec = (vec![user1], vec![session1], vec![stream_dto]);
+        let factory = delete_stream;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, err::CD_NOT_FOUND);
+        assert_eq!(app_err.message, err::MSG_STREAM_NOT_FOUND_BY_ID);
+    }
+    #[test]
+    async fn test_delete_stream_existent_id() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let now = Utc::now();
+        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+
+        // DELETE api/streams/{id}
+        let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_dto.id));
+
+        let vec = (vec![user1], vec![session1], vec![stream_dto]);
+        let factory = delete_stream;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
     }
 }
