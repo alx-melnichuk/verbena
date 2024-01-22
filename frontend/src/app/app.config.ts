@@ -8,7 +8,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 
-import { routes } from './app.routes';
+import { APP_ROUTES } from './app.routes';
 import { AuthorizationInterceptor } from './common/authorization.interceptor';
 import { InitializationService } from './common/initialization.service';
 
@@ -28,7 +28,7 @@ export const INITIALIZE_AUTHENTICATION_USER_FACTORY = (initializationService: In
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes),
+    provideRouter(APP_ROUTES),
     provideAnimations(),
     InitializationService,
     {
