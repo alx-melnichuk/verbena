@@ -1,0 +1,30 @@
+
+// Theme Init
+.dark-theme {
+//   @include angular-material-theme($dark-theme);
+//   @include app-theme-color($dark-theme);
+  --app-theme-background-panel-2: #1E222D;
+  --app-theme-green100: #26A69A;
+  --app-theme-blue-grey-500: #1E3046;
+  --app-theme-orange: #FB8C00;
+  --app-theme-nickname: #69717A;
+  --app-theme-nickname-text: #D9DCDE;
+  --app-theme-blue-300: #2196F3;
+  --app-theme-input-border: rgba(255, 255, 255, 0.3);
+  --app-theme-grey-100: #A3B4CB;
+}
+.light-theme {
+//   @include angular-material-theme($light-theme);
+//   @include app-theme-color($light-theme);
+//   --app-theme-primary: var(--blue-800);
+  --app-theme-background-panel-2: #F0F3FA;
+  --app-theme-green100: #26A69A;
+  --app-theme-blue-grey-500: #1E3046;
+  --app-theme-orange: #FB8C00;
+  --app-theme-nickname: #69717A;
+  --app-theme-nickname-text: #D9DCDE;
+  --app-theme-blue-300: #2196F3;
+  --app-theme-input-border: rgba(0, 0, 0, 0.12);
+  --app-theme-grey-100: #788393;
+}
+// --app-theme-input-border: darkgray;
