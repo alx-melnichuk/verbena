@@ -26,10 +26,5 @@ export const APP_ROUTES: Routes = [
     loadChildren: () => import('./pg-stream/pg-stream.routes').then(c => c.PG_STREAM_ROUTES),
     canActivate: [authenticationGuard],
   },
-  // Option 1: Lazy Loading another Routing Config
-  //   {
-  //     path: 'flight-booking',
-  //     loadChildren: () => import('./booking/flight-booking.routes').then(m => m.FLIGHT_BOOKING_ROUTES)
-  // },
   { path: '**', redirectTo: R_LOGIN },
 ];
