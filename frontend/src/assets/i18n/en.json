@@ -25,7 +25,13 @@
     "password:required": "The password field is required.",
     "password:min_length": "The password should have {{ minlength.requiredLength }} characters or more.",
     "password:max_length": "The password should be less than {{ maxlength.requiredLength }} characters.",
-    "password:regex": "The password must contain: a lowercase letter, an uppercase letter and a number."
+    "password:regex": "The password must contain: a lowercase letter, an uppercase letter and a number.",
+    "title:required": "The title field is required.",
+    "title:min_length": "The title should have {{ minlength.requiredLength }} characters or more.",
+    "title:max_length": "The title should be less than {{ maxlength.requiredLength }} characters.",
+    "descript:required": "The description field is required.",
+    "descript:min_length": "The description should have {{ minlength.requiredLength }} characters or more.",
+    "descript:max_length": "The description should be less than {{ maxlength.requiredLength }} characters."
   },
   "Conflict": {
     "email_already_use": "The email address you provided is already in use.",
@@ -61,6 +67,13 @@
     "label": "Password ",
     "password_hint": "Use at least 6 characters, with one lowercase letter, one capital letter and a number."
   },
+  "field-descript": {
+    "label": "Description"
+  },
+  "field-file-upload": {
+    "drag_and_drop_file_or": "Drag and drop file here or",
+    "browse_for_file": "Browse for file"
+  },
   "login": {
     "title": "Log in",
     "email_or_nickname": "Email or Nickname ",
@@ -86,5 +99,23 @@
     "login": "Log in",
     "dialog_title": "Welcome to the {{app_name}} !",
     "dialog_message": "We have sent a link to change your password to \"{{value}}\"."
+  },
+  "stream_edit": {
+    "caption": "Stream Caption",
+    "title": "Title",
+    "save": "Save",
+    "go_public": "Go Public",
+    "descript": "Description",
+    "thumbnail": "Thumbnail",
+    "tags": "Tags",
+    "add_tags_max_3": "Add tags (max 3)",
+    "set_date_and_time_or_now": "Begin Now or Schedule Stream",
+    "start_date": "Start date",
+    "start_time": "Start time",
+    "link_for_visitors": "Link for visitors",
+    "error_creating_stream": "Error creating stream",
+    "error_editing_stream": "Error editing stream",
+    "copy_stream_link_to_clipboard": "Copy stream link to clipboard",
+    "stream_link_copied_to_clipboard": "Stream link copied to clipboard"
   }
 }

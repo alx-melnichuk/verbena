@@ -4,30 +4,30 @@ export type StringDate = string;
 export type StringDateTime = string;   
 
 export enum StreamState {
-  waiting = 'waiting',
-  preparing = 'preparing',
-  started = 'started',
-  stopped = 'stopped',
-  paused = 'paused'
+  Waiting = 'Waiting',
+  Preparing = 'Preparing',
+  Started = 'Started',
+  Stopped = 'Stopped',
+  Paused = 'Paused'
 }
 export class StreamStateUtil {
   public static create(value: string): StreamState | null {
     let result: StreamState | null = null;
     switch (value) {
-      case StreamState.waiting: result = StreamState.waiting; break;
-      case StreamState.preparing: result = StreamState.preparing; break;
-      case StreamState.started: result = StreamState.started; break;
-      case StreamState.stopped: result = StreamState.stopped; break;
-      case StreamState.paused: result = StreamState.paused; break;
+      case StreamState.Waiting: result = StreamState.Waiting; break;
+      case StreamState.Preparing: result = StreamState.Preparing; break;
+      case StreamState.Started: result = StreamState.Started; break;
+      case StreamState.Stopped: result = StreamState.Stopped; break;
+      case StreamState.Paused: result = StreamState.Paused; break;
     }
     return result;
   }
   public static isActive(streamState: StreamState): boolean {
-    return [StreamState.preparing, StreamState.started, StreamState.paused].includes(streamState);
+    return [StreamState.Preparing, StreamState.Started, StreamState.Paused].includes(streamState);
   }
 } 
 
-export type StreamSateType = 'waiting' | 'preparing' | 'started' | 'stopped' | 'paused';
+export type StreamSateType = 'Waiting' | 'Preparing' | 'Started' | 'Stopped' | 'Paused';
 
 export interface StreamDto {
   id: string;
@@ -37,7 +37,7 @@ export interface StreamDto {
   logo: string | null;
   starttime: StringDateTime | null;
   live: boolean;
-  state: StreamState; // ['waiting', 'preparing', 'started', 'stopped', 'paused']
+  state: StreamState; // ['Waiting', 'Preparing', 'Started', 'Stopped', 'Paused']
   started: StringDateTime | null; // Date | null;
   stopped: StringDateTime | null; // Date | null;
   // status: bool,
@@ -49,7 +49,6 @@ export interface StreamDto {
   createdAt: StringDateTime;
   updatedAt: StringDateTime;
 } 
-
 
 /*pub struct StreamInfoDto {
     pub id: i32,
@@ -79,28 +78,60 @@ export interface StreamDto {
 }*/
 
 export class StreamDtoUtil {
-    public static create(streamDto?: Partial<StreamDto>): StreamDto {
-      return {
-        id: (streamDto?.id || ''),
-        userId: (streamDto?.userId || ''),
-        title: (streamDto?.title || ''),
-        descript: (streamDto?.descript || ''),
-        logo: (streamDto?.logo || null),
-        starttime: (streamDto?.starttime || null), // Date;
-        live: (streamDto?.live || false),
-        started: (streamDto?.started || null),
-        stopped: (streamDto?.stopped || null),
-        state: (streamDto?.state || StreamState.waiting),
-        tags: (streamDto?.tags || []),
-        source: (streamDto?.source || 'obs'),
-        isMyStream: (streamDto?.isMyStream),
-        // credentials: (streamDto?.credentials || null),
-        // publicTarget: (streamDto?.publicTarget || null)
-        createdAt: (streamDto?.createdAt || ''),
-        updatedAt: (streamDto?.updatedAt || ''),
-      };
-    }
-    // public static isFuture(startTime: StringDateTime | null): boolean | null {
-    //   return (!!startTime ? moment().isBefore(moment(startTime, MOMENT_ISO8601), 'day') : null);
-    // }
-  }   
+  public static create(streamDto?: Partial<StreamDto>): StreamDto {
+    return {
+      id: (streamDto?.id || ''),
+      userId: (streamDto?.userId || ''),
+      title: (streamDto?.title || ''),
+      descript: (streamDto?.descript || ''),
+      logo: (streamDto?.logo || null),
+      starttime: (streamDto?.starttime || null), // Date;
+      live: (streamDto?.live || false),
+      started: (streamDto?.started || null),
+      stopped: (streamDto?.stopped || null),
+      state: (streamDto?.state || StreamState.Waiting),
+      tags: (streamDto?.tags || []),
+      source: (streamDto?.source || 'obs'),
+      isMyStream: (streamDto?.isMyStream),
+      // credentials: (streamDto?.credentials || null),
+      // publicTarget: (streamDto?.publicTarget || null)
+      createdAt: (streamDto?.createdAt || ''),
+      updatedAt: (streamDto?.updatedAt || ''),
+    };
+  }
+  // public static isFuture(startTime: StringDateTime | null): boolean | null {
+  //   return (!!startTime ? moment().isBefore(moment(startTime, MOMENT_ISO8601), 'day') : null);
+  // }
+}
+
+export interface ModifyStreamDto {
+  title?: string | undefined;
+  descript?: string | undefined;
+  logo?: string | null | undefined;
+  starttime?: StringDateTime | null | undefined;
+  // live: boolean;
+  // state: StreamState; // ['Waiting', 'Preparing', 'Started', 'Stopped', 'Paused']
+  // started: StringDateTime | null; // Date | null;
+  // stopped: StringDateTime | null; // Date | null;
+  // status: bool,
+  source?: string | undefined;
+  tags?: string[] | undefined;
+  // isMyStream?: boolean;
+  // credentials: Credentials | null;
+  // publicTarget: string | null;
+} 
+  
+/*
+ModifyStreamInfoDto
+pub struct ModifyStreamInfoDto {
+    pub title: Option<String>,
+    pub descript: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logo: Option<String>,
+    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
+    pub starttime: Option<DateTime<Utc>>,
+    pub source: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Vec<String>>,
+}
+*/
