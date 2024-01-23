@@ -6,12 +6,13 @@ import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { StreamService } from 'src/app/lib-stream/stream.service';
 import { StreamDto } from 'src/app/lib-stream/stream-api.interface';
 
-import { PanelStreamEditorComponent } from '../panel-stream-editor/panel-stream-editor.component';
+import { ModifyStream, PanelStreamEditorComponent } from '../panel-stream-editor/panel-stream-editor.component';
+import { SpinnerComponent } from '../spinner/spinner.component';
 
 @Component({
   selector: 'app-stream-edit',
   standalone: true,
-  imports: [CommonModule, PanelStreamEditorComponent],
+  imports: [CommonModule, SpinnerComponent, PanelStreamEditorComponent],
   templateUrl: './stream-edit.component.html',
   styleUrls: ['./stream-edit.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -38,8 +39,8 @@ export class StreamEditComponent implements OnInit {
 
   // ** Public API **
 
-  /*public doModifyStream(modifyStream: ModifyStream): void {
-    this.alertService.hide();
+  public doModifyStream(modifyStream: ModifyStream): void {
+    /*this.alertService.hide();
     if (!modifyStream || !modifyStream.streamDTO) { return; }
     const isGoToViewStream = (modifyStream.streamDTO.starttime === null);
     const isEdit = (!!modifyStream.streamDTO.id);
@@ -71,8 +72,8 @@ export class StreamEditComponent implements OnInit {
       .finally(() => {
         this.isLoadDataStream = false;
         this.changeDetectorRef.markForCheck();
-      });
-  }*/
+      });*/
+  }
 
   // ** Private API **
 
