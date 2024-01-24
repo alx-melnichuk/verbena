@@ -1,8 +1,6 @@
-use std::{borrow, ops::Deref};
+use std::{borrow, ops::Deref, time::Instant};
 
-use actix_web::{
-    cookie::time::Duration as ActixWebDuration, cookie::Cookie, post, web, HttpResponse,
-};
+use actix_web::{cookie::time::Duration as ActixWebDuration, cookie::Cookie, post, web, HttpResponse};
 
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
@@ -67,6 +65,7 @@ pub async fn login(
     session_orm: web::Data<SessionOrmApp>,
     json_body: web::Json<user_models::LoginUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
@@ -75,7 +74,7 @@ pub async fn login(
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
-    let login_user_dto: user_models::LoginUserDto = json_body.0.clone();
+    let login_user_dto: user_models::LoginUserDto = json_body.into_inner();
     let nickname = login_user_dto.nickname.clone();
     let email = login_user_dto.nickname.clone();
     let password = login_user_dto.password.clone();
@@ -116,9 +115,8 @@ pub async fn login(
         .map_err(|err| err_jsonwebtoken_encode(err.to_string()))?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
-    let refresh_token =
-        tokens::encode_token(user.id, num_token, jwt_secret, config_jwt.jwt_refresh)
-            .map_err(|err| err_jsonwebtoken_encode(err.to_string()))?;
+    let refresh_token = tokens::encode_token(user.id, num_token, jwt_secret, config_jwt.jwt_refresh)
+        .map_err(|err| err_jsonwebtoken_encode(err.to_string()))?;
 
     let session_opt = session_orm
         .modify_session(user.id, Some(num_token))
@@ -142,6 +140,7 @@ pub async fn login(
         .max_age(ActixWebDuration::new(config_jwt.jwt_access, 0))
         .http_only(true)
         .finish();
+    log::info!("login() elapsed time: {:.2?}", now.elapsed());
 
     Ok(HttpResponse::Ok().cookie(cookie).json(login_user_response_dto))
 }
@@ -150,6 +149,7 @@ pub async fn login(
 #[rustfmt::skip]
 #[post("/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn logout(authenticated: Authenticated, session_orm: web::Data<SessionOrmApp>) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     // Get user ID.
     let user = authenticated.deref().clone();
 
@@ -166,37 +166,28 @@ pub async fn logout(authenticated: Authenticated, session_orm: web::Data<Session
         .max_age(ActixWebDuration::new(0, 0))
         .http_only(true)
         .finish();
+    log::info!("logout() elapsed time: {:.2?}", now.elapsed());
 
     Ok(HttpResponse::Ok().cookie(cookie).body(()))
 }
 
 // POST api/token
 #[rustfmt::skip]
-#[post("/token", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[post("/token")]
 pub async fn new_token(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
-    authenticated: Authenticated,
     session_orm: web::Data<SessionOrmApp>,
     json_token_user_dto: web::Json<user_models::TokenUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     // Get token2 from json.
-    let token_user_dto: user_models::TokenUserDto = json_token_user_dto.0.clone();
+    let token_user_dto: user_models::TokenUserDto = json_token_user_dto.into_inner();
     let token = token_user_dto.token;
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
+    // Get user ID.
     let (user_id, num_token) = tokens::decode_token(&token, jwt_secret)
         .map_err(|err| err_jsonwebtoken_decode(err))?;
-
-    // Get user ID.
-    let user = authenticated.deref().clone();
-    if user_id != user.id {
-        #[rustfmt::skip]
-        log::error!("{}: {} ~ user_id - {}", err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_ID, user_id);
-        let error = AppError::new(err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_ID)
-            .set_status(403)
-            .add_param(borrow::Cow::Borrowed("user_id"), &user_id);
-        return Err(error);
-    }
 
     let session_orm1 = session_orm.clone();
 
@@ -249,6 +240,7 @@ pub async fn new_token(
         .max_age(ActixWebDuration::new(config_jwt.jwt_access, 0))
         .http_only(true)
         .finish();
+    log::info!("new_token() elapsed time: {:.2?}", now.elapsed());
 
     Ok(HttpResponse::Ok().cookie(cookie).json(user_tokens_dto))
 }
@@ -270,8 +262,7 @@ mod tests {
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 
     fn create_user() -> User {
-        let mut user =
-            UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1");
+        let mut user = UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1");
         user.role = UserRole::User;
         user
     }
@@ -809,8 +800,7 @@ mod tests {
         assert_eq!(true, token.http_only().unwrap());
 
         let body = test::read_body(resp).await;
-        let login_resp: user_models::LoginUserResponseDto =
-            serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let login_resp: user_models::LoginUserResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let access_token: String = login_resp.user_tokens_dto.access_token;
         assert!(!access_token.is_empty());
@@ -862,7 +852,7 @@ mod tests {
         assert_eq!(body_str, "");
     }
 
-    // ** token **
+    // ** new_token **
     #[test]
     async fn test_new_token_no_data() {
         let user1: User = user_with_id(create_user());
@@ -871,8 +861,7 @@ mod tests {
         let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = "";
 
         let request = test::TestRequest::post().uri("/token"); // POST /token
         let vec = (vec![user1], vec![session1]);
@@ -893,8 +882,7 @@ mod tests {
         let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = "";
 
         let request = test::TestRequest::post()
             .uri("/token") // POST /token
@@ -918,14 +906,11 @@ mod tests {
         let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = "";
 
         let request = test::TestRequest::post()
             .uri("/token") // POST /token
-            .set_json(user_models::TokenUserDto {
-                token: "".to_string(),
-            });
+            .set_json(user_models::TokenUserDto { token: "".to_string() });
 
         let vec = (vec![user1], vec![session1]);
         let factory = new_token;
@@ -946,8 +931,7 @@ mod tests {
         let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = "";
 
         let request = test::TestRequest::post()
             .uri("/token") // POST /token
@@ -975,10 +959,9 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let token_bad =
-            encode_token(user1.id + 1, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = "";
+        let user_id_bad = user1.id + 1;
+        let token_bad = encode_token(user_id_bad, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::post()
             .uri("/token") // POST /token
@@ -988,13 +971,18 @@ mod tests {
         let vec = (vec![user1], vec![session1]);
         let factory = new_token;
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
+        assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
 
         let body = test::read_body(resp).await;
+        dbg!(&body);
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
-        assert_eq!(app_err.message, err::MSG_UNACCEPTABLE_TOKEN_ID);
+        assert_eq!(app_err.code, err::CD_INTER_SRV_ERROR);
+        assert_eq!(app_err.message, err::MSG_SESSION_NOT_EXIST);
+        assert_eq!(
+            app_err.params.get("user_id"),
+            serde_json::json!({ "user_id": user_id_bad }).get("user_id")
+        );
     }
     #[test]
     async fn test_new_token_unacceptable_token_num() {
@@ -1005,10 +993,8 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let token_bad =
-            encode_token(user1.id, num_token + 1, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = "";
+        let token_bad = encode_token(user1.id, num_token + 1, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::post()
             .uri("/token") // POST /token
@@ -1036,10 +1022,8 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_access = config_jwt.jwt_access;
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let token_bad =
-            encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = "";
+        let token_bad = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::post()
             .uri("/token") // POST /token
@@ -1067,58 +1051,11 @@ mod tests {
         assert_eq!(true, token.http_only().unwrap());
 
         let body = test::read_body(resp).await;
-        let user_token_resp: user_models::UserTokensDto =
-            serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let user_token_resp: user_models::UserTokensDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let access_token: String = user_token_resp.access_token;
         assert!(!access_token.is_empty());
         let refresh_token: String = user_token_resp.refresh_token;
         assert!(refresh_token.len() > 0);
     }
-
-    /*#[test]
-    async fn test_login_valid_credentials() {
-        let nickname = "Oliver_Taylor".to_string();
-        let email = format!("{}@gmail.com", nickname).to_string();
-        let password = "passwdT1R1".to_string();
-        let mut user1 =
-            UserOrmApp::new_user(USER_ID_1, &nickname.clone(), &email.clone(), &password.clone());
-        user1.role = user_models::UserRole::User;
-        let user1b_dto = user_models::UserDto::from(user1.clone());
-
-        let config_jwt = config_jwt::get_test_config();
-        let data_config_jwt = web::Data::new(config_jwt.clone());
-        let data_user_orm = web::Data::new(UserOrmApp::create(vec![user1]));
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .service(login),
-        )
-        .await;
-        let req = test::TestRequest::post()
-            .uri("/login") //POST /login
-            .set_json(user_models::LoginUserDto {
-                nickname: nickname,
-                password: password,
-            })
-            .to_request();
-        let resp = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK);
-
-        let body = test::read_body(resp).await;
-        let login_resp: user_models::LoginUserResponseDto =
-            serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let user_dto_res = login_resp.user_dto;
-        let json_user1b_dto = serde_json::json!(user1b_dto).to_string();
-        let user1b_dto_ser: user_models::UserDto =
-            serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
-        assert_eq!(user_dto_res, user1b_dto_ser);
-
-        let access_token: String = login_resp.user_tokens_dto.access_token;
-        assert!(!access_token.is_empty());
-        let refresh_token: String = login_resp.user_tokens_dto.refresh_token;
-        assert!(refresh_token.len() > 0);
-    }*/
 }
