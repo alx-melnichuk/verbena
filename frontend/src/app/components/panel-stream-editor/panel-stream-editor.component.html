@@ -29,16 +29,18 @@
         ></app-field-descript>
   
         <div class="pse-text">{{ 'stream_edit.thumbnail' | translate }}</div>
-        <div class="logo-block">
+        <div class="pse-logo-block">
           <app-field-file-upload *ngIf="!logoView"
             [maxFileSize]="maxFileSize"
             [validFileTypes]="validFileTypes"
             (addFile)="addFile($event)"
             (readFile)="readFile($event)"
           ></app-field-file-upload>
-          <div *ngIf="!!logoView" class="logo-image">
-            <img class="image-view" [src]="logoView" alt="logo unavailable">
-            <button class="delete-logo" (click)="deleteFileLogo()"><span class="delete-box"></span></button>
+          <div *ngIf="!!logoView" class="pse-logo-image">
+            <img class="pse-image-view" [src]="logoView" alt="logo unavailable">
+            <button class="pse-delete-logo" (click)="deleteFileLogo()">
+              <span class="pse-delete-box"></span>
+            </button>
           </div>
         </div>
   
@@ -49,18 +51,15 @@
           <mat-chip-grid #chipGrid aria-label="Enter fruits">
             <mat-chip-row
               *ngFor="let tagValue of tagValues"
-              selectable9="true"
               [removable]="tagValueRemovable"
               (removed)="tagValueRemove(tagValue)">
               {{ tagValue }}
               <button class="btn-chip-remove" matChipRemove *ngIf="tagValueRemovable">&#215;</button>
             </mat-chip-row>
             <input
-              placeholder9="New fruit..."
               [matChipInputFor]="chipGrid"
               [disabled]="tagValues.length == tagValuesMax"
               [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-              matChipInputAddOnBlur9="addOnBlur"
               (matChipInputTokenEnd)="tagValueAdd($event)" />
           </mat-chip-grid>
         </mat-form-field>
@@ -74,7 +73,7 @@
           ></mat-slide-toggle>
         </div>
 
-        <!-- <div class="start-date-time">
+        <div class="start-date-time">
           <mat-form-field appearance="outline" color="primary">
             <mat-label>{{ 'stream_edit.start_date' | translate }}</mat-label>
             <input matInput formControlName="startDate"
@@ -83,22 +82,34 @@
             <mat-datepicker-toggle matSuffix [for]="datepickerStartDate"></mat-datepicker-toggle>
             <mat-datepicker #datepickerStartDate></mat-datepicker>
           </mat-form-field>
-          <div class="start-time-wrap">
+          <div class="pse-start-time-wrap">
             <mat-label class="start-time" [attr.is-disable]="controls.startTime.disabled ? true : null">
               {{ 'stream_edit.start_time' | translate }}
             </mat-label>
-            <ngx-mat-timepicker class="start-time-block"
-              formControlName="startTime"
-              [attr.disabled]="controls.startTime.disabled"
-              [showSpinners]="true"
-              [stepHour]="1"
-              [stepMinute]="1"
-              [stepSecond]="1"
-              [showSeconds]="true"
-            ></ngx-mat-timepicker>
-            <div class="start-time-box" *ngIf="controls.startTime.disabled"></div>
+             <!-- <ngx-mat-timepicker class="pse-start-time-block"
+                formControlName="startTime"
+                [attr.disabled]="controls.startTime.disabled"
+                [showSpinners]="true"
+                [stepHour]="1"
+                [stepMinute]="1"
+                [stepSecond]="1"
+                [showSeconds]="true"
+             ></ngx-mat-timepicker> -->
+            <div>
+              <input class="pse-start-time"
+                type="time"
+                formControlName="startTime"
+                [attr.disabled]="controls.startTime.disabled"
+                min="00:00"
+                max="23:59"
+                step="3600"
+                pattern="[0-2][0-9]:[0-5][0-9]"
+                autocomplete="off"
+              />
+            </div>
+            <div class="pse-start-time-box" *ngIf="controls.startTime.disabled"></div>
           </div>
-        </div> -->
+        </div>
   
         <!-- <ng-container *ngIf="!isCreate">
           <div class="">

@@ -12,22 +12,66 @@ app-panel-stream-editor {
     font-weight: 500;
     font-size: medium;
     color: var(--app-theme-primary);
+    margin-bottom: 0.5em;
   }
   [max-wd] {
     width: 100%;
   }
-
-  .start-time {
-    font-size: smaller;
-    &[is-disable] { color: var(--app-theme-accent); }
+  .pse-start-date-time-label {
+    display: flex;
+    justify-content: space-between;
+    align-content: center;
   }
-  .start-time-wrap {
+  .pse-logo-block {
+    margin-bottom: 0.5em;
+    height: 130px;
+    text-align: center;
+  }
+  .pse-logo-image {
+    height: 100%;
+    display: inline-block;
     position: relative;
   }
-  .start-time-block {
+  .pse-image-view {
+    height: 100%;
+  }
+  .pse-delete-logo {
+    position: absolute;
+    right: -2.5vw;
+    width: 20px;
+    height: 22px;
+    top: 0;
+    background-color: transparent;
+    border: none;
+    padding: 0 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+  }
+  .pse-start-date-time {
+    display: flex;
+    justify-content: space-around;
+  }
+//   .start-time {
+//     font-size: smaller;
+//     &[is-disable] { color: var(--app-theme-accent); }
+//   }
+  .pse-start-time {
+    font: inherit;
+    font-size: 16px;
+    height: 2.75em;
+    min-width: 10em;
+    padding-left: 0.9em;
+    padding-right: 0.7em;
+  }
+  .pse-start-time-wrap {
+    position: relative;
+  }
+  .pse-start-time-block {
     display: block;
   }
-  .start-time-box {
+  .pse-start-time-box {
     position: absolute;
     top: 0;
     right: 0;
@@ -36,27 +80,9 @@ app-panel-stream-editor {
     opacity: 0.5;
   }
   
-  .pse-start-date-time-label {
-    display: flex;
-    justify-content: space-between;
-    align-content: center;
-  }
   mat-slide-toggle {
     margin-left: 1vw;
     margin-right: 1vw;
-  }
-  .start-date-time {
-    display: flex;
-    justify-content: space-around;
-  }
-  .logo-block {
-    border: 1px solid var(--app-theme-input-border);
-    box-sizing: border-box;
-    border-radius: 7px;
-    padding: 7px 7px;
-    margin-bottom: 1.7vh;
-    height: 130px;
-    text-align: center;
   }
   .choose-file {
     width: 100%;
@@ -71,29 +97,8 @@ app-panel-stream-editor {
     align-items: center;
     width: 1vw;
     height: 1.3vh;
-}
-  .logo-image {
-    height: 100%;
-    display: inline-block;
-    position: relative;
   }
-  .image-view {
-    height: 100%;
-  }
-  .delete-logo {
-    position: absolute;
-    right: -2.5vw;
-    width: 20px;
-    height: 22px;
-    top: 0;
-    background-color: transparent;
-    border: none;
-    padding: 0 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-  }
+
   .link-param {
     box-sizing: border-box;
     padding: 10px 13px 10px 13px;
@@ -125,13 +130,13 @@ app-panel-stream-editor {
     margin-bottom: 10px;
   }
 
-  /*.delete-box {
+  .pse-delete-box {
     width: 14px;
     height: 18px;
     display: inline-block;
     background: transparent none no-repeat center center;
-    background-image: url('../../../../assets/icons/delete-box.svg');
-  }*/
+    background-image: url('../../../assets/icons/delete-box.svg');
+  }
   /*.save-file {
     width: 25px;
     height: 25px;

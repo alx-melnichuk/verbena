@@ -8,6 +8,8 @@ import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { StreamDto, StreamDtoUtil } from 'src/app/lib-stream/stream-api.interface';
@@ -30,8 +32,10 @@ export const TAG_VALUES_MAX = 3;
 @Component({
   selector: 'app-panel-stream-editor',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatCardModule, MatChipsModule, MatFormFieldModule, MatInputModule,  MatSlideToggleModule,
-    TranslateModule, ReactiveFormsModule, FieldDescriptComponent, FieldFileUploadComponent],
+  imports: [
+    CommonModule, MatButtonModule, MatCardModule, MatChipsModule, MatFormFieldModule, MatInputModule,  MatSlideToggleModule,
+    MatDatepickerModule, MatTooltipModule, TranslateModule, ReactiveFormsModule, FieldDescriptComponent, FieldFileUploadComponent
+  ],
   templateUrl: './panel-stream-editor.component.html',
   styleUrls: ['./panel-stream-editor.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -207,14 +211,16 @@ export class PanelStreamEditorComponent implements OnInit {
     const now = new Date(Date.now())
     const currentTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 5, now.getSeconds());
     // ?? const starttime = (!!streamDto.starttime ? moment(streamDto.starttime, MOMENT_ISO8601) : currentTime);
-    const starttime = currentTime;
+    // Date.parse("2019-01-01T00:00:00.000Z");
+    const startDate = (!!streamDto.starttime ? new Date(Date.parse(streamDto.starttime)) : currentTime);
+    const startTimeStr = '' + startDate.getHours + ':' + startDate.getMinutes();
     this.formGroup.patchValue({
       title: streamDto.title,
       descript: streamDto.descript,
       starttime: streamDto.starttime,
       isStartTime: (!!streamDto.id && !!streamDto.starttime),
-      startDate: starttime,
-      startTime: starttime,
+      startDate: startDate,
+      startTime: startTimeStr,
     });
     // this.linkForVisitors = this.streamService.getLinkForVisitors(streamDto.id, true);
     this.changeIsStartTime();
