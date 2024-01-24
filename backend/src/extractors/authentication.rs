@@ -1,7 +1,14 @@
-use std::{borrow, rc::Rc, task::{Context, Poll}};
+use std::{
+    borrow,
+    rc::Rc,
+    task::{Context, Poll},
+};
 
 use actix_web::{dev, error, http, web, FromRequest, HttpMessage};
-use futures_util::{future::{ready, LocalBoxFuture, Ready}, FutureExt};
+use futures_util::{
+    future::{ready, LocalBoxFuture, Ready},
+    FutureExt,
+};
 use log;
 
 use crate::errors::AppError;
@@ -9,13 +16,16 @@ use crate::errors::AppError;
 use crate::sessions::session_orm::inst::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::sessions::{session_orm::SessionOrm, tokens::decode_token, config_jwt};
+use crate::sessions::{config_jwt, session_orm::SessionOrm, tokens::decode_token};
 use crate::settings::err;
-#[cfg(feature = "mockdata")]
-use crate::users::user_orm::tests::UserOrmApp;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_orm::inst::UserOrmApp;
-use crate::users::{user_models::{User, UserRole}, user_orm::UserOrm};
+#[cfg(feature = "mockdata")]
+use crate::users::user_orm::tests::UserOrmApp;
+use crate::users::{
+    user_models::{User, UserRole},
+    user_orm::UserOrm,
+};
 
 pub const BEARER: &str = "Bearer ";
 
@@ -25,10 +35,7 @@ impl FromRequest for Authenticated {
     type Error = actix_web::Error;
     type Future = Ready<Result<Self, Self::Error>>;
 
-    fn from_request(
-        req: &actix_web::HttpRequest,
-        _payload: &mut dev::Payload,
-    ) -> Self::Future {
+    fn from_request(req: &actix_web::HttpRequest, _payload: &mut dev::Payload) -> Self::Future {
         let value = req.extensions().get::<User>().cloned();
         let result = match value {
             Some(user) => Ok(Authenticated(user)),
@@ -112,7 +119,7 @@ fn jwt_from_header(header_token: &str) -> Result<String, String> {
     }
     let auth_header = match std::str::from_utf8(header_token.as_bytes()) {
         Ok(v) => v,
-        Err(e) => return Err(format!("{} : {}", NO_AUTH_HEADER, e.to_string()) ),
+        Err(e) => return Err(format!("{} : {}", NO_AUTH_HEADER, e.to_string())),
     };
     // eprintln!("@auth_header: {}", auth_header.to_owned());
     if !auth_header.starts_with(BEARER) {
@@ -143,25 +150,26 @@ where
     /// The future type representing the asynchronous response.
     fn call(&self, req: dev::ServiceRequest) -> Self::Future {
         // Attempt to extract token from cookie or authorization header
-        let token = req.cookie("token")
-            .map(|c| c.value().to_string())
-            .or_else(|| {
-                let header_token = req.headers().get(http::header::AUTHORIZATION)
-                    .map(|h| h.to_str().unwrap().to_string()).unwrap_or("".to_string());
-                let token2 = jwt_from_header(&header_token)
+        let token = req.cookie("token").map(|c| c.value().to_string()).or_else(|| {
+            let header_token = req
+                .headers()
+                .get(http::header::AUTHORIZATION)
+                .map(|h| h.to_str().unwrap().to_string())
+                .unwrap_or("".to_string());
+            let token2 = jwt_from_header(&header_token)
                 .map_err(|e| {
                     log::error!("InvalidToken: {}", e);
                     None::<String>
-                }).ok();
-                token2
-            });
+                })
+                .ok();
+            token2
+        });
 
         // If token is missing, return unauthorized error
         if token.is_none() {
             // eprintln!("##@@ auth() token.is_none()"); // #-
             log::error!("{}: {}", err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN);
-            let json_error = AppError::new(err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN)
-                .set_status(401);
+            let json_error = AppError::new(err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN).set_status(401);
             return Box::pin(ready(Err(error::ErrorUnauthorized(json_error))));
         }
         let token = token.unwrap().to_string();
@@ -174,26 +182,25 @@ where
         if let Err(e) = token_res {
             #[rustfmt::skip]
             log::error!("{}: {} - {}", err::CD_FORBIDDEN, err::MSG_INVALID_OR_EXPIRED_TOKEN, e);
-            let json_error = AppError::new(err::CD_FORBIDDEN, err::MSG_INVALID_OR_EXPIRED_TOKEN)
-                .set_status(403);
+            let json_error = AppError::new(err::CD_FORBIDDEN, err::MSG_INVALID_OR_EXPIRED_TOKEN).set_status(403);
             return Box::pin(ready(Err(error::ErrorForbidden(json_error))));
         }
 
         let (user_id, num_token) = token_res.unwrap();
-        
+
         let allowed_roles = self.allowed_roles.clone();
         let srv = Rc::clone(&self.service);
 
         // Handle user extraction and request processing
         async move {
             let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap();
-            
+
             let session_opt = session_orm.find_session_by_id(user_id).map_err(|e| {
                 log::error!("{}: {}", err::CD_DATABASE, e.to_string());
                 let error = AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500);
                 return error::ErrorInternalServerError(error);
             })?;
-            
+
             let session = session_opt.ok_or_else(|| {
                 // eprintln!("##@@ auth() session with {} not found", user_id.clone());
                 #[rustfmt::skip]
@@ -207,6 +214,7 @@ where
             let session_num_token = session.num_token.unwrap_or(0);
             if session_num_token != num_token {
                 // eprintln!("##@@ auth() session_num_token != num_token");
+                #[rustfmt::skip]
                 log::error!("{}: {} - user_id - {}", err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
                 let error = AppError::new(err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_NUM)
                     .set_status(403)
@@ -215,13 +223,14 @@ where
             }
 
             let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap();
-            
+
             let result = user_orm.find_user_by_id(user_id).map_err(|e| {
                 log::error!("{}: {}", err::CD_DATABASE, e.to_string());
                 error::ErrorInternalServerError(AppError::new(err::CD_DATABASE, &e.to_string()))
             })?;
 
             let user = result.ok_or_else(|| {
+                #[rustfmt::skip]
                 log::error!("{}: {} - user_id - {}", err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_ID, user_id);
                 let error = AppError::new(err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_ID)
                     .set_status(403)
@@ -251,14 +260,15 @@ where
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use actix_web::{dev, http, test, web, App, test::TestRequest, cookie::Cookie, get, HttpResponse};
+    use actix_web::{cookie::Cookie, dev, get, http, test, test::TestRequest, web, App, HttpResponse};
 
     use crate::sessions::{
-        config_jwt,
-        tokens::encode_token,
-        session_models::Session,
-        session_orm::tests::SessionOrmApp};
-    use crate::users::{user_models::{User, UserRole}, user_orm::tests::UserOrmApp};
+        config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
+    };
+    use crate::users::{
+        user_models::{User, UserRole},
+        user_orm::tests::UserOrmApp,
+    };
 
     use super::*;
 
@@ -273,8 +283,7 @@ mod tests {
     }
 
     fn create_user() -> User {
-        let mut user = 
-            UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwrN1T1");
+        let mut user = UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwrN1T1");
         user.role = UserRole::User;
         user
     }
@@ -415,8 +424,7 @@ mod tests {
         let actual_status = err.as_response_error().status_code();
         assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED);
 
-        let app_err: AppError =
-            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
         assert_eq!(app_err.code, err::CD_MISSING_TOKEN);
         assert_eq!(app_err.message, err::MSG_MISSING_TOKEN);
     }
@@ -433,8 +441,7 @@ mod tests {
         let actual_status = err.as_response_error().status_code();
         assert_eq!(actual_status, http::StatusCode::FORBIDDEN); // 403
 
-        let app_err: AppError =
-            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
@@ -448,7 +455,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user1.id, num_token, &jwt_secret, -config_jwt.jwt_access).unwrap();
- 
+
         let request = test::TestRequest::get();
         let vec = (vec![user1], vec![session1]);
         let factory = handler_with_auth;
@@ -458,8 +465,7 @@ mod tests {
         let actual_status = err.as_response_error().status_code();
         assert_eq!(actual_status, http::StatusCode::FORBIDDEN);
 
-        let app_err: AppError =
-            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
@@ -474,7 +480,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-    
+
         let request = test::TestRequest::get();
         let vec = (vec![user1], vec![session1]);
         let factory = handler_with_auth;
@@ -484,8 +490,7 @@ mod tests {
         let actual_status = err.as_response_error().status_code();
         assert_eq!(actual_status, http::StatusCode::FORBIDDEN);
 
-        let app_err: AppError =
-            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         assert_eq!(app_err.message, err::MSG_UNACCEPTABLE_TOKEN_ID);
     }
@@ -500,7 +505,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user_id, num_token + 1, &jwt_secret, config_jwt.jwt_access).unwrap();
-    
+
         let request = test::TestRequest::get();
         let vec = (vec![user1], vec![session1]);
         let factory = handler_with_auth;
@@ -510,8 +515,7 @@ mod tests {
         let actual_status = err.as_response_error().status_code();
         assert_eq!(actual_status, http::StatusCode::FORBIDDEN);
 
-        let app_err: AppError =
-            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         assert_eq!(app_err.message, err::MSG_UNACCEPTABLE_TOKEN_NUM);
     }
@@ -525,7 +529,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
- 
+
         let request = test::TestRequest::get();
         let vec = (vec![user1], vec![session1]);
         let factory = handler_with_requireonlyadmin;
@@ -535,8 +539,7 @@ mod tests {
         let actual_status = err.as_response_error().status_code();
         assert_eq!(actual_status, http::StatusCode::FORBIDDEN);
 
-        let app_err: AppError =
-            serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
         assert_eq!(app_err.code, err::CD_PERMISSION_DENIED);
         assert_eq!(app_err.message, err::MSG_PERMISSION_DENIED);
     }
