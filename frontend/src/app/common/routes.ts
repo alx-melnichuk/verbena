@@ -21,12 +21,10 @@ export const ROUTE_STREAM = '/' + R_STREAM;
 // export const R_STREAM_LIST = 'list';
 // export const ROUTE_STREAM_LIST = '/' + R_STREAM + '/' + R_STREAM_LIST; // '/ind/stream/list'
 
-// export const R_STREAM_EDIT = 'edit';
 export const E_STREAM_EDIT = 'edit';
-// export const ROUTE_STREAM_EDIT = '/' + R_STREAM + '/' + R_STREAM_EDIT;
-export const R_STREAM_EDIT = R_STREAM + '/' + E_STREAM_EDIT; //  'ind/stream/edit'
-export const ROUTE_STREAM_EDIT = '/' + R_STREAM_EDIT;        // '/ind/stream/edit'
 export const P_STREAM_ID = 'streamId';
+export const R_STREAM_EDIT = R_STREAM + '/' + E_STREAM_EDIT; //  'ind/stream/edit' + '/:' + 'streamId'
+export const ROUTE_STREAM_EDIT = '/' + R_STREAM_EDIT;        // '/ind/stream/edit' + '/:' + 'streamId'
 
 // export const R_STREAM_CREATE = 'create';
 export const E_STREAM_CREATE = 'create';

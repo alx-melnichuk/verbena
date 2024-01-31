@@ -7,10 +7,10 @@ const POST = 'POST';
 const PUT = 'PUT';
 
 export const LIST_PUBLIC_METHODS_PROFILE: PublicMethods = {
-  [Uri.appUri('appApi://api/login')]: POST, // 'appApi://profile/auth'
-  [Uri.appUri('appApi://api/token')]: POST, //   [Uri.appUri('appApi://profile/token')]: POST,
+  [Uri.appUri('appApi://login')]: POST, // 'appApi://profile/auth'
+  [Uri.appUri('appApi://token')]: POST, //   [Uri.appUri('appApi://profile/token')]: POST,
   //   [Uri.appUri('appApi://profile?userId=')]: GET,
-  [Uri.appUri('appApi://api/registration')]: POST, // 'appApi://profile/registration'
+  [Uri.appUri('appApi://registration')]: POST, // 'appApi://profile/registration'
   //   [Uri.appUri('appApi://profile/registration/')]: PUT, // 'profile/registration/:confirmationId'
   //   [Uri.appUri('appApi://profile/recovery')]: POST, // 'profile/recovery'
   //   [Uri.appUri('appApi://profile/recovery/')]: PUT, // 'profile/recovery/:confirmationId'
