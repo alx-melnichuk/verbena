@@ -1,6 +1,14 @@
 // 400 Bad Request
 pub const CD_VALIDATION: &str = "Validation";
 
+// Uploading Image Files
+// Mime file type is not valid.
+pub const CD_INVALID_FILE_TYPE: &str = "InvalidFileType";
+pub const MSG_INVALID_IMAGE_FILE: &str = "Invalid image file type.";
+// The file size does not meet the maximum size.
+pub const CD_INVALID_FILE_SIZE: &str = "InvalidFileSize";
+pub const MSG_INVALID_FILE_SIZE: &str = "The file size exceeds the max size.";
+
 // 401 Unauthorized
 pub const CD_UNAUTHORIZED: &str = "Unauthorized";
 pub const CD_MISSING_TOKEN: &str = "MissingToken";

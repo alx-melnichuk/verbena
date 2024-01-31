@@ -18,7 +18,7 @@ pub const MSG_TITLE_MAX_LENGTH: &str = "title:max_len";
 
 pub const DESCRIPT_MIN: u8 = 2;
 pub const MSG_DESCRIPT_MIN_LENGTH: &str = "descript:min_len";
-pub const DESCRIPT_MAX: u16 = 10240; // 10*1024
+pub const DESCRIPT_MAX: u16 = 2048; // 2*1024
 pub const MSG_DESCRIPT_MAX_LENGTH: &str = "descript:max_len";
 
 pub const LOGO_MIN: u8 = 2;
@@ -387,12 +387,15 @@ impl ModifyStream {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ModifyStreamInfoDto {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub descript: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub logo: Option<String>,
     #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
     pub starttime: Option<DateTime<Utc>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<Vec<String>>,
