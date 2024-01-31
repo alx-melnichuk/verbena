@@ -16,20 +16,21 @@ export const pgStreamResolver: ResolveFn<StreamDto | HttpErrorResponse | undefin
   let streamService: StreamService = inject(StreamService);
 
   const url = route.url[0];
-  const streamId = route.paramMap.get(P_STREAM_ID);
+  const streamIdStr = route.paramMap.get(P_STREAM_ID);
+  const streamId = parseInt(streamIdStr || '-1', 10);
   if (E_STREAM_CREATE === url.path) {
-    const dublicateStreamId = route.queryParamMap.get('id');
-    if (!!dublicateStreamId) {
-      return streamService.getStream(dublicateStreamId)
-        .then((response: StreamDto | HttpErrorResponse | undefined) => {
-          (response as StreamDto).id = '';
-          return response;
-        })
-      .catch((err) =>
-      goToPageNotFound(router));
-    } else {
+    // const dublicateStreamId = route.queryParamMap.get('id');
+    // if (!!dublicateStreamId) {
+    //   return streamService.getStream(dublicateStreamId)
+    //     .then((response: StreamDto | HttpErrorResponse | undefined) => {
+    //       (response as StreamDto).id = -1;
+    //       return response;
+    //     })
+    //   .catch((err) =>
+    //   goToPageNotFound(router));
+    // } else {
       return Promise.resolve(StreamDtoUtil.create());
-    }
+    // }
   } else if (E_STREAM_EDIT === url.path && !!streamId) {
     return streamService.getStream(streamId)
       .catch((err) =>

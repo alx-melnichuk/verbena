@@ -5,7 +5,7 @@ import { PgStreamComponent } from './pg-stream.component';
 import { pgStreamResolver } from './pg-stream.resolver';
 
 import { StreamEditComponent } from '../components/stream-edit/stream-edit.component';
-import { E_STREAM_EDIT, P_STREAM_ID } from '../common/routes';
+import { P_STREAM_ID, E_STREAM_EDIT } from '../common/routes';
 
 // pg-stream.routes
 export const PG_STREAM_ROUTES: Routes = [
@@ -15,7 +15,7 @@ export const PG_STREAM_ROUTES: Routes = [
     children: [
     // { path: R_STREAM_LIST, component: PageStreamListComponent }, // 'list'
       {
-        path: E_STREAM_EDIT + '/:' + P_STREAM_ID, // 'edit/:streamId'
+        path: E_STREAM_EDIT + '/:' + P_STREAM_ID, // 'ind/stream/edit/:streamId'
         component: StreamEditComponent,
         resolve: { streamDto: pgStreamResolver }
       },
