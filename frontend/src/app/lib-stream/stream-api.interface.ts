@@ -30,8 +30,8 @@ export class StreamStateUtil {
 export type StreamSateType = 'Waiting' | 'Preparing' | 'Started' | 'Stopped' | 'Paused';
 
 export interface StreamDto {
-  id: string;
-  userId: string;
+  id: number;
+  userId: number;
   title: string;
   descript: string; // description
   logo: string | null;
@@ -80,8 +80,8 @@ export interface StreamDto {
 export class StreamDtoUtil {
   public static create(streamDto?: Partial<StreamDto>): StreamDto {
     return {
-      id: (streamDto?.id || ''),
-      userId: (streamDto?.userId || ''),
+      id: (streamDto?.id || -1),
+      userId: (streamDto?.userId || -1),
       title: (streamDto?.title || ''),
       descript: (streamDto?.descript || ''),
       logo: (streamDto?.logo || null),
@@ -109,29 +109,46 @@ export interface ModifyStreamDto {
   descript?: string | undefined;
   logo?: string | null | undefined;
   starttime?: StringDateTime | null | undefined;
-  // live: boolean;
-  // state: StreamState; // ['Waiting', 'Preparing', 'Started', 'Stopped', 'Paused']
-  // started: StringDateTime | null; // Date | null;
-  // stopped: StringDateTime | null; // Date | null;
-  // status: bool,
   source?: string | undefined;
   tags?: string[] | undefined;
-  // isMyStream?: boolean;
-  // credentials: Credentials | null;
-  // publicTarget: string | null;
 } 
-  
 /*
-ModifyStreamInfoDto
 pub struct ModifyStreamInfoDto {
     pub title: Option<String>,
     pub descript: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub logo: Option<String>,
-    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
     pub starttime: Option<DateTime<Utc>>,
     pub source: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<Vec<String>>,
 }
 */
+
+export interface CreateStreamDto {
+  title: string;
+  descript?: string | undefined;
+  logo?: string | null | undefined;
+  starttime?: StringDateTime | null | undefined;
+  source?: string | undefined;
+  tags: string[] | undefined;
+} 
+/*
+pub struct CreateStreamInfoDto {
+    pub title: String,
+    pub descript: Option<String>,
+    pub logo: Option<String>,
+    pub starttime: DateTime<Utc>,
+    pub live: Option<bool>,
+    pub state: Option<StreamState>,
+    pub started: Option<DateTime<Utc>>,
+    pub stopped: Option<DateTime<Utc>>,
+    pub status: Option<bool>,
+    pub source: Option<String>,
+    pub tags: Vec<String>,
+}
+*/
+export interface UpdateStreamFileDto {
+  id?: number | undefined;
+  modifyStreamDto?: ModifyStreamDto | undefined;
+  createStreamDto?: CreateStreamDto | undefined;
+  logoFile?: File | undefined;
+}

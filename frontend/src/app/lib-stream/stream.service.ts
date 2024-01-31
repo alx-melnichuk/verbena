@@ -2,8 +2,10 @@ import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { StreamApiService } from './stream-api.service';
-import { StreamDto } from './stream-api.interface';
+import { ModifyStreamDto, StreamDto } from './stream-api.interface';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Uri } from '../common/uri';
+import { ROUTE_VIEW } from '../common/routes';
 
 @Injectable({
   providedIn: 'root'
@@ -90,8 +92,8 @@ export class StreamService {
 
   /** Get stream
    */
-  public getStream(streamId: string): Promise<StreamDto | HttpErrorResponse | undefined> {
-    return this.streamApiService.getStream(streamId);
+  public getStream(id: number): Promise<StreamDto | HttpErrorResponse | undefined> {
+    return this.streamApiService.getStream(id);
   }
 
   /** Change state stream
@@ -115,9 +117,17 @@ export class StreamService {
 
   /** Update stream
    */
-  /*public updateStream(streamId: string, updateStreamDTO: UpdateStreamDTO, file?: File): Promise<StreamDTO | HttpErrorResponse> {
-    return this.streamApiService.updateStream(streamId, updateStreamDTO, file);
-  }*/
+  public modifyStream(id: number, modifyStreamDto: ModifyStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
+    return this.streamApiService.modifyStream(id, modifyStreamDto, file);
+  }
+
+  public modifyStreamUpload(desc: string, file: File): Promise<string | HttpErrorResponse | undefined> {
+    return this.streamApiService.modifyStreamUpload(desc, file);
+  }
+
+  public send_form(modifyStreamDto: ModifyStreamDto, file?: File): Promise<any | HttpErrorResponse | undefined> {
+    return this.streamApiService.send_form(modifyStreamDto, file);
+  }
 
   /** Delete stream
    */
@@ -125,19 +135,19 @@ export class StreamService {
     return this.streamApiService.deleteStream(streamId);
   }*/
 
-  /*public getLinkForVisitors(streamId: string, isFullPath: boolean): string {
+  public getLinkForVisitors(streamId: number, isFullPath: boolean): string {
     let prefix = ((isFullPath ? Uri.get('appRoot://') : '') as string);
-    if (prefix.substr(-1) === '/') {
-      prefix = prefix.substr(0, prefix.length - 1);
+    if (prefix.slice(-1) === '/') {
+      prefix = prefix.slice(0, prefix.length - 1);
     }
     return (!!streamId ? prefix + ROUTE_VIEW + '/' + streamId : '');
-  }*/
+  }
 
-  /*public redirectToStreamViewPage(streamId: string): void {
+  public redirectToStreamViewPage(streamId: string): void {
     if (!!streamId) {
       Promise.resolve().then(() => {
         this.router.navigate([ROUTE_VIEW, streamId]);
       });
     }
-  }*/
+  }
 }

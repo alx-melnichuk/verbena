@@ -1,8 +1,8 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { Uri } from 'src/app/common/uri';
-import { StreamDto } from './stream-api.interface';
+import { ModifyStreamDto, StreamDto } from './stream-api.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -63,8 +63,8 @@ constructor(private http: HttpClient) {
    * @ required streamId
    * @ access public
    */
-  public getStream(streamId: string): Promise<StreamDto | HttpErrorResponse | undefined> {
-    const url = Uri.appUri(`appApi://api/streams/${streamId}`);
+  public getStream(id: number): Promise<StreamDto | HttpErrorResponse | undefined> {
+    const url = Uri.appUri(`appApi://streams/${id}`);
     return this.http.get<StreamDto | HttpErrorResponse>(url).toPromise();
   }
 
@@ -119,34 +119,79 @@ constructor(private http: HttpClient) {
    * @ route streams/:streamId
    * @ type put
    * @ params streamId
-   * @ body title, description, starttime, tags (array stringify, 3 max)
+   * @ body title, descript, starttime, tags (array stringify, 3 max)
    * @ required streamId
    * @ access protected
    */
-  /*public updateStream(streamId: string, updateStreamDTO: UpdateStreamDTO, file?: File): Promise<StreamDTO | HttpErrorResponse> {
+  public modifyStream0(id: number, modifyStreamDto: ModifyStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
     const formData: FormData = new FormData();
-    if (!!updateStreamDTO.title) {
-      formData.set('title', updateStreamDTO.title);
+    if (!!modifyStreamDto.title) {
+      formData.set('title', modifyStreamDto.title);
     }
-    if (!!updateStreamDTO.description) {
-      formData.set('description', updateStreamDTO.description);
-    }
-    if (!!updateStreamDTO.starttime) {
-      formData.set('starttime', updateStreamDTO.starttime);
-    }
-    if (!!updateStreamDTO.tags && updateStreamDTO.tags.length > 0) {
-      formData.set('tags', JSON.stringify(updateStreamDTO.tags));
-    }
-    if (!!updateStreamDTO.source) {
-      formData.set('source', updateStreamDTO.source);
+    if (!!modifyStreamDto.descript) {
+      formData.set('descript', modifyStreamDto.descript);
     }
     if (!!file) {
       formData.set('logo', file, file.name);
     }
-    const url = Uri.appUri(`appApi://streams/${streamId}`);
-    return this.http.put<StreamDTO | HttpErrorResponse>(url, formData).toPromise();
-  }*/
+    if (!!modifyStreamDto.starttime) {
+      formData.set('starttime', modifyStreamDto.starttime);
+    }
+    if (!!modifyStreamDto.source) {
+      formData.set('source', modifyStreamDto.source);
+    }
+    if (!!modifyStreamDto.tags) {
+      formData.set('tags', JSON.stringify(modifyStreamDto.tags));
+    }
+    
+    const url = Uri.appUri(`appApi://streams/${id}`);
+    return this.http.put<StreamDto | HttpErrorResponse>(url, formData).toPromise();
+  }
 
+  public send_form(modifyStreamDto: ModifyStreamDto, file?: File): Promise<any | HttpErrorResponse | undefined> {
+    const formData: FormData = new FormData();
+    formData.set('name', modifyStreamDto.title || 'title');
+    // if (!!file) {
+    //   formData.set('logo', file, file.name);
+    // }
+    // const headers = new HttpHeaders({ 'enctype': 'multipart/form-data' });
+    // const headers = new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' });
+    const url = Uri.appUri(`appApi://streams/send_form`);
+    return this.http.post<any | HttpErrorResponse>(url, formData, /*{ headers: headers }*/).toPromise();
+  }
+
+  public modifyStream(id: number, modifyStreamDto: ModifyStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
+    const data: ModifyStreamDto = {};
+    if (!!modifyStreamDto.title) {
+      data.title = modifyStreamDto.title;
+    }
+    if (!!modifyStreamDto.descript) {
+      data.descript = modifyStreamDto.descript;
+    }
+    // if (!!file) {
+    //   data.set('logo', file, file.name);
+    // }
+    if (!!modifyStreamDto.starttime) {
+      data.starttime = modifyStreamDto.starttime;
+    }
+    if (!!modifyStreamDto.source) {
+      data.source = modifyStreamDto.source;
+    }
+    if (!!modifyStreamDto.tags) {
+      data.tags = modifyStreamDto.tags;
+    }
+    
+    const url = Uri.appUri(`appApi://streams/${id}`);
+    return this.http.put<StreamDto | HttpErrorResponse>(url, data).toPromise();
+  }
+  public modifyStreamUpload(desc: string, file: File): Promise<string | HttpErrorResponse | undefined> {
+    const formData: FormData = new FormData();
+    formData.set('desc', desc);
+    formData.set('image', file, file.name);
+    const headers = { 'enctype': 'multipart/form-data' };
+    const url = Uri.appUri(`appApi://streams/example_form`);
+    return this.http.put<string | HttpErrorResponse>(url, formData, { headers: headers }).toPromise();
+  }
   /** Delete stream
    * @ route streams/:streamId
    * @ type delete
