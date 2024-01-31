@@ -9,6 +9,8 @@ app-spinner {
     display: flex;
     inset: 0 0 0 0;
     justify-content: center;
+    position: absolute;
+    z-index: 1;
   }
   .sp-back {
     background-color: grey;

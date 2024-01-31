@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -18,8 +18,19 @@ import { AUTHORIZATION_DENIED, ROUTE_LOGIN, ROUTE_VIEW } from './common/routes';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {
-  title = 'verbena';
-  linkLogin = ROUTE_LOGIN;
+  public title = 'verbena';
+  public linkLogin = ROUTE_LOGIN;
+  public isLightThemeVal: boolean = true;
+
+  @HostBinding('class.light-theme')
+  get isLightTheme(): boolean {
+    return !!this.isLightThemeVal;
+  }
+  @HostBinding('class.dark-theme')
+  get isDarkTheme(): boolean {
+    return !this.isLightThemeVal;
+  }
+
   constructor(public translate: TranslateService, private router: Router, public userService: UserService) {}
 
   // ** Public API **

@@ -1,6 +1,7 @@
 
 // Theme Init
 .dark-theme {
+  color-scheme: dark;
 //   @include angular-material-theme($dark-theme);
 //   @include app-theme-color($dark-theme);
   --app-theme-background-panel-2: #1E222D;
@@ -14,9 +15,11 @@
   --app-theme-grey-100: #A3B4CB;
 }
 .light-theme {
+  color-scheme: light;
 //   @include angular-material-theme($light-theme);
 //   @include app-theme-color($light-theme);
 //   --app-theme-primary: var(--blue-800);
+  --app-theme-accent: #999999;
   --app-theme-background-panel-2: #F0F3FA;
   --app-theme-green100: #26A69A;
   --app-theme-blue-grey-500: #1E3046;
@@ -26,5 +29,10 @@
   --app-theme-blue-300: #2196F3;
   --app-theme-input-border: rgba(0, 0, 0, 0.12);
   --app-theme-grey-100: #788393;
+  --app-primary: var(--mdc-theme-primary, #3f51b5); // rgb(63, 81, 181);
+  --app-input-dis: rgba(0, 0, 0, 0.38);
+  --app-input-brd: rgba(0, 0, 0, 0.38);
+  --app-input-brd-hov: rgba(0, 0, 0, 0.87);
+  --app-input-brd-dis: rgba(0, 0, 0, 0.06);
 }
 // --app-theme-input-border: darkgray;
