@@ -12,7 +12,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { StreamDto, StreamDtoUtil } from 'src/app/lib-stream/stream-api.interface';
+import { CreateStreamDto, ModifyStreamDto, StreamDto, StreamDtoUtil, UpdateStreamFileDto } from 'src/app/lib-stream/stream-api.interface';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { StreamService } from 'src/app/lib-stream/stream.service';
 import { CopyToClipboardUtil } from 'src/app/utils/copy-to-clipboard.util';
@@ -21,11 +21,6 @@ import { IMAGE_VALID_FILE_TYPES, MAX_FILE_SIZE, MOMENT_ISO8601 } from 'src/app/c
 import { FieldDescriptComponent } from '../field-descript/field-descript.component';
 import { FieldFileUploadComponent } from '../field-file-upload/field-file-upload.component';
 // import { DateUtil } from 'src/app/utils/date.utils';
-
-export interface ModifyStream {
-  streamDto: StreamDto;
-  logoFile: File | undefined;
-}
 
 export const TAG_VALUES_MAX = 3;
 
@@ -48,10 +43,10 @@ export class PanelStreamEditorComponent implements OnInit {
   public streamDto: StreamDto = StreamDtoUtil.create();
   
   @Output()
-  readonly modifyStream: EventEmitter<ModifyStream> = new EventEmitter();
+  readonly updateStream: EventEmitter<UpdateStreamFileDto> = new EventEmitter();
   
-  //   @ViewChild(NgxMatTimepickerComponent, { static: false })
-  //   public timepicker: NgxMatTimepickerComponent<any> | null = null;
+  // @ViewChild(NgxMatTimepickerComponent, { static: false })
+  // public timepicker: NgxMatTimepickerComponent<any> | null = null;
 
   public minLenTitle = 3;
   public maxLenTitle = 100;
@@ -84,7 +79,7 @@ export class PanelStreamEditorComponent implements OnInit {
     descript: new FormControl(null, []),
     isStartTime: new FormControl(false, []),
     startDate: new FormControl({ value: new Date(Date.now()), disabled: true }, []),
-    startTime: new FormControl(null, []),
+    startTime: new FormControl('', []),
   };
 
   public linkForVisitors = '';
@@ -94,6 +89,8 @@ export class PanelStreamEditorComponent implements OnInit {
   @HostBinding('class.global-scroll')
   public get isGlobalScroll(): boolean { return true; }
   
+  private origStreamDto: StreamDto = this.streamDto;
+
   constructor(
     private changeDetectorRef: ChangeDetectorRef,
     private alertService: AlertService,
@@ -143,16 +140,16 @@ export class PanelStreamEditorComponent implements OnInit {
   }
 
   public changeIsStartTime(): void {
-    /*const isStartTime: boolean = this.controls.isStartTime.value;
+    const isStartTime: boolean = !!this.controls.isStartTime.value;
     if (!isStartTime) {
       this.controls.startDate.disable({ emitEvent: false });
       this.controls.startTime.disable();
-      if (this.timepicker !== null) { this.timepicker.disabled = true; }
+    //   if (this.timepicker !== null) { this.timepicker.disabled = true; }
     } else {
       this.controls.startDate.enable({ emitEvent: false });
       this.controls.startTime.enable();
-      if (this.timepicker !== null) { this.timepicker.disabled = false; }
-    }*/
+    //   if (this.timepicker !== null) { this.timepicker.disabled = false; }
+    }
   }
 
   public tagValueAdd(event: MatChipInputEvent): void {
@@ -176,22 +173,44 @@ export class PanelStreamEditorComponent implements OnInit {
   }
 
   public saveStreamCard(): void {
-    let startTimeStr: string | null = null;
-    // const isStartTime: boolean = this.controls.isStartTime.value;
-    // if (isStartTime) {
-    //   const beginDate: moment.Moment = this.controls.startDate.value;
-    //   const timeVal: moment.Moment = moment(this.controls.startTime.value);
-    //   beginDate.set({ hour: timeVal.get('hour'), minute: timeVal.get('minute'), second: timeVal.get('second') });
-    //   startTimeStr = beginDate.format(MOMENT_ISO8601);
-    // }
-    const streamDto: StreamDto = StreamDtoUtil.create(this.streamDto);
-    streamDto.title = this.controls.title.value || '';
-    streamDto.descript = this.controls.descript.value || '';
-    streamDto.logo = (!!this.logoFile ? null : this.logoOrig);
-    streamDto.starttime = startTimeStr;
-    streamDto.tags = this.tagValues.slice(0, (this.tagValues.length > 3 ? 3 : this.tagValues.length));
+    let startDateTime: Date | null = null;
+    const isStartTime: boolean = !!this.controls.isStartTime.value;
+    if (isStartTime) {
+      // d1.toISOString() // '2024-01-25T14:14:37.470Z'
+      // d1.toJSON()      // '2024-01-25T14:14:37.470Z'
+      startDateTime = this.getStartDateTime(this.controls.startDate.value, this.controls.startTime.value);
+      //   const timeVal: moment.Moment = moment(this.controls.startTime.value);
+      //   beginDate.set({ hour: timeVal.get('hour'), minute: timeVal.get('minute'), second: timeVal.get('second') });
+      //   startTimeStr = beginDate.format(MOMENT_ISO8601);
+    }
+    const title: string | undefined = this.getValue(this.controls.title.value, this.origStreamDto.title);
+    const descript: string | undefined = this.getValue(this.controls.title.value, this.origStreamDto.descript);
+    const len = this.tagValues.length;
+    const tags = this.tagValues.slice(0, (len > 3 ? 3 : len));
 
-    this.modifyStream.emit({ streamDto: streamDto, logoFile: this.logoFile });
+    const updateStreamFileDto: UpdateStreamFileDto = {};
+    updateStreamFileDto.logoFile = this.logoFile;
+    if (this.streamDto.id > 0) {
+        updateStreamFileDto.id = this.streamDto.id;
+        updateStreamFileDto.modifyStreamDto = {
+        title,
+        descript,
+        // logo: (!!this.logoFile ? null : undefined),
+        // starttime: (startDateTime != null ? startDateTime.toJSON() : undefined),
+        tags,
+      };
+      // logo?: string | null | undefined;
+      // streamDto.logo = (!!this.logoFile ? null : this.logoOrig); logo?: string | null | undefined;
+    } else {
+        updateStreamFileDto.createStreamDto = {
+        title: title || '',
+        descript,
+        logo: (!!this.logoFile ? null : undefined),
+        starttime: (startDateTime != null ? startDateTime.toJSON() : undefined),
+        tags,
+      };
+    }
+    this.updateStream.emit(updateStreamFileDto);
   }
 
   public doCopyToClipboard(value: string): void {
@@ -207,13 +226,18 @@ export class PanelStreamEditorComponent implements OnInit {
     if (!streamDto) {
       return;
     }
+    this.origStreamDto = { ...streamDto };
+    Object.freeze(this.origStreamDto);
     // moment().add(+5, 'minute');
     const now = new Date(Date.now())
     const currentTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 5, now.getSeconds());
     // ?? const starttime = (!!streamDto.starttime ? moment(streamDto.starttime, MOMENT_ISO8601) : currentTime);
     // Date.parse("2019-01-01T00:00:00.000Z");
     const startDate = (!!streamDto.starttime ? new Date(Date.parse(streamDto.starttime)) : currentTime);
-    const startTimeStr = '' + startDate.getHours + ':' + startDate.getMinutes();
+    const startHours = ('00' + startDate.getHours()).slice(-2);
+    const startMinutes = ('00' + startDate.getMinutes()).slice(-2);
+    const startSeconds = ('00' + startDate.getSeconds()).slice(-2);
+    const startTimeStr = startHours + ':' + startMinutes + ':' + startSeconds;
     this.formGroup.patchValue({
       title: streamDto.title,
       descript: streamDto.descript,
@@ -222,14 +246,35 @@ export class PanelStreamEditorComponent implements OnInit {
       startDate: startDate,
       startTime: startTimeStr,
     });
-    // this.linkForVisitors = this.streamService.getLinkForVisitors(streamDto.id, true);
+    this.linkForVisitors = this.streamService.getLinkForVisitors(streamDto.id, true);
     this.changeIsStartTime();
     this.tagValues.length = 0;
     this.tagValues.push(...streamDto.tags);
     this.logoView = streamDto.logo;
     this.logoOrig = streamDto.logo;
-    this.isCreate = (!streamDto.id);
-    this.controls.startTime.markAsPristine();
-    this.formGroup.markAsPristine();
+    this.isCreate = (streamDto.id > 0);
+    this.controls.startTime.markAsPristine(); // ?
+    this.formGroup.markAsPristine(); // ?
+  }
+  private getValue(value: string | null | undefined, origValue: string | null | undefined): string | undefined {
+    return !!value && origValue != value ? value : undefined;
+  }
+  // '10:12'
+  private getStartDateTime(startDate: Date | null, startTime: string | null): Date | null {
+    let startDateTime: Date | null = null;
+    if (startDate != null) {
+      startDateTime = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0, 0);
+    }
+    if (startDateTime != null && startTime != null && startTime.length > 4) {
+        const hoursStr = startTime.slice(0,2);
+        const hours = parseInt(hoursStr, 10);
+        startDateTime.setHours(hours);
+        const minutesStr = startTime.slice(3,6);
+        const minutes = parseInt(minutesStr, 10);
+        startDateTime.setMinutes(minutes);
+        startDateTime.setSeconds(0);
+        startDateTime.setMilliseconds(0);
+      }
+    return startDateTime;
   }
 }

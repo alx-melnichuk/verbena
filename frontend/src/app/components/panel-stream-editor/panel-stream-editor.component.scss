@@ -5,7 +5,7 @@
 app-panel-stream-editor {
   display: block;
   height: 100%;
-  outline: 1px solid green;
+  user-select: none;
 
   .pse-text {
     font-style: normal;
@@ -53,20 +53,42 @@ app-panel-stream-editor {
     display: flex;
     justify-content: space-around;
   }
-//   .start-time {
-//     font-size: smaller;
-//     &[is-disable] { color: var(--app-theme-accent); }
-//   }
-  .pse-start-time {
-    font: inherit;
-    font-size: 16px;
-    height: 2.75em;
-    min-width: 10em;
-    padding-left: 0.9em;
-    padding-right: 0.7em;
-  }
+
   .pse-start-time-wrap {
+    margin-bottom: 1.2em;
     position: relative;
+    & > mat-label {
+      &[is-disable] { color: var(--app-theme-accent); }
+    }
+    & > div {
+      font-size: 16px;
+    }
+  }
+  .pse-input {
+    border-radius: 0.25em;
+    border-style: solid;
+    box-sizing: border-box;
+    font: inherit;
+    height: 3em;
+    min-width: 10em;
+    outline: none;
+    &:not(:focus) {
+      border-width: 1px;
+      --pse-input-pd-delta: 1px;
+    }
+    padding-left: calc(0.9em + var(--pse-input-pd-delta, 0px));
+    padding-right: calc(0.7em + var(--pse-input-pd-delta, 0px));
+    border-color: var(--app-input-brd);
+    &:not(:disabled):not(:focus):hover {
+      border-color: var(--app-input-brd-hov);
+    }
+    &:focus {
+      border-color: var(--app-primary);
+    }
+    &:disabled {
+      color: var(--app-input-dis);
+      border-color: var(--app-input-brd-dis);
+    }
   }
   .pse-start-time-block {
     display: block;
@@ -84,10 +106,7 @@ app-panel-stream-editor {
     margin-left: 1vw;
     margin-right: 1vw;
   }
-  .choose-file {
-    width: 100%;
-  }
-  .btn-chip-remove {
+  .pse-btn-chip-remove {
     background-color: transparent;
     border: none;
     font-size: large;
@@ -99,34 +118,40 @@ app-panel-stream-editor {
     height: 1.3vh;
   }
 
-  .link-param {
+  .pse-link-param {
+    border: 1px solid var(--app-theme-input-border);
+    border-radius: 0.286em;
     box-sizing: border-box;
     padding: 10px 13px 10px 13px;
-    border-radius: 10px;
-    border: 1px solid var(--app-theme-accent);
     display: flex;
     &>.icon { flex: 0 0 auto; }
     align-items: center;
     justify-content: space-between;
   }
-  .ellipsis2 {
+  .pse-ellipsis2 {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .icon {
+  .pse-icon {
     background-position-x: center;
     background-position-y: center;
     background-repeat: no-repeat;
     background-size: cover;
-    &.copy { width: 31px; height: 25px; margin-left: 7px; }
+    &.pse-copy { width: 31px; height: 25px; margin-left: 7px; }
   }
-
 
   mat-card-actions {
     text-align: center;
   }
-  .save {
+  .pse-card-actions {
+    padding: 1em;
+  }
+  .pse-card-actions-label {
+    display: flex;
+    align-items: center;
+  }
+  .pse-save {
     margin-bottom: 10px;
   }
 
@@ -137,13 +162,14 @@ app-panel-stream-editor {
     background: transparent none no-repeat center center;
     background-image: url('../../../assets/icons/delete-box.svg');
   }
-  /*.save-file {
+  .pse-save-file {
     width: 25px;
     height: 25px;
     display: inline-block;
     background: transparent none no-repeat center center;
-    background-image: url('../../../../assets/icons/save-file.svg');
-  }*/
+    background-image: url('../../../assets/icons/save-file.svg');
+    margin-right: 0.5em;
+  }
 
   /*.ngx-mat-timepicker[disabled="true"] {
     .mat-form-field-infix>.mat-input-element { color: var(--app-theme-accent); }
@@ -151,24 +177,23 @@ app-panel-stream-editor {
     .mat-icon-button { color: var(--app-theme-accent); }
   }*/
     
-  /*@media screen and (min-width: variable.$size-tablet-min) and (max-width: variable.$size-tablet-max)  { // tablet  (768px - 1024px)
+  @media screen and (min-width: variable.$tablet-768) and (max-width: variable.$laptop-1024)  { // tablet  (768px - 1024px)
     @media (orientation: portrait) {
       mat-card { width: 50vw; }    
     }
-  }*/
-
-  /*@media screen and (min-width: variable.$size-desktop-min) { // desktop   (1024.1px and more)
+  }
+  @media screen and (min-width: variable.$laptop-1024) { // desktop   (1024px and more)
     mat-card { width: 40vw; }
-  }*/
+  }
 }
 
 
-/*.dark-theme app-panel-stream-editor .icon {
-  &.copy { background-image: url('../../../../assets/icons/copy.svg'); }
-}*/
+.dark-theme app-panel-stream-editor .pse-icon {
+  &.pse-copy { background-image: url('../../../assets/icons/copy.svg'); }
+}
 
-/*.light-theme app-panel-stream-editor .icon {
-  &.copy { background-image: url('../../../../assets/icons/copy-light.svg'); }
-}*/
+.light-theme app-panel-stream-editor .pse-icon {
+  &.pse-copy { background-image: url('../../../assets/icons/copy-light.svg'); }
+}
    
   
