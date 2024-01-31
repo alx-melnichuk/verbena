@@ -28,6 +28,9 @@ async fn main() -> std::io::Result<()> {
     let app_domain = config_app.app_domain.clone();
     let app_url = format!("{}:{}", &app_host, &app_port);
 
+    log::info!("creating temporary upload directory");
+    std::fs::create_dir_all("./tmp")?;
+
     log::info!("Starting server {}", &app_domain);
 
     if config_app::PROTOCOL_HTTP == app_protocol {
@@ -42,10 +45,8 @@ async fn main() -> std::io::Result<()> {
         .run()
         .await
     } else {
-        let builder = ssl_acceptor::create_ssl_acceptor_builder(
-            &config_app.app_certificate,
-            &config_app.app_private_key,
-        );
+        let builder =
+            ssl_acceptor::create_ssl_acceptor_builder(&config_app.app_certificate, &config_app.app_private_key);
 
         HttpServer::new(move || {
             let cors = create_cors(config_app.clone());

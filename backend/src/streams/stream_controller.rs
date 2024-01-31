@@ -1,9 +1,15 @@
+use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, get, post, put, web, HttpResponse};
+use chrono::{DateTime, Utc};
+use serde_json::json;
+use std::borrow;
 use std::{ops::Deref, time::Instant};
 
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
+use crate::file_upload::upload;
 use crate::settings::err;
+use crate::streams::config_avatar_files;
 #[cfg(not(feature = "mockdata"))]
 use crate::streams::stream_orm::inst::StreamOrmApp;
 #[cfg(feature = "mockdata")]
@@ -36,6 +42,20 @@ fn err_database(err: String) -> AppError {
 fn err_blocking(err: String) -> AppError {
     log::error!("{}: {}", err::CD_BLOCKING, err);
     AppError::new(err::CD_BLOCKING, &err).set_status(500)
+}
+pub fn err_invalid_file_type(valie: String, valid_types: String) -> AppError {
+    log::error!("{}: {}", err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE);
+    let json = serde_json::json!({ "actualFileType": valie, "validFileType": valid_types });
+    AppError::new(err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE)
+        .add_param(borrow::Cow::Borrowed("invalidFileType"), &json)
+        .set_status(400)
+}
+pub fn err_invalid_file_size(err_file_size: usize, max_size: usize) -> AppError {
+    log::error!("{}: {}", err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE);
+    let json = serde_json::json!({ "actualFileSize": err_file_size, "maxFileSize": max_size });
+    AppError::new(err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE)
+        .add_param(borrow::Cow::Borrowed("invalidFileSize"), &json)
+        .set_status(400)
 }
 
 // GET api/streams/{id}
@@ -158,10 +178,114 @@ async addStream (
     return await this.streamsService.addStream(request.user.getId(), data, logo);
 }*/
 
+#[derive(Debug, MultipartForm)]
+pub struct CreateStreamForm {
+    #[multipart(limit = "255")]
+    pub title: Text<String>,
+    #[multipart(limit = "2048")]
+    pub descript: Option<Text<String>>,
+    // #[serde(default, skip_serializing_if = "Option::is_none")]
+    // pub logo: Option<String>,
+    #[multipart(limit = "24")]
+    pub starttime: Option<Text<DateTime<Utc>>>,
+    #[multipart(limit = "255")]
+    pub source: Option<Text<String>>,
+    #[multipart(rename = "tags[]")]
+    pub tags: Vec<Text<String>>,
+    #[multipart(limit = "7 MiB")]
+    pub avatar: Option<TempFile>,
+}
+
+impl CreateStreamForm {
+    pub fn convert(create_stream_form: CreateStreamForm) -> (stream_models::CreateStreamInfoDto, Option<TempFile>) {
+        let starttime: DateTime<Utc> = match create_stream_form.starttime {
+            Some(v) => v.clone(),
+            None => Utc::now(),
+        };
+        let tags: Vec<String> = create_stream_form.tags.iter().map(|v| v.to_string()).collect();
+
+        (
+            stream_models::CreateStreamInfoDto {
+                title: create_stream_form.title.to_string(),
+                descript: create_stream_form.descript.map(|v| v.to_string()),
+                logo: None,
+                starttime,
+                live: None,
+                state: None,
+                started: None,
+                stopped: None,
+                status: None,
+                source: create_stream_form.source.map(|v| v.to_string()),
+                tags,
+            },
+            create_stream_form.avatar,
+        )
+    }
+}
+
 // POST api/streams
 #[rustfmt::skip]
 #[post("/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn post_stream(
+    _authenticated: Authenticated,
+    config_avatar: web::Data<config_avatar_files::ConfigAvatarFiles>,
+    // stream_orm: web::Data<StreamOrmApp>,
+    // json_body: web::Json<stream_models::CreateStreamInfoDto>,
+    MultipartForm(create_stream_form): MultipartForm<CreateStreamForm>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    //
+    let (create_stream_info_dto, opt_avatar) = CreateStreamForm::convert(create_stream_form);
+    
+
+    let title = create_stream_info_dto.title.to_string();
+    // let mut file: NamedTempFile<File>,
+    // let mut content_type: Option<Mime>,
+    // let mut file_name: String = "".to_string();
+    
+    if let Some(temp_file) = opt_avatar {
+        if 0 == temp_file.size {
+            eprintln!("Delete old avatar file.");
+        } else {
+            let config_af = config_avatar.get_ref().clone();
+            let valid_file_types = config_af.avatar_valid_types;
+            let valid_types: String = valid_file_types.join(",");
+            // Check the mime file type for valid values.
+            let res_validate_types = upload::file_validate_types(&temp_file, valid_file_types);
+            if let Err(err_file_type) = res_validate_types {
+                return Err(err_invalid_file_type(err_file_type, valid_types));
+            }
+            let max_size = config_af.avatar_max_size;
+            // Check file size for maximum value.
+            let res_validate_size = upload::file_validate_size(&temp_file, max_size);
+            if let Err(err_file_size) = res_validate_size {
+                return Err(err_invalid_file_size(err_file_size, max_size));
+            }
+            // Upload the avatar file.
+            let file_name = "file_name_demo".to_string();
+            // let config_af2 = config_avatar.get_ref().clone();
+            // upload::file_upload(temp_file, config_af2, file_name);
+
+            let avatar_dir = config_af.avatar_dir.to_string();
+            let path_file = format!("{}{}", avatar_dir, file_name);
+            let res_upload = temp_file.file.persist(path_file);
+            
+            if let Err(err) = res_upload {
+                return Err(AppError::new("InvalidFileUpload", err.to_string().as_str())
+                    // .add_param(borrow::Cow::Borrowed("invalidFileType"), &json)
+                    .set_status(400))
+            }
+        }
+    }
+    eprintln!("create_stream_info_dto: {:?}", &create_stream_info_dto);
+
+
+    Ok(HttpResponse::Ok().json(json!({ "title": title }))) // 200
+}
+
+// POST api/streams
+#[rustfmt::skip]
+#[post("/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn post_stream0(
     authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     json_body: web::Json<stream_models::CreateStreamInfoDto>,

@@ -72,3 +72,17 @@ SMTP_USER=
 SMTP_PASS=
 SMTP_SENDER=
 
+# -----------------------------------------------------------------------------
+# Avatar Files
+# -----------------------------------------------------------------------------
+# Directory for temporary files.
+AVATAR_FILES_DIR_TMP=./tmp
+# Directory for storing avatar files.
+AVATAR_FILES_DIR=./avatars
+# Maximum size for avatar files.
+AVATAR_FILES_MAX_SIZE=7MB
+# List of valid input mime types for avatar files (comma delimited).
+AVATAR_FILES_VALID_TYPES=jpeg,gif,png,bmp
+# To reduce the size, the avatar file is saved with the specified mime type.
+AVATAR_FILES_TYPE_TO_SAVE=png
+
