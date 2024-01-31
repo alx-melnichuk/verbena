@@ -1,6 +1,6 @@
-<app-spinner *ngIf="isLoadDataStream" [isFullOwner]="true">
+<app-spinner *ngIf="isLoadDataStream" [isFullscreen]="true">
 </app-spinner>
 <app-panel-stream-editor
   [streamDto]="streamDto"
-  (modifyStream)="doModifyStream($event)"
+  (updateStream)="doUpdateStream($event)"
 ></app-panel-stream-editor>

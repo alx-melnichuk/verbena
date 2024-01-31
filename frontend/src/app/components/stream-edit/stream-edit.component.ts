@@ -4,10 +4,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { StreamService } from 'src/app/lib-stream/stream.service';
-import { StreamDto } from 'src/app/lib-stream/stream-api.interface';
+import { StreamDto, UpdateStreamFileDto } from 'src/app/lib-stream/stream-api.interface';
 
-import { ModifyStream, PanelStreamEditorComponent } from '../panel-stream-editor/panel-stream-editor.component';
+import { PanelStreamEditorComponent } from '../panel-stream-editor/panel-stream-editor.component';
 import { SpinnerComponent } from '../spinner/spinner.component';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ROUTE_STREAM } from 'src/app/common/routes';
 
 @Component({
   selector: 'app-stream-edit',
@@ -39,40 +41,56 @@ export class StreamEditComponent implements OnInit {
 
   // ** Public API **
 
-  public doModifyStream(modifyStream: ModifyStream): void {
-    /*this.alertService.hide();
-    if (!modifyStream || !modifyStream.streamDTO) { return; }
-    const isGoToViewStream = (modifyStream.streamDTO.starttime === null);
-    const isEdit = (!!modifyStream.streamDTO.id);
+  public doUpdateStream(updateStreamFileDto: UpdateStreamFileDto): void {
+    this.alertService.hide();
+    if (!updateStreamFileDto || (!updateStreamFileDto.createStreamDto && !updateStreamFileDto.modifyStreamDto)) {
+      return;
+    }
+    const isGoToViewStream = true; //(modifyStream.modifyStreamDto.starttime === null);
+    const isEdit = (!!updateStreamFileDto.modifyStreamDto);
     const buffPromise: Promise<unknown>[] = [];
     this.isLoadDataStream = true;
-    if (!isEdit) {
-      const addStreamDTO = this.streamDTOtoAddStreamDTO(modifyStream.streamDTO);
-      buffPromise.push(this.streamService.addStream(addStreamDTO, modifyStream.logoFile));
-    } else {
-      const updateStreamDTO = this.streamDTOtoUpdateStreamDTO(modifyStream.streamDTO);
+    
+    if (!!updateStreamFileDto.createStreamDto) {
+    //   const addStreamDto = this.streamDTOtoAddStreamDTO(modifyStream.modifyStreamDto);
+    //   buffPromise.push(this.streamService.addStream(addStreamDto, modifyStream.logoFile));
+    } else if (!!updateStreamFileDto.id && !!updateStreamFileDto.modifyStreamDto) {
+    //   const updateStreamDTO = this.streamDTOtoUpdateStreamDTO(modifyStream.modifyStreamDto);
+      const modifyStreamDto = updateStreamFileDto.modifyStreamDto;
       buffPromise.push(
-        this.streamService.updateStream(modifyStream.streamDTO.id, updateStreamDTO, modifyStream.logoFile)
+        this.streamService.modifyStream(updateStreamFileDto.id, modifyStreamDto, updateStreamFileDto.logoFile)
+      );
+      buffPromise.push(
+        this.streamService.send_form(modifyStreamDto /*, file?: File*/)
       );
     }
+    // if (!!updateStreamFileDto.logoFile) {
+    //   buffPromise.push(
+    //     this.streamService.modifyStreamUpload("desc05", updateStreamFileDto.logoFile)
+    //   );  
+    // }
     Promise.all(buffPromise)
       .then((responses) => {
-        const streamDTO: StreamDTO = (responses[0] as StreamDTO);
-        const goToRoute = (isGoToViewStream ? this.streamService.getLinkForVisitors(streamDTO.id, false) : ROUTE_STREAM_LIST);
+        const streamDto: StreamDto = (responses[0] as StreamDto);
+        const goToRoute = (isGoToViewStream ? this.streamService.getLinkForVisitors(streamDto.id, false) : ROUTE_STREAM); 
+        // 'ROUTE_STREAM_LIST');
         Promise.resolve()
           .then(() => {
             this.router.navigateByUrl(goToRoute);
           });
       })
       .catch((error: HttpErrorResponse) => {
-        const message = (isEdit ? 'stream_edit.error_editing_stream' : 'stream_edit.error_creating_stream');
-        this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], message);
+        console.log(`error: `, error); // #
+        const title = (isEdit ? 'stream_edit.error_editing_stream' : 'stream_edit.error_creating_stream');
+        // const message = HttpErrorUtil.getMsgs(error)[0];
+        const message = 'message';
+        this.alertService.showError(message, title);
         throw error;
       })
       .finally(() => {
         this.isLoadDataStream = false;
         this.changeDetectorRef.markForCheck();
-      });*/
+      });
   }
 
   // ** Private API **
@@ -90,13 +108,13 @@ export class StreamEditComponent implements OnInit {
     return result;
   }*/
 
-  /*private streamDTOtoUpdateStreamDTO(streamDTO: StreamDTO): UpdateStreamDTO {
+  /*private streamDTOtoUpdateStreamDTO(streamDto: StreamDTO): UpdateStreamDTO {
     const result: UpdateStreamDTO = {};
-    if (!!streamDTO.title) { result.title = streamDTO.title; }
-    if (!!streamDTO.description) { result.description = streamDTO.description; }
-    if (!!streamDTO.starttime) { result.starttime = streamDTO.starttime; }
-    if (!!streamDTO.tags) { result.tags = streamDTO.tags; }
-    if (!!streamDTO.source) { result.source = streamDTO.source; }
+    if (!!streamDto.title) { result.title = streamDto.title; }
+    if (!!streamDto.description) { result.description = streamDto.description; }
+    if (!!streamDto.starttime) { result.starttime = streamDto.starttime; }
+    if (!!streamDto.tags) { result.tags = streamDto.tags; }
+    if (!!streamDto.source) { result.source = streamDto.source; }
 
     return result;
   }*/
