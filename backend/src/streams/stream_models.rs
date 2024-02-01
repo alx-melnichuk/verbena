@@ -77,7 +77,7 @@ pub fn validate_tag_name(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::max_length(value, TAG_NAME_MAX.into(), MSG_TAG_NAME_MAX_LENGTH)?;
     Ok(())
 }
-pub fn validate_tag_names(tags: &Vec<String>) -> Result<(), ValidationError> {
+pub fn validate_tag_names(tags: &[String]) -> Result<(), ValidationError> {
     let min_amount = TAG_NAME_MIN_AMOUNT;
     ValidationChecks::min_amount_of_elem(tags.len(), min_amount.into(), MSG_TAG_NAME_MIN_AMOUNT)?;
     let max_amount = TAG_NAME_MAX_AMOUNT;
