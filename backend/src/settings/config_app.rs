@@ -18,6 +18,7 @@ pub struct ConfigApp {
     pub app_certificate: String,
     pub app_private_key: String,
     pub app_allowed_origin: String,
+    pub app_dir_tmp: String,
 }
 
 impl ConfigApp {
@@ -39,11 +40,9 @@ impl ConfigApp {
         let app_max_age = env::var("APP_MAX_AGE").expect("APP_MAX_AGE must be set");
         let app_domain = Self::get_domain(&app_protocol, &app_host, &app_port);
         // Waiting time for registration confirmation (in seconds).
-        let app_registr_duration =
-            env::var("APP_REGISTR_DURATION").expect("APP_REGISTR_DURATION must be set");
+        let app_registr_duration = env::var("APP_REGISTR_DURATION").expect("APP_REGISTR_DURATION must be set");
         // Waiting time for password recovery confirmation (in seconds).
-        let app_recovery_duration =
-            env::var("APP_RECOVERY_DURATION").expect("APP_RECOVERY_DURATION must be set");
+        let app_recovery_duration = env::var("APP_RECOVERY_DURATION").expect("APP_RECOVERY_DURATION must be set");
         let app_name = env::var("APP_NAME").expect("APP_NAME must be set");
         // SSL certificate and private key
         let app_certificate = env::var("APP_CERTIFICATE").unwrap_or("".to_string());
@@ -57,6 +56,8 @@ impl ConfigApp {
         }
         // Cors permissions "allowed_origin" (array of values, comma delimited)
         let app_allowed_origin = env::var("APP_ALLOWED_ORIGIN").unwrap_or("".to_string());
+        // Directory for temporary files when uploading user files.
+        let app_dir_tmp = env::var("APP_DIR_TMP").expect("APP_DIR_TMP must be set");
 
         ConfigApp {
             app_host,
@@ -70,6 +71,7 @@ impl ConfigApp {
             app_certificate,
             app_private_key,
             app_allowed_origin,
+            app_dir_tmp,
         }
     }
     fn get_domain(protocol: &str, host: &str, port: &str) -> String {
@@ -96,5 +98,6 @@ pub fn get_test_config() -> ConfigApp {
         app_certificate: "demo.crt.pem".to_string(),
         app_private_key: "demo.key.pem".to_string(),
         app_allowed_origin: "".to_string(),
+        app_dir_tmp: "./".to_string(),
     }
 }
