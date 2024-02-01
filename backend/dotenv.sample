@@ -40,6 +40,8 @@ APP_CERTIFICATE=example.crt.pem
 APP_PRIVATE_KEY=example.key.pem
 # Cors permissions "allowed_origin" (array of values, comma delimited). There should be no spaces.
 # APP_ALLOWED_ORIGIN=
+# Directory for temporary files when uploading user files.
+APP_DIR_TMP=./tmp
 
 # -----------------------------------------------------------------------------
 # Database (PostgreSQL)
@@ -73,16 +75,14 @@ SMTP_PASS=
 SMTP_SENDER=
 
 # -----------------------------------------------------------------------------
-# Avatar Files
+# Stream Logo Properties
 # -----------------------------------------------------------------------------
-# Directory for temporary files.
-AVATAR_FILES_DIR_TMP=./tmp
-# Directory for storing avatar files.
-AVATAR_FILES_DIR=./avatars
-# Maximum size for avatar files.
-AVATAR_FILES_MAX_SIZE=7MB
-# List of valid input mime types for avatar files (comma delimited).
-AVATAR_FILES_VALID_TYPES=jpeg,gif,png,bmp
-# To reduce the size, the avatar file is saved with the specified mime type.
-AVATAR_FILES_TYPE_TO_SAVE=png
+# Directory for storing logo files.
+SLP_FILES_DIR=./logo
+# Maximum size for logo files. (7MB=7340032)
+SLP_FILES_MAX_SIZE=7340032
+# List of valid input mime types for logo files (comma delimited).
+SLP_FILES_VALID_TYPES=image/jpeg,image/gif,image/png,image/bmp
+# To reduce the size, the logo file is saved with the specified mime type.
+SLP_FILES_TYPE_TO_SAVE=png
 

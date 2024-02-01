@@ -3,7 +3,7 @@ use dotenv;
 use env_logger;
 use log;
 
-use verbena::{configure_server, create_cors, settings::config_app, utils::ssl_acceptor};
+use verbena::{configure_server, create_cors, settings::config_app, streams::config_slp, utils::ssl_acceptor};
 
 // ** Funcion Main **
 #[actix_web::main]
@@ -27,9 +27,12 @@ async fn main() -> std::io::Result<()> {
     let app_port = config_app.app_port.clone();
     let app_domain = config_app.app_domain.clone();
     let app_url = format!("{}:{}", &app_host, &app_port);
+    log::info!("creating temporary directory");
+    std::fs::create_dir_all(config_app.app_dir_tmp.clone())?;
 
-    log::info!("creating temporary upload directory");
-    std::fs::create_dir_all("./tmp")?;
+    log::info!("creating a directory for upload the logo");
+    let config_slp = config_slp::ConfigSLP::init_by_env();
+    std::fs::create_dir_all(config_slp.slp_dir)?;
 
     log::info!("Starting server {}", &app_domain);
 
