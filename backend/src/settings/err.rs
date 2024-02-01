@@ -8,6 +8,9 @@ pub const MSG_INVALID_IMAGE_FILE: &str = "Invalid image file type.";
 // The file size does not meet the maximum size.
 pub const CD_INVALID_FILE_SIZE: &str = "InvalidFileSize";
 pub const MSG_INVALID_FILE_SIZE: &str = "The file size exceeds the max size.";
+// Error uploading file
+pub const CD_INVALID_FILE_UPLOAD: &str = "InvalidFileUpload";
+pub const MSG_INVALID_FILE_UPLOAD: &str = "Error uploading file:";
 
 // 401 Unauthorized
 pub const CD_UNAUTHORIZED: &str = "Unauthorized";

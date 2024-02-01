@@ -1,7 +1,10 @@
+use std::{self, path::PathBuf};
+
 use actix_multipart::form::tempfile::TempFile;
 
-use crate::streams::config_avatar_files::ConfigAvatarFiles;
+use crate::streams::config_slp::ConfigSLP;
 
+// Checking the file for valid mime types.
 pub fn file_validate_types(temp_file: &TempFile, valid_file_types: Vec<String>) -> Result<(), String> {
     if temp_file.content_type.is_none() {
         return Err("".to_string());
@@ -12,18 +15,30 @@ pub fn file_validate_types(temp_file: &TempFile, valid_file_types: Vec<String>) 
     }
     Ok(())
 }
-
+// Checking the file for a valid maximum size.
 pub fn file_validate_size(temp_file: &TempFile, max_size: usize) -> Result<(), usize> {
-    if temp_file.size > max_size {
+    if max_size > 0 && temp_file.size > max_size {
         return Err(temp_file.size);
     }
     Ok(())
 }
+// Upload a file with the specified name.
+pub fn file_upload(temp_file: TempFile, config_slp: ConfigSLP, file_name: String) -> Result<String, String> {
+    if temp_file.file_name.is_none() {
+        return Err("The name for the upload file is missing.".to_string());
+    }
+    let path = PathBuf::from(temp_file.file_name.unwrap());
+    let epmty = std::ffi::OsStr::new("");
+    let old_file_ext = path.extension().unwrap_or(epmty).to_str().unwrap().to_string();
 
-pub fn file_upload(temp_file: TempFile, config_af: ConfigAvatarFiles, file_name: String) -> Result<(), String> {
-    let avatar_dir = config_af.avatar_dir.to_string();
-    let path_file = format!("{}{}", avatar_dir, file_name);
-    temp_file.file.persist(path_file);
-
-    Ok(())
+    let avatar_dir = config_slp.slp_dir.to_string();
+    let mut path = PathBuf::from(avatar_dir);
+    path.push(file_name);
+    path.set_extension(old_file_ext);
+    let path_file = path.to_str().unwrap();
+    let result = temp_file.file.persist(path_file);
+    if let Err(err) = result {
+        return Err(format!("{}: {}", err.to_string(), path_file));
+    }
+    Ok(path_file.to_string())
 }

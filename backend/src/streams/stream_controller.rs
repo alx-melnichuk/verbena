@@ -1,7 +1,6 @@
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, get, post, put, web, HttpResponse};
-use chrono::{DateTime, Utc};
-use serde_json::json;
+use chrono::{DateTime, Duration, Utc};
 use std::borrow;
 use std::{ops::Deref, time::Instant};
 
@@ -9,7 +8,7 @@ use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::file_upload::upload;
 use crate::settings::err;
-use crate::streams::config_avatar_files;
+use crate::streams::config_slp;
 #[cfg(not(feature = "mockdata"))]
 use crate::streams::stream_orm::inst::StreamOrmApp;
 #[cfg(feature = "mockdata")]
@@ -56,6 +55,11 @@ pub fn err_invalid_file_size(err_file_size: usize, max_size: usize) -> AppError 
     AppError::new(err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE)
         .add_param(borrow::Cow::Borrowed("invalidFileSize"), &json)
         .set_status(400)
+}
+fn err_upload_file(err: String) -> AppError {
+    let msg = format!("{} {}", err::MSG_INVALID_FILE_UPLOAD, err);
+    log::error!("{}: {}", err::CD_INVALID_FILE_UPLOAD, msg);
+    AppError::new(err::CD_INVALID_FILE_UPLOAD, &msg).set_status(400)
 }
 
 // GET api/streams/{id}
@@ -193,17 +197,19 @@ pub struct CreateStreamForm {
     #[multipart(rename = "tags[]")]
     pub tags: Vec<Text<String>>,
     #[multipart(limit = "7 MiB")]
-    pub avatar: Option<TempFile>,
+    pub logofile: Option<TempFile>,
 }
 
 impl CreateStreamForm {
-    pub fn convert(create_stream_form: CreateStreamForm) -> (stream_models::CreateStreamInfoDto, Option<TempFile>) {
+    pub fn convert(
+        create_stream_form: CreateStreamForm,
+        start_default: DateTime<Utc>,
+    ) -> (stream_models::CreateStreamInfoDto, Option<TempFile>) {
         let starttime: DateTime<Utc> = match create_stream_form.starttime {
             Some(v) => v.clone(),
-            None => Utc::now(),
+            None => start_default,
         };
         let tags: Vec<String> = create_stream_form.tags.iter().map(|v| v.to_string()).collect();
-
         (
             stream_models::CreateStreamInfoDto {
                 title: create_stream_form.title.to_string(),
@@ -218,7 +224,7 @@ impl CreateStreamForm {
                 source: create_stream_form.source.map(|v| v.to_string()),
                 tags,
             },
-            create_stream_form.avatar,
+            create_stream_form.logofile,
         )
     }
 }
@@ -227,59 +233,87 @@ impl CreateStreamForm {
 #[rustfmt::skip]
 #[post("/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn post_stream(
-    _authenticated: Authenticated,
-    config_avatar: web::Data<config_avatar_files::ConfigAvatarFiles>,
-    // stream_orm: web::Data<StreamOrmApp>,
-    // json_body: web::Json<stream_models::CreateStreamInfoDto>,
+    authenticated: Authenticated,
+    config_slp: web::Data<config_slp::ConfigSLP>,
+    stream_orm: web::Data<StreamOrmApp>,
     MultipartForm(create_stream_form): MultipartForm<CreateStreamForm>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    //
-    let (create_stream_info_dto, opt_avatar) = CreateStreamForm::convert(create_stream_form);
-    
+    let now = Instant::now();
+    // Get current user details.
+    let curr_user = authenticated.deref();
+    let curr_user_id = curr_user.id;
 
-    let title = create_stream_info_dto.title.to_string();
-    // let mut file: NamedTempFile<File>,
-    // let mut content_type: Option<Mime>,
-    // let mut file_name: String = "".to_string();
-    
-    if let Some(temp_file) = opt_avatar {
-        if 0 == temp_file.size {
-            eprintln!("Delete old avatar file.");
-        } else {
-            let config_af = config_avatar.get_ref().clone();
-            let valid_file_types = config_af.avatar_valid_types;
-            let valid_types: String = valid_file_types.join(",");
-            // Check the mime file type for valid values.
-            let res_validate_types = upload::file_validate_types(&temp_file, valid_file_types);
-            if let Err(err_file_type) = res_validate_types {
-                return Err(err_invalid_file_type(err_file_type, valid_types));
-            }
-            let max_size = config_af.avatar_max_size;
-            // Check file size for maximum value.
-            let res_validate_size = upload::file_validate_size(&temp_file, max_size);
-            if let Err(err_file_size) = res_validate_size {
-                return Err(err_invalid_file_size(err_file_size, max_size));
-            }
-            // Upload the avatar file.
-            let file_name = "file_name_demo".to_string();
-            // let config_af2 = config_avatar.get_ref().clone();
-            // upload::file_upload(temp_file, config_af2, file_name);
+    let start = Utc::now() + Duration::minutes(5);
+    // Get data from MultipartForm.
+    let (create_stream_info_dto, logofile) = CreateStreamForm::convert(create_stream_form, start);
 
-            let avatar_dir = config_af.avatar_dir.to_string();
-            let path_file = format!("{}{}", avatar_dir, file_name);
-            let res_upload = temp_file.file.persist(path_file);
-            
-            if let Err(err) = res_upload {
-                return Err(AppError::new("InvalidFileUpload", err.to_string().as_str())
-                    // .add_param(borrow::Cow::Borrowed("invalidFileType"), &json)
-                    .set_status(400))
-            }
-        }
+    // Checking the validity of the data model.
+    let validation_res = create_stream_info_dto.validate();
+    if let Err(validation_errors) = validation_res {
+        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
+        return Ok(AppError::validations_to_response(validation_errors));
     }
+
+    let mut added_file = "".to_string();
+    while let Some(temp_file) = logofile {
+        if temp_file.size == 0 {
+            break;
+        }
+        eprintln!("Upload file");
+        let config_slp = config_slp.get_ref().clone();
+        let valid_file_types = config_slp.slp_valid_types.clone();
+        let valid_types: String = valid_file_types.join(","); 
+        // Check the mime file type for valid values.
+        if let Err(err_file_type) = upload::file_validate_types(&temp_file, valid_file_types) {
+            return Err(err_invalid_file_type(err_file_type, valid_types));
+        }
+        let max_size = config_slp.slp_max_size;
+        // Check file size for maximum value.
+        if let Err(err_file_size) = upload::file_validate_size(&temp_file, max_size) {
+            return Err(err_invalid_file_size(err_file_size, max_size));
+        }
+        // Upload the logo file.
+        let file_name = format!("logo_{}", curr_user_id);
+        let res_upload = upload::file_upload(temp_file, config_slp, file_name);
+        if let Err(err) = res_upload {
+            return Err(err_upload_file(err));
+        }
+        added_file = res_upload.unwrap();
+
+        break;
+    }
+    eprintln!("path_file: {:?}", &added_file);
     eprintln!("create_stream_info_dto: {:?}", &create_stream_info_dto);
 
+    let mut create_stream = stream_models::CreateStream::convert(create_stream_info_dto.clone(), curr_user_id);
+    let tags = create_stream_info_dto.tags.clone();
+    if added_file.len() > 0 {
+        create_stream.logo = Some(added_file.clone());
+    }
 
-    Ok(HttpResponse::Ok().json(json!({ "title": title }))) // 200
+    let res_data = web::block(move || {
+        // Add a new entity (stream).
+        let res_data =
+            stream_orm.create_stream(create_stream, &tags)
+            .map_err(|e| err_database(e.to_string()));
+            res_data
+    })
+    .await
+    .map_err(|e| err_blocking(e.to_string()))?;
+
+    if res_data.is_err() && added_file.len() > 0 {
+        let res_remove = std::fs::remove_file(added_file.clone());
+        if let Err(err) = res_remove {
+            log::error!("post_stream() std::fs::remove_file({}): error: {:?}", added_file, err);        
+        }
+    }
+    let (stream, stream_tags) = res_data?;
+    // Merge a "stream" and a corresponding list of "tags".
+    let list = stream_models::StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
+    let stream_info_dto = list[0].clone();
+    log::info!("post_stream() elapsed time: {:.2?}", now.elapsed());
+
+    Ok(HttpResponse::Created().json(stream_info_dto)) // 201
 }
 
 // POST api/streams
