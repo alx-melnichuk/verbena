@@ -20,6 +20,12 @@ backend/static
 # SSL certificate and key files.
 backend/*.pem
 
+# Stream Logo directory
+backend/logo/
+
+# temporary upload directory
+backend/tmp/
+
 
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
