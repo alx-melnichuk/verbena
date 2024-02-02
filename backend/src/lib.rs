@@ -14,6 +14,7 @@ use users::{
     user_registr_orm::cfg::get_user_registr_orm_app,
 };
 
+pub mod date_coding;
 pub(crate) mod dbase;
 pub(crate) mod errors;
 pub(crate) mod extractors;
