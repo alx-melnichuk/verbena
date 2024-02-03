@@ -11,6 +11,18 @@ pub const MSG_INVALID_HOUR: &str = "Invalid hour";
 pub const MSG_INVALID_MINUTE: &str = "Invalid minute";
 pub const MSG_INVALID_SECOND: &str = "Invalid second";
 
+/// // Encode date into string.
+///
+/// let date_time = NaiveDate::from_ymd_opt(2015, 5, 15)
+///     .and_then(|d| d.and_hms_milli_opt(11, 12, 13, 678))
+///     .unwrap()
+///     .and_utc();
+///
+/// let encode_date_time = encode_eds(date_time);
+///
+/// assert_eq!("62570f81b5cd", encode_date_time);
+///
+
 pub fn encode_eds(date_time: DateTime<Utc>) -> String {
     let buff_s = BUFF.to_string();
     let buff = buff_s.as_bytes();
@@ -34,6 +46,21 @@ pub fn encode_eds(date_time: DateTime<Utc>) -> String {
     format!("{}{}{}{}", trio1, trio2, trio3, trio4)
 }
 
+/// // Decode a string into a date.
+///
+/// let date_time: DateTime<Utc> = uncode_eds("62570f81b5cd".to_string()).unwrap();
+///
+/// assert_eq!(2015, date_time.year());
+/// assert_eq!(5, date_time.month());
+/// assert_eq!(15, date_time.day());
+///
+/// let time = date_time.time();
+/// assert_eq!(11, time.hour());
+/// assert_eq!(12, time.minute());
+/// assert_eq!(13, time.second());
+/// assert_eq!(678000000, time.nanosecond());
+///
+
 pub fn uncode_eds(value: String) -> Result<DateTime<Utc>, String> {
     let buff = BUFF.to_string();
 
@@ -42,52 +69,75 @@ pub fn uncode_eds(value: String) -> Result<DateTime<Utc>, String> {
     }
     let mut chars = value.chars();
 
-    let mill1 = chars.next().unwrap(); // [01] millisec1 +
-    let year1 = chars.next().unwrap(); // [02] year1     +
-    let month1 = chars.next().unwrap(); // [03] month    +
+    let mill1 = chars.next().unwrap(); // [01] millisec1
+    let year1 = chars.next().unwrap(); // [02] year1
+    let month1 = chars.next().unwrap(); // [03] month
 
-    let mill2 = chars.next().unwrap(); // [04] millisec2 +
-    let year2 = chars.next().unwrap(); // [05] year2     +
-    let day_1 = chars.next().unwrap(); // [06] day       +
+    let mill2 = chars.next().unwrap(); // [04] millisec2
+    let year2 = chars.next().unwrap(); // [05] year2
+    let day_1 = chars.next().unwrap(); // [06] day
 
-    let mill3 = chars.next().unwrap(); // [07] millisec3 +
-    let year3 = chars.next().unwrap(); // [08] year3     +
-    let hour1 = chars.next().unwrap(); // [09] hour      +
+    let mill3 = chars.next().unwrap(); // [07] millisec3
+    let year3 = chars.next().unwrap(); // [08] year3
+    let hour1 = chars.next().unwrap(); // [09] hour
 
-    let year4 = chars.next().unwrap(); // [10] year4     +
-    let minute = chars.next().unwrap(); // [11] minute   +
-    let second = chars.next().unwrap(); // [12] second    !
+    let year4 = chars.next().unwrap(); // [10] year4
+    let minute = chars.next().unwrap(); // [11] minute
+    let second = chars.next().unwrap(); // [12] second
 
     let year_s = format!("{}{}{}{}", year1, year2, year3, year4);
     let year = year_s
         .parse::<i32>()
         .map_err(|_| format!("{}: \"{}\"", MSG_INVALID_YEAR, year_s))?;
 
-    let month_v = buff.chars().position(|c| c == month1).unwrap_or(0);
+    let mut month_v = 0;
+    let mut day_v = 0;
+    let mut hour_v = 24;
+    let mut minute_v = 60;
+    let mut second_v = 60;
+
+    for (idx, char) in buff.chars().enumerate() {
+        if 0 == month_v && char == month1 {
+            month_v = idx;
+        }
+        if 0 == day_v && char == day_1 {
+            day_v = idx;
+        }
+        if 24 == hour_v && char == hour1 {
+            hour_v = idx;
+        }
+        if 60 == minute_v && char == minute {
+            minute_v = idx;
+        }
+        if 60 == second_v && char == second {
+            second_v = idx;
+        }
+
+        if month_v != 0 && day_v != 0 && hour_v != 24 && minute_v != 60 && second_v != 60 {
+            break;
+        }
+    }
+
     if month_v < 1 || 12 < month_v {
         return Err(format!("{}: \"{}\"", MSG_INVALID_MONTH, month1));
     }
     let month = month_v.try_into().unwrap();
 
-    let day_v = buff.chars().position(|c| c == day_1).unwrap_or(0);
     if day_v < 1 || 31 < day_v {
         return Err(format!("{}: \"{}\"", MSG_INVALID_DAY, day_1));
     }
     let day = day_v.try_into().unwrap();
 
-    let hour_v = buff.chars().position(|c| c == hour1).unwrap_or(24);
     if hour_v > 23 {
         return Err(format!("{}: \"{}\"", MSG_INVALID_HOUR, hour1));
     }
     let hour = hour_v.try_into().unwrap();
 
-    let minute_v = buff.chars().position(|c| c == minute).unwrap_or(60);
     if minute_v > 59 {
         return Err(format!("{}: \"{}\"", MSG_INVALID_MINUTE, minute));
     }
     let min = minute_v.try_into().unwrap();
 
-    let second_v = buff.chars().position(|c| c == second).unwrap_or(60);
     if second_v > 59 {
         return Err(format!("{}: \"{}\"", MSG_INVALID_SECOND, second));
     }
@@ -157,6 +207,7 @@ mod tests {
 
         assert_eq!(date_time_str, date_time_res);
     }
+
     #[test]
     fn test_uncode_eds_invalid_len() {
         let result = uncode_eds("62570f81b5cd0".to_string());
@@ -164,13 +215,6 @@ mod tests {
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), MSG_INVALID_LENGTH);
     }
-    /*#[test]
-    fn test_uncode_eds_invalid_chair() {
-        let result = uncode_eds("62570f81b5c_".to_string());
-
-        assert!(result.clone().is_err());
-        assert_eq!(result.unwrap_err(), format!("{} \"_\"", MSG_INVALID_CHARACTER));
-    }*/
     #[test]
     fn test_uncode_eds_invalid_year1() {
         let result = uncode_eds("6Z570f81b5cd".to_string());
@@ -291,6 +335,4 @@ mod tests {
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"Y\"", MSG_INVALID_SECOND));
     }
-
-    // "62570f81b5cd"
 }
