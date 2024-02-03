@@ -4,6 +4,7 @@ use chrono::{DateTime, Duration, Utc};
 use std::borrow;
 use std::{ops::Deref, time::Instant};
 
+use crate::cdis::coding;
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::file_upload::upload;
@@ -272,8 +273,11 @@ pub async fn post_stream(
         if let Err(err_file_size) = upload::file_validate_size(&temp_file, max_size) {
             return Err(err_invalid_file_size(err_file_size, max_size));
         }
+        let date_time = Utc::now();
+        // Get filename.
+        let code_date = coding::encode_eds(date_time);
         // Upload the logo file.
-        let file_name = format!("logo_{}", curr_user_id);
+        let file_name = format!("{}_{}", curr_user_id, code_date);
         let res_upload = upload::file_upload(temp_file, config_slp, file_name);
         if let Err(err) = res_upload {
             return Err(err_upload_file(err));
