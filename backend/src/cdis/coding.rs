@@ -18,12 +18,12 @@ pub const MSG_INVALID_SECOND: &str = "Invalid second";
 ///     .unwrap()
 ///     .and_utc();
 ///
-/// let encode_date_time = encode_eds(date_time);
+/// let encode_date_time = encode(date_time);
 ///
 /// assert_eq!("62570f81b5cd", encode_date_time);
 ///
 
-pub fn encode_eds(date_time: DateTime<Utc>) -> String {
+pub fn encode(date_time: DateTime<Utc>) -> String {
     let buff_s = BUFF.to_string();
     let buff = buff_s.as_bytes();
 
@@ -48,7 +48,7 @@ pub fn encode_eds(date_time: DateTime<Utc>) -> String {
 
 /// // Decode a string into a date.
 ///
-/// let date_time: DateTime<Utc> = uncode_eds("62570f81b5cd".to_string()).unwrap();
+/// let date_time: DateTime<Utc> = decode("62570f81b5cd".to_string()).unwrap();
 ///
 /// assert_eq!(2015, date_time.year());
 /// assert_eq!(5, date_time.month());
@@ -61,7 +61,7 @@ pub fn encode_eds(date_time: DateTime<Utc>) -> String {
 /// assert_eq!(678000000, time.nanosecond());
 ///
 
-pub fn uncode_eds(value: String) -> Result<DateTime<Utc>, String> {
+pub fn decode(value: String) -> Result<DateTime<Utc>, String> {
     let buff = BUFF.to_string();
 
     if value.len() != 12 {
@@ -166,20 +166,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_encode_eds_valid_data() {
+    fn test_encode_valid_data() {
         let date_time = NaiveDate::from_ymd_opt(2015, 5, 15)
             .and_then(|d| d.and_hms_milli_opt(11, 12, 13, 678))
             .unwrap()
             .and_utc();
 
-        let encode_date_time = encode_eds(date_time);
+        let encode_date_time = encode(date_time);
 
         assert_eq!("62570f81b5cd", encode_date_time);
     }
     #[test]
-    fn test_uncode_eds_valid_data() {
+    fn test_decode_valid_data() {
         let value = "62570f81b5cd".to_string();
-        let date_time: DateTime<Utc> = uncode_eds(value).unwrap();
+        let date_time: DateTime<Utc> = decode(value).unwrap();
 
         assert_eq!(2015, date_time.year());
         assert_eq!(5, date_time.month());
@@ -192,15 +192,15 @@ mod tests {
         assert_eq!(678000000, time.nanosecond());
     }
     #[test]
-    fn test_encode_eds_and_uncode_eds_valid_data() {
+    fn test_encode_and_decode_valid_data() {
         let date_time = NaiveDate::from_ymd_opt(2015, 5, 15)
             .and_then(|d| d.and_hms_milli_opt(11, 12, 13, 678))
             .unwrap()
             .and_utc();
 
-        let encode_date_time = encode_eds(date_time);
+        let encode_date_time = encode(date_time);
 
-        let uncode_date_time: DateTime<Utc> = uncode_eds(encode_date_time).unwrap();
+        let uncode_date_time: DateTime<Utc> = decode(encode_date_time).unwrap();
 
         let date_time_str = date_time.to_rfc3339_opts(SecondsFormat::Millis, true);
         let date_time_res = uncode_date_time.to_rfc3339_opts(SecondsFormat::Millis, true);
@@ -209,128 +209,128 @@ mod tests {
     }
 
     #[test]
-    fn test_uncode_eds_invalid_len() {
-        let result = uncode_eds("62570f81b5cd0".to_string());
+    fn test_decode_invalid_len() {
+        let result = decode("62570f81b5cd0".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), MSG_INVALID_LENGTH);
     }
     #[test]
-    fn test_uncode_eds_invalid_year1() {
-        let result = uncode_eds("6Z570f81b5cd".to_string());
+    fn test_decode_invalid_year1() {
+        let result = decode("6Z570f81b5cd".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"Z015\"", MSG_INVALID_YEAR));
     }
     #[test]
-    fn test_uncode_eds_invalid_year2() {
-        let result = uncode_eds("6257Zf81b5cd".to_string());
+    fn test_decode_invalid_year2() {
+        let result = decode("6257Zf81b5cd".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"2Z15\"", MSG_INVALID_YEAR));
     }
     #[test]
-    fn test_uncode_eds_invalid_year3() {
-        let result = uncode_eds("62570f8Zb5cd".to_string());
+    fn test_decode_invalid_year3() {
+        let result = decode("62570f8Zb5cd".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"20Z5\"", MSG_INVALID_YEAR));
     }
     #[test]
-    fn test_uncode_eds_invalid_year4() {
-        let result = uncode_eds("62570f81bZcd".to_string());
+    fn test_decode_invalid_year4() {
+        let result = decode("62570f81bZcd".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"201Z\"", MSG_INVALID_YEAR));
     }
     #[test]
-    fn test_uncode_eds_invalid_millisec1() {
-        let result = uncode_eds("Z2570f81b5cd".to_string());
+    fn test_decode_invalid_millisec1() {
+        let result = decode("Z2570f81b5cd".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"Z78\"", MSG_INVALID_MILLISECOND));
     }
     #[test]
-    fn test_uncode_eds_invalid_millisec2() {
-        let result = uncode_eds("625Z0f81b5cd".to_string());
+    fn test_decode_invalid_millisec2() {
+        let result = decode("625Z0f81b5cd".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"6Z8\"", MSG_INVALID_MILLISECOND));
     }
     #[test]
-    fn test_uncode_eds_invalid_millisec3() {
-        let result = uncode_eds("62570fZ1b5cd".to_string());
+    fn test_decode_invalid_millisec3() {
+        let result = decode("62570fZ1b5cd".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"67Z\"", MSG_INVALID_MILLISECOND));
     }
     #[test]
-    fn test_uncode_eds_invalid_month1() {
-        let result = uncode_eds("62070f81b5cd".to_string());
+    fn test_decode_invalid_month1() {
+        let result = decode("62070f81b5cd".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"0\"", MSG_INVALID_MONTH));
     }
     #[test]
-    fn test_uncode_eds_invalid_month2() {
-        let result = uncode_eds("62d70f81b5cd".to_string());
+    fn test_decode_invalid_month2() {
+        let result = decode("62d70f81b5cd".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"d\"", MSG_INVALID_MONTH));
     }
     #[test]
-    fn test_uncode_eds_invalid_day1() {
-        let result = uncode_eds("62570081b5cd".to_string());
+    fn test_decode_invalid_day1() {
+        let result = decode("62570081b5cd".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"0\"", MSG_INVALID_DAY));
     }
     #[test]
-    fn test_uncode_eds_invalid_day2() {
-        let result = uncode_eds("62570w81b5cd".to_string());
+    fn test_decode_invalid_day2() {
+        let result = decode("62570w81b5cd".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"w\"", MSG_INVALID_DAY));
     }
     #[test]
-    fn test_uncode_eds_invalid_hour1() {
-        let result = uncode_eds("62570f81#5cd".to_string());
+    fn test_decode_invalid_hour1() {
+        let result = decode("62570f81#5cd".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"#\"", MSG_INVALID_HOUR));
     }
     #[test]
-    fn test_uncode_eds_invalid_hour2() {
-        let result = uncode_eds("62570f81o5cd".to_string());
+    fn test_decode_invalid_hour2() {
+        let result = decode("62570f81o5cd".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"o\"", MSG_INVALID_HOUR));
     }
     #[test]
-    fn test_uncode_eds_invalid_minute1() {
-        let result = uncode_eds("62570f81b5#d".to_string());
+    fn test_decode_invalid_minute1() {
+        let result = decode("62570f81b5#d".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"#\"", MSG_INVALID_MINUTE));
     }
     #[test]
-    fn test_uncode_eds_invalid_minute2() {
-        let result = uncode_eds("62570f81b5Yd".to_string());
+    fn test_decode_invalid_minute2() {
+        let result = decode("62570f81b5Yd".to_string());
 
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"Y\"", MSG_INVALID_MINUTE));
     }
 
     #[test]
-    fn test_uncode_eds_invalid_second1() {
-        let result = uncode_eds("62570f81b5c#".to_string());
+    fn test_decode_invalid_second1() {
+        let result = decode("62570f81b5c#".to_string());
         eprintln!("result: {:?}", &result);
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"#\"", MSG_INVALID_SECOND));
     }
     #[test]
-    fn test_uncode_eds_invalid_second2() {
-        let result = uncode_eds("62570f81b5cY".to_string());
+    fn test_decode_invalid_second2() {
+        let result = decode("62570f81b5cY".to_string());
         eprintln!("result: {:?}", &result);
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"Y\"", MSG_INVALID_SECOND));
