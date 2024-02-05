@@ -1,5 +1,6 @@
 use std::{borrow, collections::HashMap};
 
+use chrono::{DateTime, SecondsFormat, Utc};
 use email_address;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -141,6 +142,22 @@ impl ValidationChecks {
             let mut err = ValidationError::new(msg);
             let data = true;
             err.add_param(borrow::Cow::Borrowed("noRequiredFields"), &data);
+            return Err(err);
+        }
+        Ok(())
+    }
+    /// Check date against minimum valid date.
+    pub fn min_valid_date(
+        value: &DateTime<Utc>,
+        min_date_time: &DateTime<Utc>,
+        msg: &'static str,
+    ) -> Result<(), ValidationError> {
+        if *value < *min_date_time {
+            let mut err = ValidationError::new(msg);
+            let value_s = (*value).to_rfc3339_opts(SecondsFormat::Millis, true);
+            let min_date_time_s = (*min_date_time).to_rfc3339_opts(SecondsFormat::Millis, true);
+            let json = serde_json::json!({ "actualDateTime": value_s, "minDateTime": min_date_time_s });
+            err.add_param(borrow::Cow::Borrowed("minValidDateTime"), &json);
             return Err(err);
         }
         Ok(())
