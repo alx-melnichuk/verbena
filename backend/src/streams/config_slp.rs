@@ -38,7 +38,7 @@ pub fn get_test_config() -> ConfigSLP {
     ConfigSLP {
         slp_dir: "./tmp".to_string(),
         slp_max_size: (1 * 1024 * 1024),
-        slp_valid_types: vec!["jpeg".to_string()],
+        slp_valid_types: vec!["image/jpeg".to_string(), "image/png".to_string()],
         slp_type_to_save: "png".to_string(),
     }
 }

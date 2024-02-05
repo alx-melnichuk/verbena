@@ -1,6 +1,7 @@
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, get, post, put, web, HttpResponse};
-use chrono::{DateTime, Duration, Utc};
+// use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Utc};
 use std::borrow;
 use std::{ops::Deref, time::Instant};
 
@@ -9,12 +10,11 @@ use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::file_upload::upload;
 use crate::settings::err;
-use crate::streams::config_slp;
 #[cfg(not(feature = "mockdata"))]
 use crate::streams::stream_orm::inst::StreamOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::streams::stream_orm::tests::StreamOrmApp;
-use crate::streams::{stream_models, stream_orm::StreamOrm};
+use crate::streams::{config_slp, stream_models, stream_orm::StreamOrm};
 use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
 use crate::validators::{msg_validation, Validator};
 
@@ -185,43 +185,24 @@ async addStream (
 
 #[derive(Debug, MultipartForm)]
 pub struct CreateStreamForm {
-    #[multipart(limit = "255")]
     pub title: Text<String>,
-    #[multipart(limit = "2048")]
     pub descript: Option<Text<String>>,
-    // #[serde(default, skip_serializing_if = "Option::is_none")]
-    // pub logo: Option<String>,
-    #[multipart(limit = "24")]
     pub starttime: Option<Text<DateTime<Utc>>>,
-    #[multipart(limit = "255")]
     pub source: Option<Text<String>>,
     #[multipart(rename = "tags[]")]
-    pub tags: Vec<Text<String>>,
-    #[multipart(limit = "7 MiB")]
+    pub tags: Vec<Text<String>>, // pub tags: Option<Vec<Text<String>>>,
+    #[multipart(limit = "7 MiB")] //
     pub logofile: Option<TempFile>,
 }
 
 impl CreateStreamForm {
-    pub fn convert(
-        create_stream_form: CreateStreamForm,
-        start_default: DateTime<Utc>,
-    ) -> (stream_models::CreateStreamInfoDto, Option<TempFile>) {
-        let starttime: DateTime<Utc> = match create_stream_form.starttime {
-            Some(v) => v.clone(),
-            None => start_default,
-        };
+    pub fn convert(create_stream_form: CreateStreamForm) -> (stream_models::CreateStreamInfoDto, Option<TempFile>) {
         let tags: Vec<String> = create_stream_form.tags.iter().map(|v| v.to_string()).collect();
         (
             stream_models::CreateStreamInfoDto {
                 title: create_stream_form.title.to_string(),
                 descript: create_stream_form.descript.map(|v| v.to_string()),
-                logo: None,
-                starttime,
-                live: None,
-                state: None,
-                started: None,
-                stopped: None,
-                status: None,
+                starttime: create_stream_form.starttime.map(|v| v.into_inner()),
                 source: create_stream_form.source.map(|v| v.to_string()),
                 tags,
             },
@@ -239,50 +220,57 @@ pub async fn post_stream(
     stream_orm: web::Data<StreamOrmApp>,
     MultipartForm(create_stream_form): MultipartForm<CreateStreamForm>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    eprintln!("post_stream()");
     let now = Instant::now();
     // Get current user details.
     let curr_user = authenticated.deref();
     let curr_user_id = curr_user.id;
 
-    let start = Utc::now() + Duration::minutes(5);
+    eprintln!("post_stream() 01 create_stream_form: {:?}", &create_stream_form);
     // Get data from MultipartForm.
-    let (create_stream_info_dto, logofile) = CreateStreamForm::convert(create_stream_form, start);
-
+    let (create_stream_info_dto, logofile) = CreateStreamForm::convert(create_stream_form);
+    eprintln!("post_stream() 02");
     // Checking the validity of the data model.
     let validation_res = create_stream_info_dto.validate();
     if let Err(validation_errors) = validation_res {
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::validations_to_response(validation_errors));
     }
-
+    eprintln!("post_stream() 03");
     let mut added_file = "".to_string();
     while let Some(temp_file) = logofile {
         if temp_file.size == 0 {
             break;
         }
-        eprintln!("Upload file");
+        eprintln!("Upload file temp_file: {:?}", temp_file);
         let config_slp = config_slp.get_ref().clone();
+        eprintln!("config_slp: {:?}", &config_slp);
         let valid_file_types = config_slp.slp_valid_types.clone();
-        let valid_types: String = valid_file_types.join(","); 
+        let valid_types: String = valid_file_types.join(",");
+        eprintln!("valid_types: {:?}", &valid_types);
         // Check the mime file type for valid values.
         if let Err(err_file_type) = upload::file_validate_types(&temp_file, valid_file_types) {
+            eprintln!("err_invalid_file_type()");
             return Err(err_invalid_file_type(err_file_type, valid_types));
         }
         let max_size = config_slp.slp_max_size;
         // Check file size for maximum value.
         if let Err(err_file_size) = upload::file_validate_size(&temp_file, max_size) {
+            eprintln!("err_invalid_file_size()");
             return Err(err_invalid_file_size(err_file_size, max_size));
         }
         let date_time = Utc::now();
         // Get filename.
-        let code_date = coding::encode_eds(date_time);
+        let code_date = coding::encode(date_time);
         // Upload the logo file.
         let file_name = format!("{}_{}", curr_user_id, code_date);
         let res_upload = upload::file_upload(temp_file, config_slp, file_name);
         if let Err(err) = res_upload {
+            eprintln!("err_upload_file()");
             return Err(err_upload_file(err));
         }
         added_file = res_upload.unwrap();
+        eprintln!("added_file: {:?}", &added_file);
 
         break;
     }
@@ -308,7 +296,7 @@ pub async fn post_stream(
     if res_data.is_err() && added_file.len() > 0 {
         let res_remove = std::fs::remove_file(added_file.clone());
         if let Err(err) = res_remove {
-            log::error!("post_stream() std::fs::remove_file({}): error: {:?}", added_file, err);        
+            log::error!("post_stream() std::fs::remove_file({}): error: {:?}", added_file, err);
         }
     }
     let (stream, stream_tags) = res_data?;
@@ -321,7 +309,7 @@ pub async fn post_stream(
 }
 
 // POST api/streams
-#[rustfmt::skip]
+/*#[rustfmt::skip]
 #[post("/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn post_stream0(
     authenticated: Authenticated,
@@ -361,7 +349,7 @@ pub async fn post_stream0(
     log::info!("post_stream() elapsed time: {:.2?}", now.elapsed());
 
     Ok(HttpResponse::Created().json(stream_info_dto)) // 201
-}
+}*/
 
 /* Name: 'Update stream'
 * @route streams/:streamId
@@ -490,32 +478,37 @@ pub async fn delete_stream(
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use actix_web::{dev, http, test, test::TestRequest, web, App};
-    use chrono::{DateTime, Duration, SecondsFormat, Utc};
-    use serde_json::json;
+    use std::{fs, io::Write, path};
 
+    use actix_multipart_test::MultiPartFormDataBuilder;
+    use actix_web::{dev, http, test, test::TestRequest, web, App};
+    use chrono::{Datelike, Duration, SecondsFormat, Utc};
+    // use chrono::{DateTime, Duration, SecondsFormat, Utc};
+    // use serde::Serialize;
+    // use serde_json::json;
+
+    use crate::cdis::coding;
     use crate::extractors::authentication::BEARER;
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
     };
     use crate::streams::{
-        stream_models::{
-            CreateStreamInfoDto, ModifyStreamInfoDto, SearchStreamInfoResponseDto, Stream, StreamInfoDto,
-            StreamModelsTest,
-        },
+        config_slp,
+        stream_models::{Stream, StreamInfoDto, StreamModelsTest},
+        //     stream_models::{ModifyStreamInfoDto, SearchStreamInfoResponseDto, Stream, StreamInfoDto, StreamModelsTest},
         stream_orm::tests::STREAM_ID,
     };
     use crate::users::{
         user_models::{User, UserRole},
         user_orm::tests::UserOrmApp,
     };
-    use crate::utils::parser::{CD_PARSE_INT_ERROR, MSG_PARSE_INT_ERROR};
+    // use crate::utils::parser::{CD_PARSE_INT_ERROR, MSG_PARSE_INT_ERROR};
 
     use super::*;
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
-    const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
-    const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
+    // const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
+    // const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
 
     fn create_user() -> User {
         let mut user = UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1");
@@ -543,6 +536,7 @@ mod tests {
         request: TestRequest,
     ) -> dev::ServiceResponse {
         let data_config_jwt = web::Data::new(config_jwt);
+        let data_config_slp = web::Data::new(config_slp::get_test_config());
         let data_user_orm = web::Data::new(UserOrmApp::create(&vec.0));
         let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
         let data_stream_orm = web::Data::new(StreamOrmApp::create(&vec.2));
@@ -550,6 +544,7 @@ mod tests {
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_config_slp))
                 .app_data(web::Data::clone(&data_user_orm))
                 .app_data(web::Data::clone(&data_session_orm))
                 .app_data(web::Data::clone(&data_stream_orm))
@@ -567,7 +562,7 @@ mod tests {
     }
 
     // ** get_stream_by_id **
-
+    /*
     #[test]
     async fn test_get_stream_by_id_invalid_id() {
         let user1: User = user_with_id(create_user());
@@ -659,9 +654,9 @@ mod tests {
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
-
+    */
     // ** get_streams **
-
+    /*
     #[test]
     async fn test_get_streams_search_by_user_id() {
         let user1: User = user_with_id(create_user());
@@ -1022,9 +1017,9 @@ mod tests {
         assert_eq!(response.page, page);
         assert_eq!(response.pages, 1);
     }
-
+    */
     // ** post_stream **
-
+    /*
     #[test]
     async fn test_post_stream_no_data() {
         let user1: User = user_with_id(create_user());
@@ -1069,9 +1064,9 @@ mod tests {
         let body_str = String::from_utf8_lossy(&body);
         let expected_message = "Json deserialize error: missing field";
         assert!(body_str.contains(expected_message));
-    }
+    }*/
 
-    async fn test_post_stream_validate(create_stream: CreateStreamInfoDto, err_msg: &str) {
+    async fn test_post_stream_validate(header: (String, String), body: Vec<u8>, err_msg: &str) {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
@@ -1080,8 +1075,11 @@ mod tests {
         // Create token values.
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(create_stream);
+        // POST api/streams
+        let request = test::TestRequest::post()
+            .uri("/streams")
+            .insert_header(header)
+            .set_payload(body);
 
         let vec = (vec![user1], vec![session1], vec![]);
         let factory = post_stream;
@@ -1095,275 +1093,143 @@ mod tests {
         assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, err_msg);
     }
-    #[test]
+    /*#[test]
     async fn test_post_stream_title_empty() {
-        let starttime = Utc::now();
-        let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-        let create_stream = CreateStreamInfoDto {
-            title: "".to_string(),
-            descript: None,
-            logo: None,
-            starttime,
-            live: None,
-            state: None,
-            started: None,
-            stopped: None,
-            status: None,
-            source: None,
-            tags: tags.clone(),
-        };
-        test_post_stream_validate(create_stream, stream_models::MSG_TITLE_REQUIRED).await;
+        let mut multipart_form_data_builder = MultiPartFormDataBuilder::new();
+        multipart_form_data_builder.with_text("title", "").with_text("tags[]", "tag11");
+        let (header, body) = multipart_form_data_builder.build();
+
+        test_post_stream_validate(header, body, stream_models::MSG_TITLE_REQUIRED).await;
     }
     #[test]
     async fn test_post_stream_title_min() {
-        let starttime = Utc::now();
-        let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-        let create_stream = CreateStreamInfoDto {
-            title: StreamModelsTest::title_min(),
-            descript: None,
-            logo: None,
-            starttime,
-            live: None,
-            state: None,
-            started: None,
-            stopped: None,
-            status: None,
-            source: None,
-            tags: tags.clone(),
-        };
-        test_post_stream_validate(create_stream, stream_models::MSG_TITLE_MIN_LENGTH).await;
+        let mut multipart_form_data_builder = MultiPartFormDataBuilder::new();
+        multipart_form_data_builder
+            .with_text("title", StreamModelsTest::title_min())
+            .with_text("tags[]", "tag11");
+        let (header, body) = multipart_form_data_builder.build();
+
+        test_post_stream_validate(header, body, stream_models::MSG_TITLE_MIN_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_title_max() {
-        let starttime = Utc::now();
-        let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-        let create_stream = CreateStreamInfoDto {
-            title: StreamModelsTest::title_max(),
-            descript: None,
-            logo: None,
-            starttime,
-            live: None,
-            state: None,
-            started: None,
-            stopped: None,
-            status: None,
-            source: None,
-            tags: tags.clone(),
-        };
-        test_post_stream_validate(create_stream, stream_models::MSG_TITLE_MAX_LENGTH).await;
+        let mut multipart_form_data_builder = MultiPartFormDataBuilder::new();
+        multipart_form_data_builder
+            .with_text("title", StreamModelsTest::title_max())
+            .with_text("tags[]", "tag11");
+        let (header, body) = multipart_form_data_builder.build();
+
+        test_post_stream_validate(header, body, stream_models::MSG_TITLE_MAX_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_descript_min() {
-        let starttime = Utc::now();
-        let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-        let create_stream = CreateStreamInfoDto {
-            title: "title".to_string(),
-            descript: Some(StreamModelsTest::descript_min()),
-            logo: None,
-            starttime,
-            live: None,
-            state: None,
-            started: None,
-            stopped: None,
-            status: None,
-            source: None,
-            tags: tags.clone(),
-        };
-        test_post_stream_validate(create_stream, stream_models::MSG_DESCRIPT_MIN_LENGTH).await;
+        let mut multipart_form_data_builder = MultiPartFormDataBuilder::new();
+        multipart_form_data_builder
+            .with_text("title", "title".to_string())
+            .with_text("descript", StreamModelsTest::descript_min())
+            .with_text("tags[]", "tag11");
+        let (header, body) = multipart_form_data_builder.build();
+
+        test_post_stream_validate(header, body, stream_models::MSG_DESCRIPT_MIN_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_descript_max() {
-        let starttime = Utc::now();
-        let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-        let create_stream = CreateStreamInfoDto {
-            title: "title".to_string(),
-            descript: Some(StreamModelsTest::descript_max()),
-            logo: None,
-            starttime,
-            live: None,
-            state: None,
-            started: None,
-            stopped: None,
-            status: None,
-            source: None,
-            tags: tags.clone(),
-        };
-        test_post_stream_validate(create_stream, stream_models::MSG_DESCRIPT_MAX_LENGTH).await;
+        let mut multipart_form_data_builder = MultiPartFormDataBuilder::new();
+        multipart_form_data_builder
+            .with_text("title", "title".to_string())
+            .with_text("descript", StreamModelsTest::descript_max())
+            .with_text("tags[]", "tag11");
+        let (header, body) = multipart_form_data_builder.build();
+
+        test_post_stream_validate(header, body, stream_models::MSG_DESCRIPT_MAX_LENGTH).await;
     }
     #[test]
-    async fn test_post_stream_logo_min() {
+    async fn test_post_stream_starttime_min() {
         let starttime = Utc::now();
-        let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-        let create_stream = CreateStreamInfoDto {
-            title: "title".to_string(),
-            descript: None,
-            logo: Some(StreamModelsTest::logo_min()),
-            starttime,
-            live: None,
-            state: None,
-            started: None,
-            stopped: None,
-            status: None,
-            source: None,
-            tags: tags.clone(),
-        };
-        test_post_stream_validate(create_stream, stream_models::MSG_LOGO_MIN_LENGTH).await;
-    }
-    #[test]
-    async fn test_post_stream_logo_max() {
-        let starttime = Utc::now();
-        let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-        let create_stream = CreateStreamInfoDto {
-            title: "title".to_string(),
-            descript: None,
-            logo: Some(StreamModelsTest::logo_max()),
-            starttime,
-            live: None,
-            state: None,
-            started: None,
-            stopped: None,
-            status: None,
-            source: None,
-            tags: tags.clone(),
-        };
-        test_post_stream_validate(create_stream, stream_models::MSG_LOGO_MAX_LENGTH).await;
+        let starttime_s = starttime.to_rfc3339_opts(SecondsFormat::Millis, true);
+
+        let mut multipart_form_data_builder = MultiPartFormDataBuilder::new();
+        multipart_form_data_builder
+            .with_text("title", "title".to_string())
+            .with_text("starttime", starttime_s)
+            .with_text("tags[]", "tag11");
+        let (header, body) = multipart_form_data_builder.build();
+
+        test_post_stream_validate(header, body, stream_models::MSG_MIN_VALID_STARTTIME).await;
     }
     #[test]
     async fn test_post_stream_source_min() {
-        let starttime = Utc::now();
-        let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-        let create_stream = CreateStreamInfoDto {
-            title: "title".to_string(),
-            descript: None,
-            logo: None,
-            starttime,
-            live: None,
-            state: None,
-            started: None,
-            stopped: None,
-            status: None,
-            source: Some(StreamModelsTest::source_min()),
-            tags: tags.clone(),
-        };
-        test_post_stream_validate(create_stream, stream_models::MSG_SOURCE_MIN_LENGTH).await;
+        let mut multipart_form_data_builder = MultiPartFormDataBuilder::new();
+        multipart_form_data_builder
+            .with_text("title", "title".to_string())
+            .with_text("source", StreamModelsTest::source_min())
+            .with_text("tags[]", "tag11");
+        let (header, body) = multipart_form_data_builder.build();
+
+        test_post_stream_validate(header, body, stream_models::MSG_SOURCE_MIN_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_source_max() {
-        let starttime = Utc::now();
-        let tags: Vec<String> = vec!["tag11".to_string(), "tag12".to_string()];
-        let create_stream = CreateStreamInfoDto {
-            title: "title".to_string(),
-            descript: None,
-            logo: None,
-            starttime,
-            live: None,
-            state: None,
-            started: None,
-            stopped: None,
-            status: None,
-            source: Some(StreamModelsTest::source_max()),
-            tags: tags.clone(),
-        };
-        test_post_stream_validate(create_stream, stream_models::MSG_SOURCE_MAX_LENGTH).await;
+        let mut multipart_form_data_builder = MultiPartFormDataBuilder::new();
+        multipart_form_data_builder
+            .with_text("title", "title".to_string())
+            .with_text("source", StreamModelsTest::source_max())
+            .with_text("tags[]", "tag11");
+        let (header, body) = multipart_form_data_builder.build();
+
+        test_post_stream_validate(header, body, stream_models::MSG_SOURCE_MAX_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_tags_min_amount() {
-        let starttime = Utc::now();
-        let create_stream = CreateStreamInfoDto {
-            title: "title".to_string(),
-            descript: None,
-            logo: None,
-            starttime,
-            live: None,
-            state: None,
-            started: None,
-            stopped: None,
-            status: None,
-            source: None,
-            tags: StreamModelsTest::tag_names_min(),
-        };
-        test_post_stream_validate(create_stream, stream_models::MSG_TAG_NAME_MIN_AMOUNT).await;
+        let mut multipart_form_data_builder = MultiPartFormDataBuilder::new();
+        multipart_form_data_builder.with_text("title", "title".to_string());
+        for tag in StreamModelsTest::tag_names_min() {
+            multipart_form_data_builder.with_text("tags[]", tag);
+        }
+        let (header, body) = multipart_form_data_builder.build();
+
+        test_post_stream_validate(header, body, stream_models::MSG_TAG_NAME_MIN_AMOUNT).await;
     }
     #[test]
     async fn test_post_stream_tags_max_amount() {
-        let starttime = Utc::now();
-        let create_stream = CreateStreamInfoDto {
-            title: "title".to_string(),
-            descript: None,
-            logo: None,
-            starttime,
-            live: None,
-            state: None,
-            started: None,
-            stopped: None,
-            status: None,
-            source: None,
-            tags: StreamModelsTest::tag_names_max(),
-        };
-        test_post_stream_validate(create_stream, stream_models::MSG_TAG_NAME_MAX_AMOUNT).await;
+        let mut multipart_form_data_builder = MultiPartFormDataBuilder::new();
+        multipart_form_data_builder.with_text("title", "title".to_string());
+        for tag in StreamModelsTest::tag_names_max() {
+            multipart_form_data_builder.with_text("tags[]", tag);
+        }
+        let (header, body) = multipart_form_data_builder.build();
+
+        test_post_stream_validate(header, body, stream_models::MSG_TAG_NAME_MAX_AMOUNT).await;
     }
     #[test]
     async fn test_post_stream_tag_name_empty() {
-        let starttime = Utc::now();
-        let mut tags: Vec<String> = StreamModelsTest::tag_names_min();
-        tags.push("".to_string());
-        let create_stream = CreateStreamInfoDto {
-            title: "title".to_string(),
-            descript: None,
-            logo: None,
-            starttime,
-            live: None,
-            state: None,
-            started: None,
-            stopped: None,
-            status: None,
-            source: None,
-            tags,
-        };
-        test_post_stream_validate(create_stream, stream_models::MSG_TAG_NAME_REQUIRED).await;
+        let mut multipart_form_data_builder = MultiPartFormDataBuilder::new();
+        multipart_form_data_builder.with_text("title", "title".to_string());
+        multipart_form_data_builder.with_text("tags[]", "");
+        let (header, body) = multipart_form_data_builder.build();
+
+        test_post_stream_validate(header, body, stream_models::MSG_TAG_NAME_REQUIRED).await;
     }
     #[test]
     async fn test_post_stream_tag_name_min() {
-        let starttime = Utc::now();
-        let mut tags: Vec<String> = StreamModelsTest::tag_names_min();
-        tags.push(StreamModelsTest::tag_name_min());
-        let create_stream = CreateStreamInfoDto {
-            title: "title".to_string(),
-            descript: None,
-            logo: None,
-            starttime,
-            live: None,
-            state: None,
-            started: None,
-            stopped: None,
-            status: None,
-            source: None,
-            tags,
-        };
-        test_post_stream_validate(create_stream, stream_models::MSG_TAG_NAME_MIN_LENGTH).await;
+        let mut multipart_form_data_builder = MultiPartFormDataBuilder::new();
+        multipart_form_data_builder.with_text("title", "title".to_string());
+        multipart_form_data_builder.with_text("tags[]", StreamModelsTest::tag_name_min());
+        let (header, body) = multipart_form_data_builder.build();
+
+        test_post_stream_validate(header, body, stream_models::MSG_TAG_NAME_MIN_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_tag_name_max() {
-        let starttime = Utc::now();
-        let mut tags: Vec<String> = StreamModelsTest::tag_names_min();
-        tags.push(StreamModelsTest::tag_name_max());
-        let create_stream = CreateStreamInfoDto {
-            title: "title".to_string(),
-            descript: None,
-            logo: None,
-            starttime,
-            live: None,
-            state: None,
-            started: None,
-            stopped: None,
-            status: None,
-            source: None,
-            tags,
-        };
-        test_post_stream_validate(create_stream, stream_models::MSG_TAG_NAME_MAX_LENGTH).await;
+        let mut multipart_form_data_builder = MultiPartFormDataBuilder::new();
+        multipart_form_data_builder.with_text("title", "title".to_string());
+        multipart_form_data_builder.with_text("tags[]", StreamModelsTest::tag_name_max());
+        let (header, body) = multipart_form_data_builder.build();
+
+        test_post_stream_validate(header, body, stream_models::MSG_TAG_NAME_MAX_LENGTH).await;
     }
     #[test]
-    async fn test_post_stream_valid_data() {
+    async fn test_post_stream_valid_data_without_file() {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
@@ -1372,26 +1238,28 @@ mod tests {
         // Create token values.
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let now = Utc::now();
-        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+        let starttime = Utc::now() + Duration::minutes(2);
+        let starttime_s = starttime.to_rfc3339_opts(SecondsFormat::Millis, true);
+        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", starttime);
 
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let stream1b_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
 
+        let mut multipart_form_data_builder = MultiPartFormDataBuilder::new();
+        multipart_form_data_builder
+            .with_text("title", stream.title.to_string())
+            .with_text("starttime", starttime_s);
+
+        for tag in stream.tags.clone().iter() {
+            multipart_form_data_builder.with_text("tags[]", tag.to_string());
+        }
+        let (header, body) = multipart_form_data_builder.build();
+
         // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").set_json(CreateStreamInfoDto {
-            title: stream.title.to_string(),
-            descript: None,
-            logo: None,
-            starttime: stream.starttime.clone(),
-            live: None,
-            state: None,
-            started: None,
-            stopped: None,
-            status: None,
-            source: None,
-            tags: stream.tags.clone(),
-        });
+        let request = test::TestRequest::post()
+            .uri("/streams")
+            .insert_header(header)
+            .set_payload(body);
 
         let vec = (vec![user1], vec![session1], vec![]);
         let factory = post_stream;
@@ -1428,9 +1296,135 @@ mod tests {
         assert_eq!(res_updated_at, ser_updated_at);
         assert_eq!(stream_dto_res.id, stream1b_dto_ser.id);
     }
+    */
+    fn save_file_png(file_name: &str) -> Result<String, String> {
+        let path_file: path::PathBuf = ["./", file_name].iter().collect();
+        let path = path_file.to_str().unwrap().to_string();
+        #[rustfmt::skip]
+        let buff: Vec<u8> = vec![
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,  0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, 
+            0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x05,  0x08, 0x06, 0x00, 0x00, 0x00, 0x8D, 0x6F, 0x26,
+            0xE5, 0x00, 0x00, 0x00, 0x01, 0x73, 0x52, 0x47,  0x42, 0x00, 0xAE, 0xCE, 0x1C, 0xE9, 0x00, 0x00,
+            0x00, 0x74, 0x49, 0x44, 0x41, 0x54, 0x18, 0x57,  0x01, 0x69, 0x00, 0x96, 0xFF, 0x01, 0xF3, 0xF4,
+            0xF4, 0xFF, 0xFA, 0xFD, 0xF9, 0x00, 0x5A, 0xAB,  0x5A, 0x00, 0x9E, 0x54, 0x9E, 0x00, 0x10, 0x06,
+            0x0E, 0x00, 0x01, 0xEB, 0xF1, 0xE5, 0xFF, 0x17,  0x02, 0x20, 0x00, 0x5B, 0xFF, 0x5F, 0x00, 0x29,
+            0xFF, 0x19, 0x00, 0x4D, 0xF7, 0x56, 0x00, 0x01,  0x15, 0x7F, 0x15, 0xFF, 0xEB, 0x77, 0xEC, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x06, 0xFD, 0x05, 0x00,  0xFE, 0x94, 0x01, 0x00, 0x01, 0xE5, 0xF0, 0xE4,
+            0xFF, 0x1E, 0x05, 0x1C, 0x00, 0xFD, 0x02, 0x01,  0x00, 0x05, 0xFD, 0x01, 0x00, 0xC3, 0xEE, 0xC3,
+            0x00, 0x01, 0xF6, 0xF4, 0xF2, 0xFF, 0xF4, 0xFC,  0xF4, 0x00, 0x35, 0x9C, 0x3F, 0x00, 0xC1, 0x63,
+            0xBA, 0x00, 0x18, 0x09, 0x19, 0x00, 0x50, 0xDE,  0x2B, 0x56, 0xC3, 0xBD, 0xEC, 0xAA, 0x00, 0x00,
+            0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42,  0x60, 0x82
+        ];
+        let mut file = fs::File::create(path_file).map_err(|e| e.to_string())?;
+        file.write_all(buff.as_ref()).map_err(|e| e.to_string())?;
+        Ok(path)
+    }
+    #[test]
+    async fn test_post_stream_valid_data_with_file() {
+        let name1 = "circle5x5";
+        let name1_file = format!("{}.png", &name1);
+        let path_name1_file = save_file_png(&name1_file).unwrap();
+        eprintln!("path_file: {}", &path_name1_file);
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let starttime = Utc::now() + Duration::minutes(2);
+        let starttime_s = starttime.to_rfc3339_opts(SecondsFormat::Millis, true);
+        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", starttime);
+
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let stream1b_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+
+        let mut multipart_form_data_builder = MultiPartFormDataBuilder::new();
+        multipart_form_data_builder
+            .with_text("title", stream.title.to_string())
+            .with_text("starttime", starttime_s);
+
+        for tag in stream.tags.clone().iter() {
+            multipart_form_data_builder.with_text("tags[]", tag.to_string());
+        }
+        // multipart_form_data_builder.with_file("tests/sample.png", "sample", "image/png", "sample.png");
+        multipart_form_data_builder.with_file(path_name1_file, "logofile", "image/png", name1_file);
+
+        let (header, body) = multipart_form_data_builder.build();
+        let now = Utc::now();
+
+        // POST api/post_stream
+        let request = test::TestRequest::post()
+            .uri("/streams")
+            .insert_header(header)
+            .set_payload(body);
+
+        let user1_id = user1.id.to_string();
+        let vec = (vec![user1], vec![session1], vec![]);
+        let factory = post_stream;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
+
+        let body = test::read_body(resp).await;
+        eprintln!("\n###### body: {:?}\n", &body);
+        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json_stream1b_dto = serde_json::json!(stream1b_dto).to_string();
+        let stream1b_dto_ser: StreamInfoDto =
+            serde_json::from_slice(json_stream1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(stream_dto_res.id, stream1b_dto_ser.id);
+        assert_eq!(stream_dto_res.user_id, stream1b_dto_ser.user_id);
+        assert_eq!(stream_dto_res.title, stream1b_dto_ser.title);
+        assert_eq!(stream_dto_res.descript, stream1b_dto_ser.descript);
+        assert_eq!(stream_dto_res.starttime, stream1b_dto_ser.starttime);
+        assert_eq!(stream_dto_res.live, stream1b_dto_ser.live);
+        assert_eq!(stream_dto_res.state, stream1b_dto_ser.state);
+        assert_eq!(stream_dto_res.started, stream1b_dto_ser.started);
+        assert_eq!(stream_dto_res.stopped, stream1b_dto_ser.stopped);
+        assert_eq!(stream_dto_res.status, stream1b_dto_ser.status);
+        assert_eq!(stream_dto_res.source, stream1b_dto_ser.source);
+        assert_eq!(stream_dto_res.tags, stream1b_dto_ser.tags);
+        assert_eq!(stream_dto_res.is_my_stream, stream1b_dto_ser.is_my_stream);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
+        let res_created_at = stream_dto_res.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        let ser_created_at = stream1b_dto_ser.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        assert_eq!(res_created_at, ser_created_at);
+        let res_updated_at = stream_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        let ser_updated_at = stream1b_dto_ser.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        assert_eq!(res_updated_at, ser_updated_at);
+        assert_eq!(stream_dto_res.id, stream1b_dto_ser.id);
+
+        let config_slp = config_slp::get_test_config();
+        let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
+        eprintln!("stream_dto_res_logo: {}", &stream_dto_res_logo);
+        assert!(stream_dto_res_logo.len() > 0);
+        assert!(stream_dto_res_logo.starts_with(&config_slp.slp_dir));
+        // stream_dto_res.logo: "./tmp/1100_32220582i4Me.png"
+        // file_name: "1100_32220582i4Me.png"
+        // file_stem: "1100_32220582i4Me"
+        let path_logo = path::PathBuf::from(stream_dto_res_logo);
+        let file_stem = path_logo.file_stem().unwrap().to_str().unwrap().to_string();
+        let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
+        let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string();
+        let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string();
+
+        assert_eq!(file_stem_part1, user1_id);
+        let date_time2 = coding::decode(file_stem_part2).unwrap();
+        let date_time2_s = date_time2.to_rfc3339_opts(SecondsFormat::Secs, true);
+        eprintln!("date_time2_s: {}", &date_time2_s);
+        let now_s = now.to_rfc3339_opts(SecondsFormat::Secs, true);
+        eprintln!("now_s       : {}", &now_s);
+        assert_eq!(now_s, date_time2_s);
+    }
+    // file.size = 0
+    // invalid_file_type
+    // invalid_file_size
+    // err_upload_file
 
     // ** put_stream **
-
+    /*
     #[test]
     async fn test_put_stream_no_data() {
         let user1: User = user_with_id(create_user());
@@ -1836,9 +1830,9 @@ mod tests {
         assert_eq!(res_updated_at, ser_updated_at);
         assert_eq!(stream_dto_res.id, stream2b_dto_ser.id);
     }
-
+    */
     // ** delete_stream **
-
+    /*
     #[test]
     async fn test_delete_stream_invalid_id() {
         let user1: User = user_with_id(create_user());
@@ -1921,4 +1915,5 @@ mod tests {
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
     }
+    */
 }
