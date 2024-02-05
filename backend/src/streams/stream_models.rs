@@ -1,7 +1,7 @@
 use std::borrow;
 use std::collections::HashMap;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -25,6 +25,8 @@ pub const LOGO_MIN: u8 = 2;
 pub const MSG_LOGO_MIN_LENGTH: &str = "logo:min_len";
 pub const LOGO_MAX: u16 = 255;
 pub const MSG_LOGO_MAX_LENGTH: &str = "logo:max_len";
+
+pub const MSG_MIN_VALID_STARTTIME: &str = "starttime:min_valid_date";
 
 pub const MSG_SOURCE_REQUIRED: &str = "source:required";
 pub const SOURCE_MIN: u8 = 2;
@@ -60,9 +62,9 @@ pub fn validate_descript(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::max_length(value, DESCRIPT_MAX.into(), MSG_DESCRIPT_MAX_LENGTH)?;
     Ok(())
 }
-pub fn validate_logo(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::min_length(value, LOGO_MIN.into(), MSG_LOGO_MIN_LENGTH)?;
-    ValidationChecks::max_length(value, LOGO_MAX.into(), MSG_LOGO_MAX_LENGTH)?;
+pub fn validate_starttime(value: &DateTime<Utc>) -> Result<(), ValidationError> {
+    let min_date_time = Utc::now() + Duration::minutes(1);
+    ValidationChecks::min_valid_date(value, &min_date_time, MSG_MIN_VALID_STARTTIME)?;
     Ok(())
 }
 pub fn validate_source(value: &str) -> Result<(), ValidationError> {
@@ -294,17 +296,18 @@ pub struct CreateStream {
 
 impl CreateStream {
     pub fn convert(create_stream_info: CreateStreamInfoDto, user_id: i32) -> Self {
+        let min_date_time = Utc::now() + Duration::minutes(2);
         CreateStream {
             user_id: user_id,
             title: create_stream_info.title.to_owned(),
             descript: create_stream_info.descript.clone(),
-            logo: create_stream_info.logo.clone(),
-            starttime: create_stream_info.starttime.to_owned(),
-            live: create_stream_info.live.clone(),
-            state: create_stream_info.state.clone(),
-            started: create_stream_info.started.clone(),
-            stopped: create_stream_info.stopped.clone(),
-            status: create_stream_info.status.clone(),
+            logo: None,
+            starttime: create_stream_info.starttime.unwrap_or(min_date_time),
+            live: None,
+            state: None,
+            started: None,
+            stopped: None,
+            status: None,
             source: create_stream_info.source.clone(),
         }
     }
@@ -315,22 +318,8 @@ pub struct CreateStreamInfoDto {
     pub title: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub descript: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub logo: Option<String>,
-    #[serde(with = "serial_datetime")]
-    pub starttime: DateTime<Utc>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub live: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<StreamState>,
-    #[rustfmt::skip]
-    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
-    pub started: Option<DateTime<Utc>>,
-    #[rustfmt::skip]
-    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
-    pub stopped: Option<DateTime<Utc>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<bool>,
+    #[serde(with = "serial_datetime_option")]
+    pub starttime: Option<DateTime<Utc>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
     pub tags: Vec<String>,
@@ -346,8 +335,8 @@ impl Validator for CreateStreamInfoDto {
         if let Some(value) = &self.descript {
             errors.push(validate_descript(&value).err());
         }
-        if let Some(value) = &self.logo {
-            errors.push(validate_logo(&value).err());
+        if let Some(value) = &self.starttime {
+            errors.push(validate_starttime(value).err());
         }
         if let Some(value) = &self.source {
             errors.push(validate_source(&value).err());
@@ -426,9 +415,6 @@ impl Validator for ModifyStreamInfoDto {
         }
         if let Some(value) = &self.descript {
             errors.push(validate_descript(&value).err());
-        }
-        if let Some(value) = &self.logo {
-            errors.push(validate_logo(&value).err());
         }
         if let Some(starttime) = &self.starttime {
             let now_date = Utc::now();
