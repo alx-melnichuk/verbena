@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { StreamApiService } from './stream-api.service';
-import { ModifyStreamDto, StreamDto } from './stream-api.interface';
+import { CreateStreamDto, ModifyStreamDto, StreamDto } from './stream-api.interface';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Uri } from '../common/uri';
 import { ROUTE_VIEW } from '../common/routes';
@@ -111,22 +111,14 @@ export class StreamService {
   /** Add stream
    * @ files logo (jpg, png and gif only, 5MB)
    */
-  /*public addStream(addStreamDTO: AddStreamDTO, file?: File): Promise<StreamDTO | HttpErrorResponse> {
-    return this.streamApiService.addStream(addStreamDTO, file);
-  }*/
+  public createStream(createStreamDto: CreateStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
+    return this.streamApiService.createStream(createStreamDto, file);
+  }
 
   /** Update stream
    */
   public modifyStream(id: number, modifyStreamDto: ModifyStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
     return this.streamApiService.modifyStream(id, modifyStreamDto, file);
-  }
-
-  public modifyStreamUpload(desc: string, file: File): Promise<string | HttpErrorResponse | undefined> {
-    return this.streamApiService.modifyStreamUpload(desc, file);
-  }
-
-  public send_form(modifyStreamDto: ModifyStreamDto, file?: File): Promise<any | HttpErrorResponse | undefined> {
-    return this.streamApiService.send_form(modifyStreamDto, file);
   }
 
   /** Delete stream

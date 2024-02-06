@@ -107,45 +107,19 @@ export class StreamDtoUtil {
 export interface ModifyStreamDto {
   title?: string | undefined;
   descript?: string | undefined;
-  logo?: string | null | undefined;
   starttime?: StringDateTime | null | undefined;
   source?: string | undefined;
   tags?: string[] | undefined;
 } 
-/*
-pub struct ModifyStreamInfoDto {
-    pub title: Option<String>,
-    pub descript: Option<String>,
-    pub logo: Option<String>,
-    pub starttime: Option<DateTime<Utc>>,
-    pub source: Option<String>,
-    pub tags: Option<Vec<String>>,
-}
-*/
 
 export interface CreateStreamDto {
   title: string;
   descript?: string | undefined;
-  logo?: string | null | undefined;
-  starttime?: StringDateTime | null | undefined;
+  starttime?: StringDateTime | undefined;
   source?: string | undefined;
-  tags: string[] | undefined;
+  tags: string[];
 } 
-/*
-pub struct CreateStreamInfoDto {
-    pub title: String,
-    pub descript: Option<String>,
-    pub logo: Option<String>,
-    pub starttime: DateTime<Utc>,
-    pub live: Option<bool>,
-    pub state: Option<StreamState>,
-    pub started: Option<DateTime<Utc>>,
-    pub stopped: Option<DateTime<Utc>>,
-    pub status: Option<bool>,
-    pub source: Option<String>,
-    pub tags: Vec<String>,
-}
-*/
+
 export interface UpdateStreamFileDto {
   id?: number | undefined;
   modifyStreamDto?: ModifyStreamDto | undefined;

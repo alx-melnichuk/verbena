@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http
 import { Injectable } from '@angular/core';
 
 import { Uri } from 'src/app/common/uri';
-import { ModifyStreamDto, StreamDto } from './stream-api.interface';
+import { CreateStreamDto, ModifyStreamDto, StreamDto } from './stream-api.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -87,33 +87,32 @@ constructor(private http: HttpClient) {
   /** Add stream
    * @ route streams
    * @ type post
-   * @ body title, description, starttime, tags (array stringify, 3 max)
+   * @ body title, description, starttime, tags (array stringify, 4 max)
    * @ files logo (jpg, png and gif only, 5MB)
    * @ required title, description
    * @ access protected
    */
-  /*public addStream(addStreamDTO: AddStreamDTO, file?: File): Promise<StreamDTO | HttpErrorResponse> {
+  public createStream(createStreamDto: CreateStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
     const formData: FormData = new FormData();
-    formData.set('title', addStreamDTO.title);
-    formData.set('description', addStreamDTO.description);
-    if (!!addStreamDTO.starttime) {
-      formData.set('starttime', addStreamDTO.starttime);
+    formData.set('title', createStreamDto.title);
+    if (!!createStreamDto.descript) {
+      formData.set('descript', createStreamDto.descript);
     }
-    if (!!addStreamDTO.tags && addStreamDTO.tags.length > 0) {
-      formData.set('tags', JSON.stringify(addStreamDTO.tags));
+    if (!!createStreamDto.starttime) {
+      formData.set('starttime', createStreamDto.starttime);
     }
-    if (!!addStreamDTO.source) {
-      formData.set('source', addStreamDTO.source);
+    if (!!createStreamDto.source) {
+      formData.set('source', createStreamDto.source);
     }
+    for (let idx = 0; idx < createStreamDto.tags.length; idx++) {
+      formData.set('tags[]', createStreamDto.tags[idx]);
+    }  
     if (!!file) {
-      formData.set('logo', file, file.name);
+      formData.set('logofile', file, file.name);
     }
-    if (!file && !!addStreamDTO.logoTarget) {
-      formData.set('logoTarget', addStreamDTO.logoTarget);
-    }
-    const url = Uri.appUri('appApi://streams');
-    return this.http.post<StreamDTO | HttpErrorResponse>(url, formData).toPromise();
-  }*/
+    const url = Uri.appUri(`appApi://streams`);
+    return this.http.post<StreamDto | HttpErrorResponse>(url, formData).toPromise();
+  }
 
   /** Update stream
    * @ route streams/:streamId
@@ -148,18 +147,6 @@ constructor(private http: HttpClient) {
     return this.http.put<StreamDto | HttpErrorResponse>(url, formData).toPromise();
   }
 
-  public send_form(modifyStreamDto: ModifyStreamDto, file?: File): Promise<any | HttpErrorResponse | undefined> {
-    const formData: FormData = new FormData();
-    formData.set('name', modifyStreamDto.title || 'title');
-    // if (!!file) {
-    //   formData.set('logo', file, file.name);
-    // }
-    // const headers = new HttpHeaders({ 'enctype': 'multipart/form-data' });
-    // const headers = new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' });
-    const url = Uri.appUri(`appApi://streams/send_form`);
-    return this.http.post<any | HttpErrorResponse>(url, formData, /*{ headers: headers }*/).toPromise();
-  }
-
   public modifyStream(id: number, modifyStreamDto: ModifyStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
     const data: ModifyStreamDto = {};
     if (!!modifyStreamDto.title) {
@@ -183,14 +170,6 @@ constructor(private http: HttpClient) {
     
     const url = Uri.appUri(`appApi://streams/${id}`);
     return this.http.put<StreamDto | HttpErrorResponse>(url, data).toPromise();
-  }
-  public modifyStreamUpload(desc: string, file: File): Promise<string | HttpErrorResponse | undefined> {
-    const formData: FormData = new FormData();
-    formData.set('desc', desc);
-    formData.set('image', file, file.name);
-    const headers = { 'enctype': 'multipart/form-data' };
-    const url = Uri.appUri(`appApi://streams/example_form`);
-    return this.http.put<string | HttpErrorResponse>(url, formData, { headers: headers }).toPromise();
   }
   /** Delete stream
    * @ route streams/:streamId
