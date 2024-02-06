@@ -46,22 +46,20 @@ export class StreamEditComponent implements OnInit {
     if (!updateStreamFileDto || (!updateStreamFileDto.createStreamDto && !updateStreamFileDto.modifyStreamDto)) {
       return;
     }
-    const isGoToViewStream = true; //(modifyStream.modifyStreamDto.starttime === null);
+    const isGoToViewStream = true; // ?? (modifyStream.modifyStreamDto.starttime === null);
     const isEdit = (!!updateStreamFileDto.modifyStreamDto);
     const buffPromise: Promise<unknown>[] = [];
     this.isLoadDataStream = true;
     
     if (!!updateStreamFileDto.createStreamDto) {
     //   const addStreamDto = this.streamDTOtoAddStreamDTO(modifyStream.modifyStreamDto);
-    //   buffPromise.push(this.streamService.addStream(addStreamDto, modifyStream.logoFile));
+      buffPromise.push(
+        this.streamService.createStream(updateStreamFileDto.createStreamDto, updateStreamFileDto.logoFile));
     } else if (!!updateStreamFileDto.id && !!updateStreamFileDto.modifyStreamDto) {
     //   const updateStreamDTO = this.streamDTOtoUpdateStreamDTO(modifyStream.modifyStreamDto);
       const modifyStreamDto = updateStreamFileDto.modifyStreamDto;
       buffPromise.push(
         this.streamService.modifyStream(updateStreamFileDto.id, modifyStreamDto, updateStreamFileDto.logoFile)
-      );
-      buffPromise.push(
-        this.streamService.send_form(modifyStreamDto /*, file?: File*/)
       );
     }
     // if (!!updateStreamFileDto.logoFile) {
