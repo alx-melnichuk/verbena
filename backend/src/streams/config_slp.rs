@@ -9,8 +9,6 @@ pub struct ConfigSLP {
     pub slp_max_size: usize,
     // List of valid input mime types for logo files (comma delimited).
     pub slp_valid_types: Vec<String>,
-    // To reduce the size, the logo file is saved with the specified mime type.
-    pub slp_type_to_save: String,
 }
 
 impl ConfigSLP {
@@ -22,13 +20,11 @@ impl ConfigSLP {
         let slp_max_size = std::env::var("SLP_FILES_MAX_SIZE").expect("SLP_FILES_MAX_SIZE must be set");
         let slp_valid_types_str = std::env::var("SLP_FILES_VALID_TYPES").expect("SLP_FILES_VALID_TYPES must be set");
         let slp_valid_types = slp_valid_types_str.split(",").into_iter().map(|v| v.to_string()).collect();
-        let slp_type_to_save = std::env::var("SLP_FILES_TYPE_TO_SAVE").expect("SLP_FILES_TYPE_TO_SAVE must be set");
 
         ConfigSLP {
             slp_dir,
             slp_max_size: slp_max_size.parse::<usize>().unwrap(),
             slp_valid_types,
-            slp_type_to_save,
         }
     }
 }
@@ -37,8 +33,7 @@ impl ConfigSLP {
 pub fn get_test_config() -> ConfigSLP {
     ConfigSLP {
         slp_dir: "./tmp".to_string(),
-        slp_max_size: (1 * 1024 * 1024),
+        slp_max_size: 160,
         slp_valid_types: vec!["image/jpeg".to_string(), "image/png".to_string()],
-        slp_type_to_save: "png".to_string(),
     }
 }

@@ -79,10 +79,8 @@ SMTP_SENDER=
 # -----------------------------------------------------------------------------
 # Directory for storing logo files.
 SLP_FILES_DIR=./logo
-# Maximum size for logo files. (7MB=7340032)
-SLP_FILES_MAX_SIZE=7340032
+# Maximum size for logo files. (5MB=5242880)
+SLP_FILES_MAX_SIZE=5242880
 # List of valid input mime types for logo files (comma delimited).
 SLP_FILES_VALID_TYPES=image/jpeg,image/gif,image/png,image/bmp
-# To reduce the size, the logo file is saved with the specified mime type.
-SLP_FILES_TYPE_TO_SAVE=png
 
