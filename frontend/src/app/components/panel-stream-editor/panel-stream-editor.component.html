@@ -10,7 +10,7 @@
         <input matInput
           type="text"
           formControlName="title"
-          [required]="true"
+          [required]="isCreate"
           [attr.maxlength]="(maxLenTitle > 0 ? maxLenTitle + 1 : null)"
           autocomplete="off"
         />
@@ -20,7 +20,7 @@
       <app-field-descript
         max-wd
         formControlName="descript"
-        [isRequired]="true"
+        [isRequired]="false"
         [label]="'stream_edit.descript'"
         [minLen]="minLenDescription"
         [maxLen]="maxLenDescription"
@@ -47,7 +47,7 @@
       <div class="pse-text">{{ 'stream_edit.tags' | translate }}</div>
 
       <mat-form-field max-wd appearance="outline" color="primary">
-        <mat-label>{{ 'stream_edit.add_tags_max_3' | translate }}</mat-label>
+        <mat-label>{{ 'stream_edit.add_tags_max_4' | translate }}</mat-label>
         <mat-chip-grid #chipGrid aria-label="Enter fruits">
           <mat-chip-row
             *ngFor="let tagValue of tagValues"
@@ -147,7 +147,9 @@
 <sub>
 startDate: {{ controls.startDate.value }}<br/>
 startTime: {{ controls.startTime.value }}<br/>
-errors:{{ formGroup.errors  | json }}<br/>
+errors: {{ formGroup.errors | json }}<br/>
+pristine: {{ formGroup.pristine | json }}<br/>
+invalid: {{ formGroup.invalid | json }}<br/>
 </sub>
 
 <!-- <form 

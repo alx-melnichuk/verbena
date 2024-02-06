@@ -20,9 +20,10 @@ import { IMAGE_VALID_FILE_TYPES, MAX_FILE_SIZE, MOMENT_ISO8601 } from 'src/app/c
 
 import { FieldDescriptComponent } from '../field-descript/field-descript.component';
 import { FieldFileUploadComponent } from '../field-file-upload/field-file-upload.component';
+import { TimeUtil } from 'src/app/utils/time.util';
 // import { DateUtil } from 'src/app/utils/date.utils';
 
-export const TAG_VALUES_MAX = 3;
+export const TAG_VALUES_MAX = 4;
 
 @Component({
   selector: 'app-panel-stream-editor',
@@ -89,8 +90,9 @@ export class PanelStreamEditorComponent implements OnInit {
   @HostBinding('class.global-scroll')
   public get isGlobalScroll(): boolean { return true; }
   
-  private origStreamDto: StreamDto = this.streamDto;
 
+  private origStreamDto: StreamDto = StreamDtoUtil.create();
+  
   constructor(
     private changeDetectorRef: ChangeDetectorRef,
     private alertService: AlertService,
@@ -154,7 +156,7 @@ export class PanelStreamEditorComponent implements OnInit {
 
   public tagValueAdd(event: MatChipInputEvent): void {
     if (this.tagValues.length === 3) { return; }
-    const input = event.input;
+    const input = event.input; // ?!
     const value = event.value;
     if ((value || '').trim()) {
       this.tagValues.push(value.trim());
@@ -183,33 +185,31 @@ export class PanelStreamEditorComponent implements OnInit {
       //   beginDate.set({ hour: timeVal.get('hour'), minute: timeVal.get('minute'), second: timeVal.get('second') });
       //   startTimeStr = beginDate.format(MOMENT_ISO8601);
     }
-    const title: string | undefined = this.getValue(this.controls.title.value, this.origStreamDto.title);
-    const descript: string | undefined = this.getValue(this.controls.title.value, this.origStreamDto.descript);
+    const title: string | undefined = this.controls.title.value || undefined;
+    // const descript: string | undefined = this.getValue(this.controls.descript.value, this.origStreamDto.descript);
+    const descript: string | undefined = this.controls.descript.value || undefined;
     const len = this.tagValues.length;
     const tags = this.tagValues.slice(0, (len > 3 ? 3 : len));
 
     const updateStreamFileDto: UpdateStreamFileDto = {};
-    updateStreamFileDto.logoFile = this.logoFile;
-    if (this.streamDto.id > 0) {
-        updateStreamFileDto.id = this.streamDto.id;
-        updateStreamFileDto.modifyStreamDto = {
-        title,
+    
+    if (this.streamDto.id < 0) { // Mode: "create"
+      updateStreamFileDto.createStreamDto = {
+        title: (title || ''),
         descript,
-        // logo: (!!this.logoFile ? null : undefined),
-        // starttime: (startDateTime != null ? startDateTime.toJSON() : undefined),
-        tags,
-      };
-      // logo?: string | null | undefined;
-      // streamDto.logo = (!!this.logoFile ? null : this.logoOrig); logo?: string | null | undefined;
-    } else {
-        updateStreamFileDto.createStreamDto = {
-        title: title || '',
-        descript,
-        logo: (!!this.logoFile ? null : undefined),
         starttime: (startDateTime != null ? startDateTime.toJSON() : undefined),
         tags,
       };
+    } else { // Mode: "update"
+        updateStreamFileDto.id = this.streamDto.id;
+        updateStreamFileDto.modifyStreamDto = {
+          title: (this.origStreamDto.title != title ? title : undefined),
+          descript: (this.origStreamDto.descript != descript ? descript : undefined),
+          starttime: (startDateTime != null ? startDateTime.toJSON() : undefined),
+          tags,
+        }
     }
+    updateStreamFileDto.logoFile = this.logoFile;
     this.updateStream.emit(updateStreamFileDto);
   }
 
@@ -242,7 +242,7 @@ export class PanelStreamEditorComponent implements OnInit {
       title: streamDto.title,
       descript: streamDto.descript,
       starttime: streamDto.starttime,
-      isStartTime: (!!streamDto.id && !!streamDto.starttime),
+      isStartTime: (streamDto.id > 0 && !!streamDto.starttime),
       startDate: startDate,
       startTime: startTimeStr,
     });
@@ -252,7 +252,7 @@ export class PanelStreamEditorComponent implements OnInit {
     this.tagValues.push(...streamDto.tags);
     this.logoView = streamDto.logo;
     this.logoOrig = streamDto.logo;
-    this.isCreate = (streamDto.id > 0);
+    this.isCreate = (streamDto.id < 0);
     this.controls.startTime.markAsPristine(); // ?
     this.formGroup.markAsPristine(); // ?
   }
@@ -266,11 +266,12 @@ export class PanelStreamEditorComponent implements OnInit {
       startDateTime = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0, 0);
     }
     if (startDateTime != null && startTime != null && startTime.length > 4) {
-        const hoursStr = startTime.slice(0,2);
-        const hours = parseInt(hoursStr, 10);
+        let { hours, minutes } = TimeUtil.parseTimeHHMM(startTime);
+        // const hoursStr = startTime.slice(0,2);
+        // const hours = parseInt(hoursStr, 10);
         startDateTime.setHours(hours);
-        const minutesStr = startTime.slice(3,6);
-        const minutes = parseInt(minutesStr, 10);
+        // const minutesStr = startTime.slice(3,6);
+        // const minutes = parseInt(minutesStr, 10);
         startDateTime.setMinutes(minutes);
         startDateTime.setSeconds(0);
         startDateTime.setMilliseconds(0);
