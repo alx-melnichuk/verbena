@@ -34,15 +34,15 @@ pub const MSG_SOURCE_MIN_LENGTH: &str = "source:min_len";
 pub const SOURCE_MAX: u16 = 255;
 pub const MSG_SOURCE_MAX_LENGTH: &str = "source:max_len";
 
-pub const TAG_NAME_MIN_AMOUNT: u8 = 1;
-pub const MSG_TAG_NAME_MIN_AMOUNT: &str = "tagName:min_amount";
-pub const TAG_NAME_MAX_AMOUNT: u8 = 4;
-pub const MSG_TAG_NAME_MAX_AMOUNT: &str = "tagName:max_amount";
-pub const MSG_TAG_NAME_REQUIRED: &str = "tagName:required";
-pub const TAG_NAME_MIN: u8 = 2;
-pub const MSG_TAG_NAME_MIN_LENGTH: &str = "tagName:min_len";
-pub const TAG_NAME_MAX: u16 = 255;
-pub const MSG_TAG_NAME_MAX_LENGTH: &str = "tagName:max_len";
+pub const TAG_MIN_AMOUNT: u8 = 1;
+pub const MSG_TAG_MIN_AMOUNT: &str = "tag:min_amount";
+pub const TAG_MAX_AMOUNT: u8 = 4;
+pub const MSG_TAG_MAX_AMOUNT: &str = "tag:max_amount";
+pub const MSG_TAG_REQUIRED: &str = "tag:required";
+pub const TAG_MIN: u8 = 2;
+pub const MSG_TAG_MIN_LENGTH: &str = "tag:min_len";
+pub const TAG_MAX: u16 = 255;
+pub const MSG_TAG_MAX_LENGTH: &str = "tag:max_len";
 
 // ** ModifyStreamInfoDto **
 
@@ -73,20 +73,22 @@ pub fn validate_source(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::max_length(&value, SOURCE_MAX.into(), MSG_SOURCE_MAX_LENGTH)?;
     Ok(())
 }
-pub fn validate_tag_name(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::required(value, MSG_TAG_NAME_REQUIRED)?;
-    ValidationChecks::min_length(value, TAG_NAME_MIN.into(), MSG_TAG_NAME_MIN_LENGTH)?;
-    ValidationChecks::max_length(value, TAG_NAME_MAX.into(), MSG_TAG_NAME_MAX_LENGTH)?;
+pub fn validate_tag(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::min_length(value, TAG_MIN.into(), MSG_TAG_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, TAG_MAX.into(), MSG_TAG_MAX_LENGTH)?;
     Ok(())
 }
-pub fn validate_tag_names(tags: &[String]) -> Result<(), ValidationError> {
-    let min_amount = TAG_NAME_MIN_AMOUNT;
-    ValidationChecks::min_amount_of_elem(tags.len(), min_amount.into(), MSG_TAG_NAME_MIN_AMOUNT)?;
-    let max_amount = TAG_NAME_MAX_AMOUNT;
-    ValidationChecks::max_amount_of_elem(tags.len(), max_amount.into(), MSG_TAG_NAME_MAX_AMOUNT)?;
+pub fn validate_tag_amount(tags: &[String]) -> Result<(), ValidationError> {
+    if tags.len() == 0 {
+        ValidationChecks::required(&"", MSG_TAG_REQUIRED)?;
+    }
+    let min_amount = TAG_MIN_AMOUNT;
+    ValidationChecks::min_amount_of_elem(tags.len(), min_amount.into(), MSG_TAG_MIN_AMOUNT)?;
+    let max_amount = TAG_MAX_AMOUNT;
+    ValidationChecks::max_amount_of_elem(tags.len(), max_amount.into(), MSG_TAG_MAX_AMOUNT)?;
 
     for tag_name in tags {
-        validate_tag_name(tag_name)?;
+        validate_tag(tag_name)?;
     }
     Ok(())
 }
@@ -341,7 +343,7 @@ impl Validator for CreateStreamInfoDto {
         if let Some(value) = &self.source {
             errors.push(validate_source(&value).err());
         }
-        errors.push(validate_tag_names(&self.tags).err());
+        errors.push(validate_tag_amount(&self.tags).err());
 
         self.filter_errors(errors)
     }
@@ -430,7 +432,7 @@ impl Validator for ModifyStreamInfoDto {
         }
         if !no_required_fields && self.tags.is_some() {
             if let Some(tags) = &self.tags {
-                errors.push(validate_tag_names(tags).err());
+                errors.push(validate_tag_amount(tags).err());
             }
         }
 
@@ -582,7 +584,7 @@ impl Validator for CreateStreamTagDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        errors.push(validate_tag_name(&self.name).err());
+        errors.push(validate_tag(&self.name).err());
 
         self.filter_errors(errors)
     }
@@ -599,7 +601,7 @@ impl Validator for ModifyStreamTagDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        errors.push(validate_tag_name(&self.name).err());
+        errors.push(validate_tag(&self.name).err());
 
         self.filter_errors(errors)
     }
@@ -749,15 +751,15 @@ impl StreamModelsTest {
         (0..(SOURCE_MAX + 1)).map(|_| 'a').collect()
     }
     pub fn tag_name_min() -> String {
-        (0..(TAG_NAME_MIN - 1)).map(|_| 'a').collect()
+        (0..(TAG_MIN - 1)).map(|_| 'a').collect()
     }
     pub fn tag_name_max() -> String {
-        (0..(TAG_NAME_MAX + 1)).map(|_| 'a').collect()
+        (0..(TAG_MAX + 1)).map(|_| 'a').collect()
     }
     pub fn tag_names_min() -> Vec<String> {
         let mut result: Vec<String> = Vec::new();
-        let tag_name: String = (0..TAG_NAME_MIN).map(|_| 'a').collect();
-        let min_value = TAG_NAME_MIN_AMOUNT - 1;
+        let tag_name: String = (0..TAG_MIN).map(|_| 'a').collect();
+        let min_value = TAG_MIN_AMOUNT - 1;
         let mut idx = 0;
         while idx < min_value {
             result.push(format!("{}{}", tag_name, idx));
@@ -767,8 +769,8 @@ impl StreamModelsTest {
     }
     pub fn tag_names_max() -> Vec<String> {
         let mut result: Vec<String> = Vec::new();
-        let tag_name: String = (0..TAG_NAME_MIN).map(|_| 'a').collect();
-        let max_value = TAG_NAME_MAX_AMOUNT + 1;
+        let tag_name: String = (0..TAG_MIN).map(|_| 'a').collect();
+        let max_value = TAG_MAX_AMOUNT + 1;
         let mut idx = 0;
         while idx < max_value {
             result.push(format!("{}{}", tag_name, idx));

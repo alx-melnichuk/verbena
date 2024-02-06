@@ -1200,7 +1200,7 @@ mod tests {
         }
         let (header, body) = multipart_form_data_builder.build();
 
-        test_post_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TAG_NAME_MIN_AMOUNT).await;
+        test_post_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TAG_MIN_AMOUNT).await;
     }
     #[test]
     async fn test_post_stream_tags_max_amount() {
@@ -1211,7 +1211,7 @@ mod tests {
         }
         let (header, body) = multipart_form_data_builder.build();
 
-        test_post_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TAG_NAME_MAX_AMOUNT).await;
+        test_post_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TAG_MAX_AMOUNT).await;
     }
     #[test]
     async fn test_post_stream_tag_name_empty() {
@@ -1220,7 +1220,7 @@ mod tests {
         multipart_form_data_builder.with_text("tags[]", "");
         let (header, body) = multipart_form_data_builder.build();
 
-        test_post_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TAG_NAME_REQUIRED).await;
+        test_post_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TAG_REQUIRED).await;
     }
     #[test]
     async fn test_post_stream_tag_name_min() {
@@ -1229,7 +1229,7 @@ mod tests {
         multipart_form_data_builder.with_text("tags[]", StreamModelsTest::tag_name_min());
         let (header, body) = multipart_form_data_builder.build();
 
-        test_post_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TAG_NAME_MIN_LENGTH).await;
+        test_post_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TAG_MIN_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_tag_name_max() {
@@ -1238,7 +1238,7 @@ mod tests {
         multipart_form_data_builder.with_text("tags[]", StreamModelsTest::tag_name_max());
         let (header, body) = multipart_form_data_builder.build();
 
-        test_post_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TAG_NAME_MAX_LENGTH).await;
+        test_post_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TAG_MAX_LENGTH).await;
     }
     #[test]
     async fn test_post_stream_invalid_file_type() {
@@ -1691,7 +1691,7 @@ mod tests {
             source: None,
             tags: Some(StreamModelsTest::tag_names_min()),
         };
-        test_put_stream_validate(modify_stream, stream_models::MSG_TAG_NAME_MIN_AMOUNT).await;
+        test_put_stream_validate(modify_stream, stream_models::MSG_TAG_MIN_AMOUNT).await;
     }
     #[test]
     async fn test_put_stream_tags_max_amount() {
@@ -1703,7 +1703,7 @@ mod tests {
             source: None,
             tags: Some(StreamModelsTest::tag_names_max()),
         };
-        test_put_stream_validate(modify_stream, stream_models::MSG_TAG_NAME_MAX_AMOUNT).await;
+        test_put_stream_validate(modify_stream, stream_models::MSG_TAG_MAX_AMOUNT).await;
     }
     #[test]
     async fn test_put_stream_tag_name_empty() {
@@ -1717,7 +1717,7 @@ mod tests {
             source: None,
             tags: Some(tags),
         };
-        test_put_stream_validate(modify_stream, stream_models::MSG_TAG_NAME_REQUIRED).await;
+        test_put_stream_validate(modify_stream, stream_models::MSG_TAG_REQUIRED).await;
     }
     #[test]
     async fn test_put_stream_tag_name_min() {
@@ -1731,7 +1731,7 @@ mod tests {
             source: None,
             tags: Some(tags),
         };
-        test_put_stream_validate(modify_stream, stream_models::MSG_TAG_NAME_MIN_LENGTH).await;
+        test_put_stream_validate(modify_stream, stream_models::MSG_TAG_MIN_LENGTH).await;
     }
     #[test]
     async fn test_put_stream_tag_name_max() {
@@ -1745,7 +1745,7 @@ mod tests {
             source: None,
             tags: Some(tags),
         };
-        test_put_stream_validate(modify_stream, stream_models::MSG_TAG_NAME_MAX_LENGTH).await;
+        test_put_stream_validate(modify_stream, stream_models::MSG_TAG_MAX_LENGTH).await;
     }
     #[test]
     async fn test_put_stream_non_existent_id() {
