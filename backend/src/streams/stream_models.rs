@@ -1,4 +1,3 @@
-use std::borrow;
 use std::collections::HashMap;
 
 use chrono::{DateTime, Duration, Utc};
@@ -47,12 +46,10 @@ pub const MSG_TAG_MAX_LENGTH: &str = "tag:max_len";
 // ** ModifyStreamInfoDto **
 
 pub const MSG_NO_REQUIRED_FIELDS: &str = "Nothing to update! One of the required fields is missing.";
-pub const MSG_CANNOT_SET_PAST_START_DATE: &str = "Cannot update stream with the past starttime!";
 
 //  ** CreateStreamInfoDto **
 
 pub fn validate_title(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::required(value, MSG_TITLE_REQUIRED)?;
     ValidationChecks::min_length(value, TITLE_MIN.into(), MSG_TITLE_MIN_LENGTH)?;
     ValidationChecks::max_length(value, TITLE_MAX.into(), MSG_TITLE_MAX_LENGTH)?;
     Ok(())
@@ -73,22 +70,22 @@ pub fn validate_source(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::max_length(&value, SOURCE_MAX.into(), MSG_SOURCE_MAX_LENGTH)?;
     Ok(())
 }
-pub fn validate_tag(value: &str) -> Result<(), ValidationError> {
+pub fn validate_tag_name(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::min_length(value, TAG_MIN.into(), MSG_TAG_MIN_LENGTH)?;
     ValidationChecks::max_length(value, TAG_MAX.into(), MSG_TAG_MAX_LENGTH)?;
     Ok(())
 }
 pub fn validate_tag_amount(tags: &[String]) -> Result<(), ValidationError> {
-    if tags.len() == 0 {
-        ValidationChecks::required(&"", MSG_TAG_REQUIRED)?;
-    }
     let min_amount = TAG_MIN_AMOUNT;
     ValidationChecks::min_amount_of_elem(tags.len(), min_amount.into(), MSG_TAG_MIN_AMOUNT)?;
     let max_amount = TAG_MAX_AMOUNT;
     ValidationChecks::max_amount_of_elem(tags.len(), max_amount.into(), MSG_TAG_MAX_AMOUNT)?;
-
+    Ok(())
+}
+pub fn validate_tag(tags: &[String]) -> Result<(), ValidationError> {
+    validate_tag_amount(tags)?;
     for tag_name in tags {
-        validate_tag(tag_name)?;
+        validate_tag_name(tag_name)?;
     }
     Ok(())
 }
@@ -320,7 +317,7 @@ pub struct CreateStreamInfoDto {
     pub title: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub descript: Option<String>,
-    #[serde(with = "serial_datetime_option")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "serial_datetime_option")]
     pub starttime: Option<DateTime<Utc>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -332,6 +329,7 @@ impl Validator for CreateStreamInfoDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
+        errors.push(ValidationChecks::required(&self.title, MSG_TITLE_REQUIRED).err());
         errors.push(validate_title(&self.title).err());
 
         if let Some(value) = &self.descript {
@@ -343,7 +341,7 @@ impl Validator for CreateStreamInfoDto {
         if let Some(value) = &self.source {
             errors.push(validate_source(&value).err());
         }
-        errors.push(validate_tag_amount(&self.tags).err());
+        errors.push(validate_tag(&self.tags).err());
 
         self.filter_errors(errors)
     }
@@ -360,6 +358,11 @@ pub struct ModifyStream {
     pub descript: Option<String>,         // type: Text default ""
     pub logo: Option<String>,             // min_len=2 max_len=255 Nullable
     pub starttime: Option<DateTime<Utc>>, //
+    pub live: Option<bool>,               // default false
+    pub state: Option<StreamState>,       // default Waiting
+    pub started: Option<DateTime<Utc>>,   // Nullable
+    pub stopped: Option<DateTime<Utc>>,   // Nullable
+    pub status: Option<bool>,             // default true
     pub source: Option<String>,           // min_len=2 max_len=255 default "obs"
 }
 
@@ -369,8 +372,13 @@ impl ModifyStream {
             user_id: user_id,
             title: modify_stream_info.title.clone(),
             descript: modify_stream_info.descript.clone(),
-            logo: modify_stream_info.logo.clone(),
+            logo: None,
             starttime: modify_stream_info.starttime.clone(),
+            live: None,
+            state: None,
+            started: None,
+            stopped: None,
+            status: None,
             source: modify_stream_info.source.clone(),
         }
     }
@@ -382,14 +390,11 @@ pub struct ModifyStreamInfoDto {
     pub title: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub descript: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub logo: Option<String>,
-    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "serial_datetime_option")]
     pub starttime: Option<DateTime<Utc>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<Vec<String>>,
+    pub tags: Vec<String>,
 }
 
 impl Validator for ModifyStreamInfoDto {
@@ -397,20 +402,15 @@ impl Validator for ModifyStreamInfoDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        let mut no_required_fields = false;
-        if self.title.is_none()
-            && self.descript.is_none()
-            && self.logo.is_none()
-            && self.starttime.is_none()
-            && self.source.is_none()
-            && self.tags.is_none()
-        {
-            let mut err = ValidationError::new(MSG_NO_REQUIRED_FIELDS);
-            let data = true;
-            no_required_fields = true;
-            err.add_param(borrow::Cow::Borrowed("noRequiredFields"), &data);
-            errors.push(Some(err));
-        }
+        // let starttime_is_none = self.starttime.is_none();
+        // let source_is_none = self.source.is_none();
+        // let tags_is_none = self.tags.is_none();
+        // if self.title.is_none() && self.descript.is_none() && starttime_is_none && source_is_none && tags_is_none {
+        //     let mut err = ValidationError::new(MSG_NO_REQUIRED_FIELDS);
+        //     let data = true;
+        //     err.add_param(borrow::Cow::Borrowed("noRequiredFields"), &data);
+        //     errors.push(Some(err));
+        // }
 
         if let Some(value) = &self.title {
             errors.push(validate_title(&value).err());
@@ -418,23 +418,13 @@ impl Validator for ModifyStreamInfoDto {
         if let Some(value) = &self.descript {
             errors.push(validate_descript(&value).err());
         }
-        if let Some(starttime) = &self.starttime {
-            let now_date = Utc::now();
-            if starttime.naive_utc() < now_date.naive_utc() {
-                let mut err = ValidationError::new(MSG_CANNOT_SET_PAST_START_DATE);
-                let data = true;
-                err.add_param(borrow::Cow::Borrowed("starttimeIsPast"), &data);
-                errors.push(Some(err));
-            }
+        if let Some(value) = &self.starttime {
+            errors.push(validate_starttime(value).err());
         }
         if let Some(value) = &self.source {
             errors.push(validate_source(&value).err());
         }
-        if !no_required_fields && self.tags.is_some() {
-            if let Some(tags) = &self.tags {
-                errors.push(validate_tag_amount(tags).err());
-            }
-        }
+        errors.push(validate_tag(&self.tags).err());
 
         self.filter_errors(errors)
     }
@@ -584,7 +574,7 @@ impl Validator for CreateStreamTagDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        errors.push(validate_tag(&self.name).err());
+        errors.push(validate_tag_name(&self.name).err());
 
         self.filter_errors(errors)
     }
@@ -601,7 +591,7 @@ impl Validator for ModifyStreamTagDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        errors.push(validate_tag(&self.name).err());
+        errors.push(validate_tag_name(&self.name).err());
 
         self.filter_errors(errors)
     }
@@ -753,6 +743,9 @@ impl StreamModelsTest {
     pub fn tag_name_min() -> String {
         (0..(TAG_MIN - 1)).map(|_| 'a').collect()
     }
+    pub fn tag_name_enough() -> String {
+        (0..(TAG_MIN)).map(|_| 'a').collect()
+    }
     pub fn tag_name_max() -> String {
         (0..(TAG_MAX + 1)).map(|_| 'a').collect()
     }
@@ -773,6 +766,16 @@ impl StreamModelsTest {
         let max_value = TAG_MAX_AMOUNT + 1;
         let mut idx = 0;
         while idx < max_value {
+            result.push(format!("{}{}", tag_name, idx));
+            idx += 1;
+        }
+        result
+    }
+    pub fn tag_names_enough() -> Vec<String> {
+        let mut result: Vec<String> = Vec::new();
+        let tag_name: String = (0..TAG_MIN).map(|_| 'a').collect();
+        let mut idx = 0;
+        while idx < TAG_MIN_AMOUNT {
             result.push(format!("{}{}", tag_name, idx));
             idx += 1;
         }
