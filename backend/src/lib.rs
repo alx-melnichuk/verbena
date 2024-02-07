@@ -1,7 +1,6 @@
 use std::env;
 
 use actix_cors::Cors;
-use actix_files::Files;
 use actix_multipart::form::tempfile::TempFileConfig;
 use actix_web::{http, web};
 
@@ -70,8 +69,6 @@ pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
             .app_data(web::Data::clone(&data_session_orm))
             .app_data(web::Data::clone(&data_user_recovery_orm))
             .app_data(web::Data::clone(&data_stream_orm))
-            .service(Files::new("/static", "static").show_files_listing())
-            .service(Files::new("/assets", "static/assets").show_files_listing())
             .configure(static_controller::configure)
             .service(
                 web::scope("/api")
