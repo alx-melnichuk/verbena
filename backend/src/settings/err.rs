@@ -1,6 +1,8 @@
 // 400 Bad Request
 pub const CD_VALIDATION: &str = "Validation";
 
+pub const CD_INVALID_TAGS_FIELD: &str = "InvalidTagsField";
+pub const MSG_INVALID_TAGS_FIELD: &str = "Error deserializing the \"tags\" field:";
 // Uploading Image Files
 // Mime file type is not valid.
 pub const CD_INVALID_FILE_TYPE: &str = "InvalidFileType";

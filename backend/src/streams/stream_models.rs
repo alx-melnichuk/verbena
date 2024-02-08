@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{borrow, collections::HashMap};
 
 use chrono::{DateTime, Duration, Utc};
 use diesel::prelude::*;
@@ -394,23 +394,29 @@ pub struct ModifyStreamInfoDto {
     pub starttime: Option<DateTime<Utc>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
-    pub tags: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Vec<String>>,
+}
+
+impl ModifyStreamInfoDto {
+    pub fn check_required_fields(&self) -> Result<(), Vec<ValidationError>> {
+        let starttime_is_none = self.starttime.is_none();
+        let source_is_none = self.source.is_none();
+        let tags_is_none = self.tags.is_none();
+        if self.title.is_none() && self.descript.is_none() && starttime_is_none && source_is_none && tags_is_none {
+            let mut err = ValidationError::new(MSG_NO_REQUIRED_FIELDS);
+            let data = true;
+            err.add_param(borrow::Cow::Borrowed("noRequiredFields"), &data);
+            return Err(vec![err]);
+        }
+        Ok(())
+    }
 }
 
 impl Validator for ModifyStreamInfoDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
-
-        // let starttime_is_none = self.starttime.is_none();
-        // let source_is_none = self.source.is_none();
-        // let tags_is_none = self.tags.is_none();
-        // if self.title.is_none() && self.descript.is_none() && starttime_is_none && source_is_none && tags_is_none {
-        //     let mut err = ValidationError::new(MSG_NO_REQUIRED_FIELDS);
-        //     let data = true;
-        //     err.add_param(borrow::Cow::Borrowed("noRequiredFields"), &data);
-        //     errors.push(Some(err));
-        // }
 
         if let Some(value) = &self.title {
             errors.push(validate_title(&value).err());
@@ -424,7 +430,9 @@ impl Validator for ModifyStreamInfoDto {
         if let Some(value) = &self.source {
             errors.push(validate_source(&value).err());
         }
-        errors.push(validate_tag(&self.tags).err());
+        if let Some(value) = &self.tags {
+            errors.push(validate_tag(value).err());
+        }
 
         self.filter_errors(errors)
     }
@@ -721,6 +729,9 @@ impl StreamModelsTest {
     }
     pub fn title_max() -> String {
         (0..(TITLE_MAX + 1)).map(|_| 'a').collect()
+    }
+    pub fn title_enough() -> String {
+        (0..(TITLE_MIN)).map(|_| 'a').collect()
     }
     pub fn descript_min() -> String {
         (0..(DESCRIPT_MIN - 1)).map(|_| 'a').collect()
