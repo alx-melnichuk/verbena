@@ -104,9 +104,9 @@ constructor(private http: HttpClient) {
     if (!!createStreamDto.source) {
       formData.set('source', createStreamDto.source);
     }
-    for (let idx = 0; idx < createStreamDto.tags.length; idx++) {
-      formData.set('tags[]', createStreamDto.tags[idx]);
-    }  
+    if (createStreamDto.tags.length > 0) {
+        formData.set('tags', JSON.stringify(createStreamDto.tags));
+    }
     if (!!file) {
       formData.set('logofile', file, file.name);
     }
@@ -122,7 +122,7 @@ constructor(private http: HttpClient) {
    * @ required streamId
    * @ access protected
    */
-  public modifyStream0(id: number, modifyStreamDto: ModifyStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
+  public modifyStream(id: number, modifyStreamDto: ModifyStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
     const formData: FormData = new FormData();
     if (!!modifyStreamDto.title) {
       formData.set('title', modifyStreamDto.title);
@@ -131,8 +131,11 @@ constructor(private http: HttpClient) {
       formData.set('descript', modifyStreamDto.descript);
     }
     if (!!file) {
-      formData.set('logo', file, file.name);
+      formData.set('logofile', file, file.name);
+    //   const file2: File = new File([], "foo.txt");
+    //   formData.set('logofile', file2, file2.name);
     }
+
     if (!!modifyStreamDto.starttime) {
       formData.set('starttime', modifyStreamDto.starttime);
     }
@@ -142,12 +145,12 @@ constructor(private http: HttpClient) {
     if (!!modifyStreamDto.tags) {
       formData.set('tags', JSON.stringify(modifyStreamDto.tags));
     }
-    
+    const headers = new HttpHeaders({ 'enctype': 'multipart/form-data' });
     const url = Uri.appUri(`appApi://streams/${id}`);
-    return this.http.put<StreamDto | HttpErrorResponse>(url, formData).toPromise();
+    return this.http.put<StreamDto | HttpErrorResponse>(url, formData, { headers: headers }).toPromise();
   }
 
-  public modifyStream(id: number, modifyStreamDto: ModifyStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
+  public modifyStream2(id: number, modifyStreamDto: ModifyStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
     const data: ModifyStreamDto = {};
     if (!!modifyStreamDto.title) {
       data.title = modifyStreamDto.title;
