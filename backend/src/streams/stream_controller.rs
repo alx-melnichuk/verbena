@@ -171,6 +171,15 @@ pub async fn get_streams(
     Ok(HttpResponse::Ok().json(result)) // 200
 }
 
+fn remove_file_and_log(file_name: &str, msg: &str) {
+    if file_name.len() > 0 {
+        let res_remove = std::fs::remove_file(file_name);
+        if let Err(err) = res_remove {
+            log::error!("{} remove_file({}): error: {:?}", msg, file_name, err);
+        }
+    }
+}
+
 #[derive(Debug, MultipartForm)]
 pub struct CreateStreamForm {
     pub title: Text<String>,
@@ -402,10 +411,15 @@ pub async fn put_stream(
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
-    let mut modify_file = "".to_string();
+    let mut is_delete_logo = false;
+    let mut new_logo_file = "".to_string();
+    let mut logo: Option<Option<String>> = None;
+
     while let Some(temp_file) = logofile {
+        // Delete the old version of the logo file.
+        is_delete_logo = true;
         if temp_file.size == 0 {
-            // TODO implem remove file
+            logo = Some(None); // Set the "logo" field to `NULL`.
             break;
         }
         let config_slp = config_slp.get_ref().clone();
@@ -429,40 +443,48 @@ pub async fn put_stream(
         if let Err(err) = res_upload {
             return Err(err_upload_file(err));
         }
-        modify_file = res_upload.unwrap();
+        new_logo_file = res_upload.unwrap();
+        logo = Some(Some(new_logo_file.clone()));
 
         break;
     }
 
-    let mut modify_stream = stream_models::ModifyStream::convert(modify_stream_info_dto.clone(), curr_user_id);
-    
-    if modify_file.len() > 0 {
-        modify_stream.logo = Some(modify_file.clone());
-    }
     let tags = modify_stream_info_dto.tags.clone();
+    let mut modify_stream = stream_models::ModifyStream::convert(modify_stream_info_dto);
+    modify_stream.logo = logo;
 
     let res_data = web::block(move || {
+        let mut old_logo_file = "".to_string();
+        if is_delete_logo {
+            // Get the logo file name for an entity (stream) by ID.
+            let res_get_stream_logo =
+            stream_orm.get_stream_logo_by_id(id, curr_user_id)
+                .map_err(|e| err_database(e.to_string()));
+
+            if let Ok(Some(old_logo)) = res_get_stream_logo {
+                old_logo_file = old_logo;
+            }
+        }
         // Modify an entity (stream).
-        let res_data =
-            stream_orm.modify_stream(id, modify_stream, tags)
+        let res_stream =
+            stream_orm.modify_stream(id, curr_user_id, modify_stream, tags)
             .map_err(|e| err_database(e.to_string()));
-            res_data
+
+        (old_logo_file, res_stream)
     })
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
 
+    let (old_logo_file, res_stream) = res_data;
+
     let mut opt_stream_info_dto: Option<stream_models::StreamInfoDto> = None;
-    if let Ok(Some((stream, stream_tags)))= res_data {
+    if let Ok(Some((stream, stream_tags)))= res_stream {
         // Merge a "stream" and a corresponding list of "tags".
         let list = stream_models::StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
         opt_stream_info_dto = Some(list[0].clone());
+        remove_file_and_log(&old_logo_file, &"put_stream()");
     } else {
-        if modify_file.len() > 0 {
-            let res_remove = std::fs::remove_file(modify_file.clone());
-            if let Err(err) = res_remove {
-                log::error!("put_stream() std::fs::remove_file({}): error: {:?}", modify_file, err);
-            }
-        }
+        remove_file_and_log(&new_logo_file, &"put_stream()");
     }
     log::info!("put_stream() elapsed time: {:.2?}", now.elapsed());
 

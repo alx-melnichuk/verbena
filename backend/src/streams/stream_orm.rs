@@ -11,10 +11,13 @@ pub trait StreamOrm {
         create_stream: CreateStream,
         tags: &[String],
     ) -> Result<(Stream, Vec<StreamTagStreamId>), String>;
+    /// Get the logo file name for an entity (stream) by ID.
+    fn get_stream_logo_by_id(&self, id: i32, user_id: i32) -> Result<Option<String>, String>;
     /// Modify an entity (stream).
     fn modify_stream(
         &self,
         id: i32,
+        user_id: i32,
         modify_stream: ModifyStream,
         opt_tags: Option<Vec<String>>,
     ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
@@ -141,7 +144,7 @@ pub mod inst {
         ) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            dbg!(&search_stream);
+
             let page: u32 = search_stream.page.unwrap_or(stream_models::SEARCH_STREAM_PAGE);
             let limit: u32 = search_stream.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT);
             let offset: u32 = (page - 1) * limit;
@@ -268,21 +271,42 @@ pub mod inst {
                 Err(err) => Err(format!("{}: {}", err_table, err.to_string())),
             }
         }
+        /// Get the logo file name for an entity (stream) by ID.
+        fn get_stream_logo_by_id(&self, id: i32, user_id: i32) -> Result<Option<String>, String> {
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            // Run query using Diesel to find user by id and return it.
+            let opt_stream = schema::streams::table
+                .filter(dsl::id.eq(id).and(dsl::user_id.eq(user_id)))
+                // .returning(Stream::as_returning())
+                .first::<Stream>(&mut conn)
+                // .get_result(conn)
+                .optional()
+                .map_err(|e| format!("find_stream_by_id: {}", e.to_string()))?;
+
+            if let Some(stream) = opt_stream {
+                Ok(stream.logo)
+            } else {
+                Ok(None)
+            }
+        }
         /// Modify an entity (stream).
         fn modify_stream(
             &self,
             id: i32,
+            user_id: i32,
             modify_stream: ModifyStream,
             opt_tags: Option<Vec<String>>,
         ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
+            // let is_delete_logo = true;
             let mut err_table = "modify_stream";
             let now1 = Instant::now();
             let res_data = conn.transaction::<_, diesel::result::Error, _>(|conn| {
-                // Run query using Diesel to add a new entry (stream). schema::streams::dsl
-                let res_stream = diesel::update(dsl::streams)
-                    .filter(dsl::id.eq(id).and(dsl::user_id.eq(modify_stream.user_id)))
+                // Run query using Diesel to modify the entry (stream). schema::streams::dsl
+                let res_stream = diesel::update(dsl::streams.filter(dsl::id.eq(id).and(dsl::user_id.eq(user_id))))
                     .set(&modify_stream)
                     .returning(Stream::as_returning())
                     .get_result(conn)
@@ -556,16 +580,28 @@ pub mod tests {
 
             Ok((stream_saved, stream_tags))
         }
+        /// Get the logo file name for an entity (stream) by ID.
+        fn get_stream_logo_by_id(&self, id: i32, user_id: i32) -> Result<Option<String>, String> {
+            let stream_info_opt = self
+                .stream_info_vec
+                .iter()
+                .find(|stream| stream.id == id && stream.user_id == user_id)
+                .map(|stream| stream.clone());
 
+            if let Some(stream_info) = stream_info_opt {
+                Ok(stream_info.logo)
+            } else {
+                Ok(None)
+            }
+        }
         /// Modify an entity (stream).
         fn modify_stream(
             &self,
             id: i32,
+            user_id: i32,
             modify_stream: ModifyStream,
             opt_tags: Option<Vec<String>>,
         ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
-            let user_id = modify_stream.user_id;
-
             let stream_opt = self
                 .stream_info_vec
                 .iter()

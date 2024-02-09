@@ -353,10 +353,9 @@ impl Validator for CreateStreamInfoDto {
 #[diesel(table_name = schema::streams)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ModifyStream {
-    pub user_id: i32,
     pub title: Option<String>,            // min_len=2 max_len=255
     pub descript: Option<String>,         // type: Text default ""
-    pub logo: Option<String>,             // min_len=2 max_len=255 Nullable
+    pub logo: Option<Option<String>>,     // min_len=2 max_len=255 Nullable
     pub starttime: Option<DateTime<Utc>>, //
     pub live: Option<bool>,               // default false
     pub state: Option<StreamState>,       // default Waiting
@@ -367,9 +366,8 @@ pub struct ModifyStream {
 }
 
 impl ModifyStream {
-    pub fn convert(modify_stream_info: ModifyStreamInfoDto, user_id: i32) -> Self {
+    pub fn convert(modify_stream_info: ModifyStreamInfoDto) -> Self {
         ModifyStream {
-            user_id: user_id,
             title: modify_stream_info.title.clone(),
             descript: modify_stream_info.descript.clone(),
             logo: None,
