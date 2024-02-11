@@ -273,7 +273,7 @@ pub async fn post_stream(
         }
         let date_time = Utc::now();
         // Get filename.
-        let code_date = coding::encode(date_time);
+        let code_date = coding::encode(date_time, 1);
         // Upload the logo file.
         let file_name = format!("{}_{}", curr_user_id, code_date);
         let res_upload = upload::file_upload(temp_file, config_slp, file_name);
@@ -434,9 +434,8 @@ pub async fn put_stream(
         if let Err(err_file_size) = upload::file_validate_size(&temp_file, max_size) {
             return Err(err_invalid_file_size(err_file_size, max_size));
         }
-        let date_time = Utc::now();
         // Get filename.
-        let code_date = coding::encode(date_time);
+        let code_date = coding::encode(Utc::now(), 1);
         // Upload the logo file.
         let file_name = format!("{}_{}", curr_user_id, code_date);
         let res_upload = upload::file_upload(temp_file, config_slp, file_name);
@@ -1090,7 +1089,13 @@ mod tests {
         assert_eq!(response.pages, 1);
     }
 
-    fn save_file_png(file_name: &str, code: u8) -> Result<String, String> {
+    fn save_empty_file(file_name: &str) -> Result<String, String> {
+        let path_file: path::PathBuf = ["./", file_name].iter().collect();
+        let path = path_file.to_str().unwrap().to_string();
+        let _ = fs::File::create(path_file).map_err(|e| e.to_string())?;
+        Ok(path)
+    }
+    fn save_file_png(path_file: &str, code: u8) -> Result<String, String> {
         let header: Vec<u8> = vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
         let footer: Vec<u8> = vec![0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82];
         #[rustfmt::skip]
@@ -1120,8 +1125,8 @@ mod tests {
             0xBA, 0x00, 0x18, 0x09, 0x19, 0x00, 0x50, 0xDE,  0x2B, 0x56, 0xC3, 0xBD, 0xEC, 0xAA,
         ];
 
-        let path_file: path::PathBuf = ["./", file_name].iter().collect();
-        let path = path_file.to_str().unwrap().to_string();
+        // let path_file: path::PathBuf = ["./", file_name].iter().collect();
+        // let path = path_file.to_str().unwrap().to_string();
 
         let mut file = fs::File::create(path_file).map_err(|e| e.to_string())?;
         file.write_all(header.as_ref()).map_err(|e| e.to_string())?;
@@ -1130,7 +1135,7 @@ mod tests {
         file.write_all(buf.as_ref()).map_err(|e| e.to_string())?;
         file.write_all(footer.as_ref()).map_err(|e| e.to_string())?;
 
-        Ok(path)
+        Ok(path_file.to_string())
     }
 
     // ** post_stream **
@@ -1406,7 +1411,8 @@ mod tests {
     #[test]
     async fn test_post_stream_invalid_file_type() {
         let name1_file = "post_ellipse5x5.png";
-        let path_name1_file = save_file_png(&name1_file, 1).unwrap();
+        let path_name1_file = format!("./{}", &name1_file);
+        save_file_png(&path_name1_file, 1).unwrap();
         let tags: Vec<String> = StreamModelsTest::tag_names_enough();
         let tags_s = serde_json::to_string(&tags).unwrap();
 
@@ -1418,12 +1424,13 @@ mod tests {
         let (header, body) = form_builder.build();
 
         test_post_stream_validate(header, body, err::CD_INVALID_FILE_TYPE, &[err::MSG_INVALID_IMAGE_FILE]).await;
-        let _ = fs::remove_file(path_name1_file);
+        let _ = fs::remove_file(&path_name1_file);
     }
     #[test]
     async fn test_post_stream_invalid_file_size() {
         let name1_file = "post_circuit5x5.png";
-        let path_name1_file = save_file_png(&name1_file, 2).unwrap();
+        let path_name1_file = format!("./{}", &name1_file);
+        save_file_png(&path_name1_file, 2).unwrap();
         let tags: Vec<String> = StreamModelsTest::tag_names_enough();
         let tags_s = serde_json::to_string(&tags).unwrap();
 
@@ -1435,7 +1442,7 @@ mod tests {
         let (header, body) = form_builder.build();
 
         test_post_stream_validate(header, body, err::CD_INVALID_FILE_SIZE, &[err::MSG_INVALID_FILE_SIZE]).await;
-        let _ = fs::remove_file(path_name1_file);
+        let _ = fs::remove_file(&path_name1_file);
     }
     #[test]
     async fn test_post_stream_valid_data_without_file() {
@@ -1507,7 +1514,8 @@ mod tests {
     #[test]
     async fn test_post_stream_valid_data_with_file() {
         let name1_file = "post_circle5x5.png";
-        let path_name1_file = save_file_png(&name1_file, 1).unwrap();
+        let path_name1_file = format!("./{}", &name1_file);
+        save_file_png(&path_name1_file, 1).unwrap();
 
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
@@ -1554,21 +1562,15 @@ mod tests {
         let _ = fs::remove_file(stream_dto_res_logo.clone());
 
         let path_logo = path::PathBuf::from(stream_dto_res_logo);
-        let file_stem = path_logo.file_stem().unwrap().to_str().unwrap().to_string(); // file_stem: "1100_3226061294TF"
+        let file_stem = path_logo.file_stem().unwrap().to_str().unwrap().to_string();
         let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
-        let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
-        let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
+        let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string();
+        let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string();
         assert_eq!(file_stem_part1, user1_id);
-        let date_time2 = coding::decode(file_stem_part2).unwrap();
+        let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_time2_s = date_time2.to_rfc3339_opts(SecondsFormat::Secs, true); // date_time2_s: 2024-02-06T09:55:41Z
         let now_s = now.to_rfc3339_opts(SecondsFormat::Secs, true); // now_s       : 2024-02-06T09:55:41Z
         assert_eq!(now_s, date_time2_s);
-    }
-    fn save_empty_file(file_name: &str) -> Result<String, String> {
-        let path_file: path::PathBuf = ["./", file_name].iter().collect();
-        let path = path_file.to_str().unwrap().to_string();
-        let _ = fs::File::create(path_file).map_err(|e| e.to_string())?;
-        Ok(path)
     }
     #[test]
     async fn test_post_stream_valid_data_with_empty_file() {
@@ -1859,7 +1861,8 @@ mod tests {
     #[test]
     async fn test_put_stream_invalid_file_type() {
         let name1_file = "put_ellipse5x5.png";
-        let path_name1_file = save_file_png(&name1_file, 1).unwrap();
+        let path_name1_file = format!("./{}", &name1_file);
+        save_file_png(&path_name1_file, 1).unwrap();
 
         let mut form_builder = MultiPartFormDataBuilder::new();
         form_builder.with_file(path_name1_file.to_string(), "logofile", "image/bmp", name1_file);
@@ -1871,7 +1874,8 @@ mod tests {
     #[test]
     async fn test_put_stream_invalid_file_size() {
         let name1_file = "put_circuit5x5.png";
-        let path_name1_file = save_file_png(&name1_file, 2).unwrap();
+        let path_name1_file = format!("./{}", &name1_file);
+        save_file_png(&path_name1_file, 2).unwrap();
 
         let mut form_builder = MultiPartFormDataBuilder::new();
         form_builder.with_file(path_name1_file.to_string(), "logofile", "image/png", name1_file);
@@ -2001,9 +2005,10 @@ mod tests {
         assert_eq!(stream_dto_res.id, stream2b_dto_ser.id);
     }
     #[test]
-    async fn test_put_stream_valid_data_with_file() {
-        let name1_file = "put_circle5x5.png";
-        let path_name1_file = save_file_png(&name1_file, 1).unwrap();
+    async fn test_put_stream_valid_data_with_file_a() {
+        let name1_file = "put_circle5x5_a_new.png";
+        let path_name1_file = format!("./{}", name1_file);
+        save_file_png(&path_name1_file, 1).unwrap();
 
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
@@ -2034,6 +2039,7 @@ mod tests {
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
         let factory = put_stream;
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+
         let _ = fs::remove_file(path_name1_file);
 
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
@@ -2046,6 +2052,8 @@ mod tests {
 
         assert!(stream_dto_res_logo.len() > 0);
         assert!(stream_dto_res_logo.starts_with(&config_slp.slp_dir));
+
+        assert!(path::Path::new(&stream_dto_res_logo).exists());
         let _ = fs::remove_file(stream_dto_res_logo.clone());
 
         let path_logo = path::PathBuf::from(stream_dto_res_logo);
@@ -2054,10 +2062,143 @@ mod tests {
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
         assert_eq!(file_stem_part1, user1_id);
-        let date_time2 = coding::decode(file_stem_part2).unwrap();
+        let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_time2_s = date_time2.to_rfc3339_opts(SecondsFormat::Secs, true); // date_time2_s: 2024-02-06T09:55:41Z
         let now_s = now.to_rfc3339_opts(SecondsFormat::Secs, true); // now_s       : 2024-02-06T09:55:41Z
         assert_eq!(now_s, date_time2_s);
+    }
+    #[test]
+    async fn test_put_stream_valid_data_with_file_b() {
+        let config_slp = config_slp::get_test_config();
+
+        let name0_file = "put_circle5x5_b_old.png";
+        let mut path = path::PathBuf::from(&config_slp.slp_dir);
+        path.push(name0_file);
+        let path_name0_file = path.to_str().unwrap().to_string();
+        save_file_png(&(path_name0_file.clone()), 1).unwrap();
+
+        let name1_file = "put_circle5x5_b_new.png";
+        let path_name1_file = format!("./{}", name1_file);
+        save_file_png(&path_name1_file, 1).unwrap();
+
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let now = Utc::now();
+        let mut stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+        stream.logo = Some(path_name0_file.clone());
+
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+
+        let mut form_builder = MultiPartFormDataBuilder::new();
+
+        form_builder.with_file(path_name1_file.to_string(), "logofile", "image/png", name1_file);
+        let (header, body) = form_builder.build();
+
+        // PUT api/streams/{id}
+        let request = test::TestRequest::put()
+            .uri(&format!("/streams/{}", stream_dto.id))
+            .insert_header(header)
+            .set_payload(body);
+
+        let user1_id = user1.id.to_string();
+        let vec = (vec![user1], vec![session1], vec![stream_dto]);
+        let factory = put_stream;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+
+        let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
+        let _ = fs::remove_file(path_name0_file.clone());
+        let _ = fs::remove_file(&path_name1_file);
+
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+        assert!(!is_exists_logo_old);
+
+        let body = test::read_body(resp).await;
+        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let config_slp = config_slp::get_test_config();
+        let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
+
+        assert!(stream_dto_res_logo.len() > 0);
+        assert!(stream_dto_res_logo.starts_with(&config_slp.slp_dir));
+
+        let is_exists_logo_new = path::Path::new(&stream_dto_res_logo).exists();
+        assert!(is_exists_logo_new);
+        let _ = fs::remove_file(&stream_dto_res_logo);
+
+        let path_logo = path::PathBuf::from(stream_dto_res_logo);
+        let file_stem = path_logo.file_stem().unwrap().to_str().unwrap().to_string(); // file_stem: "1100_3226061294TF"
+        let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
+        let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
+        let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
+        assert_eq!(file_stem_part1, user1_id);
+        let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
+        let date_time2_s = date_time2.to_rfc3339_opts(SecondsFormat::Secs, true); // date_time2_s: 2024-02-06T09:55:41Z
+        let now_s = now.to_rfc3339_opts(SecondsFormat::Secs, true); // now_s       : 2024-02-06T09:55:41Z
+        assert_eq!(now_s, date_time2_s);
+    }
+    #[test]
+    async fn test_put_stream_valid_data_with_file_c() {
+        let config_slp = config_slp::get_test_config();
+
+        let name0_file = "put_circle5x5_c_old.png";
+        let mut path = path::PathBuf::from(&config_slp.slp_dir);
+        path.push(name0_file);
+        let path_name0_file = path.to_str().unwrap().to_string();
+        save_file_png(&(path_name0_file.clone()), 1).unwrap();
+
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let now = Utc::now();
+        let mut stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+        stream.logo = Some(path_name0_file.clone());
+
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+
+        let mut form_builder = MultiPartFormDataBuilder::new();
+        form_builder.with_text("title", "title1".to_string());
+
+        let (header, body) = form_builder.build();
+
+        // PUT api/streams/{id}
+        let request = test::TestRequest::put()
+            .uri(&format!("/streams/{}", stream_dto.id))
+            .insert_header(header)
+            .set_payload(body);
+
+        let vec = (vec![user1], vec![session1], vec![stream_dto]);
+        let factory = put_stream;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+
+        let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
+        let _ = fs::remove_file(path_name0_file.clone());
+
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let config_slp = config_slp::get_test_config();
+
+        let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
+
+        assert!(stream_dto_res_logo.len() > 0);
+        assert!(stream_dto_res_logo.starts_with(&config_slp.slp_dir));
+
+        assert_eq!(&path_name0_file, &stream_dto_res_logo);
+        assert!(is_exists_logo_old);
     }
 
     // ** delete_stream **
