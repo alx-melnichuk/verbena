@@ -609,15 +609,14 @@ pub mod tests {
                 .map(|stream| stream.clone());
 
             if let Some(stream) = stream_opt {
+                #[rustfmt::skip]
+                let logo = match modify_stream.logo { Some(logo) => logo, None => stream.logo };
                 let stream_saved = Stream {
                     id: stream.id,
                     user_id: stream.user_id,
                     title: modify_stream.title.unwrap_or(stream.title.to_string()),
                     descript: modify_stream.descript.unwrap_or(stream.descript.to_string()),
-                    logo: match modify_stream.logo {
-                        Some(logo) => Some(logo),
-                        None => stream.logo,
-                    },
+                    logo,
                     starttime: modify_stream.starttime.unwrap_or(stream.starttime.clone()),
                     live: stream.live,
                     state: stream.state.clone(),
