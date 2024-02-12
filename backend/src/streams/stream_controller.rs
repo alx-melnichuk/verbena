@@ -1089,11 +1089,9 @@ mod tests {
         assert_eq!(response.pages, 1);
     }
 
-    fn save_empty_file(file_name: &str) -> Result<String, String> {
-        let path_file: path::PathBuf = ["./", file_name].iter().collect();
-        let path = path_file.to_str().unwrap().to_string();
+    fn save_empty_file(path_file: &str) -> Result<String, String> {
         let _ = fs::File::create(path_file).map_err(|e| e.to_string())?;
-        Ok(path)
+        Ok(path_file.to_string())
     }
     fn save_file_png(path_file: &str, code: u8) -> Result<String, String> {
         let header: Vec<u8> = vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
@@ -1125,8 +1123,9 @@ mod tests {
             0xBA, 0x00, 0x18, 0x09, 0x19, 0x00, 0x50, 0xDE,  0x2B, 0x56, 0xC3, 0xBD, 0xEC, 0xAA,
         ];
 
-        // let path_file: path::PathBuf = ["./", file_name].iter().collect();
-        // let path = path_file.to_str().unwrap().to_string();
+        // if path::Path::new(&path_file).exists() {
+        //     let _ = fs::remove_file(&path_file);
+        // }
 
         let mut file = fs::File::create(path_file).map_err(|e| e.to_string())?;
         file.write_all(header.as_ref()).map_err(|e| e.to_string())?;
@@ -1191,7 +1190,7 @@ mod tests {
         assert!(body_str.contains(MSG_MULTIPART_STREAM_INCOMPLETE));
     }
 
-    async fn test_post_stream_validate(header: (String, String), body: Vec<u8>, code: &str, msgs: &[&str]) {
+    async fn test_stream_validate(mode: u8, header: (String, String), body: Vec<u8>, code: &str, msgs: &[&str]) {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
@@ -1200,17 +1199,28 @@ mod tests {
         // Create token values.
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        // POST api/streams
-        let request = test::TestRequest::post()
-            .uri("/streams")
-            .insert_header(header)
-            .set_payload(body);
+        let now = Utc::now();
+        let stream = create_stream(0, user1.id, "title0", "tag01,tag02", now);
 
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+
+        let request = if mode == 1 {
+            test::TestRequest::post().uri("/streams") // POST api/streams
+        } else {
+            // PUT api/streams/{id}
+            test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id))
+        };
+        let request = request.insert_header(header).set_payload(body);
+
+        let vec = (vec![user1], vec![session1], vec![stream_dto]);
+
+        let resp = if mode == 1 {
+            call_service1(config_jwt, vec, &token, post_stream, request).await
+        } else {
+            call_service1(config_jwt, vec, &token, put_stream, request).await
+        };
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
         let body = test::read_body(resp).await;
         let mut app_err_vec: Vec<AppError> = vec![];
         if err::CD_VALIDATION == code {
@@ -1237,7 +1247,7 @@ mod tests {
         let (header, body) = form_builder.build();
 
         let msgs = [stream_models::MSG_TITLE_REQUIRED, stream_models::MSG_TITLE_MIN_LENGTH];
-        test_post_stream_validate(header, body, err::CD_VALIDATION, &msgs).await;
+        test_stream_validate(1, header, body, err::CD_VALIDATION, &msgs).await;
     }
     #[test]
     async fn test_post_stream_title_min() {
@@ -1249,8 +1259,8 @@ mod tests {
             .with_text("title", StreamModelsTest::title_min())
             .with_text("tags", tags_s);
         let (header, body) = form_builder.build();
-
-        test_post_stream_validate(header, body, err::CD_VALIDATION, &[stream_models::MSG_TITLE_MIN_LENGTH]).await;
+        #[rustfmt::skip]
+        test_stream_validate(1, header, body, err::CD_VALIDATION, &[stream_models::MSG_TITLE_MIN_LENGTH]).await;
     }
     #[test]
     async fn test_post_stream_title_max() {
@@ -1262,8 +1272,8 @@ mod tests {
             .with_text("title", StreamModelsTest::title_max())
             .with_text("tags", tags_s);
         let (header, body) = form_builder.build();
-
-        test_post_stream_validate(header, body, err::CD_VALIDATION, &[stream_models::MSG_TITLE_MAX_LENGTH]).await;
+        #[rustfmt::skip]
+        test_stream_validate(1, header, body, err::CD_VALIDATION, &[stream_models::MSG_TITLE_MAX_LENGTH]).await;
     }
     #[test]
     async fn test_post_stream_descript_min() {
@@ -1278,7 +1288,7 @@ mod tests {
         let (header, body) = form_builder.build();
 
         let msgs = [stream_models::MSG_DESCRIPT_MIN_LENGTH];
-        test_post_stream_validate(header, body, err::CD_VALIDATION, &msgs).await;
+        test_stream_validate(1, header, body, err::CD_VALIDATION, &msgs).await;
     }
     #[test]
     async fn test_post_stream_descript_max() {
@@ -1293,7 +1303,7 @@ mod tests {
         let (header, body) = form_builder.build();
 
         let msgs = [stream_models::MSG_DESCRIPT_MAX_LENGTH];
-        test_post_stream_validate(header, body, err::CD_VALIDATION, &msgs).await;
+        test_stream_validate(1, header, body, err::CD_VALIDATION, &msgs).await;
     }
     #[test]
     async fn test_post_stream_starttime_min() {
@@ -1310,7 +1320,7 @@ mod tests {
         let (header, body) = form_builder.build();
 
         let msgs = [stream_models::MSG_MIN_VALID_STARTTIME];
-        test_post_stream_validate(header, body, err::CD_VALIDATION, &msgs).await;
+        test_stream_validate(1, header, body, err::CD_VALIDATION, &msgs).await;
     }
     #[test]
     async fn test_post_stream_source_min() {
@@ -1325,7 +1335,7 @@ mod tests {
         let (header, body) = form_builder.build();
 
         let msgs = [stream_models::MSG_SOURCE_MIN_LENGTH];
-        test_post_stream_validate(header, body, err::CD_VALIDATION, &msgs).await;
+        test_stream_validate(1, header, body, err::CD_VALIDATION, &msgs).await;
     }
     #[test]
     async fn test_post_stream_source_max() {
@@ -1340,7 +1350,7 @@ mod tests {
         let (header, body) = form_builder.build();
 
         let msgs = [stream_models::MSG_SOURCE_MAX_LENGTH];
-        test_post_stream_validate(header, body, err::CD_VALIDATION, &msgs).await;
+        test_stream_validate(1, header, body, err::CD_VALIDATION, &msgs).await;
     }
     #[test]
     async fn test_post_stream_tags_min_amount() {
@@ -1352,8 +1362,8 @@ mod tests {
             .with_text("title", StreamModelsTest::title_enough())
             .with_text("tags", tags_s);
         let (header, body) = form_builder.build();
-
-        test_post_stream_validate(header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MIN_AMOUNT]).await;
+        #[rustfmt::skip]
+        test_stream_validate(1, header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MIN_AMOUNT]).await;
     }
     #[test]
     async fn test_post_stream_tags_max_amount() {
@@ -1365,8 +1375,8 @@ mod tests {
             .with_text("title", StreamModelsTest::title_enough())
             .with_text("tags", tags_s);
         let (header, body) = form_builder.build();
-
-        test_post_stream_validate(header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MAX_AMOUNT]).await;
+        #[rustfmt::skip]
+        test_stream_validate(1, header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MAX_AMOUNT]).await;
     }
     #[test]
     async fn test_post_stream_tag_name_min() {
@@ -1379,8 +1389,8 @@ mod tests {
             .with_text("title", StreamModelsTest::title_enough())
             .with_text("tags", tags_s);
         let (header, body) = form_builder.build();
-
-        test_post_stream_validate(header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MIN_LENGTH]).await;
+        #[rustfmt::skip]
+        test_stream_validate(1, header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MIN_LENGTH]).await;
     }
     #[test]
     async fn test_post_stream_tag_name_max() {
@@ -1393,8 +1403,8 @@ mod tests {
             .with_text("title", StreamModelsTest::title_enough())
             .with_text("tags", tags_s);
         let (header, body) = form_builder.build();
-
-        test_post_stream_validate(header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MAX_LENGTH]).await;
+        #[rustfmt::skip]
+        test_stream_validate(1, header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MAX_LENGTH]).await;
     }
     #[test]
     async fn test_post_stream_invalid_tag() {
@@ -1405,7 +1415,7 @@ mod tests {
         let (header, body) = form_builder.build();
         #[rustfmt::skip]
         let error = format!("{} {}", err::MSG_INVALID_TAGS_FIELD, MSG_EXPECTED_VALUE_AT_LINE_COLUMN);
-        test_post_stream_validate(header, body, err::CD_INVALID_TAGS_FIELD, &[&error]).await;
+        test_stream_validate(1, header, body, err::CD_INVALID_TAGS_FIELD, &[&error]).await;
     }
 
     #[test]
@@ -1422,8 +1432,8 @@ mod tests {
             .with_text("tags", tags_s);
         form_builder.with_file(path_name1_file.to_string(), "logofile", "image/bmp", name1_file);
         let (header, body) = form_builder.build();
-
-        test_post_stream_validate(header, body, err::CD_INVALID_FILE_TYPE, &[err::MSG_INVALID_IMAGE_FILE]).await;
+        #[rustfmt::skip]
+        test_stream_validate(1, header, body, err::CD_INVALID_FILE_TYPE, &[err::MSG_INVALID_IMAGE_FILE]).await;
         let _ = fs::remove_file(&path_name1_file);
     }
     #[test]
@@ -1440,12 +1450,12 @@ mod tests {
             .with_text("tags", tags_s);
         form_builder.with_file(path_name1_file.to_string(), "logofile", "image/png", name1_file);
         let (header, body) = form_builder.build();
-
-        test_post_stream_validate(header, body, err::CD_INVALID_FILE_SIZE, &[err::MSG_INVALID_FILE_SIZE]).await;
+        #[rustfmt::skip]
+        test_stream_validate(1, header, body, err::CD_INVALID_FILE_SIZE, &[err::MSG_INVALID_FILE_SIZE]).await;
         let _ = fs::remove_file(&path_name1_file);
     }
     #[test]
-    async fn test_post_stream_valid_data_without_file() {
+    async fn test_post_stream_valid_data_without_logo_file() {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
@@ -1493,6 +1503,7 @@ mod tests {
         assert_eq!(stream_dto_res.title, stream1b_dto_ser.title);
         assert_eq!(stream_dto_res.descript, stream1b_dto_ser.descript);
         assert_eq!(stream_dto_res.logo, stream1b_dto_ser.logo);
+        assert!(stream_dto_res.logo.is_none());
         assert_eq!(stream_dto_res.starttime, stream1b_dto_ser.starttime);
         assert_eq!(stream_dto_res.live, stream1b_dto_ser.live);
         assert_eq!(stream_dto_res.state, stream1b_dto_ser.state);
@@ -1502,17 +1513,17 @@ mod tests {
         assert_eq!(stream_dto_res.source, stream1b_dto_ser.source);
         assert_eq!(stream_dto_res.tags, stream1b_dto_ser.tags);
         assert_eq!(stream_dto_res.is_my_stream, stream1b_dto_ser.is_my_stream);
-        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
-        let res_created_at = stream_dto_res.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
-        let ser_created_at = stream1b_dto_ser.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z" "2024-02-06 09:55:41"
+        let res_created_at = stream_dto_res.created_at.format(date_format).to_string();
+        let ser_created_at = stream1b_dto_ser.created_at.format(date_format).to_string();
         assert_eq!(res_created_at, ser_created_at);
-        let res_updated_at = stream_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
-        let ser_updated_at = stream1b_dto_ser.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        let res_updated_at = stream_dto_res.updated_at.format(date_format).to_string();
+        let ser_updated_at = stream1b_dto_ser.updated_at.format(date_format).to_string();
         assert_eq!(res_updated_at, ser_updated_at);
         assert_eq!(stream_dto_res.id, stream1b_dto_ser.id);
     }
     #[test]
-    async fn test_post_stream_valid_data_with_file() {
+    async fn test_post_stream_valid_data_with_logo_file_new() {
         let name1_file = "post_circle5x5.png";
         let path_name1_file = format!("./{}", &name1_file);
         save_file_png(&path_name1_file, 1).unwrap();
@@ -1559,7 +1570,10 @@ mod tests {
 
         assert!(stream_dto_res_logo.len() > 0);
         assert!(stream_dto_res_logo.starts_with(&config_slp.slp_dir));
-        let _ = fs::remove_file(stream_dto_res_logo.clone());
+
+        let is_exists_logo_new = path::Path::new(&stream_dto_res_logo).exists();
+        let _ = fs::remove_file(&stream_dto_res_logo);
+        assert!(is_exists_logo_new);
 
         let path_logo = path::PathBuf::from(stream_dto_res_logo);
         let file_stem = path_logo.file_stem().unwrap().to_str().unwrap().to_string();
@@ -1568,14 +1582,17 @@ mod tests {
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string();
         assert_eq!(file_stem_part1, user1_id);
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
-        let date_time2_s = date_time2.to_rfc3339_opts(SecondsFormat::Secs, true); // date_time2_s: 2024-02-06T09:55:41Z
-        let now_s = now.to_rfc3339_opts(SecondsFormat::Secs, true); // now_s       : 2024-02-06T09:55:41Z
+        let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
+        let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
+        let now_s = now.format(date_format).to_string(); // : 2024-02-06 09:55:41
         assert_eq!(now_s, date_time2_s);
     }
     #[test]
     async fn test_post_stream_valid_data_with_empty_file() {
-        let name1_file = "circle_empty.png";
-        let path_name1_file = save_empty_file(name1_file).unwrap();
+        let name1_file = "post_circle_empty.png";
+        let path_name1_file = format!("./{}", name1_file);
+        eprintln!("path_name1_file: {}", path_name1_file);
+        save_empty_file(&path_name1_file).unwrap();
 
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
@@ -1707,78 +1724,37 @@ mod tests {
         assert!(app_err.message.starts_with(&msg));
     }
 
-    async fn test_put_stream_validate(header: (String, String), body: Vec<u8>, code: &str, err_msg: &str) {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let now = Utc::now();
-        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
-
-        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
-        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
-
-        // PUT api/streams
-        let request = test::TestRequest::put()
-            .uri(&format!("/streams/{}", stream_dto.id))
-            .insert_header(header)
-            .set_payload(body);
-
-        let vec = (vec![user1], vec![session1], vec![stream_dto]);
-        let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
-        let mut app_err_vec: Vec<AppError> = vec![];
-        if err::CD_VALIDATION == code {
-            let app_err_v: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-            app_err_vec.extend(app_err_v);
-        } else {
-            let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-            app_err_vec.extend(vec![app_err]);
-        }
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, code);
-        assert_eq!(app_err.message, err_msg);
-    }
-
     #[test]
     async fn test_put_stream_title_min_amount() {
         let mut form_builder = MultiPartFormDataBuilder::new();
         form_builder.with_text("title", StreamModelsTest::title_min());
         let (header, body) = form_builder.build();
-
-        test_put_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TITLE_MIN_LENGTH).await;
+        #[rustfmt::skip]
+        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_TITLE_MIN_LENGTH]).await;
     }
     #[test]
     async fn test_put_stream_title_max_amount() {
         let mut form_builder = MultiPartFormDataBuilder::new();
         form_builder.with_text("title", StreamModelsTest::title_max());
         let (header, body) = form_builder.build();
-
-        test_put_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TITLE_MAX_LENGTH).await;
+        #[rustfmt::skip]
+        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_TITLE_MAX_LENGTH]).await;
     }
     #[test]
     async fn test_put_stream_descript_min() {
         let mut form_builder = MultiPartFormDataBuilder::new();
         form_builder.with_text("descript", StreamModelsTest::descript_min());
         let (header, body) = form_builder.build();
-
-        test_put_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_DESCRIPT_MIN_LENGTH).await;
+        #[rustfmt::skip]
+        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_DESCRIPT_MIN_LENGTH]).await;
     }
     #[test]
     async fn test_put_stream_descript_max() {
         let mut form_builder = MultiPartFormDataBuilder::new();
         form_builder.with_text("descript", StreamModelsTest::descript_max());
         let (header, body) = form_builder.build();
-
-        test_put_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_DESCRIPT_MAX_LENGTH).await;
+        #[rustfmt::skip]
+        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_DESCRIPT_MAX_LENGTH]).await;
     }
     #[test]
     async fn test_put_stream_starttime_now() {
@@ -1787,24 +1763,24 @@ mod tests {
         let mut form_builder = MultiPartFormDataBuilder::new();
         form_builder.with_text("starttime", starttime_s);
         let (header, body) = form_builder.build();
-
-        test_put_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_MIN_VALID_STARTTIME).await;
+        #[rustfmt::skip]
+        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_MIN_VALID_STARTTIME]).await;
     }
     #[test]
     async fn test_put_stream_source_min() {
         let mut form_builder = MultiPartFormDataBuilder::new();
         form_builder.with_text("source", StreamModelsTest::source_min());
         let (header, body) = form_builder.build();
-
-        test_put_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_SOURCE_MIN_LENGTH).await;
+        #[rustfmt::skip]
+        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_SOURCE_MIN_LENGTH]).await;
     }
     #[test]
     async fn test_put_stream_source_max() {
         let mut form_builder = MultiPartFormDataBuilder::new();
         form_builder.with_text("source", StreamModelsTest::source_max());
         let (header, body) = form_builder.build();
-
-        test_put_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_SOURCE_MAX_LENGTH).await;
+        #[rustfmt::skip]
+        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_SOURCE_MAX_LENGTH]).await;
     }
     #[test]
     async fn test_put_stream_tags_min_amount() {
@@ -1814,8 +1790,8 @@ mod tests {
             let tags_s = serde_json::to_string(&tag_names_min).unwrap();
             form_builder.with_text("tags", tags_s);
             let (header, body) = form_builder.build();
-
-            test_put_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TAG_MIN_AMOUNT).await;
+            #[rustfmt::skip]
+            test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MIN_AMOUNT]).await;
         }
     }
     #[test]
@@ -1825,8 +1801,8 @@ mod tests {
         let tags_s = serde_json::to_string(&tags).unwrap();
         form_builder.with_text("tags", tags_s);
         let (header, body) = form_builder.build();
-
-        test_put_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TAG_MAX_AMOUNT).await;
+        #[rustfmt::skip]
+        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MAX_AMOUNT]).await;
     }
     #[test]
     async fn test_put_stream_tag_name_min() {
@@ -1835,8 +1811,8 @@ mod tests {
         let tags_s = serde_json::to_string(&tags).unwrap();
         form_builder.with_text("tags", tags_s);
         let (header, body) = form_builder.build();
-
-        test_put_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TAG_MIN_LENGTH).await;
+        #[rustfmt::skip]
+        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MIN_LENGTH]).await;
     }
     #[test]
     async fn test_put_stream_tag_name_max() {
@@ -1845,8 +1821,8 @@ mod tests {
         let tags_s = serde_json::to_string(&tags).unwrap();
         form_builder.with_text("tags", tags_s);
         let (header, body) = form_builder.build();
-
-        test_put_stream_validate(header, body, err::CD_VALIDATION, stream_models::MSG_TAG_MAX_LENGTH).await;
+        #[rustfmt::skip]
+        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MAX_LENGTH]).await;
     }
     #[test]
     async fn test_put_stream_invalid_tag() {
@@ -1855,7 +1831,7 @@ mod tests {
         let (header, body) = form_builder.build();
         #[rustfmt::skip]
         let error = format!("{} {}", err::MSG_INVALID_TAGS_FIELD, MSG_EXPECTED_VALUE_AT_LINE_COLUMN);
-        test_put_stream_validate(header, body, err::CD_INVALID_TAGS_FIELD, &error).await;
+        test_stream_validate(2, header, body, err::CD_INVALID_TAGS_FIELD, &[&error]).await;
     }
 
     #[test]
@@ -1867,8 +1843,8 @@ mod tests {
         let mut form_builder = MultiPartFormDataBuilder::new();
         form_builder.with_file(path_name1_file.to_string(), "logofile", "image/bmp", name1_file);
         let (header, body) = form_builder.build();
-
-        test_put_stream_validate(header, body, err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE).await;
+        #[rustfmt::skip]
+        test_stream_validate(2, header, body, err::CD_INVALID_FILE_TYPE, &[err::MSG_INVALID_IMAGE_FILE]).await;
         let _ = fs::remove_file(path_name1_file);
     }
     #[test]
@@ -1880,8 +1856,8 @@ mod tests {
         let mut form_builder = MultiPartFormDataBuilder::new();
         form_builder.with_file(path_name1_file.to_string(), "logofile", "image/png", name1_file);
         let (header, body) = form_builder.build();
-
-        test_put_stream_validate(header, body, err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE).await;
+        #[rustfmt::skip]
+        test_stream_validate(2, header, body, err::CD_INVALID_FILE_SIZE, &[err::MSG_INVALID_FILE_SIZE]).await;
         let _ = fs::remove_file(path_name1_file);
     }
 
@@ -2005,7 +1981,7 @@ mod tests {
         assert_eq!(stream_dto_res.id, stream2b_dto_ser.id);
     }
     #[test]
-    async fn test_put_stream_valid_data_with_file_a() {
+    async fn test_put_stream_valid_data_with_a_logo_old_0_new_1() {
         let name1_file = "put_circle5x5_a_new.png";
         let path_name1_file = format!("./{}", name1_file);
         save_file_png(&path_name1_file, 1).unwrap();
@@ -2039,8 +2015,7 @@ mod tests {
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
         let factory = put_stream;
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-
-        let _ = fs::remove_file(path_name1_file);
+        let _ = fs::remove_file(&path_name1_file);
 
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
@@ -2053,8 +2028,9 @@ mod tests {
         assert!(stream_dto_res_logo.len() > 0);
         assert!(stream_dto_res_logo.starts_with(&config_slp.slp_dir));
 
-        assert!(path::Path::new(&stream_dto_res_logo).exists());
-        let _ = fs::remove_file(stream_dto_res_logo.clone());
+        let is_exists_logo_new = path::Path::new(&stream_dto_res_logo).exists();
+        let _ = fs::remove_file(&stream_dto_res_logo);
+        assert!(is_exists_logo_new);
 
         let path_logo = path::PathBuf::from(stream_dto_res_logo);
         let file_stem = path_logo.file_stem().unwrap().to_str().unwrap().to_string(); // file_stem: "1100_3226061294TF"
@@ -2063,12 +2039,13 @@ mod tests {
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
         assert_eq!(file_stem_part1, user1_id);
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
-        let date_time2_s = date_time2.to_rfc3339_opts(SecondsFormat::Secs, true); // date_time2_s: 2024-02-06T09:55:41Z
-        let now_s = now.to_rfc3339_opts(SecondsFormat::Secs, true); // now_s       : 2024-02-06T09:55:41Z
+        let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
+        let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
+        let now_s = now.format(date_format).to_string(); // : 2024-02-06 09:55:41
         assert_eq!(now_s, date_time2_s);
     }
     #[test]
-    async fn test_put_stream_valid_data_with_file_b() {
+    async fn test_put_stream_valid_data_with_b_logo_old_1_new_1() {
         let config_slp = config_slp::get_test_config();
 
         let name0_file = "put_circle5x5_b_old.png";
@@ -2097,8 +2074,8 @@ mod tests {
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
 
         let mut form_builder = MultiPartFormDataBuilder::new();
-
         form_builder.with_file(path_name1_file.to_string(), "logofile", "image/png", name1_file);
+
         let (header, body) = form_builder.build();
 
         // PUT api/streams/{id}
@@ -2113,7 +2090,7 @@ mod tests {
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
 
         let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
-        let _ = fs::remove_file(path_name0_file.clone());
+        let _ = fs::remove_file(&path_name0_file);
         let _ = fs::remove_file(&path_name1_file);
 
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
@@ -2121,7 +2098,6 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         let config_slp = config_slp::get_test_config();
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
 
@@ -2129,8 +2105,8 @@ mod tests {
         assert!(stream_dto_res_logo.starts_with(&config_slp.slp_dir));
 
         let is_exists_logo_new = path::Path::new(&stream_dto_res_logo).exists();
-        assert!(is_exists_logo_new);
         let _ = fs::remove_file(&stream_dto_res_logo);
+        assert!(is_exists_logo_new);
 
         let path_logo = path::PathBuf::from(stream_dto_res_logo);
         let file_stem = path_logo.file_stem().unwrap().to_str().unwrap().to_string(); // file_stem: "1100_3226061294TF"
@@ -2138,13 +2114,15 @@ mod tests {
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
         assert_eq!(file_stem_part1, user1_id);
+
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
-        let date_time2_s = date_time2.to_rfc3339_opts(SecondsFormat::Secs, true); // date_time2_s: 2024-02-06T09:55:41Z
-        let now_s = now.to_rfc3339_opts(SecondsFormat::Secs, true); // now_s       : 2024-02-06T09:55:41Z
+        let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
+        let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
+        let now_s = now.format(date_format).to_string(); // : 2024-02-06 09:55:41
         assert_eq!(now_s, date_time2_s);
     }
     #[test]
-    async fn test_put_stream_valid_data_with_file_c() {
+    async fn test_put_stream_valid_data_with_c_logo_old_1_new_0() {
         let config_slp = config_slp::get_test_config();
 
         let name0_file = "put_circle5x5_c_old.png";
@@ -2187,18 +2165,121 @@ mod tests {
         let _ = fs::remove_file(path_name0_file.clone());
 
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
+        assert!(is_exists_logo_old);
 
         let body = test::read_body(resp).await;
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let config_slp = config_slp::get_test_config();
-
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
 
         assert!(stream_dto_res_logo.len() > 0);
         assert!(stream_dto_res_logo.starts_with(&config_slp.slp_dir));
 
         assert_eq!(&path_name0_file, &stream_dto_res_logo);
-        assert!(is_exists_logo_old);
+    }
+    #[test]
+    async fn test_put_stream_valid_data_with_d_logo_old_1_new_size0() {
+        let config_slp = config_slp::get_test_config();
+
+        let name0_file = "put_circle5x5_d_old.png";
+        let mut path = path::PathBuf::from(&config_slp.slp_dir);
+        path.push(name0_file);
+        let path_name0_file = path.to_str().unwrap().to_string();
+        save_file_png(&(path_name0_file.clone()), 1).unwrap();
+
+        let name1_file = "put_circle5x5_d_new.png";
+        let path_name1_file = format!("./{}", name1_file);
+        eprintln!("path_name1_file: {}", path_name1_file);
+        save_empty_file(&path_name1_file).unwrap();
+
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let now = Utc::now();
+        let mut stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+        stream.logo = Some(path_name0_file.clone());
+
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+
+        let mut form_builder = MultiPartFormDataBuilder::new();
+        form_builder.with_file(path_name1_file.to_string(), "logofile", "image/png", name1_file);
+
+        let (header, body) = form_builder.build();
+
+        // PUT api/streams/{id}
+        let request = test::TestRequest::put()
+            .uri(&format!("/streams/{}", stream_dto.id))
+            .insert_header(header)
+            .set_payload(body);
+
+        let vec = (vec![user1], vec![session1], vec![stream_dto]);
+        let factory = put_stream;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+
+        let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
+        let _ = fs::remove_file(&path_name0_file);
+        let _ = fs::remove_file(&path_name1_file);
+
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+        assert!(!is_exists_logo_old);
+
+        let body = test::read_body(resp).await;
+        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert!(stream_dto_res.logo.is_none());
+    }
+    #[test]
+    async fn test_put_stream_valid_data_with_e_logo_old_0_new_size0() {
+        // let config_slp = config_slp::get_test_config();
+
+        let name1_file = "put_circle5x5_e_new.png";
+        let path_name1_file = format!("./{}", name1_file);
+        eprintln!("path_name1_file: {}", path_name1_file);
+        save_empty_file(&path_name1_file).unwrap();
+
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let now = Utc::now();
+        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+
+        let mut form_builder = MultiPartFormDataBuilder::new();
+        form_builder.with_file(path_name1_file.to_string(), "logofile", "image/png", name1_file);
+
+        let (header, body) = form_builder.build();
+
+        // PUT api/streams/{id}
+        let request = test::TestRequest::put()
+            .uri(&format!("/streams/{}", stream_dto.id))
+            .insert_header(header)
+            .set_payload(body);
+
+        let vec = (vec![user1], vec![session1], vec![stream_dto]);
+        let factory = put_stream;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+
+        let _ = fs::remove_file(&path_name1_file);
+
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert!(stream_dto_res.logo.is_none());
     }
 
     // ** delete_stream **
