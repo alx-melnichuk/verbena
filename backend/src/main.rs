@@ -32,7 +32,7 @@ async fn main() -> std::io::Result<()> {
 
     log::info!("creating a directory for upload the logo");
     let config_slp = config_slp::ConfigSLP::init_by_env();
-    std::fs::create_dir_all(config_slp.slp_dir)?;
+    std::fs::create_dir_all(&config_slp.slp_dir)?;
 
     log::info!("Starting server {}", &app_domain);
 
