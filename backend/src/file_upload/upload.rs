@@ -31,14 +31,13 @@ pub fn file_upload(temp_file: TempFile, config_slp: ConfigSLP, file_name: String
     let epmty = std::ffi::OsStr::new("");
     let old_file_ext = path.extension().unwrap_or(epmty).to_str().unwrap().to_string();
 
-    let avatar_dir = config_slp.slp_dir.to_string();
-    let mut path = PathBuf::from(avatar_dir);
-    path.push(file_name);
-    path.set_extension(old_file_ext);
-    let path_file = path.to_str().unwrap();
+    let mut path_buf = PathBuf::from(&config_slp.slp_dir);
+    path_buf.push(file_name);
+    path_buf.set_extension(old_file_ext);
+    let path_file = path_buf.to_str().unwrap();
     let result = temp_file.file.persist(path_file);
     if let Err(err) = result {
-        return Err(format!("{}: {}", err.to_string(), path_file));
+        return Err(format!("{}: {}", err.to_string(), &path_file));
     }
     Ok(path_file.to_string())
 }
