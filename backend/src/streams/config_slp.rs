@@ -1,12 +1,8 @@
 use std::path::PathBuf;
 
-pub const SLP_ALIAS_LOGOS: &str = "logos";
-
 // Stream Logo Properties
 #[derive(Debug, Clone)]
 pub struct ConfigSLP {
-    // Alias logos
-    pub slp_logos: String,
     // Directory for storing logo files.
     pub slp_dir: String,
     // Maximum size for logo files.
@@ -26,7 +22,6 @@ impl ConfigSLP {
         let slp_valid_types = slp_valid_types_str.split(",").into_iter().map(|v| v.to_string()).collect();
 
         ConfigSLP {
-            slp_logos: SLP_ALIAS_LOGOS.to_string(),
             slp_dir,
             slp_max_size: slp_max_size.parse::<usize>().unwrap(),
             slp_valid_types,
@@ -37,7 +32,6 @@ impl ConfigSLP {
 #[cfg(all(test, feature = "mockdata"))]
 pub fn get_test_config() -> ConfigSLP {
     ConfigSLP {
-        slp_logos: SLP_ALIAS_LOGOS.to_string(),
         slp_dir: "./tmp".to_string(),
         slp_max_size: 160,
         slp_valid_types: vec!["image/jpeg".to_string(), "image/png".to_string()],
