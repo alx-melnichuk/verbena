@@ -2,16 +2,18 @@ use actix_files::Files;
 use actix_web::{http, web, HttpRequest, HttpResponse};
 use std::{io::Error, path};
 
-use crate::{settings::config_app, streams::config_slp};
+use crate::{
+    settings::config_app,
+    streams::{config_slp, stream_controller},
+};
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
-    let config_slp = config_slp::ConfigSLP::init_by_env();
-    let logo_dir = config_slp.slp_dir;
-    let logos = format!("/{}", config_slp.slp_logos); // "/logos"
+    let logo = stream_controller::ALIAS_LOGO_FILES;
+    let alias_logo = format!("/{}/{}", logo, "{name_logo:.*}");
 
     cfg.service(Files::new("/static", "static").show_files_listing())
         .service(Files::new("/assets", "static/assets").show_files_listing())
-        .service(Files::new(&logos, logo_dir).show_files_listing())
+        .service(web::resource(&alias_logo).route(web::get().to(load_files_logo)))
         .service(web::resource("/{name1:.(.+).js|(.+).css}").route(web::get().to(load_files_js_css)))
         .service(web::resource("/{name2:.(.+).ico|(.+).png}").route(web::get().to(load_files_ico_png)))
         // Route returns index.html - FE app
@@ -34,25 +36,33 @@ pub async fn index_root() -> Result<HttpResponse, Error> {
         .body(body_str))
 }
 
-pub async fn load_files_js_css(req: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    load_file_from_dir(req, "name1", "static").await
+pub async fn load_files_logo(req: HttpRequest) -> Result<actix_files::NamedFile, Error> {
+    let config_slp = config_slp::ConfigSLP::init_by_env();
+    load_file_from_dir(&config_slp.slp_dir, &get_param(req, "name_logo")).await
 }
+
+pub async fn load_files_js_css(req: HttpRequest) -> Result<actix_files::NamedFile, Error> {
+    load_file_from_dir("static", &get_param(req, "name1")).await
+}
+
 pub async fn load_files_ico_png(req: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    load_file_from_dir(req, "name2", "static").await
+    load_file_from_dir("static", &get_param(req, "name2")).await
+}
+
+/// Get the value of the parameter.
+fn get_param(req: HttpRequest, param_name: &str) -> String {
+    let path_buf_filename: path::PathBuf = req.match_info().query(param_name).parse().unwrap();
+    path_buf_filename.to_str().unwrap().to_string()
 }
 
 /// Load from the directory a file with the name from the parameter.
-async fn load_file_from_dir(req: HttpRequest, param: &str, dir: &str) -> Result<actix_files::NamedFile, Error> {
-    // Get the value of the parameter.
-    let path_buf_filename: path::PathBuf = req.match_info().query(param).parse().unwrap();
-    let filename: &str = path_buf_filename.to_str().unwrap();
-
+async fn load_file_from_dir(dir: &str, file_name: &str) -> Result<actix_files::NamedFile, Error> {
     // Normalize the directory value.
     let path_buf_dir: path::PathBuf = path::PathBuf::from(dir).iter().collect();
     let directory = path_buf_dir.to_str().unwrap();
 
     // Get the path to a file in a given directory.
-    let path: path::PathBuf = [directory, filename].iter().collect();
+    let path: path::PathBuf = [directory, file_name].iter().collect();
     // eprintln!("## load_file_from_dir() path:\"{}\"", path.to_string_lossy());
     // Open a file in the specified directory.
     let file: actix_files::NamedFile = actix_files::NamedFile::open(path)?;
