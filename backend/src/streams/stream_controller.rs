@@ -18,6 +18,8 @@ use crate::streams::{config_slp, stream_models, stream_orm::StreamOrm};
 use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
 use crate::validators::{msg_validation, Validator};
 
+pub const ALIAS_LOGO_FILES: &str = "logo";
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     GET api/streams/{id}
     cfg.service(get_stream_by_id)
@@ -274,13 +276,16 @@ pub async fn post_stream(
         let date_time = Utc::now();
         // Get filename.
         let code_date = coding::encode(date_time, 1);
+        let slp_dir = config_slp.slp_dir.clone();
         // Upload the logo file.
         let file_name = format!("{}_{}", curr_user_id, code_date);
         let res_upload = upload::file_upload(temp_file, config_slp, file_name);
         if let Err(err) = res_upload {
             return Err(err_upload_file(err));
         }
-        create_file = res_upload.unwrap();
+        let path_file = res_upload.unwrap();
+        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
+        create_file = path_file.replace(&slp_dir, &alias_logo);
 
         break;
     }
@@ -436,6 +441,7 @@ pub async fn put_stream(
         }
         // Get filename.
         let code_date = coding::encode(Utc::now(), 1);
+        let slp_dir = config_slp.slp_dir.clone();
         // Upload the logo file.
         let file_name = format!("{}_{}", curr_user_id, code_date);
         let res_upload = upload::file_upload(temp_file, config_slp, file_name);
@@ -443,7 +449,9 @@ pub async fn put_stream(
             return Err(err_upload_file(err));
         }
         new_logo_file = res_upload.unwrap();
-        logo = Some(Some(new_logo_file.clone()));
+        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
+        let modify_file = new_logo_file.replace(&slp_dir, &alias_logo);
+        logo = Some(Some(modify_file));
 
         break;
     }
@@ -461,7 +469,8 @@ pub async fn put_stream(
                 .map_err(|e| err_database(e.to_string()));
 
             if let Ok(Some(old_logo)) = res_get_stream_logo {
-                old_logo_file = old_logo;
+                let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
+                old_logo_file = old_logo.replace(&alias_logo, &config_slp.slp_dir);
             }
         }
         // Modify an entity (stream).
@@ -1564,15 +1573,17 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         let config_slp = config_slp::get_test_config();
+        let slp_dir = config_slp.slp_dir;
+
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
+        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
+        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &slp_dir, 1);
+        let is_exists_logo_new = path::Path::new(&logo_name_full_path).exists();
+        let _ = fs::remove_file(&logo_name_full_path);
 
         assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(&config_slp.slp_dir));
-
-        let is_exists_logo_new = path::Path::new(&stream_dto_res_logo).exists();
-        let _ = fs::remove_file(&stream_dto_res_logo);
+        assert!(stream_dto_res_logo.starts_with(&format!("/{}", ALIAS_LOGO_FILES)));
         assert!(is_exists_logo_new);
 
         let path_logo = path::PathBuf::from(stream_dto_res_logo);
@@ -1591,7 +1602,6 @@ mod tests {
     async fn test_post_stream_valid_data_with_empty_file() {
         let name1_file = "post_circle_empty.png";
         let path_name1_file = format!("./{}", name1_file);
-        eprintln!("path_name1_file: {}", path_name1_file);
         save_empty_file(&path_name1_file).unwrap();
 
         let user1: User = user_with_id(create_user());
@@ -1980,6 +1990,7 @@ mod tests {
         assert_eq!(res_updated_at, ser_updated_at);
         assert_eq!(stream_dto_res.id, stream2b_dto_ser.id);
     }
+
     #[test]
     async fn test_put_stream_valid_data_with_a_logo_old_0_new_1() {
         let name1_file = "put_circle5x5_a_new.png";
@@ -2018,18 +2029,21 @@ mod tests {
         let _ = fs::remove_file(&path_name1_file);
 
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
+        let config_slp = config_slp::get_test_config();
+        let slp_dir = config_slp.slp_dir;
 
         let body = test::read_body(resp).await;
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        let config_slp = config_slp::get_test_config();
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
 
-        assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(&config_slp.slp_dir));
+        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
+        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &slp_dir, 1);
+        let is_exists_logo_new = path::Path::new(&logo_name_full_path).exists();
+        let _ = fs::remove_file(&logo_name_full_path);
 
-        let is_exists_logo_new = path::Path::new(&stream_dto_res_logo).exists();
-        let _ = fs::remove_file(&stream_dto_res_logo);
+        assert!(stream_dto_res_logo.len() > 0);
+        assert!(stream_dto_res_logo.starts_with(&format!("/{}", ALIAS_LOGO_FILES)));
         assert!(is_exists_logo_new);
 
         let path_logo = path::PathBuf::from(stream_dto_res_logo);
@@ -2047,12 +2061,12 @@ mod tests {
     #[test]
     async fn test_put_stream_valid_data_with_b_logo_old_1_new_1() {
         let config_slp = config_slp::get_test_config();
+        let slp_dir = config_slp.slp_dir;
 
         let name0_file = "put_circle5x5_b_old.png";
-        let mut path = path::PathBuf::from(&config_slp.slp_dir);
-        path.push(name0_file);
-        let path_name0_file = path.to_str().unwrap().to_string();
+        let path_name0_file = format!("{}/{}", &slp_dir, name0_file);
         save_file_png(&(path_name0_file.clone()), 1).unwrap();
+        let path_name0_logo = format!("/{}/{}", ALIAS_LOGO_FILES, name0_file);
 
         let name1_file = "put_circle5x5_b_new.png";
         let path_name1_file = format!("./{}", name1_file);
@@ -2068,7 +2082,7 @@ mod tests {
 
         let now = Utc::now();
         let mut stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
-        stream.logo = Some(path_name0_file.clone());
+        stream.logo = Some(path_name0_logo);
 
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
@@ -2098,14 +2112,16 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let config_slp = config_slp::get_test_config();
+
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
+        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
+        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &slp_dir, 1);
+
+        let is_exists_logo_new = path::Path::new(&logo_name_full_path).exists();
+        let _ = fs::remove_file(&logo_name_full_path);
 
         assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(&config_slp.slp_dir));
-
-        let is_exists_logo_new = path::Path::new(&stream_dto_res_logo).exists();
-        let _ = fs::remove_file(&stream_dto_res_logo);
+        assert!(stream_dto_res_logo.starts_with(&format!("/{}", ALIAS_LOGO_FILES)));
         assert!(is_exists_logo_new);
 
         let path_logo = path::PathBuf::from(stream_dto_res_logo);
@@ -2124,12 +2140,12 @@ mod tests {
     #[test]
     async fn test_put_stream_valid_data_with_c_logo_old_1_new_0() {
         let config_slp = config_slp::get_test_config();
+        let slp_dir = config_slp.slp_dir;
 
         let name0_file = "put_circle5x5_c_old.png";
-        let mut path = path::PathBuf::from(&config_slp.slp_dir);
-        path.push(name0_file);
-        let path_name0_file = path.to_str().unwrap().to_string();
-        save_file_png(&(path_name0_file.clone()), 1).unwrap();
+        let path_name0_file = format!("{}/{}", &slp_dir, name0_file);
+        save_file_png(&path_name0_file, 1).unwrap();
+        let path_name0_logo = format!("/{}/{}", ALIAS_LOGO_FILES, name0_file);
 
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
@@ -2141,7 +2157,7 @@ mod tests {
 
         let now = Utc::now();
         let mut stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
-        stream.logo = Some(path_name0_file.clone());
+        stream.logo = Some(path_name0_logo.clone());
 
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
@@ -2160,8 +2176,8 @@ mod tests {
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
         let factory = put_stream;
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
-
         let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
+
         let _ = fs::remove_file(path_name0_file.clone());
 
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
@@ -2169,27 +2185,25 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let config_slp = config_slp::get_test_config();
+
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
 
         assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(&config_slp.slp_dir));
-
-        assert_eq!(&path_name0_file, &stream_dto_res_logo);
+        assert!(stream_dto_res_logo.starts_with(&format!("/{}", ALIAS_LOGO_FILES)));
+        assert_eq!(&path_name0_logo, &stream_dto_res_logo);
     }
     #[test]
     async fn test_put_stream_valid_data_with_d_logo_old_1_new_size0() {
         let config_slp = config_slp::get_test_config();
+        let slp_dir = config_slp.slp_dir;
 
         let name0_file = "put_circle5x5_d_old.png";
-        let mut path = path::PathBuf::from(&config_slp.slp_dir);
-        path.push(name0_file);
-        let path_name0_file = path.to_str().unwrap().to_string();
+        let path_name0_file = format!("{}/{}", &slp_dir, name0_file);
         save_file_png(&(path_name0_file.clone()), 1).unwrap();
+        let path_name0_logo = format!("/{}/{}", ALIAS_LOGO_FILES, name0_file);
 
         let name1_file = "put_circle5x5_d_new.png";
         let path_name1_file = format!("./{}", name1_file);
-        eprintln!("path_name1_file: {}", path_name1_file);
         save_empty_file(&path_name1_file).unwrap();
 
         let user1: User = user_with_id(create_user());
@@ -2202,7 +2216,7 @@ mod tests {
 
         let now = Utc::now();
         let mut stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
-        stream.logo = Some(path_name0_file.clone());
+        stream.logo = Some(path_name0_logo);
 
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
