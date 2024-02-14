@@ -1,37 +1,17 @@
-use std::{self, path::PathBuf};
+use std::{self, ffi, path::PathBuf};
 
 use actix_multipart::form::tempfile::TempFile;
+use image::{imageops::FilterType, DynamicImage, ImageFormat};
 
-use crate::streams::config_slp::ConfigSLP;
-
-// Checking the file for valid mime types.
-pub fn file_validate_types(temp_file: &TempFile, valid_file_types: Vec<String>) -> Result<(), String> {
-    if temp_file.content_type.is_none() {
-        return Err("".to_string());
-    }
-    let file_type = temp_file.content_type.clone().unwrap().to_string().to_lowercase();
-    if !valid_file_types.contains(&file_type) {
-        return Err(file_type);
-    }
-    Ok(())
-}
-// Checking the file for a valid maximum size.
-pub fn file_validate_size(temp_file: &TempFile, max_size: usize) -> Result<(), usize> {
-    if max_size > 0 && temp_file.size > max_size {
-        return Err(temp_file.size);
-    }
-    Ok(())
-}
 // Upload a file with the specified name.
-pub fn file_upload(temp_file: TempFile, config_slp: ConfigSLP, file_name: String) -> Result<String, String> {
+pub fn file_upload(temp_file: TempFile, dir_path: &str, file_name: &str) -> Result<String, String> {
     if temp_file.file_name.is_none() {
         return Err("The name for the upload file is missing.".to_string());
     }
     let path = PathBuf::from(temp_file.file_name.unwrap());
-    let epmty = std::ffi::OsStr::new("");
-    let old_file_ext = path.extension().unwrap_or(epmty).to_str().unwrap().to_string();
+    let old_file_ext = path.extension().unwrap_or(ffi::OsStr::new("")).to_str().unwrap().to_string();
 
-    let mut path_buf = PathBuf::from(&config_slp.slp_dir);
+    let mut path_buf = PathBuf::from(dir_path);
     path_buf.push(file_name);
     path_buf.set_extension(old_file_ext);
     let path_file = path_buf.to_str().unwrap();
@@ -40,4 +20,38 @@ pub fn file_upload(temp_file: TempFile, config_slp: ConfigSLP, file_name: String
         return Err(format!("{}: {}", err.to_string(), &path_file));
     }
     Ok(path_file.to_string())
+}
+
+pub fn convert(source: &str, receiver: &str) -> Result<(), String> {
+    let path_source = PathBuf::from(source);
+    let source_extension = path_source.extension().unwrap().to_str().unwrap().to_string();
+    // Check that the image type of the source file is correct.
+    let opt_source_type = ImageFormat::from_extension(source_extension);
+    if opt_source_type.is_none() {
+        return Err(format!("Invalid source file image type \"{}\".", source));
+    }
+    let source_type = opt_source_type.unwrap();
+
+    let path_receiver = PathBuf::from(receiver);
+    let receiver_extension = path_receiver.extension().unwrap().to_str().unwrap().to_string();
+    // Check that the image type of the receiver file is correct.
+    let opt_receiver_type = ImageFormat::from_extension(receiver_extension);
+    if opt_receiver_type.is_none() {
+        return Err(format!("Invalid receiver file image type \"{}\".", receiver));
+    }
+    let receiver_type = opt_receiver_type.unwrap();
+
+    if source_type == receiver_type {
+        return Err("The source and destination have the same image type.".to_string());
+    }
+    // Load the source image into memory.
+    let image_data: DynamicImage = image::open(source).unwrap();
+
+    // Delete the source image file.
+    // let _ = fs::remove_file(source).await.unwrap();
+
+    // Save the image from memory to the receiver.
+    image_data.resize_exact(200, 200, FilterType::Gaussian).save(receiver).unwrap();
+
+    Ok(())
 }

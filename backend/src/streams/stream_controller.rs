@@ -1,4 +1,4 @@
-use std::borrow;
+use std::{borrow, path};
 use std::{ops::Deref, time::Instant};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
@@ -173,6 +173,34 @@ pub async fn get_streams(
     Ok(HttpResponse::Ok().json(result)) // 200
 }
 
+// Checking the file for valid mime types.
+fn check_file_type(file_type: &str, valid_file_types: Vec<String>) -> Result<(), AppError> {
+    let file_type = &file_type.to_string();
+    if !valid_file_types.contains(file_type) {
+        log::error!("{}: {}", err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE);
+        let valid_types: String = valid_file_types.join(",");
+        let json = serde_json::json!({ "actualFileType": file_type, "validFileType": valid_types });
+        let app_err = AppError::new(err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE)
+            .add_param(borrow::Cow::Borrowed("invalidFileType"), &json)
+            .set_status(400);
+        return Err(app_err);
+    }
+    Ok(())
+}
+
+// Check file size for maximum value.
+fn check_file_size(file_size: usize, max_size: usize) -> Result<(), AppError> {
+    if max_size > 0 && file_size > max_size {
+        log::error!("{}: {}", err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE);
+        let json = serde_json::json!({ "actualFileSize": file_size, "maxFileSize": max_size });
+        let app_err = AppError::new(err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE)
+            .add_param(borrow::Cow::Borrowed("invalidFileSize"), &json)
+            .set_status(400);
+        return Err(app_err);
+    }
+    Ok(())
+}
+
 fn remove_file_and_log(file_name: &str, msg: &str) {
     if file_name.len() > 0 {
         let res_remove = std::fs::remove_file(file_name);
@@ -262,24 +290,18 @@ pub async fn post_stream(
             break;
         }
         let config_slp = config_slp.get_ref().clone();
-        let valid_file_types = config_slp.slp_valid_types.clone();
-        let valid_types: String = valid_file_types.join(",");
-        // Check the mime file type for valid values.
-        if let Err(err_file_type) = upload::file_validate_types(&temp_file, valid_file_types) {
-            return Err(err_invalid_file_type(err_file_type, valid_types));
-        }
-        let max_size = config_slp.slp_max_size;
+        
+        let file_type = temp_file.content_type.clone().unwrap().to_string(); 
+        // Checking the file for valid mime types.
+        check_file_type(&file_type, config_slp.slp_valid_types.clone())?;
         // Check file size for maximum value.
-        if let Err(err_file_size) = upload::file_validate_size(&temp_file, max_size) {
-            return Err(err_invalid_file_size(err_file_size, max_size));
-        }
-        let date_time = Utc::now();
+        check_file_size(temp_file.size, config_slp.slp_max_size)?;
         // Get filename.
-        let code_date = coding::encode(date_time, 1);
+        let code_date = coding::encode(Utc::now(), 1);
         let slp_dir = config_slp.slp_dir.clone();
-        // Upload the logo file.
         let file_name = format!("{}_{}", curr_user_id, code_date);
-        let res_upload = upload::file_upload(temp_file, config_slp, file_name);
+        // Upload the logo file.
+        let res_upload = upload::file_upload(temp_file, &config_slp.slp_dir, &file_name);
         if let Err(err) = res_upload {
             return Err(err_upload_file(err));
         }
@@ -428,29 +450,36 @@ pub async fn put_stream(
             break;
         }
         let config_slp = config_slp.get_ref().clone();
-        let valid_file_types = config_slp.slp_valid_types.clone();
-        let valid_types: String = valid_file_types.join(",");
-        // Check the mime file type for valid values.
-        if let Err(err_file_type) = upload::file_validate_types(&temp_file, valid_file_types) {
-            return Err(err_invalid_file_type(err_file_type, valid_types));
-        }
-        let max_size = config_slp.slp_max_size;
+        
+        let file_type = temp_file.content_type.clone().unwrap().to_string(); 
+        // Checking the file for valid mime types.
+        check_file_type(&file_type, config_slp.slp_valid_types.clone())?;
         // Check file size for maximum value.
-        if let Err(err_file_size) = upload::file_validate_size(&temp_file, max_size) {
-            return Err(err_invalid_file_size(err_file_size, max_size));
-        }
+        check_file_size(temp_file.size, config_slp.slp_max_size)?;
         // Get filename.
         let code_date = coding::encode(Utc::now(), 1);
-        let slp_dir = config_slp.slp_dir.clone();
         // Upload the logo file.
         let file_name = format!("{}_{}", curr_user_id, code_date);
-        let res_upload = upload::file_upload(temp_file, config_slp, file_name);
+        let res_upload = upload::file_upload(temp_file, &config_slp.slp_dir, &file_name);
         if let Err(err) = res_upload {
             return Err(err_upload_file(err));
         }
         new_logo_file = res_upload.unwrap();
+        /*let source: String = new_logo_file.to_string();
+
+        web::block(move || async move {
+            let mut path_receiver = path::PathBuf::from(&source);
+            path_receiver.set_extension("jpg");
+            let receiver = path_receiver.to_str().unwrap();
+            let res_convert = upload::convert(&source, receiver);
+            eprintln!("res_convert.is_ok(): {}", res_convert.is_ok());
+        })
+        .await
+        .unwrap()
+        .await;
+        */
         let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
-        let modify_file = new_logo_file.replace(&slp_dir, &alias_logo);
+        let modify_file = new_logo_file.replace(&config_slp.slp_dir, &alias_logo);
         logo = Some(Some(modify_file));
 
         break;
