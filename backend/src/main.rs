@@ -20,6 +20,9 @@ async fn main() -> std::io::Result<()> {
     }
     env_logger::init();
 
+    // Check the correctness of "SLP_FILES_VALID_TYPES"
+    config_slp::ConfigSLP::init_slp_valid_types_by_env()?;
+
     let config_app = config_app::ConfigApp::init_by_env();
 
     let app_host = config_app.app_host.clone();
