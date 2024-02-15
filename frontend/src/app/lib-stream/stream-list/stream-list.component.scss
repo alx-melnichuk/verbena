@@ -1,0 +1,52 @@
+/*# sourceURL=stream-list.component.scss */
+
+app-stream-list {
+  display: flex;
+  height: 100%;
+  &>.sl-my-calendar { flex-basis: 26%; }
+  &>.sl-my-streams { flex-basis: 73.99%;}
+
+  .sl-title {
+    align-items: center;
+    border: 1px solid darkgoldenrod; //
+    display: flex;
+    flex-basis: 4em;
+    flex-shrink: 0;
+    &>span {
+      font-size: 18px;
+      font-style: normal;
+      font-weight: bold;
+    }
+  }
+
+  // ** "My Calendar" **
+  .sl-my-calendar {
+    padding: 0 .8vw 0 1.6vw;
+    box-sizing: border-box;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    &>.sl-calendar { flex-grow: 0; position: relative; }
+    &>.sl-events { flex-grow: 1; overflow-y: hidden; position: relative; }
+  }
+
+  // ** **
+  .sl-my-streams {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    padding: 0 1.6vw 0 .8vw;
+    &>.sl-my-future { flex-basis: 50%; }
+    &>.sl-my-past { flex-basis: 50%; }
+  }
+  .sl-stream-box {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: hidden;
+    position: relative;
+
+    &>.sl-stream-list { flex-grow: 1; }
+  }
+ 
+}

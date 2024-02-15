@@ -1,0 +1,60 @@
+<div class="sl-my-calendar">
+  <div class="sl-title">
+    {{ 'stream_list.my_calendar' | translate }}
+  </div>
+  <div class="sl-calendar">
+    <!-- <app-spinner *ngIf="scheduleService.selectedDateMarkedDatesLoading" [isFullOwner]="true"></app-spinner> -->
+    <!-- <app-schedule-calendar
+      [selectedDate]="scheduleService.selectedDate"
+      [markedDates]="scheduleService.selectedDateMarkedDates"
+      (changeSelectedDate)="doChangeSelectedDate($event)"
+      (changeActiveDate)="doChangeActiveDate($event)"
+    ></app-schedule-calendar> -->
+  </div>
+  <div class="sl-events">
+    <!-- <app-spinner *ngIf="scheduleService.calendarMiniStreamsLoading" [isFullOwner]="true"></app-spinner> -->
+    <!-- <app-schedule-event
+      *ngIf="!scheduleService.calendarMiniStreamsLoading && scheduleService.isShowCalendarMiniStreams()"
+      [canEdit]="true"
+      [streamDTOList]="scheduleService.calendarMiniStreams"
+      (editStream)="doActionEdit($event)"
+    ></app-schedule-event> -->
+  </div>
+</div>
+<div class="sl-my-streams" style="outline: 1px solid green;">
+  <div class="sl-stream-box sl-my-future">
+    <div class="sl-title">
+      {{ 'stream_list.my_future_streams' | translate }}
+    </div>
+    <app-spinner *ngIf="streamListService.futureStreamLoading" [isFullOwner]="true">
+    </app-spinner>
+    <app-panel-stream-mini  class="sl-stream-list"
+      [canDuplicate]="true"
+      [canEdit]="true"
+      [canDelete]="true"
+      [isFuture]="true"
+      [streamList]="streamListService.futureStreamsDto"
+      requestNextPage9="doRequestNextPageFuture($event)"
+      redirectToStream9="doRedirectToStreamView($event)"
+      actionDuplicate9="doActionDuplicate($event)"
+      actionEdit9="doActionEdit($event)"
+      actionDelete9="doActionDelete($event)"
+    ></app-panel-stream-mini>
+  </div>
+  <div class="sl-stream-box sl-my-past" style="border-top: 1px solid orange;">
+    <div class="sl-title">
+      {{ 'stream_list.my_past_streams' | translate }}
+    </div>
+    <app-spinner *ngIf="streamListService.pastStreamLoading" [isFullOwner]="true">
+    </app-spinner>
+    <app-panel-stream-mini  class="sl-stream-list"
+      [canDuplicate]="true"
+      [canDelete]="true"
+      [streamList]="streamListService.pastStreamsDto"
+      requestNextPage9="doRequestNextPagePast($event)"
+      (redirectToStream)="doRedirectToStreamView($event)"
+      (actionDuplicate)="doActionDuplicate($event)"
+      (actionDelete)="doActionDelete($event)"
+    ></app-panel-stream-mini>
+  </div>
+</div>
