@@ -12,8 +12,8 @@ function goToPageNotFound(router: Router): Promise<undefined> {
 
 export const pgStreamResolver: ResolveFn<StreamDto | HttpErrorResponse | undefined> = 
 (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
-  let router = inject(Router);
-  let streamService: StreamService = inject(StreamService);
+  const router = inject(Router);
+  const streamService: StreamService = inject(StreamService);
 
   const url = route.url[0];
   const streamIdStr = route.paramMap.get(P_STREAM_ID);
