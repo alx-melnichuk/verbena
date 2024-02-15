@@ -1,15 +1,13 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
-
-import { AlertService } from 'src/app/lib-dialog/alert.service';
-import { StreamService } from 'src/app/lib-stream/stream.service';
-import { StreamDto, UpdateStreamFileDto } from 'src/app/lib-stream/stream-api.interface';
-
+import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { PanelStreamEditorComponent } from '../panel-stream-editor/panel-stream-editor.component';
-import { SpinnerComponent } from '../spinner/spinner.component';
 import { HttpErrorResponse } from '@angular/common/http';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ROUTE_STREAM } from 'src/app/common/routes';
+import { AlertService } from 'src/app/lib-dialog/alert.service';
+import { StreamDto, UpdateStreamFileDto } from '../stream-api.interface';
+import { StreamService } from '../stream.service';
 
 @Component({
   selector: 'app-stream-edit',
@@ -62,11 +60,6 @@ export class StreamEditComponent implements OnInit {
         this.streamService.modifyStream(updateStreamFileDto.id, modifyStreamDto, updateStreamFileDto.logoFile)
       );
     }
-    // if (!!updateStreamFileDto.logoFile) {
-    //   buffPromise.push(
-    //     this.streamService.modifyStreamUpload("desc05", updateStreamFileDto.logoFile)
-    //   );  
-    // }
     Promise.all(buffPromise)
       .then((responses) => {
         const streamDto: StreamDto = (responses[0] as StreamDto);
