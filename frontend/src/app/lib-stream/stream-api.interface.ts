@@ -77,6 +77,25 @@ export interface StreamDto {
     pub updated_at: DateTime<Utc>,
 }*/
 
+export class StringDateTimeUtil {
+  public static to_str(val: Date): StringDateTime {
+    return val.toISOString();
+  }
+  public static to_date(val: StringDateTime | null | undefined): Date | null {
+    if (val == null || val ==undefined) {
+      return null;
+    }
+    if (val.length != 20 && val.length != 24) {
+      console.error(`The length of the string "${val}" is not 20 or 24.`);
+      return null;
+    }
+    if (val[4] != '-' || val[7] != '-' || val[10] != 'T' || val[13] != ':' || val[16] != ':') {
+      console.error(`The value 'bbb' does not match the datetime format 'yyyy-MM-ddThh:mm:ss.000Z'`);
+      return null;
+    }
+    return new Date(val);
+  }
+}
 export class StreamDtoUtil {
   public static create(streamDto?: Partial<StreamDto>): StreamDto {
     return {
@@ -99,9 +118,12 @@ export class StreamDtoUtil {
       updatedAt: (streamDto?.updatedAt || ''),
     };
   }
-  // public static isFuture(startTime: StringDateTime | null): boolean | null {
-  //   return (!!startTime ? moment().isBefore(moment(startTime, MOMENT_ISO8601), 'day') : null);
-  // }
+  public static isFuture(startTime: StringDateTime | null): boolean | null {
+    let date: Date | null = StringDateTimeUtil.to_date(startTime);
+    const now = new Date();
+    //   return (!!startTime ? moment().isBefore(moment(startTime, MOMENT_ISO8601), 'day') : null);
+    return date != null ? (now < date) : null;
+  }
 }
 
 export interface ModifyStreamDto {
@@ -126,3 +148,40 @@ export interface UpdateStreamFileDto {
   createStreamDto?: CreateStreamDto | undefined;
   logoFile?: File | undefined;
 }
+
+export interface SearchStreamDto { // GetStreamsDTO
+  userId?: number;
+  live?: boolean;
+  //  starttime?: 'none' | 'past' | 'future'; // default 'none';
+  isFuture?: boolean; // true-'future', false-'past'
+  //  groupBy?: 'none' | 'tag' | 'date'; // default 'none';
+  orderColumn?: 'starttime' | 'title'; // default 'starttime';
+  orderDirection?: 'asc' | 'desc'; // default 'asc';
+  page?: number; // default 1;
+  limit?: number; // default 10; Min(1) Max(100)
+}
+
+/*pub struct SearchStreamInfoDto {
+    pub user_id: Option<i32>,
+    pub live: Option<bool>,
+    pub is_future: Option<bool>,
+    pub order_column: Option<OrderColumn>,
+    pub order_direction: Option<OrderDirection>,
+    pub page: Option<u32>,
+    pub limit: Option<u32>,
+}*/
+
+export interface StreamListDto {
+  list: StreamDto[];
+  limit: number;
+  count: number;
+  page: number;
+  pages: number;
+}
+/*pub struct SearchStreamInfoResponseDto {
+    pub list: Vec<StreamInfoDto, Global>,
+    pub limit: u32,
+    pub count: u32,
+    pub page: u32,
+    pub pages: u32,
+}*/

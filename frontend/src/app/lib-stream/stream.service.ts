@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { StreamApiService } from './stream-api.service';
-import { CreateStreamDto, ModifyStreamDto, StreamDto } from './stream-api.interface';
+import { CreateStreamDto, SearchStreamDto, ModifyStreamDto, StreamDto, StreamListDto } from './stream-api.interface';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Uri } from '../common/uri';
 import { ROUTE_VIEW } from '../common/routes';
@@ -42,10 +42,10 @@ export class StreamService {
    * - orderColumn (starttime / title, starttime by default)
    * - orderDirection (asc / desc, asc by default)
    */
-  /*public getStreams(getStreamsDTO: GetStreamsDTO): Promise<StreamsDTO | HttpErrorResponse> {
+  public getStreams(getStreamsDTO: SearchStreamDto): Promise<StreamListDto | HttpErrorResponse | undefined> {
     if (!getStreamsDTO) { return Promise.reject(); }
     return this.streamApiService.getStreams(getStreamsDTO);
-  }*/
+  }
   /*public getStreamsByUser(userId: string, limit?: number, page?: number): Promise<StreamsDTO | HttpErrorResponse> {
     const getStreamsDTO: GetStreamsDTO = {
       userId,

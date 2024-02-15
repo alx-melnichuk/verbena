@@ -1,8 +1,9 @@
-import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { Uri } from 'src/app/common/uri';
-import { CreateStreamDto, ModifyStreamDto, StreamDto } from './stream-api.interface';
+import { CreateStreamDto, SearchStreamDto, ModifyStreamDto, StreamDto, StreamListDto } from './stream-api.interface';
+import { HttpParamsUtil } from '../utils/http-params.util';
 
 @Injectable({
   providedIn: 'root'
@@ -50,11 +51,11 @@ constructor(private http: HttpClient) {
    * - orderDirection (asc / desc, asc by default)
    * @ access public
    */
-   /*public getStreams(getStreamsDTO: GetStreamsDTO): Promise<StreamsDTO | HttpErrorResponse> {
+   public getStreams(getStreamsDTO: SearchStreamDto): Promise<StreamListDto | HttpErrorResponse | undefined> {
     const params: HttpParams = HttpParamsUtil.create(getStreamsDTO);
     const url = Uri.appUri('appApi://streams');
-    return this.http.get<StreamsDTO | HttpErrorResponse>(url, { params }).toPromise();
-  }*/
+    return this.http.get<StreamListDto | HttpErrorResponse>(url, { params }).toPromise();
+  }
 
   /** Get stream
    * @ route streams/:streamId
