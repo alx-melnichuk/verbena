@@ -207,7 +207,7 @@ pub struct StreamInfoDto {
     #[rustfmt::skip]
     #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
     pub stopped: Option<DateTime<Utc>>,
-    pub status: bool,
+    // pub status: bool,
     pub source: String,
     pub tags: Vec<String>,
     pub is_my_stream: bool,
@@ -231,7 +231,7 @@ impl StreamInfoDto {
             state: stream.state.to_owned(),
             started: stream.started.clone(),
             stopped: stream.stopped.clone(),
-            status: stream.status.clone(),
+            // status: stream.status.clone(),
             source: stream.source.to_owned(),
             tags: tags.iter().map(|tag| tag.to_string()).collect(),
             is_my_stream: stream.user_id == user_id,
