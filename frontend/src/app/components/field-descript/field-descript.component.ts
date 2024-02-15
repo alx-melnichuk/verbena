@@ -27,7 +27,7 @@ import { MatInput, MatInputModule } from '@angular/material/input';
 import { TranslateModule } from '@ngx-translate/core';
   
 export const DESCRIPT_MIN_LENGTH = 5;
-export const DESCRIPT_MAX_LENGTH = 2000;
+export const DESCRIPT_MAX_LENGTH = 2048; // 2*1024
 export const DESCRIPT_MIN_ROWS = 10;
 export const DESCRIPT_MAX_ROWS = 10;
 

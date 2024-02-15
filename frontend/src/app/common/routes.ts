@@ -18,8 +18,11 @@ export const ROUTE_VIEW = '/' + R_VIEW; // '/ind/view'
 // ** stream **
 export const R_STREAM = R_ROOT + '/' + 'stream'; // 'ind/stream'
 export const ROUTE_STREAM = '/' + R_STREAM;
+
 // export const R_STREAM_LIST = 'list';
-// export const ROUTE_STREAM_LIST = '/' + R_STREAM + '/' + R_STREAM_LIST; // '/ind/stream/list'
+export const E_STREAM_LIST = 'list';
+export const R_STREAM_LIST = R_STREAM + '/' + E_STREAM_LIST; //  'ind/stream/list'
+export const ROUTE_STREAM_LIST = '/' + R_STREAM_LIST;        // '/ind/stream/list'
 
 export const E_STREAM_EDIT = 'edit';
 export const P_STREAM_ID = 'streamId';
