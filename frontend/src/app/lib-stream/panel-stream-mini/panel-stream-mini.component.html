@@ -1,0 +1,49 @@
+<!-- <app-infinite-scroll (scrolled)="onScroll()"> -->
+  <div class="entity-card psm-stream-card"
+    style="outline: 1px solid cornflowerblue;"
+    *ngFor="let stream of streamList.list; trackBy: trackByIdFn"
+  >
+    <a class="psm-logo" (click)="doRedirectToStream(stream.id)">
+      <!-- <app-logotype *ngIf="!isFuture"
+        [logo]="stream.logo"
+      ></app-logotype> -->
+      <div *ngIf="isFuture" class="psm-logo-future">
+      </div>
+    </a>
+
+    <div class="psm-describe">
+      <div class="psm-date text">
+        {{ stream.starttime | date: (!isFuture ? formatDate : formatDateTime) }}
+      </div>
+      <div class="psm-title">
+        <a (click)="doRedirectToStream(stream.id)">
+          {{ stream.title }}
+        </a>
+      </div>
+      <div class="psm-description">{{ stream.descript }}</div>
+    </div>
+
+    <button mat-stroked-button *ngIf="canDuplicate"
+      class="smd-button slim mat-elevation-z psm-shrink-0 psm-btn" color="accent" (click)="doActionDuplicate(stream.id)">
+      <span class="psm-action-label">
+        <i class="psm-duplicate-accent"></i>
+        {{ 'panel-stream-mini.buttons.duplicate' | translate }}
+      </span>
+    </button>
+    <button mat-stroked-button *ngIf="canEdit"
+      class="smd-button slim mat-elevation-z psm-shrink-0 psm-btn" color="accent" (click)="doActionEdit(stream.id)">
+      <span class="psm-action-label">
+        <i class="psm-edit-accent"></i>
+        {{ 'panel-stream-mini.buttons.edit' | translate }}
+      </span>
+    </button>
+    <button mat-stroked-button *ngIf="canDelete"
+      class="smd-button slim mat-elevation-z psm-shrink-0 psm-btn" color="accent" (click)="doActionDelete(stream)">
+      <span class="psm-action-label">
+        <i class="psm-delete-accent"></i>
+        {{ 'panel-stream-mini.buttons.delete' | translate }}
+      </span>
+    </button>
+
+  </div>
+<!-- </app-infinite-scroll> -->

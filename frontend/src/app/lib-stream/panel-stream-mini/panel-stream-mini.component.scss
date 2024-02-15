@@ -1,0 +1,92 @@
+/*# sourceURL=panel-stream-mini.component.scss */
+
+app-panel-stream-mini {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+
+  .psm-stream-card {
+    height: 100px;
+    flex-shrink: 0;
+    &:not(:first-of-type) { margin-top: 1.4vh; }
+    display: flex;
+    align-items: center;
+    &>.psm-logo { flex-basis: 130px; flex-shrink: 0; }
+    &>.psm-describe { flex-grow: 1; }
+    &>.psm-shrink-0 { flex-shrink: 0; }
+    border-radius: 10px;
+    padding: 0 10px 0 0;
+  }
+  .psm-logo {
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--app-theme-accent);
+    border-radius: 10px;
+  }
+  .psm-describe {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 1vh 1vw 1vh 1vw;
+    box-sizing: border-box;
+    &>.psm-date { flex-basis: 22px; flex-shrink: 0; }
+    &>.psm-title { flex-basis: 22px; flex-shrink: 0; }
+    &>.psm-description { flex-grow: 1; }
+  }
+  .psm-description {
+    color: var(--app-theme-accent);
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 400;
+    overflow: hidden;
+    line-height: 18px;
+  }
+
+  .psm-date {
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 500;
+  }
+
+  .psm-action-label {
+    display: flex;
+    align-items: center;
+    &>i { margin-right: 0.5em; }
+  }
+  .psm-btn {
+    margin-left: 1em;
+  }
+  // .primary { color: var(--app-theme-primary); }
+
+  .psm-logo-future {
+    width: 58px;
+    height: 58px;
+    display: inline-block;
+    background: transparent none no-repeat center center;
+    background-image: url('../../../assets/icons/logo-future.svg');
+  }
+  .psm-duplicate-accent {
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    background: transparent none no-repeat center center;
+    background-image: url('../../../assets/icons/duplicate-accent.svg');
+  }
+  .psm-edit-accent {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    background: transparent none no-repeat center center;
+    background-image: url('../../../assets/icons/edit-accent.svg');
+  }
+  .psm-delete-accent {
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    background: transparent none no-repeat center center;
+    background-image: url('../../../assets/icons/delete-accent.svg');
+  }
+}
