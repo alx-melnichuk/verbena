@@ -151,26 +151,3 @@ errors: {{ formGroup.errors | json }}<br/>
 pristine: {{ formGroup.pristine | json }}<br/>
 invalid: {{ formGroup.invalid | json }}<br/>
 </sub>
-
-<!-- <form 
-  action="http://localhost:4250/api/streams/upload_file" 
-  method="post"
-  enctype="multipart/form-data"
-  target="_blank">
-  <label>
-    File logo:<input type="file" multiple name="file"/>
-  </label>
-  <button type="submit">Submit</button>
-</form> -->
-
-<h3>Will hit handle_post_1</h3>
-<form
-  action="http://localhost:4250/api/streams/send_form"
-  method=POST
-  target="_blank">
-  <label>
-    Name: <input name="name">
-  </label>
-  <button type=submit>Submit</button>
-</form>
-

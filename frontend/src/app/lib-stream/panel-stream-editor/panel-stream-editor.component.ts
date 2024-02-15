@@ -1,27 +1,24 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, Input, OnInit, Output, SimpleChanges, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import { FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { ENTER, COMMA } from '@angular/cdk/keycodes';
+import { ReactiveFormsModule, FormControl, Validators, FormGroup, ValidationErrors } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
+import { MatChipsModule, MatChipInputEvent } from '@angular/material/chips';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
-
-import { CreateStreamDto, ModifyStreamDto, StreamDto, StreamDtoUtil, UpdateStreamFileDto } from 'src/app/lib-stream/stream-api.interface';
+import { MAX_FILE_SIZE, IMAGE_VALID_FILE_TYPES } from 'src/app/common/constants';
+import { FieldDescriptComponent } from 'src/app/components/field-descript/field-descript.component';
+import { FieldFileUploadComponent } from 'src/app/components/field-file-upload/field-file-upload.component';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
-import { StreamService } from 'src/app/lib-stream/stream.service';
 import { CopyToClipboardUtil } from 'src/app/utils/copy-to-clipboard.util';
-import { IMAGE_VALID_FILE_TYPES, MAX_FILE_SIZE, MOMENT_ISO8601 } from 'src/app/common/constants';
-
-import { FieldDescriptComponent } from '../field-descript/field-descript.component';
-import { FieldFileUploadComponent } from '../field-file-upload/field-file-upload.component';
 import { TimeUtil } from 'src/app/utils/time.util';
-// import { DateUtil } from 'src/app/utils/date.utils';
+import { StreamDto, StreamDtoUtil, UpdateStreamFileDto } from '../stream-api.interface';
+import { StreamService } from '../stream.service';
 
 export const TAG_VALUES_MAX = 4;
 
