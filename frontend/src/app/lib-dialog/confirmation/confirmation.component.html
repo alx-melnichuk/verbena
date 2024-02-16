@@ -1,14 +1,8 @@
-<button
-  class="btn-close"
-  (click)="cancel()"
->
+<button class="dc-close" (click)="cancel()">
   &#215;
 </button>
 <h1 mat-dialog-title>{{ title }}</h1>
-<div
-  mat-dialog-content
-  class="content"
->
+<div mat-dialog-content class="dc-content">
   <ng-container *ngIf="!!message">
     {{ message }}
   </ng-container>
@@ -16,24 +10,19 @@
     <div [innerHTML]="messageHtml"></div>
   </ng-container>
 </div>
-<div
-  mat-dialog-actions
-  class="actions"
->
-  <button
-    mat-stroked-button
+<div mat-dialog-actions class="dc-actions">
+  <button mat-stroked-button
     *ngIf="!!btnNameCancel"
-    class="smd-button slim mat-elevation-z"
+    class="mat-elevation-z"
     color="accent"
     (click)="cancel()"
     cdkFocusInitial
   >
     {{ btnNameCancel }}
   </button>
-  <button
-    mat-stroked-button
+  <button mat-stroked-button
     *ngIf="!!btnNameAccept"
-    class="smd-button slim mat-elevation-z"
+    class="mat-elevation-z"
     color="primary"
     (click)="accept()"
   >

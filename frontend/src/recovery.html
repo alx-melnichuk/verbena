@@ -183,39 +183,6 @@
       </footer>
     </div>
 
-    <!-- 
- 
-<form class="container" *ngIf="!!confirmationId"
-  [formGroup]="formGroup"
-  novalidate
->
-  <p>Enter new password for Bullpit.</p>
-  < !-- Введите новый пароль для Bullpit. -- >
-  <div class="password">
-    <app-widget-password
-      formControlName="newPassword"
-      [isRequired]="true"
-      [label]=""New password""
-    ></app-widget-password>
-  </div>
-  <button mat-raised-button class="smd-button submit" color="primary"
-    [disabled]="formGroup.invalid || isDisabledSubmit"
-    (click)="doSubmit()"
-  >Submit
-  </button>
-
-  <div *ngIf="isResponseSuccessful==true">
-    <p>Your password have been changed to new one!</p>
-    < !--Ваш пароль изменен на новый!-- >
-    <p>Please follow to <a href="/login">(login form)</a> for authorization.</p>
-    < !-- Пожалуйста, перейдите по <a href="/login">(форма входа)</a> для авторизации. -- >
-  </div>
-  <div class="failed" *ngIf="isResponseSuccessful==false">
-    <p>Your confirmation have been expired!</p>
-    < !-- Срок действия вашего подтверждения истек! -- >
-  </div>
-</form>
-    -->
     <template id="tmp_eye_off_id">
       <svg class="s-eye-off s-icon">
         <g fill="#788393">

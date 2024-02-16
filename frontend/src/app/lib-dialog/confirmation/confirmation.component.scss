@@ -2,10 +2,9 @@
 
 app-confirmation {
   display: inline-block;
-  //   margin: 1.5em;
   position: relative;
 
-  .btn-close {
+  .dc-close {
     position: absolute;
     top: 1vh;
     right: 1vw;
@@ -21,12 +20,12 @@ app-confirmation {
     font-size: large;
   }
 
-  .content {
+  .dc-content {
     font-size: medium;
     font-style: normal;
   }
 
-  .actions {
+  .dc-actions {
     justify-content: center;
   }
 
