@@ -1,17 +1,18 @@
-import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, SimpleChanges, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnChanges, OnInit, Output, SimpleChanges, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { TranslateModule } from '@ngx-translate/core';
-import { PageData, PageDataUtil } from 'src/app/common/page-data';
-import { PIPE_DATE, PIPE_DATE_TIME } from 'src/app/common/constants';
+
 import { StreamDto, StreamListDto } from '../stream-api.interface';
+import { PIPE_DATE, PIPE_DATE_TIME } from 'src/app/common/constants';
+import { PageData, PageDataUtil } from 'src/app/common/page-data';
 
 // InfiniteScrollModule, LogotypeModule
 @Component({
   selector: 'app-panel-stream-mini',
   standalone: true,
-  imports: [CommonModule, TranslateModule, MatButtonModule, MatCardModule,],
+  imports: [CommonModule, MatButtonModule, MatCardModule, TranslateModule],
   templateUrl: './panel-stream-mini.component.html',
   styleUrls: ['./panel-stream-mini.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -48,6 +49,20 @@ export class PanelStreamMiniComponent implements OnChanges, OnInit {
   @HostBinding('class.global-scroll')
   public get isGlobalScroll(): boolean { return true; }
 
+  @HostListener('scrollend', ['$event'])
+  public doScrollPanel(event:Event):void {
+    event.preventDefault();
+    event.stopPropagation();
+    const element: Element | null = event.target as Element;
+    const scrollTopAndHeight = (element?.scrollTop || 0) + (element?.clientHeight || 0);
+    const scrollHeight = element?.scrollHeight || 1;
+    const result = Math.round((scrollTopAndHeight / scrollHeight)*100)/100;
+    if (result == 1) {
+      console.log('result == 1');
+      this.checkAndGetNextPage(this.pageData);
+    }
+  }
+
   constructor(
     private element: ElementRef,
   ) {
@@ -70,7 +85,8 @@ export class PanelStreamMiniComponent implements OnChanges, OnInit {
   }
 
   public onScroll(): void {
-    this.checkAndGetNextPage(this.pageData);
+    console.log(`onScroll();`);
+    // 
   }
 
   public doRedirectToStream(streamId: number): void {

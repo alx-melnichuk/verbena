@@ -1,6 +1,6 @@
 <!-- <app-infinite-scroll (scrolled)="onScroll()"> -->
+<div>
   <div class="entity-card psm-stream-card"
-    style="outline: 1px solid cornflowerblue;"
     *ngFor="let stream of streamList.list; trackBy: trackByIdFn"
   >
     <a class="psm-logo" (click)="doRedirectToStream(stream.id)">
@@ -11,7 +11,7 @@
       </div>
     </a>
 
-    <div class="psm-describe">
+    <div class="psm-details">
       <div class="psm-date text">
         {{ stream.starttime | date: (!isFuture ? formatDate : formatDateTime) }}
       </div>
@@ -20,25 +20,30 @@
           {{ stream.title }}
         </a>
       </div>
-      <div class="psm-description">{{ stream.descript }}</div>
+      <div class="psm-descript">{{ stream.descript }}</div>
     </div>
 
     <button mat-stroked-button *ngIf="canDuplicate"
-      class="smd-button slim mat-elevation-z psm-shrink-0 psm-btn" color="accent" (click)="doActionDuplicate(stream.id)">
+      class="mat-elevation-z3 psm-shrink-0 psm-mg-rg psm-pd-hor-05" color="primary"
+      (click)="doActionDuplicate(stream.id)">
       <span class="psm-action-label">
         <i class="psm-duplicate-accent"></i>
         {{ 'panel-stream-mini.buttons.duplicate' | translate }}
       </span>
     </button>
+
     <button mat-stroked-button *ngIf="canEdit"
-      class="smd-button slim mat-elevation-z psm-shrink-0 psm-btn" color="accent" (click)="doActionEdit(stream.id)">
+      class="mat-elevation-z3 psm-shrink-0 psm-mg-rg psm-pd-hor-07" color="primary"
+      (click)="doActionEdit(stream.id)">
       <span class="psm-action-label">
         <i class="psm-edit-accent"></i>
         {{ 'panel-stream-mini.buttons.edit' | translate }}
       </span>
     </button>
+
     <button mat-stroked-button *ngIf="canDelete"
-      class="smd-button slim mat-elevation-z psm-shrink-0 psm-btn" color="accent" (click)="doActionDelete(stream)">
+      class="mat-elevation-z3 psm-shrink-0 psm-mg-rg psm-pd-hor-07" color="primary"
+      (click)="doActionDelete(stream)">
       <span class="psm-action-label">
         <i class="psm-delete-accent"></i>
         {{ 'panel-stream-mini.buttons.delete' | translate }}
@@ -46,4 +51,5 @@
     </button>
 
   </div>
+</div>
 <!-- </app-infinite-scroll> -->

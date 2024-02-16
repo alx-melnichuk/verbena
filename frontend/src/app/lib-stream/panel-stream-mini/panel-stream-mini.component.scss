@@ -2,23 +2,30 @@
 
 app-panel-stream-mini {
   height: 100%;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
 
   .psm-stream-card {
-    height: 100px;
-    flex-shrink: 0;
-    &:not(:first-of-type) { margin-top: 1.4vh; }
-    display: flex;
     align-items: center;
-    &>.psm-logo { flex-basis: 130px; flex-shrink: 0; }
-    &>.psm-describe { flex-grow: 1; }
-    &>.psm-shrink-0 { flex-shrink: 0; }
+    border: 1px solid var(--app-theme-accent);
     border-radius: 10px;
-    padding: 0 10px 0 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-shrink: 0;
+    height: 100px;
+    &:first-of-type { margin-top: 1px; }
+    &:not(:first-of-type) { margin-top: 1vh; }
+    margin-bottom: 1px;
+    margin-left: 1px;
+    margin-right: 1px;
+    &>.psm-logo { flex-basis: 130px; flex-shrink: 0; }
+    &>.psm-details { flex-grow: 1; }
+    &>.psm-shrink-0 { flex-shrink: 0; }
   }
   .psm-logo {
+    outline: 1px solid #cc5a0d;
     height: 100px;
     display: flex;
     align-items: center;
@@ -26,7 +33,7 @@ app-panel-stream-mini {
     color: var(--app-theme-accent);
     border-radius: 10px;
   }
-  .psm-describe {
+  .psm-details {
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -34,21 +41,20 @@ app-panel-stream-mini {
     box-sizing: border-box;
     &>.psm-date { flex-basis: 22px; flex-shrink: 0; }
     &>.psm-title { flex-basis: 22px; flex-shrink: 0; }
-    &>.psm-description { flex-grow: 1; }
+    &>.psm-descript { flex-grow: 1; }
   }
-  .psm-description {
-    color: var(--app-theme-accent);
-    font-size: 12px;
+  .psm-date {
+    outline: 1px solid #d421b7;
+    font-style: normal;
+  }
+
+  .psm-descript {
+    // color: var(--app-theme-accent);
+    font-size: calc(1em - 1px);
     font-style: normal;
     font-weight: 400;
     overflow: hidden;
-    line-height: 18px;
-  }
-
-  .psm-date {
-    font-size: 14px;
-    font-style: normal;
-    font-weight: 500;
+    outline: 1px solid #10b16e;
   }
 
   .psm-action-label {
@@ -56,10 +62,18 @@ app-panel-stream-mini {
     align-items: center;
     &>i { margin-right: 0.5em; }
   }
-  .psm-btn {
-    margin-left: 1em;
+  .psm-mg-rg {
+    margin-right: 0.8em;
   }
-  // .primary { color: var(--app-theme-primary); }
+  .psm-pd-hor-05 {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+  }
+  .psm-pd-hor-07 {
+    padding-left: 0.7em;
+    padding-right: 0.7em;
+  }
+
 
   .psm-logo-future {
     width: 58px;
