@@ -8,6 +8,8 @@ import { SearchStreamDto, StreamListDto } from './stream-api.interface';
 import { StreamService } from './stream.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
+const CN_DEFAULT_LIMIT = 7; // 10;
+
 @Injectable({
   providedIn: 'root'
 })
@@ -47,7 +49,7 @@ export class StreamListService {
       userId,
       isFuture: true, // starttime: 'future',
       page: (pageData.page || 1), // default = 1;
-      limit: (pageData.limit > 0 ? pageData.limit : 10), // default = 10; min = 1, max = 100;
+      limit: (pageData.limit > 0 ? pageData.limit : CN_DEFAULT_LIMIT), // default = 10; min = 1, max = 100;
       orderColumn: (orderColumn || 'starttime'),
       orderDirection: (pageData.orderDirection === OrderDirection.desc ? 'desc' : 'asc')
     };
@@ -76,7 +78,7 @@ export class StreamListService {
       userId,
       isFuture: false, // starttime: 'past',
       page: (pageData.page || 1), // default = 1;
-      limit: (pageData.limit > 0 ? pageData.limit : 10), // default = 10; min = 1, max = 100;
+      limit: (pageData.limit > 0 ? pageData.limit : CN_DEFAULT_LIMIT), // default = 10; min = 1, max = 100;
       orderColumn: (orderColumn || 'starttime'),
       orderDirection: (pageData.orderDirection === OrderDirection.desc ? 'desc' : 'asc')
     };

@@ -34,14 +34,14 @@
       [canDelete]="true"
       [isFuture]="true"
       [streamList]="streamListService.futureStreamsDto"
-      requestNextPage9="doRequestNextPageFuture($event)"
+      (requestNextPage)="doRequestNextPageFuture($event)"
       redirectToStream9="doRedirectToStreamView($event)"
       actionDuplicate9="doActionDuplicate($event)"
       actionEdit9="doActionEdit($event)"
       actionDelete9="doActionDelete($event)"
     ></app-panel-stream-mini>
   </div>
-  <div class="sl-stream-box sl-my-past" style="border-top: 1px solid orange;">
+  <div class="sl-stream-box sl-my-past">
     <div class="sl-title">
       {{ 'stream_list.my_past_streams' | translate }}
     </div>

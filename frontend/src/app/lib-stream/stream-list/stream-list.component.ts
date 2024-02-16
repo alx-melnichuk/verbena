@@ -65,29 +65,18 @@ export class StreamListComponent {
     }
     return null;
   }
-  public async doRequestNextPageFuture2(nextPageData: PageData): Promise<null | HttpErrorResponse> {
-    if (!this.streamListService.futureStreamsDto) {
-      return null;
-    }
-    const pageData = PageDataUtil.create(this.streamListService.futureStreamsDto);
-    if (!!pageData && !!nextPageData && PageDataUtil.checkNextPage(pageData, nextPageData)) {
-      await this.streamListService.getFutureStream(this.userId, nextPageData);
-      this.changeDetector.markForCheck();
-    }
-    return null;
-  }
 
-  /*public async doRequestNextPagePast(nextPageData: PageData): Promise<null | HttpErrorResponse> {
+  public async doRequestNextPagePast(nextPageData: PageData): Promise<null | HttpErrorResponse> {
     if (!this.streamListService.futureStreamsDto) {
       return null;
     }
     const pageData = PageDataUtil.create(this.streamListService.pastStreamsDto);
     if (!!pageData && !!nextPageData && PageDataUtil.checkNextPage(pageData, nextPageData)) {
-      await this.streamListService.getPastStream(nextPageData);
+      await this.streamListService.getPastStream(this.userId, nextPageData);
       this.changeDetector.markForCheck();
     }
     return null;
-  }*/
+  }
 
   public isFuture(startTime: StringDateTime | null): boolean | null {
     return StreamDtoUtil.isFuture(startTime);
@@ -128,10 +117,10 @@ export class StreamListComponent {
 
   private loadFutureAndPastStreamsAndSchedule(): void {
     this.streamListService.clearFutureStream();
-    this.doRequestNextPageFuture(PageDataUtil.create({ page: 1 }));
+    // this.doRequestNextPageFuture(PageDataUtil.create({ page: 1 }));
 
     this.streamListService.clearPastStream();
-    // this.doRequestNextPagePast(PageDataUtil.create({ page: 1 }));
+    this.doRequestNextPagePast(PageDataUtil.create({ page: 1 }));
 
     // this.doChangeActiveDate(this.scheduleService.activeDate.format(MOMENT_ISO8601_DATE));
     // this.doChangeSelectedDate(this.scheduleService.selectedDate);

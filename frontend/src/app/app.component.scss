@@ -32,6 +32,8 @@ app-root {
     flex: 0 0 var(--header-hg);
   }
   & > main {
+    height: calc(100% - var(--header-hg) - var(--footer-hg)); // #!
+    max-height: calc(100% - var(--header-hg) - var(--footer-hg)); // #!
     flex: 1 1 auto;
   }
   & > footer {
