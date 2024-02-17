@@ -1,10 +1,9 @@
 /*# sourceURL=panel-stream-mini.component.scss */
 
 app-panel-stream-mini {
-  height: 100%;
-  max-height: 100%;
   display: flex;
   flex-direction: column;
+  height: 100%;
   overflow-y: auto;
 
   .psm-stream-card {
@@ -14,13 +13,12 @@ app-panel-stream-mini {
     box-sizing: border-box;
     display: flex;
     flex-shrink: 0;
-    height: 100px;
     &:first-of-type { margin-top: 1px; }
     &:not(:first-of-type) { margin-top: 1vh; }
     margin-bottom: 1px;
     margin-left: 1px;
     margin-right: 1px;
-    &>.psm-logo { flex-basis: 130px; flex-shrink: 0; }
+    &>.psm-logo { flex: 0 0 130px; }
     &>.psm-details { flex-grow: 1; }
     &>.psm-shrink-0 { flex-shrink: 0; }
   }
@@ -34,25 +32,28 @@ app-panel-stream-mini {
     border-radius: 10px;
   }
   .psm-details {
-    height: 100%;
     display: flex;
     flex-direction: column;
     padding: 1vh 1vw 1vh 1vw;
     box-sizing: border-box;
-    &>.psm-date { flex-basis: 22px; flex-shrink: 0; }
-    &>.psm-title { flex-basis: 22px; flex-shrink: 0; }
-    &>.psm-descript { flex-grow: 1; }
-  }
-  .psm-date {
-    outline: 1px solid #d421b7;
-    font-style: normal;
   }
 
+  .psm-date {
+    font-style: normal;
+    flex: 0 0 1.5em;
+    margin-bottom: 0.25em;
+    outline: 1px solid #d421b7;
+  }
+  .psm-title {
+    flex: 0 0 1.5em;
+    margin-bottom: 0.25em;
+  }
   .psm-descript {
-    // color: var(--app-theme-accent);
+      // color: var(--app-theme-accent);
     font-size: calc(1em - 1px);
     font-style: normal;
     font-weight: 400;
+    flex: 0 0 1.5em;
     overflow: hidden;
     outline: 1px solid #10b16e;
   }

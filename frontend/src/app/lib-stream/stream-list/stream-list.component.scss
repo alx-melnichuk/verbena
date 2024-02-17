@@ -3,75 +3,40 @@
 app-stream-list {
   display: flex;
   height: 100%;
-  max-height: 100%;
   &>.sl-my-calendar { flex-basis: 26%; }
   &>.sl-my-streams { flex-basis: 73.99%;}
 
   .sl-title {
     align-items: center;
-    outline: 1px solid darkgoldenrod; //
     display: flex;
-    flex-basis: 4em;
-    flex-shrink: 0;
+    flex: 0 0 3.5em;
     &>span {
       font-size: 18px;
       font-style: normal;
       font-weight: bold;
     }
   }
+  .sl-flex-col {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: 100%;
+    padding: 0 .8vw 0 1.6vw;
+  }
 
   // ** "My Calendar" **
   .sl-my-calendar {
-    padding: 0 .8vw 0 1.6vw;
-    box-sizing: border-box;
-    height: 100%;
-    max-height: 100%;
-    flex-grow: 0;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
     &>.sl-calendar { flex-grow: 0; position: relative; }
     &>.sl-events { flex-grow: 1; overflow-y: hidden; position: relative; }
   }
 
-  // ** **
-  .sl-my-streams {
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    max-height: 100%;
-    flex-grow: 0;
-    flex-shrink: 0;
-    padding: 0 1.6vw 0 .8vw;
-    // flex-grow: 0;
-    // flex-shrink: 0;
-    &>.sl-my-future {
-      flex-basis: 50%;
-      flex-grow: 0;
-      flex-shrink: 0;
-      outline: 1px solid rgb(5, 82, 5);
-    }
-    &>.sl-my-past {
-      flex-basis: 50%;
-      flex-grow: 0;
-      flex-shrink: 0;
-      outline: 1px solid rgb(9, 104, 148);
-    }
-  }
   .sl-stream-box {
     display: flex;
     flex-direction: column;
-    // height: 100%;
-    max-height: 50%;
-    height: 50%;
+    flex: 0 0 50%;
     overflow-y: hidden;
     position: relative;
-    // 
-    &>.sl-stream-list {
-    //   flex-grow: 0;
-    //   flex-shrink: 0;
-    }
   }
- 
 }

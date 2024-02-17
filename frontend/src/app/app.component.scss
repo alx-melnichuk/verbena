@@ -20,31 +20,20 @@ app-root {
     --header-hg: 62px;
   }
 
-  display: flex;
+  display: block;
   flex-direction: column;
   height: 100%;
   outline: 1px solid green;
   position: relative;
 
   & > header {
-    border-bottom: 1px solid lightgrey;
-    box-sizing: border-box;
-    flex: 0 0 var(--header-hg);
-  }
-  & > main {
-    height: calc(100% - var(--header-hg) - var(--footer-hg)); // #!
-    max-height: calc(100% - var(--header-hg) - var(--footer-hg)); // #!
-    flex: 1 1 auto;
+    height: var(--header-hg);
   }
   & > footer {
-    border-top: 1px solid lightgrey;
-    box-sizing: border-box;
-    flex: 0 0 var(--footer-hg);
+    height: var(--footer-hg);
   }
-
-  .main {
-    // height: fit-content; // IMPORTANT for scrolling in safari
-    height: calc(100% - var(--header-hg) - var(--footer-hg));
+  & > main {
+    height: calc(100% - var(--header-hg) - var(--footer-hg) - 1px);
     overflow-y: hidden;
     position: relative;
   }
