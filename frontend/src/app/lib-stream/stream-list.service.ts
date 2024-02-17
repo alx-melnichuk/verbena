@@ -29,9 +29,7 @@ export class StreamListService {
     // private userService: UserService,
     private streamService: StreamService,
   ) { 
-    this.futureStreamsDto = this.emptyStreamListDto();
-    this.pastStreamsDto = this.emptyStreamListDto();
-    console.log(`StreamListService()`); // #
+    console.log(`StreamListService()`); // # 
   }
 
   public clearFutureStream(): void {
