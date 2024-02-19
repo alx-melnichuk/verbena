@@ -1,4 +1,4 @@
-export enum OrderDirection {
+/*export enum OrderDirection {
   asc = 'asc',
   desc = 'desc'
 }
@@ -11,7 +11,7 @@ export class OrderDirectionUtil {
     }
     return result;
   }
-}
+}*/
 /*export interface PageDataInp {
   count: number;
   limit: number;
@@ -21,32 +21,32 @@ export class OrderDirectionUtil {
   orderDirection: string;
 }*/
 
-export class PageData {
+export class PageInfo {
   public count = -1;
   public limit = -1;
   public page = -1;
   public pages = -1;
   public orderColumn = '';
-  public orderDirection = OrderDirection.asc;
+  public orderDirection = '';
 }
 
-export class PageDataUtil {
-  public static create(dataObj: Partial<PageData>): PageData {
-    const result: PageData = new PageData();
+export class PageInfoUtil {
+  public static create(dataObj: Partial<PageInfo>): PageInfo {
+    const result: PageInfo = new PageInfo();
     result.count = (dataObj.count != null ? dataObj.count : result.count);
     result.limit = (dataObj.limit != null ? dataObj.limit : result.limit);
     result.page = (dataObj.page != null ? dataObj.page : result.page);
     result.pages = (dataObj.pages != null ? dataObj.pages : result.pages);
     result.orderColumn = (dataObj.orderColumn != null ? dataObj.orderColumn : result.orderColumn);
-    result.orderDirection = (dataObj.orderDirection != null ? OrderDirectionUtil.create(dataObj.orderDirection) : result.orderDirection);
+    result.orderDirection = (dataObj.orderDirection != null ? dataObj.orderDirection : result.orderDirection);
     return result;
   }
 
-  public static checkPage(pageData: PageData, page: number): boolean {
-    return (pageData != null && page > 0 && pageData.page !== page && (pageData.pages === -1 || page <= pageData.pages));
+  public static checkPage(pageInfo: PageInfo, page: number): boolean {
+    return (pageInfo != null && page > 0 && pageInfo.page !== page && (pageInfo.pages === -1 || page <= pageInfo.pages));
   }
 
-  public static checkNextPage(oldPageData: PageData, nextPageData: PageData): boolean {
+  public static checkNextPage(oldPageData: PageInfo, nextPageData: PageInfo): boolean {
     let result = false;
     if (!!oldPageData && !!nextPageData && oldPageData !== nextPageData) {
       const res1 = (oldPageData.pages === -1);
