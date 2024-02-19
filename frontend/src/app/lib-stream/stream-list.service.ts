@@ -1,10 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { OrderDirection, PageData } from '../common/page-data';
-import { UserService } from '../entities/user/user.service';
+import { PageInfo, PageInfoUtil } from '../common/page-info';
 import { AlertService } from '../lib-dialog/alert.service';
-import { SearchStreamDto, StreamListDto } from './stream-api.interface';
+import { SearchStreamDto, StreamDto, StreamListDto } from './stream-api.interface';
 import { StreamService } from './stream.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
@@ -16,48 +15,45 @@ const CN_DEFAULT_LIMIT = 7; // 10;
 export class StreamListService {
   // "Future Streams"
   public futureStreamLoading = false;
-  public futureStreamsDto: StreamListDto = this.emptyStreamListDto();
+  public futureStreamsDto: StreamDto[] = [];
+  public futurePageInfo: PageInfo = PageInfoUtil.create({ page: 0, limit: CN_DEFAULT_LIMIT });
 
   // "Past Streams"
   public pastStreamLoading = false;
-  public pastStreamsDto: StreamListDto = this.emptyStreamListDto();
-
+  public pastStreamsDto: StreamDto[] = [];
+  public pastPageInfo: PageInfo = PageInfoUtil.create({ page: 0, limit: CN_DEFAULT_LIMIT });
 
   constructor(
     private alertService: AlertService,
-    // private profileService: ProfileService,
-    // private userService: UserService,
     private streamService: StreamService,
   ) { 
     console.log(`StreamListService()`); // # 
   }
 
   public clearFutureStream(): void {
-    this.futureStreamsDto = this.emptyStreamListDto();
+    this.futureStreamsDto = [];
   }
 
   public clearPastStream(): void {
-    this.pastStreamsDto = this.emptyStreamListDto();
+    this.pastStreamsDto = [];
   }
 
-  public getFutureStream(userId: number, pageData: PageData): Promise<StreamListDto | HttpErrorResponse | undefined> {
-    const orderColumn = (pageData.orderColumn as ('starttime' | 'title' | undefined));
-    // const userId = (this.profileService.getUserId() as string);
-    const getStreamsDto: SearchStreamDto = {
+  public searchNextFutureStream(userId: number): Promise<StreamListDto | HttpErrorResponse | undefined> {
+    if (!this.checkNextPage(this.futurePageInfo)) {
+     return Promise.resolve(undefined);
+    }
+    let searchStream: SearchStreamDto = {
       userId,
-      isFuture: true, // starttime: 'future',
-      page: (pageData.page || 1), // default = 1;
-      limit: (pageData.limit > 0 ? pageData.limit : CN_DEFAULT_LIMIT), // default = 10; min = 1, max = 100;
-      orderColumn: (orderColumn || 'starttime'),
-      orderDirection: (pageData.orderDirection === OrderDirection.desc ? 'desc' : 'asc')
+      isFuture: true,
+      page: this.futurePageInfo.page + 1,
+      limit: this.futurePageInfo.limit
     };
-    console.log(`StreamListService.getFutureStream()  getStreamsDto: `, getStreamsDto); // #
-    this.futureStreamsDto = this.emptyStreamListDto();
     this.futureStreamLoading = true;
-    return this.streamService.getStreams(getStreamsDto)
+    return this.streamService.getStreams(searchStream)
       .then((response: StreamListDto | HttpErrorResponse | undefined) => {
-        this.futureStreamsDto = (response as StreamListDto);
-        console.log(`StreamListService.getFutureStream()  this.futureStreamsDto = `, this.futureStreamsDto); // #
+        const futureStreamListDto = (response as StreamListDto);
+        this.futurePageInfo = PageInfoUtil.create(futureStreamListDto);
+        this.futureStreamsDto = this.futureStreamsDto.concat(futureStreamListDto.list);
         return response;
       })
       .catch((error: HttpErrorResponse) => {
@@ -66,25 +62,26 @@ export class StreamListService {
       })
       .finally(() => {
         this.futureStreamLoading = false;
-      });
+      });      
+  
   }
 
-  public getPastStream(userId: number, pageData: PageData): Promise<StreamListDto | HttpErrorResponse | undefined> {
-    const orderColumn = (pageData.orderColumn as ('starttime' | 'title' | undefined));
-    // const userId = (this.profileService.getUserId() as string);
-    const getStreamsDto: SearchStreamDto = {
+  public searchNextPastStream(userId: number): Promise<StreamListDto | HttpErrorResponse | undefined> {
+    if (!this.checkNextPage(this.pastPageInfo)) {
+      return Promise.resolve(undefined);
+    }
+    let searchStream: SearchStreamDto = {
       userId,
-      isFuture: false, // starttime: 'past',
-      page: (pageData.page || 1), // default = 1;
-      limit: (pageData.limit > 0 ? pageData.limit : CN_DEFAULT_LIMIT), // default = 10; min = 1, max = 100;
-      orderColumn: (orderColumn || 'starttime'),
-      orderDirection: (pageData.orderDirection === OrderDirection.desc ? 'desc' : 'asc')
+      isFuture: false,
+      page: this.pastPageInfo.page + 1,
+      limit: this.pastPageInfo.limit
     };
-    this.pastStreamsDto = this.emptyStreamListDto();
     this.pastStreamLoading = true;
-    return this.streamService.getStreams(getStreamsDto)
+    return this.streamService.getStreams(searchStream)
       .then((response: StreamListDto | HttpErrorResponse | undefined) => {
-        this.pastStreamsDto = (response as StreamListDto);
+        const pastStreamListDto = (response as StreamListDto);
+        this.pastPageInfo = PageInfoUtil.create(pastStreamListDto);
+        this.pastStreamsDto = this.pastStreamsDto.concat(pastStreamListDto.list);
         return response;
       })
       .catch((error: HttpErrorResponse) => {
@@ -93,12 +90,14 @@ export class StreamListService {
       })
       .finally(() => {
         this.pastStreamLoading = false;
-      });
+      });      
+  }
+
+  public checkNextPage(pageInfo: PageInfo): boolean {
+    const nextPageInfo: PageInfo = PageInfoUtil.create({ page: pageInfo.page + 1 });
+    return PageInfoUtil.checkNextPage(this.pastPageInfo, nextPageInfo);
   }
 
   // ** Private API **
 
-  private emptyStreamListDto(): StreamListDto {
-    return { list: [], limit: 0, count: 0, page: 0, pages: -1 };
-  }
 }
