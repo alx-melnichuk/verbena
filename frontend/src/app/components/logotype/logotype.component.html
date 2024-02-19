@@ -1,0 +1,6 @@
+<img class="logo-image"
+  *ngIf="!!logo"
+  [src]="logo"
+  [alt]="'&ensp;' + ('logotype.no_logo' | translate)"
+/>
+<div [hidden]="!!logo">{{ 'logotype.no_logo' | translate }}</div>

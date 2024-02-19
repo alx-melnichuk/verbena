@@ -100,6 +100,9 @@
     "dialog_title": "Welcome to the {{app_name}} !",
     "dialog_message": "We have sent a link to change your password to \"{{value}}\"."
   },
+  "logotype": {
+    "no_logo": "no logo!"
+  },
   "my_streams": {
     "old_variant": "old_variant",
     "sure_you_want_delete_stream": "Are you sure you want to delete the stream \"{{title}}\" ?",
