@@ -6,9 +6,22 @@ app-stream-list {
   &>.sl-my-calendar { flex-basis: 26%; }
   &>.sl-my-streams { flex-basis: 73.99%;}
 
+  .sl-pd-lf {
+    padding-left: 1.4em;
+    box-sizing: border-box;
+  }
+  .sl-br-lf {
+    border-left: 2px solid var(--app-site-delimiter-cl);
+    box-sizing: border-box;
+  }
+  .sl-br-tp {
+    border-top: 2px solid var(--app-site-delimiter-cl);
+  }
   .sl-title {
     align-items: center;
     display: flex;
+    font-weight: 500;
+    font-size: calc(1em + 1px);
     flex: 0 0 3.5em;
     &>span {
       font-size: 18px;
@@ -17,14 +30,13 @@ app-stream-list {
     }
   }
   .sl-flex-col {
-    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     flex-grow: 0;
     flex-shrink: 0;
     height: 100%;
-    padding: 0 .8vw 0 1.6vw;
   }
+  
 
   // ** "My Calendar" **
   .sl-my-calendar {
@@ -33,10 +45,12 @@ app-stream-list {
   }
 
   .sl-stream-box {
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     flex: 0 0 50%;
     overflow-y: hidden;
+    padding-left: 1.4em;
     position: relative;
   }
 }

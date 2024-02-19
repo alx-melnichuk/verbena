@@ -4,7 +4,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { PageData, PageDataUtil } from 'src/app/common/page-data';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { ROUTE_STREAM_CREATE, ROUTE_STREAM_EDIT } from 'src/app/common/routes';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
@@ -54,27 +53,17 @@ export class StreamListComponent {
 
   // ** Public API **
 
-  public async doRequestNextPageFuture(nextPageData: PageData): Promise<null | HttpErrorResponse> {
-    if (!this.streamListService.futureStreamsDto) {
-      return null;
-    }
-    const pageData = PageDataUtil.create(this.streamListService.futureStreamsDto);
-    if (!!pageData && !!nextPageData && PageDataUtil.checkNextPage(pageData, nextPageData)) {
-      await this.streamListService.getFutureStream(this.userId, nextPageData);
-      this.changeDetector.markForCheck();
-    }
+  public async doRequestNextPageFuture(): Promise<null | HttpErrorResponse> {
+    console.log(`\ndoRequestNextPageFuture() 01`); // #
+    await this.streamListService.searchNextFutureStream(this.userId);
+    this.changeDetector.markForCheck();
     return null;
   }
 
-  public async doRequestNextPagePast(nextPageData: PageData): Promise<null | HttpErrorResponse> {
-    if (!this.streamListService.futureStreamsDto) {
-      return null;
-    }
-    const pageData = PageDataUtil.create(this.streamListService.pastStreamsDto);
-    if (!!pageData && !!nextPageData && PageDataUtil.checkNextPage(pageData, nextPageData)) {
-      await this.streamListService.getPastStream(this.userId, nextPageData);
-      this.changeDetector.markForCheck();
-    }
+  public async doRequestNextPagePast(): Promise<null | HttpErrorResponse> {
+    console.log(`\ndoRequestNextPagePast() 01`); // #
+    await this.streamListService.searchNextPastStream(this.userId);
+    this.changeDetector.markForCheck();
     return null;
   }
 
@@ -117,10 +106,10 @@ export class StreamListComponent {
 
   private loadFutureAndPastStreamsAndSchedule(): void {
     this.streamListService.clearFutureStream();
-    // this.doRequestNextPageFuture(PageDataUtil.create({ page: 1 }));
+    this.doRequestNextPageFuture();
 
     this.streamListService.clearPastStream();
-    this.doRequestNextPagePast(PageDataUtil.create({ page: 1 }));
+    this.doRequestNextPagePast();
 
     // this.doChangeActiveDate(this.scheduleService.activeDate.format(MOMENT_ISO8601_DATE));
     // this.doChangeSelectedDate(this.scheduleService.selectedDate);

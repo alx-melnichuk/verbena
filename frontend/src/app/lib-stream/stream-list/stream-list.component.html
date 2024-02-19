@@ -1,4 +1,4 @@
-<div class="sl-my-calendar sl-flex-col">
+<div class="sl-my-calendar sl-pd-lf sl-flex-col">
   <div class="sl-title">
     {{ 'stream_list.my_calendar' | translate }}
   </div>
@@ -21,8 +21,8 @@
     ></app-schedule-event> -->
   </div>
 </div>
-<div class="sl-my-streams sl-flex-col" style="outline: 1px solid green;">
-  <div class="sl-stream-box" style="outline: 1px solid rgb(5, 82, 5);">
+<div class="sl-my-streams sl-br-lf sl-flex-col">
+  <div class="sl-stream-box sl-pd-lf">
     <div class="sl-title">
       {{ 'stream_list.my_future_streams' | translate }}
     </div>
@@ -34,14 +34,14 @@
       [canDelete]="true"
       [isFuture]="true"
       [streamList]="streamListService.futureStreamsDto"
-      (requestNextPage)="doRequestNextPageFuture($event)"
-      redirectToStream9="doRedirectToStreamView($event)"
-      actionDuplicate9="doActionDuplicate($event)"
-      actionEdit9="doActionEdit($event)"
-      actionDelete9="doActionDelete($event)"
+      (requestNextPage)="doRequestNextPageFuture()"
+      (redirectToStream)="doRedirectToStreamView($event)"
+      (actionDuplicate)="doActionDuplicate($event)"
+      (actionEdit)="doActionEdit($event)"
+      (actionDelete)="doActionDelete($event)"
     ></app-panel-stream-mini>
   </div>
-  <div class="sl-stream-box" style="outline: 1px solid rgb(9, 104, 148);">
+  <div class="sl-stream-box sl-pd-lf sl-br-tp">
     <div class="sl-title">
       {{ 'stream_list.my_past_streams' | translate }}
     </div>
@@ -51,7 +51,7 @@
       [canDuplicate]="true"
       [canDelete]="true"
       [streamList]="streamListService.pastStreamsDto"
-      (requestNextPage)="doRequestNextPagePast($event)"
+      (requestNextPage)="doRequestNextPagePast()"
       (redirectToStream)="doRedirectToStreamView($event)"
       (actionDuplicate)="doActionDuplicate($event)"
       (actionDelete)="doActionDelete($event)"
