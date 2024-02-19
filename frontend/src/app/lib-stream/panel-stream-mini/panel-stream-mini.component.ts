@@ -1,24 +1,25 @@
-import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnChanges, OnInit, Output, SimpleChanges, ViewEncapsulation } from '@angular/core';
+import {
+ ChangeDetectionStrategy, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewEncapsulation
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { StreamDto, StreamListDto } from '../stream-api.interface';
 import { PIPE_DATE, PIPE_DATE_TIME } from 'src/app/common/constants';
-import { PageData, PageDataUtil } from 'src/app/common/page-data';
+import { LogotypeComponent } from 'src/app/components/logotype/logotype.component';
+import { StreamDto } from '../stream-api.interface';
 
-// InfiniteScrollModule, LogotypeModule
 @Component({
   selector: 'app-panel-stream-mini',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatCardModule, TranslateModule],
+  imports: [CommonModule, MatButtonModule, MatCardModule, TranslateModule, LogotypeComponent],
   templateUrl: './panel-stream-mini.component.html',
   styleUrls: ['./panel-stream-mini.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PanelStreamMiniComponent implements OnChanges, OnInit {
+export class PanelStreamMiniComponent {
   @Input()
   public canDuplicate = false;
   @Input()
@@ -28,10 +29,19 @@ export class PanelStreamMiniComponent implements OnChanges, OnInit {
   @Input()
   public isFuture = false;
   @Input()
-  public streamList: StreamListDto = this.emptyStreamListDto();
+  public streamList: StreamDto[] = [];
+  @Input()
+  public set isScrollToTop(value: boolean) {
+    if (value) {
+      this.scrollToTop();
+    }
+  }
+  public get isScrollToTop(): boolean {
+    return false;
+  }
 
   @Output()
-  readonly requestNextPage: EventEmitter<PageData> = new EventEmitter();
+  readonly requestNextPage: EventEmitter<void> = new EventEmitter();
   @Output()
   readonly redirectToStream: EventEmitter<number> = new EventEmitter();
   @Output()
@@ -41,8 +51,6 @@ export class PanelStreamMiniComponent implements OnChanges, OnInit {
   @Output()
   readonly actionDelete: EventEmitter<StreamDto> = new EventEmitter();
 
-  public streamDTOList: StreamDto[] = [];
-  public pageData: PageData = PageDataUtil.create({});
   readonly formatDate = PIPE_DATE;
   readonly formatDateTime = PIPE_DATE_TIME;
 
@@ -53,13 +61,9 @@ export class PanelStreamMiniComponent implements OnChanges, OnInit {
   public doScrollPanel(event:Event):void {
     event.preventDefault();
     event.stopPropagation();
-    const element: Element | null = event.target as Element;
-    const scrollTopAndHeight = (element?.scrollTop || 0) + (element?.clientHeight || 0);
-    const scrollHeight = element?.scrollHeight || 1;
-    const result = Math.round((scrollTopAndHeight / scrollHeight)*100)/100;
-    if (result == 1) {
-      console.log('result == 1');
-      this.checkAndGetNextPage(this.pageData);
+    const elem: Element | null = event.target as Element;
+    if (this.checkScrollHasMax(elem?.scrollTop, elem?.clientHeight, elem?.scrollHeight)) {
+      this.requestNextPage.emit();  
     }
   }
 
@@ -68,26 +72,12 @@ export class PanelStreamMiniComponent implements OnChanges, OnInit {
   ) {
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (!!changes['streamList']) {
-      this.streamList = !this.streamList ? this.emptyStreamListDto() : this.streamList;
-      this.prepareNextStreamsData(this.streamList);
-    }
-  }
-
-  ngOnInit(): void {
-  }
-
   // ** Public API **
 
   public trackByIdFn(index: number, item: StreamDto): number {
     return item.id;
   }
 
-  public onScroll(): void {
-    console.log(`onScroll();`);
-    // 
-  }
 
   public doRedirectToStream(streamId: number): void {
     if (!!streamId) {
@@ -113,22 +103,6 @@ export class PanelStreamMiniComponent implements OnChanges, OnInit {
 
   // ** Private API **
 
-  private checkAndGetNextPage(pageData: PageData): void {
-    if (pageData.page < pageData.pages) {
-      pageData.page = pageData.page + 1;
-      this.requestNextPage.emit(PageDataUtil.create(pageData));
-    }
-  }
-
-  private prepareNextStreamsData(streamListDto: StreamListDto): void {
-    if (1 === streamListDto.page) {
-      this.streamDTOList.length = 0;
-      this.scrollToTop();
-    }
-    this.streamDTOList.push(...streamListDto.list);
-    this.pageData = PageDataUtil.create(streamListDto);
-  }
-
   private scrollToTop(): void {
     if (!!this.element) {
       try {
@@ -137,7 +111,9 @@ export class PanelStreamMiniComponent implements OnChanges, OnInit {
     }
   }
 
-  private emptyStreamListDto(): StreamListDto {
-    return { list: [], limit: 0, count: 0, page: 0, pages: -1 };
+  private checkScrollHasMax(scrollTop?: number, clientHeight?: number, scrollHeight?: number): boolean {
+    const scrollTopAndHeight = (scrollTop || 0) + (clientHeight || 0);
+    const result = Math.round((scrollTopAndHeight / (scrollHeight || 1))*100)/100;
+    return result > 0.98;
   }
 }

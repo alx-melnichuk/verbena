@@ -1,18 +1,18 @@
-<!-- <app-infinite-scroll (scrolled)="onScroll()"> -->
 <div>
-  <div class="entity-card psm-stream-card"
-    *ngFor="let stream of streamList.list; trackBy: trackByIdFn"
-  >
+  <div class="psm-stream-card"
+    *ngFor="let stream of streamList; trackBy: trackByIdFn">
+
     <a class="psm-logo" (click)="doRedirectToStream(stream.id)">
-      <!-- <app-logotype *ngIf="!isFuture"
+      <app-logotype *ngIf="!isFuture"
         [logo]="stream.logo"
-      ></app-logotype> -->
+      ></app-logotype>
       <div *ngIf="isFuture" class="psm-logo-future">
       </div>
     </a>
 
     <div class="psm-details">
       <div class="psm-date text">
+        <!-- id:{{ stream.id }} _ -->
         {{ stream.starttime | date: (!isFuture ? formatDate : formatDateTime) }}
       </div>
       <div class="psm-title">
@@ -52,4 +52,3 @@
 
   </div>
 </div>
-<!-- </app-infinite-scroll> -->
