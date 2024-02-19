@@ -23,7 +23,6 @@ app-root {
   display: block;
   flex-direction: column;
   height: 100%;
-  outline: 1px solid green;
   position: relative;
 
   & > header {
@@ -43,8 +42,10 @@ app-root {
 
   --app-site-footer-bg: var(--green-050);
   --app-site-header-bg: var(--green-050);
+  --app-site-delimiter-cl: var(--green-100);
   --app-site-border-cl: var(--green-500);
   --app-site-border-warn-cl: var(--red-500);
+  --app-pn-stream-bg: var(--powder-050);
 
   // ** temp **
   .tmp-routes {
