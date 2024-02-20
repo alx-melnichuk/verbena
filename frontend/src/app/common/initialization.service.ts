@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Renderer2 } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { first } from 'rxjs/operators';
@@ -11,6 +11,8 @@ import { DateAdapter } from '@angular/material/core';
   providedIn: 'root',
 })
 export class InitializationService {
+  private isDarkTheme: boolean | undefined;
+
   constructor(
     private router: Router,
     private dateAdapter: DateAdapter<any>,
@@ -51,6 +53,22 @@ export class InitializationService {
     return Promise.resolve();
   }
 
+  public getDarkTheme(): boolean {
+    return !!this.isDarkTheme;
+  }
+  
+  public setDarkTheme(value: boolean, renderer: Renderer2): void {
+    if (this.isDarkTheme !== value) {
+      const oldClassName = this.getThemeName(!!this.isDarkTheme);
+      this.isDarkTheme = value;
+      const newClassName = this.getThemeName(this.isDarkTheme);
+      const body: HTMLElement = document.body;
+
+      renderer.removeClass(body, oldClassName);
+      renderer.addClass(body, newClassName);
+    }
+  }
+
   // ** Private Api **
 
   private getUserLanguage(defaultValue: string): string {
@@ -62,4 +80,9 @@ export class InitializationService {
     lang = lang || wn.language || wn.browserLanguage || wn.userLanguage;
     return lang;
   }
+
+  private getThemeName(isDarkTheme: boolean): string {
+    return !!isDarkTheme ? 'dark-theme' : 'light-theme';
+  }
+
 }

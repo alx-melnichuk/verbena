@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, Output, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, Output, Renderer2, ViewEncapsulation } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { UserDto } from 'src/app/entities/user/user-dto';
 import { MainMenuComponent } from '../main-menu/main-menu.component';
+import { InitializationService } from 'src/app/common/initialization.service';
 
 @Component({
   selector: 'app-header',
@@ -28,10 +29,14 @@ export class HeaderComponent {
     return !!this.userInfo;
   }
 
-  constructor() {
+  constructor(public renderer: Renderer2, public initializationService: InitializationService) {
   }
 
   // ** Public API **
+
+  public doSetDarkTheme(value: boolean): void {
+    this.initializationService.setDarkTheme(value, this.renderer);
+  }
 
   public doLogout(): void {
     this.logout.emit();

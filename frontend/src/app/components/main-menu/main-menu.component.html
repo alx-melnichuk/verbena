@@ -1,61 +1,43 @@
 <button
   mat-button
   [matMenuTriggerFor]="mainMenu"
-  [disabled]="!isMenu"
+  [disabled]="isDisabledMenu"
 >
   <ng-content></ng-content>
 </button>
 
-<mat-menu #mainMenu="matMenu">
-  <!-- <button mat-menu-item>Item 1</button> -->
-  <!-- <button mat-menu-item>Item 2</button> -->
-  <button mat-menu-item class="app-main-menu-item" (click)="doLogout()">
-      <span class="mmi-icon mmi-log-out"></span>
-      <span class="mr-lf-10">{{ 'main-menu.log_out' | translate }}</span>
-    </button>
+<mat-menu #mainMenu="matMenu" class="pn-main-menu">
+  <!-- <button mat-menu-item class="app-main-menu-item" *ngIf="isShowMyProfile" [routerLink]="[linkMyProfile]">
+    <span class="mmi-icon mmi-my-profile"></span>
+    <span class="mr-lf-10">{{ 'main-menu.my_profile' | translate }}</span>
+  </button> -->
+  <!-- <button mat-menu-item class="app-main-menu-item" *ngIf="isShowMyStreams" [routerLink]="[linkMyStreams]">
+      <span class="mmi-icon mmi-my-streams"></span>
+      <span class="mr-lf-10">{{ 'main-menu.my_streams' | translate }}</span>
+    </button> -->
+  <!-- <button mat-menu-item class="app-main-menu-item" *ngIf="isShowMyFollows" [routerLink]="[linkMyFollows]">
+      <span class="mmi-icon mmi-my-follows"></span>
+      <span class="mr-lf-10">{{ 'main-menu.my_follows' | translate }}</span>
+    </button> -->
+
+  <button mat-menu-item *ngIf="isShowDarkTheme" class="pn-main-menu-item" (click)="doChangeDarkTheme(!isDarkTheme)">
+    <span class="mmi-icon mmi-dark-theme"></span>
+    <span class="mmi-mr-lf">{{ 'main-menu.dark_theme' | translate }}</span>
+    <mat-slide-toggle class="mmi-mr-lf" color="primary" [ngModel]="isDarkTheme"></mat-slide-toggle>
+  </button>
+    
+  <button mat-menu-item *ngIf="isShowLogout" class="app-main-menu-item" (click)="doLogout()">
+    <span class="mmi-icon mmi-log-out"></span>
+    <span class="mmi-mr-lf">{{ 'main-menu.log_out' | translate }}</span>
+  </button>
 
 </mat-menu>
-
-<!-- <button
-  mat-button
-  [matMenuTriggerFor]="mainMenu"
-  [disabled]="!isMenu"
->
-  <ng-content></ng-content>
-</button> -->
 
 <!-- <mat-menu
   #mainMenu="matMenu"
   backdropClass="app-main-menu-box"
   xPosition="before"
 > -->
-<!-- <button
-    mat-menu-item
-    class="app-main-menu-item"
-    *ngIf="isShowMyProfile"
-    [routerLink]="[linkMyProfile]"
-  >
-    <span class="mmi-icon mmi-my-profile"></span>
-    <span class="mr-lf-10">{{ 'main-menu.my_profile' | translate }}</span>
-  </button> -->
-<!-- <button mat-menu-item class="app-main-menu-item" *ngIf="isShowMyStreams" [routerLink]="[linkMyStreams]">
-      <span class="mmi-icon mmi-my-streams"></span>
-      <span class="mr-lf-10">{{ 'main-menu.my_streams' | translate }}</span>
-    </button> -->
-<!-- <button mat-menu-item class="app-main-menu-item" *ngIf="isShowMyFollows" [routerLink]="[linkMyFollows]">
-      <span class="mmi-icon mmi-my-follows"></span>
-      <span class="mr-lf-10">{{ 'main-menu.my_follows' | translate }}</span>
-    </button> -->
-<!-- <button mat-menu-item class="app-main-menu-item" *ngIf="isShowDarkTheme" (click)="doChangeDarkTheme(!isDarkTheme)">
-      <span class="mmi-icon mmi-dark-theme"></span>
-      <span class="mr-lf-10">{{ 'main-menu.dark_theme' | translate }}</span>
-      <mat-slide-toggle class="mr-lf-10" color="primary" [ngModel]="isDarkTheme"
-      ></mat-slide-toggle>
-    </button> -->
-<!-- <button mat-menu-item class="app-main-menu-item" *ngIf="isShowLogout" (click)="doLogout()">
-      <span class="mmi-icon mmi-log-out"></span>
-      <span class="mr-lf-10">{{ 'main-menu.log_out' | translate }}</span>
-    </button> -->
 <!-- </mat-menu> -->
 
 <!-- "main-menu": {

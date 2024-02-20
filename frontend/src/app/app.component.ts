@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostBinding, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostBinding, Input, Renderer2, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -7,6 +7,7 @@ import { FooterComponent } from './components/footer/footer.component';
 import { HeaderComponent } from './components/header/header.component';
 import { UserService } from './entities/user/user.service';
 import { AUTHORIZATION_DENIED, ROUTE_LOGIN, ROUTE_VIEW } from './common/routes';
+import { InitializationService } from './common/initialization.service';
 
 @Component({
   selector: 'app-root',
@@ -20,18 +21,16 @@ import { AUTHORIZATION_DENIED, ROUTE_LOGIN, ROUTE_VIEW } from './common/routes';
 export class AppComponent {
   public title = 'verbena';
   public linkLogin = ROUTE_LOGIN;
-  public isLightThemeVal: boolean = true;
 
-  @HostBinding('class.light-theme')
-  get isLightTheme(): boolean {
-    return !!this.isLightThemeVal;
+  constructor(
+    public translate: TranslateService,
+    public userService: UserService,
+    public renderer: Renderer2,
+    private router: Router,
+    private initializationService: InitializationService,
+  ) {
+    this.initializationService.setDarkTheme(false, this.renderer);
   }
-  @HostBinding('class.dark-theme')
-  get isDarkTheme(): boolean {
-    return !this.isLightThemeVal;
-  }
-
-  constructor(public translate: TranslateService, private router: Router, public userService: UserService) {}
 
   // ** Public API **
 
@@ -44,4 +43,7 @@ export class AppComponent {
     await this.router.navigate([currentRoute], { queryParams }); // ByUrl(currentRoute, { });
     return Promise.resolve();
   }
+
+  // ** Private API **
+
 }

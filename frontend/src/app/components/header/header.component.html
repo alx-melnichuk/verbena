@@ -21,6 +21,9 @@
 
   <ng-container *ngIf="!!userInfo">
     <app-main-menu
+      [isShowDarkTheme]="true"
+      [isShowLogout]="true"
+      (setDarkTheme)="doSetDarkTheme($event)"
       (logout)="doLogout()">
       <div class="hd-user-info">
         <span>{{ userInfo.nickname }}</span>

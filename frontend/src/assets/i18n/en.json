@@ -7,11 +7,17 @@
   },
   "buttons": {
     "ok": "Ok",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "yes": "Yes",
+    "no": "No"
   },
   "main-menu": {
     "my_profile": "My profile",
+    "dark_theme": "Dark Theme",
     "log_out": "Log Out"
+  },
+  "dialog": {
+    "confirmation": "Confirmation"
   },
   "Validation": {
     "nickname:required": "The nickname field is required.",
@@ -105,7 +111,6 @@
   },
   "my_streams": {
     "old_variant": "old_variant",
-    "sure_you_want_delete_stream": "Are you sure you want to delete the stream \"{{title}}\" ?",
     "sure_you_want_stop_stream": "Are you sure you want to stop the stream \"{{title}}\" ?",
     "error_get_streams_for_selected_day": "Error getting streams for the selected day",
     "error_get_streams_for_active_period": "Error getting streams for the active period",
@@ -120,7 +125,8 @@
   "stream_list": {
     "my_calendar": "My calendar",
     "my_future_streams": "My future streams",
-    "my_past_streams": "My past streams"
+    "my_past_streams": "My past streams",
+    "sure_you_want_delete_stream": "Are you sure you want to delete the stream \"{{title}}\" ?"
   },
   "panel-stream-mini": {
     "buttons": {

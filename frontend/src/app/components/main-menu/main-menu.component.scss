@@ -4,3 +4,10 @@ app-main-menu {
   display: inline;
   --mdc-typography-button-letter-spacing: normal;
 }
+
+.cdk-overlay-container 
+.pn-main-menu {
+  .mmi-mr-lf {
+    margin-left: 1em;
+  }
+}
