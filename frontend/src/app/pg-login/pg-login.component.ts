@@ -4,11 +4,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 
-import { AppErrorUtil } from '../common/app-error';
 import { StrParams } from '../common/str-params';
 import { ROUTE_VIEW } from '../common/routes';
 import { LoginComponent } from '../components/login/login.component';
 import { UserService } from '../entities/user/user.service';
+import { HttpErrorUtil } from '../utils/http-error.util';
 
 @Component({
   selector: 'app-pg-login',
@@ -24,15 +24,12 @@ export class PgLoginComponent {
   public isDisabledSubmit = false;
   public errMsgList: string[] = [];
 
-  private defaultError: string;
-
   constructor(
     private changeDetector: ChangeDetectorRef,
     private router: Router,
     private translate: TranslateService,
     private userService: UserService
   ) {
-    this.defaultError = this.translate.instant('error.server_api_call');
   }
 
   // ** Public API **
@@ -56,7 +53,7 @@ export class PgLoginComponent {
       this.router.navigateByUrl(ROUTE_VIEW);
     } catch (error) {
       if (error instanceof HttpErrorResponse) {
-        this.errMsgList = AppErrorUtil.handleError(error, this.defaultError, this.translate);
+        this.errMsgList = HttpErrorUtil.getMsgs(error);
       } else {
         throw error;
       }

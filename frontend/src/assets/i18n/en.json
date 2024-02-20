@@ -109,24 +109,21 @@
   "logotype": {
     "no_logo": "no logo!"
   },
-  "my_streams": {
-    "old_variant": "old_variant",
-    "sure_you_want_stop_stream": "Are you sure you want to stop the stream \"{{title}}\" ?",
-    "error_get_streams_for_selected_day": "Error getting streams for the selected day",
-    "error_get_streams_for_active_period": "Error getting streams for the active period",
-    "error_delete_stream": "Error while deleting stream",
-    "error_get_streams": "Error getting the list of streams",
-    "error_get_user_stock_list": "Error getting user stock list",
-    "error_add_user_stock": "Error while add user stock",
-    "error_delete_user_stock": "Error while deleting user stock",
-    "error_get_future_streams": "Error while getting future streams",
-    "error_get_past_streams": "Error while getting past streams"
-  },
   "stream_list": {
     "my_calendar": "My calendar",
     "my_future_streams": "My future streams",
     "my_past_streams": "My past streams",
-    "sure_you_want_delete_stream": "Are you sure you want to delete the stream \"{{title}}\" ?"
+    "sure_you_want_delete_stream": "Are you sure you want to delete the stream \"{{title}}\" ?",
+    "_sure_you_want_stop_stream": "Are you sure you want to stop the stream \"{{title}}\" ?",
+    "error_get_streams_for_selected_day": "Error getting streams for the selected day",
+    "error_get_streams_for_active_period": "Error getting streams for the active period",
+    "error_delete_stream": "Error while deleting stream",
+    "_error_get_streams": "Error getting the list of streams",
+    "_error_get_user_stock_list": "Error getting user stock list",
+    "_error_add_user_stock": "Error while add user stock",
+    "_error_delete_user_stock": "Error while deleting user stock",
+    "error_get_future_streams": "Error while getting future streams",
+    "error_get_past_streams": "Error while getting past streams"
   },
   "panel-stream-mini": {
     "buttons": {

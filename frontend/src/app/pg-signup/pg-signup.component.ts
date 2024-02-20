@@ -4,12 +4,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 
-import { AppErrorUtil } from '../common/app-error';
 import { SignupComponent } from '../components/signup/signup.component';
 import { StrParams } from '../common/str-params';
 import { ROUTE_LOGIN } from '../common/routes';
 import { UserService } from '../entities/user/user.service';
 import { DialogService } from '../lib-dialog/dialog.service';
+import { HttpErrorUtil } from '../utils/http-error.util';
 
 @Component({
   selector: 'app-pg-signup',
@@ -25,8 +25,6 @@ export class PgSignupComponent {
   public isDisabledSubmit = false;
   public errMsgList: string[] = [];
 
-  private defaultError: string;
-
   constructor(
     private changeDetector: ChangeDetectorRef,
     private router: Router,
@@ -34,7 +32,6 @@ export class PgSignupComponent {
     private dialogService: DialogService,
     private userService: UserService
   ) {
-    this.defaultError = this.translate.instant('error.server_api_call');
   }
 
   // ** Public API **
@@ -63,7 +60,7 @@ export class PgSignupComponent {
         });
       })
       .catch((error: HttpErrorResponse) => {
-        this.errMsgList = AppErrorUtil.handleError(error, this.defaultError, this.translate);
+        this.errMsgList = HttpErrorUtil.getMsgs(error);
       })
       .finally(() => {
         this.isDisabledSubmit = false;

@@ -3,9 +3,10 @@ import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { first } from 'rxjs/operators';
 import { ROUTE_LOGIN } from './routes';
-import { AuthorizationUtil } from '../utils/authorization-util';
+import { AuthorizationUtil } from '../utils/authorization.util';
 import { UserService } from '../entities/user/user.service';
 import { DateAdapter } from '@angular/material/core';
+import { HttpErrorUtil } from '../utils/http-error.util';
 
 @Injectable({
   providedIn: 'root',
@@ -35,7 +36,13 @@ export class InitializationService {
       this.translate
         .use(lang)
         .pipe(first())
-        .subscribe({ next: () => resolve(), error: (err) => reject(err) });
+        .subscribe({
+          next: () => {
+            HttpErrorUtil.setTranslate(this.translate)
+            resolve()
+          },
+          error: (err) => reject(err) 
+        });
     });
   }
 
