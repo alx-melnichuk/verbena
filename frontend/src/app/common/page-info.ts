@@ -1,26 +1,3 @@
-/*export enum OrderDirection {
-  asc = 'asc',
-  desc = 'desc'
-}
-
-export class OrderDirectionUtil {
-  public static create(value: string): OrderDirection {
-    let result = OrderDirection.asc;
-    if (!!value && value.toLowerCase() === OrderDirection.desc.toLowerCase()) {
-      result = OrderDirection.desc;
-    }
-    return result;
-  }
-}*/
-/*export interface PageDataInp {
-  count: number;
-  limit: number;
-  page: number;
-  pages: number;
-  orderColumn: string;
-  orderDirection: string;
-}*/
-
 export class PageInfo {
   public count = -1;
   public limit = -1;

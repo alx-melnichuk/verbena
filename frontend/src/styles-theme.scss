@@ -2,8 +2,18 @@
 // Theme Init
 .dark-theme {
   color-scheme: dark;
+ 
+  //   --app-primary-demo-01: hsla(230.85, 48.36%, 47.84%, 0.1); // #3f51b51a
+  //   --app-primary-demo : hsl(230.85, 48.36%, 47.84%);       // #3f51b5
+  --app-primary-h: 230.85;
+  --app-primary-s: 48.36%;
+  --app-primary-l: 47.84%;
+  --app-primary: hsl(var(--app-primary-h), var(--app-primary-s), var(--app-primary-l));
+  --app-primary-low: hsla(var(--app-primary-h), var(--app-primary-s), var(--app-primary-l), 0.6);
+
 //   @include angular-material-theme($dark-theme);
 //   @include app-theme-color($dark-theme);
+  --app-theme-accent: #999999;
   --app-theme-background-panel-2: #1E222D;
   --app-theme-green100: #26A69A;
   --app-theme-blue-grey-500: #1E3046;
@@ -16,6 +26,16 @@
 }
 .light-theme {
   color-scheme: light;
+
+  //   --app-primary-demo-01: hsla(230.85, 48.36%, 47.84%, 0.1); // #3f51b51a
+  //   --app-primary-demo : hsl(230.85, 48.36%, 47.84%);       // #3f51b5
+  --app-primary-h: 230.85;
+  --app-primary-s: 48.36%;
+  --app-primary-l: 47.84%;
+  --app-primary: hsl(var(--app-primary-h), var(--app-primary-s), var(--app-primary-l));
+  --app-primary-low: hsla(var(--app-primary-h), var(--app-primary-s), var(--app-primary-l), 0.1);
+//   --app-primary: var(--mdc-theme-primary, #3f51b5); // rgb(63, 81, 181);
+
 //   @include angular-material-theme($light-theme);
 //   @include app-theme-color($light-theme);
 //   --app-theme-primary: var(--blue-800);
@@ -29,7 +49,7 @@
   --app-theme-blue-300: #2196F3;
   --app-theme-input-border: rgba(0, 0, 0, 0.12);
   --app-theme-grey-100: #788393;
-  --app-primary: var(--mdc-theme-primary, #3f51b5); // rgb(63, 81, 181);
+
   --app-input-dis: rgba(0, 0, 0, 0.38);
   --app-input-brd: rgba(0, 0, 0, 0.38);
   --app-input-brd-hov: rgba(0, 0, 0, 0.87);

@@ -17,7 +17,7 @@ app-confirmation {
   }
 
   & > h1[mat-dialog-title] {
-    font-size: large;
+    background-color: var(--app-primary-low);
   }
 
   .dc-content {

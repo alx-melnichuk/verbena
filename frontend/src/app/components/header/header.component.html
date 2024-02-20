@@ -23,7 +23,7 @@
     <app-main-menu
       [isShowDarkTheme]="true"
       [isShowLogout]="true"
-      (setDarkTheme)="doSetDarkTheme($event)"
+      (setDarkTheme)="setDarkTheme($event)"
       (logout)="doLogout()">
       <div class="hd-user-info">
         <span>{{ userInfo.nickname }}</span>

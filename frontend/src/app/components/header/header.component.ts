@@ -34,7 +34,7 @@ export class HeaderComponent {
 
   // ** Public API **
 
-  public doSetDarkTheme(value: boolean): void {
+  public setDarkTheme(value: boolean): void {
     this.initializationService.setDarkTheme(value, this.renderer);
   }
 
