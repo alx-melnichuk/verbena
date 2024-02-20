@@ -57,7 +57,7 @@ export class StreamListService {
         return response;
       })
       .catch((error: HttpErrorResponse) => {
-        this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], 'my_streams.error_get_future_streams');
+        this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], 'stream_list.error_get_future_streams');
         throw error;
       })
       .finally(() => {
@@ -85,7 +85,7 @@ export class StreamListService {
         return response;
       })
       .catch((error: HttpErrorResponse) => {
-        this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], 'my_streams.error_get_past_streams');
+        this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], 'stream_list.error_get_past_streams');
         throw error;
       })
       .finally(() => {
