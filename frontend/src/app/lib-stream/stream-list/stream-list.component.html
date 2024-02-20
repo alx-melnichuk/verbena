@@ -2,8 +2,8 @@
   <div class="sl-title">
     {{ 'stream_list.my_calendar' | translate }}
   </div>
-  <div class="sl-calendar">
-    <!-- <app-spinner *ngIf="scheduleService.selectedDateMarkedDatesLoading" [isFullOwner]="true"></app-spinner> -->
+  <div class="sl-calendar sl-relative">
+    <!-- <app-spinner isFillParent *ngIf="scheduleService.selectedDateMarkedDatesLoading"></app-spinner> -->
     <!-- <app-schedule-calendar
       [selectedDate]="scheduleService.selectedDate"
       [markedDates]="scheduleService.selectedDateMarkedDates"
@@ -11,8 +11,8 @@
       (changeActiveDate)="doChangeActiveDate($event)"
     ></app-schedule-calendar> -->
   </div>
-  <div class="sl-events">
-    <!-- <app-spinner *ngIf="scheduleService.calendarMiniStreamsLoading" [isFullOwner]="true"></app-spinner> -->
+  <div class="sl-events sl-relative">
+    <!-- <app-spinner isFillParent *ngIf="scheduleService.calendarMiniStreamsLoading"></app-spinner> -->
     <!-- <app-schedule-event
       *ngIf="!scheduleService.calendarMiniStreamsLoading && scheduleService.isShowCalendarMiniStreams()"
       [canEdit]="true"
@@ -22,11 +22,11 @@
   </div>
 </div>
 <div class="sl-my-streams sl-br-lf sl-flex-col">
-  <div class="sl-stream-box sl-pd-lf">
+  <div class="sl-stream-box sl-pd-lf sl-relative">
     <div class="sl-title">
       {{ 'stream_list.my_future_streams' | translate }}
     </div>
-    <app-spinner *ngIf="streamListService.futureStreamLoading" [isFullOwner]="true">
+    <app-spinner isFillParent *ngIf="streamListService.futureStreamLoading">
     </app-spinner>
     <app-panel-stream-mini
       [canDuplicate]="true"
@@ -41,11 +41,11 @@
       (actionDelete)="doActionDelete($event)"
     ></app-panel-stream-mini>
   </div>
-  <div class="sl-stream-box sl-pd-lf sl-br-tp">
+  <div class="sl-stream-box sl-pd-lf sl-br-tp sl-relative">
     <div class="sl-title">
       {{ 'stream_list.my_past_streams' | translate }}
     </div>
-    <app-spinner *ngIf="streamListService.pastStreamLoading" [isFullOwner]="true">
+    <app-spinner isFillParent *ngIf="streamListService.pastStreamLoading">
     </app-spinner>
     <app-panel-stream-mini
       [canDuplicate]="true"

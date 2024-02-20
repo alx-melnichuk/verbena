@@ -4,7 +4,7 @@ app-spinner {
   display: contents;
   height: 100%;
 
-  &.fullscreen {
+  &.fill-parent {
     align-items: center;
     display: flex;
     inset: 0 0 0 0;
@@ -22,7 +22,6 @@ app-spinner {
     top: 0;
     z-index: 1100;
   }
-
   .sp-front {
     align-items: center;
     bottom: 0;

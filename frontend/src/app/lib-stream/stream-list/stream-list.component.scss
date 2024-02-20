@@ -36,12 +36,14 @@ app-stream-list {
     flex-shrink: 0;
     height: 100%;
   }
-  
+  .sl-relative {
+    position: relative;
+  }
 
   // ** "My Calendar" **
   .sl-my-calendar {
-    &>.sl-calendar { flex-grow: 0; position: relative; }
-    &>.sl-events { flex-grow: 1; overflow-y: hidden; position: relative; }
+    &>.sl-calendar { flex-grow: 0; }
+    &>.sl-events { flex-grow: 1; overflow-y: hidden; }
   }
 
   .sl-stream-box {
@@ -51,6 +53,5 @@ app-stream-list {
     flex: 0 0 50%;
     overflow-y: hidden;
     padding-left: 1.4em;
-    position: relative;
   }
 }

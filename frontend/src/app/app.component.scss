@@ -23,6 +23,7 @@ app-root {
   display: block;
   flex-direction: column;
   height: 100%;
+  // If the app-spinner is expanded to full screen, then "position: relative;" should only be present on the root element.
   position: relative;
 
   & > header {
@@ -34,7 +35,6 @@ app-root {
   & > main {
     height: calc(100% - var(--header-hg) - var(--footer-hg) - 1px);
     overflow-y: hidden;
-    position: relative;
   }
   // ** **
   --app-site-off-header-bg: var(--orange-100);

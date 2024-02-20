@@ -4,7 +4,13 @@ import { ThemePalette } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 /**
- * <app-spinner *ngIf="isLoad" [isFullOwner]="true"></app-spinner>
+ * // Simple display.
+ * <app-spinner></app-spinner>
+ * 
+ * // Fill the space of the parent element (which should have: "position: relative;").
+ * <div style="position: relative; height: 300px; width: 300px;">
+ *   <app-spinner isFillParent></app-spinner>
+ * <div>
  */
 
 const DEAULT_DIAMETER = 100;
@@ -22,15 +28,14 @@ export class SpinnerComponent {
   @Input()
   public color: ThemePalette = 'primary';
   @Input()
-  public isFullOwner = false;
+  public isFillParent: string = '';
   @Input()
   public isFullscreen = false;
   @Input()
   public diameter = DEAULT_DIAMETER;
 
-  @HostBinding('class.fullscreen')
-  public get isFullscreenVal(): boolean {
-    return !!this.isFullscreen;
+  @HostBinding('class.fill-parent')
+  public get isClassFillParent(): boolean {
+    return !!(this.isFillParent == '' || this.isFillParent == 'true');
   }
-
 }
