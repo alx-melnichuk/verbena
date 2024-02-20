@@ -151,30 +151,6 @@ constructor(private http: HttpClient) {
     return this.http.put<StreamDto | HttpErrorResponse>(url, formData, { headers: headers }).toPromise();
   }
 
-  public modifyStream2(id: number, modifyStreamDto: ModifyStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
-    const data: ModifyStreamDto = {};
-    if (!!modifyStreamDto.title) {
-      data.title = modifyStreamDto.title;
-    }
-    if (!!modifyStreamDto.descript) {
-      data.descript = modifyStreamDto.descript;
-    }
-    // if (!!file) {
-    //   data.set('logo', file, file.name);
-    // }
-    if (!!modifyStreamDto.starttime) {
-      data.starttime = modifyStreamDto.starttime;
-    }
-    if (!!modifyStreamDto.source) {
-      data.source = modifyStreamDto.source;
-    }
-    if (!!modifyStreamDto.tags) {
-      data.tags = modifyStreamDto.tags;
-    }
-    
-    const url = Uri.appUri(`appApi://streams/${id}`);
-    return this.http.put<StreamDto | HttpErrorResponse>(url, data).toPromise();
-  }
   /** Delete stream
    * @ route streams/:streamId
    * @ type delete
@@ -182,8 +158,8 @@ constructor(private http: HttpClient) {
    * @ required streamId
    * @ access protected
    */
-  /*public deleteStream(streamId: string): Promise<StreamDTO | HttpErrorResponse> {
+  public deleteStream(streamId: number): Promise<void | HttpErrorResponse | undefined> {
     const url = Uri.appUri(`appApi://streams/${streamId}`);
-    return this.http.delete<StreamDTO | HttpErrorResponse>(url).toPromise();
-  }*/
+    return this.http.delete<void | HttpErrorResponse>(url).toPromise();
+  }
 }

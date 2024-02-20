@@ -19,14 +19,12 @@ export class StreamService {
   }
   // ** Public API **
 
-  /** Get streams popular tags
-   */
+  /** Get streams popular tags */
   /*public getStreamsPopularTags(): Promise<StreamsPopularTagsDTO[] | HttpErrorResponse> {
     return this.streamApiService.getStreamsPopularTags();
   }*/
 
-  /** Get streams calendar
-   */
+  /** Get streams calendar */
   /*public getStreamsCalendar(userId: string, month: number, year: number): Promise<StreamsCalendarDTO[] | HttpErrorResponse> {
     return this.streamApiService.getStreamsCalendar(userId, month, year);
   }*/
@@ -56,7 +54,7 @@ export class StreamService {
     };
     return this.streamApiService.getStreams(getStreamsDTO);
   }*/
-  /*public getStreamsByDate(userId: string, selectedDate: string, page: number): Promise<StreamsDTO | HttpErrorResponse> {
+  /*!!!public getStreamsByDate(userId: string, selectedDate: string, page: number): Promise<StreamsDTO | HttpErrorResponse> {
     const getStreamsDTO: GetStreamsDTO = {
       userId,
       key: selectedDate, // '2021-04-27',
@@ -90,14 +88,12 @@ export class StreamService {
     return this.streamApiService.getStreams(getStreamsDTO);
   }*/
 
-  /** Get stream
-   */
+  /** Get stream */
   public getStream(id: number): Promise<StreamDto | HttpErrorResponse | undefined> {
     return this.streamApiService.getStream(id);
   }
 
-  /** Change state stream
-   */
+  /** Change state stream */
   /*public toggleStreamState(
     streamId: string, streamState: StreamState
   ): Promise<StreamDTO | StreamSetStateForbbidenDTO | HttpErrorResponse> {
@@ -108,24 +104,20 @@ export class StreamService {
     return this.streamApiService.toggleStreamState(streamId, { state: (streamStateStr as ToggleStreamState) });
   }*/
 
-  /** Add stream
-   * @ files logo (jpg, png and gif only, 5MB)
-   */
+  /** Add stream * @ files logo (jpg, png and gif only, 5MB) */
   public createStream(createStreamDto: CreateStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
     return this.streamApiService.createStream(createStreamDto, file);
   }
 
-  /** Update stream
-   */
+  /** Update stream */
   public modifyStream(id: number, modifyStreamDto: ModifyStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
     return this.streamApiService.modifyStream(id, modifyStreamDto, file);
   }
 
-  /** Delete stream
-   */
-  /*public deleteStream(streamId: string): Promise<StreamDTO | HttpErrorResponse> {
+  /** Delete stream */
+  public deleteStream(streamId: number): Promise<void | HttpErrorResponse | undefined> {
     return this.streamApiService.deleteStream(streamId);
-  }*/
+  }
 
   public getLinkForVisitors(streamId: number, isFullPath: boolean): string {
     let prefix = ((isFullPath ? Uri.get('appRoot://') : '') as string);

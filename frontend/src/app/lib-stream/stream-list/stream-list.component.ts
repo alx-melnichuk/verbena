@@ -8,10 +8,12 @@ import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { ROUTE_STREAM_CREATE, ROUTE_STREAM_EDIT } from 'src/app/common/routes';
+import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 
 import { StringDateTime, StreamDtoUtil, StreamDto } from '../stream-api.interface';
 import { StreamListService } from '../stream-list.service';
 import { PanelStreamInfoComponent } from '../panel-stream-info/panel-stream-info.component';
+import { StreamService } from '../stream.service';
 
 @Component({
   selector: 'app-stream-list',
@@ -32,7 +34,7 @@ export class StreamListComponent {
     private router: Router,
     private translateService: TranslateService,
     private dialogService: DialogService,
-    // private streamService: StreamService,
+    private streamService: StreamService,
     private alertService: AlertService,
     public streamListService: StreamListService,
     // public scheduleService: ScheduleService,
@@ -139,10 +141,9 @@ export class StreamListComponent {
       const message = this.translateService.instant('stream_list.sure_you_want_delete_stream', { title: info.title });
       this.dialogService.openConfirmation(message, '', 'buttons.no', 'buttons.yes')
         .then((result) => {
-            console.log(`)(_result: ${result}`); // #
-        //   if (!!result) {
-        //     this.deleteDataStream(info.id);
-        //   }
+          if (!!result) {
+            this.deleteDataStream(info.id);
+          }
         });
     }
   }
@@ -152,18 +153,18 @@ export class StreamListComponent {
 
   // "Streams"
 
-  private async deleteDataStream(streamDto: StreamDto): Promise<void> {
-    /*this.alertService.hide();
-    if (!streamDto) {
+  private async deleteDataStream(streamId: number): Promise<void> {
+    this.alertService.hide();
+    if (!streamId) {
       return Promise.reject();
     }
     let isRefres = false;
-    this.streamService.deleteStream(streamDto.id)
-      .then((response: StreamDTO | HttpErrorResponse) => {
+    this.streamService.deleteStream(streamId + 1000)
+      .then((response: void | HttpErrorResponse | undefined) => {
         isRefres = true;
       })
       .catch((error: HttpErrorResponse) => {
-        this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], 'my_streams.error_delete_stream');
+        this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], 'stream_list.error_delete_stream');
         throw error;
       })
       .finally(() => {
@@ -173,6 +174,6 @@ export class StreamListComponent {
             this.loadFutureAndPastStreamsAndSchedule();
           });
         }
-      });*/
+      });
   }
 }
