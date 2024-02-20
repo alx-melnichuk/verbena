@@ -2,20 +2,21 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulatio
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
+import { AlertService } from 'src/app/lib-dialog/alert.service';
+import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { ROUTE_STREAM_CREATE, ROUTE_STREAM_EDIT } from 'src/app/common/routes';
-import { AlertService } from 'src/app/lib-dialog/alert.service';
 
 import { StringDateTime, StreamDtoUtil, StreamDto } from '../stream-api.interface';
 import { StreamListService } from '../stream-list.service';
-import { PanelStreamMiniComponent } from '../panel-stream-mini/panel-stream-mini.component';
+import { PanelStreamInfoComponent } from '../panel-stream-info/panel-stream-info.component';
 
 @Component({
   selector: 'app-stream-list',
   standalone: true,
-  imports: [CommonModule, TranslateModule, SpinnerComponent, PanelStreamMiniComponent],
+  imports: [CommonModule, TranslateModule, SpinnerComponent, PanelStreamInfoComponent],
   templateUrl: './stream-list.component.html',
   styleUrls: ['./stream-list.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -29,8 +30,8 @@ export class StreamListComponent {
     private changeDetector: ChangeDetectorRef,
     private route: ActivatedRoute,
     private router: Router,
-    // private translateService: TranslateService,
-    // private dialogService: DialogService,
+    private translateService: TranslateService,
+    private dialogService: DialogService,
     // private streamService: StreamService,
     private alertService: AlertService,
     public streamListService: StreamListService,
@@ -131,18 +132,19 @@ export class StreamListComponent {
     }
   }
 
-  public doActionDelete(streamDto: StreamDto): void {
+  public doActionDelete(info: { id: number, title: string }): void {
     this.alertService.hide();
-    /*if (!!streamDto) {
+    if (!!info && !!info.id) {
       this.alertService.hide();
-      const message = this.translateService.instant('my_streams.sure_you_want_delete_stream', { title: streamDto.title });
+      const message = this.translateService.instant('stream_list.sure_you_want_delete_stream', { title: info.title });
       this.dialogService.openConfirmation(message, '', 'buttons.no', 'buttons.yes')
         .then((result) => {
-          if (!!result) {
-            this.deleteDataStream(streamDto);
-          }
+            console.log(`)(_result: ${result}`); // #
+        //   if (!!result) {
+        //     this.deleteDataStream(info.id);
+        //   }
         });
-    }*/
+    }
   }
 
   // ** Private API **

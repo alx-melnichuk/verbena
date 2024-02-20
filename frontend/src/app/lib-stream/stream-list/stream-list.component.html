@@ -28,7 +28,7 @@
     </div>
     <app-spinner isFillParent *ngIf="streamListService.futureStreamLoading">
     </app-spinner>
-    <app-panel-stream-mini
+    <app-panel-stream-info
       [canDuplicate]="true"
       [canEdit]="true"
       [canDelete]="true"
@@ -39,7 +39,7 @@
       (actionDuplicate)="doActionDuplicate($event)"
       (actionEdit)="doActionEdit($event)"
       (actionDelete)="doActionDelete($event)"
-    ></app-panel-stream-mini>
+    ></app-panel-stream-info>
   </div>
   <div class="sl-stream-box sl-pd-lf sl-br-tp sl-relative">
     <div class="sl-title">
@@ -47,7 +47,7 @@
     </div>
     <app-spinner isFillParent *ngIf="streamListService.pastStreamLoading">
     </app-spinner>
-    <app-panel-stream-mini
+    <app-panel-stream-info
       [canDuplicate]="true"
       [canDelete]="true"
       [streamList]="streamListService.pastStreamsDto"
@@ -55,6 +55,6 @@
       (redirectToStream)="doRedirectToStreamView($event)"
       (actionDuplicate)="doActionDuplicate($event)"
       (actionDelete)="doActionDelete($event)"
-    ></app-panel-stream-mini>
+    ></app-panel-stream-info>
   </div>
 </div>

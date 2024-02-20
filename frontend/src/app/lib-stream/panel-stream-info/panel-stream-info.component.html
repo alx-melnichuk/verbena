@@ -1,0 +1,54 @@
+<div>
+  <div class="psi-stream-card"
+    *ngFor="let stream of streamList; trackBy: trackByIdFn">
+
+    <a class="psi-logo" (click)="doRedirectToStream(stream.id)">
+      <app-logotype *ngIf="!isFuture"
+        [logo]="stream.logo"
+      ></app-logotype>
+      <div *ngIf="isFuture" class="psi-logo-future">
+      </div>
+    </a>
+
+    <div class="psi-details">
+      <div class="psi-date text">
+        <!-- id:{{ stream.id }} _ -->
+        {{ stream.starttime | date: (!isFuture ? formatDate : formatDateTime) }}
+      </div>
+      <div class="psi-title">
+        <a (click)="doRedirectToStream(stream.id)">
+          {{ stream.title }}
+        </a>
+      </div>
+      <div class="psi-descript">{{ stream.descript }}</div>
+    </div>
+
+    <button mat-stroked-button *ngIf="canDuplicate"
+      class="mat-elevation-z3 psi-shrink-0 psi-mg-rg psi-pd-hor-05" color="primary"
+      (click)="doActionDuplicate(stream.id)">
+      <span class="psi-action-label">
+        <i class="psi-duplicate-accent"></i>
+        {{ 'panel-stream-mini.buttons.duplicate' | translate }}
+      </span>
+    </button>
+
+    <button mat-stroked-button *ngIf="canEdit"
+      class="mat-elevation-z3 psi-shrink-0 psi-mg-rg psi-pd-hor-07" color="primary"
+      (click)="doActionEdit(stream.id)">
+      <span class="psi-action-label">
+        <i class="psi-edit-accent"></i>
+        {{ 'panel-stream-mini.buttons.edit' | translate }}
+      </span>
+    </button>
+
+    <button mat-stroked-button *ngIf="canDelete"
+      class="mat-elevation-z3 psi-shrink-0 psi-mg-rg psi-pd-hor-07" color="primary"
+      (click)="doActionDelete(stream)">
+      <span class="psi-action-label">
+        <i class="psi-delete-accent"></i>
+        {{ 'panel-stream-mini.buttons.delete' | translate }}
+      </span>
+    </button>
+
+  </div>
+</div>
