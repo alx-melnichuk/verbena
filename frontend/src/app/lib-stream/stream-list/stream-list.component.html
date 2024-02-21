@@ -2,7 +2,7 @@
   <div class="sl-title">
     {{ 'stream_list.my_calendar' | translate }}
   </div>
-  <div class="sl-calendar sl-relative">
+  <div class="sl-calendar sl-relative" style="outline: 1px solid goldenrod;">
     <!-- <app-spinner isFillParent *ngIf="scheduleService.selectedDateMarkedDatesLoading"></app-spinner> -->
     <!-- <app-schedule-calendar
       [selectedDate]="scheduleService.selectedDate"
@@ -12,16 +12,17 @@
     ></app-schedule-calendar> -->
   </div>
   <div class="sl-events sl-relative">
-    <!-- <app-spinner isFillParent *ngIf="scheduleService.calendarMiniStreamsLoading"></app-spinner> -->
-    <!-- <app-schedule-event
-      *ngIf="!scheduleService.calendarMiniStreamsLoading && scheduleService.isShowCalendarMiniStreams()"
+    <app-spinner isFillParent *ngIf="streamCalendarService.streamsEventLoading">
+    </app-spinner>
+    <app-panel-stream-event
       [canEdit]="true"
-      [streamDTOList]="scheduleService.calendarMiniStreams"
-      (editStream)="doActionEdit($event)"
-    ></app-schedule-event> -->
+      [streamShortDtoList]="streamCalendarService.streamsEvent"
+      (requestNextPage)="doChangeSelectedDate()"
+      (editStream)="doActionEdit($event)">
+    </app-panel-stream-event>
   </div>
 </div>
-<div class="sl-my-streams sl-br-lf sl-flex-col">
+<div class="sl-my-streams sl-flex-col">
   <div class="sl-stream-box sl-pd-lf sl-relative">
     <div class="sl-title">
       {{ 'stream_list.my_future_streams' | translate }}
@@ -38,10 +39,10 @@
       (redirectToStream)="doRedirectToStreamView($event)"
       (actionDuplicate)="doActionDuplicate($event)"
       (actionEdit)="doActionEdit($event)"
-      (actionDelete)="doActionDelete($event)"
-    ></app-panel-stream-info>
+      (actionDelete)="doActionDelete($event)">
+    </app-panel-stream-info>
   </div>
-  <div class="sl-stream-box sl-pd-lf sl-br-tp sl-relative">
+  <div class="sl-stream-box sl-pd-lf sl-relative">
     <div class="sl-title">
       {{ 'stream_list.my_past_streams' | translate }}
     </div>
@@ -54,7 +55,7 @@
       (requestNextPage)="doRequestNextPagePast()"
       (redirectToStream)="doRedirectToStreamView($event)"
       (actionDuplicate)="doActionDuplicate($event)"
-      (actionDelete)="doActionDelete($event)"
-    ></app-panel-stream-info>
+      (actionDelete)="doActionDelete($event)">
+    </app-panel-stream-info>
   </div>
 </div>
