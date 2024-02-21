@@ -22,8 +22,11 @@ export class PageInfoUtil {
   public static checkPage(pageInfo: PageInfo, page: number): boolean {
     return (pageInfo != null && page > 0 && pageInfo.page !== page && (pageInfo.pages === -1 || page <= pageInfo.pages));
   }
+  public static checkNextPage(pageInfo: PageInfo): boolean {
+    return pageInfo != null && (pageInfo.pages === -1 || pageInfo.page < pageInfo.pages);
+  }
 
-  public static checkNextPage(oldPageData: PageInfo, nextPageData: PageInfo): boolean {
+  public static checkNextPageInfo(oldPageData: PageInfo, nextPageData: PageInfo): boolean {
     let result = false;
     if (!!oldPageData && !!nextPageData && oldPageData !== nextPageData) {
       const res1 = (oldPageData.pages === -1);

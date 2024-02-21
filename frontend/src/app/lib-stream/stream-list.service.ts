@@ -95,7 +95,7 @@ export class StreamListService {
 
   public checkNextPage(pageInfo: PageInfo): boolean {
     const nextPageInfo: PageInfo = PageInfoUtil.create({ page: pageInfo.page + 1 });
-    return PageInfoUtil.checkNextPage(this.pastPageInfo, nextPageInfo);
+    return PageInfoUtil.checkNextPageInfo(pageInfo, nextPageInfo);
   }
 
   // ** Private API **
