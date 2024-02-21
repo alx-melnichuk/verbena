@@ -1,0 +1,27 @@
+<div class="pse-stream" *ngFor="let streamShort of streamShortDtoList">
+
+  <a class="pse-logo" (click)="doViewStream(streamShort.id)">
+    <app-logotype *ngIf="!isFuture(streamShort.starttime); else elseBlockIsFuture"
+       [logo]="streamShort.logo">
+    </app-logotype>
+    <ng-template #elseBlockIsFuture>
+      <div class="pse-logo-future"></div>
+    </ng-template>
+  </a>
+
+  <div class="pse-details-wrap">
+    <div class="pse-details">
+      <div class="pse-starttime pse-ellipsis">
+        {{ streamShort.starttime | date: (!isFuture(streamShort.starttime) ? formatDate : formatDateTime) }}
+      </div>
+    
+      <button class="pse-edit-btn" *ngIf="canEdit && isFuture(streamShort.starttime)"
+        (click)="doEditStream(streamShort.id)">
+        {{ 'panel-stream-event.buttons.edit' | translate }}
+      </button>
+    </div>
+
+    <div class="pse-ellipsis">{{ streamShort.title }}</div>
+  </div>
+
+</div>
