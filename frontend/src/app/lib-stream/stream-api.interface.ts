@@ -126,6 +126,37 @@ export class StreamDtoUtil {
   }
 }
 
+export interface StreamListDto {
+  list: StreamDto[];
+  limit: number;
+  count: number;
+  page: number;
+  pages: number;
+}
+/*pub struct SearchStreamInfoResponseDto {
+    pub list: Vec<StreamInfoDto, Global>,
+    pub limit: u32,
+    pub count: u32,
+    pub page: u32,
+    pub pages: u32,
+}*/
+
+export interface StreamEventDto {
+  id: number;
+  userId: number;
+  title: string;
+  logo: string | null;
+  starttime: StringDateTime | null;
+}
+
+export interface StreamEventListDto {
+  list: StreamEventDto[];
+  limit: number;
+  count: number;
+  page: number;
+  pages: number;
+}
+
 export interface ModifyStreamDto {
   title?: string | undefined;
   descript?: string | undefined;
@@ -149,12 +180,12 @@ export interface UpdateStreamFileDto {
   logoFile?: File | undefined;
 }
 
-export interface SearchStreamDto { // GetStreamsDTO
+// ** getStreams()  **
+
+export interface SearchStreamDto {
   userId?: number;
   live?: boolean;
-  //  starttime?: 'none' | 'past' | 'future'; // default 'none';
   isFuture?: boolean; // true-'future', false-'past'
-  //  groupBy?: 'none' | 'tag' | 'date'; // default 'none';
   orderColumn?: 'starttime' | 'title'; // default 'starttime';
   orderDirection?: 'asc' | 'desc'; // default 'asc';
   page?: number; // default 1;
@@ -171,17 +202,12 @@ export interface SearchStreamDto { // GetStreamsDTO
     pub limit: Option<u32>,
 }*/
 
-export interface StreamListDto {
-  list: StreamDto[];
-  limit: number;
-  count: number;
-  page: number;
-  pages: number;
+// ** getStreamsEvent()  **
+
+export interface SearchStreamEventDto {
+  userId?: number;
+  starttime: StringDate;
+  orderDirection?: 'asc' | 'desc'; // default 'asc';
+  page?: number; // default 1;
+  limit?: number; // default 10; Min(1) Max(100)
 }
-/*pub struct SearchStreamInfoResponseDto {
-    pub list: Vec<StreamInfoDto, Global>,
-    pub limit: u32,
-    pub count: u32,
-    pub page: u32,
-    pub pages: u32,
-}*/

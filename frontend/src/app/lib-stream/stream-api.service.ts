@@ -2,7 +2,10 @@ import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular
 import { Injectable } from '@angular/core';
 
 import { Uri } from 'src/app/common/uri';
-import { CreateStreamDto, SearchStreamDto, ModifyStreamDto, StreamDto, StreamListDto } from './stream-api.interface';
+import {
+  CreateStreamDto, SearchStreamDto, ModifyStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventListDto,
+  StreamEventDto
+} from './stream-api.interface';
 import { HttpParamsUtil } from '../utils/http-params.util';
 
 @Injectable({
@@ -51,10 +54,26 @@ constructor(private http: HttpClient) {
    * - orderDirection (asc / desc, asc by default)
    * @ access public
    */
-   public getStreams(getStreamsDTO: SearchStreamDto): Promise<StreamListDto | HttpErrorResponse | undefined> {
-    const params: HttpParams = HttpParamsUtil.create(getStreamsDTO);
+   public getStreams(searchStreamDto: SearchStreamDto): Promise<StreamListDto | HttpErrorResponse | undefined> {
+    const params: HttpParams = HttpParamsUtil.create(searchStreamDto);
     const url = Uri.appUri('appApi://streams');
     return this.http.get<StreamListDto | HttpErrorResponse>(url, { params }).toPromise();
+  }
+  
+  public getStreamsEvent(searchStreamEventDto: SearchStreamEventDto): Promise<StreamEventListDto | HttpErrorResponse | undefined> {
+    const params: HttpParams = HttpParamsUtil.create(searchStreamEventDto);
+    // const url = Uri.appUri('appApi://streams-event');
+    // return this.http.get<StreamEventListDto | HttpErrorResponse>(url, { params }).toPromise();
+    return new Promise<StreamEventListDto>(
+      (resolve: (value: StreamEventListDto | PromiseLike<StreamEventListDto>) => void, reject: (reason?: any) => void) => {
+        setTimeout(() => {
+          if (!!searchStreamEventDto.starttime) {
+            resolve(this.getStreamEventListDto());
+          } else {
+            reject('err');
+          }
+        }, 500);
+      });
   }
 
   /** Get stream
@@ -161,5 +180,23 @@ constructor(private http: HttpClient) {
   public deleteStream(streamId: number): Promise<void | HttpErrorResponse | undefined> {
     const url = Uri.appUri(`appApi://streams/${streamId}`);
     return this.http.delete<void | HttpErrorResponse>(url).toPromise();
+  }
+
+  private getStreamEventListDto(): StreamEventListDto {
+    const list: StreamEventDto[] = [
+      { "id": 22, "userId": 10, "title": "trip to cyprus 1 - E.Allen", "logo": "/assets/images/trip_cyprus01.jpg", 
+        "starttime": "2024-01-19T09:08:05.553Z" },
+      { "id": 8, "userId": 10, "title": "trip to greece 1 - E.Allen", "logo": "/assets/images/trip_greece01.jpg", 
+        "starttime": "2024-02-19T09:08:05.553Z" },
+      { "id": 1, "userId": 10, "title": "trip to spain 1 - E.Allen", "logo": "/assets/images/trip_spain01.jpg", 
+        "starttime": "2024-03-19T09:08:05.553Z" },
+      { "id": 25, "userId": 10, "title": "trip to cyprusA 1 - E.Allen", "logo": "/assets/images/trip_cyprus02.jpg", 
+        "starttime": "2024-04-19T09:08:05.553Z" },
+      { "id": 18, "userId": 10, "title": "trip to greeceA 1 - E.Allen", "logo": "/assets/images/trip_greece02.jpg", 
+        "starttime": "2024-09-21T09:08:05.553Z" },
+      { "id": 19, "userId": 10, "title": "trip to spainA 1 - E.Allen", "logo": "/assets/images/trip_spain02.jpg", 
+        "starttime": "2024-12-23T09:08:05.553Z" },
+    ];
+    return { list, limit: 3, count: 6, page: 1, pages: 2 };
   }
 }

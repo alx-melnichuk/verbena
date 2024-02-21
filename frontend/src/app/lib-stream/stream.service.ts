@@ -2,7 +2,9 @@ import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { StreamApiService } from './stream-api.service';
-import { CreateStreamDto, SearchStreamDto, ModifyStreamDto, StreamDto, StreamListDto } from './stream-api.interface';
+import {
+  CreateStreamDto, SearchStreamDto, ModifyStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventListDto
+} from './stream-api.interface';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Uri } from '../common/uri';
 import { ROUTE_VIEW } from '../common/routes';
@@ -40,9 +42,9 @@ export class StreamService {
    * - orderColumn (starttime / title, starttime by default)
    * - orderDirection (asc / desc, asc by default)
    */
-  public getStreams(getStreamsDTO: SearchStreamDto): Promise<StreamListDto | HttpErrorResponse | undefined> {
-    if (!getStreamsDTO) { return Promise.reject(); }
-    return this.streamApiService.getStreams(getStreamsDTO);
+  public getStreams(searchStreamsDTO: SearchStreamDto): Promise<StreamListDto | HttpErrorResponse | undefined> {
+    if (!searchStreamsDTO) { return Promise.reject(); }
+    return this.streamApiService.getStreams(searchStreamsDTO);
   }
   /*public getStreamsByUser(userId: string, limit?: number, page?: number): Promise<StreamsDTO | HttpErrorResponse> {
     const getStreamsDTO: GetStreamsDTO = {
@@ -54,18 +56,10 @@ export class StreamService {
     };
     return this.streamApiService.getStreams(getStreamsDTO);
   }*/
-  /*!!!public getStreamsByDate(userId: string, selectedDate: string, page: number): Promise<StreamsDTO | HttpErrorResponse> {
-    const getStreamsDTO: GetStreamsDTO = {
-      userId,
-      key: selectedDate, // '2021-04-27',
-      groupBy: 'date', // 'none' | 'tag' | 'date'; // default = 'none';
-      page: (page || 1), // default = 1;
-      limit: 100, // default = 10;
-      orderColumn: 'starttime', // 'starttime' | 'title'; // default = 'starttime';
-      orderDirection: 'ASC'     // 'asc' | 'desc'; // default = 'ASC';
-    };
-    return this.streamApiService.getStreams(getStreamsDTO);
-  }*/
+  public getStreamsEvent(searchStreamEventDto: SearchStreamEventDto): Promise<StreamEventListDto | HttpErrorResponse | undefined> {
+    if (!searchStreamEventDto) { return Promise.reject(); }
+    return this.streamApiService.getStreamsEvent(searchStreamEventDto);
+  }
   /*public getStreamsByLive(
     userId: string | null, live: boolean | null, tag: string | null, limit?: number, page?: number
   ): Promise<StreamsDTO | HttpErrorResponse> {
@@ -127,7 +121,7 @@ export class StreamService {
     return (!!streamId ? prefix + ROUTE_VIEW + '/' + streamId : '');
   }
 
-  public redirectToStreamViewPage(streamId: string): void {
+  public redirectToStreamViewPage(streamId: number): void {
     if (!!streamId) {
       Promise.resolve().then(() => {
         this.router.navigate([ROUTE_VIEW, streamId]);
