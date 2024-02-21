@@ -9,6 +9,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { PIPE_DATE, PIPE_DATE_TIME } from 'src/app/common/constants';
 import { LogotypeComponent } from 'src/app/components/logotype/logotype.component';
 import { StreamDto } from '../stream-api.interface';
+import { ScrollHasMaxUtil } from 'src/app/utils/scroll-has-max.util';
 
 @Component({
   selector: 'app-panel-stream-info',
@@ -62,7 +63,7 @@ export class PanelStreamInfoComponent {
     event.preventDefault();
     event.stopPropagation();
     const elem: Element | null = event.target as Element;
-    if (this.checkScrollHasMax(elem?.scrollTop, elem?.clientHeight, elem?.scrollHeight)) {
+    if (ScrollHasMaxUtil.check(elem?.scrollTop, elem?.clientHeight, elem?.scrollHeight)) {
       this.requestNextPage.emit();  
     }
   }
@@ -109,11 +110,5 @@ export class PanelStreamInfoComponent {
         this.element.nativeElement.scrollTop = 0;
       } catch (err) { }
     }
-  }
-
-  private checkScrollHasMax(scrollTop?: number, clientHeight?: number, scrollHeight?: number): boolean {
-    const scrollTopAndHeight = (scrollTop || 0) + (clientHeight || 0);
-    const result = Math.round((scrollTopAndHeight / (scrollHeight || 1))*100)/100;
-    return result > 0.98;
   }
 }

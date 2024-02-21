@@ -1,10 +1,12 @@
 <div class="psi-stream-card" *ngFor="let stream of streamList; trackBy: trackByIdFn">
 
-    <a class="psi-logo" (click)="doRedirectToStream(stream.id)">
-      <app-logotype *ngIf="!isFuture" [logo]="stream.logo">
-      </app-logotype>
-    <div *ngIf="isFuture" class="psi-logo-future">
-    </div>
+  <a class="psi-logo" (click)="doRedirectToStream(stream.id)">
+    <app-logotype *ngIf="!isFuture; else elseBlockIsFuture"
+      [logo]="stream.logo">
+    </app-logotype>
+    <ng-template #elseBlockIsFuture>
+      <div class="psi-logo-future"></div>
+    </ng-template>
   </a>
 
   <div class="psi-details">
