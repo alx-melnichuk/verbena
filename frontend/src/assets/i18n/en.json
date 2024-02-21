@@ -132,6 +132,11 @@
       "delete": "Delete"
     }
   },
+  "panel-stream-event": {
+    "buttons": {
+      "edit": "Edit"
+    }
+  },
   "stream_edit": {
     "caption": "Stream Caption",
     "title": "Title",
