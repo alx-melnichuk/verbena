@@ -9,6 +9,8 @@
     --app-default-bg-s: 5%;
     --app-default-bg-l: 10%;
     --app-default-bg: hsl(var(--app-default-bg-h),var(--app-default-bg-s),var(--app-default-bg-l));
+    --app-default-bg-high: hsl(0, 0%, 22%);
+    --app-default-bg-low: hsl(0, 0%, 17%);
     // "default" color: hsl(0, 0%, 100%); #fff;
     --app-default-cl-h: 0;
     --app-default-cl-s: 0%;

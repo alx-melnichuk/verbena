@@ -3,6 +3,8 @@
 app-panel-stream-event {
   --pse-logo-wd: 60px;
   --pse-edit-wd: 40px;
+  --pse-pn-stream-bg: var(--app-pn-stream);
+  --pse-pn-stream-brd: var(--app-pn-stream-low);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -10,8 +12,8 @@ app-panel-stream-event {
 
   .pse-stream {
     align-items: center;
-    background-color: var(--app-theme-background-panel-2);
-    border: 1px solid var(--app-theme-background-panel-2);
+    background-color: var(--pse-pn-stream-bg);
+    border: 1px solid var(--pse-pn-stream-brd);
     border-radius: 10px;
     box-sizing: border-box;
     display: flex;

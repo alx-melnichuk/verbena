@@ -68,9 +68,7 @@ export class PanelStreamInfoComponent {
     }
   }
 
-  constructor(
-    private element: ElementRef,
-  ) {
+  constructor(private element: ElementRef) {
   }
 
   // ** Public API **

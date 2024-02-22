@@ -20,22 +20,36 @@ export class DialogService {
     if (!!btnNameAccept) {
       confirmationData.btnNameAccept = btnNameAccept;
     }
-    return this.openConfirmationExt(confirmationData);
+    return this.openComponentExt(ConfirmationComponent, confirmationData);
   }
 
-  public openConfirmationExt(confirmationData: ConfirmationData): Promise<unknown> {
+  public openComponent(component: ComponentType<unknown>, dataParams: any): void {
     const dialogConfig = new MatDialogConfig();
-    dialogConfig.data = {
-      // Custom class for the overlay pane.
-      panelClass: ['app-modal', 'large'],
-      // Whether the dialog has a backdrop.
-      hasBackdrop: true,
-      // Custom class for the backdrop.
-      backdropClass: 'app-modal-backdrop',
-      // Whether the user can use escape or clicking on the backdrop to close the modal. disableClose?: boolean;
-      disableClose: false,
-      ...confirmationData,
-    };
+    // Custom class for the overlay pane.
+    dialogConfig.panelClass = ['app-modal-panel', 'large'];
+    // Whether the dialog has a backdrop.
+    dialogConfig.hasBackdrop = true;
+    // Custom class for the backdrop.
+    dialogConfig.backdropClass = 'app-modal-backdrop';
+    // Whether the user can use escape or clicking on the backdrop to close the modal. disableClose?: boolean;
+    dialogConfig.disableClose = false;
+    dialogConfig.data = dataParams;
+
+    this.dialog.open(component, dialogConfig);
+  }
+
+  public openComponentExt(component: ComponentType<unknown>, dataParams: any): Promise<unknown> {
+    const dialogConfig = new MatDialogConfig();
+    // Custom class for the overlay pane.
+    dialogConfig.panelClass = ['app-modal-panel', 'large'];
+    // Whether the dialog has a backdrop.
+    dialogConfig.hasBackdrop = true;
+    // Custom class for the backdrop.
+    dialogConfig.backdropClass = 'app-modal-backdrop';
+    // Whether the user can use escape or clicking on the backdrop to close the modal. disableClose?: boolean;
+    dialogConfig.disableClose = false;
+    dialogConfig.data = dataParams;
+
     const dialogRef = this.dialog.open(ConfirmationComponent, dialogConfig);
     // const answer = new Promise((resolve, reject) => {
     //   dialogRef.afterClosed().subscribe(result => {
@@ -44,37 +58,5 @@ export class DialogService {
     // });
     // return answer;
     return dialogRef.afterClosed().toPromise();
-  }
-
-  public openComponent(component: ComponentType<unknown>, dataParams: any): void {
-    const dialogConfig = new MatDialogConfig();
-    dialogConfig.data = {
-      // Custom class for the overlay pane.
-      panelClass: ['app-modal', 'large'],
-      // Whether the dialog has a backdrop.
-      hasBackdrop: true,
-      // Custom class for the backdrop.
-      backdropClass: 'app-modal-backdrop',
-      // Whether the user can use escape or clicking on the backdrop to close the modal. disableClose?: boolean;
-      disableClose: false,
-      ...{ ...dataParams },
-    };
-    this.dialog.open(component, dialogConfig);
-  }
-
-  public openComponentExt(component: ComponentType<unknown>, dataParams: any): Promise<unknown> {
-    const dialogConfig = new MatDialogConfig();
-    dialogConfig.data = {
-      // Custom class for the overlay pane.
-      panelClass: ['app-modal', 'large'],
-      // Whether the dialog has a backdrop.
-      hasBackdrop: true,
-      // Custom class for the backdrop.
-      backdropClass: 'app-modal-backdrop',
-      // Whether the user can use escape or clicking on the backdrop to close the modal. disableClose?: boolean;
-      disableClose: false,
-      ...{ ...dataParams },
-    };
-    return this.dialog.open(component, dialogConfig).afterClosed().toPromise();
   }
 }

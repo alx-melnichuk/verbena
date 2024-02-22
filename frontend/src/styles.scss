@@ -66,3 +66,22 @@ body {
 // .spacer {
 //   flex: 1;
 // }
+
+
+.cdk-overlay-pane.app-modal-panel {
+
+  .mdc-dialog__container {
+    // --mdc-dialog-container-color: white;
+    --mdc-dialog-container-color: var(--app-default-bg-high); // background-color: var(--mdc-dialog-container-color, white);
+
+    // --mdc-dialog-subhead-color: rgba(0, 0, 0, 0.87);
+
+    --mdc-dialog-supporting-text-color: var(--app-default-cl); // rgba(0, 0, 0, 0.6);
+    
+    --mdc-dialog-container-shape: 1em; //  border-radius: var(--mdc-dialog-container-shape); // 4px
+
+    --mdc-dialog-container-elevation:
+      0px 11px 15px -7px rgba(0, 0, 0, 0.2), 0px 24px 38px 3px rgba(0, 0, 0, 0.14), 0px 9px 46px 8px rgba(0, 0, 0, 0.12);
+  }
+
+}
