@@ -4,6 +4,12 @@ app-confirmation {
   display: inline-block;
   position: relative;
 
+  .dc-title {
+    font-size: 1.5em;
+    font-weight: 500;
+    padding: 0.5em 0.7em;
+    background-color: var(--app-pn-stream-low);
+  }
   .dc-close {
     position: absolute;
     top: 1vh;
@@ -16,10 +22,6 @@ app-confirmation {
     z-index: 1;
   }
 
-  & > h1[mat-dialog-title] {
-    background-color: var(--app-primary-low);
-  }
-
   .dc-content {
     font-size: medium;
     font-style: normal;
@@ -29,8 +31,11 @@ app-confirmation {
     justify-content: center;
   }
 
-  .mat-dialog-actions {
-    padding-top: 1.2vh;
-    padding-bottom: 1.2vh;
+  .mat-mdc-dialog-actions {
+    padding-top: 0px;
+    padding-bottom: 1.3em;
+  }
+  .mat-mdc-dialog-content.mdc-dialog__content {
+    padding-top: 1em;
   }
 }

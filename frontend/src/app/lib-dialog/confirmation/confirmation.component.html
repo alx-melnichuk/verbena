@@ -1,7 +1,7 @@
 <button class="dc-close" (click)="cancel()">
   &#215;
 </button>
-<h1 mat-dialog-title>{{ title }}</h1>
+<div class="dc-title">{{ title }}</div>
 <div mat-dialog-content class="dc-content">
   <ng-container *ngIf="!!message">
     {{ message }}
