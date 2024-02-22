@@ -1,9 +1,10 @@
 /*# sourceURL=styles.scss */
 /* You can add global styles to this file, and also import other style files */
 
-@import './styles-colors.scss';
 @import './styles-sme.scss';
 @import './styles-theme.scss';
+@import './styles-colors.scss';
+@import './styles-list-colors.scss';
 
 html,
 body {
@@ -33,12 +34,12 @@ p {
 a,
 a:visited,
 a:hover {
-  color: #1976d2;
+  color: hsl(209.84, 78.72%, 45%); //   color: #1976d2; // hsl(209.84, 78.72%, 46.08%);
   text-decoration: none;
+  cursor: pointer;
 }
-
 a:hover {
-  color: #125699;
+  color: #125699; // hsl(209.78, 78.95%, 33.53%);
 }
 
 .global-scroll {

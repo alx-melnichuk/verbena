@@ -6,12 +6,12 @@ app-header {
   height: 100%;
   
   &:not(.hd-user-info) {
-    ---hd-bg-cl: var(--app-site-off-header-bg);
+    ---hd-bg: var(--app-site-unauth);
   }
   &.hd-user-info {
-    ---hd-bg-cl: var(--app-site-header-bg);
+    ---hd-bg: var(--app-site-auth);
   }
-  background-color: var(---hd-bg-cl);
+  background-color: var(---hd-bg);
 
   & > div {
     align-items: center;

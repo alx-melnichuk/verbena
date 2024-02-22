@@ -5,11 +5,11 @@ app-footer {
   height: 100%;
   padding-left: 0.8em;
   &:not(.ft-user-info) {
-    ---ft-bg-cl: var(--app-site-off-footer-bg);
+    ---ft-bg: var(--app-site-unauth);
   }
   &.ft-user-info {
-    ---ft-bg-cl: var(--app-site-footer-bg);
+    ---ft-bg: var(--app-site-auth);
   }
-  background-color: var(---ft-bg-cl);
+  background-color: var(---ft-bg);
 
 }

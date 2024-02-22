@@ -1,58 +1,25 @@
+/*# sourceURL=styles-theme.scss */
 
-// Theme Init
-.dark-theme {
-  color-scheme: dark;
- 
-  //   --app-primary-demo-01: hsla(230.85, 48.36%, 47.84%, 0.1); // #3f51b51a
-  //   --app-primary-demo : hsl(230.85, 48.36%, 47.84%);       // #3f51b5
-  --app-primary-h: 230.85;
-  --app-primary-s: 48.36%;
-  --app-primary-l: 47.84%;
-  --app-primary: hsl(var(--app-primary-h), var(--app-primary-s), var(--app-primary-l));
-  --app-primary-low: hsla(var(--app-primary-h), var(--app-primary-s), var(--app-primary-l), 0.6);
+:root {
 
-//   @include angular-material-theme($dark-theme);
-//   @include app-theme-color($dark-theme);
-  --app-theme-accent: #999999;
-  --app-theme-background-panel-2: #1E222D;
-  --app-theme-green100: #26A69A;
-  --app-theme-blue-grey-500: #1E3046;
-  --app-theme-orange: #FB8C00;
-  --app-theme-nickname: #69717A;
-  --app-theme-nickname-text: #D9DCDE;
-  --app-theme-blue-300: #2196F3;
-  --app-theme-input-border: rgba(255, 255, 255, 0.3);
-  --app-theme-grey-100: #A3B4CB;
+  //    primary  : hsl(231, 48%, 48%); #3f51b5
+  --thm-primary-h: 231;
+  --thm-primary-s: 48%;
+  --thm-primary-l: 48%;
+  --thm-primary  : hsl(var(--thm-primary-h), var(--thm-primary-s), var(--thm-primary-l));
+  //    primary-high: #c5cbe9  hsl(230, 45%, 84%)   hsl(230, 45%, 84%)
+  --thm-primary-high: hsl(calc(var(--thm-primary-h) - 1), calc(var(--thm-primary-s) - 3%), calc(var(--thm-primary-l) + 36%));
+  //    primary-low : #29379d  hsl(233, 59%, 39%)
+  --thm-primary-low : hsl(calc(var(--thm-primary-h) + 2), calc(var(--thm-primary-s) + 11%), calc(var(--thm-primary-l) - 0%));
+
+  //    accent  : hsl( 35, 97%, 38%); #c07003  
+  --thm-accent-h: 35;
+  --thm-accent-s: 97%;
+  --thm-accent-l: 38%;
+  --thm-accent  : hsl(var(--thm-accent-h), var(--thm-accent-s), var(--thm-accent-l));
+  //    accent-high: #ecd4b3  hsl(35, 60%, 81%)
+  --thm-accent-high: hsl(calc(var(--thm-accent-h) - 0), calc(var(--thm-accent-s) - 37%), calc(var(--thm-accent-l) + 43%));
+  //    accent-low: #aa5302  hsl(29, 98%, 34%)
+  --thm-accent-low : hsl(calc(var(--thm-accent-h) - 6), calc(var(--thm-accent-s) + 1%), calc(var(--thm-accent-l) - 4%));
+  
 }
-.light-theme {
-  color-scheme: light;
-
-  //   --app-primary-demo-01: hsla(230.85, 48.36%, 47.84%, 0.1); // #3f51b51a
-  //   --app-primary-demo : hsl(230.85, 48.36%, 47.84%);       // #3f51b5
-  --app-primary-h: 230.85;
-  --app-primary-s: 48.36%;
-  --app-primary-l: 47.84%;
-  --app-primary: hsl(var(--app-primary-h), var(--app-primary-s), var(--app-primary-l));
-  --app-primary-low: hsla(var(--app-primary-h), var(--app-primary-s), var(--app-primary-l), 0.1);
-//   --app-primary: var(--mdc-theme-primary, #3f51b5); // rgb(63, 81, 181);
-
-//   @include angular-material-theme($light-theme);
-//   @include app-theme-color($light-theme);
-//   --app-theme-primary: var(--blue-800);
-  --app-theme-accent: #999999;
-  --app-theme-background-panel-2: #F0F3FA;
-  --app-theme-green100: #26A69A;
-  --app-theme-blue-grey-500: #1E3046;
-  --app-theme-orange: #FB8C00;
-  --app-theme-nickname: #69717A;
-  --app-theme-nickname-text: #D9DCDE;
-  --app-theme-blue-300: #2196F3;
-  --app-theme-input-border: rgba(0, 0, 0, 0.12);
-  --app-theme-grey-100: #788393;
-
-  --app-input-dis: rgba(0, 0, 0, 0.38);
-  --app-input-brd: rgba(0, 0, 0, 0.38);
-  --app-input-brd-hov: rgba(0, 0, 0, 0.87);
-  --app-input-brd-dis: rgba(0, 0, 0, 0.06);
-}
-// --app-theme-input-border: darkgray;
