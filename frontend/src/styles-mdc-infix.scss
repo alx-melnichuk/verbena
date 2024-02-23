@@ -1,0 +1,44 @@
+/*# sourceURL=styles-mdc-infix.scss */
+/* Complements the "Material Design" style library. */
+
+.stl-mdc-infix {
+    --demo-button-bg: #797979;
+
+    
+  &.dark-theme {
+    --infix-button-ordinary-brd: var(--app-ordinary-low); // high
+    --demo-button-ordinary-bg : hsl(0, 0%, 19%);
+    --infix-button-ordinary-bg: hsl(var(--app-ordinary-h), var(--app-ordinary-s), calc(var(--app-ordinary-l) - 28%));
+    }
+  &.light-theme {
+    --infix-button-ordinary-brd: var(--app-ordinary-high);
+    --demo-button-ordinary-bg : hsl(0, 0%, 84%);
+    --infix-button-ordinary-bg: hsl(var(--app-ordinary-h), var(--app-ordinary-s), calc(var(--app-ordinary-l) + 37%));
+    }
+
+            
+  button.app-infix {
+    --mdc-outlined-button-label-text-color: none; // use color:inherit
+    &.app-ordinary {
+      --mdc-outlined-button-outline-color: var(--infix-button-ordinary-brd);
+      background-color: var(--infix-button-ordinary-bg);
+    }
+  }
+
+//   .mat-mdc-button.mat-primary, .mat-mdc-outlined-button.mat-primary {
+//     --mat-mdc-button-persistent-ripple-color: #3f51b5;
+//     --mat-mdc-button-ripple-color: rgba(63, 81, 181, 0.1);
+//   }
+// .mat-mdc-raised-button:not(:disabled) {
+//     background-color: var(--mdc-protected-button-container-color, transparent);
+// }
+
+//   .mat-mdc-dialog-actions {
+//     padding-top: 0px;
+//     padding-bottom: 1.3em;
+//   }
+  .mat-mdc-dialog-content.mdc-dialog__content {
+    padding-top: 1em;
+  }
+    
+}
