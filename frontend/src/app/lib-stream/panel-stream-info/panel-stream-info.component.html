@@ -22,7 +22,7 @@
   </div>
 
   <button mat-stroked-button *ngIf="canDuplicate"
-    class="mat-elevation-z3 psi-shrink-0 psi-mg-rg psi-pd-hor-05" color="primary"
+    class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mg-rg psi-pd-hor-05"
     (click)="doActionDuplicate(stream.id)">
     <span class="psi-action-label">
       <i class="psi-duplicate-accent"></i>
@@ -31,7 +31,7 @@
   </button>
 
   <button mat-stroked-button *ngIf="canEdit"
-    class="mat-elevation-z3 psi-shrink-0 psi-mg-rg psi-pd-hor-07" color="primary"
+    class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mg-rg psi-pd-hor-07"
     (click)="doActionEdit(stream.id)">
     <span class="psi-action-label">
       <i class="psi-edit-accent"></i>
@@ -40,7 +40,7 @@
   </button>
 
   <button mat-stroked-button *ngIf="canDelete"
-    class="mat-elevation-z3 psi-shrink-0 psi-mg-rg psi-pd-hor-07" color="primary"
+    class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mg-rg psi-pd-hor-07"
     (click)="doActionDelete(stream)">
     <span class="psi-action-label">
       <i class="psi-delete-accent"></i>

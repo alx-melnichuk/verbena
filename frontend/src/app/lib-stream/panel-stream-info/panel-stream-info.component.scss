@@ -1,9 +1,6 @@
 /*# sourceURL=panel-stream-info.component.scss */
 
 app-panel-stream-info {
-  --psi-pn-stream-bg: var(--app-pn-stream);
-  --psi-pn-stream-brd: var(--app-pn-stream-low);
-
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -11,8 +8,8 @@ app-panel-stream-info {
 
   .psi-stream-card {
     align-items: center;
-    background-color: var(--psi-pn-stream-bg);
-    border: 1px solid var(--psi-pn-stream-brd);
+    background-color: var(--app-pn-stream);
+    border: 1px solid var(--app-pn-stream-low);
     border-radius: 10px;
     box-sizing: border-box;
     display: flex;
@@ -77,22 +74,6 @@ app-panel-stream-info {
     padding-right: 0.7em;
   }
 
-  .mat-mdc-outlined-button {
-    --mdc-outlined-button-outline-color: var(--psi-pn-stream-brd);
-  }
-//   .mat-mdc-outlined-button:not(:disabled) {
-//     border-color: var(--mdc-outlined-button-outline-color, rgba(0, 0, 0, 0.12)));
-//   }
-//   .mat-mdc-outlined-button:not(:disabled) {
-//     color: var(--mdc-outlined-button-label-text-color, inherit);
-//   }
-//   .mat-mdc-button.mat-primary, .mat-mdc-outlined-button.mat-primary {
-//     --mat-mdc-button-persistent-ripple-color: #3f51b5;
-//     --mat-mdc-button-ripple-color: rgba(63, 81, 181, 0.1);
-//   }
-//   .mat-mdc-outlined-button.mat-primary {
-//     --mdc-outlined-button-label-text-color: #3f51b5;
-//   }
   .psi-logo-future {
     background: transparent none no-repeat center center;
     background-image: url('../../../assets/icons/logo-future.svg');
