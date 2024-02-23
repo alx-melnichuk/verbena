@@ -11,21 +11,18 @@
   </ng-container>
 </div>
 <div mat-dialog-actions class="dc-actions">
+
   <button mat-stroked-button
     *ngIf="!!btnNameCancel"
-    class="mat-elevation-z3"
-    color="primary"
+    class="app-infix app-ordinary mat-elevation-z3"
     (click)="cancel()"
-    cdkFocusInitial
-  >
+    cdkFocusInitial>
     {{ btnNameCancel }}
   </button>
   <button mat-stroked-button
     *ngIf="!!btnNameAccept"
-    class="mat-elevation-z3"
-    color="primary"
-    (click)="accept()"
-  >
+    class="app-infix app-ordinary mat-elevation-z3"
+    (click)="accept()">
     {{ btnNameAccept }}
   </button>
 </div>

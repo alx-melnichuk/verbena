@@ -7,7 +7,7 @@ app-confirmation {
   .dc-title {
     font-size: 1.5em;
     font-weight: 500;
-    padding: 0.5em 0.7em;
+    padding: 0.5em 0.5em 0.5em 0.8em;
     background-color: var(--app-pn-stream-low);
   }
   .dc-close {
@@ -29,13 +29,5 @@ app-confirmation {
 
   .dc-actions {
     justify-content: center;
-  }
-
-  .mat-mdc-dialog-actions {
-    padding-top: 0px;
-    padding-bottom: 1.3em;
-  }
-  .mat-mdc-dialog-content.mdc-dialog__content {
-    padding-top: 1em;
   }
 }
