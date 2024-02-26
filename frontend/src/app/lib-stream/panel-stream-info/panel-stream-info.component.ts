@@ -68,7 +68,7 @@ export class PanelStreamInfoComponent {
     }
   }
 
-  constructor(private element: ElementRef) {
+  constructor(private elementRef: ElementRef) {
   }
 
   // ** Public API **
@@ -103,9 +103,9 @@ export class PanelStreamInfoComponent {
   // ** Private API **
 
   private scrollToTop(): void {
-    if (!!this.element) {
+    if (!!this.elementRef) {
       try {
-        this.element.nativeElement.scrollTop = 0;
+        this.elementRef.nativeElement.scrollTop = 0;
       } catch (err) { }
     }
   }
