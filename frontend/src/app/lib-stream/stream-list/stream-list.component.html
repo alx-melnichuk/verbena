@@ -10,6 +10,8 @@
       (changeSelectedDate)="doChangeSelectedDate($event)"
       (changeActiveDate)="doChangeActiveDate($event)"
     ></app-schedule-calendar> -->
+    <app-panel-stream-calendar>
+    </app-panel-stream-calendar>
   </div>
   <div class="sl-events sl-relative">
     <app-spinner isFillParent *ngIf="streamCalendarService.streamsEventLoading">

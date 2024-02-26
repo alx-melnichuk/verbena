@@ -9,18 +9,21 @@ import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { ROUTE_STREAM_CREATE, ROUTE_STREAM_EDIT } from 'src/app/common/routes';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
+import { StringDateTime } from 'src/app/common/string-date-time';
 
-import { StringDateTime, StreamDtoUtil, StreamDto } from '../stream-api.interface';
+import { StreamDtoUtil } from '../stream-api.interface';
 import { StreamListService } from '../stream-list.service';
 import { PanelStreamEventComponent } from '../panel-stream-event/panel-stream-event.component';
 import { PanelStreamInfoComponent } from '../panel-stream-info/panel-stream-info.component';
+import { PanelStreamCalendarComponent } from '../panel-stream-calendar/panel-stream-calendar.component';
 import { StreamService } from '../stream.service';
 import { StreamCalendarService } from '../stream-calendar.service';
 
 @Component({
   selector: 'app-stream-list',
   standalone: true,
-  imports: [CommonModule, TranslateModule, SpinnerComponent, PanelStreamEventComponent, PanelStreamInfoComponent],
+  imports: [CommonModule, TranslateModule, SpinnerComponent, PanelStreamEventComponent, PanelStreamInfoComponent,
+    PanelStreamCalendarComponent],
   templateUrl: './stream-list.component.html',
   styleUrls: ['./stream-list.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -114,7 +117,9 @@ export class StreamListComponent {
     this.streamListService.clearPastStream();
     this.doRequestNextPagePast();
 
+    // this.streamCalendarService.clearSelectedMarkedDates();
     // this.doChangeActiveDate(this.scheduleService.activeDate.format(MOMENT_ISO8601_DATE));
+
     // this.doChangeSelectedDate(this.scheduleService.selectedDate);
     this.doChangeSelectedDate();
   }
