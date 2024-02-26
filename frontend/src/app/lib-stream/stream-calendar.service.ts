@@ -1,10 +1,14 @@
 import { Injectable } from '@angular/core';
-import { AlertService } from '../lib-dialog/alert.service';
-import { StreamService } from './stream.service';
-import { SearchStreamEventDto, StreamEventDto, StreamEventListDto, StringDate, StringDateTime } from './stream-api.interface';
-import { PageInfo, PageInfoUtil } from '../common/page-info';
-import { HttpErrorUtil } from '../utils/http-error.util';
 import { HttpErrorResponse } from '@angular/common/http';
+
+import { PageInfo, PageInfoUtil } from '../common/page-info';
+import { StringDate, StringDateTime, StringDateTimeUtil } from '../common/string-date-time';
+import { AlertService } from '../lib-dialog/alert.service';
+import { HttpErrorUtil } from '../utils/http-error.util';
+
+import { StreamService } from './stream.service';
+import { SearchStreamEventDto, StreamEventDto, StreamEventListDto } from './stream-api.interface';
+
 
 const CN_DEFAULT_LIMIT = 10;
 
@@ -13,15 +17,15 @@ const CN_DEFAULT_LIMIT = 10;
 })
 export class StreamCalendarService {
 
-  // "Panel Calendar"
-  // # public selectedDate: StringDate = moment().add(-1, 'day').format(MOMENT_ISO8601_DATE);
-  // # public selectedDateMarkedDates: string[] = [];
-  // # public selectedDateMarkedDatesLoading = false;
+  // List of days with events in the month.
+  public selectedDate: StringDate = ''; // moment().add(-1, 'day').format(MOMENT_ISO8601_DATE);
+  public selectedDateMarkedDates: string[] = [];
+  public selectedDateMarkedDatesLoading = false;
   // # public activePeriodYear: number = moment().year();
   // # public activePeriodMonth: number = moment().month() + 1;
   // # public activeDate: moment.Moment = moment();
 
-  // "Panel Calendar for StreamShort list"
+  // List of events in the month.
   // # public calendarMiniStreams: StreamDto[] = [];
   public streamsEvent: StreamEventDto[] = [];
   // # public calendarMiniStreamsLoading = false;
@@ -34,6 +38,15 @@ export class StreamCalendarService {
   }
 
   // ** Public API **
+
+  // List of days with events in the month.
+
+  public getToday(): Date {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, -today.getTimezoneOffset(), 0, 0);
+  }
+
+  // List of events in the month.
 
   /** For the selected date, get a list of streams for short streams. */
   public setSelectedDateAndGetShortStreams(

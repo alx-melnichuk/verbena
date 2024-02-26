@@ -30,12 +30,15 @@ export class StreamListService {
     console.log(`StreamListService()`); // # 
   }
 
-  public clearFutureStream(): void {
-    this.futureStreamsDto = [];
+  public checkNextPage(pageInfo: PageInfo): boolean {
+    const nextPageInfo: PageInfo = PageInfoUtil.create({ page: pageInfo.page + 1 });
+    return PageInfoUtil.checkNextPageInfo(pageInfo, nextPageInfo);
   }
 
-  public clearPastStream(): void {
-    this.pastStreamsDto = [];
+  // "Future Streams"
+
+  public clearFutureStream(): void {
+    this.futureStreamsDto = [];
   }
 
   public searchNextFutureStream(userId: number): Promise<StreamListDto | HttpErrorResponse | undefined> {
@@ -63,7 +66,12 @@ export class StreamListService {
       .finally(() => {
         this.futureStreamLoading = false;
       });      
-  
+  }
+
+  // "Past Streams"
+
+  public clearPastStream(): void {
+    this.pastStreamsDto = [];
   }
 
   public searchNextPastStream(userId: number): Promise<StreamListDto | HttpErrorResponse | undefined> {
@@ -91,11 +99,6 @@ export class StreamListService {
       .finally(() => {
         this.pastStreamLoading = false;
       });      
-  }
-
-  public checkNextPage(pageInfo: PageInfo): boolean {
-    const nextPageInfo: PageInfo = PageInfoUtil.create({ page: pageInfo.page + 1 });
-    return PageInfoUtil.checkNextPageInfo(pageInfo, nextPageInfo);
   }
 
   // ** Private API **

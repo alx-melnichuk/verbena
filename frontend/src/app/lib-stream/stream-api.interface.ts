@@ -1,7 +1,5 @@
-export interface StreamApi {
-}
-export type StringDate = string;
-export type StringDateTime = string;   
+import { StringDate, StringDateTime,  StringDateTimeUtil } from '../common/string-date-time';
+
 
 export enum StreamState {
   Waiting = 'Waiting',
@@ -77,25 +75,6 @@ export interface StreamDto {
     pub updated_at: DateTime<Utc>,
 }*/
 
-export class StringDateTimeUtil {
-  public static to_str(val: Date): StringDateTime {
-    return val.toISOString();
-  }
-  public static to_date(val: StringDateTime | null | undefined): Date | null {
-    if (val == null || val ==undefined) {
-      return null;
-    }
-    if (val.length != 20 && val.length != 24) {
-      console.error(`The length of the string "${val}" is not 20 or 24.`);
-      return null;
-    }
-    if (val[4] != '-' || val[7] != '-' || val[10] != 'T' || val[13] != ':' || val[16] != ':') {
-      console.error(`The value 'bbb' does not match the datetime format 'yyyy-MM-ddThh:mm:ss.000Z'`);
-      return null;
-    }
-    return new Date(val);
-  }
-}
 export class StreamDtoUtil {
   public static create(streamDto?: Partial<StreamDto>): StreamDto {
     return {
@@ -210,4 +189,11 @@ export interface SearchStreamEventDto {
   orderDirection?: 'asc' | 'desc'; // default 'asc';
   page?: number; // default 1;
   limit?: number; // default 10; Min(1) Max(100)
+}
+
+// ** getStreamsCalendar()  **
+
+export interface StreamsCalendarDTO {
+  day: number;
+  count: number;
 }
