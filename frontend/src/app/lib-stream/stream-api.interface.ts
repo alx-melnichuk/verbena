@@ -193,7 +193,14 @@ export interface SearchStreamEventDto {
 
 // ** getStreamsCalendar()  **
 
-export interface StreamsCalendarDTO {
+export interface SearchStreamsCalendarDto {
+  userId?: number;
+  startDate: StringDateTime;
+  finalDate: StringDateTime;
+}
+
+export interface StreamsCalendarDto {
+  date: StringDateTime;
   day: number;
   count: number;
 }

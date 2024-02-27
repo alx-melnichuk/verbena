@@ -2,11 +2,12 @@ import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular
 import { Injectable } from '@angular/core';
 
 import { Uri } from 'src/app/common/uri';
+import { HttpParamsUtil } from '../utils/http-params.util';
 import {
   CreateStreamDto, SearchStreamDto, ModifyStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventListDto,
-  StreamEventDto
+  StreamEventDto, StreamsCalendarDto, SearchStreamsCalendarDto
 } from './stream-api.interface';
-import { HttpParamsUtil } from '../utils/http-params.util';
+import { StringDateTime } from '../common/string-date-time';
 
 @Injectable({
   providedIn: 'root'
@@ -37,7 +38,21 @@ constructor(private http: HttpClient) {
     const url = Uri.appUri(`appApi://streams/calendar/${userId}/${month}/${year}`);
     return this.http.get<StreamsCalendarDTO[] | HttpErrorResponse>(url).toPromise();
   }*/
-
+  public getStreamsCalendar(search: SearchStreamsCalendarDto): Promise<StreamsCalendarDto[] | HttpErrorResponse | undefined> {
+    const params: HttpParams = HttpParamsUtil.create(search);
+    // const url = Uri.appUri(`appApi://streams/calendar/${month}/${year}`);
+    // return this.http.get<StreamsCalendarDto[] | HttpErrorResponse>(url, { params }).toPromise();
+    return new Promise<StreamsCalendarDto[]>(
+        (resolve: (value: StreamsCalendarDto[] | PromiseLike<StreamsCalendarDto[]>) => void, reject: (reason?: any) => void) => {
+          setTimeout(() => {
+            if (!!search) {
+              resolve(this.streamsCalendarDto(search.startDate));
+            } else {
+              reject('err');
+            }
+          }, 500);
+        });
+  }
   /** Get streams
    * @ route streams
    * @ example streams?groupBy=date&userId=385e0469-7143-4915-88d0-f23f5b27ed28/9/2022&orderColumn=title&orderDirection=desc&live=true
@@ -198,5 +213,21 @@ constructor(private http: HttpClient) {
         "starttime": "2024-12-23T09:08:05.553Z" },
     ];
     return { list, limit: 3, count: 6, page: 1, pages: 2 };
+  }
+  private streamsCalendarDto(startDate: StringDateTime): StreamsCalendarDto[] {
+    const date = new Date(startDate);
+    console.log(`@startDate:`, startDate); // #
+    const i = date.getMonth() % 2 !== 0 ? 0 : 2;
+    const date1 = new Date(date.getFullYear(), date.getMonth(), 10 + i, date.getHours(), date.getMinutes(), date.getSeconds());
+    const date2 = new Date(date.getFullYear(), date.getMonth(), 15 + i, date.getHours(), date.getMinutes(), date.getSeconds());
+    const date3 = new Date(date.getFullYear(), date.getMonth(), 20 + i, date.getHours(), date.getMinutes(), date.getSeconds());
+    const date4 = new Date(date.getFullYear(), date.getMonth(), 25 + i, date.getHours(), date.getMinutes(), date.getSeconds());
+    const list: StreamsCalendarDto[] = [
+      { "date": date1.toISOString(), "day": 10, "count": 1 }, // '2024-02-10T11:08:05.553Z+0200'
+      { "date": date2.toISOString(), "day": 15, "count": 1 }, // '2024-02-15T11:08:05.553Z+0200'
+      { "date": date3.toISOString(), "day": 20, "count": 1 }, // '2024-02-20T11:08:05.553Z+0200'
+      { "date": date4.toISOString(), "day": 25, "count": 1 }, // '2024-02-25T11:08:05.553Z+0200'
+    ];
+    return list;
   }
 }

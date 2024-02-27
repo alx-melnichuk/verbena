@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 
 import { StreamApiService } from './stream-api.service';
 import {
-  CreateStreamDto, SearchStreamDto, ModifyStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventListDto
+  CreateStreamDto, SearchStreamDto, ModifyStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventListDto, StreamsCalendarDto, SearchStreamsCalendarDto
 } from './stream-api.interface';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Uri } from '../common/uri';
@@ -30,6 +30,9 @@ export class StreamService {
   /*public getStreamsCalendar(userId: string, month: number, year: number): Promise<StreamsCalendarDTO[] | HttpErrorResponse> {
     return this.streamApiService.getStreamsCalendar(userId, month, year);
   }*/
+  public getStreamsCalendar(search: SearchStreamsCalendarDto): Promise<StreamsCalendarDto[] | HttpErrorResponse | undefined> {
+    return this.streamApiService.getStreamsCalendar(search);
+  }
 
   /** Get streams
    * - userId (only for groupBy "date")
