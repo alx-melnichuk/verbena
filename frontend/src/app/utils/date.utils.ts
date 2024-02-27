@@ -38,4 +38,12 @@ export class DateUtil {
   public static daysInMonth(date: Date): number {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   }
+
+  public static dateFirstDayOfMonth(d: Date): Date {
+    return new Date(d.getFullYear(), d.getMonth(), 1, d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds());
+  }
+  public static dateLastDayOfMonth(d: Date): Date {
+    const day = DateUtil.daysInMonth(d);
+    return new Date(d.getFullYear(), d.getMonth(), day, d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds());
+  }
 }
