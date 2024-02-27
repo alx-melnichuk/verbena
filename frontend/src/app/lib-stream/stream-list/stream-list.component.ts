@@ -88,15 +88,26 @@ export class StreamListComponent {
 
   // "Panel Calendar and Events"
 
-  public async doChangeSelectedDate(selectedDate?: StringDateTime): Promise<void> {
+  public doChangeSelectedDate(selectedDate: Date | null) {
+
+  }
+  //   (requestNextPage)="doChangeSelectedDate()"
+  public async doRequestNextPageShortStreams(selectedDate?: StringDateTime): Promise<void> {
     const starttime: StringDateTime = selectedDate || this.streamCalendarService.streamsEventStarttime;
+    // Get a list of days for a new calendar period.
+    await this.streamCalendarService.getShortStreamsForDate(starttime)
+    .finally(() => {
+      this.changeDetector.markForCheck();
+    });
+  }
+
+  public async doChangeCalendar(calendarStart: Date): Promise<void> {
     // Get a list of events (streams) for a specified date.
-    await this.streamCalendarService.setSelectedDateAndGetShortStreams(starttime)
+    await this.streamCalendarService.getStreamsCalendarForDate(calendarStart)
     .finally(() => {
         this.changeDetector.markForCheck();
     });
   }
-
   /*public async doChangeActiveDate(activeDateStr: StringDate): Promise<null | HttpErrorResponse> {
     if (!activeDateStr) {
       return null;
@@ -117,11 +128,17 @@ export class StreamListComponent {
     this.streamListService.clearPastStream();
     this.doRequestNextPagePast();
 
-    // this.streamCalendarService.clearSelectedMarkedDates();
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    // console.log(`loadFutureAndPastStreamsAndSchedule()`); // #
+    // console.log(`now    :`, now); // #
+    // console.log(`now.iso:`, now.toISOString()); // #
+
+    this.streamCalendarService.getStreamsCalendarForDate(now);
     // this.doChangeActiveDate(this.scheduleService.activeDate.format(MOMENT_ISO8601_DATE));
 
-    // this.doChangeSelectedDate(this.scheduleService.selectedDate);
-    this.doChangeSelectedDate();
+    this.doChangeSelectedDate(now);
+    // this.doRequestNextPageShortStreams();
   }
 
   // "Streams"
