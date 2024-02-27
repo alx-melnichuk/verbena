@@ -1,5 +1,5 @@
 import {
-  AfterViewInit, ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output,
+  AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output,
   SimpleChanges,
   ViewChild, ViewEncapsulation
 } from '@angular/core';
@@ -12,6 +12,7 @@ import { Subscription } from 'rxjs';
 
 export const PSC_DELTA_TO_FUTURE = 1;
 export const PSC_DELTA_TO_PAST = 20;
+export const PSC_DAY_WITH_STREAMS = 'psc-day-with-streams';
 
 @Component({
   selector: 'app-panel-stream-calendar',
@@ -27,12 +28,12 @@ export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterVie
   @Input()
   public selected: StringDateTime | null; // # = moment().format(MOMENT_ISO8601_DATE);
   @Input()
-  public markedDates: string[] = [];
+  public markedDates: StringDateTime[] = [];
 
   @Output()
-  readonly changeSelectedDate: EventEmitter<StringDateTime> = new EventEmitter();
+  readonly changeSelectedDate: EventEmitter<Date | null> = new EventEmitter();
   @Output()
-  readonly changeActiveDate: EventEmitter<StringDateTime> = new EventEmitter();
+  readonly changeCalendar: EventEmitter<Date> = new EventEmitter();
 
   @ViewChild('calendar')
   public calendar: MatCalendar<Date> | null = null;
@@ -44,6 +45,7 @@ export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterVie
   public activeDate: Date;
 
   private stateChangesSub: Subscription | undefined;
+  private markedDatesStr: string[] = [];
 
   constructor() {
     const today = new Date();
@@ -75,6 +77,8 @@ export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterVie
       this.selectedDate = StringDateTimeUtil.to_date(this.selected);
     }
     if (!!changes['markedDates'] && !!this.markedDates && !!this.calendar) {
+    //   console.log(`this.markedDates:`, this.markedDates); // #
+      this.markedDatesStr = this.markedDates.map(val => this.getInfoDate(new Date(val)));
       this.calendar.updateTodaysDate();
     }
   }
@@ -98,36 +102,44 @@ export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterVie
 
   public doChangeSelected(value: Date | null): void {
     if (!value) { return; }
-    const value_str = StringDateTimeUtil.toISO(value);  // # dateValue.format(MOMENT_ISO8601_DATE);
-    console.log('value_str:', value_str); // #
-    this.changeSelectedDate.emit(value_str as StringDateTime);
-  }
-  // Function used to filter which dates are selectable.
-  public dateFilter = (dateValue: Date): boolean => {
-    return (!!dateValue);
+    this.changeSelectedDate.emit(value);
   }
   // Function that can be used to add custom CSS classes to dates.
-  public dateClass: MatCalendarCellClassFunction<Date> = (date: Date, view: 'month' | 'year' | 'multi-year') => {
+  public dateClassFn: MatCalendarCellClassFunction<Date> = (date: Date, view: 'month' | 'year' | 'multi-year') => {
+    let result: string = '';
     // Only highlight dates inside the month view.
     if (view === 'month') {
-      const value = StringDateTimeUtil.toISODate(date);
-      return (this.markedDates.includes(value) ? 'app-schedule-calendar-day-with-streams' : '');
+      const value = this.getInfoDate(date);
+      if (this.markedDatesStr.includes(value)) {
+        result = PSC_DAY_WITH_STREAMS;
+      }
     }
-    return '';
-  }
+    return result;
+  };
 
   // ** Private API **
 
   private changeSateCalendar = (): void => {
-    const currActiveDateYYMM = this.activeDate.toISOString().slice(0,7);
-    const newActiveDate: Date | null = !!this.calendar ? new Date(this.calendar.activeDate) : null;
-    const newActiveDateYYMM = newActiveDate?.toISOString().slice(0,7) || '';
-    console.log(`newActiveDate: ${newActiveDate?.toISOString() || ''}`); // #
-    if (!!newActiveDate && currActiveDateYYMM != newActiveDateYYMM) {
-      this.activeDate = newActiveDate;
-      console.log(`this.activeDate = ${newActiveDate.toISOString()}`); // #
-      const value_str = StringDateTimeUtil.toISO(this.activeDate);
-      this.changeActiveDate.emit(value_str as StringDateTime);
+    if (!this.calendar) {
+      return;
     }
+    const newActiveDate: Date = new Date(this.calendar.activeDate);
+    const newActiveDateYearMonth = this.getInfoDate(newActiveDate).slice(0, 7);
+    // console.log(`newActiveDate:`, newActiveDate); // #
+
+    const currActiveDateYearMonth = this.getInfoDate(this.activeDate).slice(0, 7);
+    if (!!newActiveDate && currActiveDateYearMonth != newActiveDateYearMonth) {
+      const activeDate = new Date(newActiveDate.getFullYear(), newActiveDate.getMonth(), 1, 0, 0, 0, 0);
+      this.activeDate = activeDate;
+    //   console.log(`activeDate:`, activeDate); // #
+      this.changeCalendar.emit(new Date(activeDate));
+    }
+  }
+
+  private getInfoDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = ('00' + (date.getMonth() + 1)).slice(-2);
+    const day = ('00' + date.getDate()).slice(-2);
+    return `${year}-${month}-${day}`;
   }
 }

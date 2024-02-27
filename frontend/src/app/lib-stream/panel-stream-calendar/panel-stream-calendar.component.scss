@@ -4,9 +4,10 @@ app-panel-stream-calendar {
   display: block;
   padding-bottom: 1px;
   box-sizing: border-box;
+
+  button.psc-day-with-streams {
+    background: var(--green-200);
+    border-radius: 100%;
+  }
 }
 
-.app-schedule-calendar-day-with-streams {
-  background: var(--app-theme-green100);
-  border-radius: 100%;
-}
