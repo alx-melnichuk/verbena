@@ -82,8 +82,8 @@ constructor(private http: HttpClient) {
     return new Promise<StreamEventListDto>(
       (resolve: (value: StreamEventListDto | PromiseLike<StreamEventListDto>) => void, reject: (reason?: any) => void) => {
         setTimeout(() => {
-          if (!!searchStreamEventDto.starttime) {
-            resolve(this.getStreamEventListDto());
+          if (!!searchStreamEventDto.startDate) {
+            resolve(this.getStreamEventListDto(searchStreamEventDto));
           } else {
             reject('err');
           }
@@ -197,26 +197,75 @@ constructor(private http: HttpClient) {
     return this.http.delete<void | HttpErrorResponse>(url).toPromise();
   }
 
-  private getStreamEventListDto(): StreamEventListDto {
-    const list: StreamEventDto[] = [
-      { "id": 22, "userId": 10, "title": "trip to cyprus 1 - E.Allen", "logo": "/assets/images/trip_cyprus01.jpg", 
-        "starttime": "2024-01-19T09:08:05.553Z" },
-      { "id": 8, "userId": 10, "title": "trip to greece 1 - E.Allen", "logo": "/assets/images/trip_greece01.jpg", 
-        "starttime": "2024-02-19T09:08:05.553Z" },
-      { "id": 1, "userId": 10, "title": "trip to spain 1 - E.Allen", "logo": "/assets/images/trip_spain01.jpg", 
-        "starttime": "2024-03-19T09:08:05.553Z" },
-      { "id": 25, "userId": 10, "title": "trip to cyprusA 1 - E.Allen", "logo": "/assets/images/trip_cyprus02.jpg", 
-        "starttime": "2024-04-19T09:08:05.553Z" },
-      { "id": 18, "userId": 10, "title": "trip to greeceA 1 - E.Allen", "logo": "/assets/images/trip_greece02.jpg", 
-        "starttime": "2024-09-21T09:08:05.553Z" },
-      { "id": 19, "userId": 10, "title": "trip to spainA 1 - E.Allen", "logo": "/assets/images/trip_spain02.jpg", 
-        "starttime": "2024-12-23T09:08:05.553Z" },
+  private getStreamEventListDto(search: SearchStreamEventDto): StreamEventListDto {
+    const tr = ' trip to ';
+    const avt = '- E.Allen';
+    const dir = '/assets/images/trip_';
+    const listVal: StreamEventDto[] = [
+      { "id":  1, "userId": 10, "title": `01${tr}cyprus 0${avt}` , "logo": `${dir}cyprus01.jpg`, "starttime": "2024-01-10T09:08:05.553Z" },
+      { "id":  2, "userId": 10, "title": `02${tr}greece 0${avt}` , "logo": `${dir}greece01.jpg`, "starttime": "2024-01-20T09:08:05.553Z" },
+      { "id":  3, "userId": 10, "title": `03${tr}spain 0${avt}`  , "logo": `${dir}spain01.jpg` , "starttime": "2024-02-10T09:08:05.553Z" },
+      { "id":  4, "userId": 10, "title": `04${tr}cyprusA 0${avt}`, "logo": `${dir}cyprus02.jpg`, "starttime": "2024-02-20T09:08:05.553Z" },
+      { "id":  5, "userId": 10, "title": `05${tr}greeceA 0${avt}`, "logo": `${dir}greece02.jpg`, "starttime": "2024-03-10T09:08:05.553Z" },
+      { "id":  6, "userId": 10, "title": `06${tr}spainA 0${avt}` , "logo": `${dir}spain02.jpg` , "starttime": "2024-03-20T09:08:05.553Z" },
+      { "id":  7, "userId": 10, "title": `07${tr}cyprus 0${avt}` , "logo": `${dir}cyprus01.jpg`, "starttime": "2024-04-10T09:08:05.553Z" },
+      { "id":  8, "userId": 10, "title": `08${tr}greece 0${avt}` , "logo": `${dir}greece01.jpg`, "starttime": "2024-04-20T09:08:05.553Z" },
+      { "id":  9, "userId": 10, "title": `09${tr}spain 0${avt}`  , "logo": `${dir}spain01.jpg` , "starttime": "2024-05-10T09:08:05.553Z" },
+      { "id": 10, "userId": 10, "title": `10${tr}cyprusA 1${avt}`, "logo": `${dir}cyprus02.jpg`, "starttime": "2024-05-20T09:08:05.553Z" },
+      { "id": 11, "userId": 10, "title": `11${tr}greeceA 1${avt}`, "logo": `${dir}greece02.jpg`, "starttime": "2024-06-10T09:08:05.553Z" },
+      { "id": 12, "userId": 10, "title": `12${tr}spainA 1${avt}` , "logo": `${dir}spain02.jpg` , "starttime": "2024-06-20T09:08:05.553Z" },
+      { "id": 13, "userId": 10, "title": `13${tr}cyprus 1${avt}` , "logo": `${dir}cyprus01.jpg`, "starttime": "2024-01-11T09:08:05.553Z" },
+      { "id": 14, "userId": 10, "title": `14${tr}greece 1${avt}` , "logo": `${dir}greece01.jpg`, "starttime": "2024-01-21T09:08:05.553Z" },
+      { "id": 15, "userId": 10, "title": `15${tr}spain 1${avt}`  , "logo": `${dir}spain01.jpg` , "starttime": "2024-02-11T09:08:05.553Z" },
+      { "id": 16, "userId": 10, "title": `16${tr}cyprusA 1${avt}`, "logo": `${dir}cyprus02.jpg`, "starttime": "2024-02-21T09:08:05.553Z" },
+      { "id": 17, "userId": 10, "title": `17${tr}greeceA 1${avt}`, "logo": `${dir}greece02.jpg`, "starttime": "2024-03-21T09:08:05.553Z" },
+      { "id": 18, "userId": 10, "title": `18${tr}spainA 1${avt}` , "logo": `${dir}spain02.jpg` , "starttime": "2024-03-21T09:08:05.553Z" },
+      { "id": 19, "userId": 10, "title": `19${tr}cyprus 1${avt}` , "logo": `${dir}cyprus01.jpg`, "starttime": "2024-04-11T09:08:05.553Z" },
+      { "id": 20, "userId": 10, "title": `20${tr}greece 2${avt}` , "logo": `${dir}greece01.jpg`, "starttime": "2024-04-21T09:08:05.553Z" },
+      { "id": 21, "userId": 10, "title": `21${tr}spain 2${avt}`  , "logo": `${dir}spain01.jpg` , "starttime": "2024-05-11T09:08:05.553Z" },
+      { "id": 22, "userId": 10, "title": `22${tr}cyprusA 2${avt}`, "logo": `${dir}cyprus02.jpg`, "starttime": "2024-05-12T09:08:05.553Z" },
+      { "id": 23, "userId": 10, "title": `23${tr}greeceA 2${avt}`, "logo": `${dir}greece02.jpg`, "starttime": "2024-06-11T09:08:05.553Z" },
+      { "id": 24, "userId": 10, "title": `24${tr}spainA 2${avt}` , "logo": `${dir}spain02.jpg` , "starttime": "2024-06-21T09:08:05.553Z" },
+      { "id": 25, "userId": 10, "title": `25${tr}cyprus 2${avt}` , "logo": `${dir}cyprus01.jpg`, "starttime": "2024-01-12T09:08:05.553Z" },
+      { "id": 26, "userId": 10, "title": `26${tr}greece 2${avt}` , "logo": `${dir}greece01.jpg`, "starttime": "2024-01-22T09:08:05.553Z" },
+      { "id": 27, "userId": 10, "title": `27${tr}spain 2${avt}`  , "logo": `${dir}spain01.jpg` , "starttime": "2024-02-12T09:08:05.553Z" },
+      { "id": 28, "userId": 10, "title": `28${tr}cyprusA 2${avt}`, "logo": `${dir}cyprus02.jpg`, "starttime": "2024-02-22T09:08:05.553Z" },
+      { "id": 29, "userId": 10, "title": `29${tr}greeceA 2${avt}`, "logo": `${dir}greece02.jpg`, "starttime": "2024-03-12T09:08:05.553Z" },
+      { "id": 30, "userId": 10, "title": `30${tr}spainA 3${avt}` , "logo": `${dir}spain02.jpg` , "starttime": "2024-03-22T09:08:05.553Z" },
+      { "id": 31, "userId": 10, "title": `31${tr}cyprus 3${avt}` , "logo": `${dir}cyprus01.jpg`, "starttime": "2024-04-12T09:08:05.553Z" },
+      { "id": 32, "userId": 10, "title": `32${tr}greece 3${avt}` , "logo": `${dir}greece01.jpg`, "starttime": "2024-04-22T09:08:05.553Z" },
+      { "id": 33, "userId": 10, "title": `33${tr}spain 3${avt}`  , "logo": `${dir}spain01.jpg` , "starttime": "2024-05-12T09:08:05.553Z" },
+      { "id": 34, "userId": 10, "title": `34${tr}cyprusA 3${avt}`, "logo": `${dir}cyprus02.jpg`, "starttime": "2024-05-22T09:08:05.553Z" },
+      { "id": 35, "userId": 10, "title": `35${tr}greeceA 3${avt}`, "logo": `${dir}greece02.jpg`, "starttime": "2024-06-12T09:08:05.553Z" },
+      { "id": 36, "userId": 10, "title": `36${tr}spainA 3${avt}` , "logo": `${dir}spain02.jpg` , "starttime": "2024-06-22T09:08:05.553Z" },
+      { "id": 37, "userId": 10, "title": `37${tr}cyprus 3${avt}` , "logo": `${dir}cyprus01.jpg`, "starttime": "2024-01-12T09:08:05.553Z" },
+      { "id": 38, "userId": 10, "title": `38${tr}greece 3${avt}` , "logo": `${dir}greece01.jpg`, "starttime": "2024-01-22T09:08:05.553Z" },
+      { "id": 39, "userId": 10, "title": `39${tr}spain 3${avt}`  , "logo": `${dir}spain01.jpg` , "starttime": "2024-02-12T09:08:05.553Z" },
+      { "id": 40, "userId": 10, "title": `40${tr}cyprusA 4${avt}`, "logo": `${dir}cyprus02.jpg`, "starttime": "2024-02-22T09:08:05.553Z" },
+      { "id": 41, "userId": 10, "title": `41${tr}greeceA 4${avt}`, "logo": `${dir}greece02.jpg`, "starttime": "2024-03-22T09:08:05.553Z" },
+      { "id": 42, "userId": 10, "title": `42${tr}spainA 4${avt}` , "logo": `${dir}spain02.jpg` , "starttime": "2024-03-22T09:08:05.553Z" },
+      { "id": 43, "userId": 10, "title": `43${tr}cyprus 4${avt}` , "logo": `${dir}cyprus01.jpg`, "starttime": "2024-04-12T09:08:05.553Z" },
+      { "id": 44, "userId": 10, "title": `44${tr}greece 4${avt}` , "logo": `${dir}greece01.jpg`, "starttime": "2024-04-22T09:08:05.553Z" },
+      { "id": 45, "userId": 10, "title": `45${tr}spain 4${avt}`  , "logo": `${dir}spain01.jpg` , "starttime": "2024-05-12T09:08:05.553Z" },
+      { "id": 46, "userId": 10, "title": `46${tr}cyprusA 4${avt}`, "logo": `${dir}cyprus02.jpg`, "starttime": "2024-05-12T09:08:05.553Z" },
+      { "id": 47, "userId": 10, "title": `47${tr}greeceA 4${avt}`, "logo": `${dir}greece02.jpg`, "starttime": "2024-06-12T09:08:05.553Z" },
+      { "id": 48, "userId": 10, "title": `48${tr}spainA 4${avt}` , "logo": `${dir}spain02.jpg` , "starttime": "2024-06-22T09:08:05.553Z" },
+      { "id": 49, "userId": 10, "title": `49${tr}spainA 4${avt}` , "logo": `${dir}spain02.jpg` , "starttime": "2024-06-22T09:08:05.553Z" },
+      { "id": 50, "userId": 10, "title": `50${tr}spainA 5${avt}` , "logo": `${dir}spain02.jpg` , "starttime": "2024-06-22T09:08:05.553Z" },
     ];
-    return { list, limit: 3, count: 6, page: 1, pages: 2 };
+    const count = listVal.length;
+    const page = search.page || 1;
+    const limit = search.limit || 9;
+    const pages = Math.ceil(count / limit);
+    const start = (page -1 ) * limit;
+    const finishVal = page * limit;
+    const finish = finishVal > count ? count : finishVal;
+    const list = listVal.slice(start, finish);
+    return { list, limit, count, page, pages };
   }
   private streamsCalendarDto(startDate: StringDateTime): StreamsCalendarDto[] {
     const date = new Date(startDate);
-    console.log(`@startDate:`, startDate); // #
+    // console.log(`@startDate:`, startDate); // #
     const i = date.getMonth() % 2 !== 0 ? 0 : 2;
     const date1 = new Date(date.getFullYear(), date.getMonth(), 10 + i, date.getHours(), date.getMinutes(), date.getSeconds());
     const date2 = new Date(date.getFullYear(), date.getMonth(), 15 + i, date.getHours(), date.getMinutes(), date.getSeconds());

@@ -185,7 +185,7 @@ export interface SearchStreamDto {
 
 export interface SearchStreamEventDto {
   userId?: number;
-  starttime: StringDate;
+  startDate: StringDate;
   orderDirection?: 'asc' | 'desc'; // default 'asc';
   page?: number; // default 1;
   limit?: number; // default 10; Min(1) Max(100)
