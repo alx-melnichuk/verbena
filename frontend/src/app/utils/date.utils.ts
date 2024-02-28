@@ -46,4 +46,25 @@ export class DateUtil {
     const day = DateUtil.daysInMonth(d);
     return new Date(d.getFullYear(), d.getMonth(), day, d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds());
   }
+
+   /** Compare two dates (d1 < d2 = -1; d1 == d2 = 0; d1 > d2 = 1;) */
+   public static compare(date1: Date | null | undefined, date2: Date | null | undefined): number {
+    return date1 != null && date2 != null
+      ? date1.getFullYear() - date2.getFullYear() || date1.getMonth() - date2.getMonth() || date1.getDate() - date2.getDate()
+      : date1 == null && date2 != null
+      ? -1
+      : 1;
+  }
+  /** Compare two dates (d1 < d2 = -1; d1 == d2 = 0; d1 > d2 = 1;) */
+  public static compareYearMonth(date1: Date | null | undefined, date2: Date | null | undefined): number {
+    return date1 != null && date2 != null
+      ? date1.getFullYear() - date2.getFullYear() || date1.getMonth() - date2.getMonth()
+      : date1 == null && date2 != null
+      ? -1
+      : 1;
+  }
+  /** Compare two dates (d1 < d2 = -1; d1 == d2 = 0; d1 > d2 = 1;) */
+  public static compareYear(date1: Date | null | undefined, date2: Date | null | undefined): number {
+    return date1 != null && date2 != null ? date1.getFullYear() - date2.getFullYear() : date1 == null && date2 != null ? -1 : 1;
+  }
 }
