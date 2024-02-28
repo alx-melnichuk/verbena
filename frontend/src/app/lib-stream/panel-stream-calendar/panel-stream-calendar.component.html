@@ -1,10 +1,9 @@
 <mat-calendar #calendar
   [startView]="'month'"
-  [selected]="selectedDate"
+  [selected]="selected"
   [startAt]="startAtDate"
   [minDate]="minDate"
   [maxDate]="maxDate"
   [dateClass]="dateClassFn"
   (selectedChange)="doChangeSelected($event)">
 </mat-calendar>
-<p>Selected: {{selected}}</p>

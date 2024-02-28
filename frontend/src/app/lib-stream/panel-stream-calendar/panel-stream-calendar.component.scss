@@ -3,11 +3,21 @@
 app-panel-stream-calendar {
   display: block;
   padding-bottom: 1px;
+  background-color: var(--app-pn-stream);
+  border: 1px solid var(--app-pn-stream-low);
+  border-radius: 0.75em;
   box-sizing: border-box;
 
+  mat-calendar {
+    min-height: 24em;
+  }
   button.psc-day-with-streams {
     background: var(--green-200);
     border-radius: 100%;
+  }
+
+  .mat-calendar-body-label {
+    display: none !important;
   }
 }
 
