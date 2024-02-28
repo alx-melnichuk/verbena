@@ -14,13 +14,13 @@ app-panel-stream-event {
     align-items: center;
     background-color: var(--pse-pn-stream-bg);
     border: 1px solid var(--pse-pn-stream-brd);
-    border-radius: 10px;
+    border-radius: 0.75em;
     box-sizing: border-box;
     display: flex;
     flex-shrink: 0;
     height: 52px;
     &:not(:first-of-type) {
-      margin-top: 1vh;
+      margin-top: 0.75em;
     }
   }
   .pse-logo {

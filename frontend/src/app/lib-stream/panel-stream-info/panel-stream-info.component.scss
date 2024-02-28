@@ -10,7 +10,7 @@ app-panel-stream-info {
     align-items: center;
     background-color: var(--app-pn-stream);
     border: 1px solid var(--app-pn-stream-low);
-    border-radius: 10px;
+    border-radius: 0.75em;
     box-sizing: border-box;
     display: flex;
     flex-shrink: 0;
@@ -18,14 +18,14 @@ app-panel-stream-info {
     margin-left: 1px;
     margin-right: 1px;
     &:first-of-type { margin-top: 1px; }
-    &:not(:first-of-type) { margin-top: 1vh; }
+    &:not(:first-of-type) { margin-top: 0.75em; }
     &>.psi-logo { flex: 0 0 130px; }
     &>.psi-details { flex-grow: 1; }
     &>.psi-shrink-0 { flex-shrink: 0; }
   }
   .psi-logo {
     align-items: center;
-    border-radius: 10px;
+    border-radius: 0.75em;
     color: var(--app-theme-accent);
     cursor: pointer;
     display: flex;

@@ -37,16 +37,17 @@ export class StreamListService {
 
   // "Future Streams"
 
+  /** Clear array of "Future Stream". */
   public clearFutureStream(): void {
     this.futureStreamsDto = [];
   }
-
+  /** Search for the next page of the "Future Stream". */
   public searchNextFutureStream(userId: number): Promise<StreamListDto | HttpErrorResponse | undefined> {
     if (!this.checkNextPage(this.futurePageInfo)) {
      return Promise.resolve(undefined);
     }
     let searchStream: SearchStreamDto = {
-      userId,
+      userId, // TODO delete
       isFuture: true,
       page: this.futurePageInfo.page + 1,
       limit: this.futurePageInfo.limit
@@ -70,10 +71,11 @@ export class StreamListService {
 
   // "Past Streams"
 
+  /** Clear array of "Past Stream". */
   public clearPastStream(): void {
     this.pastStreamsDto = [];
   }
-
+  /** Search for the next page of the "Past Stream". */
   public searchNextPastStream(userId: number): Promise<StreamListDto | HttpErrorResponse | undefined> {
     if (!this.checkNextPage(this.pastPageInfo)) {
       return Promise.resolve(undefined);
