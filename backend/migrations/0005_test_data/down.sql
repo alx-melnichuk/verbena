@@ -5,7 +5,7 @@ CREATE OR REPLACE PROCEDURE remove_data_test()
 LANGUAGE plpgsql 
 AS $$
 DECLARE
-  user_index INTEGER := 0;
+  idx INTEGER := 0;
   name_list VARCHAR[];
   nick VARCHAR := '';
 BEGIN
@@ -18,17 +18,23 @@ BEGIN
     'Mason_Garcia', 'Harper_Clark' , 'Logan_Lewis'    , 'Evelyn_Allen'
   ];
    
-  user_index := ARRAY_LENGTH(name_list, 1);
-  WHILE user_index > 0 LOOP
-    nick = LOWER(name_list[user_index]);
-    RAISE NOTICE 'name_list[user_index]: %, nick: %', name_list[user_index], nick;
+  idx := ARRAY_LENGTH(name_list, 1);
+  WHILE idx > 0 LOOP
+    nick = LOWER(name_list[idx]);
+    RAISE NOTICE 'name_list[idx]: %, nick: %', name_list[idx], nick;
 
     DELETE FROM users WHERE nickname = nick;
 
-    user_index := user_index - 1;
+    idx := idx - 1;
   END LOOP;
 
-  SELECT setval('users_id_seq', (SELECT MAX(id) FROM users)) INTO user_index;
+  SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 1) FROM users)) INTO idx;
+  RAISE NOTICE 'users_id_seq: %', idx;
+  SELECT setval('streams_id_seq', (SELECT COALESCE(MAX(id), 1) FROM streams)) INTO idx;
+  RAISE NOTICE 'streams_id_seq: %', idx;
+  SELECT setval('stream_tags_id_seq', (SELECT COALESCE(MAX(id), 1) FROM stream_tags)) INTO idx;
+  RAISE NOTICE 'stream_tags_id_seq: %', idx;
+
 END;
 $$;
 
