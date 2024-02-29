@@ -51,7 +51,6 @@ diesel::table! {
         state -> StreamState,
         started -> Nullable<Timestamptz>,
         stopped -> Nullable<Timestamptz>,
-        status -> Bool,
         #[max_length = 255]
         source -> Varchar,
         created_at -> Timestamptz,

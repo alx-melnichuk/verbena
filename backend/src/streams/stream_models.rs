@@ -92,23 +92,29 @@ pub fn validate_tag(tags: &[String]) -> Result<(), ValidationError> {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, diesel_derive_enum::DbEnum)]
 #[ExistingTypePath = "crate::schema::sql_types::StreamState"]
+#[DbValueStyle = "snake_case"] // BazQuxx => "baz_quxx"
 pub enum StreamState {
-    Waiting,
-    Started,
-    Stopped,
-    Paused,
-    Preparing,
+    Waiting,   // (default)
+    Preparing, // (is live)
+    Started,   // (is live)
+    Paused,    // (is live)
+    Disabled,
 }
 
 impl StreamState {
     pub fn to_str(&self) -> &str {
         match self {
             StreamState::Waiting => "waiting",
-            StreamState::Started => "started",
-            StreamState::Stopped => "stopped",
-            StreamState::Paused => "paused",
             StreamState::Preparing => "preparing",
+            StreamState::Started => "started",
+            StreamState::Paused => "paused",
+            StreamState::Disabled => "disabled",
         }
+    }
+    pub fn is_live(stream_state: StreamState) -> bool {
+        stream_state == StreamState::Preparing
+            || stream_state == StreamState::Started
+            || stream_state == StreamState::Paused
     }
 }
 
@@ -128,7 +134,6 @@ pub struct Stream {
     pub state: StreamState,             // default Waiting
     pub started: Option<DateTime<Utc>>, // Nullable
     pub stopped: Option<DateTime<Utc>>, // Nullable
-    pub status: bool,                   // default true
     pub source: String,                 // min_len=2 max_len=255 default "obs"
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -140,8 +145,6 @@ pub const STREAM_DESCRIPT_DEF: &str = "";
 pub const STREAM_LIVE_DEF: bool = false;
 #[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_STATE_DEF: StreamState = StreamState::Waiting;
-#[cfg(any(test, feature = "mockdata"))]
-pub const STREAM_STATUS_DEF: bool = true;
 #[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_SOURCE_DEF: &str = "obs";
 
@@ -160,7 +163,6 @@ impl Stream {
             state: STREAM_STATE_DEF,
             started: None,
             stopped: None,
-            status: STREAM_STATUS_DEF,
             source: STREAM_SOURCE_DEF.to_string(),
             created_at: now,
             updated_at: now,
@@ -180,7 +182,6 @@ impl Stream {
             state: create_stream.state.unwrap_or(STREAM_STATE_DEF),
             started: create_stream.started.clone(),
             stopped: create_stream.stopped.clone(),
-            status: create_stream.status.unwrap_or(STREAM_STATUS_DEF),
             source: create_stream.source.clone().unwrap_or(STREAM_SOURCE_DEF.to_string()),
             created_at: now,
             updated_at: now,
@@ -207,7 +208,6 @@ pub struct StreamInfoDto {
     #[rustfmt::skip]
     #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
     pub stopped: Option<DateTime<Utc>>,
-    // pub status: bool,
     pub source: String,
     pub tags: Vec<String>,
     pub is_my_stream: bool,
@@ -231,7 +231,6 @@ impl StreamInfoDto {
             state: stream.state.to_owned(),
             started: stream.started.clone(),
             stopped: stream.stopped.clone(),
-            // status: stream.status.clone(),
             source: stream.source.to_owned(),
             tags: tags.iter().map(|tag| tag.to_string()).collect(),
             is_my_stream: stream.user_id == user_id,
@@ -285,11 +284,9 @@ pub struct CreateStream {
     pub descript: Option<String>,       // type: Text default ""
     pub logo: Option<String>,           // min_len=2 max_len=255 Nullable
     pub starttime: DateTime<Utc>,       //
-    pub live: Option<bool>,             // default false
     pub state: Option<StreamState>,     // default Waiting
     pub started: Option<DateTime<Utc>>, // Nullable
     pub stopped: Option<DateTime<Utc>>, // Nullable
-    pub status: Option<bool>,           // default true
     pub source: Option<String>,         // min_len=2 max_len=255 default "obs"
 }
 
@@ -302,11 +299,9 @@ impl CreateStream {
             descript: create_stream_info.descript.clone(),
             logo: None,
             starttime: create_stream_info.starttime.unwrap_or(min_date_time),
-            live: None,
             state: None,
             started: None,
             stopped: None,
-            status: None,
             source: create_stream_info.source.clone(),
         }
     }
@@ -357,11 +352,9 @@ pub struct ModifyStream {
     pub descript: Option<String>,               // type: Text default ""
     pub logo: Option<Option<String>>,           // min_len=2 max_len=255 Nullable
     pub starttime: Option<DateTime<Utc>>,       //
-    pub live: Option<bool>,                     // default false
     pub state: Option<StreamState>,             // default Waiting
     pub started: Option<Option<DateTime<Utc>>>, // Nullable
     pub stopped: Option<Option<DateTime<Utc>>>, // Nullable
-    pub status: Option<bool>,                   // default true
     pub source: Option<String>,                 // min_len=2 max_len=255 default "obs"
 }
 
@@ -372,11 +365,9 @@ impl ModifyStream {
             descript: modify_stream_info.descript.clone(),
             logo: None,
             starttime: modify_stream_info.starttime.clone(),
-            live: None,
             state: None,
             started: None,
             stopped: None,
-            status: None,
             source: modify_stream_info.source.clone(),
         }
     }
@@ -562,48 +553,6 @@ pub struct SearchStreamInfoResponseDto {
 }
 
 // ** **
-
-// OLD
-
-// ** Section: "stream_tags" table **
-
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
-#[diesel(table_name = schema::stream_tags)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateStreamTagDto {
-    pub user_id: i32,
-    pub name: String, // min_len=2 max_len=255
-}
-
-impl Validator for CreateStreamTagDto {
-    // Check the model against the required conditions.
-    fn validate(&self) -> Result<(), Vec<ValidationError>> {
-        let mut errors: Vec<Option<ValidationError>> = vec![];
-
-        errors.push(validate_tag_name(&self.name).err());
-
-        self.filter_errors(errors)
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
-#[diesel(table_name = schema::stream_tags)]
-pub struct ModifyStreamTagDto {
-    pub name: String, // min_len=2 max_len=255
-}
-
-impl Validator for ModifyStreamTagDto {
-    // Check the model against the required conditions.
-    fn validate(&self) -> Result<(), Vec<ValidationError>> {
-        let mut errors: Vec<Option<ValidationError>> = vec![];
-
-        errors.push(validate_tag_name(&self.name).err());
-
-        self.filter_errors(errors)
-    }
-}
-
-// ** Section: "StreamDto" **
 
 #[cfg(test)]
 mod tests {

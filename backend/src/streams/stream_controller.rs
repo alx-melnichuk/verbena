@@ -155,11 +155,11 @@ pub async fn get_streams(
         // A query to obtain a list of "streams" based on the specified search parameters.
         let res_data =
             stream_orm.find_streams(search_stream).map_err(|e| err_database(e.to_string()));
-            res_data
+        res_data
         })
         .await
         .map_err(|e| err_blocking(e.to_string()))?;
-
+        
     let (count, streams, stream_tags) = match res_data { Ok(v) => v, Err(e) => return Err(e) };
 
     // Merge a "stream" and a corresponding list of "tags".
@@ -1547,7 +1547,6 @@ mod tests {
         assert_eq!(stream_dto_res.state, stream1b_dto_ser.state);
         assert_eq!(stream_dto_res.started, stream1b_dto_ser.started);
         assert_eq!(stream_dto_res.stopped, stream1b_dto_ser.stopped);
-        assert_eq!(stream_dto_res.status, stream1b_dto_ser.status);
         assert_eq!(stream_dto_res.source, stream1b_dto_ser.source);
         assert_eq!(stream_dto_res.tags, stream1b_dto_ser.tags);
         assert_eq!(stream_dto_res.is_my_stream, stream1b_dto_ser.is_my_stream);
@@ -2006,7 +2005,6 @@ mod tests {
         assert_eq!(stream_dto_res.state, stream2b_dto_ser.state);
         assert_eq!(stream_dto_res.started, stream2b_dto_ser.started);
         assert_eq!(stream_dto_res.stopped, stream2b_dto_ser.stopped);
-        assert_eq!(stream_dto_res.status, stream2b_dto_ser.status);
         assert_eq!(stream_dto_res.source, stream2b_dto_ser.source);
         assert_eq!(stream_dto_res.tags, stream2b_dto_ser.tags);
         assert_eq!(stream_dto_res.is_my_stream, stream2b_dto_ser.is_my_stream);

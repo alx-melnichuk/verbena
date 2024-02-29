@@ -58,7 +58,6 @@ pub mod inst {
     use super::*;
 
     pub const CONN_POOL: &str = "ConnectionPool";
-    // pub const MAX_LIMIT_STREAM_TAGS: i64 = stream_models::TAG_NAME_MAX_AMOUNT as i64;
 
     #[derive(Debug, Clone)]
     pub struct StreamOrmApp {
@@ -70,7 +69,7 @@ pub mod inst {
             StreamOrmApp { pool }
         }
         pub fn get_conn(&self) -> Result<dbase::DbPooledConnection, String> {
-            (&self.pool).get().map_err(|e| format!("{CONN_POOL}: {}", e.to_string()))
+            (&self.pool).get().map_err(|e| format!("{}: {}", CONN_POOL, e.to_string()))
         }
         /// Get a list of "tags" for the specified "stream".
         fn get_stream_tags(
@@ -159,13 +158,11 @@ pub mod inst {
             let mut query_list = schema::streams::table.into_boxed();
             query_list = query_list
                 .select(schema::streams::all_columns)
-                .filter(dsl::status.eq(true))
                 .offset(offset.into())
                 .limit(limit.into());
 
             // Create a query to get the number of elements in the list of "threads".
             let mut query_count = schema::streams::table.into_boxed();
-            query_count = query_count.filter(dsl::status.eq(true));
 
             if let Some(user_id) = search_stream.user_id {
                 query_list = query_list.filter(dsl::user_id.eq(user_id));
@@ -417,7 +414,6 @@ pub mod tests {
                 state: stream_info.state.clone(),
                 started: stream_info.started.clone(),
                 stopped: stream_info.stopped.clone(),
-                status: stream_info.status,
                 source: stream_info.source.to_owned(),
                 created_at: stream_info.created_at.clone(),
                 updated_at: stream_info.updated_at.clone(),
@@ -490,9 +486,6 @@ pub mod tests {
             let now_date = now.date_naive();
 
             for stream in self.stream_info_vec.iter() {
-                if !stream.status {
-                    continue;
-                }
                 let mut is_add_value = !is_check;
 
                 if !is_add_value && is_user_id && stream.user_id == search_stream.user_id.unwrap() {
@@ -622,7 +615,6 @@ pub mod tests {
                     state: stream.state.clone(),
                     started: stream.started.clone(),
                     stopped: stream.stopped.clone(),
-                    status: stream.status,
                     source: modify_stream.source.unwrap_or(stream.source.to_string()),
                     created_at: stream.created_at,
                     updated_at: Utc::now(),
