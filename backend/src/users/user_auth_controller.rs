@@ -110,11 +110,11 @@ pub async fn login(
     let config_jwt = config_jwt.get_ref().clone();
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
-    // Pack two parameters (user.id, num_token) into a access_token.
+    // Packing two parameters (user.id, num_token) into access_token.
     let access_token = tokens::encode_token(user.id, num_token, jwt_secret, config_jwt.jwt_access)
         .map_err(|err| err_jsonwebtoken_encode(err.to_string()))?;
 
-    // Pack two parameters (user.id, num_token) into a access_token.
+    // Packing two parameters (user.id, num_token) into refresh_token.
     let refresh_token = tokens::encode_token(user.id, num_token, jwt_secret, config_jwt.jwt_refresh)
         .map_err(|err| err_jsonwebtoken_encode(err.to_string()))?;
 
