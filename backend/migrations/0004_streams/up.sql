@@ -1,6 +1,13 @@
 
-/* Create a type "stream_state". */
-CREATE TYPE stream_state AS ENUM ('waiting', 'started', 'stopped', 'paused', 'preparing');
+/* Create a type "stream_state".
+  Accepts the following values:
+    waiting - stream is waiting (default),
+    preparing - stream is preparing (is live),
+    started - stream has started (is live),
+    paused - stream is paused (is live),
+    disabled - stream is disabled
+ */
+CREATE TYPE stream_state AS ENUM ('waiting', 'preparing', 'started', 'paused', 'disabled');
 
 /* Create "streams" table. */
 CREATE TABLE streams (
@@ -10,25 +17,23 @@ CREATE TABLE streams (
     /* Custom title */
     title VARCHAR(255) NOT NULL,
     /* Custom description */
-    descript TEXT NOT NULL DEFAULT '',
+    descript TEXT DEFAULT '' NOT NULL,
     /* Link to stream logo, optional */
     logo VARCHAR(255) NULL,
     /* Time when stream should start. Required on create */
     starttime TIMESTAMP WITH TIME ZONE NOT NULL,
     /* Stream live status, false means inactive */
     live BOOLEAN NOT NULL DEFAULT FALSE,
-    /* Stream live state - waiting, preparing, start, paused, stop (waiting by default) */
-    "state" stream_state NOT NULL DEFAULT 'waiting',
+    /* Stream live state - waiting (default), preparing, start, paused, disabled. */
+    "state" stream_state DEFAULT 'waiting' NOT NULL,
     /* Time when stream was started */
     "started" TIMESTAMP WITH TIME ZONE NULL,
     /* Time when stream was stopped */
     "stopped" TIMESTAMP WITH TIME ZONE NULL,
-    /* Stream status, false means disabled */
-    "status" BOOLEAN NOT NULL DEFAULT TRUE,
     /* stream source */
-    source VARCHAR(255) NOT NULL DEFAULT 'obs',
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    source VARCHAR(255) DEFAULT 'obs' NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 SELECT diesel_manage_updated_at('streams');
@@ -36,8 +41,29 @@ SELECT diesel_manage_updated_at('streams');
 CREATE INDEX idx_streams_user_id ON streams(user_id);
 CREATE INDEX idx_streams_starttime ON streams(starttime);
 CREATE INDEX idx_streams_live ON streams(live);
-CREATE INDEX idx_streams_status ON streams("status");
+CREATE INDEX idx_streams_state ON streams("state");
 
+
+/* Create trigger function for table "streams". */
+CREATE OR REPLACE FUNCTION modify_stream_set_live()
+RETURNS TRIGGER 
+LANGUAGE plpgsql 
+AS $$
+BEGIN
+  NEW.live := NEW."state" IN ('preparing', 'started', 'paused');
+  RETURN NEW;
+END;
+$$;
+/* Create trigger for table "streams". */
+CREATE OR REPLACE TRIGGER tr_before_insert_stream_set_live
+BEFORE INSERT ON streams
+FOR EACH ROW
+EXECUTE FUNCTION modify_stream_set_live();
+
+CREATE OR REPLACE TRIGGER tr_before_update_stream_set_live
+BEFORE UPDATE ON streams
+FOR EACH ROW
+EXECUTE FUNCTION modify_stream_set_live();
 
 /* Create "stream_tags" table. */
 CREATE TABLE stream_tags (

@@ -23,7 +23,13 @@ DROP TABLE IF EXISTS stream_tags;
 DROP INDEX IF EXISTS idx_streams_user_id;
 DROP INDEX IF EXISTS idx_streams_starttime;
 DROP INDEX IF EXISTS idx_streams_live;
-DROP INDEX IF EXISTS idx_streams_status;
+DROP INDEX IF EXISTS idx_streams_state;
+
+/* Remove trigger for table "streams". */
+DROP TRIGGER IF EXISTS tr_before_insert_stream_set_live ON streams;
+DROP TRIGGER IF EXISTS tr_before_update_stream_set_live ON streams;
+/* Remove trigger function for table "streams". */
+DROP FUNCTION IF EXISTS modify_stream_set_live;
 
 /* Remove the "streams" table. */
 DROP TABLE IF EXISTS streams;
