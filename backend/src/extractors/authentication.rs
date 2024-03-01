@@ -247,9 +247,9 @@ where
                 Ok(res)
             } else {
                 #[rustfmt::skip]
-                log::error!("{}: {}", err::CD_PERMISSION_DENIED, err::MSG_PERMISSION_DENIED);
+                log::error!("{}: {}", err::CD_ACCESS_DENIED, err::MSG_PERMISSION_DENIED);
                 #[rustfmt::skip]
-                let error = AppError::new(err::CD_PERMISSION_DENIED, err::MSG_PERMISSION_DENIED)
+                let error = AppError::new(err::CD_ACCESS_DENIED, err::MSG_PERMISSION_DENIED)
                     .set_status(403);
                 Err(error::ErrorForbidden(error))
             }
@@ -540,7 +540,7 @@ mod tests {
         assert_eq!(actual_status, http::StatusCode::FORBIDDEN);
 
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
-        assert_eq!(app_err.code, err::CD_PERMISSION_DENIED);
+        assert_eq!(app_err.code, err::CD_ACCESS_DENIED);
         assert_eq!(app_err.message, err::MSG_PERMISSION_DENIED);
     }
 }

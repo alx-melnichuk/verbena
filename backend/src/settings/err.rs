@@ -13,6 +13,9 @@ pub const MSG_INVALID_FILE_SIZE: &str = "The file size exceeds the max size.";
 // Error uploading file
 pub const CD_INVALID_FILE_UPLOAD: &str = "InvalidFileUpload";
 pub const MSG_INVALID_FILE_UPLOAD: &str = "Error uploading file:";
+// Error when receiving another user's streams.
+pub const CD_NO_ACCESS_TO_STREAMS: &str = "NoAccessToStreams";
+pub const MSG_NO_ACCESS_TO_STREAMS: &str = "No access to other user's streams.";
 
 // 401 Unauthorized
 pub const CD_UNAUTHORIZED: &str = "Unauthorized";
@@ -38,7 +41,7 @@ pub const MSG_UNALLOWABLE_TOKEN: &str = "oken value is unallowable";
 // pub const CD_BAD_TOKEN: &str = "Bad Token";
 // pub const MSG_BAD_TOKEN: &str = "Bad token value";
 
-pub const CD_PERMISSION_DENIED: &str = "PermissionDenied";
+pub const CD_ACCESS_DENIED: &str = "AccessDenied";
 pub const MSG_PERMISSION_DENIED: &str = "You are not allowed to perform this action";
 
 // 404

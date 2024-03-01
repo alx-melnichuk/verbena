@@ -475,32 +475,29 @@ pub mod tests {
         ) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String> {
             let mut streams_info: Vec<StreamInfoDto> = vec![];
 
-            let is_user_id = search_stream.user_id.is_some();
-            let is_live = search_stream.live.is_some();
             let is_future = search_stream.is_future.is_some();
             #[rustfmt::skip]
-            let is_future_value = if is_future { search_stream.is_future.unwrap() } else { false };
+            let is_future_val = if is_future { search_stream.is_future.unwrap() } else { false };
 
-            let is_check = is_user_id || is_live || is_future;
             let now = Utc::now();
             let now_date = now.date_naive();
 
             for stream in self.stream_info_vec.iter() {
-                let mut is_add_value = !is_check;
+                let mut is_add_value = true;
 
-                if !is_add_value && is_user_id && stream.user_id == search_stream.user_id.unwrap() {
-                    is_add_value = true;
+                if stream.user_id != search_stream.user_id.unwrap_or(stream.user_id) {
+                    is_add_value = false;
                 }
-                if !is_add_value && is_live && stream.live == search_stream.live.unwrap() {
-                    is_add_value = true;
+                if stream.live != search_stream.live.unwrap_or(stream.live) {
+                    is_add_value = false;
                 }
                 let starttime_date = stream.starttime.date_naive();
-                if !is_add_value
-                    && is_future
-                    && ((!is_future_value && starttime_date < now_date)
-                        || (is_future_value && starttime_date >= now_date))
-                {
-                    is_add_value = true;
+
+                if is_future && !is_future_val && starttime_date >= now_date {
+                    is_add_value = false;
+                }
+                if is_future && is_future_val && starttime_date < now_date {
+                    is_add_value = false;
                 }
 
                 if is_add_value {
