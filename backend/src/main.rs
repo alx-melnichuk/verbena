@@ -3,7 +3,7 @@ use dotenv;
 use env_logger;
 use log;
 
-use verbena::{configure_server, create_cors, settings::config_app, streams::config_slp, utils::ssl_acceptor};
+use verbena::{configure_server, create_cors, settings::config_app, streams::config_strm, utils::ssl_acceptor};
 
 // ** Funcion Main **
 #[actix_web::main]
@@ -20,8 +20,8 @@ async fn main() -> std::io::Result<()> {
     }
     env_logger::init();
 
-    // Check the correctness of "SLP_FILES_VALID_TYPES"
-    config_slp::ConfigSLP::init_slp_valid_types_by_env()?;
+    // Check the correctness of "STRM_LOGO_VALID_TYPES"
+    config_strm::ConfigStrm::init_strm_valid_types_by_env()?;
 
     let config_app = config_app::ConfigApp::init_by_env();
 
@@ -34,8 +34,8 @@ async fn main() -> std::io::Result<()> {
     std::fs::create_dir_all(config_app.app_dir_tmp.clone())?;
 
     log::info!("creating a directory for upload the logo");
-    let config_slp = config_slp::ConfigSLP::init_by_env();
-    std::fs::create_dir_all(&config_slp.slp_dir)?;
+    let config_strm = config_strm::ConfigStrm::init_by_env();
+    std::fs::create_dir_all(&config_strm.strm_logo_files_dir)?;
 
     log::info!("Starting server {}", &app_domain);
 

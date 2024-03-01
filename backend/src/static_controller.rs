@@ -4,7 +4,7 @@ use std::{io::Error, path};
 
 use crate::{
     settings::config_app,
-    streams::{config_slp, stream_controller},
+    streams::{config_strm, stream_controller},
 };
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
@@ -37,8 +37,8 @@ pub async fn index_root() -> Result<HttpResponse, Error> {
 }
 
 pub async fn load_files_logo(req: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    let config_slp = config_slp::ConfigSLP::init_by_env();
-    load_file_from_dir(&config_slp.slp_dir, &get_param(req, "name_logo")).await
+    let config_strm = config_strm::ConfigStrm::init_by_env();
+    load_file_from_dir(&config_strm.strm_logo_files_dir, &get_param(req, "name_logo")).await
 }
 
 pub async fn load_files_js_css(req: HttpRequest) -> Result<actix_files::NamedFile, Error> {

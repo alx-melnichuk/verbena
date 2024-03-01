@@ -6,7 +6,7 @@ use actix_web::{http, web};
 
 use send_email::{config_smtp, mailer};
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
-use streams::{config_slp, stream_controller, stream_orm::cfg::get_stream_orm_app};
+use streams::{config_strm, stream_controller, stream_get_controller, stream_orm::cfg::get_stream_orm_app};
 use users::{
     user_auth_controller, user_controller, user_orm::cfg::get_user_orm_app,
     user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_controller,
@@ -48,7 +48,7 @@ pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
         let data_config_smtp = web::Data::new(config_smtp.clone());
         // data_config_smtp.get_ref().clone()
         let data_temp_file_config = web::Data::new(temp_file_config);
-        let data_config_slp = web::Data::new(config_slp::ConfigSLP::init_by_env());
+        let data_config_strm = web::Data::new(config_strm::ConfigStrm::init_by_env());
 
         // Adding various entities.
         let data_mailer = web::Data::new(mailer::cfg::get_mailer_app(config_smtp));
@@ -62,7 +62,7 @@ pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
             .app_data(web::Data::clone(&data_config_jwt))
             .app_data(web::Data::clone(&data_config_smtp))
             .app_data(web::Data::clone(&data_temp_file_config))
-            .app_data(web::Data::clone(&data_config_slp))
+            .app_data(web::Data::clone(&data_config_strm))
             .app_data(web::Data::clone(&data_mailer))
             .app_data(web::Data::clone(&data_user_orm))
             .app_data(web::Data::clone(&data_user_registr_orm))
@@ -75,6 +75,7 @@ pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
                     .configure(user_registr_controller::configure)
                     .configure(user_auth_controller::configure)
                     .configure(user_controller::configure)
+                    .configure(stream_get_controller::configure)
                     .configure(stream_controller::configure),
             );
     })
