@@ -66,6 +66,7 @@ DECLARE
   stream_tag_id INTEGER := 0;
   tourism_tag_id INTEGER := 0;
   trip_index INTEGER := 0;
+  index_day INTEGER := 0;
   trip_list VARCHAR[];
   trip VARCHAR := '';
   logo VARCHAR := '';
@@ -73,8 +74,8 @@ DECLARE
   idx INTEGER := 0;
   txt VARCHAR := '';
   year_str VARCHAR := '';
-  starttime1 TIMESTAMP WITH TIME ZONE := '2024-01-07T10:00:00+02';
-  starttime2 TIMESTAMP WITH TIME ZONE := '2024-01-10T10:00:00+02';
+  starttime1 TIMESTAMP WITH TIME ZONE := '2024-01-10T10:00:00+02';
+  starttime2 TIMESTAMP WITH TIME ZONE := '2024-01-07T10:00:00+02';
 BEGIN
   RAISE NOTICE 'Start';
   name_list := ARRAY[
@@ -88,6 +89,7 @@ BEGIN
   trip_list := ARRAY['cyprus','france','greece','spain'];
    
   user_index := ARRAY_LENGTH(name_list, 1);
+  index_day := user_index;
   WHILE user_index > 0 LOOP
     nick = LOWER(name_list[user_index]);
     RAISE NOTICE 'name_list[user_index]: %, nick: %', name_list[user_index], nick;
@@ -106,8 +108,8 @@ BEGIN
     
     CALL add_stream_tag(user_id, 'tourism', tourism_tag_id);
 
-    starttime1:= '2024-02-02T10:00:00+02';
-    starttime2:= '2024-03-10T10:00:00+02';
+    starttime1:= '2024-03-10T10:00:00+02';
+    starttime2:= '2024-02-02T10:00:00+02';
 
     trip_index := ARRAY_LENGTH(trip_list, 1);
     WHILE trip_index > 0 LOOP
@@ -130,19 +132,20 @@ BEGIN
         CALL add_link_stream_tags_to_streams(stream_tag_id, stream_id);
 
         RAISE NOTICE 'idx: %  CALL add_stream(user_id: %) stream_id: %', idx, user_id, stream_id;
+        starttime1 := starttime1 + interval '4 months'; -- '1 years';
 
-        year_str := DATE_PART('year', starttime2);
-        title := CONCAT('trip ', year_str, ' to ', trip, ' ', idx, ' - ', txt);
-        descript := CONCAT('Description of a beautiful ', title);
+        IF user_index = index_day THEN
+          year_str := DATE_PART('year', starttime2);
+          title := CONCAT('trip ', year_str, ' to ', trip, ' ', idx, ' - ', txt);
+          descript := CONCAT('Description of a beautiful ', title);
 
-        CALL add_stream(user_id, title, logo, starttime2, descript, stream_id);
-        CALL add_link_stream_tags_to_streams(tourism_tag_id, stream_id);
-        CALL add_link_stream_tags_to_streams(stream_tag_id, stream_id);
+          CALL add_stream(user_id, title, logo, starttime2, descript, stream_id);
+          CALL add_link_stream_tags_to_streams(tourism_tag_id, stream_id);
+          CALL add_link_stream_tags_to_streams(stream_tag_id, stream_id);
 
-        RAISE NOTICE 'idx: %  CALL add_stream(user_id: %) stream_id: %', idx, user_id, stream_id;
-
-        starttime1 := starttime1 + interval '30 minute';
-        starttime2 := starttime2 + interval '4 months'; -- '1 years';
+          RAISE NOTICE 'idx: %  CALL add_stream(user_id: %) stream_id: %', idx, user_id, stream_id;
+          starttime2 := starttime2 + interval '30 minute';
+        END IF;
 
         idx := idx + 1;
       END LOOP;

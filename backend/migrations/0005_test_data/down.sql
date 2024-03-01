@@ -34,6 +34,8 @@ BEGIN
   RAISE NOTICE 'streams_id_seq: %', idx;
   SELECT setval('stream_tags_id_seq', (SELECT COALESCE(MAX(id), 1) FROM stream_tags)) INTO idx;
   RAISE NOTICE 'stream_tags_id_seq: %', idx;
+  SELECT setval('link_stream_tags_to_streams_id_seq', (SELECT COALESCE(MAX(id), 1) FROM link_stream_tags_to_streams)) INTO idx;
+  RAISE NOTICE 'link_stream_tags_to_streams_id_seq: %', idx;
 
 END;
 $$;
