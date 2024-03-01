@@ -142,8 +142,6 @@ pub struct Stream {
 #[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_DESCRIPT_DEF: &str = "";
 #[cfg(any(test, feature = "mockdata"))]
-pub const STREAM_LIVE_DEF: bool = false;
-#[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_STATE_DEF: StreamState = StreamState::Waiting;
 #[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_SOURCE_DEF: &str = "obs";
@@ -159,7 +157,7 @@ impl Stream {
             descript: STREAM_DESCRIPT_DEF.to_string(),
             logo: None,
             starttime: starttime.clone(),
-            live: STREAM_LIVE_DEF,
+            live: StreamState::is_live(STREAM_STATE_DEF),
             state: STREAM_STATE_DEF,
             started: None,
             stopped: None,
@@ -178,7 +176,7 @@ impl Stream {
             descript: create_stream.descript.clone().unwrap_or(STREAM_DESCRIPT_DEF.to_string()),
             logo: create_stream.logo.clone(),
             starttime: create_stream.starttime.clone(),
-            live: create_stream.live.unwrap_or(STREAM_LIVE_DEF),
+            live: StreamState::is_live(create_stream.state.unwrap_or(STREAM_STATE_DEF)),
             state: create_stream.state.unwrap_or(STREAM_STATE_DEF),
             started: create_stream.started.clone(),
             stopped: create_stream.stopped.clone(),
