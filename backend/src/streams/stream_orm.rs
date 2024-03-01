@@ -2,7 +2,7 @@ use super::stream_models::{CreateStream, ModifyStream, SearchStream, Stream, Str
 
 pub trait StreamOrm {
     /// Find for an entity (stream) by id.
-    fn find_stream_by_id(&self, id: i32) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
+    fn find_stream_by_id(&self, id: i32, user_id: i32) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
     /// Find for an entity (stream) by SearchStreamInfoDto.
     fn find_streams(&self, search_stream: SearchStream) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String>;
     /// Add a new entity (stream).
@@ -116,13 +116,13 @@ pub mod inst {
 
     impl StreamOrm for StreamOrmApp {
         /// Find for an entity (stream) by id.
-        fn find_stream_by_id(&self, id: i32) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
+        fn find_stream_by_id(&self, id: i32, user_id: i32) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
             // Run query using Diesel to find user by id and return it.
             let opt_stream = schema::streams::table
-                .filter(dsl::id.eq(id))
+                .filter(dsl::id.eq(id).and(dsl::user_id.eq(user_id)))
                 .first::<Stream>(&mut conn)
                 .optional()
                 .map_err(|e| format!("find_stream_by_id: {}", e.to_string()))?;
@@ -454,11 +454,11 @@ pub mod tests {
 
     impl StreamOrm for StreamOrmApp {
         /// Find for an entity (stream) by id.
-        fn find_stream_by_id(&self, id: i32) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
+        fn find_stream_by_id(&self, id: i32, user_id: i32) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             let stream_info_opt = self
                 .stream_info_vec
                 .iter()
-                .find(|stream| stream.id == id)
+                .find(|stream| stream.id == id && stream.user_id == user_id)
                 .map(|stream| stream.clone());
 
             if let Some(stream_info) = stream_info_opt {
