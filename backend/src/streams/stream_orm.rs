@@ -22,7 +22,7 @@ pub trait StreamOrm {
         opt_tags: Option<Vec<String>>,
     ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
     /// Delete an entity (stream).
-    fn delete_stream(&self, id: i32, user_id: i32) -> Result<usize, String>;
+    fn delete_stream(&self, id: i32, user_id: i32) -> Result<Option<Stream>, String>;
 }
 
 pub mod cfg {
@@ -45,8 +45,6 @@ pub mod cfg {
 
 #[cfg(not(feature = "mockdata"))]
 pub mod inst {
-    use std::time::Instant;
-
     use chrono::Utc;
     use diesel::{self, prelude::*, sql_types};
     use schema::streams::dsl;
@@ -201,6 +199,7 @@ pub mod inst {
             query_list = query_list.then_order_by(dsl::id.asc());
 
             let amount_res = query_count.count().get_result::<i64>(&mut conn);
+            // lead time: 476.06µs
             if let Err(err) = amount_res {
                 return Err(format!("find_streams_by_user_id: (query_count) {}", err));
             }
@@ -210,7 +209,7 @@ pub mod inst {
             let streams: Vec<Stream> = query_list
                 .load(&mut conn)
                 .map_err(|e| format!("find_streams_by_user_id: (query_list) {}", e.to_string()))?;
-
+            // lead time: 679.46µs
             // Get a list of "stream" identifiers.
             let ids: Vec<i32> = streams.iter().map(|stream| stream.id).collect();
             let stream_tags = self
@@ -236,22 +235,23 @@ pub mod inst {
                     .values(create_stream)
                     .returning(Stream::as_returning())
                     .get_result(conn);
+                // lead time: 1.53ms
 
                 let stream = res_stream?;
                 let stream_id = stream.id;
                 let user_id = stream.user_id;
-                let now1 = Instant::now();
+
                 // Update the list of "tags" for the specified "stream".
                 let res_update_stream_tags = self.update_list_stream_tags(conn, stream_id, user_id, tags);
+                // lead time: 1.73ms
 
                 if let Err(err) = res_update_stream_tags {
                     err_table = "update_list_stream_tags";
                     return Err(err);
                 };
-
                 // Get a list of "tags" for the specified "stream".
                 let res_stream_tags = self.get_stream_tags(conn, &[stream_id]);
-                eprintln!("total              () elapsed time: {:.2?}", now1.elapsed());
+                // lead time: 510.37µs
 
                 let stream_tags = match res_stream_tags {
                     Ok(v) => v,
@@ -263,7 +263,8 @@ pub mod inst {
 
                 Ok((stream, stream_tags))
             });
-            eprintln!("res_data: {:?}", res_data);
+            // lead time: 4.48ms
+            // eprintln!("res_data: {:?}", res_data);
             match res_data {
                 Ok((stream, stream_tags)) => Ok((stream, stream_tags)),
                 Err(err) => Err(format!("{}: {}", err_table, err.to_string())),
@@ -301,7 +302,6 @@ pub mod inst {
             let mut conn = self.get_conn()?;
             // let is_delete_logo = true;
             let mut err_table = "modify_stream";
-            let now1 = Instant::now();
             let res_data = conn.transaction::<_, diesel::result::Error, _>(|conn| {
                 // Run query using Diesel to modify the entry (stream). schema::streams::dsl
                 let res_stream = diesel::update(dsl::streams.filter(dsl::id.eq(id).and(dsl::user_id.eq(user_id))))
@@ -309,6 +309,7 @@ pub mod inst {
                     .returning(Stream::as_returning())
                     .get_result(conn)
                     .optional();
+                // lead time: 1.64ms
 
                 let opt_stream = res_stream?;
                 if let Some(stream) = opt_stream {
@@ -318,6 +319,7 @@ pub mod inst {
                     if let Some(tags) = opt_tags {
                         // Update the list of "tags" for the specified "stream".
                         let res_update_stream_tags = self.update_list_stream_tags(conn, stream_id, user_id, &tags);
+                        // lead time: 1.04ms
 
                         if let Err(err) = res_update_stream_tags {
                             err_table = "update_list_stream_tags";
@@ -327,6 +329,7 @@ pub mod inst {
 
                     // Get a list of "tags" for the specified "stream".
                     let res_stream_tags = self.get_stream_tags(conn, &[stream_id]);
+                    // lead time: 532.19µs
 
                     let stream_tags = match res_stream_tags {
                         Ok(v) => v,
@@ -340,27 +343,29 @@ pub mod inst {
                     Ok(None)
                 }
             });
-            eprintln!("total              () elapsed time: {:.2?}", now1.elapsed());
-            eprintln!("res_data: {:?}", res_data);
+            // lead time: 3.84ms
+            // eprintln!("res_data: {:?}", res_data);
             match res_data {
                 Ok(value) => Ok(value),
                 Err(err) => Err(format!("{}: {}", err_table, err.to_string())),
             }
         }
         /// Delete an entity (stream).
-        fn delete_stream(&self, id: i32, user_id: i32) -> Result<usize, String> {
+        fn delete_stream(&self, id: i32, user_id: i32) -> Result<Option<Stream>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
             // Run query using Diesel to delete a entry (stream).
-            let count: usize = diesel::delete(dsl::streams.find(id))
-                .execute(&mut conn)
+            let opt_stream: Option<Stream> = diesel::delete(dsl::streams.find(id))
+                .returning(Stream::as_returning())
+                .get_result(&mut conn)
+                .optional()
                 .map_err(|e| format!("delete_stream: {}", e.to_string()))?;
 
             // Update the "stream_tags" data for user.
             let _ = self.update_stream_tags_for_user(&mut conn, user_id);
 
-            Ok(count)
+            Ok(opt_stream)
         }
     }
 }
@@ -629,12 +634,12 @@ pub mod tests {
             }
         }
         /// Delete an entity (stream).
-        fn delete_stream(&self, id: i32, _: i32) -> Result<usize, String> {
-            let stream_opt = self.stream_info_vec.iter().find(|stream| stream.id == id);
+        fn delete_stream(&self, id: i32, _: i32) -> Result<Option<Stream>, String> {
+            let opt_stream_info = self.stream_info_vec.iter().find(|stream| stream.id == id);
 
-            #[rustfmt::skip]
-            let result = if stream_opt.is_none() { 0 } else { 1 };
-            Ok(result)
+            let opt_stream = opt_stream_info.map(|v| Self::to_stream(v.clone()));
+
+            Ok(opt_stream)
         }
     }
 }
