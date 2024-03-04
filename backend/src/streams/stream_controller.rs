@@ -471,15 +471,21 @@ pub async fn delete_stream(
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
 
-    let result_count = res_data?;
+    let opt_stream = res_data?;
+    let is_opt_stream_none = opt_stream.is_none();
+    let logo_file: String = opt_stream.map(|s| s.logo.unwrap_or("".to_string())).unwrap_or("".to_string());
+
+    if logo_file.len() > 0 {
+        let config_strm = config_strm.get_ref().clone();
+        let logo_files_dir = config_strm.strm_logo_files_dir.clone();
+        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
+        let logo_name_full_path = logo_file.replace(&alias_logo, &logo_files_dir);
+        remove_file_and_log(&logo_name_full_path, &"delete_stream()");
+    }
     if config_strm.strm_show_lead_time {
         log::info!("delete_stream() lead time: {:.2?}", now.elapsed());
     }
-    // if result_count == 1 { // TODO
-    //     stream.logo && await this.appFileService.remove(stream.logo, userId);  
-    // }
-
-    if 0 == result_count {
+    if is_opt_stream_none {
         Err(AppError::new(err::CD_NOT_FOUND, err::MSG_STREAM_NOT_FOUND_BY_ID).set_status(404))
     } else {
         Ok(HttpResponse::Ok().finish())
@@ -500,7 +506,7 @@ mod tests {
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
     };
     use crate::streams::{
-        config_slp,
+        config_strm,
         stream_models::{Stream, StreamInfoDto, StreamModelsTest},
         stream_orm::tests::STREAM_ID,
     };
@@ -544,7 +550,7 @@ mod tests {
         request: TestRequest,
     ) -> dev::ServiceResponse {
         let data_config_jwt = web::Data::new(config_jwt);
-        let data_config_slp = web::Data::new(config_slp::get_test_config());
+        let data_config_strm = web::Data::new(config_strm::get_test_config());
         let data_user_orm = web::Data::new(UserOrmApp::create(&vec.0));
         let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
         let data_stream_orm = web::Data::new(StreamOrmApp::create(&vec.2));
@@ -552,7 +558,7 @@ mod tests {
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_config_slp))
+                .app_data(web::Data::clone(&data_config_strm))
                 .app_data(web::Data::clone(&data_user_orm))
                 .app_data(web::Data::clone(&data_session_orm))
                 .app_data(web::Data::clone(&data_stream_orm))
@@ -1043,12 +1049,12 @@ mod tests {
 
         let body = test::read_body(resp).await;
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let config_slp = config_slp::get_test_config();
-        let slp_dir = config_slp.slp_dir;
+        let config_strm = config_strm::get_test_config();
+        let strm_logo_files_dir = config_strm.strm_logo_files_dir;
 
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
         let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
-        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &slp_dir, 1);
+        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &strm_logo_files_dir, 1);
         let is_exists_logo_new = path::Path::new(&logo_name_full_path).exists();
         let _ = fs::remove_file(&logo_name_full_path);
 
@@ -1498,8 +1504,8 @@ mod tests {
         let _ = fs::remove_file(&path_name1_file);
 
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
-        let config_slp = config_slp::get_test_config();
-        let slp_dir = config_slp.slp_dir;
+        let config_strm = config_strm::get_test_config();
+        let strm_logo_files_dir = config_strm.strm_logo_files_dir;
 
         let body = test::read_body(resp).await;
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -1507,7 +1513,7 @@ mod tests {
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
 
         let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
-        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &slp_dir, 1);
+        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &strm_logo_files_dir, 1);
         let is_exists_logo_new = path::Path::new(&logo_name_full_path).exists();
         let _ = fs::remove_file(&logo_name_full_path);
 
@@ -1529,11 +1535,11 @@ mod tests {
     }
     #[test]
     async fn test_put_stream_valid_data_with_b_logo_old_1_new_1() {
-        let config_slp = config_slp::get_test_config();
-        let slp_dir = config_slp.slp_dir;
+        let config_strm = config_strm::get_test_config();
+        let strm_logo_files_dir = config_strm.strm_logo_files_dir;
 
         let name0_file = "put_circle5x5_b_old.png";
-        let path_name0_file = format!("{}/{}", &slp_dir, name0_file);
+        let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_logo = format!("/{}/{}", ALIAS_LOGO_FILES, name0_file);
 
@@ -1584,7 +1590,7 @@ mod tests {
 
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
         let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
-        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &slp_dir, 1);
+        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &strm_logo_files_dir, 1);
 
         let is_exists_logo_new = path::Path::new(&logo_name_full_path).exists();
         let _ = fs::remove_file(&logo_name_full_path);
@@ -1608,11 +1614,11 @@ mod tests {
     }
     #[test]
     async fn test_put_stream_valid_data_with_c_logo_old_1_new_0() {
-        let config_slp = config_slp::get_test_config();
-        let slp_dir = config_slp.slp_dir;
+        let config_strm = config_strm::get_test_config();
+        let strm_logo_files_dir = config_strm.strm_logo_files_dir;
 
         let name0_file = "put_circle5x5_c_old.png";
-        let path_name0_file = format!("{}/{}", &slp_dir, name0_file);
+        let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         save_file_png(&path_name0_file, 1).unwrap();
         let path_name0_logo = format!("/{}/{}", ALIAS_LOGO_FILES, name0_file);
 
@@ -1663,11 +1669,11 @@ mod tests {
     }
     #[test]
     async fn test_put_stream_valid_data_with_d_logo_old_1_new_size0() {
-        let config_slp = config_slp::get_test_config();
-        let slp_dir = config_slp.slp_dir;
+        let config_strm = config_strm::get_test_config();
+        let strm_logo_files_dir = config_strm.strm_logo_files_dir;
 
         let name0_file = "put_circle5x5_d_old.png";
-        let path_name0_file = format!("{}/{}", &slp_dir, name0_file);
+        let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_logo = format!("/{}/{}", ALIAS_LOGO_FILES, name0_file);
 
@@ -1719,11 +1725,8 @@ mod tests {
     }
     #[test]
     async fn test_put_stream_valid_data_with_e_logo_old_0_new_size0() {
-        // let config_slp = config_slp::get_test_config();
-
         let name1_file = "put_circle5x5_e_new.png";
         let path_name1_file = format!("./{}", name1_file);
-        eprintln!("path_name1_file: {}", path_name1_file);
         save_empty_file(&path_name1_file).unwrap();
 
         let user1: User = user_with_id(create_user());
@@ -1848,5 +1851,43 @@ mod tests {
         let factory = delete_stream;
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
+    }
+    #[test]
+    async fn test_delete_stream_existent_id_with_logo() {
+        let config_strm = config_strm::get_test_config();
+        let strm_logo_files_dir = config_strm.strm_logo_files_dir;
+
+        let name0_file = "delete_circle5x5_b_old.png";
+        let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
+        save_file_png(&(path_name0_file.clone()), 1).unwrap();
+        let path_name0_logo = format!("/{}/{}", ALIAS_LOGO_FILES, name0_file);
+
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let now = Utc::now();
+        let mut stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+        stream.logo = Some(path_name0_logo);
+
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+
+        // DELETE api/streams/{id}
+        let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_dto.id));
+
+        let vec = (vec![user1], vec![session1], vec![stream_dto]);
+        let factory = delete_stream;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+
+        let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
+        let _ = fs::remove_file(&path_name0_file);
+
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+        assert!(!is_exists_logo_old);
     }
 }
