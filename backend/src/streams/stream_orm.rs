@@ -198,6 +198,7 @@ pub mod inst {
                     query_list = query_list.order_by(dsl::title.desc());
                 }
             }
+            query_list = query_list.then_order_by(dsl::id.asc());
 
             let amount_res = query_count.count().get_result::<i64>(&mut conn);
             if let Err(err) = amount_res {
