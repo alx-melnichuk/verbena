@@ -19,7 +19,6 @@ use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
 use crate::validators::{msg_validation, Validator};
 
 pub const ALIAS_LOGO_FILES: &str = "logo";
-const IS_LEAD_TIME: bool = true;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     POST api/streams
@@ -233,7 +232,7 @@ pub async fn post_stream(
     let list = stream_models::StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
     let stream_info_dto = list[0].clone();
 
-    if IS_LEAD_TIME {
+    if config_strm.strm_show_lead_time {
         log::info!("post_stream() lead time: {:.2?}", now.elapsed());
     }
     Ok(HttpResponse::Created().json(stream_info_dto)) // 201
@@ -420,7 +419,7 @@ pub async fn put_stream(
     } else {
         remove_file_and_log(&new_logo_file, &"put_stream()");
     }
-    if IS_LEAD_TIME {
+    if config_strm.strm_show_lead_time {
         log::info!("put_stream() lead time: {:.2?}", now.elapsed());
     }
     if let Some(stream_info_dto) = opt_stream_info_dto {
@@ -449,6 +448,7 @@ async deleteStream (
 #[delete("/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_stream(
     authenticated: Authenticated,
+    config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -472,10 +472,10 @@ pub async fn delete_stream(
     .map_err(|e| err_blocking(e.to_string()))?;
 
     let result_count = res_data?;
-    if IS_LEAD_TIME {
+    if config_strm.strm_show_lead_time {
         log::info!("delete_stream() lead time: {:.2?}", now.elapsed());
     }
-    // if result_count == 1 {
+    // if result_count == 1 { // TODO
     //     stream.logo && await this.appFileService.remove(stream.logo, userId);  
     // }
 
