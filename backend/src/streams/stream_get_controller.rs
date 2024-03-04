@@ -9,11 +9,9 @@ use crate::settings::err;
 use crate::streams::stream_orm::inst::StreamOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::streams::stream_orm::tests::StreamOrmApp;
-use crate::streams::{stream_models, stream_orm::StreamOrm};
+use crate::streams::{config_strm, stream_models, stream_orm::StreamOrm};
 use crate::users::user_models::UserRole;
 use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
-
-const IS_LEAD_TIME: bool = true;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     GET api/streams/{id}
@@ -44,6 +42,7 @@ fn err_no_access_to_streams() -> AppError {
 #[get("/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_stream_by_id(
     authenticated: Authenticated,
+    config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -76,7 +75,7 @@ pub async fn get_stream_by_id(
         None
     };
 
-    if IS_LEAD_TIME {
+    if config_strm.strm_show_lead_time {
         log::info!("get_stream_by_id() lead time: {:.2?}", now.elapsed());
     }
     if let Some(stream_tag_dto) = opt_stream_tag_dto {
@@ -107,6 +106,7 @@ pub async fn get_stream_by_id(
 #[get("/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_streams(
     authenticated: Authenticated,
+    config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
     query_params: web::Query<stream_models::SearchStreamInfoDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -148,7 +148,7 @@ pub async fn get_streams(
 
     let result = stream_models::SearchStreamInfoResponseDto { list, limit, count, page, pages };
 
-    if IS_LEAD_TIME {
+    if config_strm.strm_show_lead_time {
         log::info!("get_streams() lead time: {:.2?}", now.elapsed());
     }
     Ok(HttpResponse::Ok().json(result)) // 200
