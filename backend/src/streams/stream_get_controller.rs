@@ -164,7 +164,7 @@ mod tests {
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
     };
     use crate::streams::{
-        config_slp,
+        config_strm,
         stream_models::{SearchStreamInfoResponseDto, Stream, StreamInfoDto},
         stream_orm::tests::STREAM_ID,
     };
@@ -205,7 +205,7 @@ mod tests {
         request: TestRequest,
     ) -> dev::ServiceResponse {
         let data_config_jwt = web::Data::new(config_jwt);
-        let data_config_slp = web::Data::new(config_slp::get_test_config());
+        let data_config_strm = web::Data::new(config_strm::get_test_config());
         let data_user_orm = web::Data::new(UserOrmApp::create(&vec.0));
         let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
         let data_stream_orm = web::Data::new(StreamOrmApp::create(&vec.2));
@@ -213,7 +213,7 @@ mod tests {
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_config_slp))
+                .app_data(web::Data::clone(&data_config_strm))
                 .app_data(web::Data::clone(&data_user_orm))
                 .app_data(web::Data::clone(&data_session_orm))
                 .app_data(web::Data::clone(&data_stream_orm))
