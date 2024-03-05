@@ -94,9 +94,6 @@ impl actix_web::ResponseError for AppError {
         self.status_code()
     }
     fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody> {
-        // #[cfg(test)]
-        // #[rustfmt::skip]
-        // eprintln!("AppError({} {}): {}", self.status, self.status_code(), self.to_string() ); // #
         HttpResponse::build(self.status_code())
             .insert_header(http::header::ContentType::json())
             .json(self)

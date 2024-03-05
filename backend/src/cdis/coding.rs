@@ -527,14 +527,14 @@ mod tests {
     #[test]
     fn test_decode_invalid_second1() {
         let result = decode("62570f81b5c#", 0);
-        eprintln!("result: {:?}", &result);
+
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"#\"", MSG_INVALID_SECOND));
     }
     #[test]
     fn test_decode_invalid_second2() {
         let result = decode("62570f81b5cY", 0);
-        eprintln!("result: {:?}", &result);
+
         assert!(result.clone().is_err());
         assert_eq!(result.unwrap_err(), format!("{}: \"Y\"", MSG_INVALID_SECOND));
     }
