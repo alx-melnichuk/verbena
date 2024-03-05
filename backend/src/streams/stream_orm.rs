@@ -47,7 +47,7 @@ pub mod cfg {
 pub mod inst {
     use chrono::Utc;
     use diesel::{self, prelude::*, sql_types};
-    use schema::streams::dsl;
+    use schema::streams::dsl as streams_dsl;
 
     use crate::dbase;
     use crate::schema;
@@ -120,7 +120,7 @@ pub mod inst {
 
             // Run query using Diesel to find user by id and return it.
             let opt_stream = schema::streams::table
-                .filter(dsl::id.eq(id).and(dsl::user_id.eq(user_id)))
+                .filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id)))
                 .first::<Stream>(&mut conn)
                 .optional()
                 .map_err(|e| format!("find_stream_by_id: {}", e.to_string()))?;
@@ -163,40 +163,40 @@ pub mod inst {
             let mut query_count = schema::streams::table.into_boxed();
 
             if let Some(user_id) = search_stream.user_id {
-                query_list = query_list.filter(dsl::user_id.eq(user_id));
-                query_count = query_count.filter(dsl::user_id.eq(user_id));
+                query_list = query_list.filter(streams_dsl::user_id.eq(user_id));
+                query_count = query_count.filter(streams_dsl::user_id.eq(user_id));
             }
             if let Some(live) = search_stream.live {
-                query_list = query_list.filter(dsl::live.eq(live));
-                query_count = query_count.filter(dsl::live.eq(live));
+                query_list = query_list.filter(streams_dsl::live.eq(live));
+                query_count = query_count.filter(streams_dsl::live.eq(live));
             }
             if let Some(is_future) = search_stream.is_future {
                 let now_date = Utc::now().date_naive().and_hms_opt(0, 0, 0).unwrap();
                 if !is_future {
                     // starttime < now_date
-                    query_list = query_list.filter(dsl::starttime.lt(now_date));
-                    query_count = query_count.filter(dsl::starttime.lt(now_date));
+                    query_list = query_list.filter(streams_dsl::starttime.lt(now_date));
+                    query_count = query_count.filter(streams_dsl::starttime.lt(now_date));
                 } else {
                     // starttime >= now_date
-                    query_list = query_list.filter(dsl::starttime.ge(now_date));
-                    query_count = query_count.filter(dsl::starttime.ge(now_date));
+                    query_list = query_list.filter(streams_dsl::starttime.ge(now_date));
+                    query_count = query_count.filter(streams_dsl::starttime.ge(now_date));
                 }
             }
 
             if order_column == stream_models::OrderColumn::Starttime {
                 if is_asc {
-                    query_list = query_list.order_by(dsl::starttime.asc());
+                    query_list = query_list.order_by(streams_dsl::starttime.asc());
                 } else {
-                    query_list = query_list.order_by(dsl::starttime.desc());
+                    query_list = query_list.order_by(streams_dsl::starttime.desc());
                 }
             } else {
                 if is_asc {
-                    query_list = query_list.order_by(dsl::title.asc());
+                    query_list = query_list.order_by(streams_dsl::title.asc());
                 } else {
-                    query_list = query_list.order_by(dsl::title.desc());
+                    query_list = query_list.order_by(streams_dsl::title.desc());
                 }
             }
-            query_list = query_list.then_order_by(dsl::id.asc());
+            query_list = query_list.then_order_by(streams_dsl::id.asc());
 
             let amount_res = query_count.count().get_result::<i64>(&mut conn);
             // lead time: 476.06µs
@@ -277,7 +277,7 @@ pub mod inst {
 
             // Run query using Diesel to find user by id and return it.
             let opt_stream = schema::streams::table
-                .filter(dsl::id.eq(id).and(dsl::user_id.eq(user_id)))
+                .filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id)))
                 // .returning(Stream::as_returning())
                 .first::<Stream>(&mut conn)
                 // .get_result(conn)
@@ -304,11 +304,13 @@ pub mod inst {
             let mut err_table = "modify_stream";
             let res_data = conn.transaction::<_, diesel::result::Error, _>(|conn| {
                 // Run query using Diesel to modify the entry (stream). schema::streams::dsl
-                let res_stream = diesel::update(dsl::streams.filter(dsl::id.eq(id).and(dsl::user_id.eq(user_id))))
-                    .set(&modify_stream)
-                    .returning(Stream::as_returning())
-                    .get_result(conn)
-                    .optional();
+                let res_stream = diesel::update(
+                    streams_dsl::streams.filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id))),
+                )
+                .set(&modify_stream)
+                .returning(Stream::as_returning())
+                .get_result(conn)
+                .optional();
                 // lead time: 1.64ms
 
                 let opt_stream = res_stream?;
@@ -356,7 +358,7 @@ pub mod inst {
             let mut conn = self.get_conn()?;
 
             // Run query using Diesel to delete a entry (stream).
-            let opt_stream: Option<Stream> = diesel::delete(dsl::streams.find(id))
+            let opt_stream: Option<Stream> = diesel::delete(streams_dsl::streams.find(id))
                 .returning(Stream::as_returning())
                 .get_result(&mut conn)
                 .optional()
