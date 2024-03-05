@@ -459,7 +459,7 @@ pub struct LinkStreamTagsToStreams {
     pub stream_tag_id: i32,
 }
 
-// **  Section: Search "StreamInfoDto". **
+// **  Section: Search for data "StreamInfoDto" of the "streams" table. **
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -517,18 +517,18 @@ impl SearchStream {
     }
 }
 
+// * SearchStreamInfoDto *
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchStreamInfoDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub user_id: Option<i32>,
-    // pub key: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub live: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     // true - (starttime >= now), false - (starttime < now)
     pub is_future: Option<bool>,
-    // groupBy?: 'none' | 'tag' | 'date' = 'none';
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub order_column: Option<OrderColumn>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -539,11 +539,85 @@ pub struct SearchStreamInfoDto {
     pub limit: Option<u32>,
 }
 
-// ** SearchResponseDto<T> **
+// * SearchResponseDto<T> *
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SearchStreamInfoResponseDto {
     pub list: Vec<StreamInfoDto>,
+    pub limit: u32,
+    pub count: u32,
+    pub page: u32,
+    pub pages: u32,
+}
+
+// **  Section: Search for data "StreamInfoDto?" of the "streams" table. **
+
+pub const SEARCH_STREAM_EVENT_PAGE: u32 = 1;
+pub const SEARCH_STREAM_EVENT_LIMIT: u32 = 10;
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SearchStreamEvent {
+    pub user_id: Option<i32>,
+    pub starttime: DateTime<Utc>,
+    pub page: Option<u32>,
+    pub limit: Option<u32>,
+}
+
+impl SearchStreamEvent {
+    pub fn convert(search_stream_event: SearchStreamEventDto) -> Self {
+        SearchStreamEvent {
+            user_id: search_stream_event.user_id.clone(),
+            starttime: search_stream_event.starttime.clone(),
+            page: search_stream_event.page.clone(),
+            limit: search_stream_event.limit.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchStreamEventDto {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<i32>,
+    #[serde(with = "serial_datetime")]
+    pub starttime: DateTime<Utc>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub page: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+}
+
+// * SearchStreamEventResponseDto *
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct StreamEventDto {
+    pub id: i32,
+    pub user_id: i32,
+    pub title: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logo: Option<String>,
+    #[serde(with = "serial_datetime")]
+    pub starttime: DateTime<Utc>,
+}
+
+impl StreamEventDto {
+    #[allow(dead_code)]
+    pub fn convert(stream: Stream) -> Self {
+        StreamEventDto {
+            id: stream.id,
+            user_id: stream.user_id,
+            title: stream.title.to_owned(),
+            logo: stream.logo.clone(),
+            starttime: stream.starttime.to_owned(),
+        }
+    }
+}
+
+// * SearchStreamEventResponseDto<T> * /* interface StreamEventListDto */
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SearchStreamEventResponseDto {
+    pub list: Vec<StreamEventDto>,
     pub limit: u32,
     pub count: u32,
     pub page: u32,

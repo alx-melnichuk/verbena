@@ -1,10 +1,12 @@
-use super::stream_models::{CreateStream, ModifyStream, SearchStream, Stream, StreamTagStreamId};
+use super::stream_models::{CreateStream, ModifyStream, SearchStream, SearchStreamEvent, Stream, StreamTagStreamId};
 
 pub trait StreamOrm {
     /// Find for an entity (stream) by id.
     fn find_stream_by_id(&self, id: i32, user_id: i32) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
-    /// Find for an entity (stream) by SearchStreamInfoDto.
+    /// Find for an entity (stream) by SearchStreamInfo.
     fn find_streams(&self, search_stream: SearchStream) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String>;
+    /// Find for an entity (stream event) by SearchStreamEvent.
+    fn find_stream_events(&self, search_stream_event: SearchStreamEvent) -> Result<(u32, Vec<Stream>), String>;
     /// Add a new entity (stream).
     fn create_stream(
         &self,
@@ -45,7 +47,7 @@ pub mod cfg {
 
 #[cfg(not(feature = "mockdata"))]
 pub mod inst {
-    use chrono::Utc;
+    use chrono::{Duration, Utc};
     use diesel::{self, prelude::*, sql_types};
     use schema::streams::dsl as streams_dsl;
 
@@ -159,7 +161,7 @@ pub mod inst {
                 .offset(offset.into())
                 .limit(limit.into());
 
-            // Create a query to get the number of elements in the list of "threads".
+            // Create a query to get the number of elements in the list of "streams".
             let mut query_count = schema::streams::table.into_boxed();
 
             if let Some(user_id) = search_stream.user_id {
@@ -201,14 +203,14 @@ pub mod inst {
             let amount_res = query_count.count().get_result::<i64>(&mut conn);
             // lead time: 476.06µs
             if let Err(err) = amount_res {
-                return Err(format!("find_streams_by_user_id: (query_count) {}", err));
+                return Err(format!("find_streams: (query_count) {}", err));
             }
             let amount: i64 = amount_res.unwrap();
             let count: u32 = amount.try_into().unwrap();
 
             let streams: Vec<Stream> = query_list
                 .load(&mut conn)
-                .map_err(|e| format!("find_streams_by_user_id: (query_list) {}", e.to_string()))?;
+                .map_err(|e| format!("find_streams: (query_list) {}", e.to_string()))?;
             // lead time: 679.46µs
             // Get a list of "stream" identifiers.
             let ids: Vec<i32> = streams.iter().map(|stream| stream.id).collect();
@@ -217,6 +219,62 @@ pub mod inst {
                 .map_err(|e| format!("get_stream_tags: {}", e.to_string()))?;
 
             Ok((count, streams, stream_tags))
+        }
+
+        /// Find for an entity (stream event) by SearchStreamEvent.
+        fn find_stream_events(&self, search_stream_event: SearchStreamEvent) -> Result<(u32, Vec<Stream>), String> {
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let page: u32 = search_stream_event.page.unwrap_or(stream_models::SEARCH_STREAM_EVENT_PAGE);
+            let limit: u32 = search_stream_event.limit.unwrap_or(stream_models::SEARCH_STREAM_EVENT_LIMIT);
+            let offset: u32 = (page - 1) * limit;
+            let start = search_stream_event.starttime;
+            let finish = start + Duration::hours(24);
+
+            // Build a query to find a list of "streams".
+            let mut query_list = schema::streams::table.into_boxed();
+            query_list = query_list
+                .select(schema::streams::all_columns)
+                // starttime >= start
+                .filter(streams_dsl::starttime.ge(start))
+                // starttime < finish
+                .filter(streams_dsl::starttime.lt(finish))
+                .offset(offset.into())
+                .limit(limit.into());
+
+            // Create a query to get the number of elements in the list of "streams".
+            let mut query_count = schema::streams::table.into_boxed();
+            query_count = query_count
+                // starttime >= start
+                .filter(streams_dsl::starttime.ge(start))
+                // starttime < finish
+                .filter(streams_dsl::starttime.lt(finish));
+
+            if let Some(user_id) = search_stream_event.user_id {
+                query_list = query_list.filter(streams_dsl::user_id.eq(user_id));
+                query_count = query_count.filter(streams_dsl::user_id.eq(user_id));
+            }
+
+            query_list = query_list
+                .order_by(streams_dsl::starttime.asc())
+                .then_order_by(streams_dsl::id.asc());
+
+            let amount_res = query_count.count().get_result::<i64>(&mut conn);
+            // lead time: 1.14ms
+            if let Err(err) = amount_res {
+                return Err(format!("find_stream_events: (query_count) {}", err));
+            }
+            let amount: i64 = amount_res.unwrap();
+            let count: u32 = amount.try_into().unwrap();
+
+            let streams: Vec<Stream> = query_list
+                .load(&mut conn)
+                .map_err(|e| format!("find_streams: (query_list) {}", e.to_string()))?;
+            // lead time: 699.49µs
+
+            // lead time: 2.14ms
+            Ok((count, streams))
         }
 
         /// Add a new entity (stream).
@@ -376,7 +434,7 @@ pub mod inst {
 pub mod tests {
     use std::cmp::Ordering;
 
-    use chrono::Utc;
+    use chrono::{Duration, Utc};
 
     use crate::streams::stream_models::{self, StreamInfoDto};
 
@@ -565,6 +623,60 @@ pub mod tests {
             }
 
             Ok((count, streams, stream_tags))
+        }
+        /// Find for an entity (stream event) by SearchStreamEvent.
+        fn find_stream_events(&self, search_stream_event: SearchStreamEvent) -> Result<(u32, Vec<Stream>), String> {
+            let mut streams_info: Vec<StreamInfoDto> = vec![];
+
+            let start = search_stream_event.starttime;
+            let finish = start + Duration::hours(24);
+
+            for stream in self.stream_info_vec.iter() {
+                let mut is_add_value = true;
+
+                if stream.user_id != search_stream_event.user_id.unwrap_or(stream.user_id) {
+                    is_add_value = false;
+                }
+                if !(start <= stream.starttime && stream.starttime < finish) {
+                    is_add_value = false;
+                }
+
+                if is_add_value {
+                    streams_info.push(stream.clone());
+                }
+            }
+
+            streams_info.sort_by(|a, b| a.starttime.partial_cmp(&b.starttime).unwrap_or(Ordering::Equal));
+
+            let amount = streams_info.len();
+            let page = search_stream_event.page.unwrap_or(stream_models::SEARCH_STREAM_EVENT_PAGE);
+            let limit = search_stream_event.limit.unwrap_or(stream_models::SEARCH_STREAM_EVENT_LIMIT);
+            let min_idx = (page - 1) * limit;
+            let max_idx = min_idx + limit;
+            let mut idx = 0;
+            streams_info.retain(|_| {
+                let res = min_idx <= idx && idx < max_idx;
+                idx += 1;
+                res
+            });
+
+            let count: u32 = amount.try_into().unwrap();
+
+            let mut streams: Vec<Stream> = vec![];
+            let mut stream_tags: Vec<StreamTagStreamId> = vec![];
+            let mut tag_id = 0;
+            for stream in streams_info.iter() {
+                streams.push(Self::to_stream(stream.clone()));
+                for tag in stream.tags.iter() {
+                    #[rustfmt::skip]
+                    stream_tags.push(StreamTagStreamId {
+                        stream_id: stream.id, id: tag_id, user_id: stream.user_id, name: tag.to_string()
+                    });
+                    tag_id += 1;
+                }
+            }
+
+            Ok((count, streams))
         }
         /// Add a new entity (stream).
         fn create_stream(

@@ -17,7 +17,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     //     GET api/streams/{id}
     cfg.service(get_stream_by_id)
         // GET api/streams
-        .service(get_streams);
+        .service(get_streams)
+        // GET api/stream_events
+        .service(get_streams_events);
 }
 
 fn err_parse_int(err: String) -> AppError {
@@ -122,12 +124,12 @@ pub async fn get_streams(
     let limit: u32 = search_stream_info_dto.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT);
     let mut search_stream = stream_models::SearchStream::convert(search_stream_info_dto);
 
-    let user_id: i32 = search_stream.user_id.unwrap_or(curr_user_id);
-    if user_id != curr_user_id && curr_user.role != UserRole::Admin {
-        return Err(err_no_access_to_streams());
-    }
-    if Some(user_id) != search_stream.user_id {
-        search_stream.user_id = Some(user_id);
+    if search_stream.user_id.is_none() {
+        search_stream.user_id = Some(curr_user_id);
+    } else if let Some(user_id) = search_stream.user_id {
+        if user_id != curr_user_id && curr_user.role != UserRole::Admin {
+            return Err(err_no_access_to_streams());
+        }
     }
 
     let res_data = web::block(move || {
@@ -154,10 +156,63 @@ pub async fn get_streams(
     Ok(HttpResponse::Ok().json(result)) // 200
 }
 
+// 'starttime' only format Utc ("%Y-%m-%dT%H:%M:%S.%3fZ").
+// GET api/stream_events
+#[rustfmt::skip]
+#[get("/streams_events", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn get_streams_events(
+    authenticated: Authenticated,
+    config_strm: web::Data<config_strm::ConfigStrm>,
+    stream_orm: web::Data<StreamOrmApp>,
+    query_params: web::Query<stream_models::SearchStreamEventDto>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
+    // Get current user details.
+    let curr_user = authenticated.deref();
+    let curr_user_id = curr_user.id;
+
+    // Get search parameters.
+    let search_stream_event_dto: stream_models::SearchStreamEventDto = query_params.into_inner();
+
+    let page: u32 = search_stream_event_dto.page.unwrap_or(stream_models::SEARCH_STREAM_EVENT_PAGE);
+    let limit: u32 = search_stream_event_dto.limit.unwrap_or(stream_models::SEARCH_STREAM_EVENT_LIMIT);
+    let mut search_stream_event = stream_models::SearchStreamEvent::convert(search_stream_event_dto);
+
+    if search_stream_event.user_id.is_none() {
+        search_stream_event.user_id = Some(curr_user_id);
+    } else if let Some(user_id) = search_stream_event.user_id {
+        if user_id != curr_user_id && curr_user.role != UserRole::Admin {
+            return Err(err_no_access_to_streams());
+        }
+    }
+
+    let res_data = web::block(move || {
+        // Find for an entity (stream event) by SearchStreamEvent.
+        let res_data =
+            stream_orm.find_stream_events(search_stream_event).map_err(|e| err_database(e.to_string()));
+        res_data
+        })
+        .await
+        .map_err(|e| err_blocking(e.to_string()))?;
+
+    let (count, streams) = match res_data { Ok(v) => v, Err(e) => return Err(e) };
+
+    let list = streams.into_iter().map(|v| stream_models::StreamEventDto::convert(v)).collect();
+
+    let pages: u32 = count / limit + if (count % limit) > 0 { 1 } else { 0 };
+
+    let result = stream_models::SearchStreamEventResponseDto { list, limit, count, page, pages };
+
+    if config_strm.strm_show_lead_time {
+        log::info!("get_streams_events() lead time: {:.2?}", now.elapsed());
+    }
+    Ok(HttpResponse::Ok().json(result)) // 200
+}
+
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{dev, http, test, test::TestRequest, web, App};
-    use chrono::{DateTime, Duration, Utc};
+    use chrono::{DateTime, Datelike, Duration, Local, TimeZone, Utc};
 
     use crate::extractors::authentication::BEARER;
     use crate::sessions::{
@@ -165,7 +220,9 @@ mod tests {
     };
     use crate::streams::{
         config_strm,
-        stream_models::{SearchStreamInfoResponseDto, Stream, StreamInfoDto},
+        stream_models::{
+            SearchStreamEventResponseDto, SearchStreamInfoResponseDto, Stream, StreamEventDto, StreamInfoDto,
+        },
         stream_orm::tests::STREAM_ID,
     };
     use crate::users::{
@@ -325,8 +382,8 @@ mod tests {
     }
     #[test]
     async fn test_get_stream_by_id_another_user() {
-        let user1 = UserOrmApp::new_user(2, "Jacob_Moore", "Jacob_Moore@gmail.com", "passwdT1R1");
-        let user2 = UserOrmApp::new_user(1, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdT1R1");
+        let user1 = UserOrmApp::new_user(1, "Jacob_Moore", "Jacob_Moore@gmail.com", "passwdT1R1");
+        let user2 = UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdT1R1");
 
         let user_orm = UserOrmApp::create(&vec![user1, user2]);
         let user1 = user_orm.user_vec.get(0).unwrap().clone();
@@ -353,6 +410,7 @@ mod tests {
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
+
     // ** get_streams **
 
     #[test]
@@ -497,8 +555,8 @@ mod tests {
     }
     #[test]
     async fn test_get_streams_search_by_another_user_id_with_role_user() {
-        let user1 = UserOrmApp::new_user(2, "Jacob_Moore", "Jacob_Moore@gmail.com", "passwdT1R1");
-        let user2 = UserOrmApp::new_user(1, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdT1R1");
+        let user1 = UserOrmApp::new_user(1, "Jacob_Moore", "Jacob_Moore@gmail.com", "passwdT1R1");
+        let user2 = UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdT1R1");
 
         let user_orm = UserOrmApp::create(&vec![user1, user2]);
         let user1 = user_orm.user_vec.get(0).unwrap().clone();
@@ -532,9 +590,9 @@ mod tests {
     }
     #[test]
     async fn test_get_streams_search_by_another_user_id_with_role_admin() {
-        let mut user1 = UserOrmApp::new_user(2, "Jacob_Moore", "Jacob_Moore@gmail.com", "passwdT1R1");
+        let mut user1 = UserOrmApp::new_user(1, "Jacob_Moore", "Jacob_Moore@gmail.com", "passwdT1R1");
         user1.role = UserRole::Admin;
-        let user2 = UserOrmApp::new_user(1, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdT1R1");
+        let user2 = UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdT1R1");
 
         let user_orm = UserOrmApp::create(&vec![user1, user2]);
         let user1 = user_orm.user_vec.get(0).unwrap().clone();
@@ -840,6 +898,299 @@ mod tests {
         assert_eq!(response.list, stream1b_vec_ser);
         assert_eq!(response.limit, limit);
         assert_eq!(response.count, 4);
+        assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
+    }
+
+    // ** get_streams_events **
+
+    fn to_utc(value: DateTime<Local>) -> DateTime<Utc> {
+        DateTime::from(value)
+    }
+    #[test]
+    async fn test_get_streams_events_search_by_user_id() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let dt = Local::now();
+        let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
+        let mut stream_vec: Vec<StreamInfoDto> = Vec::new();
+        let d1 = today - Duration::seconds(1);
+        stream_vec.push(create_stream(0, user1.id, "demo11", "tag11,tag12", to_utc(d1)));
+        let d2 = today;
+        stream_vec.push(create_stream(1, user1.id, "demo12", "tag14,tag15", to_utc(d2)));
+        let d3 = today + Duration::hours(23) + Duration::minutes(59) + Duration::seconds(59);
+        stream_vec.push(create_stream(2, user1.id, "demo21", "tag21,tag22", to_utc(d3)));
+        let d4 = today + Duration::hours(24);
+        stream_vec.push(create_stream(3, user1.id, "demo22", "tag24,tag25", to_utc(d4)));
+
+        let stream_orm = StreamOrmApp::create(&stream_vec);
+        let stream_info1 = stream_orm.stream_info_vec.get(1).unwrap().clone();
+        let stream_info2 = stream_orm.stream_info_vec.get(2).unwrap().clone();
+        let stream1b_vec: Vec<StreamInfoDto> = vec![stream_info1, stream_info2];
+
+        let starttime = to_utc(today).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let limit = 2;
+        let page = 1;
+        #[rustfmt::skip]
+        let uri = format!("/streams_events?userId={}&starttime={}&page={}&limit={}", user1.id, starttime, page, limit);
+
+        // GET api/get_streams_events
+        let request = test::TestRequest::get().uri(&uri.to_string());
+        let vec = (vec![user1], vec![session1], stream_vec);
+        let factory = get_streams_events;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let response: SearchStreamEventResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
+        let stream1b_vec_ser: Vec<StreamEventDto> =
+            serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.list, stream1b_vec_ser);
+        assert_eq!(response.list.len(), limit as usize);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.count, 2);
+        assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
+    }
+    #[test]
+    async fn test_get_streams_events_search_by_without_user_id() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let dt = Local::now();
+        let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
+        let mut stream_vec: Vec<StreamInfoDto> = Vec::new();
+        stream_vec.push(create_stream(0, user1.id, "demo11", "tag11,tag12", to_utc(today)));
+        stream_vec.push(create_stream(1, user1.id, "demo12", "tag14,tag15", to_utc(today)));
+        stream_vec.push(create_stream(2, user1.id + 1, "demo21", "tag21,tag22", to_utc(today)));
+        stream_vec.push(create_stream(3, user1.id + 1, "demo22", "tag24,tag25", to_utc(today)));
+
+        let stream_orm = StreamOrmApp::create(&stream_vec);
+        let stream_info0 = stream_orm.stream_info_vec.get(0).unwrap().clone();
+        let stream_info1 = stream_orm.stream_info_vec.get(1).unwrap().clone();
+        let stream1b_vec: Vec<StreamInfoDto> = vec![stream_info0, stream_info1];
+        let starttime = to_utc(today).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let limit = 2;
+        let page = 1;
+        let uri = format!("/streams_events?starttime={}&page={}&limit={}", starttime, page, limit);
+
+        // GET api/get_streams_events
+        let request = test::TestRequest::get().uri(&uri.to_string());
+        let vec = (vec![user1], vec![session1], stream_vec);
+        let factory = get_streams_events;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let response: SearchStreamEventResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
+        let stream1b_vec_ser: Vec<StreamEventDto> =
+            serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.list, stream1b_vec_ser);
+        assert_eq!(response.list.len(), limit as usize);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.count, 2);
+        assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
+    }
+    #[test]
+    async fn test_get_streams_events_search_by_page2() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let dt = Local::now();
+        let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
+        let mut stream_vec: Vec<StreamInfoDto> = Vec::new();
+        stream_vec.push(create_stream(0, user1.id, "demo11", "tag11,tag12", to_utc(today)));
+        stream_vec.push(create_stream(1, user1.id, "demo12", "tag14,tag15", to_utc(today)));
+        stream_vec.push(create_stream(2, user1.id, "demo21", "tag21,tag22", to_utc(today)));
+        stream_vec.push(create_stream(3, user1.id, "demo22", "tag24,tag25", to_utc(today)));
+
+        let stream_orm = StreamOrmApp::create(&stream_vec);
+        let stream_info2 = stream_orm.stream_info_vec.get(2).unwrap().clone();
+        let stream_info3 = stream_orm.stream_info_vec.get(3).unwrap().clone();
+        let stream1b_vec: Vec<StreamInfoDto> = vec![stream_info2, stream_info3];
+        let starttime = to_utc(today).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let limit = 2;
+        let page = 2;
+        let uri = format!("/streams_events?starttime={}&page={}&limit={}", starttime, page, limit);
+
+        // GET api/get_streams_events
+        let request = test::TestRequest::get().uri(&uri.to_string());
+        let vec = (vec![user1], vec![session1], stream_vec);
+        let factory = get_streams_events;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let response: SearchStreamEventResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
+        let stream1b_vec_ser: Vec<StreamEventDto> =
+            serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.list, stream1b_vec_ser);
+        assert_eq!(response.list.len(), limit as usize);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.count, 4);
+        assert_eq!(response.page, page);
+        assert_eq!(response.pages, 2);
+    }
+    #[test]
+    async fn test_get_streams_events_search_by_bad_starttime() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let dt = Local::now();
+        let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
+        let mut stream_vec: Vec<StreamInfoDto> = Vec::new();
+        stream_vec.push(create_stream(0, user1.id, "demo11", "tag11,tag12", to_utc(today)));
+        stream_vec.push(create_stream(1, user1.id, "demo12", "tag14,tag15", to_utc(today)));
+
+        let starttime = to_utc(today - Duration::days(1)).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let limit = 2;
+        let page = 1;
+        let uri = format!("/streams_events?starttime={}&page={}&limit={}", starttime, page, limit);
+
+        // GET api/get_streams_events
+        let request = test::TestRequest::get().uri(&uri.to_string());
+        let vec = (vec![user1], vec![session1], stream_vec);
+        let factory = get_streams_events;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let response: SearchStreamEventResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.list, vec![]);
+        assert_eq!(response.list.len(), 0);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.count, 0);
+        assert_eq!(response.page, 1);
+        assert_eq!(response.pages, 0);
+    }
+    #[test]
+    async fn test_get_streams_events_search_by_another_user_id_with_role_user() {
+        let user1 = UserOrmApp::new_user(1, "Jacob_Moore", "Jacob_Moore@gmail.com", "passwdT1R1");
+        let user2 = UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdT1R1");
+
+        let user_orm = UserOrmApp::create(&vec![user1, user2]);
+        let user1 = user_orm.user_vec.get(0).unwrap().clone();
+        let user2 = user_orm.user_vec.get(1).unwrap().clone();
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let dt = Local::now();
+        let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
+        let mut stream_vec: Vec<StreamInfoDto> = Vec::new();
+        stream_vec.push(create_stream(0, user2.id, "demo11", "tag11,tag12", to_utc(today)));
+        stream_vec.push(create_stream(1, user2.id, "demo12", "tag14,tag15", to_utc(today)));
+        stream_vec.push(create_stream(2, user1.id, "demo21", "tag21,tag22", to_utc(today)));
+        stream_vec.push(create_stream(3, user1.id, "demo22", "tag24,tag25", to_utc(today)));
+
+        let starttime = to_utc(today).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let limit = 2;
+        let page = 1;
+        #[rustfmt::skip]
+        let uri = format!("/streams_events?userId={}&starttime={}&page={}&limit={}", user2.id, starttime, page, limit);
+
+        // GET api/get_streams_events
+        let request = test::TestRequest::get().uri(&uri.to_string());
+        let vec = (vec![user1], vec![session1], stream_vec);
+        let factory = get_streams_events;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, err::CD_NO_ACCESS_TO_STREAMS);
+        assert_eq!(app_err.message, err::MSG_NO_ACCESS_TO_STREAMS);
+    }
+    #[test]
+    async fn test_get_streams_events_search_by_another_user_id_with_role_admin() {
+        let mut user1 = UserOrmApp::new_user(1, "Jacob_Moore", "Jacob_Moore@gmail.com", "passwdT1R1");
+        user1.role = UserRole::Admin;
+        let user2 = UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdT1R1");
+
+        let user_orm = UserOrmApp::create(&vec![user1, user2]);
+        let user1 = user_orm.user_vec.get(0).unwrap().clone();
+        let user2 = user_orm.user_vec.get(1).unwrap().clone();
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let dt = Local::now();
+        let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
+        let mut stream_vec: Vec<StreamInfoDto> = Vec::new();
+        stream_vec.push(create_stream(0, user2.id, "demo11", "tag11,tag12", to_utc(today)));
+        stream_vec.push(create_stream(1, user2.id, "demo12", "tag14,tag15", to_utc(today)));
+        stream_vec.push(create_stream(2, user1.id, "demo21", "tag21,tag22", to_utc(today)));
+        stream_vec.push(create_stream(3, user1.id, "demo22", "tag24,tag25", to_utc(today)));
+
+        let stream_orm = StreamOrmApp::create(&stream_vec);
+        let stream_info0 = stream_orm.stream_info_vec.get(0).unwrap().clone();
+        let stream_info1 = stream_orm.stream_info_vec.get(1).unwrap().clone();
+        let stream1b_vec: Vec<StreamInfoDto> = vec![stream_info0, stream_info1];
+        let starttime = to_utc(today).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let limit = 2;
+        let page = 1;
+        #[rustfmt::skip]
+        let uri = format!("/streams_events?userId={}&starttime={}&page={}&limit={}", user2.id, starttime, page, limit);
+
+        // GET api/get_streams_events
+        let request = test::TestRequest::get().uri(&uri.to_string());
+        let vec = (vec![user1], vec![session1], stream_vec);
+        let factory = get_streams_events;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let response: SearchStreamEventResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
+        let stream1b_vec_ser: Vec<StreamEventDto> =
+            serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.list, stream1b_vec_ser);
+        assert_eq!(response.list.len(), limit as usize);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.count, 2);
         assert_eq!(response.page, page);
         assert_eq!(response.pages, 1);
     }
