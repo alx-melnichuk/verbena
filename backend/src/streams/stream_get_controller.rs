@@ -1,6 +1,7 @@
 use std::{ops::Deref, time::Instant};
 
 use actix_web::{get, web, HttpResponse};
+use chrono::{DateTime, Duration, Utc};
 
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
@@ -13,13 +14,17 @@ use crate::streams::{config_strm, stream_models, stream_orm::StreamOrm};
 use crate::users::user_models::UserRole;
 use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
 
+pub const PERIOD_MAX_NUMBER_DAYS: u16 = 65;
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     //     GET api/streams/{id}
     cfg.service(get_stream_by_id)
         // GET api/streams
         .service(get_streams)
-        // GET api/stream_events
-        .service(get_streams_events);
+        // GET api/streams_events
+        .service(get_streams_events)
+        // GET api/streams_period
+        .service(get_streams_period);
 }
 
 fn err_parse_int(err: String) -> AppError {
@@ -37,6 +42,15 @@ fn err_blocking(err: String) -> AppError {
 fn err_no_access_to_streams() -> AppError {
     log::error!("{}: {}", err::CD_NO_ACCESS_TO_STREAMS, err::MSG_NO_ACCESS_TO_STREAMS);
     AppError::new(err::CD_NO_ACCESS_TO_STREAMS, err::MSG_NO_ACCESS_TO_STREAMS).set_status(400)
+}
+fn err_finish_less_start() -> AppError {
+    log::error!("{}: {}", err::CD_FINISH_LESS_START, err::MSG_FINISH_LESS_START);
+    AppError::new(err::CD_FINISH_LESS_START, err::MSG_FINISH_LESS_START).set_status(400)
+}
+fn err_bad_finish_period(max_days_period: u16) -> AppError {
+    let msg = format!("{} ({}).", err::MSG_FINISH_GREATER_MAX, max_days_period);
+    log::error!("{}: {}", err::CD_FINISH_GREATER_MAX, msg);
+    AppError::new(err::CD_FINISH_GREATER_MAX, &msg).set_status(400)
 }
 
 // GET api/streams/{id}
@@ -157,7 +171,7 @@ pub async fn get_streams(
 }
 
 // 'starttime' only format Utc ("%Y-%m-%dT%H:%M:%S.%3fZ").
-// GET api/stream_events
+// GET api/streams_events
 #[rustfmt::skip]
 #[get("/streams_events", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_streams_events(
@@ -203,6 +217,54 @@ pub async fn get_streams_events(
         log::info!("get_streams_events() lead time: {:.2?}", now.elapsed());
     }
     Ok(HttpResponse::Ok().json(result)) // 200
+}
+
+// GET api/streams_period
+#[rustfmt::skip]
+#[get("/streams_period", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn get_streams_period(
+    authenticated: Authenticated,
+    config_strm: web::Data<config_strm::ConfigStrm>,
+    stream_orm: web::Data<StreamOrmApp>,
+    query_params: web::Query<stream_models::SearchStreamPeriodDto>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
+    // Get current user details.
+    let curr_user = authenticated.deref();
+    let curr_user_id = curr_user.id;
+
+    // Get search parameters.
+    let search_stream_period_dto: stream_models::SearchStreamPeriodDto = query_params.into_inner();
+
+    let search_stream_period = stream_models::SearchStreamPeriod::convert(search_stream_period_dto, curr_user_id);
+        
+    if search_stream_period.user_id != curr_user_id && curr_user.role != UserRole::Admin {
+        return Err(err_no_access_to_streams());
+    }
+    if search_stream_period.finish < search_stream_period.start {
+        return Err(err_finish_less_start());
+    }
+    let finish = search_stream_period.start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
+    if finish <= search_stream_period.finish {
+        return Err(err_bad_finish_period(PERIOD_MAX_NUMBER_DAYS));
+    }
+
+    let res_data = web::block(move || {
+        // Find for an entity (stream period) by SearchStreamEvent.
+        let res_data =
+            stream_orm.find_streams_period(search_stream_period).map_err(|e| err_database(e.to_string()));
+        res_data
+        })
+        .await
+        .map_err(|e| err_blocking(e.to_string()))?;
+
+    let list: Vec<DateTime<Utc>> = match res_data { Ok(v) => v, Err(e) => return Err(e) };
+
+    if config_strm.strm_show_lead_time {
+        log::info!("get_streams_period() lead time: {:.2?}", now.elapsed());
+    }
+    Ok(HttpResponse::Ok().json(list)) // 200
+
 }
 
 #[cfg(all(test, feature = "mockdata"))]
@@ -934,7 +996,7 @@ mod tests {
         #[rustfmt::skip]
         let uri = format!("/streams_events?userId={}&starttime={}&page={}&limit={}", user1.id, starttime, page, limit);
 
-        // GET api/get_streams_events
+        // GET api/streams_events
         let request = test::TestRequest::get().uri(&uri.to_string());
         let vec = (vec![user1], vec![session1], stream_vec);
         let factory = get_streams_events;
@@ -982,7 +1044,7 @@ mod tests {
         let page = 1;
         let uri = format!("/streams_events?starttime={}&page={}&limit={}", starttime, page, limit);
 
-        // GET api/get_streams_events
+        // GET api/streams_events
         let request = test::TestRequest::get().uri(&uri.to_string());
         let vec = (vec![user1], vec![session1], stream_vec);
         let factory = get_streams_events;
@@ -1030,7 +1092,7 @@ mod tests {
         let page = 2;
         let uri = format!("/streams_events?starttime={}&page={}&limit={}", starttime, page, limit);
 
-        // GET api/get_streams_events
+        // GET api/streams_events
         let request = test::TestRequest::get().uri(&uri.to_string());
         let vec = (vec![user1], vec![session1], stream_vec);
         let factory = get_streams_events;
@@ -1072,7 +1134,7 @@ mod tests {
         let page = 1;
         let uri = format!("/streams_events?starttime={}&page={}&limit={}", starttime, page, limit);
 
-        // GET api/get_streams_events
+        // GET api/streams_events
         let request = test::TestRequest::get().uri(&uri.to_string());
         let vec = (vec![user1], vec![session1], stream_vec);
         let factory = get_streams_events;
@@ -1119,7 +1181,7 @@ mod tests {
         #[rustfmt::skip]
         let uri = format!("/streams_events?userId={}&starttime={}&page={}&limit={}", user2.id, starttime, page, limit);
 
-        // GET api/get_streams_events
+        // GET api/streams_events
         let request = test::TestRequest::get().uri(&uri.to_string());
         let vec = (vec![user1], vec![session1], stream_vec);
         let factory = get_streams_events;
@@ -1167,7 +1229,7 @@ mod tests {
         #[rustfmt::skip]
         let uri = format!("/streams_events?userId={}&starttime={}&page={}&limit={}", user2.id, starttime, page, limit);
 
-        // GET api/get_streams_events
+        // GET api/streams_events
         let request = test::TestRequest::get().uri(&uri.to_string());
         let vec = (vec![user1], vec![session1], stream_vec);
         let factory = get_streams_events;
@@ -1187,5 +1249,222 @@ mod tests {
         assert_eq!(response.count, 2);
         assert_eq!(response.page, page);
         assert_eq!(response.pages, 1);
+    }
+
+    // ** get_streams_period **
+
+    #[test]
+    async fn test_get_streams_period_by_finish_less_start() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let dt = Local::now();
+        let start = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
+        let finish = start - Duration::seconds(1);
+        let start2 = to_utc(start).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let finish2 = to_utc(finish).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        #[rustfmt::skip]
+        let uri = format!("/streams_period?userId={}&start={}&finish={}", user1.id, start2, finish2);
+
+        // GET api/streams_period
+        let request = test::TestRequest::get().uri(&uri.to_string());
+        let vec = (vec![user1], vec![session1], vec![]);
+        let factory = get_streams_period;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, err::CD_FINISH_LESS_START);
+        assert_eq!(app_err.message, err::MSG_FINISH_LESS_START);
+    }
+    #[test]
+    async fn test_get_streams_period_by_finish_more_on_2_month() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let dt = Local::now();
+        let start = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
+        let finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
+        let start2 = to_utc(start).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let finish2 = to_utc(finish).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        #[rustfmt::skip]
+        let uri = format!("/streams_period?userId={}&start={}&finish={}", user1.id, start2, finish2);
+
+        // GET api/streams_period
+        let request = test::TestRequest::get().uri(&uri.to_string());
+        let vec = (vec![user1], vec![session1], vec![]);
+        let factory = get_streams_period;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, err::CD_FINISH_GREATER_MAX);
+        let msg = format!("{} ({}).", err::MSG_FINISH_GREATER_MAX, PERIOD_MAX_NUMBER_DAYS);
+        assert_eq!(app_err.message, msg);
+    }
+
+    fn get_streams2(user_id: i32) -> (Vec<StreamInfoDto>, String, String, Vec<DateTime<Utc>>) {
+        let dt = Local::now();
+        let month1 = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
+        let month2 = Local.with_ymd_and_hms(dt.year(), dt.month() + 1, 1, 0, 0, 0).unwrap();
+        let mut stream_vec: Vec<StreamInfoDto> = Vec::new();
+        let d1 = month1 - Duration::seconds(1);
+        stream_vec.push(create_stream(0, user_id, "demo11", "tag11,tag12", to_utc(d1)));
+        let d2 = month1;
+        stream_vec.push(create_stream(1, user_id, "demo12", "tag12,tag13", to_utc(d2)));
+        let d3 = month2 - Duration::seconds(1);
+        stream_vec.push(create_stream(2, user_id, "demo13", "tag13,tag14", to_utc(d3)));
+        let d4 = month2;
+        stream_vec.push(create_stream(3, user_id, "demo14", "tag14,tag15", to_utc(d4)));
+
+        let stream_orm = StreamOrmApp::create(&stream_vec);
+        let stream_info1 = stream_orm.stream_info_vec.get(1).unwrap().clone();
+        let stream_info2 = stream_orm.stream_info_vec.get(2).unwrap().clone();
+        let result_vec: Vec<DateTime<Utc>> = vec![stream_info1.starttime, stream_info2.starttime];
+        let start = to_utc(d2).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let finish = to_utc(d3).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+
+        (stream_vec, start, finish, result_vec)
+    }
+    #[test]
+    async fn test_get_streams_period_by_user_id() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let (stream_vec, start, finish, res_vec) = get_streams2(user1.id);
+        #[rustfmt::skip]
+        let uri = format!("/streams_period?userId={}&start={}&finish={}", user1.id, start, finish);
+
+        // GET api/streams_period
+        let request = test::TestRequest::get().uri(&uri.to_string());
+        let vec = (vec![user1], vec![session1], stream_vec);
+        let factory = get_streams_period;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+        let body = test::read_body(resp).await;
+
+        let response: Vec<DateTime<Utc>> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json_res_vec = serde_json::json!(res_vec).to_string();
+        let res_vec_ser: Vec<DateTime<Utc>> = serde_json::from_slice(json_res_vec.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.len(), res_vec_ser.len());
+        assert_eq!(response, res_vec_ser);
+    }
+    #[test]
+    async fn test_get_streams_period_by_without_user_id() {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let (stream_vec, start, finish, res_vec) = get_streams2(user1.id);
+        #[rustfmt::skip]
+        let uri = format!("/streams_period?start={}&finish={}", start, finish);
+
+        // GET api/streams_period
+        let request = test::TestRequest::get().uri(&uri.to_string());
+        let vec = (vec![user1], vec![session1], stream_vec);
+        let factory = get_streams_period;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+        let body = test::read_body(resp).await;
+
+        let response: Vec<DateTime<Utc>> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json_res_vec = serde_json::json!(res_vec).to_string();
+        let res_vec_ser: Vec<DateTime<Utc>> = serde_json::from_slice(json_res_vec.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.len(), res_vec_ser.len());
+        assert_eq!(response, res_vec_ser);
+    }
+    #[test]
+    async fn test_get_streams_period_by_another_user_id_with_role_user() {
+        let user1 = UserOrmApp::new_user(1, "Jacob_Moore", "Jacob_Moore@gmail.com", "passwdT1R1");
+        let user2 = UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdT1R1");
+
+        let user_orm = UserOrmApp::create(&vec![user1, user2]);
+        let user1 = user_orm.user_vec.get(0).unwrap().clone();
+        let user2 = user_orm.user_vec.get(1).unwrap().clone();
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let dt = Local::now();
+        let start = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
+        let finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
+        let start2 = to_utc(start).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let finish2 = to_utc(finish).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        #[rustfmt::skip]
+        let uri = format!("/streams_period?userId={}&start={}&finish={}", user2.id, start2, finish2);
+
+        // GET api/streams_period
+        let request = test::TestRequest::get().uri(&uri.to_string());
+        let vec = (vec![user1], vec![session1], vec![]);
+        let factory = get_streams_period;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        let body = test::read_body(resp).await;
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(app_err.code, err::CD_NO_ACCESS_TO_STREAMS);
+        assert_eq!(app_err.message, err::MSG_NO_ACCESS_TO_STREAMS);
+    }
+    #[test]
+    async fn test_get_streams_period_by_another_user_id_with_role_admin() {
+        let mut user1 = UserOrmApp::new_user(1, "Jacob_Moore", "Jacob_Moore@gmail.com", "passwdT1R1");
+        user1.role = UserRole::Admin;
+        let user2 = UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdT1R1");
+
+        let user_orm = UserOrmApp::create(&vec![user1, user2]);
+        let user1 = user_orm.user_vec.get(0).unwrap().clone();
+        let user2 = user_orm.user_vec.get(1).unwrap().clone();
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let (stream_vec, start, finish, res_vec) = get_streams2(user2.id);
+        #[rustfmt::skip]
+        let uri = format!("/streams_period?userId={}&start={}&finish={}", user2.id, start, finish);
+
+        // GET api/streams_period
+        let request = test::TestRequest::get().uri(&uri.to_string());
+        let vec = (vec![user1], vec![session1], stream_vec);
+        let factory = get_streams_period;
+        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let response: Vec<DateTime<Utc>> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json_res_vec = serde_json::json!(res_vec).to_string();
+        let res_vec_ser: Vec<DateTime<Utc>> = serde_json::from_slice(json_res_vec.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(response.len(), res_vec_ser.len());
+        assert_eq!(response, res_vec_ser);
     }
 }

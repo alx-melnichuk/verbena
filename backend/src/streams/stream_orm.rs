@@ -1,4 +1,8 @@
-use super::stream_models::{CreateStream, ModifyStream, SearchStream, SearchStreamEvent, Stream, StreamTagStreamId};
+use chrono::{DateTime, Utc};
+
+use super::stream_models::{
+    CreateStream, ModifyStream, SearchStream, SearchStreamEvent, SearchStreamPeriod, Stream, StreamTagStreamId,
+};
 
 pub trait StreamOrm {
     /// Find for an entity (stream) by id.
@@ -7,6 +11,8 @@ pub trait StreamOrm {
     fn find_streams(&self, search_stream: SearchStream) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String>;
     /// Find for an entity (stream event) by SearchStreamEvent.
     fn find_stream_events(&self, search_stream_event: SearchStreamEvent) -> Result<(u32, Vec<Stream>), String>;
+    /// Find for an entity (stream period) by SearchStreamPeriod.
+    fn find_streams_period(&self, search_stream_period: SearchStreamPeriod) -> Result<Vec<DateTime<Utc>>, String>;
     /// Add a new entity (stream).
     fn create_stream(
         &self,
@@ -47,13 +53,13 @@ pub mod cfg {
 
 #[cfg(not(feature = "mockdata"))]
 pub mod inst {
-    use chrono::{Duration, Utc};
+    use chrono::Duration;
     use diesel::{self, prelude::*, sql_types};
     use schema::streams::dsl as streams_dsl;
 
     use crate::dbase;
     use crate::schema;
-    use crate::streams::stream_models::{self, CreateStream};
+    use crate::streams::stream_models::{self, CreateStream, SearchStreamPeriod};
 
     use super::*;
 
@@ -274,6 +280,33 @@ pub mod inst {
             Ok((count, streams))
         }
 
+        /// Find for an entity (stream period) by SearchStreamPeriod.
+        fn find_streams_period(&self, search_stream_period: SearchStreamPeriod) -> Result<Vec<DateTime<Utc>>, String> {
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let start = search_stream_period.start;
+            let finish = search_stream_period.finish;
+            // Build a query to find a list of "streams"
+            let query_list = schema::streams::table
+                .select(schema::streams::columns::starttime)
+                // starttime >= start
+                .filter(streams_dsl::starttime.ge(start))
+                // starttime <= finish
+                .filter(streams_dsl::starttime.le(finish))
+                .filter(streams_dsl::user_id.eq(search_stream_period.user_id))
+                .order_by(streams_dsl::starttime.asc())
+                .then_order_by(streams_dsl::id.asc());
+
+            let list: Vec<DateTime<Utc>> = query_list
+                .load(&mut conn)
+                .map_err(|e| format!("find_streams_period: {}", e.to_string()))?;
+            // lead time: 704.62µs
+
+            // lead time: 908.45µs
+            Ok(list)
+        }
+
         /// Add a new entity (stream).
         fn create_stream(
             &self,
@@ -431,7 +464,7 @@ pub mod inst {
 pub mod tests {
     use std::cmp::Ordering;
 
-    use chrono::{Duration, Utc};
+    use chrono::Duration;
 
     use crate::streams::stream_models::{self, StreamInfoDto};
 
@@ -668,6 +701,28 @@ pub mod tests {
             }
 
             Ok((count, streams))
+        }
+        /// Find for an entity (stream period) by SearchStreamPeriod.
+        fn find_streams_period(&self, search_stream_period: SearchStreamPeriod) -> Result<Vec<DateTime<Utc>>, String> {
+            let mut streams_info: Vec<StreamInfoDto> = vec![];
+
+            let start = search_stream_period.start;
+            let finish = search_stream_period.finish;
+
+            for stream in self.stream_info_vec.iter() {
+                if stream.user_id == search_stream_period.user_id
+                    && start <= stream.starttime
+                    && stream.starttime <= finish
+                {
+                    streams_info.push(stream.clone());
+                }
+            }
+
+            streams_info.sort_by(|a, b| a.starttime.partial_cmp(&b.starttime).unwrap_or(Ordering::Equal));
+
+            let list: Vec<DateTime<Utc>> = streams_info.into_iter().map(|v| v.starttime).collect();
+
+            Ok(list)
         }
         /// Add a new entity (stream).
         fn create_stream(

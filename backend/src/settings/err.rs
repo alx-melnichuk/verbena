@@ -16,6 +16,12 @@ pub const MSG_INVALID_FILE_UPLOAD: &str = "Error uploading file:";
 // Error when receiving another user's streams.
 pub const CD_NO_ACCESS_TO_STREAMS: &str = "NoAccessToStreams";
 pub const MSG_NO_ACCESS_TO_STREAMS: &str = "No access to other user's streams.";
+// Error when end date is less than start date
+pub const CD_FINISH_LESS_START: &str = "FinishLessStart";
+pub const MSG_FINISH_LESS_START: &str = "The finish date is less than start date.";
+// Error when the finish period is greater than the maximum.
+pub const CD_FINISH_GREATER_MAX: &str = "FinishGreaterMax";
+pub const MSG_FINISH_GREATER_MAX: &str = "The finish date of the search period exceeds the limit";
 
 // 401 Unauthorized
 pub const CD_UNAUTHORIZED: &str = "Unauthorized";

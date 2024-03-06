@@ -623,6 +623,36 @@ pub struct StreamEventPageDto {
     pub pages: u32,
 }
 
+// **  Section: Search for data "StreamPeriodDto" of the "streams" table. **
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SearchStreamPeriod {
+    pub user_id: i32,
+    pub start: DateTime<Utc>,
+    pub finish: DateTime<Utc>,
+}
+
+impl SearchStreamPeriod {
+    pub fn convert(search_stream_period: SearchStreamPeriodDto, user_id: i32) -> Self {
+        SearchStreamPeriod {
+            user_id: search_stream_period.user_id.unwrap_or(user_id),
+            start: search_stream_period.start.clone(),
+            finish: search_stream_period.finish.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchStreamPeriodDto {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<i32>,
+    #[serde(with = "serial_datetime")]
+    pub start: DateTime<Utc>,
+    #[serde(with = "serial_datetime")]
+    pub finish: DateTime<Utc>,
+}
+
 // ** **
 
 #[cfg(test)]
