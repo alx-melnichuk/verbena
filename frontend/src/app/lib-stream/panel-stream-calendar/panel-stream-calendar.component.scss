@@ -17,7 +17,7 @@ app-panel-stream-calendar {
   }
 
   .mat-calendar-body-label {
-    display: none !important;
+    visibility: hidden;
   }
 }
 
