@@ -180,15 +180,15 @@ export interface SearchStreamEventDto {
   limit?: number; // default 10; Min(1) Max(100)
 }
 
-// ** getStreamsCalendar()  **
+// ** getStreamsPeriod()  **
 
-export interface SearchStreamsCalendarDto {
+export interface SearchStreamsPeriodDto {
   userId?: number;
-  startDate: StringDateTime;
-  finalDate: StringDateTime;
+  startPeriod: StringDateTime;
+  finalPeriod: StringDateTime;
 }
 
-export interface StreamsCalendarDto {
+export interface StreamsPeriodDto {
   date: StringDateTime;
   day: number;
   count: number;

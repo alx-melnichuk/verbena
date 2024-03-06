@@ -5,7 +5,7 @@ import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
 import {
   CreateStreamDto, SearchStreamDto, ModifyStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto,
-  StreamEventDto, StreamsCalendarDto, SearchStreamsCalendarDto
+  StreamEventDto, StreamsPeriodDto, SearchStreamsPeriodDto
 } from './stream-api.interface';
 import { StringDateTime } from '../common/string-date-time';
 
@@ -38,15 +38,15 @@ constructor(private http: HttpClient) {
     const url = Uri.appUri(`appApi://streams/calendar/${userId}/${month}/${year}`);
     return this.http.get<StreamsCalendarDTO[] | HttpErrorResponse>(url).toPromise();
   }*/
-  public getStreamsCalendar(search: SearchStreamsCalendarDto): Promise<StreamsCalendarDto[] | HttpErrorResponse | undefined> {
+  public getStreamsPeriod(search: SearchStreamsPeriodDto): Promise<StreamsPeriodDto[] | HttpErrorResponse | undefined> {
     const params: HttpParams = HttpParamsUtil.create(search);
     // const url = Uri.appUri(`appApi://streams/calendar/${month}/${year}`);
     // return this.http.get<StreamsCalendarDto[] | HttpErrorResponse>(url, { params }).toPromise();
-    return new Promise<StreamsCalendarDto[]>(
-        (resolve: (value: StreamsCalendarDto[] | PromiseLike<StreamsCalendarDto[]>) => void, reject: (reason?: any) => void) => {
+    return new Promise<StreamsPeriodDto[]>(
+        (resolve: (value: StreamsPeriodDto[] | PromiseLike<StreamsPeriodDto[]>) => void, reject: (reason?: any) => void) => {
           setTimeout(() => {
             if (!!search) {
-              resolve(this.streamsCalendarDto(search.startDate));
+              resolve(this.streamsPeriodDto(search.startPeriod));
             } else {
               reject('err');
             }
@@ -187,7 +187,7 @@ constructor(private http: HttpClient) {
     return this.http.delete<void | HttpErrorResponse>(url).toPromise();
   }
 
-  private streamsCalendarDto(startDate: StringDateTime): StreamsCalendarDto[] {
+  private streamsPeriodDto(startDate: StringDateTime): StreamsPeriodDto[] {
     const date = new Date(startDate);
     // console.log(`@startDate:`, startDate); // #
     const i = date.getMonth() % 2 !== 0 ? 0 : 2;
@@ -195,7 +195,7 @@ constructor(private http: HttpClient) {
     const date2 = new Date(date.getFullYear(), date.getMonth(), 15 + i, date.getHours(), date.getMinutes(), date.getSeconds());
     const date3 = new Date(date.getFullYear(), date.getMonth(), 20 + i, date.getHours(), date.getMinutes(), date.getSeconds());
     const date4 = new Date(date.getFullYear(), date.getMonth(), 25 + i, date.getHours(), date.getMinutes(), date.getSeconds());
-    const list: StreamsCalendarDto[] = [
+    const list: StreamsPeriodDto[] = [
       { "date": date1.toISOString(), "day": 10, "count": 1 }, // '2024-02-10T11:08:05.553Z+0200'
       { "date": date2.toISOString(), "day": 15, "count": 1 }, // '2024-02-15T11:08:05.553Z+0200'
       { "date": date3.toISOString(), "day": 20, "count": 1 }, // '2024-02-20T11:08:05.553Z+0200'
