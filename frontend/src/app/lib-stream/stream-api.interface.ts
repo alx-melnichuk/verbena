@@ -184,12 +184,13 @@ export interface SearchStreamEventDto {
 
 export interface SearchStreamsPeriodDto {
   userId?: number;
-  startPeriod: StringDateTime;
-  finalPeriod: StringDateTime;
+  start: StringDateTime;
+  finish: StringDateTime;
 }
 
 export interface StreamsPeriodDto {
-  date: StringDateTime;
-  day: number;
+  date: StringDate;
   count: number;
 }
+
+// ** **

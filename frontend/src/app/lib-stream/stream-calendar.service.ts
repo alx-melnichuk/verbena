@@ -8,7 +8,7 @@ import { DateUtil } from '../utils/date.utils';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
 import { StreamService } from './stream.service';
-import { SearchStreamEventDto, StreamEventDto, StreamEventPageDto, StreamsCalendarDto } from './stream-api.interface';
+import { SearchStreamEventDto, StreamEventDto, StreamEventPageDto, StreamsPeriodDto } from './stream-api.interface';
 
 
 export const SC_DEFAULT_LIMIT = 20;
@@ -43,7 +43,7 @@ export class StreamCalendarService {
   // ** "Streams Calendar" **
 
   /** Get calendar information for a period. */
-  public getCalendarInfoForPeriod(start: Date, userId?: number): Promise<StreamsCalendarDto[] | HttpErrorResponse | undefined> {
+  public getCalendarInfoForPeriod(start: Date, userId?: number): Promise<StreamsPeriodDto[] | HttpErrorResponse | undefined> {
     this.alertService.hide();
     // console.log(`\n!!getStreamsCalendarForDate()`); // #
     // console.log(`!!start     :`, start); // #
@@ -57,12 +57,12 @@ export class StreamCalendarService {
     const endMonth: Date = DateUtil.dateLastDayOfMonth(startMonth);
     this.calendarLoading = true;
     return this.streamService.getStreamsCalendar({
-      startDate: StringDateTimeUtil.toISO(startMonth),
-      finalDate: StringDateTimeUtil.toISO(endMonth),
+      start: StringDateTimeUtil.toISO(startMonth),
+      finish: StringDateTimeUtil.toISO(endMonth),
       userId
     })
-    .then((response: StreamsCalendarDto[] | HttpErrorResponse | undefined) => {
-        this.calendarMarkedDates = (response as StreamsCalendarDto[]).map((val) => val.date);
+    .then((response: StreamsPeriodDto[] | HttpErrorResponse | undefined) => {
+        this.calendarMarkedDates = (response as StreamsPeriodDto[]).map((val) => val.date);
         return response;
     })
     .catch((error: HttpErrorResponse) => {

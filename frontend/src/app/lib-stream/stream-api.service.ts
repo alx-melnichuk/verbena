@@ -5,9 +5,11 @@ import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
 import {
   CreateStreamDto, SearchStreamDto, ModifyStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto,
-  StreamEventDto, StreamsPeriodDto, SearchStreamsPeriodDto
+  SearchStreamsPeriodDto,
+  StreamsPeriodDto
 } from './stream-api.interface';
-import { StringDateTime } from '../common/string-date-time';
+import { StringDate, StringDateTime, StringDateTimeUtil } from '../common/string-date-time';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -40,18 +42,36 @@ constructor(private http: HttpClient) {
   }*/
   public getStreamsPeriod(search: SearchStreamsPeriodDto): Promise<StreamsPeriodDto[] | HttpErrorResponse | undefined> {
     const params: HttpParams = HttpParamsUtil.create(search);
-    // const url = Uri.appUri(`appApi://streams/calendar/${month}/${year}`);
-    // return this.http.get<StreamsCalendarDto[] | HttpErrorResponse>(url, { params }).toPromise();
-    return new Promise<StreamsPeriodDto[]>(
+    const url = Uri.appUri(`appApi://streams_period`);
+    return this.http.get<StringDateTime[] | HttpErrorResponse>(url, { params })
+      .pipe(map((response) => {
+        const result: StreamsPeriodDto[] = [];
+        if (Array.isArray(response)) {
+          const obj: {[key: string]: number} = {};
+          for (let idx = 0; idx < response.length; idx++) {
+            const itemDate = StringDateTimeUtil.to_date(response[idx]);
+            if (!itemDate) continue;
+            const item: StringDate = StringDateTimeUtil.toISODate(itemDate);
+            obj[item] = (obj[item] || 0) + 1;
+          }
+          const keys = Object.keys(obj);
+          for (let i = 0; i < keys.length; i++) {
+            result.push({ date: keys[i], count: obj[keys[i]] });
+          }
+        }
+        return result;
+      }))
+      .toPromise();
+    /*return new Promise<StreamsPeriodDto[]>(
         (resolve: (value: StreamsPeriodDto[] | PromiseLike<StreamsPeriodDto[]>) => void, reject: (reason?: any) => void) => {
           setTimeout(() => {
             if (!!search) {
-              resolve(this.streamsPeriodDto(search.startPeriod));
+              resolve(this.streamsPeriodDto(search.start));
             } else {
               reject('err');
             }
           }, 500);
-        });
+        });*/
   }
   /** Get streams
    * @ route streams
@@ -187,7 +207,7 @@ constructor(private http: HttpClient) {
     return this.http.delete<void | HttpErrorResponse>(url).toPromise();
   }
 
-  private streamsPeriodDto(startDate: StringDateTime): StreamsPeriodDto[] {
+  /*private streamsPeriodDto(startDate: StringDateTime): StreamsPeriodDto[] {
     const date = new Date(startDate);
     // console.log(`@startDate:`, startDate); // #
     const i = date.getMonth() % 2 !== 0 ? 0 : 2;
@@ -202,5 +222,5 @@ constructor(private http: HttpClient) {
       { "date": date4.toISOString(), "day": 25, "count": 1 }, // '2024-02-25T11:08:05.553Z+0200'
     ];
     return list;
-  }
+  }*/
 }
