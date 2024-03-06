@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { LogotypeComponent } from 'src/app/components/logotype/logotype.component';
-import { PIPE_DATE, PIPE_DATE_TIME } from 'src/app/common/constants';
+import { PIPE_DATE_TIME } from 'src/app/common/constants';
 import { ScrollHasMaxUtil } from 'src/app/utils/scroll-has-max.util';
 
 import { StreamDtoUtil, StreamEventDto } from '../stream-api.interface';
@@ -32,7 +32,6 @@ export class PanelStreamEventComponent {
   @Output()
   readonly editStream: EventEmitter<number> = new EventEmitter();
 
-  readonly formatDate = PIPE_DATE;
   readonly formatDateTime = PIPE_DATE_TIME;
 
   @HostBinding('class.global-scroll')

@@ -12,7 +12,7 @@
   <div class="pse-details-wrap">
     <div class="pse-details">
       <div class="pse-starttime pse-ellipsis">
-        {{ streamShort.starttime | date: (!isFuture(streamShort.starttime) ? formatDate : formatDateTime) }}
+        {{ streamShort.starttime | date: formatDateTime }}
       </div>
     
       <button class="pse-edit-btn" *ngIf="canEdit && isFuture(streamShort.starttime)"
