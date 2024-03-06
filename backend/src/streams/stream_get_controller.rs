@@ -176,14 +176,10 @@ pub async fn get_streams_events(
 
     let page: u32 = search_stream_event_dto.page.unwrap_or(stream_models::SEARCH_STREAM_EVENT_PAGE);
     let limit: u32 = search_stream_event_dto.limit.unwrap_or(stream_models::SEARCH_STREAM_EVENT_LIMIT);
-    let mut search_stream_event = stream_models::SearchStreamEvent::convert(search_stream_event_dto);
-
-    if search_stream_event.user_id.is_none() {
-        search_stream_event.user_id = Some(curr_user_id);
-    } else if let Some(user_id) = search_stream_event.user_id {
-        if user_id != curr_user_id && curr_user.role != UserRole::Admin {
-            return Err(err_no_access_to_streams());
-        }
+    let search_stream_event = stream_models::SearchStreamEvent::convert(search_stream_event_dto, curr_user_id);
+        
+    if search_stream_event.user_id != curr_user_id && curr_user.role != UserRole::Admin {
+        return Err(err_no_access_to_streams());
     }
 
     let res_data = web::block(move || {
@@ -444,7 +440,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamInfoDto> =
@@ -490,7 +486,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamInfoDto> =
@@ -538,7 +534,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamInfoDto> =
@@ -626,7 +622,7 @@ mod tests {
         let resp = call_service1(config_jwt, vec, &token, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
         let body = test::read_body(resp).await;
-        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamInfoDto> =
@@ -678,7 +674,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamInfoDto> =
@@ -726,7 +722,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamInfoDto> =
@@ -773,7 +769,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamInfoDto> =
@@ -830,7 +826,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamInfoDto> =
@@ -887,7 +883,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let response: SearchStreamInfoResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamInfoDto> =
@@ -946,7 +942,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let response: SearchStreamEventResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: StreamEventPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamEventDto> =
@@ -994,7 +990,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let response: SearchStreamEventResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: StreamEventPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamEventDto> =
@@ -1042,7 +1038,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let response: SearchStreamEventResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: StreamEventPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamEventDto> =
@@ -1084,7 +1080,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let response: SearchStreamEventResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: StreamEventPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(response.list, vec![]);
         assert_eq!(response.list.len(), 0);
@@ -1179,7 +1175,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let response: SearchStreamEventResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let response: StreamEventPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamEventDto> =

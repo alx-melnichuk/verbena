@@ -240,6 +240,7 @@ pub mod inst {
                 .filter(streams_dsl::starttime.ge(start))
                 // starttime < finish
                 .filter(streams_dsl::starttime.lt(finish))
+                .filter(streams_dsl::user_id.eq(search_stream_event.user_id))
                 .offset(offset.into())
                 .limit(limit.into());
 
@@ -249,12 +250,8 @@ pub mod inst {
                 // starttime >= start
                 .filter(streams_dsl::starttime.ge(start))
                 // starttime < finish
-                .filter(streams_dsl::starttime.lt(finish));
-
-            if let Some(user_id) = search_stream_event.user_id {
-                query_list = query_list.filter(streams_dsl::user_id.eq(user_id));
-                query_count = query_count.filter(streams_dsl::user_id.eq(user_id));
-            }
+                .filter(streams_dsl::starttime.lt(finish))
+                .filter(streams_dsl::user_id.eq(search_stream_event.user_id));
 
             query_list = query_list
                 .order_by(streams_dsl::starttime.asc())
@@ -358,7 +355,7 @@ pub mod inst {
         ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            // let is_delete_logo = true;
+
             let mut err_table = "modify_stream";
             let res_data = conn.transaction::<_, diesel::result::Error, _>(|conn| {
                 // Run query using Diesel to modify the entry (stream). schema::streams::dsl
@@ -632,16 +629,10 @@ pub mod tests {
             let finish = start + Duration::hours(24);
 
             for stream in self.stream_info_vec.iter() {
-                let mut is_add_value = true;
-
-                if stream.user_id != search_stream_event.user_id.unwrap_or(stream.user_id) {
-                    is_add_value = false;
-                }
-                if !(start <= stream.starttime && stream.starttime < finish) {
-                    is_add_value = false;
-                }
-
-                if is_add_value {
+                if stream.user_id == search_stream_event.user_id
+                    && start <= stream.starttime
+                    && stream.starttime < finish
+                {
                     streams_info.push(stream.clone());
                 }
             }

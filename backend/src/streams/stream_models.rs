@@ -550,23 +550,23 @@ pub struct StreamInfoPageDto {
     pub pages: u32,
 }
 
-// **  Section: Search for data "StreamInfoDto?" of the "streams" table. **
+// **  Section: Search for data "StreamEventDto" of the "streams" table. **
 
 pub const SEARCH_STREAM_EVENT_PAGE: u32 = 1;
 pub const SEARCH_STREAM_EVENT_LIMIT: u32 = 10;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SearchStreamEvent {
-    pub user_id: Option<i32>,
+    pub user_id: i32,
     pub starttime: DateTime<Utc>,
     pub page: Option<u32>,
     pub limit: Option<u32>,
 }
 
 impl SearchStreamEvent {
-    pub fn convert(search_stream_event: SearchStreamEventDto) -> Self {
+    pub fn convert(search_stream_event: SearchStreamEventDto, user_id: i32) -> Self {
         SearchStreamEvent {
-            user_id: search_stream_event.user_id.clone(),
+            user_id: search_stream_event.user_id.unwrap_or(user_id),
             starttime: search_stream_event.starttime.clone(),
             page: search_stream_event.page.clone(),
             limit: search_stream_event.limit.clone(),
