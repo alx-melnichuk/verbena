@@ -587,7 +587,7 @@ pub struct SearchStreamEventDto {
     pub limit: Option<u32>,
 }
 
-// * SearchStreamEventResponseDto *
+// * StreamEventPageDto *
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -614,9 +614,8 @@ impl StreamEventDto {
     }
 }
 
-// * SearchStreamEventResponseDto<T> * /* interface StreamEventListDto */
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SearchStreamEventResponseDto {
+pub struct StreamEventPageDto {
     pub list: Vec<StreamEventDto>,
     pub limit: u32,
     pub count: u32,
