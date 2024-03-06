@@ -128,7 +128,7 @@ export interface StreamEventDto {
   starttime: StringDateTime | null;
 }
 
-export interface StreamEventListDto {
+export interface StreamEventPageDto {
   list: StreamEventDto[];
   limit: number;
   count: number;
@@ -171,22 +171,11 @@ export interface SearchStreamDto {
   limit?: number; // default 10; Min(1) Max(100)
 }
 
-/*pub struct SearchStreamInfoDto {
-    pub user_id: Option<i32>,
-    pub live: Option<bool>,
-    pub is_future: Option<bool>,
-    pub order_column: Option<OrderColumn>,
-    pub order_direction: Option<OrderDirection>,
-    pub page: Option<u32>,
-    pub limit: Option<u32>,
-}*/
-
 // ** getStreamsEvent()  **
 
 export interface SearchStreamEventDto {
   userId?: number;
-  startDate: StringDate;
-  orderDirection?: 'asc' | 'desc'; // default 'asc';
+  starttime: StringDate;
   page?: number; // default 1;
   limit?: number; // default 10; Min(1) Max(100)
 }

@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 
 import { StreamApiService } from './stream-api.service';
 import {
-  CreateStreamDto, SearchStreamDto, ModifyStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventListDto, StreamsCalendarDto, SearchStreamsCalendarDto
+  CreateStreamDto, SearchStreamDto, ModifyStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto, StreamsCalendarDto, SearchStreamsCalendarDto
 } from './stream-api.interface';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Uri } from '../common/uri';
@@ -59,7 +59,7 @@ export class StreamService {
     };
     return this.streamApiService.getStreams(getStreamsDTO);
   }*/
-  public getStreamsEvent(searchStreamEventDto: SearchStreamEventDto): Promise<StreamEventListDto | HttpErrorResponse | undefined> {
+  public getStreamsEvent(searchStreamEventDto: SearchStreamEventDto): Promise<StreamEventPageDto | HttpErrorResponse | undefined> {
     if (!searchStreamEventDto) { return Promise.reject(); }
     return this.streamApiService.getStreamsEvent(searchStreamEventDto);
   }

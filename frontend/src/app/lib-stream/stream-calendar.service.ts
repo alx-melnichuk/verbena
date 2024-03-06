@@ -8,7 +8,7 @@ import { DateUtil } from '../utils/date.utils';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
 import { StreamService } from './stream.service';
-import { SearchStreamEventDto, StreamEventDto, StreamEventListDto, StreamsCalendarDto } from './stream-api.interface';
+import { SearchStreamEventDto, StreamEventDto, StreamEventPageDto, StreamsCalendarDto } from './stream-api.interface';
 
 
 export const SC_DEFAULT_LIMIT = 20;
@@ -77,27 +77,24 @@ export class StreamCalendarService {
   /** Get a list of events for a date. */
   public getListEventsForDate(
     start: Date | null, pageNum: number, userId?: number
-  ): Promise<StreamEventListDto | HttpErrorResponse | undefined> {
+  ): Promise<StreamEventPageDto | HttpErrorResponse | undefined> {
     this.alertService.hide();
     const page = pageNum > 0 ? pageNum : this.eventsOfDayPageInfo.page + 1;
-    // console.log(`\n!!getShortStreamsForDate() page: ${page}`); // #
-    // console.log(`!! start       :`, start); // #
-    if (!start || page > 0 && !PageInfoUtil.checkNextPage(this.eventsOfDayPageInfo)) {
+    if (!start || (this.eventsOfDaySelected == start && !PageInfoUtil.checkNextPage(this.eventsOfDayPageInfo))) {
       return Promise.resolve(undefined);
     }
-    const orderDirection = this.eventsOfDayPageInfo.orderDirection as ('asc' | 'desc' | undefined);
-    const startDate = StringDateTimeUtil.toISO(start);
-    const searchStreamEventDto: SearchStreamEventDto = { userId, startDate, orderDirection, page, limit: SC_DEFAULT_LIMIT };
+    const starttime = StringDateTimeUtil.toISO(start);
+    const searchStreamEventDto: SearchStreamEventDto = { userId, starttime, page, limit: SC_DEFAULT_LIMIT };
     this.eventsOfDayLoading = true;
     return this.streamService.getStreamsEvent(searchStreamEventDto)
-    .then((response: StreamEventListDto | HttpErrorResponse | undefined) => {
-        const streamShortListDto = (response as StreamEventListDto);
-        this.eventsOfDayPageInfo = PageInfoUtil.create(streamShortListDto);
+    .then((response: StreamEventPageDto | HttpErrorResponse | undefined) => {
+        const streamEventPageDto = (response as StreamEventPageDto);
+        this.eventsOfDayPageInfo = PageInfoUtil.create(streamEventPageDto);
         if (this.eventsOfDayPageInfo.page == 1) {
             this.eventsOfDaySelected = start;
             this.eventsOfDay = [];
         }
-        this.eventsOfDay = this.eventsOfDay.concat(streamShortListDto.list);
+        this.eventsOfDay = this.eventsOfDay.concat(streamEventPageDto.list);
         return response;
     })
     .catch((error: HttpErrorResponse) => {
