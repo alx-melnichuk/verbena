@@ -17,8 +17,7 @@
     </app-panel-stream-calendar>
   </div>
 
-  <div class="sl-events sl-relative"
-    [ngClass]="{ 'sl-hide': !streamCalendarService.isShowEvents() }">
+  <div class="sl-events sl-relative">
     <div class="sl-event-label">
       <span>{{ streamCalendarService.eventsOfDaySelected | date: formatDate }}</span>
     </div>
