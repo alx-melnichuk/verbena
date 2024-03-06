@@ -8,7 +8,9 @@ export class HttpParamsUtil {
     const keys: string[] = Object.keys(innData);
     for (const key of keys) {
       const value = innData[key];
-      result = result.set(key, (value != null ? value.toString() : value));
+      if (value != null) {
+        result = result.set(key, value.toString());
+      }
     }
     return result;
   }
