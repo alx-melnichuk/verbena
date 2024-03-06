@@ -148,7 +148,7 @@ pub async fn get_streams(
 
     let pages: u32 = count / limit + if (count % limit) > 0 { 1 } else { 0 };
 
-    let result = stream_models::SearchStreamInfoResponseDto { list, limit, count, page, pages };
+    let result = stream_models::StreamInfoPageDto { list, limit, count, page, pages };
 
     if config_strm.strm_show_lead_time {
         log::info!("get_streams() lead time: {:.2?}", now.elapsed());
@@ -220,7 +220,7 @@ mod tests {
     };
     use crate::streams::{
         config_strm,
-        stream_models::{SearchStreamInfoResponseDto, Stream, StreamEventDto, StreamEventPageDto, StreamInfoDto},
+        stream_models::{Stream, StreamEventDto, StreamEventPageDto, StreamInfoDto, StreamInfoPageDto},
         stream_orm::tests::STREAM_ID,
     };
     use crate::users::{

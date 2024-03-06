@@ -539,10 +539,10 @@ pub struct SearchStreamInfoDto {
     pub limit: Option<u32>,
 }
 
-// * SearchResponseDto<T> *
+// * StreamInfoPageDto *
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SearchStreamInfoResponseDto {
+pub struct StreamInfoPageDto {
     pub list: Vec<StreamInfoDto>,
     pub limit: u32,
     pub count: u32,
