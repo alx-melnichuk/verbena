@@ -11,7 +11,7 @@ import { StreamService } from './stream.service';
 import { SearchStreamEventDto, StreamEventDto, StreamEventPageDto, StreamsPeriodDto } from './stream-api.interface';
 
 
-export const SC_DEFAULT_LIMIT = 10;
+export const SC_DEFAULT_LIMIT = 12;
 export const SC_DELTA_TO_FUTURE = 1;
 export const SC_DELTA_TO_PAST = 10;
 
@@ -118,9 +118,6 @@ export class StreamCalendarService {
     const timeZoneOffset = -1 * today.getTimezoneOffset();
     let now = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, timeZoneOffset, 0, 0);
 
-    // this.startAtDate = now;
-    // this.activeDate = now;
-    
     const minDateValue = DateUtil.addYear(now, -SC_DELTA_TO_PAST);
     this.calendarMinDate = DateUtil.addDay(minDateValue, -minDateValue.getDate() + 1);
 
