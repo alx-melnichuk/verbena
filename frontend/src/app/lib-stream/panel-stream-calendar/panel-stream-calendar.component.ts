@@ -101,13 +101,11 @@ export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterVie
     }
     const newActiveDate: Date = new Date(this.calendar.activeDate);
     const newActiveDateYearMonth = this.getInfoDate(newActiveDate).slice(0, 7);
-    // console.log(`^^newActiveDate:`, newActiveDate); // #
 
     const currActiveDateYearMonth = this.getInfoDate(this.activeDate).slice(0, 7);
     if (!!newActiveDate && currActiveDateYearMonth != newActiveDateYearMonth) {
       const activeDate = new Date(newActiveDate.getFullYear(), newActiveDate.getMonth(), 1, 0, 0, 0, 0);
       this.activeDate = activeDate;
-      // console.log(`^^activeDate:`, activeDate); // #
       this.changeCalendar.emit(new Date(activeDate));
     }
   }

@@ -1,7 +1,7 @@
 /*# sourceURL=panel-stream-event.component.scss */
 
 app-panel-stream-event {
-  --pse-logo-wd: 60px;
+  --pse-logo-wd: 4.5em;
   --pse-edit-wd: 40px;
   --pse-pn-stream-bg: var(--app-pn-stream);
   --pse-pn-stream-brd: var(--app-pn-stream-low);
@@ -18,7 +18,7 @@ app-panel-stream-event {
     box-sizing: border-box;
     display: flex;
     flex-shrink: 0;
-    height: 52px;
+    height: 4.5em;
     &:not(:first-of-type) {
       margin-top: 0.75em;
     }
@@ -37,12 +37,17 @@ app-panel-stream-event {
   }
   .pse-details-wrap {
     box-sizing: border-box;
+    display: flex;
     flex: 0 0 calc(100% - var(--pse-logo-wd));
+    flex-direction: column;
+    height: 100%;
+    justify-content: space-evenly;
     padding-left: 0.3em;
     width: calc(100% - var(--pse-logo-wd));
   }
   .pse-details {
     display: flex;
+    justify-content: space-between;
   }
   .pse-starttime {
     width: 14.5em;
