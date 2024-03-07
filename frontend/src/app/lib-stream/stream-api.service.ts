@@ -49,10 +49,12 @@ constructor(private http: HttpClient) {
         if (Array.isArray(response)) {
           const obj: {[key: string]: number} = {};
           for (let idx = 0; idx < response.length; idx++) {
-            const itemDate = StringDateTimeUtil.to_date(response[idx]);
+            const itemDate = StringDateTimeUtil.toDate(response[idx]);
             if (!itemDate) continue;
-            const item: StringDate = StringDateTimeUtil.toISODate(itemDate);
-            obj[item] = (obj[item] || 0) + 1;
+            itemDate.setHours(0, 0, 0, 0);
+            const itemLocal = StringDateTimeUtil.toISOLocal(itemDate);
+
+            obj[itemLocal] = (obj[itemLocal] || 0) + 1;
           }
           const keys = Object.keys(obj);
           for (let i = 0; i < keys.length; i++) {
@@ -62,16 +64,6 @@ constructor(private http: HttpClient) {
         return result;
       }))
       .toPromise();
-    /*return new Promise<StreamsPeriodDto[]>(
-        (resolve: (value: StreamsPeriodDto[] | PromiseLike<StreamsPeriodDto[]>) => void, reject: (reason?: any) => void) => {
-          setTimeout(() => {
-            if (!!search) {
-              resolve(this.streamsPeriodDto(search.start));
-            } else {
-              reject('err');
-            }
-          }, 500);
-        });*/
   }
   /** Get streams
    * @ route streams
@@ -206,21 +198,4 @@ constructor(private http: HttpClient) {
     const url = Uri.appUri(`appApi://streams/${streamId}`);
     return this.http.delete<void | HttpErrorResponse>(url).toPromise();
   }
-
-  /*private streamsPeriodDto(startDate: StringDateTime): StreamsPeriodDto[] {
-    const date = new Date(startDate);
-    // console.log(`@startDate:`, startDate); // #
-    const i = date.getMonth() % 2 !== 0 ? 0 : 2;
-    const date1 = new Date(date.getFullYear(), date.getMonth(), 10 + i, date.getHours(), date.getMinutes(), date.getSeconds());
-    const date2 = new Date(date.getFullYear(), date.getMonth(), 15 + i, date.getHours(), date.getMinutes(), date.getSeconds());
-    const date3 = new Date(date.getFullYear(), date.getMonth(), 20 + i, date.getHours(), date.getMinutes(), date.getSeconds());
-    const date4 = new Date(date.getFullYear(), date.getMonth(), 25 + i, date.getHours(), date.getMinutes(), date.getSeconds());
-    const list: StreamsPeriodDto[] = [
-      { "date": date1.toISOString(), "day": 10, "count": 1 }, // '2024-02-10T11:08:05.553Z+0200'
-      { "date": date2.toISOString(), "day": 15, "count": 1 }, // '2024-02-15T11:08:05.553Z+0200'
-      { "date": date3.toISOString(), "day": 20, "count": 1 }, // '2024-02-20T11:08:05.553Z+0200'
-      { "date": date4.toISOString(), "day": 25, "count": 1 }, // '2024-02-25T11:08:05.553Z+0200'
-    ];
-    return list;
-  }*/
 }

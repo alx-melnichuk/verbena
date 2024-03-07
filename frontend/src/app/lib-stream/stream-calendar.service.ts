@@ -11,9 +11,9 @@ import { StreamService } from './stream.service';
 import { SearchStreamEventDto, StreamEventDto, StreamEventPageDto, StreamsPeriodDto } from './stream-api.interface';
 
 
-export const SC_DEFAULT_LIMIT = 20;
+export const SC_DEFAULT_LIMIT = 10;
 export const SC_DELTA_TO_FUTURE = 1;
-export const SC_DELTA_TO_PAST = 20;
+export const SC_DELTA_TO_PAST = 10;
 
 
 @Injectable({
@@ -26,7 +26,7 @@ export class StreamCalendarService {
   // ** "Streams Calendar" **
   public calendarMarkedDates: StringDateTime[] = [];
   public calendarLoading = false;
-  public calendarMonth: Date | null = null;
+  public calendarMonth: Date = new Date();
 
   // ** "Streams Event" **
   public eventsOfDay: StreamEventDto[] = [];
@@ -45,8 +45,6 @@ export class StreamCalendarService {
   /** Get calendar information for a period. */
   public getCalendarInfoForPeriod(start: Date, userId?: number): Promise<StreamsPeriodDto[] | HttpErrorResponse | undefined> {
     this.alertService.hide();
-    // console.log(`\n!!getStreamsCalendarForDate()`); // #
-    // console.log(`!!start     :`, start); // #
     const date: Date = new Date(start);
     date.setHours(0, 0, 0, 0);
     const startMonth = DateUtil.dateFirstDayOfMonth(date);
@@ -74,15 +72,21 @@ export class StreamCalendarService {
 
   // ** "Streams Event" **
 
+  /** Clear array of "Streams Event". */
+  public clearStreamsEvent(): void {
+    this.eventsOfDay = [];
+  }
+    
   /** Get a list of events for a date. */
   public getListEventsForDate(
     start: Date | null, pageNum: number, userId?: number
   ): Promise<StreamEventPageDto | HttpErrorResponse | undefined> {
     this.alertService.hide();
-    const page = pageNum > 0 ? pageNum : this.eventsOfDayPageInfo.page + 1;
-    if (!start || (this.eventsOfDaySelected == start && !PageInfoUtil.checkNextPage(this.eventsOfDayPageInfo))) {
-      return Promise.resolve(undefined);
+    const page = pageNum > 0 ? pageNum : (this.eventsOfDayPageInfo.page + 1);
+    if (!start || (this.eventsOfDaySelected == start && page > 1 && page > this.eventsOfDayPageInfo.pages)) {
+        return Promise.resolve(undefined);
     }
+    this.eventsOfDaySelected = start;
     const starttime = StringDateTimeUtil.toISO(start);
     const searchStreamEventDto: SearchStreamEventDto = { userId, starttime, page, limit: SC_DEFAULT_LIMIT };
     this.eventsOfDayLoading = true;
@@ -91,7 +95,6 @@ export class StreamCalendarService {
         const streamEventPageDto = (response as StreamEventPageDto);
         this.eventsOfDayPageInfo = PageInfoUtil.create(streamEventPageDto);
         if (this.eventsOfDayPageInfo.page == 1) {
-            this.eventsOfDaySelected = start;
             this.eventsOfDay = [];
         }
         this.eventsOfDay = this.eventsOfDay.concat(streamEventPageDto.list);
@@ -104,15 +107,8 @@ export class StreamCalendarService {
     .finally(() => this.eventsOfDayLoading = false);
   }
 
-  public isShowEvents(calendarDate?: Date): boolean {
-    let calendarMonth = this.calendarMonth;
-    if (!!calendarDate) {
-      calendarMonth = new Date(calendarDate);
-      calendarMonth.setHours(0, 0, 0, 0);
-    }
-    const res = DateUtil.compareYearMonth(calendarMonth, this.eventsOfDaySelected) == 0;
-    // console.log(`\n!! isShowEvents(): ${res}`); // #
-    return DateUtil.compareYearMonth(calendarMonth, this.eventsOfDaySelected) == 0;
+  public isShowEvents(calendarDate: Date): boolean {
+    return DateUtil.compareYearMonth(calendarDate, this.eventsOfDaySelected) == 0;
   }
 
   // ** Private API **

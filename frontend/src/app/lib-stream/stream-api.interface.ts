@@ -98,7 +98,7 @@ export class StreamDtoUtil {
     };
   }
   public static isFuture(startTime: StringDateTime | null): boolean | null {
-    let date: Date | null = StringDateTimeUtil.to_date(startTime);
+    let date: Date | null = StringDateTimeUtil.toDate(startTime);
     const now = new Date();
     //   return (!!startTime ? moment().isBefore(moment(startTime, MOMENT_ISO8601), 'day') : null);
     return date != null ? (now < date) : null;
