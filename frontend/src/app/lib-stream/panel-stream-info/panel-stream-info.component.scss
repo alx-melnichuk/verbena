@@ -1,6 +1,34 @@
 /*# sourceURL=panel-stream-info.component.scss */
 
+@use '../../../styles-dimensions.scss' as dimensions;
+
 app-panel-stream-info {
+  --psi-btn-dpl-wd: 8em;
+  --psi-btn-edt-wd: 5.5em;
+  --psi-btn-del-wd: 6.5em;
+
+  @media screen and (width <= dimensions.$laptop-1024) {
+    --psi-pd: 2em;
+    --psi-actn-fl-dr: column;
+    --psi-actn2-fl-dr: column;
+    --psi--btn-dpl-wd: 8em;
+    --psi--btn-edt-wd: 8em;
+    --psi--btn-del-wd: 8em;
+    --psi--btn-mr-ver: 0.15em;
+  }
+  @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
+    --psi-pd: 2.5em;
+    --psi-actn-fl-dr: row;
+    --psi-actn2-fl-dr: column;
+    --psi-actn2-js-cnt: space-between;
+    --psi--btn-edt-wd: 6.5em;
+  }
+  @media screen and (dimensions.$desktop-1280 < width) {
+    --psi-pd: 3em;
+    --psi-actn-fl-dr: row;
+    --psi-actn2-fl-dr: row;
+  }
+
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -21,8 +49,8 @@ app-panel-stream-info {
     &:not(:first-of-type) { margin-top: 0.75em; }
     &>.psi-logo { flex: 0 0 130px; }
     &>.psi-details { flex-grow: 1; }
-    &>.psi-shrink-0 { flex-shrink: 0; }
   }
+  .psi-shrink-0 { flex-shrink: 0; }
   .psi-logo {
     align-items: center;
     border-radius: 0.75em;
@@ -38,6 +66,18 @@ app-panel-stream-info {
     flex-direction: column;
     padding: 1vh 1vw 1vh 1vw;
   }
+  .psi-actions {
+    align-items: center;
+    display: flex;
+    flex-direction: var(--psi-actn-fl-dr);
+    height: 100%;
+    justify-content: center
+  }
+  .psi-actions-both {
+    display: flex;
+    flex-direction: var(--psi-actn2-fl-dr);
+    justify-content: var(--psi-actn2-js-cnt, unset);
+  }
 
   .psi-date {
     font-style: normal;
@@ -47,9 +87,10 @@ app-panel-stream-info {
   .psi-title {
     flex: 0 0 1.5em;
     margin-bottom: 0.25em;
+    overflow: hidden;
   }
   .psi-descript {
-      // color: var(--app-theme-accent);
+    // color: var(--app-theme-accent);
     font-size: calc(1em - 1px);
     font-style: normal;
     font-weight: 400;
@@ -62,16 +103,20 @@ app-panel-stream-info {
     display: flex;
     &>i { margin-right: 0.5em; }
   }
-  .psi-mg-rg {
+  .psi-btn-dpl {
+    width: var(--psi--btn-dpl-wd, var(--psi-btn-dpl-wd));
+  }
+  .psi-btn-edt {
+    width: var(--psi--btn-edt-wd, var(--psi-btn-edt-wd));
+  }
+  .psi-btn-del {
+    width: var(--psi--btn-del-wd, var(--psi-btn-del-wd));
+  }
+
+  .psi-mr {
     margin-right: 0.8em;
-  }
-  .psi-pd-hor-05 {
-    padding-left: 0.5em;
-    padding-right: 0.5em;
-  }
-  .psi-pd-hor-07 {
-    padding-left: 0.7em;
-    padding-right: 0.7em;
+    margin-top: var(--psi--btn-mr-ver, 0.25em);
+    margin-bottom: var(--psi--btn-mr-ver, 0.25em);
   }
 
   .psi-logo-future {

@@ -21,31 +21,35 @@
     <div class="psi-descript">{{ stream.descript }}</div>
   </div>
 
-  <button mat-stroked-button *ngIf="canDuplicate"
-    class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mg-rg psi-pd-hor-05"
-    (click)="doActionDuplicate(stream.id)">
-    <span class="psi-action-label">
-      <i class="psi-duplicate-accent"></i>
-      {{ 'panel-stream-mini.buttons.duplicate' | translate }}
-    </span>
-  </button>
+  <div class="psi-actions">
+    <button mat-stroked-button *ngIf="canDuplicate"
+      class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mr psi-btn-dpl"
+      (click)="doActionDuplicate(stream.id)">
+      <span class="psi-action-label">
+        <i class="psi-duplicate-accent"></i>
+        {{ 'panel-stream-mini.buttons.duplicate' | translate }}
+      </span>
+    </button>
 
-  <button mat-stroked-button *ngIf="canEdit"
-    class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mg-rg psi-pd-hor-07"
-    (click)="doActionEdit(stream.id)">
-    <span class="psi-action-label">
-      <i class="psi-edit-accent"></i>
-      {{ 'panel-stream-mini.buttons.edit' | translate }}
-    </span>
-  </button>
-
-  <button mat-stroked-button *ngIf="canDelete"
-    class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mg-rg psi-pd-hor-07"
-    (click)="doActionDelete(stream)">
-    <span class="psi-action-label">
-      <i class="psi-delete-accent"></i>
-      {{ 'panel-stream-mini.buttons.delete' | translate }}
-    </span>
-  </button>
+    <div class="psi-actions-both">
+      <button mat-stroked-button *ngIf="canEdit"
+        class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mr psi-btn-edt"
+        (click)="doActionEdit(stream.id)">
+        <span class="psi-action-label">
+          <i class="psi-edit-accent"></i>
+          {{ 'panel-stream-mini.buttons.edit' | translate }}
+        </span>
+      </button>
+    
+      <button mat-stroked-button *ngIf="canDelete"
+        class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mr psi-btn-del"
+        (click)="doActionDelete(stream)">
+        <span class="psi-action-label">
+          <i class="psi-delete-accent"></i>
+          {{ 'panel-stream-mini.buttons.delete' | translate }}
+        </span>
+      </button>
+    </div>
+  </div>
 
 </div>
