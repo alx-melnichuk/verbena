@@ -1,22 +1,22 @@
 /*# sourceURL=app.component.scss */
 
-@use '../styles-dimensions.scss' as variable;
+@use '../styles-dimensions.scss' as dimensions;
 
 app-root {
   --footer-hg: 20px;
-  @media screen and (width <= variable.$mobile-480) {
+  @media screen and (width <= dimensions.$mobile-480) {
     --header-hg: min(18vh, 80px);
   }
-  @media screen and (variable.$mobile-480 < width <= variable.$tablet-768) {
+  @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
     --header-hg: 74px;
   }
-  @media screen and (variable.$tablet-768 < width <= variable.$laptop-1024) {
+  @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
     --header-hg: 68px;
   }
-  @media screen and (variable.$laptop-1024 < width <= variable.$desktop-1280) {
+  @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
     --header-hg: 64px;
   }
-  @media screen and (variable.$desktop-1280 < width) {
+  @media screen and (dimensions.$desktop-1280 < width) {
     --header-hg: 62px;
   }
 

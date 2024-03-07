@@ -1,6 +1,6 @@
 /*# sourceURL=login.component.scss */
 
-@use '../../../styles-dimensions.scss' as variable;
+@use '../../../styles-dimensions.scss' as dimensions;
 
 app-login {
   align-items: center;
@@ -25,28 +25,33 @@ app-login {
   }
 
   .lg-content {
-    @media screen and (width <= variable.$mobile-480) {
-      --pd: 0.5em; --wd: 100%;
+    @media screen and (width <= dimensions.$mobile-480) {
+      --lg-pd: 0.5em;
+      --lg-wd: 100%;
     }
-    @media screen and (variable.$mobile-480 < width <= variable.$tablet-768) {
-      --pd: 1.5em; --wd: 30em;
+    @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
+      --lg-pd: 1.5em;
+      --lg-wd: 30em;
     }
-    @media screen and (variable.$tablet-768 < width <= variable.$laptop-1024) {
-      --pd: 2em; --wd: 32em;
+    @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
+      --lg-pd: 2em;
+      --lg-wd: 32em;
     }
-    @media screen and (variable.$laptop-1024 < width <= variable.$desktop-1280) {
-      --pd: 2.5em; --wd: 34em;
+    @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
+      --lg-pd: 2.5em;
+      --lg-wd: 34em;
     }
-    @media screen and (variable.$desktop-1280 < width) {
-      --pd: 3em; --wd: 36em;
+    @media screen and (dimensions.$desktop-1280 < width) {
+      --lg-pd: 3em;
+      --lg-wd: 36em;
     }
   
-    border-radius: var(--pd);
+    border-radius: var(--lg-pd);
     border: 1px solid var(--app-site-border-cl);
     box-sizing: border-box;
     margin-bottom: 7em;
-    padding: var(--pd);
-    width: var(--wd);
+    padding: var(--lg-pd);
+    width: var(--lg-wd);
   }
 
   .lg-form {

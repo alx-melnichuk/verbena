@@ -1,6 +1,6 @@
 /*# sourceURL=panel-stream-editor.component.scss */
 
-@use '../../../styles-dimensions.scss' as variable;
+@use '../../../styles-dimensions.scss' as dimensions;
 
 app-panel-stream-editor {
   display: block;
@@ -177,12 +177,12 @@ app-panel-stream-editor {
     .mat-icon-button { color: var(--app-theme-accent); }
   }*/
     
-  @media screen and (min-width: variable.$tablet-768) and (max-width: variable.$laptop-1024)  { // tablet  (768px - 1024px)
+  @media screen and (min-width: dimensions.$tablet-768) and (max-width: dimensions.$laptop-1024)  { // tablet  (768px - 1024px)
     @media (orientation: portrait) {
       mat-card { width: 50vw; }    
     }
   }
-  @media screen and (min-width: variable.$laptop-1024) { // desktop   (1024px and more)
+  @media screen and (min-width: dimensions.$laptop-1024) { // desktop   (1024px and more)
     mat-card { width: 40vw; }
   }
 }
