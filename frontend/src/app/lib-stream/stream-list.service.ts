@@ -30,11 +30,6 @@ export class StreamListService {
     console.log(`StreamListService()`); // # 
   }
 
-  public checkNextPage(pageInfo: PageInfo): boolean {
-    const nextPageInfo: PageInfo = PageInfoUtil.create({ page: pageInfo.page + 1 });
-    return PageInfoUtil.checkNextPageInfo(pageInfo, nextPageInfo);
-  }
-
   // "Future Streams"
 
   /** Clear array of "Future Stream". */
@@ -43,8 +38,11 @@ export class StreamListService {
   }
   /** Search for the next page of the "Future Stream". */
   public searchNextFutureStream(userId: number): Promise<StreamListDto | HttpErrorResponse | undefined> {
-    if (!this.checkNextPage(this.futurePageInfo)) {
-     return Promise.resolve(undefined);
+    const pages = this.futurePageInfo.pages;
+    const nextPage = this.futurePageInfo.page + 1;
+    const isNextPage = ((pages === -1) || (this.futurePageInfo.page !== nextPage && nextPage <= pages));
+    if (!isNextPage) {
+        return Promise.resolve(undefined);
     }
     let searchStream: SearchStreamDto = {
       userId, // TODO delete
@@ -77,8 +75,11 @@ export class StreamListService {
   }
   /** Search for the next page of the "Past Stream". */
   public searchNextPastStream(userId: number): Promise<StreamListDto | HttpErrorResponse | undefined> {
-    if (!this.checkNextPage(this.pastPageInfo)) {
-      return Promise.resolve(undefined);
+    const pages = this.pastPageInfo.pages;
+    const nextPage = this.pastPageInfo.page + 1;
+    const isNextPage = ((pages === -1) || (this.pastPageInfo.page !== nextPage && nextPage <= pages));
+    if (!isNextPage) {
+        return Promise.resolve(undefined);
     }
     let searchStream: SearchStreamDto = {
       userId,
