@@ -62,12 +62,13 @@ export class StreamListComponent {
   // ** "Streams Calendar" panel-stream-calendar **
 
   public async getCalendarInfoForPeriod(calendarStart: Date): Promise<void> {
-    // console.log(`\n++getCalendarInfoForPeriod() 02a`); // #
     const buffPromise: Promise<unknown>[] = [];
     // Get a list of events (streams) for a specified date.
     buffPromise.push(this.streamCalendarService.getCalendarInfoForPeriod(calendarStart));
     if (this.streamCalendarService.isShowEvents(calendarStart)) {
       buffPromise.push(this.getListEventsForDate(this.streamCalendarService.eventsOfDaySelected, 1));
+    } else {
+      this.streamCalendarService.clearStreamsEvent();
     }
     Promise.all(buffPromise).finally(() => this.changeDetector.markForCheck());
   }
@@ -75,7 +76,6 @@ export class StreamListComponent {
   // ** "Streams Event" panel-stream-event **
 
   public async getListEventsForDate(selectedDate: Date | null, pageNum: number): Promise<void> {
-    // console.log(`\n++getListEventsForDate() 02bc`); // #
     // Get the next page of the list of short streams for the selected date.
     await this.streamCalendarService.getListEventsForDate(selectedDate, pageNum)
     .finally(() => {
@@ -86,7 +86,6 @@ export class StreamListComponent {
   // ** "Future Stream" and "Past Stream" panel-stream-info **
 
   public async searchNextFutureStream(): Promise<null | HttpErrorResponse> {
-    // console.log(`\n++searchNextFutureStream() 01a`); // #
     // Get the next page of the "Future Stream".
     await this.streamListService.searchNextFutureStream(this.userId); // TODO delete serId
     this.changeDetector.markForCheck();
@@ -94,7 +93,6 @@ export class StreamListComponent {
   }
 
   public async searchNextPastStream(): Promise<null | HttpErrorResponse> {
-    // console.log(`\n++searchNextPastStream() 01b`); // #
     // Get the next page of "Past Stream".
     await this.streamListService.searchNextPastStream(this.userId); // TODO delete serId
     this.changeDetector.markForCheck();
@@ -151,7 +149,6 @@ export class StreamListComponent {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const selectedDate = this.streamCalendarService.eventsOfDaySelected || now;
-    // console.log(`\n++selectedDate:`, selectedDate); // #
     // Get a list of short streams for the selected date.
     buffPromise.push(this.streamCalendarService.getListEventsForDate(selectedDate, 1));
     // Get a list of events (streams) for a specified date.

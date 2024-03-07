@@ -1,4 +1,4 @@
-<div class="sl-my-calendar sl-pd-lf sl-flex-col">
+<div class="sl-my-calendar sl-flex-col">
 
   <div class="sl-title">
     {{ 'stream_list.my_calendar' | translate }}
@@ -19,7 +19,9 @@
 
   <div class="sl-events sl-relative">
     <div class="sl-event-label">
-      <span>{{ streamCalendarService.eventsOfDaySelected | date: formatDate }}</span>
+      <span [ngClass]="{ 'sl-hidden': !streamCalendarService.isShowEvents(streamCalendarService.calendarMonth) }">
+        {{ streamCalendarService.eventsOfDaySelected | date: formatDate }}
+      </span>
     </div>
     <div class="sl-event-list">
       <app-spinner isFillParent *ngIf="streamCalendarService.eventsOfDayLoading">
@@ -37,7 +39,7 @@
 
 <div class="sl-my-streams sl-flex-col">
 
-  <div class="sl-stream-box sl-pd-lf sl-relative">
+  <div class="sl-stream-box sl-relative">
     <div class="sl-title">
       {{ 'stream_list.my_future_streams' | translate }}
     </div>
@@ -58,7 +60,7 @@
     </app-panel-stream-info>
   </div>
 
-  <div class="sl-stream-box sl-pd-lf sl-relative">
+  <div class="sl-stream-box sl-relative">
     <div class="sl-title">
       {{ 'stream_list.my_past_streams' | translate }}
     </div>

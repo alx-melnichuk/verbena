@@ -1,13 +1,39 @@
 /*# sourceURL=stream-list.component.scss */
 
+@use '../../../styles-dimensions.scss' as dimensions;
+
+
 app-stream-list {
+  @media screen and (width <= dimensions.$mobile-480) {
+    --sl-pd: 0.5em;
+    --wd: 100%;
+  }
+  @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
+    --sl-pd: 1.5em;
+    --wd: 30em;
+  }
+  @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
+    --sl-pd: 2em;
+    --wd: 32em; // !!
+  }
+  @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
+    --sl-pd: 2.5em;
+    --wd: 34em;
+  }
+  @media screen and (dimensions.$desktop-1280 < width) {
+    --sl-pd: 3em;
+    --wd: 36em;
+  }
+
+  box-sizing: border-box;
   display: flex;
   height: 100%;
-  &>.sl-my-calendar { flex: 0 0 27%; max-width: 27%; }
-  &>.sl-my-streams { flex: 0 0 72.99%;}
+  padding: var(--sl-pd);
+  &>.sl-my-calendar { flex: 0 0 min(27vw, 25em); }
+  &>.sl-my-streams { flex: 0 0 calc(99.9vw - min(27vw, 25em) - var(--sl-pd) - var(--sl-pd));}
 
-  .sl-pd-lf {
-    padding-left: 1.3em;
+  .sl-my-streams {
+    padding-left: var(--sl-pd);
     box-sizing: border-box;
   }
   .sl-title {
@@ -55,5 +81,8 @@ app-stream-list {
     flex-direction: column;
     flex: 0 0 50%;
     overflow-y: hidden;
+  }
+  .sl-hidden {
+    visibility: hidden;
   }
 }
