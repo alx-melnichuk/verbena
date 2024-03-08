@@ -11,11 +11,9 @@ DECLARE
 BEGIN
   RAISE NOTICE 'Start';
   name_list := ARRAY[
-    'Liam_Smith'  , 'Emma_Johnson' , 'Noah_Williams'  , 'Olivia_Jones' ,
-    'Ethan_Brown' , 'Ava_Wilson'   , 'James_Miller'   , 'Mila_Davis'   ,
-    'Jack_Thomas' , 'Sophia_Taylor', 'Jacob_Moore'    , 'Emily_White'  ,
-    'John_Harris' , 'Mia_Jackson'  , 'Lucas_Anderson' , 'Amelia_Martin',
-    'Mason_Garcia', 'Harper_Clark' , 'Logan_Lewis'    , 'Evelyn_Allen'
+    'Liam_Smith'  , 'Emma_Johnson' , 'Noah_Williams'  , 'Olivia_Jones',
+    'Ethan_Brown' , 'Ava_Wilson'   , 'James_Miller'   , 'Mila_Davis',
+    'Logan_Lewis', 'Evelyn_Allen'
   ];
    
   idx := ARRAY_LENGTH(name_list, 1);
