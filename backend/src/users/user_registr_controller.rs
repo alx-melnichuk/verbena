@@ -1,4 +1,4 @@
-use std::borrow;
+use std::{borrow, time::Instant};
 
 use actix_web::{get, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
@@ -25,6 +25,7 @@ use crate::users::user_recovery_orm::inst::UserRecoveryOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_recovery_orm::tests::UserRecoveryOrmApp;
 use crate::users::{
+    config_usr,
     user_models, user_orm::UserOrm, user_recovery_orm::UserRecoveryOrm,
     user_registr_orm::UserRegistrOrm,
 };
@@ -114,12 +115,14 @@ fn err_recovery_not_found(user_recovery_id: i32) -> AppError {
 #[post("/registration")]
 pub async fn registration(
     config_app: web::Data<config_app::ConfigApp>,
+    config_usr: web::Data<config_usr::ConfigUsr>,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     mailer: web::Data<MailerApp>,
     user_orm: web::Data<UserOrmApp>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     json_body: web::Json<user_models::RegistrUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
@@ -232,6 +235,9 @@ pub async fn registration(
         registr_token: registr_token.clone(),
     };
 
+    if config_usr.usr_show_lead_time {
+        log::info!("registration() lead time: {:.2?}", now.elapsed());
+    }
     Ok(HttpResponse::Created().json(registr_user_response_dto))
 }
 
@@ -240,11 +246,13 @@ pub async fn registration(
 #[put("/registration/{registr_token}")]
 pub async fn confirm_registration(
     request: actix_web::HttpRequest,
+    config_usr: web::Data<config_usr::ConfigUsr>,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     user_orm: web::Data<UserOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     let registr_token = request.match_info().query("registr_token").to_string();
 
     let config_jwt = config_jwt.get_ref().clone();
@@ -312,6 +320,9 @@ pub async fn confirm_registration(
 
     let user_dto = user_models::UserDto::from(user);
 
+    if config_usr.usr_show_lead_time {
+        log::info!("confirm_registration() lead time: {:.2?}", now.elapsed());
+    }
     Ok(HttpResponse::Created().json(user_dto))
 }
 
@@ -321,12 +332,14 @@ pub async fn confirm_registration(
 #[post("/recovery")]
 pub async fn recovery(
     config_app: web::Data<config_app::ConfigApp>,
+    config_usr: web::Data<config_usr::ConfigUsr>,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     mailer: web::Data<MailerApp>,
     user_orm: web::Data<UserOrmApp>,
     user_recovery_orm: web::Data<UserRecoveryOrmApp>,
     json_body: web::Json<user_models::RecoveryUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
@@ -452,6 +465,9 @@ pub async fn recovery(
         recovery_token: recovery_token.clone(),
     };
 
+    if config_usr.usr_show_lead_time {
+        log::info!("recovery() lead time: {:.2?}", now.elapsed());
+    }
     Ok(HttpResponse::Created().json(recovery_user_response_dto))
 }
 
@@ -460,12 +476,14 @@ pub async fn recovery(
 #[put("/recovery/{recovery_token}")]
 pub async fn confirm_recovery(
     request: actix_web::HttpRequest,
+    config_usr: web::Data<config_usr::ConfigUsr>,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     user_recovery_orm: web::Data<UserRecoveryOrmApp>,
     user_orm: web::Data<UserOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
     json_body: web::Json<user_models::RecoveryDataDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
@@ -564,6 +582,9 @@ pub async fn confirm_recovery(
     let user = user_opt.ok_or_else(|| err_recovery_not_found(user_recovery_id))?;
     let user_dto = user_models::UserDto::from(user);
 
+    if config_usr.usr_show_lead_time {
+        log::info!("confirm_recovery() lead time: {:.2?}", now.elapsed());
+    }
     Ok(HttpResponse::Ok().json(user_dto))
 }
 
@@ -572,9 +593,11 @@ pub async fn confirm_recovery(
 #[rustfmt::skip]
 #[get("/clear_for_expired", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn clear_for_expired(
+    config_usr: web::Data<config_usr::ConfigUsr>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     user_recovery_orm: web::Data<UserRecoveryOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
 
     // Delete entries in the "user_registr" table, that are already expired.
     let count_inactive_registr_res = 
@@ -598,6 +621,9 @@ pub async fn clear_for_expired(
         count_inactive_recover,
     };
     
+    if config_usr.usr_show_lead_time {
+        log::info!("clear_for_expired() lead time: {:.2?}", now.elapsed());
+    }
     Ok(HttpResponse::Ok().json(clear_for_expired_response_dto))
 }
 
@@ -672,6 +698,7 @@ mod tests {
         request: TestRequest,
     ) -> dev::ServiceResponse {
         let data_config_app = web::Data::new(config_app::get_test_config());
+        let data_config_usr = web::Data::new(config_usr::get_test_config());
         let data_config_jwt = web::Data::new(config_jwt);
         let data_mailer = web::Data::new(MailerApp::new(config_smtp::get_test_config()));
 
@@ -683,6 +710,7 @@ mod tests {
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::clone(&data_config_app))
+                .app_data(web::Data::clone(&data_config_usr))
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_mailer))
                 .app_data(web::Data::clone(&data_user_orm))

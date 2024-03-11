@@ -78,6 +78,12 @@ SMTP_PASS=
 SMTP_SENDER=
 
 # -----------------------------------------------------------------------------
+# User Controller Settings
+# -----------------------------------------------------------------------------
+# A flag to display the execution time of methods. (default false)
+USR_SHOW_LEAD_TIME=true
+
+# -----------------------------------------------------------------------------
 # Stream Controller Settings
 # -----------------------------------------------------------------------------
 # A flag to display the execution time of methods. (default false)

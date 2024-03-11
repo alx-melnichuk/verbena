@@ -15,7 +15,7 @@ use crate::settings::err;
 use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
-use crate::users::{user_models, user_orm::UserOrm};
+use crate::users::{config_usr, user_models, user_orm::UserOrm};
 use crate::validators::{msg_validation, Validator};
 
 pub const MSG_WRONG_NICKNAME_EMAIL: &str = "nickname_or_email_incorrect";
@@ -60,6 +60,7 @@ fn err_session(user_id: i32) -> AppError {
 // POST api/login
 #[post("/login")]
 pub async fn login(
+    config_usr: web::Data<config_usr::ConfigUsr>,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     user_orm: web::Data<UserOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
@@ -140,15 +141,21 @@ pub async fn login(
         .max_age(ActixWebDuration::new(config_jwt.jwt_access, 0))
         .http_only(true)
         .finish();
-    log::info!("login() elapsed time: {:.2?}", now.elapsed());
 
+    if config_usr.usr_show_lead_time {
+        log::info!("login() lead time: {:.2?}", now.elapsed());
+    }
     Ok(HttpResponse::Ok().cookie(cookie).json(login_user_response_dto))
 }
 
 // POST api/logout
 #[rustfmt::skip]
 #[post("/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn logout(authenticated: Authenticated, session_orm: web::Data<SessionOrmApp>) -> actix_web::Result<HttpResponse, AppError> {
+pub async fn logout(
+    config_usr: web::Data<config_usr::ConfigUsr>,
+    authenticated: Authenticated,
+    session_orm: web::Data<SessionOrmApp>
+) -> actix_web::Result<HttpResponse, AppError> {
     let now = Instant::now();
     // Get user ID.
     let user = authenticated.deref().clone();
@@ -166,8 +173,9 @@ pub async fn logout(authenticated: Authenticated, session_orm: web::Data<Session
         .max_age(ActixWebDuration::new(0, 0))
         .http_only(true)
         .finish();
-    log::info!("logout() elapsed time: {:.2?}", now.elapsed());
-
+    if config_usr.usr_show_lead_time {
+        log::info!("logout() lead time: {:.2?}", now.elapsed());
+    }
     Ok(HttpResponse::Ok().cookie(cookie).body(()))
 }
 
@@ -175,6 +183,7 @@ pub async fn logout(authenticated: Authenticated, session_orm: web::Data<Session
 #[rustfmt::skip]
 #[post("/token")]
 pub async fn new_token(
+    config_usr: web::Data<config_usr::ConfigUsr>,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     session_orm: web::Data<SessionOrmApp>,
     json_token_user_dto: web::Json<user_models::TokenUserDto>,
@@ -240,8 +249,9 @@ pub async fn new_token(
         .max_age(ActixWebDuration::new(config_jwt.jwt_access, 0))
         .http_only(true)
         .finish();
-    log::info!("new_token() elapsed time: {:.2?}", now.elapsed());
-
+    if config_usr.usr_show_lead_time {
+        log::info!("new_token() lead time: {:.2?}", now.elapsed());
+    }
     Ok(HttpResponse::Ok().cookie(cookie).json(user_tokens_dto))
 }
 
@@ -253,6 +263,7 @@ mod tests {
     use crate::extractors::authentication::BEARER;
     use crate::sessions::{config_jwt, session_models::Session, tokens::encode_token};
     use crate::users::{
+        config_usr,
         user_models::{LoginUserDto, User, UserModelsTest, UserRole},
         user_orm::tests::UserOrmApp,
     };
@@ -281,6 +292,7 @@ mod tests {
         factory: impl dev::HttpServiceFactory + 'static,
         request: TestRequest,
     ) -> dev::ServiceResponse {
+        let data_config_usr = web::Data::new(config_usr::get_test_config());
         let data_config_jwt = web::Data::new(config_jwt);
 
         let data_user_orm = web::Data::new(UserOrmApp::create(&vec.0));
@@ -288,6 +300,7 @@ mod tests {
 
         let app = test::init_service(
             App::new()
+                .app_data(web::Data::clone(&data_config_usr))
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_user_orm))
                 .app_data(web::Data::clone(&data_session_orm))

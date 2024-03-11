@@ -8,7 +8,7 @@ use send_email::{config_smtp, mailer};
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
 use streams::{config_strm, stream_controller, stream_get_controller, stream_orm::cfg::get_stream_orm_app};
 use users::{
-    user_auth_controller, user_controller, user_orm::cfg::get_user_orm_app,
+    config_usr, user_auth_controller, user_controller, user_orm::cfg::get_user_orm_app,
     user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_controller,
     user_registr_orm::cfg::get_user_registr_orm_app,
 };
@@ -48,6 +48,7 @@ pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
         let data_config_smtp = web::Data::new(config_smtp.clone());
         // data_config_smtp.get_ref().clone()
         let data_temp_file_config = web::Data::new(temp_file_config);
+        let data_config_usr = web::Data::new(config_usr::ConfigUsr::init_by_env());
         let data_config_strm = web::Data::new(config_strm::ConfigStrm::init_by_env());
 
         // Adding various entities.
@@ -62,6 +63,7 @@ pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
             .app_data(web::Data::clone(&data_config_jwt))
             .app_data(web::Data::clone(&data_config_smtp))
             .app_data(web::Data::clone(&data_temp_file_config))
+            .app_data(web::Data::clone(&data_config_usr))
             .app_data(web::Data::clone(&data_config_strm))
             .app_data(web::Data::clone(&data_mailer))
             .app_data(web::Data::clone(&data_user_orm))

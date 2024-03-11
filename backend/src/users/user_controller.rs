@@ -1,7 +1,8 @@
+use std::{ops::Deref, time::Instant};
+
 use actix_web::{delete, get, put, web, HttpResponse};
 use log;
 use serde_json::json;
-use std::ops::Deref;
 
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
@@ -10,7 +11,7 @@ use crate::settings::err;
 use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
-use crate::users::{user_models, user_orm::UserOrm};
+use crate::users::{config_usr, user_models, user_orm::UserOrm};
 use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
 use crate::validators::{msg_validation, Validator};
 
@@ -50,9 +51,11 @@ fn err_blocking(err: String) -> AppError {
 #[rustfmt::skip]
 #[get("/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
 pub async fn get_users_by_id(
+    config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     let id_str = request.match_info().query("id").to_string();
 
     let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
@@ -67,6 +70,9 @@ pub async fn get_users_by_id(
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
 
+    if config_usr.usr_show_lead_time {
+        log::info!("get_users_by_id() lead time: {:.2?}", now.elapsed());
+    }
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
     } else {
@@ -77,9 +83,11 @@ pub async fn get_users_by_id(
 // GET api/users/nickname/{nickname}
 #[get("/users/nickname/{nickname}")]
 pub async fn get_users_by_nickname(
+    config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     let nickname = request.match_info().query("nickname").to_string();
 
     let result_user = web::block(move || {
@@ -94,6 +102,9 @@ pub async fn get_users_by_nickname(
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
 
+    if config_usr.usr_show_lead_time {
+        log::info!("get_users_by_nickname() lead time: {:.2?}", now.elapsed());
+    }
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(json!({ "nickname": user.nickname })))
     } else {
@@ -104,9 +115,11 @@ pub async fn get_users_by_nickname(
 // GET api/users/email/{email}
 #[get("/users/email/{email}")]
 pub async fn get_users_by_email(
+    config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     let email = request.match_info().query("email").to_string();
 
     let result_user = web::block(move || {
@@ -121,6 +134,9 @@ pub async fn get_users_by_email(
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
 
+    if config_usr.usr_show_lead_time {
+        log::info!("get_users_by_email() lead time: {:.2?}", now.elapsed());
+    }
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(json!({ "email": user.email })))
     } else {
@@ -132,11 +148,16 @@ pub async fn get_users_by_email(
 #[rustfmt::skip]
 #[get("/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_user_current(
+    config_usr: web::Data<config_usr::ConfigUsr>,
     authenticated: Authenticated,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     let user = authenticated.deref();
     let user_dto = user_models::UserDto::from(user.clone());
 
+    if config_usr.usr_show_lead_time {
+        log::info!("get_user_current() lead time: {:.2?}", now.elapsed());
+    }
     Ok(HttpResponse::Ok().json(user_dto))
 }
 
@@ -144,10 +165,12 @@ pub async fn get_user_current(
 #[rustfmt::skip]
 #[put("/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_user_current(
+    config_usr: web::Data<config_usr::ConfigUsr>,
     authenticated: Authenticated,
     user_orm: web::Data<UserOrmApp>,
     json_body: web::Json<user_models::ModifyUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     let user = authenticated.deref();
     let id = user.id;
 
@@ -170,6 +193,9 @@ pub async fn put_user_current(
     .await
     .map_err(|e| err_blocking(e.to_string()))??;
 
+    if config_usr.usr_show_lead_time {
+        log::info!("put_user_current() lead time: {:.2?}", now.elapsed());
+    }
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
     } else {
@@ -181,9 +207,11 @@ pub async fn put_user_current(
 #[rustfmt::skip]
 #[delete("/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_user_current(
+    config_usr: web::Data<config_usr::ConfigUsr>,
     authenticated: Authenticated,
     user_orm: web::Data<UserOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     let user = authenticated.deref();
     let id = user.id;
 
@@ -197,7 +225,10 @@ pub async fn delete_user_current(
     .await
     .map_err(|e| err_blocking(e.to_string()))??;
 
-    if 0 == result_count {
+    if config_usr.usr_show_lead_time {
+        log::info!("delete_user_current() lead time: {:.2?}", now.elapsed());
+    }
+   if 0 == result_count {
         Err(AppError::new(err::CD_NOT_FOUND, err::MSG_USER_NOT_FOUND_BY_ID).set_status(404))
     } else {
         Ok(HttpResponse::Ok().finish())
@@ -208,10 +239,12 @@ pub async fn delete_user_current(
 #[rustfmt::skip]
 #[put("/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn put_user(
+    config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
     json_body: web::Json<user_models::ModifyUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     let id_str = request.match_info().query("id").to_string();
 
     let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
@@ -235,6 +268,9 @@ pub async fn put_user(
     .await
     .map_err(|e| err_blocking(e.to_string()))??;
 
+    if config_usr.usr_show_lead_time {
+        log::info!("put_user() lead time: {:.2?}", now.elapsed());
+    }
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
     } else {
@@ -246,9 +282,11 @@ pub async fn put_user(
 #[rustfmt::skip]
 #[delete("/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn delete_user(
+    config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
     let id_str = request.match_info().query("id").to_string();
 
     let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
@@ -263,6 +301,9 @@ pub async fn delete_user(
     .await
     .map_err(|e| err_blocking(e.to_string()))??;
 
+    if config_usr.usr_show_lead_time {
+        log::info!("delete_user() lead time: {:.2?}", now.elapsed());
+    }
     if 0 == result_count {
         Err(AppError::new(err::CD_NOT_FOUND, err::MSG_USER_NOT_FOUND_BY_ID).set_status(404))
     } else {
@@ -280,7 +321,10 @@ mod tests {
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
     };
-    use crate::users::user_models::{ModifyUserDto, User, UserDto, UserModelsTest, UserRole};
+    use crate::users::{
+        config_usr,
+        user_models::{ModifyUserDto, User, UserDto, UserModelsTest, UserRole},
+    };
     use crate::utils::parser::{CD_PARSE_INT_ERROR, MSG_PARSE_INT_ERROR};
 
     use super::*;
@@ -308,12 +352,14 @@ mod tests {
         factory: impl dev::HttpServiceFactory + 'static,
         request: TestRequest,
     ) -> dev::ServiceResponse {
+        let data_config_usr = web::Data::new(config_usr::get_test_config());
         let data_config_jwt = web::Data::new(config_jwt);
         let data_user_orm = web::Data::new(UserOrmApp::create(&vec.0));
         let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
 
         let app = test::init_service(
             App::new()
+                .app_data(web::Data::clone(&data_config_usr))
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_user_orm))
                 .app_data(web::Data::clone(&data_session_orm))
