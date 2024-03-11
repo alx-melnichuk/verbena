@@ -42,6 +42,9 @@ APP_PRIVATE_KEY=example.key.pem
 # APP_ALLOWED_ORIGIN=
 # Directory for temporary files when uploading user files.
 APP_DIR_TMP=./tmp
+# Number of worker services (this is the number of available physical CPU cores for parallel computing).
+# By default, it is detected automatically.
+# APP_NUM_WORKERS=5
 
 # -----------------------------------------------------------------------------
 # Database (PostgreSQL)

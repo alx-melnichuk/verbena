@@ -38,31 +38,28 @@ async fn main() -> std::io::Result<()> {
     std::fs::create_dir_all(&config_strm.strm_logo_files_dir)?;
 
     log::info!("Starting server {}", &app_domain);
+    let config_app2 = config_app.clone();
+
+    let mut srv = HttpServer::new(move || {
+        let cors = create_cors(config_app2.clone());
+        App::new()
+            .configure(configure_server())
+            .wrap(cors)
+            .wrap(actix_web::middleware::Logger::default())
+    });
 
     if config_app::PROTOCOL_HTTP == app_protocol {
-        HttpServer::new(move || {
-            let cors = create_cors(config_app.clone());
-            App::new()
-                .configure(configure_server())
-                .wrap(cors)
-                .wrap(actix_web::middleware::Logger::default())
-        })
-        .bind(&app_url)?
-        .run()
-        .await
+        srv = srv.bind(&app_url)?;
     } else {
         let builder =
             ssl_acceptor::create_ssl_acceptor_builder(&config_app.app_certificate, &config_app.app_private_key);
-
-        HttpServer::new(move || {
-            let cors = create_cors(config_app.clone());
-            App::new()
-                .configure(configure_server())
-                .wrap(cors)
-                .wrap(actix_web::middleware::Logger::default())
-        })
-        .bind_openssl(&app_url, builder)?
-        .run()
-        .await
+        srv = srv.bind_openssl(&app_url, builder)?;
     }
+    if let Some(num_workers) = config_app.app_num_workers {
+        let worker_count = std::thread::available_parallelism()?.get();
+        #[rustfmt::skip]
+        let workers = if num_workers > worker_count { worker_count } else { num_workers };
+        srv = srv.workers(workers);
+    }
+    srv.run().await
 }

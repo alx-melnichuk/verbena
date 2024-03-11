@@ -19,6 +19,7 @@ pub struct ConfigApp {
     pub app_private_key: String,
     pub app_allowed_origin: String,
     pub app_dir_tmp: String,
+    pub app_num_workers: Option<usize>,
 }
 
 impl ConfigApp {
@@ -58,6 +59,11 @@ impl ConfigApp {
         let app_allowed_origin = env::var("APP_ALLOWED_ORIGIN").unwrap_or("".to_string());
         // Directory for temporary files when uploading user files.
         let app_dir_tmp = env::var("APP_DIR_TMP").expect("APP_DIR_TMP must be set");
+        // Number of worker services (this is the number of available physical CPU cores for parallel computing).
+        // By default, it is detected automatically.
+        let num_workers = env::var("APP_NUM_WORKERS").unwrap_or("".to_string());
+        #[rustfmt::skip]
+        let app_num_workers = if num_workers.len() > 0 { Some(num_workers.parse::<usize>().unwrap()) } else { None };
 
         ConfigApp {
             app_host,
@@ -72,6 +78,7 @@ impl ConfigApp {
             app_private_key,
             app_allowed_origin,
             app_dir_tmp,
+            app_num_workers,
         }
     }
     fn get_domain(protocol: &str, host: &str, port: &str) -> String {
@@ -99,5 +106,6 @@ pub fn get_test_config() -> ConfigApp {
         app_private_key: "demo.key.pem".to_string(),
         app_allowed_origin: "".to_string(),
         app_dir_tmp: "./".to_string(),
+        app_num_workers: None,
     }
 }
