@@ -14,7 +14,7 @@ app-panel-stream-event {
     align-items: center;
     background-color: var(--pse-pn-stream-bg);
     border: 1px solid var(--pse-pn-stream-brd);
-    border-radius: 0.75em;
+    border-radius: var(--pse-crd-brd-rd, 0.75em);
     box-sizing: border-box;
     display: flex;
     flex-shrink: 0;
