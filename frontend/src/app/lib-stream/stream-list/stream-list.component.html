@@ -18,8 +18,9 @@
   </div>
 
   <div class="sl-events sl-relative">
-    <div class="sl-event-label">
-      <span [ngClass]="{ 'sl-hidden': !streamCalendarService.isShowEvents(streamCalendarService.calendarMonth) }">
+    <div [ngClass]="{ 'sl-heavier': streamCalendarService.isShowEvents(streamCalendarService.calendarMonth) }"
+      class="sl-event-label">
+      <span>
         {{ streamCalendarService.eventsOfDaySelected | date: formatDate }}
       </span>
     </div>

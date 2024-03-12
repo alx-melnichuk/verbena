@@ -68,7 +68,10 @@ app-stream-list {
     flex-direction: column;
   }
   .sl-event-label {
-    font-weight: 500;
+    &.sl-heavier {
+      --sl-fn-wg: 500;
+    }
+    font-weight: var(--sl-fn-wg, lighter);
     height: 4em;
     line-height: 4em;
     padding-left: 5em;

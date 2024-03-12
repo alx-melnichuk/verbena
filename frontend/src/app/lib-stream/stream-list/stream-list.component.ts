@@ -46,14 +46,6 @@ export class StreamListComponent {
   ) {
     const userDto = this.route.snapshot.data['userDto'];
     this.userId = userDto.id;
-    // this.routerChangesSub = this.router.events
-    //   .pipe(filter((event) => event instanceof NavigationEnd))
-    //   .subscribe(() => {
-    //     this.scheduleService.activeDate = moment();
-    //     this.scheduleService.selectedDate = moment().format(MOMENT_ISO8601_DATE);
-    //     this.loadFutureAndPastStreamsAndSchedule();
-    //     this.changeDetector.markForCheck();
-    //   });
     this.loadFutureAndPastStreamsAndSchedule();
   }
 
@@ -87,14 +79,14 @@ export class StreamListComponent {
 
   public async searchNextFutureStream(): Promise<null | HttpErrorResponse> {
     // Get the next page of the "Future Stream".
-    await this.streamListService.searchNextFutureStream(this.userId); // TODO delete serId
+    await this.streamListService.searchNextFutureStream();
     this.changeDetector.markForCheck();
     return null;
   }
 
   public async searchNextPastStream(): Promise<null | HttpErrorResponse> {
     // Get the next page of "Past Stream".
-    await this.streamListService.searchNextPastStream(this.userId); // TODO delete serId
+    await this.streamListService.searchNextPastStream();
     this.changeDetector.markForCheck();
     return null;
   }
@@ -142,17 +134,19 @@ export class StreamListComponent {
 
     const buffPromise: Promise<unknown>[] = [];
     // Get the next page of the "Future Stream".
-    buffPromise.push(this.streamListService.searchNextFutureStream(this.userId));
+    buffPromise.push(this.streamListService.searchNextFutureStream());
     // Get the next page of "Past Stream".
-    buffPromise.push(this.streamListService.searchNextPastStream(this.userId));
+    buffPromise.push(this.streamListService.searchNextPastStream());
     
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const selectedDate = this.streamCalendarService.eventsOfDaySelected || now;
     // Get a list of short streams for the selected date.
     buffPromise.push(this.streamCalendarService.getListEventsForDate(selectedDate, 1));
+
+    const selectedMonth = this.streamCalendarService.calendarMonth || now;
     // Get a list of events (streams) for a specified date.
-    buffPromise.push(this.streamCalendarService.getCalendarInfoForPeriod(now));
+    buffPromise.push(this.streamCalendarService.getCalendarInfoForPeriod(selectedMonth));
 
     Promise.all(buffPromise).finally(() => this.changeDetector.markForCheck());
   }

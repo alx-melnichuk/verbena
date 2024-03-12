@@ -16,18 +16,17 @@ export class StreamListService {
   // "Future Streams"
   public futureStreamLoading = false;
   public futureStreamsDto: StreamDto[] = [];
-  public futurePageInfo: PageInfo = PageInfoUtil.create({ page: 0, limit: CN_DEFAULT_LIMIT });
+  public futurePageInfo: PageInfo = this.createPageInfo();
 
   // "Past Streams"
   public pastStreamLoading = false;
   public pastStreamsDto: StreamDto[] = [];
-  public pastPageInfo: PageInfo = PageInfoUtil.create({ page: 0, limit: CN_DEFAULT_LIMIT });
+  public pastPageInfo: PageInfo = this.createPageInfo();
 
   constructor(
     private alertService: AlertService,
     private streamService: StreamService,
   ) { 
-    console.log(`StreamListService()`); // # 
   }
 
   // "Future Streams"
@@ -35,17 +34,18 @@ export class StreamListService {
   /** Clear array of "Future Stream". */
   public clearFutureStream(): void {
     this.futureStreamsDto = [];
+    this.futurePageInfo = this.createPageInfo();
   }
   /** Search for the next page of the "Future Stream". */
-  public searchNextFutureStream(userId: number): Promise<StreamListDto | HttpErrorResponse | undefined> {
+  public searchNextFutureStream(userId?: number | undefined): Promise<StreamListDto | HttpErrorResponse | undefined> {
     const pages = this.futurePageInfo.pages;
     const nextPage = this.futurePageInfo.page + 1;
     const isNextPage = ((pages === -1) || (this.futurePageInfo.page !== nextPage && nextPage <= pages));
     if (!isNextPage) {
-        return Promise.resolve(undefined);
+      return Promise.resolve(undefined);
     }
     let searchStream: SearchStreamDto = {
-      userId, // TODO delete
+      userId,
       isFuture: true,
       page: this.futurePageInfo.page + 1,
       limit: this.futurePageInfo.limit
@@ -72,14 +72,15 @@ export class StreamListService {
   /** Clear array of "Past Stream". */
   public clearPastStream(): void {
     this.pastStreamsDto = [];
+    this.pastPageInfo = this.createPageInfo();
   }
   /** Search for the next page of the "Past Stream". */
-  public searchNextPastStream(userId: number): Promise<StreamListDto | HttpErrorResponse | undefined> {
+  public searchNextPastStream(userId?: number | undefined): Promise<StreamListDto | HttpErrorResponse | undefined> {
     const pages = this.pastPageInfo.pages;
     const nextPage = this.pastPageInfo.page + 1;
     const isNextPage = ((pages === -1) || (this.pastPageInfo.page !== nextPage && nextPage <= pages));
     if (!isNextPage) {
-        return Promise.resolve(undefined);
+      return Promise.resolve(undefined);
     }
     let searchStream: SearchStreamDto = {
       userId,
@@ -101,9 +102,12 @@ export class StreamListService {
       })
       .finally(() => {
         this.pastStreamLoading = false;
-      });      
+      });
   }
 
   // ** Private API **
 
+  private createPageInfo(): PageInfo {
+    return PageInfoUtil.create({ page: 0, limit: CN_DEFAULT_LIMIT });
+  }
 }
