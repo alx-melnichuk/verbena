@@ -15,7 +15,6 @@ export const SC_DEFAULT_LIMIT = 12;
 export const SC_DELTA_TO_FUTURE = 1;
 export const SC_DELTA_TO_PAST = 10;
 
-
 @Injectable({
   providedIn: 'root'
 })
@@ -84,7 +83,7 @@ export class StreamCalendarService {
     this.alertService.hide();
     const page = pageNum > 0 ? pageNum : (this.eventsOfDayPageInfo.page + 1);
     if (!start || (this.eventsOfDaySelected == start && page > 1 && page > this.eventsOfDayPageInfo.pages)) {
-        return Promise.resolve(undefined);
+      return Promise.resolve(undefined);
     }
     this.eventsOfDaySelected = start;
     const starttime = StringDateTimeUtil.toISO(start);

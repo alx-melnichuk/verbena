@@ -11,11 +11,7 @@ export const ROUTE_SIGNUP = '/' + R_SIGNUP;      // '/ind/signup'
 export const R_FORGOT_PASSWORD = R_ROOT + '/' + 'forgot-password'; // 'ind/forgot-password'
 export const ROUTE_FORGOT_PASSWORD = '/' + R_FORGOT_PASSWORD; // '/ind/forgot-password'
 
-// ** View **
-export const R_VIEW = R_ROOT + '/' + 'view'; // 'ind/view'
-export const ROUTE_VIEW = '/' + R_VIEW; // '/ind/view'
-
-// ** stream **
+// ** Stream **
 export const R_STREAM = R_ROOT + '/' + 'stream'; // 'ind/stream'
 export const ROUTE_STREAM = '/' + R_STREAM;
 
@@ -34,6 +30,12 @@ export const E_STREAM_CREATE = 'create';
 export const R_STREAM_CREATE = R_STREAM + '/' + E_STREAM_CREATE; //  'ind/stream/create'
 export const ROUTE_STREAM_CREATE = '/' + R_STREAM_CREATE;        // '/ind/stream/create'
 // export const ROUTE_STREAM_CREATE = '/' + R_STREAM + '/' + R_STREAM_CREATE;
+
+// ** View **
+export const R_VIEW = R_ROOT + '/' + 'view'; // 'ind/view'
+export const ROUTE_VIEW = '/' + R_VIEW; // '/ind/view'
+
+// ** **
 
 export const AUTHORIZATION_REQUIRED = [
   ROUTE_STREAM
