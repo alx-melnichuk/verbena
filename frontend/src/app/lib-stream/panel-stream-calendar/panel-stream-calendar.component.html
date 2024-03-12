@@ -1,7 +1,7 @@
 <mat-calendar #calendar
   [startView]="'month'"
   [selected]="selected"
-  [startAt]="startAtDate"
+  [startAt]="selected || startAtDate"
   [minDate]="minDate"
   [maxDate]="maxDate"
   [dateClass]="dateClassFn"
