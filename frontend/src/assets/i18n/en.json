@@ -11,8 +11,10 @@
     "yes": "Yes",
     "no": "No"
   },
-  "main-menu": {
-    "my_profile": "My profile",
+  "main_menu": {
+    "my_profile_": "My profile",
+    "my_streams": "My streams",
+    "my_follows_": "My follows",
     "dark_theme": "Dark Theme",
     "log_out": "Log Out"
   },

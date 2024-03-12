@@ -1,49 +1,26 @@
 <button
   mat-button
   [matMenuTriggerFor]="mainMenu"
-  [disabled]="isDisabledMenu"
->
+  [disabled]="isDisabledMenu">
   <ng-content></ng-content>
 </button>
 
-<mat-menu #mainMenu="matMenu" class="pn-main-menu">
-  <!-- <button mat-menu-item class="app-main-menu-item" *ngIf="isShowMyProfile" [routerLink]="[linkMyProfile]">
-    <span class="mmi-icon mmi-my-profile"></span>
-    <span class="mr-lf-10">{{ 'main-menu.my_profile' | translate }}</span>
-  </button> -->
-  <!-- <button mat-menu-item class="app-main-menu-item" *ngIf="isShowMyStreams" [routerLink]="[linkMyStreams]">
-      <span class="mmi-icon mmi-my-streams"></span>
-      <span class="mr-lf-10">{{ 'main-menu.my_streams' | translate }}</span>
-    </button> -->
-  <!-- <button mat-menu-item class="app-main-menu-item" *ngIf="isShowMyFollows" [routerLink]="[linkMyFollows]">
-      <span class="mmi-icon mmi-my-follows"></span>
-      <span class="mr-lf-10">{{ 'main-menu.my_follows' | translate }}</span>
-    </button> -->
+<mat-menu #mainMenu="matMenu" class="app-panel-mainmenu">
+
+  <button mat-menu-item *ngIf="isShowMyStreams" class="app-main-menu-item" [routerLink]="[linkMyStreams]">
+    <span class="mm-icon mm-my-streams"></span>
+    <span class="mm-mr-lf">{{ 'main_menu.my_streams' | translate }}</span>
+  </button>
 
   <button mat-menu-item *ngIf="isShowDarkTheme" class="pn-main-menu-item" (click)="doChangeDarkTheme(!isDarkTheme)">
-    <span class="mmi-icon mmi-dark-theme"></span>
-    <span class="mmi-mr-lf">{{ 'main-menu.dark_theme' | translate }}</span>
-    <mat-slide-toggle class="mmi-mr-lf" color="primary" [ngModel]="isDarkTheme"></mat-slide-toggle>
+    <span class="mm-icon mm-dark-theme"></span>
+    <span class="mm-mr-lf">{{ 'main_menu.dark_theme' | translate }}</span>
+    <mat-slide-toggle class="mm-mr-lf" color="primary" [ngModel]="isDarkTheme"></mat-slide-toggle>
   </button>
     
   <button mat-menu-item *ngIf="isShowLogout" class="app-main-menu-item" (click)="doLogout()">
-    <span class="mmi-icon mmi-log-out"></span>
-    <span class="mmi-mr-lf">{{ 'main-menu.log_out' | translate }}</span>
+    <span class="mm-icon mm-log-out"></span>
+    <span class="mm-mr-lf">{{ 'main_menu.log_out' | translate }}</span>
   </button>
 
 </mat-menu>
-
-<!-- <mat-menu
-  #mainMenu="matMenu"
-  backdropClass="app-main-menu-box"
-  xPosition="before"
-> -->
-<!-- </mat-menu> -->
-
-<!-- "main-menu": {
-    "my_profile": "My profile",
-    "my_streams": "My streams",
-    "my_follows": "My follows",
-    "dark_theme": "Dark Theme",
-    "log_out": "Log Out"
-  }, -->
