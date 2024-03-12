@@ -21,6 +21,7 @@
 
   <ng-container *ngIf="!!userInfo">
     <app-main-menu
+      [isShowMyStreams]="true"
       [isShowDarkTheme]="true"
       [isShowLogout]="true"
       (setDarkTheme)="setDarkTheme($event)"
