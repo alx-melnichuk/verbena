@@ -56,7 +56,7 @@ export class StreamListComponent {
   public async getCalendarInfoForPeriod(calendarStart: Date): Promise<void> {
     const buffPromise: Promise<unknown>[] = [];
     // Get a list of events (streams) for a specified date.
-    buffPromise.push(this.streamCalendarService.getCalendarInfoForPeriod(calendarStart));
+    buffPromise.push(this.streamCalendarService.getCalendarInfoForPeriod(calendarStart, false));
     if (this.streamCalendarService.isShowEvents(calendarStart)) {
       buffPromise.push(this.getListEventsForDate(this.streamCalendarService.eventsOfDaySelected, 1));
     } else {
@@ -137,16 +137,14 @@ export class StreamListComponent {
     buffPromise.push(this.streamListService.searchNextFutureStream());
     // Get the next page of "Past Stream".
     buffPromise.push(this.streamListService.searchNextPastStream());
-    
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const selectedDate = this.streamCalendarService.eventsOfDaySelected || now;
     // Get a list of short streams for the selected date.
     buffPromise.push(this.streamCalendarService.getListEventsForDate(selectedDate, 1));
-
     const selectedMonth = this.streamCalendarService.calendarMonth || now;
     // Get a list of events (streams) for a specified date.
-    buffPromise.push(this.streamCalendarService.getCalendarInfoForPeriod(selectedMonth));
+    buffPromise.push(this.streamCalendarService.getCalendarInfoForPeriod(selectedMonth, true));
 
     Promise.all(buffPromise).finally(() => this.changeDetector.markForCheck());
   }

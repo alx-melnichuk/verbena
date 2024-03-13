@@ -12,7 +12,7 @@ import { SearchStreamEventDto, StreamEventDto, StreamEventPageDto, StreamsPeriod
 
 
 export const SC_DEFAULT_LIMIT = 12;
-export const SC_DELTA_TO_FUTURE = 1;
+export const SC_DELTA_TO_FUTURE = 10;
 export const SC_DELTA_TO_PAST = 10;
 
 @Injectable({
@@ -42,12 +42,12 @@ export class StreamCalendarService {
   // ** "Streams Calendar" **
 
   /** Get calendar information for a period. */
-  public getCalendarInfoForPeriod(start: Date, userId?: number): Promise<StreamsPeriodDto[] | HttpErrorResponse | undefined> {
+  public getCalendarInfoForPeriod(start: Date, isRequired: boolean, userId?: number): Promise<StreamsPeriodDto[] | HttpErrorResponse | undefined> {
     this.alertService.hide();
     const date: Date = new Date(start);
     date.setHours(0, 0, 0, 0);
     const startMonth = DateUtil.dateFirstDayOfMonth(date);
-    if (DateUtil.compare(this.calendarMonth, startMonth) == 0) {
+    if (!isRequired && DateUtil.compare(this.calendarMonth, startMonth) == 0) {
       return Promise.resolve(undefined);
     }
     this.calendarMonth = startMonth;
@@ -59,8 +59,8 @@ export class StreamCalendarService {
       userId
     })
     .then((response: StreamsPeriodDto[] | HttpErrorResponse | undefined) => {
-        this.calendarMarkedDates = (response as StreamsPeriodDto[]).map((val) => val.date);
-        return response;
+      this.calendarMarkedDates = (response as StreamsPeriodDto[]).map((val) => val.date);
+      return response;
     })
     .catch((error: HttpErrorResponse) => {
       this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], 'stream_list.error_get_streams_for_active_period');
