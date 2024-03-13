@@ -1,13 +1,15 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { PanelStreamEditorComponent } from '../panel-stream-editor/panel-stream-editor.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ROUTE_STREAM } from 'src/app/common/routes';
+
+import { ROUTE_STREAM, ROUTE_STREAM_LIST } from 'src/app/common/routes';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
-import { StreamDto, UpdateStreamFileDto } from '../stream-api.interface';
+
 import { StreamService } from '../stream.service';
+import { StreamDto, UpdateStreamFileDto } from '../stream-api.interface';
 
 @Component({
   selector: 'app-stream-edit',
@@ -18,10 +20,12 @@ import { StreamService } from '../stream.service';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class StreamEditComponent implements OnInit {
+export class StreamEditComponent {
   public isLoadDataStream = false;
   public streamDto: StreamDto;
   
+  private goBackToRoute: string = ROUTE_STREAM_LIST;
+
   constructor(
     private changeDetectorRef: ChangeDetectorRef,
     private route: ActivatedRoute,
@@ -32,12 +36,17 @@ export class StreamEditComponent implements OnInit {
     console.log(`StreamEditComponent()`); // #-
     this.streamDto = this.route.snapshot.data['streamDto'];
     console.log(`StreamEditComponent() streamDto: `, this.streamDto); // #-
-  }
-  ngOnInit(): void {
-    console.log(`StreamEditComponent().OnInit()`); // #-
+    const previousNavigation = this.router.getCurrentNavigation()?.previousNavigation;
+    if (!!previousNavigation && !!previousNavigation.finalUrl) {
+        this.goBackToRoute = previousNavigation.finalUrl.toString();
+    }
   }
 
   // ** Public API **
+
+  public doCancelStream(): void {
+    this.goBack();
+  }
 
   public doUpdateStream(updateStreamFileDto: UpdateStreamFileDto): void {
     this.alertService.hide();
@@ -67,11 +76,11 @@ export class StreamEditComponent implements OnInit {
         // 'ROUTE_STREAM_LIST');
         Promise.resolve()
           .then(() => {
-            this.router.navigateByUrl(goToRoute);
-          });
+            return this.goBack();
+        });
       })
       .catch((error: HttpErrorResponse) => {
-        console.log(`error: `, error); // #
+        console.error(`error: `, error); // #
         const title = (isEdit ? 'stream_edit.error_editing_stream' : 'stream_edit.error_creating_stream');
         // const message = HttpErrorUtil.getMsgs(error)[0];
         const message = 'message';
@@ -86,27 +95,7 @@ export class StreamEditComponent implements OnInit {
 
   // ** Private API **
 
-  /*private streamDTOtoAddStreamDTO(streamDTO: StreamDTO): AddStreamDTO {
-    const result: AddStreamDTO = {
-      title: streamDTO.title,
-      description: streamDTO.description,
-    };
-    if (!!streamDTO.starttime) { result.starttime = streamDTO.starttime; }
-    if (!!streamDTO.tags) { result.tags = streamDTO.tags; }
-    if (!!streamDTO.logo) { result.logoTarget = streamDTO.logo; }
-    if (!!streamDTO.source) { result.source = streamDTO.source; }
-
-    return result;
-  }*/
-
-  /*private streamDTOtoUpdateStreamDTO(streamDto: StreamDTO): UpdateStreamDTO {
-    const result: UpdateStreamDTO = {};
-    if (!!streamDto.title) { result.title = streamDto.title; }
-    if (!!streamDto.description) { result.description = streamDto.description; }
-    if (!!streamDto.starttime) { result.starttime = streamDto.starttime; }
-    if (!!streamDto.tags) { result.tags = streamDto.tags; }
-    if (!!streamDto.source) { result.source = streamDto.source; }
-
-    return result;
-  }*/
+  private goBack(): Promise<boolean> {
+    return this.router.navigateByUrl(this.goBackToRoute);
+  }
 }
