@@ -43,7 +43,7 @@
         </div>
       </div>
 
-      <div class="pse-text">{{ 'stream_edit.tags' | translate }}</div>
+      <div class="psd-text">{{ 'stream_edit.tags' | translate }}</div>
 
       <mat-form-field class="psd-max-wd" appearance="outline" color="primary">
         <mat-label>{{ 'stream_edit.add_tags_max_4' | translate }}</mat-label>
@@ -53,11 +53,12 @@
             [removable]="tagValueRemovable"
             (removed)="tagValueRemove(tagValue)">
             {{ tagValue }}
-            <button class="pse-btn-chip-remove" matChipRemove *ngIf="tagValueRemovable">&#215;</button>
+            <button class="psd-btn-chip-remove" matChipRemove *ngIf="tagValueRemovable">&#215;</button>
           </mat-chip-row>
-          <input
+          <input #tagValue
+            [formControl]="tagValueCtrl"
             [matChipInputFor]="chipGrid"
-            [disabled]="tagValues.length == tagValuesMax"
+            [attr.readonly]="tagValues.length == tagValuesMax ? '' : null"
             [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
             (matChipInputTokenEnd)="tagValueAdd($event)"
           />
@@ -86,15 +87,6 @@
           <mat-label [attr.is-disable]="controls.startTime.disabled ? true : null">
             {{ 'stream_edit.start_time' | translate }}
           </mat-label>
-             <!-- <ngx-mat-timepicker class="pse-start-time-block"
-                formControlName="startTime"
-                [attr.disabled]="controls.startTime.disabled"
-                [showSpinners]="true"
-                [stepHour]="1"
-                [stepMinute]="1"
-                [stepSecond]="1"
-                [showSeconds]="true"
-             ></ngx-mat-timepicker> -->
           <div>
             <input class="psd-input"
               type="time"
@@ -106,7 +98,6 @@
               autocomplete="off"
             />
           </div>
-          <!-- <div class="pse-start-time-box" *ngIf="controls.startTime.disabled"></div> -->
         </div>
       </div>
 
@@ -131,8 +122,7 @@
   </div>
   <div class="psd-card-actions">
 
-    <button class="smd-button"
-      mat-raised-button color="primary"
+    <button mat-raised-button color="primary"
       [disabled]="formGroup.pristine || formGroup.invalid"
       (click)="saveStreamCard()">
       <span class="psd-card-actions-label">
@@ -140,163 +130,18 @@
         {{ (isCreate ? 'stream_edit.go_public' : 'stream_edit.save') | translate }}
       </span>
     </button>
-    <div class="psd-save"></div>
+    
+    <button mat-raised-button class="psd-cancel"
+      (click)="cancelStreamCard()">
+      <span class="psd-card-actions-label">
+        {{ 'buttons.cancel' | translate }}
+      </span>
+    </button>
   
   </div>
   <sub>
-startDate: {{ controls.startDate.value | date: "dd MMMM yyyy HH:mm:ss z"}} . . startTime: {{ controls.startTime.value }}<br/>
-pristine: {{ formGroup.pristine | json }} . . invalid: {{ formGroup.invalid | json }}<br/>
+startDate: {{ controls.startDate.value | date: "dd MMMM yyyy HH:mm:ss z"}} __ startTime: {{ controls.startTime.value }}<br/>
+pristine: {{ formGroup.pristine | json }} __ invalid: {{ formGroup.invalid | json }}<br/>
 errors: {{ formGroup.errors | json }}<br/>
   </sub>
 </div>
-<mat-card>
-  <mat-card-content>
-
-    <form [formGroup]="formGroup" novalidate>
-  
-      <div class="pse-text">{{ 'stream_edit.caption' | translate }}</div>
-
-      <mat-form-field max-wd appearance="outline" color="primary">
-        <mat-label>{{ 'stream_edit.title' | translate }}</mat-label>
-        <input matInput
-          type="text"
-          formControlName="title"
-          [required]="isCreate"
-          [attr.maxlength]="(maxLenTitle > 0 ? maxLenTitle + 1 : null)"
-          autocomplete="off"
-        />
-        <mat-error>{{ getErrorMsg(controls.title.errors) | translate : controls.title.errors }}</mat-error>
-      </mat-form-field>
-  
-      <app-field-descript
-        max-wd
-        formControlName="descript"
-        [isRequired]="false"
-        [label]="'stream_edit.descript'"
-        [minLen]="minLenDescription"
-        [maxLen]="maxLenDescription"
-        [minRows]="countRowsDescription"
-        [maxRows]="countRowsDescription"
-      ></app-field-descript>
-  
-      <div class="pse-text">{{ 'stream_edit.thumbnail' | translate }}</div>
-      <div class="pse-logo-block">
-        <app-field-file-upload *ngIf="!logoView"
-          [maxFileSize]="maxFileSize"
-          [validFileTypes]="validFileTypes"
-          (addFile)="addFile($event)"
-          (readFile)="readFile($event)"
-        ></app-field-file-upload>
-        <div *ngIf="!!logoView" class="pse-logo-image">
-          <img class="pse-image-view" [src]="logoView" alt="logo unavailable">
-          <button class="pse-delete-logo" (click)="deleteFileLogo()">
-            <span class="pse-delete-box"></span>
-          </button>
-        </div>
-      </div>
-  
-      <div class="pse-text">{{ 'stream_edit.tags' | translate }}</div>
-
-      <mat-form-field max-wd appearance="outline" color="primary">
-        <mat-label>{{ 'stream_edit.add_tags_max_4' | translate }}</mat-label>
-        <mat-chip-grid #chipGrid2 aria-label="Enter fruits">
-          <mat-chip-row
-            *ngFor="let tagValue of tagValues"
-            [removable]="tagValueRemovable"
-            (removed)="tagValueRemove(tagValue)">
-            {{ tagValue }}
-            <button class="pse-btn-chip-remove" matChipRemove *ngIf="tagValueRemovable">&#215;</button>
-          </mat-chip-row>
-          <input
-            [matChipInputFor]="chipGrid2"
-            [disabled]="tagValues.length == tagValuesMax"
-            [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-            (matChipInputTokenEnd)="tagValueAdd($event)"
-          />
-        </mat-chip-grid>
-      </mat-form-field>
-
-      <div class="pse-start-date-time-label">
-        <span class="pse-text">{{ 'stream_edit.set_date_and_time_or_now' | translate }}</span>
-        <mat-slide-toggle
-          color="primary"
-          formControlName="isStartTime"
-          (change)="changeIsStartTime()"
-        ></mat-slide-toggle>
-      </div>
-
-      <div class="start-date-time">
-        <mat-form-field appearance="outline" color="primary">
-          <mat-label>{{ 'stream_edit.start_date' | translate }}</mat-label>
-          <input matInput formControlName="startDate"
-            [matDatepicker]="datepickerStartDate"
-          />
-          <mat-datepicker-toggle matSuffix [for]="datepickerStartDate"></mat-datepicker-toggle>
-          <mat-datepicker #datepickerStartDate></mat-datepicker>
-        </mat-form-field>
-        <div class="pse-start-time-wrap">
-          <mat-label [attr.is-disable]="controls.startTime.disabled ? true : null">
-            {{ 'stream_edit.start_time' | translate }}
-          </mat-label>
-             <!-- <ngx-mat-timepicker class="pse-start-time-block"
-                formControlName="startTime"
-                [attr.disabled]="controls.startTime.disabled"
-                [showSpinners]="true"
-                [stepHour]="1"
-                [stepMinute]="1"
-                [stepSecond]="1"
-                [showSeconds]="true"
-             ></ngx-mat-timepicker> -->
-          <div>
-            <input class="pse-input"
-              type="time"
-              formControlName="startTime"
-              [attr.disabled]="controls.startTime.disabled ? true : null"
-              min="00:00"
-              max="23:59"
-              step="60"
-              autocomplete="off"
-            />
-          </div>
-          <!-- <div class="pse-start-time-box" *ngIf="controls.startTime.disabled"></div> -->
-        </div>
-      </div>
-  
-      <ng-container *ngIf="!isCreate">
-        <div class="">
-          <div class="pse-text">{{ 'stream_edit.link_for_visitors' | translate }}</div>
-        </div>
-        <div class="pse-link-param">
-          <div class="pse-ellipsis2">
-            <span>{{ linkForVisitors }}</span>
-          </div>
-          <div class="pse-icon pse-copy"
-            [matTooltip]="'stream_edit.copy_stream_link_to_clipboard' | translate"
-            matTooltipPosition="above"
-            (click)="doCopyToClipboard(linkForVisitors)"
-          ></div>
-        </div>
-      </ng-container>
-  
-    </form>
-
-  </mat-card-content>
-  <mat-card-actions class="pse-card-actions">
-    <button class="smd-button"
-      mat-raised-button color="primary"
-      [disabled]="formGroup.pristine || formGroup.invalid"
-      (click)="saveStreamCard()"
-    >
-      <span class="pse-card-actions-label">
-        <i class="pse-save-file"></i>
-        {{ (isCreate ? 'stream_edit.go_public' : 'stream_edit.save') | translate }}
-      </span>
-    </button>
-    <div class="pse-save"></div>
-  </mat-card-actions>
-  <sub>
-startDate: {{ controls.startDate.value | date: "dd MMMM yyyy HH:mm:ss z"}} . . startTime: {{ controls.startTime.value }}<br/>
-pristine: {{ formGroup.pristine | json }} . . invalid: {{ formGroup.invalid | json }}<br/>
-errors: {{ formGroup.errors | json }}
-  </sub>
-</mat-card>

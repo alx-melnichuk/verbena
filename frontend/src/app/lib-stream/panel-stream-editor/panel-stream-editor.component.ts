@@ -1,9 +1,11 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, Input, OnInit, Output, SimpleChanges, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, Input, OnChanges, Output, 
+  SimpleChanges, ViewEncapsulation
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ENTER, COMMA } from '@angular/cdk/keycodes';
 import { ReactiveFormsModule, FormControl, Validators, FormGroup, ValidationErrors } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule, MatChipInputEvent } from '@angular/material/chips';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -11,14 +13,17 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
+
 import { MAX_FILE_SIZE, IMAGE_VALID_FILE_TYPES } from 'src/app/common/constants';
 import { FieldDescriptComponent } from 'src/app/components/field-descript/field-descript.component';
 import { FieldFileUploadComponent } from 'src/app/components/field-file-upload/field-file-upload.component';
+import { StringDateTime } from 'src/app/common/string-date-time';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { CopyToClipboardUtil } from 'src/app/utils/copy-to-clipboard.util';
 import { TimeUtil } from 'src/app/utils/time.util';
-import { StreamDto, StreamDtoUtil, UpdateStreamFileDto } from '../stream-api.interface';
+
 import { StreamService } from '../stream.service';
+import { StreamDto, StreamDtoUtil, UpdateStreamFileDto } from '../stream-api.interface';
 
 export const TAG_VALUES_MAX = 4;
 
@@ -26,7 +31,7 @@ export const TAG_VALUES_MAX = 4;
   selector: 'app-panel-stream-editor',
   standalone: true,
   imports: [
-    CommonModule, MatButtonModule, MatCardModule, MatChipsModule, MatFormFieldModule, MatInputModule,  MatSlideToggleModule,
+    CommonModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule,  MatSlideToggleModule,
     MatDatepickerModule, MatTooltipModule, TranslateModule, ReactiveFormsModule, FieldDescriptComponent, FieldFileUploadComponent
   ],
   templateUrl: './panel-stream-editor.component.html',
@@ -34,7 +39,7 @@ export const TAG_VALUES_MAX = 4;
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PanelStreamEditorComponent implements OnInit {
+export class PanelStreamEditorComponent implements OnChanges {
   @Input()
   public isDisabledSubmit = false;
   @Input()
@@ -42,19 +47,16 @@ export class PanelStreamEditorComponent implements OnInit {
   
   @Output()
   readonly updateStream: EventEmitter<UpdateStreamFileDto> = new EventEmitter();
+  @Output()
+  readonly cancelStream: EventEmitter<void> = new EventEmitter();
   
-  // @ViewChild(NgxMatTimepickerComponent, { static: false })
-  // public timepicker: NgxMatTimepickerComponent<any> | null = null;
-
   public minLenTitle = 3;
   public maxLenTitle = 100;
   public minLenDescription = 3;
   public maxLenDescription = 1000;
   public countRowsDescription = 4;
 
-  // public minDate: moment.Moment = moment().clone();
   public minDate: Date = new Date(Date.now());
-  // public maxDate: moment.Moment = moment().clone().add(+6, 'month').endOf('month');
   public maxDate: Date = new Date(this.minDate.getFullYear(), this.minDate.getMonth() + 7, 0);
 
   public logoOrig: string | null = '';
@@ -75,6 +77,7 @@ export class PanelStreamEditorComponent implements OnInit {
     title: new FormControl(null,
       [Validators.required, Validators.minLength(this.minLenTitle), Validators.maxLength(this.maxLenTitle)]),
     descript: new FormControl(null, []),
+    tagValue: this.tagValueCtrl,
     isStartTime: new FormControl(false, []),
     startDate: new FormControl({ value: new Date(Date.now()), disabled: true }, []),
     startTime: new FormControl('', []),
@@ -104,10 +107,6 @@ export class PanelStreamEditorComponent implements OnInit {
     }
   }
   
-  ngOnInit(): void {
-    console.log(`PanelStreamEditorComponent().OnInit()`); // #-
-  }
-
   // ** Public API **
 
   public getErrorMsg(errors: ValidationErrors | null): string {
@@ -143,50 +142,50 @@ export class PanelStreamEditorComponent implements OnInit {
     if (!isStartTime) {
       this.controls.startDate.disable({ emitEvent: false });
       this.controls.startTime.disable();
-    //   if (this.timepicker !== null) { this.timepicker.disabled = true; }
     } else {
       this.controls.startDate.enable({ emitEvent: false });
       this.controls.startTime.enable();
-    //   if (this.timepicker !== null) { this.timepicker.disabled = false; }
     }
   }
 
   public tagValueAdd(event: MatChipInputEvent): void {
-    if (this.tagValues.length === 3) { return; }
     const input = event.input; // ?!
     const value = event.value;
-    if ((value || '').trim()) {
-      this.tagValues.push(value.trim());
+    if (!!value) {
+      const val = (value || '').trim();
+      if (!!val && this.tagValues.length < TAG_VALUES_MAX && !this.tagValues.includes(val)) {
+        this.tagValues.push(val);
+      }
+      if (input) {
+        input.value = '';
+      }
     }
-    if (input) {
-      input.value = '';
-    }
-    this.tagValueCtrl.setValue(null);
+    this.setTagValueDirtyOrPristine(this.origStreamDto.tags, this.tagValues, this.tagValueCtrl);
   }
 
   public tagValueRemove(tagValueRemove: string): void {
     const index = this.tagValues.indexOf(tagValueRemove);
     if (index >= 0) {
       this.tagValues.splice(index, 1);
+      this.setTagValueDirtyOrPristine(this.origStreamDto.tags, this.tagValues, this.tagValueCtrl);
     }
   }
 
+  public cancelStreamCard(): void {
+    this.cancelStream.emit();
+  }
+
   public saveStreamCard(): void {
-    let startDateTime: Date | null = null;
+    let starttime: StringDateTime | undefined;
     const isStartTime: boolean = !!this.controls.isStartTime.value;
     if (isStartTime) {
-      // d1.toISOString() // '2024-01-25T14:14:37.470Z'
-      // d1.toJSON()      // '2024-01-25T14:14:37.470Z'
-      startDateTime = this.getStartDateTime(this.controls.startDate.value, this.controls.startTime.value);
-      //   const timeVal: moment.Moment = moment(this.controls.startTime.value);
-      //   beginDate.set({ hour: timeVal.get('hour'), minute: timeVal.get('minute'), second: timeVal.get('second') });
-      //   startTimeStr = beginDate.format(MOMENT_ISO8601);
+      const startDateTime = this.getStartDateTime(this.controls.startDate.value, this.controls.startTime.value);
+      starttime = !!startDateTime ? startDateTime.toISOString() : undefined;
     }
     const title: string | undefined = this.controls.title.value || undefined;
-    // const descript: string | undefined = this.getValue(this.controls.descript.value, this.origStreamDto.descript);
     const descript: string | undefined = this.controls.descript.value || undefined;
     const len = this.tagValues.length;
-    const tags = this.tagValues.slice(0, (len > 3 ? 3 : len));
+    const tags = this.tagValues.slice(0, (len > TAG_VALUES_MAX ? TAG_VALUES_MAX : len));
 
     const updateStreamFileDto: UpdateStreamFileDto = {};
     
@@ -194,7 +193,7 @@ export class PanelStreamEditorComponent implements OnInit {
       updateStreamFileDto.createStreamDto = {
         title: (title || ''),
         descript,
-        starttime: (startDateTime != null ? startDateTime.toJSON() : undefined),
+        starttime,
         tags,
       };
     } else { // Mode: "update"
@@ -202,8 +201,8 @@ export class PanelStreamEditorComponent implements OnInit {
         updateStreamFileDto.modifyStreamDto = {
           title: (this.origStreamDto.title != title ? title : undefined),
           descript: (this.origStreamDto.descript != descript ? descript : undefined),
-          starttime: (startDateTime != null ? startDateTime.toJSON() : undefined),
-          tags,
+          starttime: (this.origStreamDto.starttime != starttime ? starttime : undefined),
+          tags: (JSON.stringify(this.origStreamDto.tags) != JSON.stringify(tags) ? tags : undefined),
         }
     }
     updateStreamFileDto.logoFile = this.logoFile;
@@ -225,10 +224,8 @@ export class PanelStreamEditorComponent implements OnInit {
     }
     this.origStreamDto = { ...streamDto };
     Object.freeze(this.origStreamDto);
-    // moment().add(+5, 'minute');
     const now = new Date(Date.now())
     const currentTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 5, now.getSeconds());
-    // ?? const starttime = (!!streamDto.starttime ? moment(streamDto.starttime, MOMENT_ISO8601) : currentTime);
     // Date.parse("2019-01-01T00:00:00.000Z");
     const startDate = (!!streamDto.starttime ? new Date(Date.parse(streamDto.starttime)) : currentTime);
     const startHours = ('00' + startDate.getHours()).slice(-2);
@@ -250,11 +247,6 @@ export class PanelStreamEditorComponent implements OnInit {
     this.logoView = streamDto.logo;
     this.logoOrig = streamDto.logo;
     this.isCreate = (streamDto.id < 0);
-    this.controls.startTime.markAsPristine(); // ?
-    this.formGroup.markAsPristine(); // ?
-  }
-  private getValue(value: string | null | undefined, origValue: string | null | undefined): string | undefined {
-    return !!value && origValue != value ? value : undefined;
   }
   // '10:12'
   private getStartDateTime(startDate: Date | null, startTime: string | null): Date | null {
@@ -264,15 +256,23 @@ export class PanelStreamEditorComponent implements OnInit {
     }
     if (startDateTime != null && startTime != null && startTime.length > 4) {
         let { hours, minutes } = TimeUtil.parseTimeHHMM(startTime);
-        // const hoursStr = startTime.slice(0,2);
-        // const hours = parseInt(hoursStr, 10);
         startDateTime.setHours(hours);
-        // const minutesStr = startTime.slice(3,6);
-        // const minutes = parseInt(minutesStr, 10);
         startDateTime.setMinutes(minutes);
         startDateTime.setSeconds(0);
         startDateTime.setMilliseconds(0);
       }
     return startDateTime;
+  }
+
+  private setTagValueDirtyOrPristine(old_tags: string[], new_tags: string[], tagValueCtrl: FormControl<any>): void {
+    const isDirty = JSON.stringify(old_tags) != JSON.stringify(new_tags);
+    if (!tagValueCtrl) {
+      return;
+    }
+    if (isDirty) {
+      tagValueCtrl.markAsDirty();
+    } else {
+      tagValueCtrl.markAsPristine();
+    }
   }
 }
