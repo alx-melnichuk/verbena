@@ -19,18 +19,20 @@ export const pgStreamResolver: ResolveFn<StreamDto | HttpErrorResponse | undefin
   const streamIdStr = route.paramMap.get(P_STREAM_ID);
   const streamId = parseInt(streamIdStr || '-1', 10);
   if (E_STREAM_CREATE === url.path) {
-    // const dublicateStreamId = route.queryParamMap.get('id');
-    // if (!!dublicateStreamId) {
-    //   return streamService.getStream(dublicateStreamId)
-    //     .then((response: StreamDto | HttpErrorResponse | undefined) => {
-    //       (response as StreamDto).id = -1;
-    //       return response;
-    //     })
-    //   .catch((err) =>
-    //   goToPageNotFound(router));
-    // } else {
+    const streamIdForDuplicationStr = route.queryParamMap.get('id');
+    const streamIdForDuplication = parseInt(streamIdForDuplicationStr || '-1', 10);
+    // If the "ID" parameter is specified, then this stream for duplication.
+    if (streamIdForDuplication > 0) {
+      return streamService.getStream(streamIdForDuplication)
+        .then((response: StreamDto | HttpErrorResponse | undefined) => {
+          (response as StreamDto).id = -1;
+          return response;
+        })
+      .catch((err) =>
+      goToPageNotFound(router));
+    } else {
       return Promise.resolve(StreamDtoUtil.create());
-    // }
+    }
   } else if (E_STREAM_EDIT === url.path && !!streamId) {
     return streamService.getStream(streamId)
       .catch((err) =>
