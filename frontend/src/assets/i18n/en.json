@@ -39,7 +39,10 @@
     "title:max_length": "The title should be less than {{ maxlength.requiredLength }} characters.",
     "descript:required": "The description field is required.",
     "descript:min_length": "The description should have {{ minlength.requiredLength }} characters or more.",
-    "descript:max_length": "The description should be less than {{ maxlength.requiredLength }} characters."
+    "descript:max_length": "The description should be less than {{ maxlength.requiredLength }} characters.",
+    "time:required": "The time field is required.",
+    "time:min": "The time must be more {{ min.requiredMin }}.",
+    "time:max": "The time must be less {{ max.requiredMax }}."
   },
   "Conflict": {
     "email_already_use": "The email address you provided is already in use.",
@@ -81,6 +84,9 @@
   "field-file-upload": {
     "drag_and_drop_file_or": "Drag and drop file here or",
     "browse_for_file": "Browse for file"
+  },
+  "field-time": {
+    "label": "Time "
   },
   "login": {
     "title": "Log in",
