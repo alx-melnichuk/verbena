@@ -1,26 +1,10 @@
 import {
-  ChangeDetectionStrategy,
-  Component,
-  Input,
-  OnChanges,
-  SimpleChanges,
-  ViewChild,
-  ViewEncapsulation,
-  forwardRef,
+  ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewChild, ViewEncapsulation, forwardRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  AbstractControl,
-  ControlValueAccessor,
-  FormControl,
-  FormGroup,
-  NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validator,
-  ValidatorFn,
-  Validators,
+  AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule,
+  ValidationErrors, Validator, ValidatorFn, Validators,
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
