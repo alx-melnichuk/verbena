@@ -16,7 +16,7 @@
         <mat-error>{{ getErrorMsg(controls.title.errors) | translate : controls.title.errors }}</mat-error>
       </mat-form-field>
 
-      <app-field-descript class="psd-max-wd"
+      <app-field-descript class="psd-max-wd psd-mr-tp"
         formControlName="descript"
         [isRequired]="false"
         [label]="'stream_edit.descript'"
@@ -74,7 +74,8 @@
         </mat-slide-toggle>
       </div>
 
-      <div>
+      <div class="psd-start-date-time">
+        
         <mat-form-field appearance="outline" color="primary">
           <mat-label>{{ 'stream_edit.start_date' | translate }}</mat-label>
           <input matInput formControlName="startDate"
@@ -83,22 +84,13 @@
           <mat-datepicker-toggle matSuffix [for]="datepickerStartDate"></mat-datepicker-toggle>
           <mat-datepicker #datepickerStartDate></mat-datepicker>
         </mat-form-field>
-        <div class="psd-start-time">
-          <mat-label [attr.is-disable]="controls.startTime.disabled ? true : null">
-            {{ 'stream_edit.start_time' | translate }}
-          </mat-label>
-          <div>
-            <input class="psd-input"
-              type="time"
-              formControlName="startTime"
-              [attr.disabled]="controls.startTime.disabled ? true : null"
-              min="00:00"
-              max="23:59"
-              step="60"
-              autocomplete="off"
-            />
-          </div>
-        </div>
+
+        
+        <app-field-time class="psd-start-time"
+          formControlName="startTime"
+          [isRequired]="true">
+        </app-field-time>
+        <!-- [attr.disabled]="controls.startTime.disabled ? true : null" -->
       </div>
 
       <ng-container *ngIf="!isCreate">
@@ -141,7 +133,7 @@
   </div>
   <sub>
 startDate: {{ controls.startDate.value | date: "dd MMMM yyyy HH:mm:ss z"}} __ startTime: {{ controls.startTime.value }}<br/>
-pristine: {{ formGroup.pristine | json }} __ invalid: {{ formGroup.invalid | json }}<br/>
+pristine: {{ formGroup.pristine }} __ invalid: {{ formGroup.invalid }}<br/>
 errors: {{ formGroup.errors | json }}<br/>
   </sub>
 </div>

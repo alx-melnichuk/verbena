@@ -17,6 +17,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { MAX_FILE_SIZE, IMAGE_VALID_FILE_TYPES } from 'src/app/common/constants';
 import { FieldDescriptComponent } from 'src/app/components/field-descript/field-descript.component';
 import { FieldFileUploadComponent } from 'src/app/components/field-file-upload/field-file-upload.component';
+import { FieldTimeComponent } from 'src/app/components/field-time/field-time.component';
 import { StringDateTime } from 'src/app/common/string-date-time';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { CopyToClipboardUtil } from 'src/app/utils/copy-to-clipboard.util';
@@ -32,7 +33,8 @@ export const TAG_VALUES_MAX = 4;
   standalone: true,
   imports: [
     CommonModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule,  MatSlideToggleModule,
-    MatDatepickerModule, MatTooltipModule, TranslateModule, ReactiveFormsModule, FieldDescriptComponent, FieldFileUploadComponent
+    MatDatepickerModule, MatTooltipModule, TranslateModule, ReactiveFormsModule, FieldDescriptComponent, FieldFileUploadComponent,
+    FieldTimeComponent
   ],
   templateUrl: './panel-stream-editor.component.html',
   styleUrls: ['./panel-stream-editor.component.scss'],

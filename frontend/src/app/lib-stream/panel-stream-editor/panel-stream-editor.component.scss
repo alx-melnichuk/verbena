@@ -5,7 +5,7 @@
 app-panel-stream-editor {
   --psd-pn-stream-bg: var(--app-pn-stream);
   --psd-pn-stream-brd: var(--app-pn-stream-low);
-  //   --psd-mr-tp: 0.15em;
+
   @media screen and (width <= dimensions.$mobile-480) {
     --psd-crd-wd: 100vw;
   }
@@ -30,6 +30,10 @@ app-panel-stream-editor {
   .psd-max-wd {
     width: 100%;
   }
+  .psd-mr-tp {
+    margin-top: 0.25em;
+  }
+
   .psd-card {
     background-color:  var(--psd-crd-bg,var(--psd-pn-stream-bg));
     border-color: var(--psd-crd-brd-cl, var(--psd-pn-stream-brd));
@@ -109,48 +113,14 @@ app-panel-stream-editor {
     align-content: center;
   }
 
+  .psd-start-date-time {
+    display: flex;
+  }
   .psd-start-time {
-    margin-bottom: 1.2em;
-    position: relative;
-    & > mat-label {
-      &[is-disable] { color: var(--app-theme-accent); }
-    }
-    & > div {
-      font-size: 16px;
-    }
+    margin-left: 2em;
+    width: 16em;
   }
-  .psd-input {
-    background-color: transparent;
-    border-radius: 0.25em;
-    border-style: solid;
-    box-sizing: border-box;
-    font: inherit;
-    height: 3.5em;
-    min-width: 10em;
-    outline: none;
-    &:not(:focus) {
-      border-width: 1px;
-      --psd--input-pd-delta: 1px;
-    }
-    padding-left: calc(0.9em + var(--psd--input-pd-delta, 0px));
-    padding-right: calc(0.7em + var(--psd--input-pd-delta, 0px));
-    border-color: var(--app-input-brd);
-    &:not(:disabled):not(:focus):hover {
-      border-color: var(--app-input-brd-hov);
-    }
-    &:focus {
-      border-color: var(--app-primary);
-    }
-    &:disabled {
-      color: var(--app-input-dis);
-      border-color: var(--app-input-brd-dis);
-    }
-  }
-  .demo {
-    position: absolute;
-    transform: translateY(-11px) scale(var(--mat-mdc-form-field-floating-label-scale, 0.75));
-    font-size: 16px;
-  }
+
   .psd-link-param {
     border: 1px solid var(--app-theme-input-border);
     border-radius: 0.286em;
