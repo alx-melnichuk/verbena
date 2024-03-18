@@ -14,16 +14,18 @@ export class HttpErrorUtil {
     if (!!errRes && !!errRes.error) {
       const errResList = !Array.isArray(errRes.error) ? [errRes.error] : errRes.error;
       for (let index = 0; index < errResList.length; index++) {
+        let value = '';
         const appError = errResList[index];
-        const code = appError['code'] || '';
-        const message = appError['message'] || '';
-        let value = `${code}${!!message ? ': ' + message : ''}`;
-        if (!!code && !!HttpErrorUtil.translate) {
-          const key = `${code}${!!message ? '.' + message : ''}`;
-          const value2 = HttpErrorUtil.translate.instant(key, appError['params'] || {});
-          if (value2 != key) {
-            value = value2;
+        if (typeof appError == 'object') {
+          const code = appError['code'] || '';
+          const message = appError['message'] || '';
+          if (!!code) {
+            const key = `${code}${!!message ? '.' + message : ''}`;
+            const value2 = HttpErrorUtil.translate?.instant(key, appError['params'] || {}) || key;
+            value = value2 != key ? value2 : `${code}${!!message ? ': ' + message : ''}`;
           }
+        } else {
+          value = (appError || '').toString();
         }
         if (!!value) {
           result.push(value);
