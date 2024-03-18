@@ -11,27 +11,27 @@ use crate::validators::{ValidationChecks, ValidationError, Validator};
 
 pub const MSG_TITLE_REQUIRED: &str = "title:required";
 pub const TITLE_MIN: u8 = 2;
-pub const MSG_TITLE_MIN_LENGTH: &str = "title:min_len";
+pub const MSG_TITLE_MIN_LENGTH: &str = "title:min_length";
 pub const TITLE_MAX: u16 = 255;
-pub const MSG_TITLE_MAX_LENGTH: &str = "title:max_len";
+pub const MSG_TITLE_MAX_LENGTH: &str = "title:max_length";
 
 pub const DESCRIPT_MIN: u8 = 2;
-pub const MSG_DESCRIPT_MIN_LENGTH: &str = "descript:min_len";
+pub const MSG_DESCRIPT_MIN_LENGTH: &str = "descript:min_length";
 pub const DESCRIPT_MAX: u16 = 2048; // 2*1024
-pub const MSG_DESCRIPT_MAX_LENGTH: &str = "descript:max_len";
+pub const MSG_DESCRIPT_MAX_LENGTH: &str = "descript:max_length";
 
 pub const LOGO_MIN: u8 = 2;
-pub const MSG_LOGO_MIN_LENGTH: &str = "logo:min_len";
+pub const MSG_LOGO_MIN_LENGTH: &str = "logo:min_length";
 pub const LOGO_MAX: u16 = 255;
-pub const MSG_LOGO_MAX_LENGTH: &str = "logo:max_len";
+pub const MSG_LOGO_MAX_LENGTH: &str = "logo:max_length";
 
 pub const MSG_MIN_VALID_STARTTIME: &str = "starttime:min_valid_date";
 
 pub const MSG_SOURCE_REQUIRED: &str = "source:required";
 pub const SOURCE_MIN: u8 = 2;
-pub const MSG_SOURCE_MIN_LENGTH: &str = "source:min_len";
+pub const MSG_SOURCE_MIN_LENGTH: &str = "source:min_length";
 pub const SOURCE_MAX: u16 = 255;
-pub const MSG_SOURCE_MAX_LENGTH: &str = "source:max_len";
+pub const MSG_SOURCE_MAX_LENGTH: &str = "source:max_length";
 
 pub const TAG_MIN_AMOUNT: u8 = 1;
 pub const MSG_TAG_MIN_AMOUNT: &str = "tag:min_amount";
@@ -39,9 +39,9 @@ pub const TAG_MAX_AMOUNT: u8 = 4;
 pub const MSG_TAG_MAX_AMOUNT: &str = "tag:max_amount";
 pub const MSG_TAG_REQUIRED: &str = "tag:required";
 pub const TAG_MIN: u8 = 2;
-pub const MSG_TAG_MIN_LENGTH: &str = "tag:min_len";
+pub const MSG_TAG_MIN_LENGTH: &str = "tag:min_length";
 pub const TAG_MAX: u16 = 255;
-pub const MSG_TAG_MAX_LENGTH: &str = "tag:max_len";
+pub const MSG_TAG_MAX_LENGTH: &str = "tag:max_length";
 
 // ** ModifyStreamInfoDto **
 
