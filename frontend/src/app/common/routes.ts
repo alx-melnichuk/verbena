@@ -37,6 +37,9 @@ export const ROUTE_VIEW = '/' + R_VIEW; // '/ind/view'
 
 // ** **
 
+// Route for redirection after login.
+export const REDIRECT_AFTER_LOGIN = ROUTE_STREAM_LIST;
+
 export const AUTHORIZATION_REQUIRED = [
   ROUTE_STREAM
   // ROUTE_PROFILE,
