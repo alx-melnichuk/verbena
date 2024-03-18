@@ -30,8 +30,6 @@ export class SpinnerComponent {
   @Input()
   public isFillParent: string = '';
   @Input()
-  public isFullscreen = false;
-  @Input()
   public diameter = DEAULT_DIAMETER;
 
   @HostBinding('class.fill-parent')
