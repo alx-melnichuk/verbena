@@ -5,8 +5,9 @@ import { PanelStreamEditorComponent } from '../panel-stream-editor/panel-stream-
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { ROUTE_STREAM, ROUTE_STREAM_LIST } from 'src/app/common/routes';
+import { ROUTE_STREAM_LIST } from 'src/app/common/routes';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
+import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 
 import { StreamService } from '../stream.service';
 import { StreamDto, UpdateStreamFileDto } from '../stream-api.interface';
@@ -48,43 +49,35 @@ export class StreamEditComponent {
     this.goBack();
   }
 
-  public doUpdateStream(updateStreamFileDto: UpdateStreamFileDto): void {
+  public doUpdateStream(updateStreamFile: UpdateStreamFileDto): void {
     this.alertService.hide();
-    if (!updateStreamFileDto || (!updateStreamFileDto.createStreamDto && !updateStreamFileDto.modifyStreamDto)) {
+    if (!updateStreamFile || (!updateStreamFile.createStreamDto && !updateStreamFile.modifyStreamDto)) {
       return;
     }
-    const isGoToViewStream = true; // ?? (modifyStream.modifyStreamDto.starttime === null);
-    const isEdit = (!!updateStreamFileDto.modifyStreamDto);
+    const isEdit = (!!updateStreamFile.modifyStreamDto);
     const buffPromise: Promise<unknown>[] = [];
     this.isLoadDataStream = true;
     
-    if (!!updateStreamFileDto.createStreamDto) {
-    //   const addStreamDto = this.streamDTOtoAddStreamDTO(modifyStream.modifyStreamDto);
+    if (!!updateStreamFile.createStreamDto) {
       buffPromise.push(
-        this.streamService.createStream(updateStreamFileDto.createStreamDto, updateStreamFileDto.logoFile));
-    } else if (!!updateStreamFileDto.id && !!updateStreamFileDto.modifyStreamDto) {
-    //   const updateStreamDTO = this.streamDTOtoUpdateStreamDTO(modifyStream.modifyStreamDto);
-      const modifyStreamDto = updateStreamFileDto.modifyStreamDto;
+        this.streamService.createStream(updateStreamFile.createStreamDto, updateStreamFile.logoFile)
+      );
+    } else if (!!updateStreamFile.id && !!updateStreamFile.modifyStreamDto) {
       buffPromise.push(
-        this.streamService.modifyStream(updateStreamFileDto.id, modifyStreamDto, updateStreamFileDto.logoFile)
+        this.streamService.modifyStream(updateStreamFile.id, updateStreamFile.modifyStreamDto, updateStreamFile.logoFile)
       );
     }
     Promise.all(buffPromise)
       .then((responses) => {
-        const streamDto: StreamDto = (responses[0] as StreamDto);
-        const goToRoute = (isGoToViewStream ? this.streamService.getLinkForVisitors(streamDto.id, false) : ROUTE_STREAM); 
-        // 'ROUTE_STREAM_LIST');
         Promise.resolve()
           .then(() => {
-            return this.goBack();
-        });
+            this.goBack();
+          });
       })
       .catch((error: HttpErrorResponse) => {
         console.error(`error: `, error); // #
         const title = (isEdit ? 'stream_edit.error_editing_stream' : 'stream_edit.error_creating_stream');
-        // const message = HttpErrorUtil.getMsgs(error)[0];
-        const message = 'message';
-        this.alertService.showError(message, title);
+        this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], title);
         throw error;
       })
       .finally(() => {
