@@ -6,7 +6,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { FooterComponent } from './components/footer/footer.component';
 import { HeaderComponent } from './components/header/header.component';
 import { UserService } from './entities/user/user.service';
-import { AUTHORIZATION_DENIED, ROUTE_LOGIN, ROUTE_VIEW } from './common/routes';
+import { AUTHORIZATION_DENIED, ROUTE_LOGIN } from './common/routes';
 import { InitializationService } from './common/initialization.service';
 
 @Component({
