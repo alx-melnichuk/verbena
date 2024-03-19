@@ -163,15 +163,17 @@ export class FieldChipGridComponent implements OnChanges, ControlValueAccessor, 
     const curr: string[] | null = this.formControl.value;
     const length = (curr || []).length;
     const min = this.minQuantity || 0;
-    const actualQuantity = length;
-    return !!curr && length > 0 && length < min ? { 'minQuantity': { actualQuantity, "requiredQuantity": min }} : null;
+    return !!curr && length > 0 && length < min
+      ? { 'minQuantity': { "actualQuantity": length, "requiredQuantity": min }}
+      : null;
   }
   private maxQuantityValidator: ValidatorFn = (): ValidationErrors | null => {
     const curr: string[] | null = this.formControl.value;
     const length = (curr || []).length;
     const max = this.maxQuantity || 0;
-    const actualQuantity = length;
-    return !!curr && length > 0 && length > max ? { 'maxQuantity': { actualQuantity, "requiredQuantity": max }} : null;
+    return !!curr && length > 0 && length > max 
+      ? { 'maxQuantity': { "actualQuantity": length, "requiredQuantity": max }}
+      : null;
   }
   private minLengthValidator: ValidatorFn = (): ValidationErrors | null => {
     let result: ValidationErrors | null = null;
