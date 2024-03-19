@@ -1,0 +1,22 @@
+/*# sourceURL=field-chip-grid.component.scss */
+
+app-field-chip-grid {
+  display: block;
+  height: 100%;
+
+  .fcg-max-wd {
+    width: 100%;
+  }
+  .fcg-btn-chip-remove {
+    background-color: transparent;
+    border: none;
+    font-size: large;
+    padding: 0 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 1vw;
+    height: 1.3vh;
+  }
+}
+  
