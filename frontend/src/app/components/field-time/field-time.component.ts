@@ -36,13 +36,13 @@ export class FieldTimeComponent implements OnChanges, ControlValueAccessor, Vali
   @Input()
   public label: string = 'field-time.label';
   @Input()
-  public min: string | null = null;
-  @Input()
-  public max: string | null = null;
+  public hint: string = '';
   @Input()
   public isDisabled: boolean = false;
   @Input()
-  public hint: string = '';
+  public min: string | null = null;
+  @Input()
+  public max: string | null = null;
   @Input()
   public step: number = FT_DEFAULT_STEP;
   
