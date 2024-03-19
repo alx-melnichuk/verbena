@@ -95,24 +95,16 @@ app-panel-stream-editor {
     cursor: pointer;
   }
 
-  .psd-btn-chip-remove {
-    background-color: transparent;
-    border: none;
-    font-size: large;
-    padding: 0 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 1vw;
-    height: 1.3vh;
+  mat-hint {
+    color: var(--black-500);
   }
 
   .psd-start-date-time-label {
-    display: flex;
-    justify-content: space-between;
-    align-content: center;
+    margin-bottom: 0.5em;
   }
-
+  .psd-toggle {
+    margin-left: 2em;
+  }
   .psd-start-date-time {
     display: flex;
   }

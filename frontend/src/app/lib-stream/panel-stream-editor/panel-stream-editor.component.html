@@ -13,7 +13,7 @@
           [attr.maxlength]="(maxLenTitle > 0 ? maxLenTitle + 1 : null)"
           autocomplete="off"
         />
-        <mat-error>{{ getErrorMsg(controls.title.errors) | translate : controls.title.errors }}</mat-error>
+        <mat-error>{{ getErrorMsg(controls.title.errors, 'title') | translate : controls.title.errors }}</mat-error>
       </mat-form-field>
 
       <app-field-descript class="psd-max-wd psd-mr-tp"
@@ -45,29 +45,24 @@
 
       <div class="psd-text">{{ 'stream_edit.tags' | translate }}</div>
 
-      <mat-form-field class="psd-max-wd" appearance="outline" color="primary">
-        <mat-label>{{ 'stream_edit.add_tags_max_4' | translate }}</mat-label>
-        <mat-chip-grid #chipGrid aria-label="Enter fruits">
-          <mat-chip-row
-            *ngFor="let tagValue of tagValues"
-            [removable]="tagValueRemovable"
-            (removed)="tagValueRemove(tagValue)">
-            {{ tagValue }}
-            <button class="psd-btn-chip-remove" matChipRemove *ngIf="tagValueRemovable">&#215;</button>
-          </mat-chip-row>
-          <input #tagValue
-            [formControl]="tagValueCtrl"
-            [matChipInputFor]="chipGrid"
-            [attr.readonly]="tagValues.length == tagValuesMax ? '' : null"
-            [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-            (matChipInputTokenEnd)="tagValueAdd($event)"
-          />
-        </mat-chip-grid>
-      </mat-form-field>
+      <app-field-chip-grid
+        formControlName="tags"
+        [label]="'stream_edit.add_tags'"
+        [isReadonly]="(controls.tags.value || '').length == tagMaxQuantity ? true : null"
+        [isRequired]="true"
+        [isRemovable]="isTagRemovable"
+        [minLength]="tagMinLength"
+        [maxLength]="tagMaxLength"
+        [minQuantity]="tagMinQuantity"
+        [maxQuantity]="tagMaxQuantity"
+        [separatorCodes]="separatorCodes"
+        [hint]="'stream_edit.tags_hint'"
+      >
+      </app-field-chip-grid>
 
       <div class="psd-start-date-time-label">
         <span class="psd-text">{{ 'stream_edit.set_date_and_time_or_now' | translate }}</span>
-        <mat-slide-toggle
+        <mat-slide-toggle  class="psd-toggle"
           color="primary"
           formControlName="isStartTime"
           (change)="changeIsStartTime()">

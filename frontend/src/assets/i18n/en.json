@@ -43,10 +43,11 @@
     "time:required": "The time field is required.",
     "time:min": "The time must be more {{ min.requiredMin }}.",
     "time:max": "The time must be less {{ max.requiredMax }}.",
-    "tag:min_amount": "Tags must have a minimum number of {{ minAmountOfElem.requiredAmountOfElem }}.",
-    "tag:max_amount": "Tags must have a maximum number of {{ maxAmountOfElem.requiredAmountOfElem }}.",
-    "tag:min_length": "The tag must have at least {{ minlength.requiredLength }} characters.",
-    "tag:max_length": "The tag must have no more {{ maxlength.requiredLength }} characters."
+    "tag:required": "The tags field is required.",
+    "tag:min_quantity": "Tags must have a minimum number of {{ minQuantity.requiredQuantity }}.",
+    "tag:max_quantity": "Tags must have a maximum number of {{ maxQuantity.requiredQuantity }}.",
+    "tag:min_length": "The tag must have at least {{ minlength.requiredLength }} characters ({{ minlength.actualValue }}).",
+    "tag:max_length": "The tag must have no more {{ maxlength.requiredLength }} characters ({{ maxlength.actualValue }})."
   },
   "Conflict": {
     "email_already_use": "The email address you provided is already in use.",
@@ -91,6 +92,10 @@
   },
   "field-time": {
     "label": "Time "
+  },
+  "field-chip-grid": {
+    "label": "Add value",
+    "hint": "separator: Enter and space"
   },
   "login": {
     "title": "Log in",
@@ -157,7 +162,8 @@
     "descript": "Description",
     "thumbnail": "Thumbnail",
     "tags": "Tags",
-    "add_tags_max_4": "Add tags (max 4)",
+    "add_tags": "Add tags",
+    "tags_hint": "Tags should be: minimum 1, maximum 4.",
     "set_date_and_time_or_now": "Begin Now or Schedule Stream",
     "start_date": "Start date",
     "start_time": "Start time",
