@@ -1,28 +1,8 @@
-use std::{self, ffi, path::PathBuf};
+use std::{self, path::PathBuf};
 
-use actix_multipart::form::tempfile::TempFile;
-use image::{imageops::FilterType, DynamicImage, ImageFormat};
+use image::{imageops::FilterType, DynamicImage, GenericImageView, ImageFormat};
 
-// Upload a file with the specified name.
-pub fn file_upload(temp_file: TempFile, dir_path: &str, file_name: &str) -> Result<String, String> {
-    if temp_file.file_name.is_none() {
-        return Err("The name for the upload file is missing.".to_string());
-    }
-    let path = PathBuf::from(temp_file.file_name.unwrap());
-    let old_file_ext = path.extension().unwrap_or(ffi::OsStr::new("")).to_str().unwrap().to_string();
-
-    let mut path_buf = PathBuf::from(dir_path);
-    path_buf.push(file_name);
-    path_buf.set_extension(old_file_ext);
-    let path_file = path_buf.to_str().unwrap();
-    let result = temp_file.file.persist(path_file);
-    if let Err(err) = result {
-        return Err(format!("{}: {}", err.to_string(), &path_file));
-    }
-    Ok(path_file.to_string())
-}
-
-pub fn convert(source: &str, receiver: &str) -> Result<(), String> {
+pub fn convert(source: &str, receiver: &str, _min_width: u32, _min_height: u32) -> Result<(), String> {
     let path_source = PathBuf::from(source);
     let source_extension = path_source.extension().unwrap().to_str().unwrap().to_string();
     // Check that the image type of the source file is correct.
@@ -47,11 +27,22 @@ pub fn convert(source: &str, receiver: &str) -> Result<(), String> {
     // Load the source image into memory.
     let image_data: DynamicImage = image::open(source).unwrap();
 
+    let (nwidth, nheight) = image_data.dimensions();
+    // if min_width > 0 || min_height > 0 {
+    // 700x469 699x463 705x467 620x437
+    // image01.png 1531x858 => image01_1024.jpg 1024x573
+    // 1531÷858=1,784382284                     1024÷573=1,787085515
+    // 1531 * x = 1024  x=1,495117188             // 1531 / 1,495117188 = 1023,999999658
+    //  858 * y = 573   y=1,497382199             //  858 / 1,497382199 =  572,999999982
+    // }
     // Delete the source image file.
     // let _ = fs::remove_file(source).await.unwrap();
 
     // Save the image from memory to the receiver.
-    image_data.resize_exact(200, 200, FilterType::Gaussian).save(receiver).unwrap();
-
+    image_data
+        .resize_exact(nwidth, nheight, FilterType::Nearest)
+        .save(receiver)
+        .unwrap();
+    eprintln!("convert() receiver: {}", &receiver);
     Ok(())
 }

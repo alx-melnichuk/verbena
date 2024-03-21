@@ -1,8 +1,9 @@
-use std::{borrow, ops::Deref, time::Instant};
+use std::{borrow, ops::Deref, path, time::Instant};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, post, put, web, HttpResponse};
 use chrono::{DateTime, Utc};
+use mime::IMAGE;
 
 use crate::cdis::coding;
 use crate::errors::AppError;
@@ -45,16 +46,16 @@ fn err_invalid_tags(err: String) -> AppError {
     log::error!("{}: {}", err::CD_INVALID_TAGS_FIELD, error);
     AppError::new(err::CD_INVALID_TAGS_FIELD, &error).set_status(400)
 }
-pub fn err_invalid_file_type(valie: String, valid_types: String) -> AppError {
+pub fn err_invalid_file_type(valie: &str, valid_types: &str) -> AppError {
     log::error!("{}: {}", err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE);
     let json = serde_json::json!({ "actualFileType": valie, "validFileType": valid_types });
     AppError::new(err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE)
         .add_param(borrow::Cow::Borrowed("invalidFileType"), &json)
         .set_status(400)
 }
-pub fn err_invalid_file_size(err_file_size: usize, max_size: usize) -> AppError {
+pub fn err_invalid_file_size(err_file_size: usize, max_file_size: usize) -> AppError {
     log::error!("{}: {}", err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE);
-    let json = serde_json::json!({ "actualFileSize": err_file_size, "maxFileSize": max_size });
+    let json = serde_json::json!({ "actualFileSize": err_file_size, "maxFileSize": max_file_size });
     AppError::new(err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE)
         .add_param(borrow::Cow::Borrowed("invalidFileSize"), &json)
         .set_status(400)
@@ -63,34 +64,6 @@ fn err_upload_file(err: String) -> AppError {
     let msg = format!("{} {}", err::MSG_INVALID_FILE_UPLOAD, err);
     log::error!("{}: {}", err::CD_INVALID_FILE_UPLOAD, msg);
     AppError::new(err::CD_INVALID_FILE_UPLOAD, &msg).set_status(400)
-}
-
-// Checking the file for valid mime types.
-fn check_file_type(file_type: &str, valid_file_types: Vec<String>) -> Result<(), AppError> {
-    let file_type = &file_type.to_string();
-    if !valid_file_types.contains(file_type) {
-        log::error!("{}: {}", err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE);
-        let valid_types: String = valid_file_types.join(",");
-        let json = serde_json::json!({ "actualFileType": file_type, "validFileType": valid_types });
-        let app_err = AppError::new(err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE)
-            .add_param(borrow::Cow::Borrowed("invalidFileType"), &json)
-            .set_status(400);
-        return Err(app_err);
-    }
-    Ok(())
-}
-
-// Check file size for maximum value.
-fn check_file_size(file_size: usize, max_size: usize) -> Result<(), AppError> {
-    if max_size > 0 && file_size > max_size {
-        log::error!("{}: {}", err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE);
-        let json = serde_json::json!({ "actualFileSize": file_size, "maxFileSize": max_size });
-        let app_err = AppError::new(err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE)
-            .add_param(borrow::Cow::Borrowed("invalidFileSize"), &json)
-            .set_status(400);
-        return Err(app_err);
-    }
-    Ok(())
 }
 
 fn remove_file_and_log(file_name: &str, msg: &str) {
@@ -176,31 +149,44 @@ pub async fn post_stream(
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::validations_to_response(validation_errors));
     }
+
+    let config_strm = config_strm.get_ref().clone();
+    let logo_files_dir = config_strm.strm_logo_files_dir.clone();
     let mut create_file = "".to_string();
+
     while let Some(temp_file) = logofile {
         if temp_file.size == 0 {
             break;
         }
-        let config_strm = config_strm.get_ref().clone();
-        
-        let file_type = temp_file.content_type.clone().unwrap().to_string(); 
-        // Checking the file for valid mime types.
-        check_file_type(&file_type, config_strm.strm_logo_valid_types.clone())?;
         // Check file size for maximum value.
-        check_file_size(temp_file.size, config_strm.strm_logo_max_size)?;
-        // Get filename.
-        let code_date = coding::encode(Utc::now(), 1);
-        let logo_files_dir = config_strm.strm_logo_files_dir.clone();
-        let file_name = format!("{}_{}", curr_user_id, code_date);
-        // Upload the logo file.
-        let res_upload = upload::file_upload(temp_file, &config_strm.strm_logo_files_dir, &file_name);
-        if let Err(err) = res_upload {
-            return Err(err_upload_file(err));
+        let logo_max_size = config_strm.strm_logo_max_size;
+        if logo_max_size > 0 && temp_file.size > logo_max_size {
+            return Err(err_invalid_file_size(temp_file.size, logo_max_size));
         }
-        let path_file = res_upload.unwrap();
-        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
-        create_file = path_file.replace(&logo_files_dir, &alias_logo);
+        // Checking the file for valid mime types.
+        let logo_valid_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
+        let file_type = match temp_file.content_type {
+            Some(val) => val.to_string(),
+            None => "".to_string(),
+        };
+        if !logo_valid_types.contains(&file_type) {
+            return Err(err_invalid_file_type(&file_type, &logo_valid_types.join(",")));
+        }
+        // Get file name and file extension.
+        let file_name = format!("{}_{}", curr_user_id, coding::encode(Utc::now(), 1));
+        let file_ext = file_type.replace(&format!("{}/", IMAGE), "");
+        // Add 'file path' + 'file name'.'file extension'.
+        let path: path::PathBuf = [logo_files_dir.clone(), format!("{}.{}", file_name, file_ext)].iter().collect();
+        let path_file = path.to_str().unwrap().to_string();
+    
+        // Persist the temporary file at the target path.
+        // If a file exists at the target path, persist will atomically replace it.
+        let res_upload = temp_file.file.persist(&path_file);
+        if let Err(err) = res_upload {
+            return Err(err_upload_file(format!("{}: {}", err.to_string(), &path_file)));
+        }
 
+        create_file = path_file.replace(&logo_files_dir, &format!("/{}", ALIAS_LOGO_FILES));
         break;
     }
 
@@ -331,12 +317,12 @@ pub async fn put_stream(
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::validations_to_response(validation_errors));
     }
-
-    let mut is_delete_logo = false;
-    let mut new_logo_file = "".to_string();
     let mut logo: Option<Option<String>> = None;
+    let mut is_delete_logo = false;
+
     let config_strm = config_strm.get_ref().clone();
     let logo_files_dir = config_strm.strm_logo_files_dir.clone();
+    let mut new_logo_file = "".to_string();
 
     while let Some(temp_file) = logofile {
         // Delete the old version of the logo file.
@@ -345,36 +331,50 @@ pub async fn put_stream(
             logo = Some(None); // Set the "logo" field to `NULL`.
             break;
         }
-        let file_type = temp_file.content_type.clone().unwrap().to_string(); 
-        // Checking the file for valid mime types.
-        check_file_type(&file_type, config_strm.strm_logo_valid_types.clone())?;
         // Check file size for maximum value.
-        check_file_size(temp_file.size, config_strm.strm_logo_max_size)?;
-        // Get filename.
-        let code_date = coding::encode(Utc::now(), 1);
-        // Upload the logo file.
-        let file_name = format!("{}_{}", curr_user_id, code_date);
-        
-        let res_upload = upload::file_upload(temp_file, &logo_files_dir, &file_name);
-        if let Err(err) = res_upload {
-            return Err(err_upload_file(err));
+        let logo_max_size = config_strm.strm_logo_max_size;
+        if logo_max_size > 0 && temp_file.size > logo_max_size {
+            return Err(err_invalid_file_size(temp_file.size, logo_max_size));
         }
-        new_logo_file = res_upload.unwrap();
-        /*let source: String = new_logo_file.to_string();
+        // Checking the file for valid mime types.
+        let logo_valid_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
+        let file_type = match temp_file.content_type {
+            Some(val) => val.to_string(),
+            None => "".to_string(),
+        };
+        if !logo_valid_types.contains(&file_type) {
+            return Err(err_invalid_file_type(&file_type, &logo_valid_types.join(",")));
+        }
+        // Get file name and file extension.
+        let file_name = format!("{}_{}", curr_user_id, coding::encode(Utc::now(), 1));
+        let file_ext = file_type.replace(&format!("{}/", IMAGE), "");
+        // Add 'file path' + 'file name'.'file extension'.
+        let path: path::PathBuf = [logo_files_dir.clone(), format!("{}.{}", file_name, file_ext)].iter().collect();
+        let path_file = path.to_str().unwrap().to_string();
+    
+        // Persist the temporary file at the target path.
+        // If a file exists at the target path, persist will atomically replace it.
+        let res_upload = temp_file.file.persist(&path_file);
+        if let Err(err) = res_upload {
+            return Err(err_upload_file(format!("{}: {}", err.to_string(), &path_file)));
+        }
+        new_logo_file = path_file;
 
-        web::block(move || async move {
+        let logo_ext = config_strm.strm_logo_ext.unwrap_or("".to_string());
+        if logo_ext.len() > 0 && logo_ext != file_ext {
+            let source: String = new_logo_file.to_string();
+
             let mut path_receiver = path::PathBuf::from(&source);
-            path_receiver.set_extension("jpg");
-            let receiver = path_receiver.to_str().unwrap();
-            let res_convert = upload::convert(&source, receiver);
-            eprintln!("res_convert.is_ok(): {}", res_convert.is_ok());
-        })
-        .await
-        .unwrap()
-        .await;
-        */
-        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
-        let modify_file = new_logo_file.replace(&logo_files_dir, &alias_logo);
+            path_receiver.set_extension(logo_ext);
+            let receiver = path_receiver.to_str().unwrap().to_string();
+
+            let _res_convert = upload::convert(&source, &receiver, 0, 0);
+            // eprintln!("res_convert.is_ok(): {}", res_convert.is_ok());
+            new_logo_file = receiver;
+            // eprintln!("2new_logo_file: {}", &new_logo_file);
+        }
+
+        let modify_file = new_logo_file.replace(&logo_files_dir, &format!("/{}", ALIAS_LOGO_FILES));
         logo = Some(Some(modify_file));
 
         break;
