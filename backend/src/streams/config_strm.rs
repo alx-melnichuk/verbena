@@ -1,6 +1,6 @@
 use std::{io, path::PathBuf};
 
-use mime::{self, IMAGE_BMP, IMAGE_GIF, IMAGE_JPEG, IMAGE_PNG};
+use mime::{self, IMAGE, IMAGE_BMP, IMAGE_GIF, IMAGE_JPEG, IMAGE_PNG};
 
 const STRM_SHOW_LEAD_TIME_DEF: bool = false;
 
@@ -15,6 +15,7 @@ pub struct ConfigStrm {
     pub strm_logo_max_size: usize,
     // List of valid input mime types for logo files (comma delimited).
     pub strm_logo_valid_types: Vec<String>,
+    pub strm_logo_ext: Option<String>,
 }
 
 impl ConfigStrm {
@@ -28,30 +29,36 @@ impl ConfigStrm {
 
         let logo_max_size = std::env::var("STRM_LOGO_MAX_SIZE").expect("STRM_LOGO_MAX_SIZE must be set");
 
-        let strm_logo_valid_types: Vec<String> = Self::init_strm_valid_types_by_env().unwrap();
+        let logo_valid_types: Vec<String> = Self::init_strm_valid_types_by_env().unwrap();
+
+        let strm_logo_ext = Self::init_logo_ext();
 
         ConfigStrm {
             strm_show_lead_time,
             strm_logo_files_dir,
             strm_logo_max_size: logo_max_size.parse::<usize>().unwrap(),
-            strm_logo_valid_types,
+            strm_logo_valid_types: logo_valid_types,
+            strm_logo_ext,
         }
     }
 
+    pub fn get_image_types() -> Vec<String> {
+        vec![
+            IMAGE_BMP.essence_str().to_string(),
+            IMAGE_GIF.essence_str().to_string(),
+            IMAGE_JPEG.essence_str().to_string(),
+            IMAGE_PNG.essence_str().to_string(),
+        ]
+    }
     pub fn init_strm_valid_types_by_env() -> Result<Vec<String>, io::Error> {
-        let acceptable_types: Vec<&str> = vec![
-            IMAGE_BMP.essence_str(),
-            IMAGE_GIF.essence_str(),
-            IMAGE_JPEG.essence_str(),
-            IMAGE_PNG.essence_str(),
-        ];
+        let image_types: Vec<String> = Self::get_image_types();
 
         let strm_valid_types_str = std::env::var("STRM_LOGO_VALID_TYPES").expect("STRM_LOGO_VALID_TYPES must be set");
         let mut errors: Vec<String> = Vec::new();
         let mut result: Vec<String> = Vec::new();
         for strm_type in strm_valid_types_str.split(",").into_iter() {
             let value = strm_type.to_lowercase();
-            if acceptable_types.contains(&value.as_str()) {
+            if image_types.contains(&value) {
                 result.push(value);
             } else {
                 errors.push(value);
@@ -63,6 +70,19 @@ impl ConfigStrm {
         }
         Ok(result)
     }
+    pub fn init_logo_ext() -> Option<String> {
+        let image_types: Vec<String> = Self::get_image_types();
+
+        let logo_ext = std::env::var("STRM_LOGO_EXT").unwrap_or("".to_string());
+        let len = format!("{}/", IMAGE).len();
+        let type_list: Vec<String> = image_types.iter().map(|v| v.get(len..).unwrap().to_string()).collect();
+        let is_logo_ext = logo_ext.len() > 0 && type_list.contains(&logo_ext);
+        if is_logo_ext {
+            Some(logo_ext)
+        } else {
+            None
+        }
+    }
 }
 
 #[cfg(all(test, feature = "mockdata"))]
@@ -72,5 +92,6 @@ pub fn get_test_config() -> ConfigStrm {
         strm_logo_files_dir: "./tmp".to_string(),
         strm_logo_max_size: 160,
         strm_logo_valid_types: vec!["image/jpeg".to_string(), "image/png".to_string()],
+        strm_logo_ext: None,
     }
 }
