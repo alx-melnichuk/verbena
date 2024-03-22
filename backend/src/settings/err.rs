@@ -11,8 +11,11 @@ pub const MSG_INVALID_IMAGE_FILE: &str = "Invalid image file type.";
 pub const CD_INVALID_FILE_SIZE: &str = "InvalidFileSize";
 pub const MSG_INVALID_FILE_SIZE: &str = "The file size exceeds the max size.";
 // Error uploading file
-pub const CD_INVALID_FILE_UPLOAD: &str = "InvalidFileUpload";
-pub const MSG_INVALID_FILE_UPLOAD: &str = "Error uploading file:";
+pub const CD_ERROR_FILE_UPLOAD: &str = "ErrorUploadFile";
+pub const MSG_ERROR_FILE_UPLOAD: &str = "Error while upload file:";
+// Error convert file
+pub const CD_ERROR_CONVERT_FILE: &str = "ErrorConvertFile";
+pub const MSG_ERROR_CONVERT_FILE: &str = "Error converting file:";
 // Error when receiving another user's streams.
 pub const CD_NO_ACCESS_TO_STREAMS: &str = "NoAccessToStreams";
 pub const MSG_NO_ACCESS_TO_STREAMS: &str = "No access to other user's streams.";

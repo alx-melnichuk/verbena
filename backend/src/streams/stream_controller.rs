@@ -1,4 +1,4 @@
-use std::{borrow, ops::Deref, path, time::Instant};
+use std::{borrow, ffi::OsStr, ops::Deref, path, time::Instant};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, post, put, web, HttpResponse};
@@ -61,9 +61,14 @@ pub fn err_invalid_file_size(err_file_size: usize, max_file_size: usize) -> AppE
         .set_status(400)
 }
 fn err_upload_file(err: String) -> AppError {
-    let msg = format!("{} {}", err::MSG_INVALID_FILE_UPLOAD, err);
-    log::error!("{}: {}", err::CD_INVALID_FILE_UPLOAD, msg);
-    AppError::new(err::CD_INVALID_FILE_UPLOAD, &msg).set_status(400)
+    let msg = format!("{} {}", err::MSG_ERROR_FILE_UPLOAD, err);
+    log::error!("{}: {}", err::CD_ERROR_FILE_UPLOAD, msg);
+    AppError::new(err::CD_ERROR_FILE_UPLOAD, &msg).set_status(400)
+}
+fn err_convert_file(err: String) -> AppError {
+    let error = format!("{} {}", err::MSG_ERROR_CONVERT_FILE, err);
+    log::error!("{}: {}", err::CD_ERROR_CONVERT_FILE, error);
+    AppError::new(err::CD_ERROR_CONVERT_FILE, &error).set_status(400)
 }
 
 fn remove_file_and_log(file_name: &str, msg: &str) {
@@ -152,48 +157,31 @@ pub async fn post_stream(
 
     let config_strm = config_strm.get_ref().clone();
     let logo_files_dir = config_strm.strm_logo_files_dir.clone();
-    let mut create_file = "".to_string();
+    let mut path_new_logo_file = "".to_string();
 
     while let Some(temp_file) = logofile {
         if temp_file.size == 0 {
             break;
         }
-        // Check file size for maximum value.
-        let logo_max_size = config_strm.strm_logo_max_size;
-        if logo_max_size > 0 && temp_file.size > logo_max_size {
-            return Err(err_invalid_file_size(temp_file.size, logo_max_size));
-        }
-        // Checking the file for valid mime types.
-        let logo_valid_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
-        let file_type = match temp_file.content_type {
-            Some(val) => val.to_string(),
-            None => "".to_string(),
-        };
-        if !logo_valid_types.contains(&file_type) {
-            return Err(err_invalid_file_type(&file_type, &logo_valid_types.join(",")));
-        }
-        // Get file name and file extension.
-        let file_name = format!("{}_{}", curr_user_id, coding::encode(Utc::now(), 1));
-        let file_ext = file_type.replace(&format!("{}/", IMAGE), "");
-        // Add 'file path' + 'file name'.'file extension'.
-        let path: path::PathBuf = [logo_files_dir.clone(), format!("{}.{}", file_name, file_ext)].iter().collect();
-        let path_file = path.to_str().unwrap().to_string();
-    
-        // Persist the temporary file at the target path.
-        // If a file exists at the target path, persist will atomically replace it.
-        let res_upload = temp_file.file.persist(&path_file);
-        if let Err(err) = res_upload {
-            return Err(err_upload_file(format!("{}: {}", err.to_string(), &path_file)));
-        }
+        let only_file_name = format!("{}_{}", curr_user_id, coding::encode(Utc::now(), 1));
+        // Upload file (checking max size and mime type). And also convert to another mime type.
+        path_new_logo_file = upload_temp_file(temp_file, config_strm.clone(), &only_file_name)?;
 
-        create_file = path_file.replace(&logo_files_dir, &format!("/{}", ALIAS_LOGO_FILES));
+        // Convert the file to another mime type.
+        let path_file = convert_file(config_strm.clone(), &path_new_logo_file.clone())?;
+        if !path_file.eq(&path_new_logo_file) {
+            remove_file_and_log(&path_new_logo_file, &"post_stream()");
+        }
+        path_new_logo_file = path_file;
+
         break;
     }
 
     let mut create_stream = stream_models::CreateStream::convert(create_stream_info_dto.clone(), curr_user_id);
     let tags = create_stream_info_dto.tags.clone();
-    if create_file.len() > 0 {
-        create_stream.logo = Some(create_file.clone());
+    if path_new_logo_file.len() > 0 {
+        let alias_logo_file = path_new_logo_file.replace(&logo_files_dir, &format!("/{}", ALIAS_LOGO_FILES));
+        create_stream.logo = Some(alias_logo_file);
     }
 
     let res_data = web::block(move || {
@@ -206,11 +194,8 @@ pub async fn post_stream(
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
 
-    if res_data.is_err() && create_file.len() > 0 {
-        let res_remove = std::fs::remove_file(create_file.clone());
-        if let Err(err) = res_remove {
-            log::error!("post_stream() std::fs::remove_file({}): error: {:?}", create_file, err);
-        }
+    if res_data.is_err() {
+        remove_file_and_log(&path_new_logo_file, &"post_stream()");
     }
     let (stream, stream_tags) = res_data?;
     // Merge a "stream" and a corresponding list of "tags".
@@ -221,6 +206,69 @@ pub async fn post_stream(
         log::info!("post_stream() lead time: {:.2?}", now.elapsed());
     }
     Ok(HttpResponse::Created().json(stream_info_dto)) // 201
+}
+
+// Upload file (checking max size and mime type)
+fn upload_temp_file(
+    temp_file: TempFile,
+    config_strm: config_strm::ConfigStrm,
+    only_file_name: &str,
+) -> Result<String, AppError> {
+    // Check file size for maximum value.
+    let logo_max_size = config_strm.strm_logo_max_size;
+    if logo_max_size > 0 && temp_file.size > logo_max_size {
+        return Err(err_invalid_file_size(temp_file.size, logo_max_size));
+    }
+    // Checking the file for valid mime types.
+    let file_type = match temp_file.content_type {
+        Some(val) => val.to_string(),
+        None => "".to_string(),
+    };
+    let logo_valid_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
+    if !logo_valid_types.contains(&file_type) {
+        return Err(err_invalid_file_type(&file_type, &logo_valid_types.join(",")));
+    }
+
+    // Get file name and file extension.
+    // let file_name = format!("{}_{}", curr_user_id, coding::encode(Utc::now(), 1));
+    let file_ext = file_type.replace(&format!("{}/", IMAGE), "");
+    // Add 'file path' + 'file name'.'file extension'.
+    let logo_files_dir = config_strm.strm_logo_files_dir.clone();
+    let path: path::PathBuf = [logo_files_dir.clone(), format!("{}.{}", only_file_name, file_ext)]
+        .iter()
+        .collect();
+    let path_file = path.to_str().unwrap().to_string();
+
+    // Persist the temporary file at the target path.
+    // If a file exists at the target path, persist will atomically replace it.
+    let res_upload = temp_file.file.persist(&path_file);
+    if let Err(err) = res_upload {
+        return Err(err_upload_file(format!("{}: {}", err.to_string(), &path_file)));
+    }
+
+    Ok(path_file)
+}
+
+// Convert the file to another mime type.
+fn convert_file(config_strm: config_strm::ConfigStrm, file_source: &str) -> Result<String, AppError> {
+    let mut file_receiver = file_source.to_string();
+    let path: path::PathBuf = [file_source].iter().collect();
+    let file_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap().to_string();
+
+    let strm_logo_ext = config_strm.strm_logo_ext.unwrap_or("".to_string());
+
+    if strm_logo_ext.len() > 0 && !strm_logo_ext.eq(&file_ext) {
+        let mut path_receiver = path::PathBuf::from(file_source);
+        path_receiver.set_extension(&strm_logo_ext);
+        file_receiver = path_receiver.to_str().unwrap().to_string();
+
+        let res_convert = upload::convert_file(file_source, &file_receiver, 0, 0);
+        if let Err(err) = res_convert {
+            return Err(err_convert_file(err));
+        }
+        file_receiver = res_convert.unwrap();
+    }
+    Ok(file_receiver)
 }
 
 #[derive(Debug, MultipartForm)]
@@ -322,7 +370,7 @@ pub async fn put_stream(
 
     let config_strm = config_strm.get_ref().clone();
     let logo_files_dir = config_strm.strm_logo_files_dir.clone();
-    let mut new_logo_file = "".to_string();
+    let mut path_new_logo_file = "".to_string();
 
     while let Some(temp_file) = logofile {
         // Delete the old version of the logo file.
@@ -331,51 +379,19 @@ pub async fn put_stream(
             logo = Some(None); // Set the "logo" field to `NULL`.
             break;
         }
-        // Check file size for maximum value.
-        let logo_max_size = config_strm.strm_logo_max_size;
-        if logo_max_size > 0 && temp_file.size > logo_max_size {
-            return Err(err_invalid_file_size(temp_file.size, logo_max_size));
-        }
-        // Checking the file for valid mime types.
-        let logo_valid_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
-        let file_type = match temp_file.content_type {
-            Some(val) => val.to_string(),
-            None => "".to_string(),
-        };
-        if !logo_valid_types.contains(&file_type) {
-            return Err(err_invalid_file_type(&file_type, &logo_valid_types.join(",")));
-        }
-        // Get file name and file extension.
-        let file_name = format!("{}_{}", curr_user_id, coding::encode(Utc::now(), 1));
-        let file_ext = file_type.replace(&format!("{}/", IMAGE), "");
-        // Add 'file path' + 'file name'.'file extension'.
-        let path: path::PathBuf = [logo_files_dir.clone(), format!("{}.{}", file_name, file_ext)].iter().collect();
-        let path_file = path.to_str().unwrap().to_string();
-    
-        // Persist the temporary file at the target path.
-        // If a file exists at the target path, persist will atomically replace it.
-        let res_upload = temp_file.file.persist(&path_file);
-        if let Err(err) = res_upload {
-            return Err(err_upload_file(format!("{}: {}", err.to_string(), &path_file)));
-        }
-        new_logo_file = path_file;
+        let only_file_name = format!("{}_{}", curr_user_id, coding::encode(Utc::now(), 1));
+        // Upload file (checking max size and mime type). And also convert to another mime type.
+        path_new_logo_file = upload_temp_file(temp_file, config_strm.clone(), &only_file_name)?;
 
-        let logo_ext = config_strm.strm_logo_ext.unwrap_or("".to_string());
-        if logo_ext.len() > 0 && logo_ext != file_ext {
-            let source: String = new_logo_file.to_string();
-
-            let mut path_receiver = path::PathBuf::from(&source);
-            path_receiver.set_extension(logo_ext);
-            let receiver = path_receiver.to_str().unwrap().to_string();
-
-            let _res_convert = upload::convert(&source, &receiver, 0, 0);
-            // eprintln!("res_convert.is_ok(): {}", res_convert.is_ok());
-            new_logo_file = receiver;
-            // eprintln!("2new_logo_file: {}", &new_logo_file);
+        // Convert the file to another mime type.
+        let path_file = convert_file(config_strm.clone(), &path_new_logo_file.clone())?;
+        if !path_file.eq(&path_new_logo_file) {
+            remove_file_and_log(&path_new_logo_file, &"put_stream()");
         }
+        path_new_logo_file = path_file;
 
-        let modify_file = new_logo_file.replace(&logo_files_dir, &format!("/{}", ALIAS_LOGO_FILES));
-        logo = Some(Some(modify_file));
+        let alias_logo_file = path_new_logo_file.replace(&logo_files_dir, &format!("/{}", ALIAS_LOGO_FILES));
+        logo = Some(Some(alias_logo_file));
 
         break;
     }
@@ -407,16 +423,16 @@ pub async fn put_stream(
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
 
-    let (old_logo_file, res_stream) = res_data;
+    let (path_old_logo_file, res_stream) = res_data;
 
     let mut opt_stream_info_dto: Option<stream_models::StreamInfoDto> = None;
     if let Ok(Some((stream, stream_tags)))= res_stream {
         // Merge a "stream" and a corresponding list of "tags".
         let list = stream_models::StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
         opt_stream_info_dto = Some(list[0].clone());
-        remove_file_and_log(&old_logo_file, &"put_stream()");
+        remove_file_and_log(&path_old_logo_file, &"put_stream()");
     } else {
-        remove_file_and_log(&new_logo_file, &"put_stream()");
+        remove_file_and_log(&path_new_logo_file, &"put_stream()");
     }
     if config_strm.strm_show_lead_time {
         log::info!("put_stream() lead time: {:.2?}", now.elapsed());

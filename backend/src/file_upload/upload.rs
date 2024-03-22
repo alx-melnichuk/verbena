@@ -1,16 +1,16 @@
-use std::{self, path::PathBuf};
+use std::{self, ffi::OsStr, path::PathBuf};
 
 use image::{imageops::FilterType, DynamicImage, GenericImageView, ImageFormat};
 
-pub fn convert(source: &str, receiver: &str, _min_width: u32, _min_height: u32) -> Result<(), String> {
+pub fn convert_file(source: &str, receiver: &str, _min_width: u32, _min_height: u32) -> Result<String, String> {
     let path_source = PathBuf::from(source);
-    let source_extension = path_source.extension().unwrap().to_str().unwrap().to_string();
+    let source_extension = path_source.extension().unwrap_or(OsStr::new("")).to_str().unwrap().to_string();
+
     // Check that the image type of the source file is correct.
     let opt_source_type = ImageFormat::from_extension(source_extension);
     if opt_source_type.is_none() {
         return Err(format!("Invalid source file image type \"{}\".", source));
     }
-    let source_type = opt_source_type.unwrap();
 
     let path_receiver = PathBuf::from(receiver);
     let receiver_extension = path_receiver.extension().unwrap().to_str().unwrap().to_string();
@@ -19,11 +19,7 @@ pub fn convert(source: &str, receiver: &str, _min_width: u32, _min_height: u32) 
     if opt_receiver_type.is_none() {
         return Err(format!("Invalid receiver file image type \"{}\".", receiver));
     }
-    let receiver_type = opt_receiver_type.unwrap();
 
-    if source_type == receiver_type {
-        return Err("The source and destination have the same image type.".to_string());
-    }
     // Load the source image into memory.
     let image_data: DynamicImage = image::open(source).unwrap();
 
@@ -39,10 +35,13 @@ pub fn convert(source: &str, receiver: &str, _min_width: u32, _min_height: u32) 
     // let _ = fs::remove_file(source).await.unwrap();
 
     // Save the image from memory to the receiver.
-    image_data
+    let result = image_data
         .resize_exact(nwidth, nheight, FilterType::Nearest)
         .save(receiver)
-        .unwrap();
-    eprintln!("convert() receiver: {}", &receiver);
-    Ok(())
+        .map_err(|err| err.to_string());
+
+    match result {
+        Ok(()) => Ok(receiver.to_string()),
+        Err(err) => Err(err),
+    }
 }
