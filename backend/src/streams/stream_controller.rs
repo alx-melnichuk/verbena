@@ -557,10 +557,14 @@ mod tests {
         StreamInfoDto::convert(stream, user_id, &tags1)
     }
 
+    fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
+        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (http::header::AUTHORIZATION, header_value)
+    }
+
     async fn call_service1(
         config_jwt: config_jwt::ConfigJwt,
         vec: (Vec<User>, Vec<Session>, Vec<StreamInfoDto>),
-        token: &str,
         factory: impl dev::HttpServiceFactory + 'static,
         request: TestRequest,
     ) -> dev::ServiceResponse {
@@ -580,14 +584,8 @@ mod tests {
                 .service(factory),
         )
         .await;
-        let test_request = if token.len() > 0 {
-            request.insert_header((http::header::AUTHORIZATION, format!("{}{}", BEARER, token)))
-        } else {
-            request
-        };
-        let req = test_request.to_request();
 
-        test::call_service(&app, req).await
+        test::call_service(&app, request.to_request()).await
     }
 
     fn save_empty_file(path_file: &str) -> Result<String, String> {
@@ -651,11 +649,11 @@ mod tests {
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         // POST api/streams
-        let request = test::TestRequest::post().uri("/streams");
+        let request = test::TestRequest::post().uri("/streams").insert_header(header_auth(&token));
 
         let vec = (vec![user1], vec![session1], vec![]);
         let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -676,14 +674,12 @@ mod tests {
         let (header, body) = form_builder.build();
 
         // POST api/streams
-        let request = test::TestRequest::post()
-            .uri("/streams")
-            .insert_header(header)
-            .set_payload(body);
+        let request = test::TestRequest::post().uri("/streams").insert_header(header);
+        let request = request.insert_header(header_auth(&token)).set_payload(body);
 
         let vec = (vec![user1], vec![session1], vec![]);
         let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -713,13 +709,14 @@ mod tests {
             test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id))
         };
         let request = request.insert_header(header).set_payload(body);
+        let request = request.insert_header(header_auth(&token));
 
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
 
         let resp = if mode == 1 {
-            call_service1(config_jwt, vec, &token, post_stream, request).await
+            call_service1(config_jwt, vec, post_stream, request).await
         } else {
-            call_service1(config_jwt, vec, &token, put_stream, request).await
+            call_service1(config_jwt, vec, put_stream, request).await
         };
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
         let body = test::read_body(resp).await;
@@ -982,14 +979,12 @@ mod tests {
         let (header, body) = form_builder.build();
 
         // POST api/post_stream
-        let request = test::TestRequest::post()
-            .uri("/streams")
-            .insert_header(header)
-            .set_payload(body);
+        let request = test::TestRequest::post().uri("/streams").insert_header(header);
+        let request = request.insert_header(header_auth(&token)).set_payload(body);
 
         let vec = (vec![user1], vec![session1], vec![]);
         let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         let body = test::read_body(resp).await;
@@ -1049,15 +1044,13 @@ mod tests {
         let now = Utc::now();
 
         // POST api/post_stream
-        let request = test::TestRequest::post()
-            .uri("/streams")
-            .insert_header(header)
-            .set_payload(body);
+        let request = test::TestRequest::post().uri("/streams").insert_header(header);
+        let request = request.insert_header(header_auth(&token)).set_payload(body);
 
         let user1_id = user1.id.to_string();
         let vec = (vec![user1], vec![session1], vec![]);
         let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         let _ = fs::remove_file(path_name1_file);
 
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
@@ -1115,15 +1108,13 @@ mod tests {
         let (header, body) = form_builder.build();
 
         // POST api/post_stream
-        let request = test::TestRequest::post()
-            .uri("/streams")
-            .insert_header(header)
-            .set_payload(body);
+        let request = test::TestRequest::post().uri("/streams").insert_header(header);
+        let request = request.insert_header(header_auth(&token)).set_payload(body);
 
         let user1_id = user1.id;
         let vec = (vec![user1], vec![session1], vec![]);
         let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
 
         let _ = fs::remove_file(path_name1_file);
 
@@ -1152,10 +1143,11 @@ mod tests {
 
         // PUT api/streams/{id}
         let request = test::TestRequest::put().uri(&format!("/streams/1"));
+        let request = request.insert_header(header_auth(&token));
 
         let vec = (vec![user1], vec![session1], vec![]);
         let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1176,14 +1168,12 @@ mod tests {
         let (header, body) = form_builder.build();
 
         // PUT api/streams/{id}
-        let request = test::TestRequest::put()
-            .uri("/streams/1")
-            .insert_header(header)
-            .set_payload(body);
+        let request = test::TestRequest::put().uri("/streams/1").insert_header(header);
+        let request = request.insert_header(header_auth(&token)).set_payload(body);
 
         let vec = (vec![user1], vec![session1], vec![]);
         let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1206,14 +1196,13 @@ mod tests {
         let (header, body) = form_builder.build();
 
         // PUT api/streams/{id}
-        let request = test::TestRequest::put()
-            .uri(&format!("/streams/{}", stream_id_bad))
-            .insert_header(header)
-            .set_payload(body);
+        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_id_bad));
+        let request = request.insert_header(header).set_payload(body);
+        let request = request.insert_header(header_auth(&token));
 
         let vec = (vec![user1], vec![session1], vec![]);
         let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1385,13 +1374,13 @@ mod tests {
         let user1_id = user1.id;
 
         // PUT api/streams/{id}
-        let request = test::TestRequest::put()
-            .uri(&format!("/streams/{}", user1_id + 1))
-            .insert_header(header)
-            .set_payload(body);
+        let request = test::TestRequest::put().uri(&format!("/streams/{}", user1_id + 1));
+        let request = request.insert_header(header).set_payload(body);
+        let request = request.insert_header(header_auth(&token));
+
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
         let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -1442,13 +1431,13 @@ mod tests {
         let (header, body) = form_builder.build();
 
         // PUT api/streams/{id}
-        let request = test::TestRequest::put()
-            .uri(&format!("/streams/{}", stream_dto.id))
-            .insert_header(header)
-            .set_payload(body);
+        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
+        let request = request.insert_header(header).set_payload(body);
+        let request = request.insert_header(header_auth(&token));
+
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
         let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -1507,15 +1496,14 @@ mod tests {
         let (header, body) = form_builder.build();
 
         // PUT api/streams/{id}
-        let request = test::TestRequest::put()
-            .uri(&format!("/streams/{}", stream_dto.id))
-            .insert_header(header)
-            .set_payload(body);
+        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
+        let request = request.insert_header(header).set_payload(body);
+        let request = request.insert_header(header_auth(&token));
 
         let user1_id = user1.id.to_string();
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
         let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         let _ = fs::remove_file(&path_name1_file);
 
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
@@ -1583,15 +1571,14 @@ mod tests {
         let (header, body) = form_builder.build();
 
         // PUT api/streams/{id}
-        let request = test::TestRequest::put()
-            .uri(&format!("/streams/{}", stream_dto.id))
-            .insert_header(header)
-            .set_payload(body);
+        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
+        let request = request.insert_header(header).set_payload(body);
+        let request = request.insert_header(header_auth(&token));
 
         let user1_id = user1.id.to_string();
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
         let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
 
         let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
         let _ = fs::remove_file(&path_name0_file);
@@ -1658,14 +1645,13 @@ mod tests {
         let (header, body) = form_builder.build();
 
         // PUT api/streams/{id}
-        let request = test::TestRequest::put()
-            .uri(&format!("/streams/{}", stream_dto.id))
-            .insert_header(header)
-            .set_payload(body);
+        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
+        let request = request.insert_header(header).set_payload(body);
+        let request = request.insert_header(header_auth(&token));
 
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
         let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
 
         let _ = fs::remove_file(path_name0_file.clone());
@@ -1717,14 +1703,13 @@ mod tests {
         let (header, body) = form_builder.build();
 
         // PUT api/streams/{id}
-        let request = test::TestRequest::put()
-            .uri(&format!("/streams/{}", stream_dto.id))
-            .insert_header(header)
-            .set_payload(body);
+        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
+        let request = request.insert_header(header).set_payload(body);
+        let request = request.insert_header(header_auth(&token));
 
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
         let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
 
         let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
         let _ = fs::remove_file(&path_name0_file);
@@ -1764,14 +1749,13 @@ mod tests {
         let (header, body) = form_builder.build();
 
         // PUT api/streams/{id}
-        let request = test::TestRequest::put()
-            .uri(&format!("/streams/{}", stream_dto.id))
-            .insert_header(header)
-            .set_payload(body);
+        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
+        let request = request.insert_header(header).set_payload(body);
+        let request = request.insert_header(header_auth(&token));
 
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
         let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
 
         let _ = fs::remove_file(&path_name1_file);
 
@@ -1799,10 +1783,11 @@ mod tests {
 
         // DELETE api/streams/{id}
         let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_id_bad));
+        let request = request.insert_header(header_auth(&token));
 
         let vec = (vec![user1], vec![session1], vec![]);
         let factory = delete_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1831,10 +1816,11 @@ mod tests {
 
         // DELETE api/streams/{id}
         let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_dto.id + 1));
+        let request = request.insert_header(header_auth(&token));
 
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
         let factory = delete_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -1861,10 +1847,11 @@ mod tests {
 
         // DELETE api/streams/{id}
         let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_dto.id));
+        let request = request.insert_header(header_auth(&token));
 
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
         let factory = delete_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
     }
     #[test]
@@ -1894,10 +1881,11 @@ mod tests {
 
         // DELETE api/streams/{id}
         let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_dto.id));
+        let request = request.insert_header(header_auth(&token));
 
         let vec = (vec![user1], vec![session1], vec![stream_dto]);
         let factory = delete_stream;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
 
         let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
         let _ = fs::remove_file(&path_name0_file);
