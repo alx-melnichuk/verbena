@@ -689,11 +689,13 @@ mod tests {
         let user_recovery_orm = UserRecoveryOrmApp::create(vec![user_recovery]);
         user_recovery_orm.user_recovery_vec.get(0).unwrap().clone()
     }
-
+    fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
+        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (http::header::AUTHORIZATION, header_value)
+    }
     async fn call_service1(
         config_jwt: config_jwt::ConfigJwt,
         vec: (Vec<User>, Vec<UserRegistr>, Vec<Session>, Vec<UserRecovery>),
-        token: &str,
         factory: impl dev::HttpServiceFactory + 'static,
         request: TestRequest,
     ) -> dev::ServiceResponse {
@@ -720,26 +722,18 @@ mod tests {
                 .service(factory),
         )
         .await;
-        let test_request = if token.len() > 0 {
-            request.insert_header((http::header::AUTHORIZATION, format!("{}{}", BEARER, token)))
-        } else {
-            request
-        };
-        let req = test_request.to_request();
 
-        test::call_service(&app, req).await
+        test::call_service(&app, request.to_request()).await
     }
 
     // ** registration **
     #[test]
     async fn test_registration_no_data() {
-        let token = "";
-
         let request = test::TestRequest::post().uri("/registration"); // POST /registration
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -749,15 +743,13 @@ mod tests {
     }
     #[test]
     async fn test_registration_empty_json_object() {
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(json!({}));
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -767,8 +759,6 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_nickname_empty() {
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -779,7 +769,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -791,8 +781,6 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_nickname_min() {
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -803,7 +791,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -815,8 +803,6 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_nickname_max() {
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -827,7 +813,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -839,8 +825,6 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_nickname_wrong() {
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -851,7 +835,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -863,8 +847,6 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_email_empty() {
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -875,7 +857,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -887,8 +869,6 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_email_min() {
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -899,7 +879,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -911,8 +891,6 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_email_max() {
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -923,7 +901,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -935,8 +913,6 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_email_wrong() {
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -947,7 +923,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -959,8 +935,6 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_password_empty() {
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -971,7 +945,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -983,8 +957,6 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_password_min() {
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -995,7 +967,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1007,8 +979,6 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_password_max() {
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -1019,7 +989,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1031,8 +1001,6 @@ mod tests {
     }
     #[test]
     async fn test_registration_invalid_dto_password_wrong() {
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -1043,7 +1011,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1058,8 +1026,6 @@ mod tests {
         let user1 = user_with_id(create_user());
         let nickname1: String = user1.nickname.to_string();
 
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -1070,7 +1036,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![user1], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
         let body = test::read_body(resp).await;
@@ -1084,8 +1050,6 @@ mod tests {
         let user1 = user_with_id(create_user());
         let email1: String = user1.email.to_string();
 
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -1096,7 +1060,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![user1], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
         let body = test::read_body(resp).await;
@@ -1110,8 +1074,6 @@ mod tests {
         let user_registr1: UserRegistr = create_user_registr();
         let nickname1: String = user_registr1.nickname.to_string();
 
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -1122,7 +1084,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![user_registr1], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
         let body = test::read_body(resp).await;
@@ -1136,8 +1098,6 @@ mod tests {
         let user_registr1: UserRegistr = create_user_registr();
         let email1: String = user_registr1.email.to_string();
 
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -1148,7 +1108,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![user_registr1], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
         let body = test::read_body(resp).await;
@@ -1159,8 +1119,6 @@ mod tests {
     }
     #[test]
     async fn test_login_err_jsonwebtoken_encode() {
-        let token = "";
-
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
             .set_json(RegistrUserDto {
@@ -1173,7 +1131,7 @@ mod tests {
         config_jwt.jwt_secret = "".to_string();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
 
         let body = test::read_body(resp).await;
@@ -1185,12 +1143,9 @@ mod tests {
     #[test]
     async fn test_registration_new_user() {
         let user_registr1: UserRegistr = create_user_registr();
-
         let nickname = "Mary_Williams".to_string();
         let email = "Mary_Williams@gmail.com".to_string();
         let password = "passwordD2T2".to_string();
-
-        let token = "";
 
         let request = test::TestRequest::post()
             .uri("/registration") // POST /registration
@@ -1202,7 +1157,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![user_registr1], vec![], vec![]);
         let factory = registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         let body = test::read_body(resp).await;
@@ -1235,16 +1190,13 @@ mod tests {
     #[test]
     async fn test_registration_confirm_invalid_registr_token() {
         let registr_token = "invalid_registr_token";
-
-        let token = "";
-
         // PUT /registration/{registr_token}
         let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
 
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = confirm_registration;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -1258,7 +1210,6 @@ mod tests {
         let user_reg1_id = user_reg1.id;
 
         let num_token = 1234;
-
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
@@ -1267,14 +1218,12 @@ mod tests {
         let registr_token =
             encode_token(user_reg1_id, num_token, jwt_secret, -reg_duration).unwrap();
 
-        let token = "";
-
         //PUT /registration/{registr_token}
         let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
 
         let factory = confirm_registration;
         let vec = (vec![], vec![user_reg1], vec![], vec![]);
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -1288,7 +1237,6 @@ mod tests {
         let user_reg1_id = user_reg1.id;
 
         let num_token = 1234;
-
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
@@ -1297,14 +1245,12 @@ mod tests {
         let registr_token =
             encode_token(user_reg1_id + 1, num_token, jwt_secret, reg_duration).unwrap();
 
-        let token = "";
-
         //PUT /registration/{registr_token}
         let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
 
         let factory = confirm_registration;
         let vec = (vec![], vec![user_reg1], vec![], vec![]);
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -1319,7 +1265,6 @@ mod tests {
         let email = user_reg1.email.to_string();
 
         let num_token = 1234;
-
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
@@ -1328,14 +1273,12 @@ mod tests {
         let registr_token =
             encode_token(user_reg1.id, num_token, jwt_secret, reg_duration).unwrap();
 
-        let token = "";
-
         //PUT /registration/{registr_token}
         let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
 
         let factory = confirm_registration;
         let vec = (vec![], vec![user_reg1], vec![], vec![]);
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         let body = test::read_body(resp).await;
@@ -1351,12 +1294,11 @@ mod tests {
     // ** recovery **
     #[test]
     async fn test_recovery_no_data() {
-        let token = "";
         let request = test::TestRequest::post().uri("/recovery"); //POST /recovery
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = recovery;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1366,14 +1308,12 @@ mod tests {
     }
     #[test]
     async fn test_recovery_empty_json_object() {
-        let token = "";
-        let request = test::TestRequest::post()
-            .uri("/recovery") //POST /recovery
-            .set_json(json!({}));
+        //POST /recovery
+        let request = test::TestRequest::post().uri("/recovery").set_json(json!({}));
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = recovery;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1383,16 +1323,13 @@ mod tests {
     }
     #[test]
     async fn test_recovery_invalid_dto_email_empty() {
-        let token = "";
-        let request = test::TestRequest::post()
-            .uri("/recovery") //POST /recovery
-            .set_json(RecoveryUserDto {
-                email: "".to_string(),
-            });
+        //POST /recovery
+        let request = test::TestRequest::post().uri("/recovery") 
+            .set_json(RecoveryUserDto { email: "".to_string() });
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = recovery;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1404,16 +1341,13 @@ mod tests {
     }
     #[test]
     async fn test_recovery_invalid_dto_email_min() {
-        let token = "";
-        let request = test::TestRequest::post()
-            .uri("/recovery") //POST /recovery
-            .set_json(RecoveryUserDto {
-                email: UserModelsTest::email_min(),
-            });
+        //POST /recovery
+        let request = test::TestRequest::post().uri("/recovery")
+            .set_json(RecoveryUserDto { email: UserModelsTest::email_min() });
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = recovery;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1425,16 +1359,13 @@ mod tests {
     }
     #[test]
     async fn test_recovery_invalid_dto_email_max() {
-        let token = "";
-        let request = test::TestRequest::post()
-            .uri("/recovery") //POST /recovery
-            .set_json(RecoveryUserDto {
-                email: UserModelsTest::email_max(),
-            });
+         //POST /recovery
+        let request = test::TestRequest::post().uri("/recovery")
+            .set_json(RecoveryUserDto { email: UserModelsTest::email_max() });
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = recovery;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1446,16 +1377,13 @@ mod tests {
     }
     #[test]
     async fn test_recovery_invalid_dto_email_wrong() {
-        let token = "";
-        let request = test::TestRequest::post()
-            .uri("/recovery") //POST /recovery
-            .set_json(RecoveryUserDto {
-                email: UserModelsTest::email_wrong(),
-            });
+        //POST /recovery
+        let request = test::TestRequest::post().uri("/recovery")
+            .set_json(RecoveryUserDto { email: UserModelsTest::email_wrong() });
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = recovery;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1467,16 +1395,13 @@ mod tests {
     }
     #[test]
     async fn test_recovery_if_user_with_email_not_exist() {
-        let token = "";
-        let request = test::TestRequest::post()
-            .uri("/recovery") //POST /recovery
-            .set_json(RecoveryUserDto {
-                email: "Oliver_Taylor@gmail.com".to_string(),
-            });
+        //POST /recovery
+        let request = test::TestRequest::post().uri("/recovery")
+            .set_json(RecoveryUserDto { email: "Oliver_Taylor@gmail.com".to_string() });
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = recovery;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -1490,16 +1415,13 @@ mod tests {
         let user1 = user_with_id(create_user());
         let user1_email = user1.email.to_string();
 
-        let token = "";
-        let request = test::TestRequest::post()
-            .uri("/recovery") //POST /recovery
-            .set_json(RecoveryUserDto {
-                email: user1_email.to_string(),
-            });
+        //POST /recovery
+        let request = test::TestRequest::post().uri("/recovery")
+            .set_json(RecoveryUserDto { email: user1_email.to_string() });
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![user1], vec![], vec![], vec![]);
         let factory = recovery;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         let body = test::read_body(resp).await;
@@ -1530,16 +1452,13 @@ mod tests {
             create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
         let user_recovery1_id = user_recovery1.id;
 
-        let token = "";
-        let request = test::TestRequest::post()
-            .uri("/recovery") //POST /recovery
-            .set_json(RecoveryUserDto {
-                email: user1_email.to_string(),
-            });
+        //POST /recovery
+        let request = test::TestRequest::post().uri("/recovery")
+            .set_json(RecoveryUserDto { email: user1_email.to_string() });
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![user1], vec![], vec![], vec![user_recovery1]);
         let factory = recovery;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         let body = test::read_body(resp).await;
@@ -1569,17 +1488,14 @@ mod tests {
         let user_recovery1 =
             create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
 
-        let token = "";
-        let request = test::TestRequest::post()
-            .uri("/recovery") //POST /recovery
-            .set_json(RecoveryUserDto {
-                email: user1_email.to_string(),
-            });
+        // POST /recovery
+        let request = test::TestRequest::post().uri("/recovery") 
+            .set_json(RecoveryUserDto { email: user1_email.to_string() });
         let mut config_jwt = config_jwt::get_test_config();
         config_jwt.jwt_secret = "".to_string();
         let vec = (vec![user1], vec![], vec![], vec![user_recovery1]);
         let factory = recovery;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
 
         let body = test::read_body(resp).await;
@@ -1593,16 +1509,13 @@ mod tests {
     #[test]
     async fn test_recovery_confirm_invalid_dto_password_empty() {
         let recovery_token = "recovery_token";
-        let token = "";
-        let request = test::TestRequest::put()
-            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
-            .set_json(RecoveryDataDto {
-                password: "".to_string(),
-            });
+        // PUT /recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token))
+            .set_json(RecoveryDataDto { password: "".to_string() });
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = confirm_recovery;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1615,16 +1528,13 @@ mod tests {
     #[test]
     async fn test_recovery_confirm_invalid_dto_password_min() {
         let recovery_token = "recovery_token";
-        let token = "";
-        let request = test::TestRequest::put()
-            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
-            .set_json(RecoveryDataDto {
-                password: UserModelsTest::password_min(),
-            });
+        // PUT /recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token)) 
+            .set_json(RecoveryDataDto { password: UserModelsTest::password_min() });
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = confirm_recovery;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1637,16 +1547,13 @@ mod tests {
     #[test]
     async fn test_recovery_confirm_invalid_dto_password_max() {
         let recovery_token = "recovery_token";
-        let token = "";
-        let request = test::TestRequest::put()
-            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
-            .set_json(RecoveryDataDto {
-                password: UserModelsTest::password_max(),
-            });
+        // PUT /recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token)) 
+            .set_json(RecoveryDataDto { password: UserModelsTest::password_max() });
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = confirm_recovery;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1659,16 +1566,13 @@ mod tests {
     #[test]
     async fn test_recovery_confirm_invalid_recovery_token() {
         let recovery_token = "invalid_recovery_token";
-        let token = "";
-        let request = test::TestRequest::put()
-            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
-            .set_json(RecoveryDataDto {
-                password: "passwordQ2V2".to_string(),
-            });
+        // PUT /recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token)) 
+            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() });
         let config_jwt = config_jwt::get_test_config();
         let vec = (vec![], vec![], vec![], vec![]);
         let factory = confirm_recovery;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -1688,21 +1592,17 @@ mod tests {
             create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
 
         let num_token = 1234;
-
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token =
             encode_token(user_recovery1.id, num_token, jwt_secret, -recovery_duration).unwrap();
 
-        let token = "";
-        let request = test::TestRequest::put()
-            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
-            .set_json(RecoveryDataDto {
-                password: "passwordQ2V2".to_string(),
-            });
+        // PUT /recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token)) 
+            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() });
         let factory = confirm_recovery;
         let vec = (vec![user1], vec![], vec![], vec![user_recovery1]);
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -1722,7 +1622,6 @@ mod tests {
             create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
 
         let num_token = 1234;
-
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = encode_token(
@@ -1733,15 +1632,12 @@ mod tests {
         )
         .unwrap();
 
-        let token = "";
-        let request = test::TestRequest::put()
-            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
-            .set_json(RecoveryDataDto {
-                password: "passwordQ2V2".to_string(),
-            });
+        // PUT /recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token))
+            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() });
         let factory = confirm_recovery;
         let vec = (vec![user1], vec![], vec![], vec![user_recovery1]);
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -1772,15 +1668,12 @@ mod tests {
         )
         .unwrap();
 
-        let token = "";
-        let request = test::TestRequest::put()
-            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
-            .set_json(RecoveryDataDto {
-                password: "passwordQ2V2".to_string(),
-            });
+        // PUT /recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token)) 
+            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() });
         let factory = confirm_recovery;
         let vec = (vec![user1], vec![], vec![], vec![user_recovery1]);
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -1807,15 +1700,12 @@ mod tests {
         let recovery_token =
             encode_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
 
-        let token = "";
-        let request = test::TestRequest::put()
-            .uri(&format!("/recovery/{}", recovery_token)) //PUT /recovery/{recovery_token}
-            .set_json(RecoveryDataDto {
-                password: "passwordQ2V2".to_string(),
-            });
+        // PUT /recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token)) 
+            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() });
         let factory = confirm_recovery;
         let vec = (vec![user1], vec![], vec![], vec![user_recovery1]);
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -1856,17 +1746,12 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let request = test::TestRequest::get().uri(&"/clear_for_expired"); // GET api/clear_for_expired
-
+        // GET api/clear_for_expired
+        let request = test::TestRequest::get().uri(&"/clear_for_expired");
+        let request = request.insert_header(header_auth(&token));
         let factory = clear_for_expired;
-        let vec = (
-            vec![user1],
-            vec![user_registr1],
-            vec![session1],
-            vec![user_recovery1],
-        );
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let vec = (vec![user1], vec![user_registr1], vec![session1], vec![user_recovery1]);
+        let resp = call_service1(config_jwt, vec, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
