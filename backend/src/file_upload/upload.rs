@@ -2,6 +2,7 @@ use std::{self, ffi::OsStr, path::PathBuf};
 
 use image::{imageops::FilterType, DynamicImage, GenericImageView, ImageFormat};
 
+/** Convert the file to another mime type. */
 pub fn convert_file(source: &str, receiver: &str, _min_width: u32, _min_height: u32) -> Result<String, String> {
     let path_source = PathBuf::from(source);
     let source_extension = path_source.extension().unwrap_or(OsStr::new("")).to_str().unwrap().to_string();
