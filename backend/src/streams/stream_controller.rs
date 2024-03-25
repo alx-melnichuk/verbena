@@ -46,18 +46,18 @@ fn err_invalid_tags(err: String) -> AppError {
     log::error!("{}: {}", err::CD_INVALID_TAGS_FIELD, error);
     AppError::new(err::CD_INVALID_TAGS_FIELD, &error).set_status(400)
 }
-pub fn err_invalid_file_type(valie: &str, valid_types: &str) -> AppError {
-    log::error!("{}: {}", err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE);
-    let json = serde_json::json!({ "actualFileType": valie, "validFileType": valid_types });
-    AppError::new(err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE)
-        .add_param(borrow::Cow::Borrowed("invalidFileType"), &json)
-        .set_status(400)
-}
-pub fn err_invalid_file_size(err_file_size: usize, max_file_size: usize) -> AppError {
+fn err_invalid_file_size(err_file_size: usize, max_file_size: usize) -> AppError {
     log::error!("{}: {}", err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE);
     let json = serde_json::json!({ "actualFileSize": err_file_size, "maxFileSize": max_file_size });
     AppError::new(err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE)
         .add_param(borrow::Cow::Borrowed("invalidFileSize"), &json)
+        .set_status(400)
+}
+fn err_invalid_file_type(valie: &str, valid_types: &str) -> AppError {
+    log::error!("{}: {}", err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE);
+    let json = serde_json::json!({ "actualFileType": valie, "validFileType": valid_types });
+    AppError::new(err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE)
+        .add_param(borrow::Cow::Borrowed("invalidFileType"), &json)
         .set_status(400)
 }
 fn err_upload_file(err: String) -> AppError {
@@ -163,16 +163,46 @@ pub async fn post_stream(
         if temp_file.size == 0 {
             break;
         }
-        let only_file_name = format!("{}_{}", curr_user_id, coding::encode(Utc::now(), 1));
-        // Upload file (checking max size and mime type). And also convert to another mime type.
-        path_new_logo_file = upload_temp_file(temp_file, config_strm.clone(), &only_file_name)?;
-
-        // Convert the file to another mime type.
-        let path_file = convert_file(config_strm.clone(), &path_new_logo_file.clone())?;
-        if !path_file.eq(&path_new_logo_file) {
-            remove_file_and_log(&path_new_logo_file, &"post_stream()");
+        let logo_max_size = config_strm.strm_logo_max_size;
+        // Check file size for maximum value.
+        if logo_max_size > 0 && temp_file.size > logo_max_size {
+            return Err(err_invalid_file_size(temp_file.size, logo_max_size));
+        }
+        #[rustfmt::skip]
+        let file_mime_type = match temp_file.content_type { Some(v) => v.to_string(), None => "".to_string() };
+        let valid_file_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
+        // Checking the file for valid mime types.
+        if !valid_file_types.contains(&file_mime_type) {
+            return Err(err_invalid_file_type(&file_mime_type, &valid_file_types.join(",")));
+        }
+        // Get the name of the new file.
+        let path_file = get_new_path_file(curr_user_id, Utc::now(), &file_mime_type, &logo_files_dir);
+        // Persist the temporary file at the target path.
+        // If a file exists at the target path, persist will atomically replace it.
+        let res_upload = temp_file.file.persist(&path_file);
+        if let Err(err) = res_upload {
+            return Err(err_upload_file(format!("{}: {}", err.to_string(), &path_file)));
         }
         path_new_logo_file = path_file;
+        
+        let mut path: path::PathBuf = path::PathBuf::from(&path_new_logo_file);
+        let file_source_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap().to_string();
+        let strm_logo_ext = config_strm.clone().strm_logo_ext.unwrap_or("".to_string());
+
+        if strm_logo_ext.len() > 0 && !strm_logo_ext.eq(&file_source_ext) {
+            path.set_extension(&strm_logo_ext);
+            let file_receiver = path.to_str().unwrap().to_string();
+            // Convert the file to another mime type.
+            let res_convert = upload::convert_file(&path_new_logo_file, &file_receiver, 0, 0);
+            if let Err(err) = res_convert {
+                return Err(err_convert_file(err));
+            }
+            let path_file = res_convert.unwrap();
+            if !path_file.eq(&path_new_logo_file) {
+                remove_file_and_log(&path_new_logo_file, &"post_stream()");
+            }
+            path_new_logo_file = path_file;
+        }
 
         break;
     }
@@ -208,67 +238,13 @@ pub async fn post_stream(
     Ok(HttpResponse::Created().json(stream_info_dto)) // 201
 }
 
-// Upload file (checking max size and mime type)
-fn upload_temp_file(
-    temp_file: TempFile,
-    config_strm: config_strm::ConfigStrm,
-    only_file_name: &str,
-) -> Result<String, AppError> {
-    // Check file size for maximum value.
-    let logo_max_size = config_strm.strm_logo_max_size;
-    if logo_max_size > 0 && temp_file.size > logo_max_size {
-        return Err(err_invalid_file_size(temp_file.size, logo_max_size));
-    }
-    // Checking the file for valid mime types.
-    let file_type = match temp_file.content_type {
-        Some(val) => val.to_string(),
-        None => "".to_string(),
-    };
-    let logo_valid_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
-    if !logo_valid_types.contains(&file_type) {
-        return Err(err_invalid_file_type(&file_type, &logo_valid_types.join(",")));
-    }
-
+fn get_new_path_file(user_id: i32, date_time: DateTime<Utc>, file_mime_type: &str, file_dir: &str) -> String {
+    let only_file_name = format!("{}_{}", user_id, coding::encode(date_time, 1));
     // Get file name and file extension.
-    // let file_name = format!("{}_{}", curr_user_id, coding::encode(Utc::now(), 1));
-    let file_ext = file_type.replace(&format!("{}/", IMAGE), "");
+    let file_ext = file_mime_type.replace(&format!("{}/", IMAGE), "");
     // Add 'file path' + 'file name'.'file extension'.
-    let logo_files_dir = config_strm.strm_logo_files_dir.clone();
-    let path: path::PathBuf = [logo_files_dir.clone(), format!("{}.{}", only_file_name, file_ext)]
-        .iter()
-        .collect();
-    let path_file = path.to_str().unwrap().to_string();
-
-    // Persist the temporary file at the target path.
-    // If a file exists at the target path, persist will atomically replace it.
-    let res_upload = temp_file.file.persist(&path_file);
-    if let Err(err) = res_upload {
-        return Err(err_upload_file(format!("{}: {}", err.to_string(), &path_file)));
-    }
-
-    Ok(path_file)
-}
-
-// Convert the file to another mime type.
-fn convert_file(config_strm: config_strm::ConfigStrm, file_source: &str) -> Result<String, AppError> {
-    let mut file_receiver = file_source.to_string();
-    let path: path::PathBuf = [file_source].iter().collect();
-    let file_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap().to_string();
-
-    let strm_logo_ext = config_strm.strm_logo_ext.unwrap_or("".to_string());
-
-    if strm_logo_ext.len() > 0 && !strm_logo_ext.eq(&file_ext) {
-        let mut path_receiver = path::PathBuf::from(file_source);
-        path_receiver.set_extension(&strm_logo_ext);
-        file_receiver = path_receiver.to_str().unwrap().to_string();
-
-        let res_convert = upload::convert_file(file_source, &file_receiver, 0, 0);
-        if let Err(err) = res_convert {
-            return Err(err_convert_file(err));
-        }
-        file_receiver = res_convert.unwrap();
-    }
-    Ok(file_receiver)
+    let path: path::PathBuf = [file_dir, &format!("{}.{}", only_file_name, file_ext)].iter().collect();
+    path.to_str().unwrap().to_string()
 }
 
 #[derive(Debug, MultipartForm)]
@@ -379,16 +355,46 @@ pub async fn put_stream(
             logo = Some(None); // Set the "logo" field to `NULL`.
             break;
         }
-        let only_file_name = format!("{}_{}", curr_user_id, coding::encode(Utc::now(), 1));
-        // Upload file (checking max size and mime type). And also convert to another mime type.
-        path_new_logo_file = upload_temp_file(temp_file, config_strm.clone(), &only_file_name)?;
-
-        // Convert the file to another mime type.
-        let path_file = convert_file(config_strm.clone(), &path_new_logo_file.clone())?;
-        if !path_file.eq(&path_new_logo_file) {
-            remove_file_and_log(&path_new_logo_file, &"put_stream()");
+        let logo_max_size = config_strm.strm_logo_max_size;
+        // Check file size for maximum value.
+        if logo_max_size > 0 && temp_file.size > logo_max_size {
+            return Err(err_invalid_file_size(temp_file.size, logo_max_size));
+        }
+        #[rustfmt::skip]
+        let file_mime_type = match temp_file.content_type { Some(v) => v.to_string(), None => "".to_string() };
+        let valid_file_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
+        // Checking the file for valid mime types.
+        if !valid_file_types.contains(&file_mime_type) {
+            return Err(err_invalid_file_type(&file_mime_type, &valid_file_types.join(",")));
+        }
+        // Get the name of the new file.
+        let path_file = get_new_path_file(curr_user_id, Utc::now(), &file_mime_type, &logo_files_dir);
+        // Persist the temporary file at the target path.
+        // If a file exists at the target path, persist will atomically replace it.
+        let res_upload = temp_file.file.persist(&path_file);
+        if let Err(err) = res_upload {
+            return Err(err_upload_file(format!("{}: {}", err.to_string(), &path_file)));
         }
         path_new_logo_file = path_file;
+        
+        let mut path: path::PathBuf = path::PathBuf::from(&path_new_logo_file);
+        let file_source_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap().to_string();
+        let strm_logo_ext = config_strm.clone().strm_logo_ext.unwrap_or("".to_string());
+
+        if strm_logo_ext.len() > 0 && !strm_logo_ext.eq(&file_source_ext) {
+            path.set_extension(&strm_logo_ext);
+            let file_receiver = path.to_str().unwrap().to_string();
+            // Convert the file to another mime type.
+            let res_convert = upload::convert_file(&path_new_logo_file, &file_receiver, 0, 0);
+            if let Err(err) = res_convert {
+                return Err(err_convert_file(err));
+            }
+            let path_file = res_convert.unwrap();
+            if !path_file.eq(&path_new_logo_file) {
+                remove_file_and_log(&path_new_logo_file, &"put_stream()");
+            }
+            path_new_logo_file = path_file;
+        }
 
         let alias_logo_file = path_new_logo_file.replace(&logo_files_dir, &format!("/{}", ALIAS_LOGO_FILES));
         logo = Some(Some(alias_logo_file));
@@ -563,16 +569,16 @@ mod tests {
     }
 
     async fn call_service1(
-        config_jwt: config_jwt::ConfigJwt,
-        vec: (Vec<User>, Vec<Session>, Vec<StreamInfoDto>),
+        cfg_c: (config_jwt::ConfigJwt, config_strm::ConfigStrm),
+        data_c: (Vec<User>, Vec<Session>, Vec<StreamInfoDto>),
         factory: impl dev::HttpServiceFactory + 'static,
         request: TestRequest,
     ) -> dev::ServiceResponse {
-        let data_config_jwt = web::Data::new(config_jwt);
-        let data_config_strm = web::Data::new(config_strm::get_test_config());
-        let data_user_orm = web::Data::new(UserOrmApp::create(&vec.0));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
-        let data_stream_orm = web::Data::new(StreamOrmApp::create(&vec.2));
+        let data_config_jwt = web::Data::new(cfg_c.0);
+        let data_config_strm = web::Data::new(cfg_c.1);
+        let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
+        let data_session_orm = web::Data::new(SessionOrmApp::create(data_c.1));
+        let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.2));
 
         let app = test::init_service(
             App::new()
@@ -650,10 +656,9 @@ mod tests {
 
         // POST api/streams
         let request = test::TestRequest::post().uri("/streams").insert_header(header_auth(&token));
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![]);
+        let resp = call_service1(cfg_c, data_c, post_stream, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -676,10 +681,9 @@ mod tests {
         // POST api/streams
         let request = test::TestRequest::post().uri("/streams").insert_header(header);
         let request = request.insert_header(header_auth(&token)).set_payload(body);
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![]);
+        let resp = call_service1(cfg_c, data_c, post_stream, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -710,13 +714,13 @@ mod tests {
         };
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
-
-        let vec = (vec![user1], vec![session1], vec![stream_dto]);
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
 
         let resp = if mode == 1 {
-            call_service1(config_jwt, vec, post_stream, request).await
+            call_service1(cfg_c, data_c, post_stream, request).await
         } else {
-            call_service1(config_jwt, vec, put_stream, request).await
+            call_service1(cfg_c, data_c, put_stream, request).await
         };
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
         let body = test::read_body(resp).await;
@@ -981,10 +985,9 @@ mod tests {
         // POST api/post_stream
         let request = test::TestRequest::post().uri("/streams").insert_header(header);
         let request = request.insert_header(header_auth(&token)).set_payload(body);
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![]);
+        let resp = call_service1(cfg_c, data_c, post_stream, request).await;
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         let body = test::read_body(resp).await;
@@ -1048,9 +1051,9 @@ mod tests {
         let request = request.insert_header(header_auth(&token)).set_payload(body);
 
         let user1_id = user1.id.to_string();
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![]);
+        let resp = call_service1(cfg_c, data_c, post_stream, request).await;
         let _ = fs::remove_file(path_name1_file);
 
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
@@ -1110,11 +1113,10 @@ mod tests {
         // POST api/post_stream
         let request = test::TestRequest::post().uri("/streams").insert_header(header);
         let request = request.insert_header(header_auth(&token)).set_payload(body);
-
+        let cfg_c = (config_jwt, config_strm::get_test_config());
         let user1_id = user1.id;
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = post_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let data_c = (vec![user1], vec![session1], vec![]);
+        let resp = call_service1(cfg_c, data_c, post_stream, request).await;
 
         let _ = fs::remove_file(path_name1_file);
 
@@ -1144,10 +1146,9 @@ mod tests {
         // PUT api/streams/{id}
         let request = test::TestRequest::put().uri(&format!("/streams/1"));
         let request = request.insert_header(header_auth(&token));
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![]);
+        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1170,10 +1171,9 @@ mod tests {
         // PUT api/streams/{id}
         let request = test::TestRequest::put().uri("/streams/1").insert_header(header);
         let request = request.insert_header(header_auth(&token)).set_payload(body);
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![]);
+        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1199,10 +1199,9 @@ mod tests {
         let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_id_bad));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![]);
+        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1377,10 +1376,9 @@ mod tests {
         let request = test::TestRequest::put().uri(&format!("/streams/{}", user1_id + 1));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
-
-        let vec = (vec![user1], vec![session1], vec![stream_dto]);
-        let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
+        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -1434,10 +1432,9 @@ mod tests {
         let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
-
-        let vec = (vec![user1], vec![session1], vec![stream_dto]);
-        let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
+        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -1499,11 +1496,10 @@ mod tests {
         let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
-
+        let cfg_c = (config_jwt, config_strm::get_test_config());
         let user1_id = user1.id.to_string();
-        let vec = (vec![user1], vec![session1], vec![stream_dto]);
-        let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
+        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
         let _ = fs::remove_file(&path_name1_file);
 
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
@@ -1574,11 +1570,10 @@ mod tests {
         let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
-
+        let cfg_c = (config_jwt, config_strm::get_test_config());
         let user1_id = user1.id.to_string();
-        let vec = (vec![user1], vec![session1], vec![stream_dto]);
-        let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
+        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
 
         let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
         let _ = fs::remove_file(&path_name0_file);
@@ -1648,10 +1643,9 @@ mod tests {
         let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
-
-        let vec = (vec![user1], vec![session1], vec![stream_dto]);
-        let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
+        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
         let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
 
         let _ = fs::remove_file(path_name0_file.clone());
@@ -1706,10 +1700,9 @@ mod tests {
         let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
-
-        let vec = (vec![user1], vec![session1], vec![stream_dto]);
-        let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
+        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
 
         let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
         let _ = fs::remove_file(&path_name0_file);
@@ -1752,10 +1745,9 @@ mod tests {
         let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
-
-        let vec = (vec![user1], vec![session1], vec![stream_dto]);
-        let factory = put_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
+        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
 
         let _ = fs::remove_file(&path_name1_file);
 
@@ -1784,10 +1776,9 @@ mod tests {
         // DELETE api/streams/{id}
         let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_id_bad));
         let request = request.insert_header(header_auth(&token));
-
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = delete_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![]);
+        let resp = call_service1(cfg_c, data_c, delete_stream, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1817,10 +1808,9 @@ mod tests {
         // DELETE api/streams/{id}
         let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_dto.id + 1));
         let request = request.insert_header(header_auth(&token));
-
-        let vec = (vec![user1], vec![session1], vec![stream_dto]);
-        let factory = delete_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
+        let resp = call_service1(cfg_c, data_c, delete_stream, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -1848,10 +1838,9 @@ mod tests {
         // DELETE api/streams/{id}
         let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_dto.id));
         let request = request.insert_header(header_auth(&token));
-
-        let vec = (vec![user1], vec![session1], vec![stream_dto]);
-        let factory = delete_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
+        let resp = call_service1(cfg_c, data_c, delete_stream, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
     }
     #[test]
@@ -1882,10 +1871,9 @@ mod tests {
         // DELETE api/streams/{id}
         let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_dto.id));
         let request = request.insert_header(header_auth(&token));
-
-        let vec = (vec![user1], vec![session1], vec![stream_dto]);
-        let factory = delete_stream;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
+        let resp = call_service1(cfg_c, data_c, delete_stream, request).await;
 
         let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
         let _ = fs::remove_file(&path_name0_file);
