@@ -163,10 +163,9 @@ pub async fn post_stream(
         if temp_file.size == 0 {
             break;
         }
-        let logo_max_size = config_strm.strm_logo_max_size;
         // Check file size for maximum value.
-        if logo_max_size > 0 && temp_file.size > logo_max_size {
-            return Err(err_invalid_file_size(temp_file.size, logo_max_size));
+        if config_strm.strm_logo_max_size > 0 && temp_file.size > config_strm.strm_logo_max_size {
+            return Err(err_invalid_file_size(temp_file.size, config_strm.strm_logo_max_size));
         }
         #[rustfmt::skip]
         let file_mime_type = match temp_file.content_type { Some(v) => v.to_string(), None => "".to_string() };
@@ -185,15 +184,14 @@ pub async fn post_stream(
         }
         path_new_logo_file = path_file;
         
-        let mut path: path::PathBuf = path::PathBuf::from(&path_new_logo_file);
+        let path: path::PathBuf = path::PathBuf::from(&path_new_logo_file);
         let file_source_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap().to_string();
         let strm_logo_ext = config_strm.clone().strm_logo_ext.unwrap_or("".to_string());
 
         if strm_logo_ext.len() > 0 && !strm_logo_ext.eq(&file_source_ext) {
-            path.set_extension(&strm_logo_ext);
-            let file_receiver = path.to_str().unwrap().to_string();
             // Convert the file to another mime type.
-            let res_convert = upload::convert_file(&path_new_logo_file, &file_receiver, 0, 0);
+            let res_convert = upload::convert_file(
+                &path_new_logo_file, &strm_logo_ext, config_strm.strm_logo_max_width, config_strm.strm_logo_max_height);
             if let Err(err) = res_convert {
                 return Err(err_convert_file(err));
             }
@@ -355,10 +353,9 @@ pub async fn put_stream(
             logo = Some(None); // Set the "logo" field to `NULL`.
             break;
         }
-        let logo_max_size = config_strm.strm_logo_max_size;
         // Check file size for maximum value.
-        if logo_max_size > 0 && temp_file.size > logo_max_size {
-            return Err(err_invalid_file_size(temp_file.size, logo_max_size));
+        if config_strm.strm_logo_max_size > 0 && temp_file.size > config_strm.strm_logo_max_size {
+            return Err(err_invalid_file_size(temp_file.size, config_strm.strm_logo_max_size));
         }
         #[rustfmt::skip]
         let file_mime_type = match temp_file.content_type { Some(v) => v.to_string(), None => "".to_string() };
@@ -377,15 +374,14 @@ pub async fn put_stream(
         }
         path_new_logo_file = path_file;
         
-        let mut path: path::PathBuf = path::PathBuf::from(&path_new_logo_file);
+        let path: path::PathBuf = path::PathBuf::from(&path_new_logo_file);
         let file_source_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap().to_string();
-        let strm_logo_ext = config_strm.clone().strm_logo_ext.unwrap_or("".to_string());
+        let strm_logo_ext = config_strm.strm_logo_ext.unwrap_or("".to_string());
 
         if strm_logo_ext.len() > 0 && !strm_logo_ext.eq(&file_source_ext) {
-            path.set_extension(&strm_logo_ext);
-            let file_receiver = path.to_str().unwrap().to_string();
             // Convert the file to another mime type.
-            let res_convert = upload::convert_file(&path_new_logo_file, &file_receiver, 0, 0);
+            let res_convert = upload::convert_file(
+                &path_new_logo_file, &strm_logo_ext, config_strm.strm_logo_max_width, config_strm.strm_logo_max_height);
             if let Err(err) = res_convert {
                 return Err(err_convert_file(err));
             }
@@ -602,8 +598,7 @@ mod tests {
         let header: Vec<u8> = vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
         let footer: Vec<u8> = vec![0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82];
         #[rustfmt::skip]
-        let buf1: Vec<u8> = vec![
-            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+        let buf1: Vec<u8> = vec![                            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
             0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x04,  0x08, 0x06, 0x00, 0x00, 0x00, 0xA9, 0xF1, 0x9E,
             0x7E, 0x00, 0x00, 0x00, 0x01, 0x73, 0x52, 0x47,  0x42, 0x00, 0xAE, 0xCE, 0x1C, 0xE9, 0x00, 0x00,
             0x00, 0x4F, 0x49, 0x44, 0x41, 0x54, 0x18, 0x57,  0x01, 0x44, 0x00, 0xBB, 0xFF, 0x01, 0xF3, 0xF5,
@@ -614,8 +609,7 @@ mod tests {
             0x00, 0x78, 0x18, 0x1E, 0xE2, 0xBA, 0x4A, 0xF4,  0x76
         ];
         #[rustfmt::skip]
-        let buf2: Vec<u8> = vec![
-            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+        let buf2: Vec<u8> = vec![                            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
             0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x05,  0x08, 0x06, 0x00, 0x00, 0x00, 0x8D, 0x6F, 0x26,
             0xE5, 0x00, 0x00, 0x00, 0x01, 0x73, 0x52, 0x47,  0x42, 0x00, 0xAE, 0xCE, 0x1C, 0xE9, 0x00, 0x00,
             0x00, 0x74, 0x49, 0x44, 0x41, 0x54, 0x18, 0x57,  0x01, 0x69, 0x00, 0x96, 0xFF, 0x01, 0xF3, 0xF4,
@@ -627,6 +621,19 @@ mod tests {
             0x00, 0x01, 0xF6, 0xF4, 0xF2, 0xFF, 0xF4, 0xFC,  0xF4, 0x00, 0x35, 0x9C, 0x3F, 0x00, 0xC1, 0x63,
             0xBA, 0x00, 0x18, 0x09, 0x19, 0x00, 0x50, 0xDE,  0x2B, 0x56, 0xC3, 0xBD, 0xEC, 0xAA,
         ];
+        #[rustfmt::skip]
+        let buf3: Vec<u8> = vec![                            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0x00, 0x17, 0x00, 0x00, 0x00, 0x13,  0x08, 0x06, 0x00, 0x00, 0x00, 0x7B, 0xBB, 0x96,
+            0xB6, 0x00, 0x00, 0x00, 0x04, 0x73, 0x42, 0x49,  0x54, 0x08, 0x08, 0x08, 0x08, 0x7C, 0x08, 0x64,
+            0x88, 0x00, 0x00, 0x00, 0x6C, 0x49, 0x44, 0x41,  0x54, 0x38, 0x8D, 0xED, 0x94, 0x4B, 0x0A, 0x80,
+            0x30, 0x0C, 0x05, 0x5F, 0xC5, 0x83, 0x28, 0x78,  0x3D, 0xDB, 0xDE, 0xA4, 0x1F, 0x0F, 0x3C, 0xAE,
+            0x15, 0x6B, 0xAB, 0xD0, 0x5D, 0x07, 0x02, 0x81,  0x90, 0x49, 0xC8, 0x22, 0x06, 0x40, 0x9D, 0x98,
+            0x7A, 0x89, 0x87, 0x7C, 0xC8, 0xBF, 0x31, 0x97,  0x0A, 0x31, 0x66, 0xA5, 0x7C, 0xBC, 0x36, 0x3B,
+            0xBB, 0xCB, 0x7B, 0x5B, 0xAC, 0x17, 0x37, 0xF7,  0xDE, 0xCA, 0xD9, 0xFD, 0xB7, 0x58, 0x92, 0x44,
+            0x85, 0x10, 0x12, 0xCB, 0xBA, 0x5D, 0x22, 0x84,  0x54, 0x6B, 0x03, 0xA0, 0x2A, 0xBF, 0x0F, 0x68,
+            0x15, 0x03, 0x14, 0x6F, 0x7E, 0x3F, 0xD1, 0x53,  0x5E, 0xC3, 0xC0, 0x78, 0x5C, 0x43, 0xDE, 0xC8,
+            0x09, 0xFC, 0x22, 0xB8, 0x69, 0x88, 0xAE, 0x67,  0xA8 
+        ];
 
         // if path::Path::new(&path_file).exists() {
         //     let _ = fs::remove_file(&path_file);
@@ -635,7 +642,7 @@ mod tests {
         let mut file = fs::File::create(path_file).map_err(|e| e.to_string())?;
         file.write_all(header.as_ref()).map_err(|e| e.to_string())?;
         #[rustfmt::skip]
-        let buf: Vec<u8> = match code { 2 => buf2, _ => buf1 };
+        let buf: Vec<u8> = match code { 3 => buf3, 2 => buf2, _ => buf1 };
         file.write_all(buf.as_ref()).map_err(|e| e.to_string())?;
         file.write_all(footer.as_ref()).map_err(|e| e.to_string())?;
 
@@ -714,7 +721,9 @@ mod tests {
         };
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let mut config_strm = config_strm::get_test_config();
+        config_strm.strm_logo_max_size = 160;
+        let cfg_c = (config_jwt, config_strm);
         let data_c = (vec![user1], vec![session1], vec![stream_dto]);
 
         let resp = if mode == 1 {
@@ -1130,6 +1139,79 @@ mod tests {
         assert_eq!(stream_dto_res.tags.len(), tags.len());
         assert_eq!(stream_dto_res.tags, tags);
     }
+    #[test]
+    async fn test_post_stream_valid_data_with_logo_convert_file_new() {
+        let name1_file = "post_triangle_23x19.png";
+        let path_name1_file = format!("./{}", &name1_file);
+        save_file_png(&path_name1_file, 3).unwrap();
+
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let tags: Vec<String> = StreamModelsTest::tag_names_enough();
+        let tags_s = serde_json::to_string(&tags).unwrap();
+
+        let mut form_builder = MultiPartFormDataBuilder::new();
+        form_builder
+            .with_text("title", StreamModelsTest::title_enough())
+            .with_text("tags", tags_s);
+        form_builder.with_file(path_name1_file.to_string(), "logofile", "image/png", name1_file);
+
+        let (header, body) = form_builder.build();
+        let now = Utc::now();
+
+        // POST api/post_stream
+        let request = test::TestRequest::post().uri("/streams").insert_header(header);
+        let request = request.insert_header(header_auth(&token)).set_payload(body);
+
+        let mut config_strm = config_strm::get_test_config();
+        let file_ext = "jpeg".to_string();
+        config_strm.strm_logo_ext = Some(file_ext.clone());
+        config_strm.strm_logo_max_width = 18;
+        config_strm.strm_logo_max_height = 18;
+        let strm_logo_files_dir = config_strm.strm_logo_files_dir.clone();
+
+        let cfg_c = (config_jwt, config_strm);
+        let user1_id = user1.id.to_string();
+        let data_c = (vec![user1], vec![session1], vec![]);
+        let resp = call_service1(cfg_c, data_c, post_stream, request).await;
+        let _ = fs::remove_file(path_name1_file);
+
+        assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
+
+        let body = test::read_body(resp).await;
+
+        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
+        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
+        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &strm_logo_files_dir, 1);
+        let path = path::Path::new(&logo_name_full_path);
+        let receiver_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap();
+        let is_exists_logo_new = path.exists();
+        let _ = fs::remove_file(&logo_name_full_path);
+
+        assert_eq!(file_ext, receiver_ext);
+        assert!(stream_dto_res_logo.len() > 0);
+        assert!(stream_dto_res_logo.starts_with(&format!("/{}", ALIAS_LOGO_FILES)));
+        assert!(is_exists_logo_new);
+
+        let path_logo = path::PathBuf::from(stream_dto_res_logo);
+        let file_stem = path_logo.file_stem().unwrap().to_str().unwrap().to_string();
+        let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
+        let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string();
+        let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string();
+        assert_eq!(file_stem_part1, user1_id);
+        let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
+        let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
+        let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
+        let now_s = now.format(date_format).to_string(); // : 2024-02-06 09:55:41
+        assert_eq!(now_s, date_time2_s);
+    }
 
     // ** put_stream **
 
@@ -1516,6 +1598,80 @@ mod tests {
         let is_exists_logo_new = path::Path::new(&logo_name_full_path).exists();
         let _ = fs::remove_file(&logo_name_full_path);
 
+        assert!(stream_dto_res_logo.len() > 0);
+        assert!(stream_dto_res_logo.starts_with(&format!("/{}", ALIAS_LOGO_FILES)));
+        assert!(is_exists_logo_new);
+
+        let path_logo = path::PathBuf::from(stream_dto_res_logo);
+        let file_stem = path_logo.file_stem().unwrap().to_str().unwrap().to_string(); // file_stem: "1100_3226061294TF"
+        let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
+        let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
+        let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
+        assert_eq!(file_stem_part1, user1_id);
+        let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
+        let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
+        let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
+        let now_s = now.format(date_format).to_string(); // : 2024-02-06 09:55:41
+        assert_eq!(now_s, date_time2_s);
+    }
+    #[test]
+    async fn test_put_stream_valid_data_with_a_logo_old_0_new_1_convert_file_new() {
+        let name1_file = "put_triangle_23x19.png";
+        let path_name1_file = format!("./{}", name1_file);
+        save_file_png(&path_name1_file, 3).unwrap();
+
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let now = Utc::now();
+        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+
+        let mut form_builder = MultiPartFormDataBuilder::new();
+
+        form_builder.with_file(path_name1_file.to_string(), "logofile", "image/png", name1_file);
+        let (header, body) = form_builder.build();
+
+        // PUT api/streams/{id}
+        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
+        let request = request.insert_header(header).set_payload(body);
+        let request = request.insert_header(header_auth(&token));
+
+        let mut config_strm = config_strm::get_test_config();
+        let file_ext = "jpeg".to_string();
+        config_strm.strm_logo_ext = Some(file_ext.clone());
+        config_strm.strm_logo_max_width = 18;
+        config_strm.strm_logo_max_height = 18;
+        let strm_logo_files_dir = config_strm.strm_logo_files_dir.clone();
+
+        let cfg_c = (config_jwt, config_strm);
+        let user1_id = user1.id.to_string();
+        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
+        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
+        let _ = fs::remove_file(&path_name1_file);
+
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
+
+        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
+        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &strm_logo_files_dir, 1);
+        let path = path::Path::new(&logo_name_full_path);
+        let receiver_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap();
+        let is_exists_logo_new = path.exists();
+        let _ = fs::remove_file(&logo_name_full_path);
+
+        assert_eq!(file_ext, receiver_ext);
         assert!(stream_dto_res_logo.len() > 0);
         assert!(stream_dto_res_logo.starts_with(&format!("/{}", ALIAS_LOGO_FILES)));
         assert!(is_exists_logo_new);
