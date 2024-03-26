@@ -98,3 +98,7 @@ STRM_LOGO_VALID_TYPES=image/jpeg,image/gif,image/png,image/bmp
 # Logo files will be converted to this MIME type.
 # Valid values: jpeg,gif,png,bmp
 STRM_LOGO_EXT=jpeg
+# Maximum width for a logo file. (default 0)
+# STRM_LOGO_MAX_WIDTH=0
+# Maximum height for a logo file. (default 0)
+# STRM_LOGO_MAX_HEIGHT=0

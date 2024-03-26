@@ -3,6 +3,8 @@ use std::{io, path::PathBuf};
 use mime::{self, IMAGE, IMAGE_BMP, IMAGE_GIF, IMAGE_JPEG, IMAGE_PNG};
 
 const STRM_SHOW_LEAD_TIME_DEF: bool = false;
+const STRM_LOGO_MAX_WIDTH_DEF: u32 = 0;
+const STRM_LOGO_MAX_HEIGHT_DEF: u32 = 0;
 
 // Stream Logo Properties
 #[derive(Debug, Clone)]
@@ -16,6 +18,10 @@ pub struct ConfigStrm {
     // List of valid input mime types for logo files (comma delimited).
     pub strm_logo_valid_types: Vec<String>,
     pub strm_logo_ext: Option<String>,
+    // Maximum width for a logo file.
+    pub strm_logo_max_width: u32,
+    // Maximum height for a logo file.
+    pub strm_logo_max_height: u32,
 }
 
 impl ConfigStrm {
@@ -33,12 +39,22 @@ impl ConfigStrm {
 
         let strm_logo_ext = Self::init_logo_ext();
 
+        let max_width_def = STRM_LOGO_MAX_WIDTH_DEF.to_string();
+        #[rustfmt::skip]
+        let logo_max_width: u32 = std::env::var("STRM_LOGO_MAX_WIDTH").unwrap_or(max_width_def).trim().parse().unwrap();
+
+        let max_height_def = STRM_LOGO_MAX_HEIGHT_DEF.to_string();
+        #[rustfmt::skip]
+        let logo_max_height: u32 = std::env::var("STRM_LOGO_MAX_HEIGHT").unwrap_or(max_height_def).trim().parse().unwrap();
+
         ConfigStrm {
             strm_show_lead_time,
             strm_logo_files_dir,
             strm_logo_max_size: logo_max_size.parse::<usize>().unwrap(),
             strm_logo_valid_types: logo_valid_types,
             strm_logo_ext,
+            strm_logo_max_width: logo_max_width,
+            strm_logo_max_height: logo_max_height,
         }
     }
 
@@ -74,8 +90,8 @@ impl ConfigStrm {
         let image_types: Vec<String> = Self::get_image_types();
 
         let logo_ext = std::env::var("STRM_LOGO_EXT").unwrap_or("".to_string());
-        let len = format!("{}/", IMAGE).len();
-        let type_list: Vec<String> = image_types.iter().map(|v| v.get(len..).unwrap().to_string()).collect();
+        let text = format!("{}/", IMAGE);
+        let type_list: Vec<String> = image_types.iter().map(|v| v.replace(&text, "")).collect();
         let is_logo_ext = logo_ext.len() > 0 && type_list.contains(&logo_ext);
         if is_logo_ext {
             Some(logo_ext)
@@ -90,8 +106,13 @@ pub fn get_test_config() -> ConfigStrm {
     ConfigStrm {
         strm_show_lead_time: false,
         strm_logo_files_dir: "./tmp".to_string(),
-        strm_logo_max_size: 160,
-        strm_logo_valid_types: vec!["image/jpeg".to_string(), "image/png".to_string()],
+        strm_logo_max_size: 0,
+        strm_logo_valid_types: vec![
+            IMAGE_JPEG.essence_str().to_string(),
+            IMAGE_PNG.essence_str().to_string(),
+        ],
         strm_logo_ext: None,
+        strm_logo_max_width: STRM_LOGO_MAX_WIDTH_DEF,
+        strm_logo_max_height: STRM_LOGO_MAX_HEIGHT_DEF,
     }
 }
