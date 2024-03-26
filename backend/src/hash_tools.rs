@@ -9,7 +9,7 @@ pub const ERR_PARAM_EXCEED_MAX_LEN: &str = "The parameter exceeds the max length
 pub const ERR_HASHING_ERR: &str = "Error creating hash - ";
 pub const ERR_INVALID_HASH_FORMAT: &str = "Invalid parameter hash format - ";
 
-/// Create a hash for the value.
+/** Create a hash for the value. */
 pub fn encode_hash(param: impl Into<String>) -> Result<String, String> {
     let param = param.into();
 
@@ -29,7 +29,7 @@ pub fn encode_hash(param: impl Into<String>) -> Result<String, String> {
     Ok(param_hash.to_owned())
 }
 
-/// Compare the hash for the value with the specified one.
+/** Compare the hash for the value with the specified one. */
 pub fn compare_hash(param: impl Into<String>, hashed_param: &str) -> Result<bool, String> {
     let param = param.into();
 
@@ -40,15 +40,14 @@ pub fn compare_hash(param: impl Into<String>, hashed_param: &str) -> Result<bool
         return Err(format!("{}{}", ERR_PARAM_EXCEED_MAX_LEN, MAX_PARAM_LENGTH));
     }
 
-    let parsed_hash = PasswordHash::new(hashed_param)
-        .map_err(|e| format!("{}{}", ERR_INVALID_HASH_FORMAT, e.to_string()))?;
+    let parsed_hash =
+        PasswordHash::new(hashed_param).map_err(|e| format!("{}{}", ERR_INVALID_HASH_FORMAT, e.to_string()))?;
 
     let compare_res = Argon2::default().verify_password(param.as_bytes(), &parsed_hash);
 
     Ok(compare_res.is_ok())
 }
 
-// ctreate_hash(param: impl Into<String>)   compare_hash(param: impl Into<String>, hashed_param: &str)
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -70,10 +69,7 @@ mod tests {
     fn test_compare_hashed_passwords_should_return_false() {
         let (_, hashed_password) = setup_test();
 
-        assert_eq!(
-            compare_hash("wrongpassword", &hashed_password).unwrap(),
-            false
-        );
+        assert_eq!(compare_hash("wrongpassword", &hashed_password).unwrap(), false);
     }
 
     #[test]
