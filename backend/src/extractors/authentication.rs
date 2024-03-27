@@ -294,18 +294,23 @@ mod tests {
     fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
         SessionOrmApp::new_session(user_id, num_token)
     }
-
+    fn cfg_jwt() -> config_jwt::ConfigJwt {
+        config_jwt::get_test_config()
+    }
+    fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
+        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (http::header::AUTHORIZATION, header_value)
+    }
     async fn call_service1(
-        config_jwt: config_jwt::ConfigJwt,
+        cfg_jwt: config_jwt::ConfigJwt,
         vec: (Vec<User>, Vec<Session>),
-        token: &str,
         factory: impl dev::HttpServiceFactory + 'static,
         request: TestRequest,
     ) -> dev::ServiceResponse {
-        let data_config_jwt = web::Data::new(config_jwt);
+        let data_config_jwt = web::Data::new(cfg_jwt);
 
         let data_user_orm = web::Data::new(UserOrmApp::create(&vec.0));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
+        let data_session_orm = web::Data::new(SessionOrmApp::create(&vec.1));
 
         let app = test::init_service(
             App::new()
@@ -315,26 +320,19 @@ mod tests {
                 .service(factory),
         )
         .await;
-        let test_request = if token.len() > 0 {
-            request.insert_header((http::header::AUTHORIZATION, format!("{}{}", BEARER, token)))
-        } else {
-            request
-        };
-        let req = test_request.to_request();
 
-        test::call_service(&app, req).await
+        test::call_service(&app, request.to_request()).await
     }
     async fn call_service2(
         config_jwt: config_jwt::ConfigJwt,
         vec: (Vec<User>, Vec<Session>),
-        token: &str,
         factory: impl dev::HttpServiceFactory + 'static,
         request: TestRequest,
     ) -> Result<dev::ServiceResponse, actix_web::Error> {
         let data_config_jwt = web::Data::new(config_jwt);
 
         let data_user_orm = web::Data::new(UserOrmApp::create(&vec.0));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
+        let data_session_orm = web::Data::new(SessionOrmApp::create(&vec.1));
 
         let app = test::init_service(
             App::new()
@@ -344,20 +342,13 @@ mod tests {
                 .service(factory),
         )
         .await;
-        let test_request = if token.len() > 0 {
-            request.insert_header((http::header::AUTHORIZATION, format!("{}{}", BEARER, token)))
-        } else {
-            request
-        };
-        let req = test_request.to_request();
 
-        test::try_call_service(&app, req).await
+        test::try_call_service(&app, request.to_request()).await
     }
 
     #[test]
     async fn test_authentication_middelware_valid_token() {
         let user1: User = user_with_id(create_user());
-
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
 
@@ -365,29 +356,25 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let request = test::TestRequest::get();
-        let vec = (vec![user1], vec![session1]);
-        let factory = handler_with_auth;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let request = test::TestRequest::get().insert_header(header_auth(&token));
+        let data_c = (vec![user1], vec![session1]);
+        let resp = call_service1(config_jwt, data_c, handler_with_auth, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 
     #[test]
     async fn test_authentication_middelware_valid_token_with_cookie() {
         let user1: User = user_with_id(create_user());
-
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = "";
         let token_val = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::get().cookie(Cookie::new("token", token_val));
-        let vec = (vec![user1], vec![session1]);
-        let factory = handler_with_auth;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let data_c = (vec![user1], vec![session1]);
+        let resp = call_service1(config_jwt, data_c, handler_with_auth, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 
@@ -404,21 +391,17 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let request = test::TestRequest::get();
-        let vec = (vec![user1], vec![session1]);
-        let factory = handler_with_auth;
-        let resp = call_service1(config_jwt, vec, &token, factory, request).await;
+        let request = test::TestRequest::get().insert_header(header_auth(&token));
+        let data_c = (vec![user1], vec![session1]);
+        let resp = call_service1(config_jwt, data_c, handler_with_auth, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 
     #[test]
     async fn test_authentication_middleware_missing_token() {
-        let config_jwt = config_jwt::get_test_config();
-        let token = "";
         let request = test::TestRequest::get();
-        let vec = (vec![], vec![]);
-        let factory = handler_with_auth;
-        let result = call_service2(config_jwt, vec, &token, factory, request).await.err();
+        let data_c = (vec![], vec![]);
+        let result = call_service2(cfg_jwt(), data_c, handler_with_auth, request).await.err();
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
@@ -430,12 +413,9 @@ mod tests {
     }
     #[test]
     async fn test_authentication_middleware_invalid_token() {
-        let config_jwt = config_jwt::get_test_config();
-        let token = "invalid_token";
-        let request = test::TestRequest::get();
-        let vec = (vec![], vec![]);
-        let factory = handler_with_auth;
-        let result = call_service2(config_jwt, vec, &token, factory, request).await.err();
+        let request = test::TestRequest::get().insert_header(header_auth("invalid_token"));
+        let data_c = (vec![], vec![]);
+        let result = call_service2(cfg_jwt(), data_c, handler_with_auth, request).await.err();
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
@@ -448,7 +428,6 @@ mod tests {
     #[test]
     async fn test_authentication_middelware_expired_token() {
         let user1: User = user_with_id(create_user());
-
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
 
@@ -456,10 +435,9 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user1.id, num_token, &jwt_secret, -config_jwt.jwt_access).unwrap();
 
-        let request = test::TestRequest::get();
-        let vec = (vec![user1], vec![session1]);
-        let factory = handler_with_auth;
-        let result = call_service2(config_jwt, vec, &token, factory, request).await.err();
+        let request = test::TestRequest::get().insert_header(header_auth(&token));
+        let data_c = (vec![user1], vec![session1]);
+        let result = call_service2(config_jwt, data_c, handler_with_auth, request).await.err();
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
@@ -473,7 +451,6 @@ mod tests {
     async fn test_authentication_middelware_valid_token_non_existent_user() {
         let user1: User = user_with_id(create_user());
         let user_id = user1.id + 1;
-
         let num_token = 1234;
         let session1 = create_session(user_id, Some(num_token));
 
@@ -481,10 +458,9 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let request = test::TestRequest::get();
-        let vec = (vec![user1], vec![session1]);
-        let factory = handler_with_auth;
-        let result = call_service2(config_jwt, vec, &token, factory, request).await.err();
+        let request = test::TestRequest::get().insert_header(header_auth(&token));
+        let data_c = (vec![user1], vec![session1]);
+        let result = call_service2(config_jwt, data_c, handler_with_auth, request).await.err();
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
@@ -506,10 +482,9 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user_id, num_token + 1, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let request = test::TestRequest::get();
-        let vec = (vec![user1], vec![session1]);
-        let factory = handler_with_auth;
-        let result = call_service2(config_jwt, vec, &token, factory, request).await.err();
+        let request = test::TestRequest::get().insert_header(header_auth(&token));
+        let data_c = (vec![user1], vec![session1]);
+        let result = call_service2(config_jwt, data_c, handler_with_auth, request).await.err();
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
@@ -522,7 +497,6 @@ mod tests {
     #[test]
     async fn test_authentication_middleware_access_admin_only_endpoint_fail() {
         let user1: User = user_with_id(create_user());
-
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
 
@@ -530,10 +504,10 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let request = test::TestRequest::get();
-        let vec = (vec![user1], vec![session1]);
-        let factory = handler_with_requireonlyadmin;
-        let result = call_service2(config_jwt, vec, &token, factory, request).await.err();
+        let request = test::TestRequest::get().insert_header(header_auth(&token));
+        let data_c = (vec![user1], vec![session1]);
+        #[rustfmt::skip]
+        let result = call_service2(config_jwt, data_c, handler_with_requireonlyadmin, request).await.err();
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
