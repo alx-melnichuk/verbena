@@ -6,11 +6,7 @@ pub trait SessionOrm {
     /// Add a new entity (session).
     fn create_session(&self, session: Session) -> Result<Session, String>;
     /// Modify the entity (session).
-    fn modify_session(
-        &self,
-        user_id: i32,
-        num_token: Option<i32>,
-    ) -> Result<Option<Session>, String>;
+    fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String>;
     // There is no need to delete the entity (session), since it is deleted cascade when deleting an entry in the users table.
 }
 
@@ -86,11 +82,7 @@ pub mod inst {
             Ok(session)
         }
         /// Perform a full or partial change to a session record.
-        fn modify_session(
-            &self,
-            user_id: i32,
-            num_token: Option<i32>,
-        ) -> Result<Option<Session>, String> {
+        fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to full or partially modify the session entry.
@@ -125,7 +117,7 @@ pub mod tests {
         }
         /// Create a new instance with the specified session list.
         #[cfg(test)]
-        pub fn create(session_list: Vec<Session>) -> Self {
+        pub fn create(session_list: &[Session]) -> Self {
             let mut session_vec: Vec<Session> = Vec::new();
             for session in session_list.iter() {
                 session_vec.push(Self::new_session(session.user_id, session.num_token));
@@ -163,11 +155,7 @@ pub mod tests {
             Ok(session_saved)
         }
         /// Modify the entity (session).
-        fn modify_session(
-            &self,
-            user_id: i32,
-            num_token: Option<i32>,
-        ) -> Result<Option<Session>, String> {
+        fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
             let session_opt: Option<Session> = self.find_session_by_id(user_id)?;
             let mut res_session = match session_opt {
                 Some(v) => v,
