@@ -8,10 +8,7 @@ pub trait UserRecoveryOrm {
     /// Find for an entity (user_recovery) by user_id.
     fn find_user_recovery_by_user_id(&self, user_id: i32) -> Result<Option<UserRecovery>, String>;
     /// Add a new entity (user_recovery).
-    fn create_user_recovery(
-        &self,
-        create_user_recovery_dto: CreateUserRecoveryDto,
-    ) -> Result<UserRecovery, String>;
+    fn create_user_recovery(&self, create_user_recovery_dto: CreateUserRecoveryDto) -> Result<UserRecovery, String>;
     /// Modify an entity (user_recovery).
     fn modify_user_recovery(
         &self,
@@ -90,10 +87,7 @@ pub mod inst {
         }
 
         /// Find for an entity (user_recovery) by user_id.
-        fn find_user_recovery_by_user_id(
-            &self,
-            user_id: i32,
-        ) -> Result<Option<UserRecovery>, String> {
+        fn find_user_recovery_by_user_id(&self, user_id: i32) -> Result<Option<UserRecovery>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             let now = Utc::now();
@@ -156,10 +150,7 @@ pub mod inst {
         }
 
         /// Delete all entities (user_recovery) with an inactive "final_date".
-        fn delete_inactive_final_date(
-            &self,
-            duration_in_days: Option<u16>,
-        ) -> Result<usize, String> {
+        fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String> {
             let now = Utc::now();
             let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
             let start_day_time = now - Duration::days(duration.into());
@@ -168,12 +159,12 @@ pub mod inst {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to delete a entry (user_recovery).
-            let count: usize =
-                diesel::delete(schema::user_recovery::table.filter(
-                    dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time)),
-                ))
-                .execute(&mut conn)
-                .map_err(|e| format!("delete_inactive_final_date: {}", e.to_string()))?;
+            let count: usize = diesel::delete(
+                schema::user_recovery::table
+                    .filter(dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time))),
+            )
+            .execute(&mut conn)
+            .map_err(|e| format!("delete_inactive_final_date: {}", e.to_string()))?;
 
             Ok(count)
         }
@@ -204,7 +195,7 @@ pub mod tests {
         }
         /// Create a new instance with the specified user recovery list.
         #[cfg(test)]
-        pub fn create(user_recov_vec: Vec<UserRecovery>) -> Self {
+        pub fn create(user_recov_vec: &[UserRecovery]) -> Self {
             let mut user_recovery_vec: Vec<UserRecovery> = Vec::new();
             let mut idx: i32 = user_recov_vec.len().try_into().unwrap();
             for user_reg in user_recov_vec.iter() {
@@ -238,18 +229,13 @@ pub mod tests {
             Ok(result)
         }
         /// Find for an entity (user_recovery) by user_id.
-        fn find_user_recovery_by_user_id(
-            &self,
-            user_id: i32,
-        ) -> Result<Option<UserRecovery>, String> {
+        fn find_user_recovery_by_user_id(&self, user_id: i32) -> Result<Option<UserRecovery>, String> {
             let now = Utc::now();
 
             let result: Option<UserRecovery> = self
                 .user_recovery_vec
                 .iter()
-                .find(|user_recovery| {
-                    user_recovery.final_date > now && (user_recovery.user_id == user_id)
-                })
+                .find(|user_recovery| user_recovery.final_date > now && (user_recovery.user_id == user_id))
                 .map(|user_recovery| user_recovery.clone());
 
             Ok(result)
@@ -263,8 +249,7 @@ pub mod tests {
             let user_id = create_user_recovery_dto.user_id;
             let final_date = create_user_recovery_dto.final_date.clone();
 
-            let res_user1_opt: Option<UserRecovery> =
-                self.find_user_recovery_by_user_id(user_id)?;
+            let res_user1_opt: Option<UserRecovery> = self.find_user_recovery_by_user_id(user_id)?;
             if res_user1_opt.is_some() {
                 return Err("\"User recovery\" already exists.".to_string());
             }
@@ -272,8 +257,7 @@ pub mod tests {
             let idx: i32 = self.user_recovery_vec.len().try_into().unwrap();
             let new_id: i32 = USER_RECOVERY_ID + idx;
 
-            let user_recovery_saved: UserRecovery =
-                UserRecoveryOrmApp::new_user_recovery(new_id, user_id, final_date);
+            let user_recovery_saved: UserRecovery = UserRecoveryOrmApp::new_user_recovery(new_id, user_id, final_date);
 
             Ok(user_recovery_saved)
         }
@@ -284,8 +268,7 @@ pub mod tests {
             id: i32,
             create_user_recovery_dto: CreateUserRecoveryDto,
         ) -> Result<Option<UserRecovery>, String> {
-            let user_recovery_opt =
-                self.user_recovery_vec.iter().find(|user_recovery| user_recovery.id == id);
+            let user_recovery_opt = self.user_recovery_vec.iter().find(|user_recovery| user_recovery.id == id);
             if user_recovery_opt.is_none() {
                 return Ok(None);
             }
@@ -301,18 +284,14 @@ pub mod tests {
 
         /// Delete an entity (user_recovery).
         fn delete_user_recovery(&self, id: i32) -> Result<usize, String> {
-            let user_recovery_opt =
-                self.user_recovery_vec.iter().find(|user_recovery| user_recovery.id == id);
+            let user_recovery_opt = self.user_recovery_vec.iter().find(|user_recovery| user_recovery.id == id);
 
             #[rustfmt::skip]
             let result = if user_recovery_opt.is_none() { 0 } else { 1 };
             Ok(result)
         }
         /// Delete all entities (user_recovery) with an inactive "final_date".
-        fn delete_inactive_final_date(
-            &self,
-            duration_in_days: Option<u16>,
-        ) -> Result<usize, String> {
+        fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String> {
             let now = Utc::now();
             let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
             let start_day_time = now - Duration::days(duration.into());
@@ -322,8 +301,7 @@ pub mod tests {
                 .user_recovery_vec
                 .iter()
                 .filter(|user_recovery| {
-                    user_recovery.final_date > start_day_time
-                        && user_recovery.final_date < end_day_time
+                    user_recovery.final_date > start_day_time && user_recovery.final_date < end_day_time
                 })
                 .count();
 
