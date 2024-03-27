@@ -316,16 +316,16 @@ mod tests {
     }
 
     async fn call_service1(
-        config_jwt: config_jwt::ConfigJwt,
-        vec: (Vec<User>, Vec<Session>, Vec<StreamInfoDto>),
+        cfg_c: (config_jwt::ConfigJwt, config_strm::ConfigStrm),
+        data_c: (Vec<User>, Vec<Session>, Vec<StreamInfoDto>),
         factory: impl dev::HttpServiceFactory + 'static,
         request: TestRequest,
     ) -> dev::ServiceResponse {
-        let data_config_jwt = web::Data::new(config_jwt);
-        let data_config_strm = web::Data::new(config_strm::get_test_config());
-        let data_user_orm = web::Data::new(UserOrmApp::create(&vec.0));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(vec.1));
-        let data_stream_orm = web::Data::new(StreamOrmApp::create(&vec.2));
+        let data_config_jwt = web::Data::new(cfg_c.0);
+        let data_config_strm = web::Data::new(cfg_c.1);
+        let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
+        let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
+        let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.2));
 
         let app = test::init_service(
             App::new()
@@ -365,9 +365,9 @@ mod tests {
         // GET api/streams/{id}
         let request = test::TestRequest::get().uri(&format!("/streams/{}", stream_id_bad));
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_stream_by_id;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_stream_by_id, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -398,9 +398,9 @@ mod tests {
         // GET api/streams/{id}
         let request = test::TestRequest::get().uri(&format!("/streams/{}", stream1b_dto.id));
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_stream_by_id;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_stream_by_id, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -432,9 +432,9 @@ mod tests {
         // GET api/streams/{id}
         let request = test::TestRequest::get().uri(&format!("/streams/{}", stream_id + 1));
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_stream_by_id;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_stream_by_id, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[test]
@@ -463,9 +463,9 @@ mod tests {
         // GET api/streams/{id}
         let request = test::TestRequest::get().uri(&format!("/streams/{}", stream_id));
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_stream_by_id;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_stream_by_id, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
 
@@ -499,9 +499,9 @@ mod tests {
         // GET api/streams
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -546,9 +546,9 @@ mod tests {
         // GET api/streams
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -595,9 +595,9 @@ mod tests {
         // GET api/streams
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -639,9 +639,9 @@ mod tests {
         // GET api/streams
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1, user2], vec![session1], stream_vec);
-        let factory = get_streams;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1, user2], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -686,9 +686,9 @@ mod tests {
         // GET api/streams
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1, user2], vec![session1], stream_vec);
-        let factory = get_streams;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1, user2], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
         let body = test::read_body(resp).await;
         let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -738,9 +738,9 @@ mod tests {
         // GET api/streams
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -787,9 +787,9 @@ mod tests {
         // GET api/streams
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -835,9 +835,9 @@ mod tests {
         // GET api/streams
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -893,9 +893,9 @@ mod tests {
         // GET api/streams
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -951,9 +951,9 @@ mod tests {
         // GET api/streams
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -1011,9 +1011,9 @@ mod tests {
         // GET api/streams_events
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams_events;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams_events, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -1060,9 +1060,9 @@ mod tests {
         // GET api/streams_events
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams_events;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams_events, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -1109,9 +1109,9 @@ mod tests {
         // GET api/streams_events
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams_events;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams_events, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -1152,9 +1152,9 @@ mod tests {
         // GET api/streams_events
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams_events;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams_events, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -1200,9 +1200,9 @@ mod tests {
         // GET api/streams_events
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams_events;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams_events, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1249,9 +1249,9 @@ mod tests {
         // GET api/streams_events
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams_events;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams_events, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -1292,9 +1292,9 @@ mod tests {
         // GET api/streams_period
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = get_streams_period;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![]);
+        let resp = call_service1(cfg_c, data_c, get_streams_period, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1324,9 +1324,9 @@ mod tests {
         // GET api/streams_period
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = get_streams_period;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![]);
+        let resp = call_service1(cfg_c, data_c, get_streams_period, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1376,9 +1376,9 @@ mod tests {
         // GET api/streams_period
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams_period;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams_period, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
         let body = test::read_body(resp).await;
 
@@ -1405,9 +1405,9 @@ mod tests {
         // GET api/streams_period
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams_period;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams_period, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
         let body = test::read_body(resp).await;
 
@@ -1445,9 +1445,9 @@ mod tests {
         // GET api/streams_period
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], vec![]);
-        let factory = get_streams_period;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], vec![]);
+        let resp = call_service1(cfg_c, data_c, get_streams_period, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -1479,9 +1479,9 @@ mod tests {
         // GET api/streams_period
         let request = test::TestRequest::get().uri(&uri.to_string());
         let request = request.insert_header(header_auth(&token));
-        let vec = (vec![user1], vec![session1], stream_vec);
-        let factory = get_streams_period;
-        let resp = call_service1(config_jwt, vec, factory, request).await;
+        let cfg_c = (config_jwt, config_strm::get_test_config());
+        let data_c = (vec![user1], vec![session1], stream_vec);
+        let resp = call_service1(cfg_c, data_c, get_streams_period, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
