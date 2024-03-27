@@ -294,7 +294,7 @@ mod tests {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
     }
-    async fn call_service2(
+    async fn call_service1(
         cfg_c: (config_usr::ConfigUsr, config_jwt::ConfigJwt),
         data_c: (Vec<User>, Vec<Session>),
         factory: impl dev::HttpServiceFactory + 'static,
@@ -326,7 +326,7 @@ mod tests {
         let request = test::TestRequest::post().uri("/login");
 
         let data_c = (vec![], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -340,7 +340,7 @@ mod tests {
         let request = test::TestRequest::post().uri("/login").set_json(json!({}));
 
         let data_c = (vec![], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -356,7 +356,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -374,7 +374,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -392,7 +392,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -410,7 +410,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -428,7 +428,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -446,7 +446,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -464,7 +464,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -482,7 +482,7 @@ mod tests {
             password: "".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -500,7 +500,7 @@ mod tests {
             password: UserModelsTest::password_min(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -518,7 +518,7 @@ mod tests {
             password: UserModelsTest::password_max(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -536,7 +536,7 @@ mod tests {
             password: UserModelsTest::password_wrong(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -554,7 +554,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         let body = test::read_body(resp).await;
@@ -571,7 +571,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         let body = test::read_body(resp).await;
@@ -592,7 +592,7 @@ mod tests {
             password: user1_password.to_string(),
         });
         let data_c = (vec![user1], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
 
         let body = test::read_body(resp).await;
@@ -617,7 +617,7 @@ mod tests {
             password: format!("{}a", user1_password),
         });
         let data_c = (vec![user1], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         let body = test::read_body(resp).await;
@@ -644,7 +644,7 @@ mod tests {
         let mut config_jwt = config_jwt::get_test_config();
         config_jwt.jwt_secret = "".to_string();
         let data_c = (vec![user1], vec![]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
 
         let body = test::read_body(resp).await;
@@ -669,7 +669,7 @@ mod tests {
             password: user1_password,
         });
         let data_c = (vec![user1], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
 
         let body = test::read_body(resp).await;
@@ -700,7 +700,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_access = config_jwt.jwt_access;
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, login, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let token_cookie_opt = resp.response().cookies().find(|cookie| cookie.name() == "token");
@@ -748,7 +748,7 @@ mod tests {
         let request = test::TestRequest::post().uri("/logout");
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, logout, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, logout, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let token_cookie_opt = resp.response().cookies().find(|cookie| cookie.name() == "token");
@@ -779,7 +779,7 @@ mod tests {
         // POST /token
         let request = test::TestRequest::post().uri("/token");
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, new_token, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, new_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -796,7 +796,7 @@ mod tests {
         let request = test::TestRequest::post().uri("/token").set_json(json!({}));
 
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, new_token, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, new_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -815,7 +815,7 @@ mod tests {
             .set_json(user_models::TokenUserDto { token: "".to_string() });
 
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, new_token, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, new_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -834,7 +834,7 @@ mod tests {
             token: "invalid_token".to_string(),
         });
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, new_token, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, new_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -858,7 +858,7 @@ mod tests {
             token: token_bad.to_string(),
         });
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, new_token, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, new_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
 
         let body = test::read_body(resp).await;
@@ -886,7 +886,7 @@ mod tests {
             token: token_bad.to_string(),
         });
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, new_token, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, new_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -910,7 +910,7 @@ mod tests {
             token: token_bad.to_string(),
         });
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, new_token, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, new_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let token_cookie_opt = resp.response().cookies().find(|cookie| cookie.name() == "token");
