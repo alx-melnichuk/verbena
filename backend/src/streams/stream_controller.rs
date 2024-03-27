@@ -573,7 +573,7 @@ mod tests {
         let data_config_jwt = web::Data::new(cfg_c.0);
         let data_config_strm = web::Data::new(cfg_c.1);
         let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(data_c.1));
+        let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
         let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.2));
 
         let app = test::init_service(
