@@ -354,7 +354,7 @@ mod tests {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
     }
-    async fn call_service2(
+    async fn call_service1(
         cfg_c: (config_usr::ConfigUsr, config_jwt::ConfigJwt),
         data_c: (Vec<User>, Vec<Session>),
         factory: impl dev::HttpServiceFactory + 'static,
@@ -397,7 +397,7 @@ mod tests {
         let request = test::TestRequest::get().uri(&format!("/users/{}", user_id_bad.clone()));
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, get_users_by_id, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, get_users_by_id, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -425,7 +425,7 @@ mod tests {
         let request = test::TestRequest::get().uri(&format!("/users/{}", user1.id));
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, get_users_by_id, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, get_users_by_id, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -453,7 +453,7 @@ mod tests {
         let request = test::TestRequest::get().uri(&format!("/users/{}", user1.id + 1));
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, get_users_by_id, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, get_users_by_id, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
 
@@ -464,7 +464,7 @@ mod tests {
         // GET /users/nickname/${nickname}
         let request = test::TestRequest::get().uri(&"/users/nickname/JAMES_SMITH");
         let data_c = (vec![user1], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, get_users_by_nickname, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_users_by_nickname, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[test]
@@ -475,7 +475,7 @@ mod tests {
         // GET /users/nickname/${nickname}
         let request = test::TestRequest::get().uri(&format!("/users/nickname/{}", nickname));
         let data_c = (vec![user1], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, get_users_by_nickname, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_users_by_nickname, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -491,7 +491,7 @@ mod tests {
         // GET /users/email/${email}
         let request = test::TestRequest::get().uri(&"/users/email/JAMES_SMITH@gmail.com");
         let data_c = (vec![user1], vec![]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, get_users_by_email, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_users_by_email, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[test]
@@ -503,7 +503,7 @@ mod tests {
         let request = test::TestRequest::get().uri(&format!("/users/email/{}", email));
         let data_c = (vec![user1], vec![]);
         let factory = get_users_by_email;
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, factory, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -528,7 +528,7 @@ mod tests {
         let request = test::TestRequest::get().uri("/users_current");
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, get_user_current, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_current, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -576,7 +576,7 @@ mod tests {
             })
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), cfg_jwt()), data_c, put_user_current, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, put_user_current, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -609,7 +609,7 @@ mod tests {
         let request = test::TestRequest::delete().uri("/users_current");
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, delete_user_current, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, delete_user_current, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
     }
 
@@ -638,7 +638,7 @@ mod tests {
             })
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, put_user, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, put_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -667,7 +667,7 @@ mod tests {
             .set_json(modify_user)
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, put_user, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, put_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -821,7 +821,7 @@ mod tests {
             })
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, put_user, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, put_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -866,7 +866,7 @@ mod tests {
             })
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, put_user, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, put_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -903,7 +903,7 @@ mod tests {
             .uri(&format!("/users/{}", user_id_bad.clone()))
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, delete_user, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, delete_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -931,7 +931,7 @@ mod tests {
             .uri(&format!("/users/{}", user1.id + 1))
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, delete_user, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, delete_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         let body = test::read_body(resp).await;
@@ -957,7 +957,7 @@ mod tests {
             .uri(&format!("/users/{}", user1.id))
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service2((cfg_usr(), config_jwt), data_c, delete_user, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, delete_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
     }
 }
