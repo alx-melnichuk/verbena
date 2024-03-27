@@ -52,7 +52,7 @@ pub fn convert_file(source: &str, extension: &str, max_width: u32, max_height: u
     Ok(receiver.to_string())
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use std::{fs, io::Write, path};
 
