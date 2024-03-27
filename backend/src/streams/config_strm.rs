@@ -87,17 +87,19 @@ impl ConfigStrm {
         Ok(result)
     }
     pub fn init_logo_ext() -> Option<String> {
-        let image_types: Vec<String> = Self::get_image_types();
-
         let logo_ext = std::env::var("STRM_LOGO_EXT").unwrap_or("".to_string());
-        let text = format!("{}/", IMAGE);
-        let type_list: Vec<String> = image_types.iter().map(|v| v.replace(&text, "")).collect();
+        let type_list: Vec<String> = Self::get_types(Self::get_image_types());
         let is_logo_ext = logo_ext.len() > 0 && type_list.contains(&logo_ext);
         if is_logo_ext {
             Some(logo_ext)
         } else {
             None
         }
+    }
+    pub fn get_types(image_types: Vec<String>) -> Vec<String> {
+        let text = format!("{}/", IMAGE);
+        let types: Vec<String> = image_types.iter().map(|v| v.replace(&text, "")).collect();
+        types
     }
 }
 
