@@ -12,10 +12,7 @@ pub trait UserRegistrOrm {
         email: Option<&str>,
     ) -> Result<Option<UserRegistr>, String>;
     /// Add a new entity (user_registration).
-    fn create_user_registr(
-        &self,
-        create_user_registr_dto: CreateUserRegistrDto,
-    ) -> Result<UserRegistr, String>;
+    fn create_user_registr(&self, create_user_registr_dto: CreateUserRegistrDto) -> Result<UserRegistr, String>;
     /// Delete an entity (user_registration).
     fn delete_user_registr(&self, id: i32) -> Result<usize, String>;
     /// Delete all entities (user_registration) with an inactive "final_date".
@@ -134,9 +131,8 @@ pub mod inst {
                 let sql_query = sql_query_nickname.union_all(sql_query_email);
                 // eprintln!("#sql_query: `{}`", debug_query::<Pg, _>(&sql_query).to_string());
                 // Run query using Diesel to find user by nickname or email and return it (where final_date > now).
-                let result_nickname_email_vec: Vec<UserRegistr> = sql_query
-                    .load(&mut conn)
-                    .map_err(|e| format!("{}: {}", table, e.to_string()))?;
+                let result_nickname_email_vec: Vec<UserRegistr> =
+                    sql_query.load(&mut conn).map_err(|e| format!("{}: {}", table, e.to_string()))?;
                 result_vec.extend(result_nickname_email_vec);
             }
 
@@ -149,10 +145,7 @@ pub mod inst {
         }
 
         /// Add a new entity (user_registration).
-        fn create_user_registr(
-            &self,
-            create_user_registr_dto: CreateUserRegistrDto,
-        ) -> Result<UserRegistr, String> {
+        fn create_user_registr(&self, create_user_registr_dto: CreateUserRegistrDto) -> Result<UserRegistr, String> {
             let mut create_user_registr_dto2 = create_user_registr_dto.clone();
             create_user_registr_dto2.nickname = create_user_registr_dto2.nickname.to_lowercase();
             create_user_registr_dto2.email = create_user_registr_dto2.email.to_lowercase();
@@ -182,10 +175,7 @@ pub mod inst {
         }
 
         /// Delete all entities (user_registration) with an inactive "final_date".
-        fn delete_inactive_final_date(
-            &self,
-            duration_in_days: Option<u16>,
-        ) -> Result<usize, String> {
+        fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String> {
             let now = Utc::now();
             let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
             let start_day_time = now - Duration::days(duration.into());
@@ -194,12 +184,12 @@ pub mod inst {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to delete a entry (user_registration).
-            let count: usize =
-                diesel::delete(schema::user_registration::table.filter(
-                    dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time)),
-                ))
-                .execute(&mut conn)
-                .map_err(|e| format!("delete_inactive_final_date: {}", e.to_string()))?;
+            let count: usize = diesel::delete(
+                schema::user_registration::table
+                    .filter(dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time))),
+            )
+            .execute(&mut conn)
+            .map_err(|e| format!("delete_inactive_final_date: {}", e.to_string()))?;
 
             Ok(count)
         }
@@ -230,7 +220,7 @@ pub mod tests {
         }
         /// Create a new instance with the specified user registr list.
         #[cfg(test)]
-        pub fn create(user_reg_vec: Vec<UserRegistr>) -> Self {
+        pub fn create(user_reg_vec: &[UserRegistr]) -> Self {
             let mut user_registr_vec: Vec<UserRegistr> = Vec::new();
             let mut idx: i32 = user_registr_vec.len().try_into().unwrap();
             for user_reg in user_reg_vec.iter() {
@@ -302,10 +292,7 @@ pub mod tests {
             Ok(result)
         }
         /// Add a new entity (user_registration).
-        fn create_user_registr(
-            &self,
-            create_user_registr_dto: CreateUserRegistrDto,
-        ) -> Result<UserRegistr, String> {
+        fn create_user_registr(&self, create_user_registr_dto: CreateUserRegistrDto) -> Result<UserRegistr, String> {
             let nickname = create_user_registr_dto.nickname.clone();
             let email = create_user_registr_dto.email.clone();
             let password = create_user_registr_dto.password.clone();
@@ -322,9 +309,8 @@ pub mod tests {
             let nickname = create_user_registr_dto.nickname.clone();
             let email = create_user_registr_dto.email.clone();
 
-            let user_registr_saved: UserRegistr = UserRegistrOrmApp::new_user_registr(
-                new_id, &nickname, &email, &password, final_date,
-            );
+            let user_registr_saved: UserRegistr =
+                UserRegistrOrmApp::new_user_registr(new_id, &nickname, &email, &password, final_date);
 
             Ok(user_registr_saved)
         }
@@ -338,10 +324,7 @@ pub mod tests {
             Ok(result)
         }
         /// Delete all entities (user_registration) with an inactive "final_date".
-        fn delete_inactive_final_date(
-            &self,
-            duration_in_days: Option<u16>,
-        ) -> Result<usize, String> {
+        fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String> {
             let now = Utc::now();
             let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
             let start_day_time = now - Duration::days(duration.into());
@@ -351,8 +334,7 @@ pub mod tests {
                 .user_registr_vec
                 .iter()
                 .filter(|user_registr| {
-                    user_registr.final_date > start_day_time
-                        && user_registr.final_date < end_day_time
+                    user_registr.final_date > start_day_time && user_registr.final_date < end_day_time
                 })
                 .count();
 
