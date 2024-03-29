@@ -62,8 +62,6 @@ pub fn decrypt_utf8(pr_key_pem: &str, encrypted: &str) -> Result<Vec<u8>, String
 
 #[cfg(test)]
 mod tests {
-    use std::path;
-
     use super::*;
     /** Get the private key in PEM encoded format. */
     fn get_pr_key_pem() -> String {
