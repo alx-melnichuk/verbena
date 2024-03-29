@@ -49,13 +49,8 @@ APP_DIR_TMP=./tmp
 # -----------------------------------------------------------------------------
 # Database (PostgreSQL)
 # -----------------------------------------------------------------------------
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=
-DB_USER=
-DB_PASSWORD=
-# Don't worry about the placeholders. Rust supports this feature.
-DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}
+# DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}
+# DATABASE_URL=postgresql://database_user:database_password@127.0.0.1:5432/database_name
 
 # -----------------------------------------------------------------------------
 # JSON Web Token Credentials
