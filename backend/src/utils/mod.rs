@@ -1,4 +1,3 @@
-pub mod encoding;
 pub mod parser;
 pub mod serial_datetime;
 pub mod serial_datetime_option;
