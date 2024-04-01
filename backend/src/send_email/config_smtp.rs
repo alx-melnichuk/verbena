@@ -9,11 +9,15 @@ pub struct ConfigSmtp {
 
 impl ConfigSmtp {
     pub fn init_by_env() -> Self {
-        let smtp_host = std::env::var("SMTP_HOST").expect("SMTP_HOST must be set");
-        let smtp_port = std::env::var("SMTP_PORT").expect("SMTP_PORT must be set");
-        let smtp_user = std::env::var("SMTP_USER").expect("SMTP_USER must be set");
-        let smtp_pass = std::env::var("SMTP_PASS").expect("SMTP_PASS must be set");
-        let smtp_sender = std::env::var("SMTP_SENDER").expect("SMTP_SENDER must be set");
+        let smtp_host_port = std::env::var("SMTP_HOST_PORT").expect("SMTP_HOST_PORT must be set");
+        let (host, port) = smtp_host_port.split_once(':').unwrap_or(("", ""));
+        let smtp_host = host.to_string();
+        let smtp_port = port.to_string();
+        let smtp_user_pass = std::env::var("SMTP_USER_PASS").expect("SMTP_USER_PASS must be set");
+        let (user, pass) = smtp_user_pass.split_once(':').unwrap_or(("", ""));
+        let smtp_user = user.to_string();
+        let smtp_pass = pass.to_string();
+        let smtp_sender = smtp_user.clone();
 
         ConfigSmtp {
             smtp_host,
@@ -33,6 +37,6 @@ pub fn get_test_config() -> ConfigSmtp {
         smtp_pass: "pass".to_string(),
         smtp_user: "user".to_string(),
         smtp_port: 465,
-        smtp_sender: "sender".to_string(),
+        smtp_sender: "user".to_string(),
     }
 }
