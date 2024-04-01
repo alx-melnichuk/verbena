@@ -37,7 +37,8 @@ async fn main() -> std::io::Result<()> {
     let config_strm = config_strm::ConfigStrm::init_by_env();
     std::fs::create_dir_all(&config_strm.strm_logo_files_dir)?;
 
-    log::info!("Starting server {}", &app_domain);
+    let version = env!("CARGO_PKG_VERSION");
+    log::info!("Starting server v.{} {}", version, &app_domain);
     let config_app2 = config_app.clone();
 
     let mut srv = HttpServer::new(move || {
