@@ -9,7 +9,7 @@ pub const ERR_PARAM_EXCEED_MAX_LEN: &str = "The parameter exceeds the max length
 pub const ERR_HASHING_ERR: &str = "Error creating hash - ";
 pub const ERR_INVALID_HASH_FORMAT: &str = "Invalid parameter hash format - ";
 
-/** Create a hash for the value. */
+/// Create a hash for the value.
 pub fn encode_hash(param: impl Into<String>) -> Result<String, String> {
     let param = param.into();
 
@@ -29,7 +29,7 @@ pub fn encode_hash(param: impl Into<String>) -> Result<String, String> {
     Ok(param_hash.to_owned())
 }
 
-/** Compare the hash for the value with the specified one. */
+/// Compare the hash for the value with the specified one.
 pub fn compare_hash(param: impl Into<String>, hashed_param: &str) -> Result<bool, String> {
     let param = param.into();
 

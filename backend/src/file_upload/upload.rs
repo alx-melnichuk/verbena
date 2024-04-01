@@ -5,7 +5,7 @@ use image::{DynamicImage, GenericImageView, ImageFormat};
 pub const MSG_INVALID_SOURCE_IMAGE_TYPE: &str = "Invalid source file image type ";
 pub const MSG_INVALID_RECEIVER_IMAGE_TYPE: &str = "Invalid receiver file image type ";
 
-/** Convert the file to another mime type. */
+/// Convert the file to another mime type.
 pub fn convert_file(source: &str, extension: &str, max_width: u32, max_height: u32) -> Result<String, String> {
     let mut path = PathBuf::from(source);
     let source_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap().to_string();

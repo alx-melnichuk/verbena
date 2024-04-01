@@ -4,17 +4,16 @@ use openssl::{
     pkey::{PKey, Private},
     rsa::Padding,
 };
-/** Deserializes a private key from a PEM-encoded key type specific format. */
+/// Deserializes a private key from a PEM-encoded key type specific format.
 fn pr_key_from_pem(pr_key_pem: &str) -> Result<PKey<Private>, error::ErrorStack> {
     let pr_key_pem_buf: &[u8] = &pr_key_pem.as_bytes();
     PKey::private_key_from_pem(pr_key_pem_buf)
 }
 // https://docs.rs/openssl/0.10.64/openssl/encrypt/index.html
-/** Encrypt data with the specified private key.
- * pr_key_pem: `&str` - Private key in PEM encoding format.
- * data: `&[u8]` - Data buffer for encryption.
- * Returns: encrypted data as a base64 `String`.
-*/
+/// Encrypt data with the specified private key.
+/// * pr_key_pem: `&str` - Private key in PEM encoding format.
+/// * data: `&[u8]` - Data buffer for encryption.
+/// * Returns: `String` - encrypted data as a base64.
 pub fn encrypt_utf8(pr_key_pem: &str, data: &[u8]) -> Result<String, String> {
     // Deserializes a private key from a PEM-encoded key type specific format.
     let keypair: PKey<Private> = pr_key_from_pem(pr_key_pem).map_err(|err| err.to_string())?;
@@ -36,11 +35,10 @@ pub fn encrypt_utf8(pr_key_pem: &str, data: &[u8]) -> Result<String, String> {
     Ok(base64::encode_block(&encrypted))
 }
 // https://docs.rs/openssl/0.10.64/openssl/encrypt/index.html
-/** Decrypt data with the specified private key.
- * pr_key_pem: `&str` - Private key in PEM encoding format.
- * encrypted: `&str` - An encrypted message string in Base64 encoding.
- * Returns: the decrypted data as a `Vec<u8>`.
- */
+/// Decrypt data with the specified private key.
+/// * pr_key_pem: `&str` - Private key in PEM encoding format.
+/// * encrypted: `&str` - An encrypted message string in Base64 encoding.
+/// * Returns: `Vec<u8>` - the decrypted data.
 pub fn decrypt_utf8(pr_key_pem: &str, encrypted: &str) -> Result<Vec<u8>, String> {
     // Decodes a base64-encoded string to bytes.
     let encrypted = base64::decode_block(encrypted).map_err(|err| err.to_string())?;
@@ -63,7 +61,7 @@ pub fn decrypt_utf8(pr_key_pem: &str, encrypted: &str) -> Result<Vec<u8>, String
 #[cfg(test)]
 mod tests {
     use super::*;
-    /** Get the private key in PEM encoded format. */
+    /// Get the private key in PEM encoded format.
     fn get_pr_key_pem() -> String {
         let mut result: Vec<String> = Vec::new();
         result.push("-----BEGIN PRIVATE KEY-----\n".to_string());

@@ -20,7 +20,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .service(web::resource("/ind/{path_url:.*}").route(web::get().to(index_root)));
 }
 
-/** Loading the `index.html` file. */
+/// Loading the `index.html` file.
 pub async fn index_root() -> Result<HttpResponse, Error> {
     let body_str = include_str!("../static/index.html");
     let config_app = config_app::ConfigApp::init_by_env();
