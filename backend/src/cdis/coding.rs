@@ -19,7 +19,7 @@ pub const MSG_INVALID_SECOND: &str = "Invalid second";
 ///   1 - with microseconds (10^6);
 ///   2 - with nanoseconds (10^9);
 ///
-/// # Example: Encode a date (in milliseconds, precision = 0) into a string.
+/// Example: Encode a date (in milliseconds, precision = 0) into a string.
 /// ```
 /// let date_time = NaiveDate::from_ymd_opt(2015, 5, 15)
 ///     .and_then(|d| d.and_hms_milli_opt(11, 12, 13, 456)).unwrap().and_utc();
@@ -29,7 +29,7 @@ pub const MSG_INVALID_SECOND: &str = "Invalid second";
 /// assert_eq!("42550f61b5cd", encode_date_time);
 /// ```
 ///
-/// # Example: Encode the date (with microseconds, accuracy=1) into a string.
+/// Example: Encode the date (with microseconds, accuracy=1) into a string.
 /// ```
 /// let date_time = NaiveDate::from_ymd_opt(2015, 5, 15)
 ///     .and_then(|d| d.and_hms_micro_opt(11, 12, 13, 456789)).unwrap().and_utc();
@@ -39,7 +39,7 @@ pub const MSG_INVALID_SECOND: &str = "Invalid second";
 /// assert_eq!("42550f61b5cd987", encode_date_time);
 /// ```
 ///
-/// # Example: Encode the date (with nanoseconds, accuracy=2) into a string.
+/// Example: Encode the date (with nanoseconds, accuracy=2) into a string.
 /// ```
 /// let date_time = NaiveDate::from_ymd_opt(2015, 5, 15)
 ///     .and_then(|d| d.and_hms_nano_opt(11, 12, 13, 456789123)).unwrap().and_utc();
@@ -92,7 +92,7 @@ pub fn encode(date_time: DateTime<Utc>, accuracy: u8) -> String {
 ///   2 - in nanoseconds (10^9);
 ///
 ///
-/// # Example: Decode a string (in milliseconds, accuracy=0) into a date.
+/// Example: Decode a string (in milliseconds, accuracy=0) into a date.
 /// ```
 /// let date_time: DateTime<Utc> = decode("42550f61b5cd".to_string(), 0).unwrap();
 ///
@@ -107,7 +107,7 @@ pub fn encode(date_time: DateTime<Utc>, accuracy: u8) -> String {
 /// assert_eq!(456000000, time.nanosecond());
 /// ```
 ///
-/// # Example: Decode a string (in microseconds, accuracy=1) into a date.
+/// Example: Decode a string (in microseconds, accuracy=1) into a date.
 /// ```
 /// let date_time: DateTime<Utc> = decode("42550f61b5cd987", 1).unwrap();
 ///
@@ -122,7 +122,7 @@ pub fn encode(date_time: DateTime<Utc>, accuracy: u8) -> String {
 /// assert_eq!(456789000, time.nanosecond());
 /// ```
 ///
-/// # Example: Decode a string (in nanoseconds, accuracy=2) into a date.
+/// Example: Decode a string (in nanoseconds, accuracy=2) into a date.
 /// ```
 /// let date_time: DateTime<Utc> = decode("42550f61b5cd987321", 2).unwrap();
 ///
