@@ -7,6 +7,7 @@ use actix_web::{http, web};
 use send_email::{config_smtp, mailer};
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
 use streams::{config_strm, stream_controller, stream_get_controller, stream_orm::cfg::get_stream_orm_app};
+use tools::evn_data;
 use users::{
     config_usr, user_auth_controller, user_controller, user_orm::cfg::get_user_orm_app,
     user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_controller,
@@ -107,4 +108,36 @@ pub fn create_cors(config_app: settings::config_app::ConfigApp) -> Cors {
         }
     }
     cors
+}
+// Checking the configuration and encrypting the specified parameters.
+pub fn check_env() -> Result<bool, String> {
+    // SSL private key
+    let app_private_key = std::env::var("APP_PRIVATE_KEY").unwrap_or("".to_string());
+
+    if app_private_key.len() > 0 {
+        let mut param_list: Vec<&str> = Vec::new();
+        param_list.push("DATABASE_URL");
+        param_list.push("SMTP_HOST_PORT");
+        param_list.push("SMTP_USER_PASS");
+        // Checking the configuration and encrypting the specified parameters.
+        evn_data::check_params_env(&"./.env", &param_list, &app_private_key, 500)
+    } else {
+        Ok(false)
+    }
+}
+// Update configurations and decryption of specified parameters.
+pub fn update_env() -> Result<bool, String> {
+    // SSL private key
+    let app_private_key = std::env::var("APP_PRIVATE_KEY").unwrap_or("".to_string());
+
+    if app_private_key.len() > 0 {
+        let mut param_list: Vec<&str> = Vec::new();
+        param_list.push("DATABASE_URL");
+        param_list.push("SMTP_HOST_PORT");
+        param_list.push("SMTP_USER_PASS");
+        // Update configurations and decryption of specified parameters.
+        evn_data::update_params_env(&param_list, &app_private_key, 500)
+    } else {
+        Ok(false)
+    }
 }
