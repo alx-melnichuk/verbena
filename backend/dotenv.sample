@@ -35,9 +35,10 @@ APP_RECOVERY_DURATION=600
 # Site name.
 APP_NAME=Verbéna
 # SSL certificate and private key (for the "https" protocol)
-APP_CERTIFICATE=example.crt.pem
+# APP_CERTIFICATE=example.crt.pem
 # SSL private key (for the "https" protocol)
-APP_PRIVATE_KEY=example.key.pem
+# The presence of a private key leads to encryption of the parameters: DATABASE_URL, SMTP_HOST_PORT, SMTP_USER_PASS.
+# APP_PRIVATE_KEY=example.key.pem
 # Cors permissions "allowed_origin" (array of values, comma delimited). There should be no spaces.
 # APP_ALLOWED_ORIGIN=
 # Directory for temporary files when uploading user files.
@@ -49,6 +50,7 @@ APP_DIR_TMP=./tmp
 # -----------------------------------------------------------------------------
 # Database (PostgreSQL)
 # -----------------------------------------------------------------------------
+# The parameter will be encrypted if there is a private key (APP_PRIVATE_KEY).
 # DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}
 # DATABASE_URL=postgresql://database_user:database_password@127.0.0.1:5432/database_name
 
@@ -66,8 +68,12 @@ JWT_REFRESH_TOKEN_DURATION=345600
 # -----------------------------------------------------------------------------
 # SMTP
 # -----------------------------------------------------------------------------
-SMTP_HOST_PORT=
-SMTP_USER_PASS=
+# The parameter will be encrypted if there is a private key (APP_PRIVATE_KEY).
+# The value of connection parameters to the SMTP server: `host:port`
+# SMTP_HOST_PORT=
+# The parameter will be encrypted if there is a private key (APP_PRIVATE_KEY).
+# The value of the SMTP server user parameters: `user:password`
+# SMTP_USER_PASS=
 
 # -----------------------------------------------------------------------------
 # User Controller Settings
