@@ -21,41 +21,14 @@ async fn main() -> std::io::Result<()> {
         let log = "info,actix_web=info,actix_server=info,verbena_backend=info";
         std::env::set_var("RUST_LOG", log);
     }
-    let env_dbase_url = std::env::var("DATABASE_URL").unwrap_or("".to_string());
-    eprintln!("0_env_dbase_url: {}", &env_dbase_url);
-    let env_smtp_host_port = std::env::var("SMTP_HOST_PORT").unwrap_or("".to_string());
-    eprintln!("0_env_smtp_host_port: {}", &env_smtp_host_port);
-    let env_smtp_user_pass = std::env::var("SMTP_USER_PASS").unwrap_or("".to_string());
-    eprintln!("0_env_smtp_user_pass: {}", &env_smtp_user_pass);
 
-    let res_check = check_env();
-    eprintln!("check_env(): {:?}", &res_check);
-    if res_check.unwrap_or(false) {
-        let env_dbase_url = std::env::var("DATABASE_URL").unwrap_or("".to_string());
-        eprintln!("1_env_dbase_url: {}", &env_dbase_url);
-        let env_smtp_host_port = std::env::var("SMTP_HOST_PORT").unwrap_or("".to_string());
-        eprintln!("1_env_smtp_host_port: {}", &env_smtp_host_port);
-        let env_smtp_user_pass = std::env::var("SMTP_USER_PASS").unwrap_or("".to_string());
-        eprintln!("1_env_smtp_user_pass: {}", &env_smtp_user_pass);
-
+    // Checking the configuration and encrypting the specified parameters.
+    if check_env().unwrap_or(0) > 0 {
+        // Load the `.env` file again.
         dotenv::dotenv().expect("Failed to read .env file");
-
-        let env_dbase_url = std::env::var("DATABASE_URL").unwrap_or("".to_string());
-        eprintln!("2_env_dbase_url: {}", &env_dbase_url);
-        let env_smtp_host_port = std::env::var("SMTP_HOST_PORT").unwrap_or("".to_string());
-        eprintln!("2_env_smtp_host_port: {}", &env_smtp_host_port);
-        let env_smtp_user_pass = std::env::var("SMTP_USER_PASS").unwrap_or("".to_string());
-        eprintln!("2_env_smtp_user_pass: {}", &env_smtp_user_pass);
     }
     // Update configurations and decryption of specified parameters.
-    let res_update = update_env();
-    eprintln!("update_env(): {:?}", &res_update);
-    let env_dbase_url = std::env::var("DATABASE_URL").unwrap_or("".to_string());
-    eprintln!("3_env_dbase_url: {}", &env_dbase_url);
-    let env_smtp_host_port = std::env::var("SMTP_HOST_PORT").unwrap_or("".to_string());
-    eprintln!("3_env_smtp_host_port: {}", &env_smtp_host_port);
-    let env_smtp_user_pass = std::env::var("SMTP_USER_PASS").unwrap_or("".to_string());
-    eprintln!("3_env_smtp_user_pass: {}", &env_smtp_user_pass);
+    update_env().ok();
 
     env_logger::init();
 
