@@ -48,6 +48,11 @@ APP_DIR_TMP=./tmp
 # APP_NUM_WORKERS=5
 
 # -----------------------------------------------------------------------------
+# When APP_PRIVATE_KEY is present, the following will be encoded: DATABASE_URL, SMTP_HOST_PORT, SMTP_USER_PASS.
+# And in order to view the decrypted values of these parameters, you need to enable this parameter.
+# IS_SHOW_DECRYPTED_PRMS=true
+
+# -----------------------------------------------------------------------------
 # Database (PostgreSQL)
 # -----------------------------------------------------------------------------
 # The parameter will be encrypted if there is a private key (APP_PRIVATE_KEY).
@@ -58,8 +63,8 @@ APP_DIR_TMP=./tmp
 # JSON Web Token Credentials
 # -----------------------------------------------------------------------------
 JWT_SECRET_KEY=jwt_secret_key
-JWT_MAXAGE=60
-#  15 minutes;
+# (900 seconds = 15 minutes)
+JWT_MAXAGE=900
 # Access token duration (in seconds). (900 seconds = 15 minutes)
 JWT_ACCESS_TOKEN_DURATION=900
 # Refresh token duration (in seconds). (345600 seconds = 4 days  60sec*60min*24hour*4days)
