@@ -111,7 +111,7 @@ pub fn create_cors(config_app: settings::config_app::ConfigApp) -> Cors {
 }
 // List of parameters that are encrypted.
 fn get_list_params<'a>() -> &'a [&'a str] {
-    &["DATABASE_URL", "SMTP_HOST_PORT", "SMTP_USER_PASS"]
+    &["DATABASE_URL", "SMTP_HOST_PORT", "SMTP_USER_PASS", "JWT_SECRET_KEY"]
 }
 // Checking the configuration and encrypting the specified parameters.
 pub fn check_env() -> Result<usize, String> {
