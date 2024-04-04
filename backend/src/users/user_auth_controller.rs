@@ -167,10 +167,10 @@ pub async fn logout(
     if session_opt.is_none() {
         return Err(err_session(user.id));
     }
-
+    // If a cookie has expired, the browser will delete the existing cookie.
     let cookie = Cookie::build("token", "")
         .path("/")
-        .max_age(ActixWebDuration::new(0, 0))
+        .max_age(ActixWebDuration::new(-1, 0))
         .http_only(true)
         .finish();
     if config_usr.usr_show_lead_time {
