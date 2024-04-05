@@ -1,10 +1,12 @@
+use std::fmt::Debug;
+
 use chrono::{Duration, Utc};
-use jsonwebtoken as jwt;
+use jsonwebtoken::{self as jwt, errors};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::settings::err;
-use crate::utils::parser;
+use crate::utils::{crypto, parser};
 
 pub const CD_NUM_TOKEN_MIN: usize = 1;
 pub const CD_NUM_TOKEN_MAX: usize = 10000;
@@ -24,12 +26,16 @@ pub fn encode_token(
     secret: &[u8],
     // expires in seconds
     expires: i64,
-) -> Result<String, jwt::errors::Error> {
+) -> Result<String, String> {
     if num_token == 0 {
-        return Err(jwt::errors::ErrorKind::InvalidSubject.into());
+        let err = errors::Error::from(errors::ErrorKind::InvalidSubject).to_string();
+        log::error!("{:?}", err);
+        return Err(err);
     }
     if secret.len() == 0 {
-        return Err(jwt::errors::ErrorKind::InvalidKeyFormat.into());
+        let err = errors::Error::from(errors::ErrorKind::InvalidKeyFormat).to_string();
+        log::error!("{:?}", err);
+        return Err(err);
     }
 
     let now = Utc::now();
@@ -39,23 +45,43 @@ pub fn encode_token(
     let sub = user_id.to_string();
 
     let claims = TokenClaims { exp, iat, iss, sub };
-
-    jwt::encode(
+    // Encode the header and claims given and sign the payload using the algorithm from the header and the key.
+    let encoded = jwt::encode(
         &jwt::Header::new(jwt::Algorithm::HS256),
         &claims,
         &jwt::EncodingKey::from_secret(secret),
     )
+    .map_err(|e| {
+        let err = e.to_string();
+        log::error!("{:?}", err);
+        err
+    })?;
+    // Encrypt the data using a secret string.
+    let encrypted = crypto::encrypt_aes(secret, encoded.as_bytes())?;
+
+    Ok(encrypted)
 }
 
 /// Unpack two parameters from the token.
 pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<(i32, i32), String> {
+    let token_into: String = token.into();
+    let decrypted = crypto::decrypt_aes(secret, &token_into).map_err(|err| {
+        log::error!("{:?}", err);
+        err::CD_FORBIDDEN
+    })?;
+
+    let token_str = std::str::from_utf8(&decrypted).map_err(|err| {
+        log::error!("{:?}", err);
+        err::CD_FORBIDDEN
+    })?;
+
     let token_data = jwt::decode::<TokenClaims>(
-        &token.into(),
+        token_str,
         &jwt::DecodingKey::from_secret(secret),
         &jwt::Validation::new(jwt::Algorithm::HS256),
     )
     .map_err(|err| {
-        log::error!("decode error: {:?}", err);
+        log::error!("{:?}", err);
         err::CD_FORBIDDEN
     })?;
 
@@ -99,10 +125,8 @@ mod tests {
         let result = encode_token(user_id, num_token, secret, EXPIRES);
 
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().into_kind(),
-            jwt::errors::ErrorKind::InvalidSubject
-        );
+        let r = jwt::errors::Error::from(jwt::errors::ErrorKind::InvalidSubject).to_string();
+        assert_eq!(result.unwrap_err(), r);
     }
     #[test]
     fn test2_encode_with_empty_secret() {
@@ -113,10 +137,8 @@ mod tests {
         let result = encode_token(user_id, num_token, secret, EXPIRES);
 
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().into_kind(),
-            jwt::errors::ErrorKind::InvalidKeyFormat
-        );
+        let r = jwt::errors::Error::from(jwt::errors::ErrorKind::InvalidKeyFormat).to_string();
+        assert_eq!(result.unwrap_err(), r);
     }
     #[test]
     fn test2_encode_and_decoded_valid_token() {
