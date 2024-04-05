@@ -1,9 +1,10 @@
-// use std::str;
 use openssl::{
-    base64, encrypt, error,
+    base64, encrypt, error, hash,
     pkey::{PKey, Private},
     rsa::Padding,
+    symm,
 };
+
 /// Deserializes a private key from a PEM-encoded key type specific format.
 fn pr_key_from_pem(pr_key_pem: &str) -> Result<PKey<Private>, error::ErrorStack> {
     let pr_key_pem_buf: &[u8] = &pr_key_pem.as_bytes();
@@ -37,11 +38,11 @@ pub fn encrypt_utf8(pr_key_pem: &str, data: &[u8]) -> Result<String, String> {
 // https://docs.rs/openssl/0.10.64/openssl/encrypt/index.html
 /// Decrypt data with the specified private key.
 /// * pr_key_pem: `&str` - Private key in PEM encoding format.
-/// * encrypted: `&str` - An encrypted message string in Base64 encoding.
+/// * data: `&str` - An encrypted message string in Base64 encoding.
 /// * Returns: `Vec<u8>` - the decrypted data.
-pub fn decrypt_utf8(pr_key_pem: &str, encrypted: &str) -> Result<Vec<u8>, String> {
+pub fn decrypt_utf8(pr_key_pem: &str, data: &str) -> Result<Vec<u8>, String> {
     // Decodes a base64-encoded string to bytes.
-    let encrypted = base64::decode_block(encrypted).map_err(|err| err.to_string())?;
+    let encrypted = base64::decode_block(data).map_err(|err| err.to_string())?;
     // Deserializes a private key from a PEM-encoded key type specific format.
     let keypair: PKey<Private> = pr_key_from_pem(pr_key_pem).map_err(|err| err.to_string())?;
 
@@ -54,6 +55,62 @@ pub fn decrypt_utf8(pr_key_pem: &str, encrypted: &str) -> Result<Vec<u8>, String
     // Encrypt and truncate the buffer
     let decrypted_len = decrypter.decrypt(&encrypted, &mut decrypted).map_err(|err| err.to_string())?;
     decrypted.truncate(decrypted_len);
+
+    Ok(decrypted)
+}
+
+/// Get the key from the secret string.
+fn get_key(secret: &[u8]) -> Result<[u8; 16], String> {
+    let mut result = [0 as u8; 16];
+    let t = hash::MessageDigest::md5();
+    let digest = hash::hash(t, secret).map_err(|err| err.to_string())?;
+    let key_buf = digest.as_ref();
+    let size = if key_buf.len() < 16 { key_buf.len() } else { 16 };
+    for idx in 0..size {
+        result[idx] = key_buf[idx];
+    }
+    Ok(result)
+}
+/// Get the 'init_vec' from the secret string.
+fn get_init_vec(secret: &[u8]) -> [u8; 16] {
+    let mut result = ['a' as u8; 16];
+    let size = if secret.len() < 16 { secret.len() } else { 16 };
+    for idx in 0..size {
+        result[idx] = secret[idx];
+    }
+    result
+}
+/// Encrypt the data using a secret string.
+/// * secret: `&[u8]` - Secret string
+/// * data: `&[u8]` - Data buffer for encryption.
+/// * Returns: `String` - encrypted data as a base64.
+pub fn encrypt_aes(secret: &[u8], data: &[u8]) -> Result<String, String> {
+    // Get the key from the secret string.
+    let key = get_key(secret)?;
+    // Get the 'init_vec' from the secret string.
+    let iv = get_init_vec(secret);
+
+    let cipher = symm::Cipher::aes_128_cbc();
+    // Encrypts data in one go, and returns the encrypted data.
+    let encrypted = symm::encrypt(cipher, &key, Some(&iv), data).map_err(|e| e.to_string())?;
+    // Encodes a slice of bytes to a base64 string.
+    Ok(base64::encode_block(&encrypted))
+}
+/// Decrypt the data using the secret string.
+/// * secret: `&[u8]` - Secret string
+/// * data: `&str` - An encrypted message string in Base64 encoding.
+/// * Returns: `Vec<u8>` - the decrypted data.
+pub fn decrypt_aes(secret: &[u8], data: &str) -> Result<Vec<u8>, String> {
+    // Get the key from the secret string.
+    let key = get_key(secret)?;
+    // Get the 'init_vec' from the secret string.
+    let iv = get_init_vec(secret);
+    // Decodes a base64-encoded string to bytes.
+    let data = base64::decode_block(data).map_err(|err| err.to_string())?;
+
+    let cipher = symm::Cipher::aes_128_cbc();
+    // Decrypts data in one go, and returns the decrypted data.
+    let decrypted = symm::decrypt(cipher, &key, Some(&iv), &data).map_err(|e| e.to_string())?;
 
     Ok(decrypted)
 }
@@ -95,7 +152,7 @@ mod tests {
         result.join("")
     }
 
-    // ** encrypt **
+    // ** encrypt_utf8 **
     #[test]
     fn test_encrypt_utf8_bad_pr_key_pem() {
         let data = "Test data1 string.".as_bytes();
@@ -165,7 +222,7 @@ mod tests {
         assert_eq!(&*decrypted, data);
     }
 
-    // ** decrypt **
+    // ** decrypt_utf8 **
     #[test]
     fn test_decrypt_utf8_bad_pr_key_pem() {
         // Get the private key in PEM encoded format.
@@ -249,5 +306,33 @@ mod tests {
         let decrypted: Vec<u8> = decrypt_utf8(&pr_key_pem_str, &encrypted_base64).unwrap();
 
         assert_eq!(&*decrypted, data);
+    }
+
+    // ** encrypt_aes **
+
+    #[test]
+    fn test_encrypt_aes_valid_data() {
+        let data = "The string is Hello World";
+        let secret = "Secret phrase for encryption.";
+
+        let res = encrypt_aes(secret.as_bytes(), data.as_bytes());
+        assert!(res.is_ok());
+        let r = "aBzSFmAGqjIr+pbLXmP3h37nM9p18IbVA/Xp0lvmw30=";
+        let encrypted = res.ok().unwrap();
+        assert_eq!(r, &encrypted);
+    }
+
+    // ** decrypt_aes **
+
+    #[test]
+    fn test_decrypt_aes_valid_data() {
+        let data = "aBzSFmAGqjIr+pbLXmP3h37nM9p18IbVA/Xp0lvmw30=";
+        let secret = "Secret phrase for encryption.";
+
+        let res = decrypt_aes(secret.as_bytes(), data);
+        assert!(res.is_ok());
+        let r = "The string is Hello World".as_bytes();
+        let decrypted = res.ok().unwrap();
+        assert_eq!(r, &decrypted);
     }
 }
