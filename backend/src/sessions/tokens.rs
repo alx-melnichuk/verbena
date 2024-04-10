@@ -201,8 +201,6 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "ExpiredSignature");
     }
-
-    // OLD
     #[test]
     fn test_encode_and_decoded_valid_token() {
         let user_id: i32 = 123;
