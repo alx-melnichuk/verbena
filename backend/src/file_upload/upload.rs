@@ -128,24 +128,28 @@ mod tests {
 
         Ok(path_file.to_string())
     }
-    fn dimensions(file_path: &str) -> (u32, u32) {
+    fn dimensions(file_path: &str) -> Result<(u32, u32), String> {
         // Load the source image into memory.
-        let image_source: DynamicImage = image::open(file_path).unwrap();
+        let res_image_source = image::open(file_path);
+        if let Err(err) = res_image_source {
+            eprintln!("\nAttention !! The test ran successfully for 'image' ver.'0.24.9'.\n");
+            return Err(format!("For {} error: {}", file_path, err.to_string()));
+        }
+        let image_source = res_image_source.ok().unwrap();
         // Get the width and height of this image.
-        image_source.dimensions()
+        Ok(image_source.dimensions())
     }
     #[test]
     fn test_convert_file_source_png_receiver_jpeg_maxwd_0_maxhg_0() {
         let source = file_path("demo02", "png");
         create_file_png(&source).unwrap();
-        let (source_wd, source_hg) = dimensions(&source);
+        let (source_wd, source_hg) = dimensions(&source).unwrap();
 
         let result = convert_file(&source, "jpeg", 0, 0);
-
         let _ = fs::remove_file(&source);
 
         let receiver = file_path("demo02", "jpeg");
-        let (receiver_wd, receiver_hg) = dimensions(&receiver);
+        let (receiver_wd, receiver_hg) = dimensions(&receiver).unwrap();
         let _ = fs::remove_file(&receiver);
 
         assert!(result.is_ok());
@@ -157,14 +161,14 @@ mod tests {
     fn test_convert_file_source_png_receiver_jpeg_maxwd_10_maxhg_10() {
         let source = file_path("demo03", "png");
         create_file_png(&source).unwrap();
-        let (source_wd, source_hg) = dimensions(&source);
+        let (source_wd, source_hg) = dimensions(&source).unwrap();
 
         let result = convert_file(&source, "jpeg", 10, 10);
 
         let _ = fs::remove_file(&source);
 
         let receiver = file_path("demo03", "jpeg");
-        let (receiver_wd, receiver_hg) = dimensions(&receiver);
+        let (receiver_wd, receiver_hg) = dimensions(&receiver).unwrap();
         let _ = fs::remove_file(&receiver);
 
         assert!(result.is_ok());
@@ -178,12 +182,12 @@ mod tests {
     fn test_convert_file_source_png_receiver_png_maxwd_10_maxhg_10() {
         let source = file_path("demo04", "png");
         create_file_png(&source).unwrap();
-        let (source_wd, source_hg) = dimensions(&source);
+        let (source_wd, source_hg) = dimensions(&source).unwrap();
 
         let result = convert_file(&source, "png", 10, 10);
 
         let receiver = source.clone();
-        let (receiver_wd, receiver_hg) = dimensions(&receiver);
+        let (receiver_wd, receiver_hg) = dimensions(&receiver).unwrap();
 
         let _ = fs::remove_file(&source);
 
@@ -198,12 +202,12 @@ mod tests {
     fn test_convert_file_source_png_receiver_png_maxwd_30_maxhg_30() {
         let source = file_path("demo05", "png");
         create_file_png(&source).unwrap();
-        let (source_wd, source_hg) = dimensions(&source);
+        let (source_wd, source_hg) = dimensions(&source).unwrap();
 
         let result = convert_file(&source, "png", 30, 30);
 
         let receiver = source.clone();
-        let (receiver_wd, receiver_hg) = dimensions(&receiver);
+        let (receiver_wd, receiver_hg) = dimensions(&receiver).unwrap();
 
         let _ = fs::remove_file(&source);
 
