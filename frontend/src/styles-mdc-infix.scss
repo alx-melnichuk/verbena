@@ -2,7 +2,7 @@
 /* Complements the "Material Design" style library. */
 
 .stl-mdc-infix {
-    --demo-button-bg: #797979;
+  --demo-button-bg: #797979;
 
     
   &.dark-theme {
@@ -40,5 +40,7 @@
   .mat-mdc-dialog-content.mdc-dialog__content {
     padding-top: 1em;
   }
-    
+  .mat-mdc-form-field-hint {
+    color: var(--black-600);
+  }
 }
