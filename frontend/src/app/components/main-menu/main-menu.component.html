@@ -12,6 +12,11 @@
     <span class="mm-mr-lf">{{ 'main_menu.my_streams' | translate }}</span>
   </button>
 
+  <button mat-menu-item *ngIf="isShowCreateStream" class="app-main-menu-item" [routerLink]="[linkCreateStream]">
+    <span class="mm-icon mm-my-streams"></span>
+    <span class="mm-mr-lf">{{ 'main_menu.create_stream' | translate }}</span>
+  </button>
+
   <button mat-menu-item *ngIf="isShowDarkTheme" class="pn-main-menu-item" (click)="doChangeDarkTheme(!isDarkTheme)">
     <span class="mm-icon mm-dark-theme"></span>
     <span class="mm-mr-lf">{{ 'main_menu.dark_theme' | translate }}</span>

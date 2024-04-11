@@ -8,7 +8,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { RouterLink } from '@angular/router';
 
 import { InitializationService } from 'src/app/common/initialization.service';
-import { ROUTE_STREAM_LIST } from 'src/app/common/routes';
+import { ROUTE_STREAM_CREATE, ROUTE_STREAM_LIST } from 'src/app/common/routes';
 
 
 @Component({
@@ -26,6 +26,8 @@ export class MainMenuComponent implements OnInit {
   @Input()
   public isShowMyStreams: boolean = false;
   @Input()
+  public isShowCreateStream: boolean = false;
+  @Input()
   public isShowDarkTheme: boolean = false;
   @Input()
   public isShowLogout: boolean = false;
@@ -38,6 +40,7 @@ export class MainMenuComponent implements OnInit {
   
   public isDarkTheme = false;
   public linkMyStreams = ROUTE_STREAM_LIST;
+  public linkCreateStream = ROUTE_STREAM_CREATE;
 
   constructor(public initializationService: InitializationService) {
   }

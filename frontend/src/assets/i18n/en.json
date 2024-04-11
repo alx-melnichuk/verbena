@@ -14,6 +14,7 @@
   "main_menu": {
     "my_profile_": "My profile",
     "my_streams": "My streams",
+    "create_stream": "Create stream",
     "my_follows_": "My follows",
     "dark_theme": "Dark Theme",
     "log_out": "Log Out"
