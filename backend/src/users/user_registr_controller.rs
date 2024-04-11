@@ -215,7 +215,7 @@ pub async fn registration(
     let nickname = registr_user_dto.nickname.clone();
     let receiver = registr_user_dto.email.clone();
     let target = registr_token.clone();
-    let registr_duration = app_registr_duration.clone();
+    let registr_duration = app_registr_duration.clone() / 60; // From seconds to minutes.
     let result = mailer.send_verification_code(
         &receiver,
         &domain,
@@ -444,7 +444,7 @@ pub async fn recovery(
     let nickname = user.nickname.clone();
     let receiver = user.email.clone();
     let target = recovery_token.clone();
-    let recovery_duration = app_recovery_duration.clone();
+    let recovery_duration = app_recovery_duration.clone() / 60; // From seconds to minutes.
     // Send an email to this user.
     let result = mailer.send_password_recovery(
         &receiver,
