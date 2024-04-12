@@ -255,6 +255,12 @@ pub async fn confirm_registration(
     let now = Instant::now();
     let registr_token = request.match_info().query("registr_token").to_string();
 
+    let user_registr_orm2 = user_registr_orm.clone();
+    // Delete entries in the "user_registr" table, that are already expired.
+    let _ = web::block(move || user_registr_orm2.delete_inactive_final_date(None))
+        .await
+        .map_err(|e| err_blocking(e.to_string()))?;
+
     let config_jwt = config_jwt.get_ref().clone();
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
@@ -312,11 +318,6 @@ pub async fn confirm_registration(
     })
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
-
-    // Delete entries in the "user_registr" table, that are already expired.
-    let _ = web::block(move || user_registr_orm.delete_inactive_final_date(None))
-        .await
-        .map_err(|e| err_blocking(e.to_string()))?;
 
     let user_dto = user_models::UserDto::from(user);
 
@@ -492,6 +493,14 @@ pub async fn confirm_recovery(
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
+    let user_recovery_orm2 = user_recovery_orm.clone();
+    // Delete entries in the "user_recovery" table, that are already expired.
+    let _ = web::block(move || {
+        user_recovery_orm2.delete_inactive_final_date(None).map_err(|e| err_database(e))
+    })
+    .await
+    .map_err(|e| err_blocking(e.to_string()))?;
+
     let recovery_data_dto: user_models::RecoveryDataDto = json_body.0.clone();
 
     // Prepare a password hash.
@@ -568,13 +577,6 @@ pub async fn confirm_recovery(
             .map_err(|e| err_database(e.to_string()));
 
         (user_recovery_res, session_res)
-    })
-    .await
-    .map_err(|e| err_blocking(e.to_string()))?;
-
-    // Delete entries in the "user_recovery" table, that are already expired.
-    let _ = web::block(move || {
-        user_recovery_orm.delete_inactive_final_date(None).map_err(|e| err_database(e))
     })
     .await
     .map_err(|e| err_blocking(e.to_string()))?;
