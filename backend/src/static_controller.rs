@@ -28,7 +28,7 @@ pub async fn index_root() -> Result<HttpResponse, Error> {
     let app_name = format!("<title>{}</title>", &config_app.app_name);
     let body_str = body_str.replacen("<title>APP_NAME</title>", &app_name, 1);
     #[rustfmt::skip]
-    let app_domain = format!("<script>var APP_DOMAIN='{}/';</script>", &config_app.app_domain );
+    let app_domain = format!("<script>var APP_DOMAIN='{}';</script>", &config_app.app_domain );
     let body_str = body_str.replacen("<script>var APP_DOMAIN;</script>", &app_domain, 1);
 
     Ok(HttpResponse::build(http::StatusCode::OK)
