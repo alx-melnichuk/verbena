@@ -79,6 +79,10 @@ JWT_REFRESH_TOKEN_DURATION=345600
 # The parameter will be encrypted if there is a private key (APP_PRIVATE_KEY).
 # The value of the SMTP server user parameters: `user:password`
 # SMTP_USER_PASS=
+# Sign to disable sending letters (default: false)
+# SMTP_NOT_SEND_LETTER=true
+# Sign for saving the text of the letter (default: false)
+# SMTP_SAVE_LETTER=true
 
 # -----------------------------------------------------------------------------
 # User Controller Settings

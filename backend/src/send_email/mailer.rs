@@ -41,9 +41,8 @@ pub mod cfg {
 
 #[cfg(not(feature = "mockdata"))]
 pub mod inst {
-    use lettre::{message::header::ContentType, transport::smtp, Message, SmtpTransport};
-    use std::collections::HashMap;
-    use std::{fs::File, io::Write};
+    use lettre::{message::header::ContentType, transport::smtp, Message, SmtpTransport, Transport};
+    use std::{collections::HashMap, fs::File, io::Write};
 
     use crate::send_email::config_smtp::ConfigSmtp;
     use crate::tools::template_rendering::render_template;
@@ -101,16 +100,12 @@ pub mod inst {
         }
         // Sending mail (synchronous)
         fn sending(&self, message: Message) -> Result<(), String> {
-            // Open a remote connection to the SMTP relay server
-            // tmp
-            eprintln!(
-                "sending() message: {}",
-                std::str::from_utf8(&message.formatted()).unwrap()
-            );
-            // tmp let transport =
-            self.new_smtp_transport().map_err(|e| e.to_string())?;
-            // tmp // Send the email.
-            // tmp transport.send(&message).map(|_| ()).map_err(|e| e.to_string())?;
+            if !self.config_smtp.smtp_not_send_letter {
+                // Open a remote connection to the SMTP relay server
+                let transport = self.new_smtp_transport().map_err(|e| e.to_string())?;
+                // Send the email.
+                transport.send(&message).map(|_| ()).map_err(|e| e.to_string())?;
+            }
             Ok(())
         }
     }
@@ -138,16 +133,14 @@ pub mod inst {
             params.insert("registr_duration", &registr_duration_val);
             // Create a html_template to send.
             let html_template = render_template("verification_code", params)?;
-            eprintln!("html_template: {:?}", html_template);
-            // TODO del;
-            let path = "res_registration.html";
-            let file_opt = File::create(path).ok();
-            if file_opt.is_some() {
-                let mut file = file_opt.unwrap();
-                let _ = write!(file, "{}", &html_template);
-            }
 
-            let receiver = "lg2aam@gmail.com";
+            if self.config_smtp.smtp_save_letter {
+                let path = "res_registration.html";
+                let res_file = File::create(path);
+                if let Ok(mut file) = res_file {
+                    let _ = write!(file, "{}", &html_template);
+                }
+            }
             // Create a message to send.
             let message = self.new_message(receiver, subject, &html_template)?;
             // Sending mail (synchronous)
@@ -176,23 +169,19 @@ pub mod inst {
 
             // Create a html_template to send.
             let html_template = render_template("password_recovery", params)?;
-            eprintln!("html_template: {:?}", html_template);
-            // TODO del;
-            let path = "res_recovery.html";
-            let file_opt = File::create(path).ok();
-            if file_opt.is_some() {
-                let mut file = file_opt.unwrap();
-                let _ = write!(file, "{}", &html_template);
+
+            if self.config_smtp.smtp_save_letter {
+                let path = "res_recovery.html";
+                let file_opt = File::create(path).ok();
+                if file_opt.is_some() {
+                    let mut file = file_opt.unwrap();
+                    let _ = write!(file, "{}", &html_template);
+                }
             }
-            // // Create a message to send.
-            // let message = self.new_message(receiver, subject, &html_template)?;
-            // // Sending mail (synchronous)
-            // self.sending(message)
-            if html_template.len() > 0 {
-                Ok(())
-            } else {
-                Ok(())
-            }
+            // Create a message to send.
+            let message = self.new_message(receiver, subject, &html_template)?;
+            // Sending mail (synchronous)
+            self.sending(message)
         }
     }
 }
