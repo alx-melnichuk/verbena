@@ -7,8 +7,8 @@ export class Uri {
 
   static {
     // Data Initialization
-    Uri.replace('appRoot://', (APP_DOMAIN || (window.location.origin + '/')));
-    Uri.replace('appApi://', (APP_DOMAIN || (window.location.origin + '/api/')));
+    Uri.replace('appRoot://', (APP_DOMAIN || window.location.origin) + '/');
+    Uri.replace('appApi://', (APP_DOMAIN || window.location.origin) + '/api/');
   }
 
   /**
