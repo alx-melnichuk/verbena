@@ -255,12 +255,6 @@ pub async fn confirm_registration(
     let now = Instant::now();
     let registr_token = request.match_info().query("registr_token").to_string();
 
-    let user_registr_orm2 = user_registr_orm.clone();
-    // Delete entries in the "user_registr" table, that are already expired.
-    let _ = web::block(move || user_registr_orm2.delete_inactive_final_date(None))
-        .await
-        .map_err(|e| err_blocking(e.to_string()))?;
-
     let config_jwt = config_jwt.get_ref().clone();
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
@@ -268,11 +262,10 @@ pub async fn confirm_registration(
     let dual_token =
         decode_token(&registr_token, jwt_secret).map_err(|err| err_jsonwebtoken_decode(err))?;
 
-    let user_registr_orm2 = user_registr_orm.clone();
-
     // Get "user_registr ID" from "registr_token".
     let (user_registr_id, _) = dual_token;
 
+    let user_registr_orm2 = user_registr_orm.clone();
     // Find a record with the specified ID in the “user_registr" table.
     let user_registr_opt = web::block(move || {
         let user_registr = user_registr_orm2
@@ -282,6 +275,12 @@ pub async fn confirm_registration(
     })
     .await
     .map_err(|e| err_blocking(e.to_string()))??;
+
+    let user_registr_orm2 = user_registr_orm.clone();
+    // Delete entries in the "user_registr" table, that are already expired.
+    let _ = web::block(move || user_registr_orm2.delete_inactive_final_date(None))
+        .await
+        .map_err(|e| err_blocking(e.to_string()))?;
 
     // If no such entry exists, then exit with code 404.
     let user_registr = user_registr_opt.ok_or_else(|| err_registr_not_found(user_registr_id))?;
@@ -493,14 +492,6 @@ pub async fn confirm_recovery(
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
-    let user_recovery_orm2 = user_recovery_orm.clone();
-    // Delete entries in the "user_recovery" table, that are already expired.
-    let _ = web::block(move || {
-        user_recovery_orm2.delete_inactive_final_date(None).map_err(|e| err_database(e))
-    })
-    .await
-    .map_err(|e| err_blocking(e.to_string()))?;
-
     let recovery_data_dto: user_models::RecoveryDataDto = json_body.0.clone();
 
     // Prepare a password hash.
@@ -516,11 +507,10 @@ pub async fn confirm_recovery(
     let dual_token =
         decode_token(&recovery_token, jwt_secret).map_err(|err| err_jsonwebtoken_decode(err))?;
 
-    let user_recovery_orm2 = user_recovery_orm.clone();
-
     // Get "user_recovery ID" from "recovery_token".
     let (user_recovery_id, _) = dual_token;
 
+    let user_recovery_orm2 = user_recovery_orm.clone();
     // Find a record with the specified ID in the “user_recovery" table.
     let user_recovery_opt = web::block(move || {
         let user_recovery = user_recovery_orm2
@@ -530,6 +520,14 @@ pub async fn confirm_recovery(
     })
     .await
     .map_err(|e| err_blocking(e.to_string()))??;
+
+    let user_recovery_orm2 = user_recovery_orm.clone();
+    // Delete entries in the "user_recovery" table, that are already expired.
+    let _ = web::block(move || {
+        user_recovery_orm2.delete_inactive_final_date(None).map_err(|e| err_database(e))
+    })
+    .await
+    .map_err(|e| err_blocking(e.to_string()))?;
 
     // If no such entry exists, then exit with code 404.
     let user_recovery =
