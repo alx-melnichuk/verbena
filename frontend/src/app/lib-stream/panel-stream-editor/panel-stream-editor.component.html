@@ -80,12 +80,10 @@
           <mat-datepicker #datepickerStartDate></mat-datepicker>
         </mat-form-field>
 
-        
         <app-field-time class="psd-start-time"
           formControlName="startTime"
           [isRequired]="true">
         </app-field-time>
-        <!-- [attr.disabled]="controls.startTime.disabled ? true : null" -->
       </div>
 
       <ng-container *ngIf="!isCreate">
@@ -126,9 +124,4 @@
     </button>
   
   </div>
-  <sub>
-startDate: {{ controls.startDate.value | date: "dd MMMM yyyy HH:mm:ss z"}} __ startTime: {{ controls.startTime.value }}<br/>
-pristine: {{ formGroup.pristine }} __ invalid: {{ formGroup.invalid }}<br/>
-errors: {{ formGroup.errors | json }}<br/>
-  </sub>
 </div>
