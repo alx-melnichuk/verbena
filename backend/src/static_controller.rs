@@ -15,7 +15,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .service(Files::new("/assets", "static/assets").show_files_listing())
         .service(web::resource(&alias_logo).route(web::get().to(load_files_logo)))
         .service(web::resource("/{name1:.(.+).js|(.+).css}").route(web::get().to(load_files_js_css)))
-        .service(web::resource("/{name2:.(.+).ico|(.+).png}").route(web::get().to(load_files_ico_png)))
+        .service(web::resource("/{name2:.(.+).ico|(.+).png|(.+).svg}").route(web::get().to(load_files_images)))
         // Route returns index.html - FE app
         .service(web::resource("/ind/{path_url:.*}").route(web::get().to(index_root)));
 }
@@ -45,7 +45,7 @@ pub async fn load_files_js_css(req: HttpRequest) -> Result<actix_files::NamedFil
     load_file_from_dir("static", &get_param(req, "name1")).await
 }
 
-pub async fn load_files_ico_png(req: HttpRequest) -> Result<actix_files::NamedFile, Error> {
+pub async fn load_files_images(req: HttpRequest) -> Result<actix_files::NamedFile, Error> {
     load_file_from_dir("static", &get_param(req, "name2")).await
 }
 
@@ -62,10 +62,12 @@ async fn load_file_from_dir(dir: &str, file_name: &str) -> Result<actix_files::N
     let directory = path_buf_dir.to_str().unwrap();
 
     // Get the path to a file in a given directory.
-    let path: path::PathBuf = [directory, file_name].iter().collect();
-    // eprintln!("## load_file_from_dir() path:\"{}\"", path.to_string_lossy());
+    let path_buf: path::PathBuf = [directory, file_name].iter().collect();
+    // #[rustfmt::skip]
+    // eprintln!("load_file_from_dir(dir: '{}', file_name: '{}') exists({})={}", dir, file_name,
+    // &path_buf.to_string_lossy().into_owned(), path_buf.as_path().exists());
     // Open a file in the specified directory.
-    let file: actix_files::NamedFile = actix_files::NamedFile::open(path)?;
+    let file: actix_files::NamedFile = actix_files::NamedFile::open(path_buf)?;
 
     Ok(file.use_last_modified(true))
 }
