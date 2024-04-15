@@ -81,7 +81,7 @@ pub mod inst {
             nickname: Option<&str>,
             email: Option<&str>,
         ) -> Result<Option<User>, String> {
-            let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase();
+            let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase(); // #?
             let nickname2_len = nickname2.len();
             let email2 = email.unwrap_or(&"".to_string()).to_lowercase();
             let email2_len = email2.len();
@@ -93,8 +93,12 @@ pub mod inst {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
+            // use diesel::sql_types::VarChar;
+            // sql_function! { fn lower(a: VarChar) -> VarChar; }
+
             // Run query using Diesel to find user by nickname and return it.
             let sql_query_nickname = schema::users::table
+                // .filter(lower(schema::users::dsl::nickname).eq(nickname2))
                 .filter(schema::users::dsl::nickname.eq(nickname2))
                 .select(schema::users::all_columns)
                 .limit(1);
@@ -108,11 +112,13 @@ pub mod inst {
             let table = "find_user_by_nickname_or_email";
 
             if nickname2_len > 0 && email2_len == 0 {
+                // eprintln!("#sql_nick: `{}`", debug_query::<Pg, _>(&sql_query_nickname).to_string());
                 let result_nickname_vec: Vec<User> = sql_query_nickname
                     .load(&mut conn)
                     .map_err(|e| format!("{}: {}", table, e.to_string()))?;
                 result_vec.extend(result_nickname_vec);
             } else if nickname2_len == 0 && email2_len > 0 {
+                // eprintln!("#sql_email: `{}`", debug_query::<Pg, _>(&sql_query_email).to_string());
                 let result_email_vec: Vec<User> = sql_query_email
                     .load(&mut conn)
                     .map_err(|e| format!("{}: {}", table, e.to_string()))?;
@@ -122,9 +128,8 @@ pub mod inst {
                 let sql_query = sql_query_nickname.union_all(sql_query_email);
                 // eprintln!("#sql_query: `{}`", debug_query::<Pg, _>(&sql_query).to_string());
                 // Run query using Diesel to find user by nickname or email and return it.
-                let result_nickname_email_vec: Vec<User> = sql_query
-                    .load(&mut conn)
-                    .map_err(|e| format!("{}: {}", table, e.to_string()))?;
+                let result_nickname_email_vec: Vec<User> =
+                    sql_query.load(&mut conn).map_err(|e| format!("{}: {}", table, e.to_string()))?;
                 result_vec.extend(result_nickname_email_vec);
             }
 
@@ -138,7 +143,7 @@ pub mod inst {
         /// Add a new entity (user).
         fn create_user(&self, create_user_dto: CreateUserDto) -> Result<User, String> {
             let mut create_user_dto2 = create_user_dto.clone();
-            create_user_dto2.nickname = create_user_dto2.nickname.to_lowercase();
+            create_user_dto2.nickname = create_user_dto2.nickname.to_lowercase(); // #?
             create_user_dto2.email = create_user_dto2.email.to_lowercase();
 
             // Get a connection from the P2D2 pool.
@@ -153,15 +158,11 @@ pub mod inst {
             Ok(user)
         }
         /// Modify an entity (user).
-        fn modify_user(
-            &self,
-            id: i32,
-            modify_user_dto: ModifyUserDto,
-        ) -> Result<Option<User>, String> {
+        fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String> {
             let mut modify_user_dto2: ModifyUserDto = modify_user_dto.clone();
 
             if let Some(nickname) = modify_user_dto2.nickname {
-                modify_user_dto2.nickname = Some(nickname.to_lowercase());
+                modify_user_dto2.nickname = Some(nickname.to_lowercase()); // #?
             }
             if let Some(email) = modify_user_dto2.email {
                 modify_user_dto2.email = Some(email.to_lowercase());
@@ -210,9 +211,7 @@ pub mod tests {
     impl UserOrmApp {
         /// Create a new instance.
         pub fn new() -> Self {
-            UserOrmApp {
-                user_vec: Vec::new(),
-            }
+            UserOrmApp { user_vec: Vec::new() }
         }
         /// Create a new instance with the specified user list.
         #[cfg(test)]
@@ -274,8 +273,7 @@ pub mod tests {
                 .user_vec
                 .iter()
                 .find(|user| {
-                    (nickname2_len > 0 && user.nickname == nickname2)
-                        || (email2_len > 0 && user.email == email2)
+                    (nickname2_len > 0 && user.nickname == nickname2) || (email2_len > 0 && user.email == email2)
                 })
                 .map(|user| user.clone());
 
@@ -300,11 +298,7 @@ pub mod tests {
             Ok(user_saved)
         }
         /// Modify an entity (user).
-        fn modify_user(
-            &self,
-            id: i32,
-            modify_user_dto: ModifyUserDto,
-        ) -> Result<Option<User>, String> {
+        fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String> {
             let user_opt = self.user_vec.iter().find(|user| user.id == id);
             let user = match user_opt {
                 Some(v) => v.clone(),
