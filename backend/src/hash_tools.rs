@@ -84,7 +84,7 @@ mod tests {
     fn test_compare_long_password_should_return_fail() {
         let (_, hashed_password) = setup_test();
 
-        let long_password = "a".repeat(1000);
+        let long_password = "a".repeat(MAX_PARAM_LENGTH + 1);
         let result = compare_hash(&long_password, &hashed_password).unwrap_err();
         let error = format!("{}{}", ERR_PARAM_EXCEED_MAX_LEN, MAX_PARAM_LENGTH);
         assert_eq!(result, error);
@@ -109,7 +109,7 @@ mod tests {
 
     #[test]
     fn test_hash_long_password_should_fail() {
-        let result = encode_hash("a".repeat(1000));
+        let result = encode_hash("a".repeat(MAX_PARAM_LENGTH + 1));
         let error = format!("{}{}", ERR_PARAM_EXCEED_MAX_LEN, MAX_PARAM_LENGTH);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), error);
