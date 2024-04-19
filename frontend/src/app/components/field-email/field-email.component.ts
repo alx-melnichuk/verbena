@@ -11,7 +11,10 @@ import { MatInput, MatInputModule } from '@angular/material/input';
 import { TranslateModule } from '@ngx-translate/core';
 
 export const EMAIL_MIN_LENGTH = 5;
-export const EMAIL_MAX_LENGTH = 255;
+// https://stackoverflow.com/questions/386294/what-is-the-maximum-length-of-a-valid-email-address
+// What is the maximum length of a valid email address? 
+// Answer: An email address must not exceed 254 characters.
+export const EMAIL_MAX_LENGTH = 254;
 
 @Component({
   selector: 'app-field-email',
