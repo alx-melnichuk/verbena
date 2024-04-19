@@ -17,7 +17,10 @@ pub const MSG_NICKNAME_MAX_LENGTH: &str = "nickname:max_length";
 pub const MSG_NICKNAME_REGEX: &str = "nickname:regex";
 
 pub const EMAIL_MIN: u8 = 5;
-pub const EMAIL_MAX: u16 = 255;
+// https://stackoverflow.com/questions/386294/what-is-the-maximum-length-of-a-valid-email-address
+// What is the maximum length of a valid email address?
+// Answer: An email address must not exceed 254 characters.
+pub const EMAIL_MAX: u16 = 254;
 pub const MSG_EMAIL_REQUIRED: &str = "email:required";
 pub const MSG_EMAIL_MIN_LENGTH: &str = "email:min_length";
 pub const MSG_EMAIL_MAX_LENGTH: &str = "email:max_length";
