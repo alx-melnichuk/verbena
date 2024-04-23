@@ -84,4 +84,12 @@ export class LoginComponent implements OnChanges {
   public updateErrMsg(errMsgList: string[] = []): void {
     this.errMsgList = errMsgList;
   }
+
+  public nicknameFocusout(): void {
+    let value = this.controls.nickname.value || "";
+    let clearedValue = value.trim();
+    if (value != clearedValue) {
+        this.controls.nickname.setValue(clearedValue);
+    }
+  }
 }
