@@ -5,7 +5,7 @@
     "text":"Wait a little ...",
     "confirm_successful":"We inform you that your confirmation was successful !",
     "confirm_failed":"We inform you that your confirmation failed.",
-    "link_login":"Go to the login page on our website."
+    "link_login":"Go to the login page."
   },
   "Forbidden": {
     "invalid_or_expired_token":"Invalid or expired token."
@@ -15,7 +15,8 @@
     "label":"Enter a new password for your account.",
     "change_successful":"We inform you that the password change was successful !",
     "change_failed":"We inform you that the password change failed.",
-    "link_signup":"Go to the registration page on our website."
+    "link_signup":"Go to the registration page.",
+    "submit_label": "Change"
   },
   "field-password": {
     "label":"Password ",
