@@ -42,7 +42,6 @@
     <style>
       .s-desktop {  --a-hd-hg: 4.4em; --a-hd-bg: hsl(140, 40%, 90%); --a-ft-hg: 2.3em; --a-ft-bg: hsl(140, 40%, 90%);
         font-family: sans-serif; }
-      a, a:visited, a:hover { text-decoration: none; }
       header { background-color: var(--a-hd-bg); border-bottom: 1px solid lightgrey; flex: 0 0 var(--a-hd-hg); }
       footer { background-color: var(--a-ft-bg); border-top: 1px solid lightgrey; flex: 0 0 var(--a-ft-hg); }
       main { flex: 1 1 auto; height: fit-content; }
@@ -338,7 +337,7 @@
       }
 
       function recoverySuccessful(responseText) {
-        formDisabled(false);
+        formDisabled(true);
         const content = document.getElementById("content_id");
         const tmpl = document.getElementById("tmp_success_id");
         const clon = tmpl?.content.cloneNode(true);
@@ -363,7 +362,7 @@
         fail_answer.innerText = getTranslate("Change_password", "change_failed");
 
         const errText = clon.querySelector("[id=err_msg_id]");
-        errText.innerText = getTranslate(err.errCode, err.errMsg);
+        errText.innerText = getTranslate(err.code, err.message);
 
         const signup = clon.querySelector("[id=signup_id]");
         signup.innerText = getTranslate("Change_password", "link_signup");
