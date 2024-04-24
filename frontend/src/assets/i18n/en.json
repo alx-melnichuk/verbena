@@ -110,8 +110,7 @@
     "title": "Sign up",
     "button_signup": "Sign up",
     "already_registered": "Already registered ?",
-    "go_to": "Go to",
-    "login_page": "the login page.",
+    "go_to_login_page": "Go to the login page.",
     "dialog_title": "Welcome to the {{app_name}} !",
     "dialog_message": "We have sent a registration link to \"{{value}}\"."
   },
@@ -120,8 +119,7 @@
     "you_forgot_password": "If you have forgotten your password, please provide your email address and send a change request to it.",
     "email_address": "Email Address",
     "button_send": "Send request",
-    "go_to": "Go to",
-    "login_page": "the login page.",
+    "go_to_login_page": "Go to the login page.",
     "dialog_title": "Welcome to the {{app_name}} !",
     "dialog_message": "We have sent a link to change your password to \"{{value}}\"."
   },
