@@ -76,7 +76,7 @@
       <header ds-fl js-cn-bet bx-sz-brd>
         <a ds-fl al-it-cen pd-lf-05 pd-rg-05 id="hd_ref" href="/ind/login">
           <i bg-sz-cov class="hd-logo-mini"></i>
-          <span mr-lf-05 style="font-size: x-large; font-weight: 600;">Verbéna</span>
+          <span mr-lf-05 id="app_name_id" style="font-size: x-large; font-weight: 600;"></span>
         </a>
       </header>
 
@@ -84,11 +84,11 @@
         <div ds-fl fl-dr-col js-cn-cen al-it-cen hg-100>
             <div id="content_id" class="s-content">
               
-              <div mr-bt-05 tx-al-cen class="s-title" id="title_id">Registration</div>
+              <div mr-bt-05 tx-al-cen class="s-title" id="title_id"></div>
 
               <span mr-bt-05 mr-tp-05 id="start_id">
-                <span class="s-text" id="label_id">The registration process has begun.</span>  
-                <p class="s-text" id="text_id">Wait ...</p>
+                <span class="s-text" id="label_id"></span>  
+                <p class="s-text" id="text_id"></p>
               </span>
   
             </div>
@@ -96,19 +96,19 @@
       </main>
 
       <footer ds-fl al-it-cen bx-sz-brd style="padding-left: 2em;">
-        <span><a id="ft_ref" href="/ind/login" target="_blank">Verbéna</a> demo site.</span>
+        <a id="app_footer_id" href="/ind/login" target="_blank"></a>
       </footer>
     </div>
 
     <template id="tmp_success_id">
       <span id="succ_answ_id"></span>
-      <p><a href="/ind/login">Go to the login page.</a></p>
+      <p><a href="/ind/login" id="link_login_id"></a></p>
     </template>
   
     <template id="tmp_failure_id">
       <div mr-bt-05 mr-tp-05 id="fail_answ_id"></div>
       <div mr-bt-05 mr-tp-05 fn-sz-2 fn-st-italic id="err_msg_id" class="s-err"></div>
-      <a href="/ind/signup">Go to the registration page on our website.</a>
+      <a href="/ind/signup" id="link_signup_id"></a>
     </template>
   
     <script type="text/javascript" language="javascript">
@@ -128,7 +128,6 @@
             callbackSuccess(xhr.responseText);
           } else {
             callbackFailure(xhr.responseText, xhr.status);
-            // callbackSuccess(xhr.responseText);
           }
         };
 
@@ -158,6 +157,12 @@
       }
 
       function prepareData() {
+        const app_name = document.getElementById("app_name_id");
+        app_name.innerText = getTranslate("app", "name");
+
+        const app_footer = document.getElementById("app_footer_id");
+        app_footer.innerText = getTranslate("app", "footer");
+
         const content = document.getElementById("content_id");
 
         const title = content.querySelector("[id=title_id]");
@@ -178,6 +183,9 @@
         const succ_answer = clon.querySelector("[id=succ_answ_id]");
         succ_answer.innerText = getTranslate("Registration", "confirm_successful");
 
+        const link_login = clon.querySelector("[id=link_login_id]");
+        link_login.innerText = getTranslate("Registration", "link_login");
+
         content?.appendChild(clon);
 
         const start = content.querySelector("[id=start_id]");
@@ -195,6 +203,10 @@
         const errText = clon.querySelector("[id=err_msg_id]");
         const err = JSON.parse(responseText);
         errText.innerText = getTranslate(err.code, err.message);
+
+        const link_signup = clon.querySelector("[id=link_signup_id]");
+        link_signup.innerText = getTranslate("Registration", "link_signup");
+
         content?.appendChild(clon);
 
         let start = content.querySelector("[id=start_id]");
