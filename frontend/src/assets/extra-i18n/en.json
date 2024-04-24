@@ -1,11 +1,17 @@
 {
+  "app": {
+    "name": "Verbéna",
+    "footer": "Verbéna demo site."
+  },
   "Registration": {
     "title":"Registration",
     "label":"Your registration process has started.",
     "text":"Wait a little ...",
     "confirm_successful":"We inform you that your confirmation was successful !",
+    "link_login":"Go to the login page.",
     "confirm_failed":"We inform you that your confirmation failed.",
-    "link_login":"Go to the login page."
+    "link_signup": "Go to the registration page."
+    
   },
   "Forbidden": {
     "invalid_or_expired_token":"Invalid or expired token."
@@ -13,10 +19,10 @@
   "Change_password": {
     "title":"Change password",
     "label":"Enter a new password for your account.",
+    "submit_label": "Change",
     "change_successful":"We inform you that the password change was successful !",
     "change_failed":"We inform you that the password change failed.",
-    "link_signup":"Go to the registration page.",
-    "submit_label": "Change"
+    "link_password_change":"Go to the password change page."
   },
   "field-password": {
     "label":"Password ",
