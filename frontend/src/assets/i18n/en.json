@@ -82,7 +82,7 @@
   },
   "field-password": {
     "label": "Password ",
-    "password_hint": "Use at least 6 characters, with one lowercase letter, one capital letter and a number."
+    "password_hint": "Use at least 6 characters, with one lowercase letter, one uppercase letter and a number."
   },
   "field-descript": {
     "label": "Description"
