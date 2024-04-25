@@ -16,18 +16,22 @@
   "Forbidden": {
     "invalid_or_expired_token":"Invalid or expired token."
   },
+  "NotFound": {
+    "recovery_not_found": "This request has already been processed previously."
+  },
   "Change_password": {
     "title":"Change password",
     "label":"Enter a new password for your account.",
     "submit_label": "Change",
     "change_successful":"We inform you that the password change was successful !",
+    "link_login": "Go to the login page.",
     "change_failed":"We inform you that the password change failed.",
     "link_password_change":"Go to the password change page."
   },
   "field-password": {
     "label":"Password ",
     "placeholder":"New password",
-    "password_hint":"Use at least 6 characters, with one lowercase letter, one capital letter and a number."
+    "password_hint":"Use at least 6 characters, with one lowercase letter, one uppercase letter and a number."
   },
   "Validation": {
     "password:required":"The password field is required.",
