@@ -48,11 +48,6 @@
       .hd-logo-mini { height: 4em; width: 4em; background-image: url("assets/images/logo_mini.png"); }
 
       .s-content {
-        @media screen and (width <= 480px) { --pd: 0.5em; --wd: 100%; }
-        @media screen and (480px < width <= 768px) { --pd: 1.5em; --wd: 30em; }
-        @media screen and (768px < width <= 1024px) { --pd: 2em; --wd: 32em; }
-        @media screen and (1024px < width <= 1280px) { --pd: 2.5em; --wd: 34em; }
-        @media screen and (1280px < width) { --pd: 3em; --wd: 36em; }
         background-color: honeydew;
         border-radius: var(--pd);
         box-sizing: border-box;
@@ -61,6 +56,11 @@
         padding: var(--pd);
         width: var(--wd);
       }
+      @media (width <= 480px) { .s-content { --pd: 0.5em; --wd: 100%; } }
+      @media (480px < width <= 768px) { .s-content { --pd: 1.5em; --wd: 30em; } }
+      @media (768px < width <= 1024px) { .s-content { --pd: 2em; --wd: 32em; } }
+      @media (1024px < width <= 1280px) { .s-content { --pd: 2.5em; --wd: 34em; } }
+      @media (1280px < width) { .s-content { --pd: 3em; --wd: 36em; } }
       .s-title {
         font-size: calc(100% + 4px);
         font-weight: bold;
