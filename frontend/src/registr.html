@@ -33,6 +33,7 @@
       [ps-abs] { position: absolute; }
       [tx-al-cen] { text-align: center; }
       [wd-100] { width: 100%; }
+      [us-nn] { user-select: none; }
     </style>
   </head>
   <body>
@@ -47,9 +48,11 @@
       .hd-logo-mini { height: 4em; width: 4em; background-image: url("assets/images/logo_mini.png"); }
 
       .s-content {
-        @media screen and (max-width: 480px) { --pd: 0.5em; --wd: 100%; }
-        @media screen and (min-width: 480px) and (max-width: 960px) { --pd: 1.5em; --wd: calc(16 * var(--pd)); }
-        @media screen and (min-width: 960px) { --pd: 2em; --wd: calc(14 * var(--pd)); }
+        @media screen and (width <= 480px) { --pd: 0.5em; --wd: 100%; }
+        @media screen and (480px < width <= 768px) { --pd: 1.5em; --wd: 30em; }
+        @media screen and (768px < width <= 1024px) { --pd: 2em; --wd: 32em; }
+        @media screen and (1024px < width <= 1280px) { --pd: 2.5em; --wd: 34em; }
+        @media screen and (1280px < width) { --pd: 3em; --wd: 36em; }
         background-color: honeydew;
         border-radius: var(--pd);
         box-sizing: border-box;
@@ -66,7 +69,7 @@
 
       .s-hint-wrap { margin-left: 1em; min-height: 2.111em; }
       .s-hint { line-height: 1.2; font-size: calc(100% - 4px); }
-
+      .s-hint:not(.s-err) { color: hsl(210, 8%, 35%); }
       .s-err { color: rgb(224,32,32); }
 
     </style>
@@ -74,10 +77,10 @@
 
     <div ds-fl fl-dr-col hg-100 class="s-desktop">
       <header ds-fl js-cn-bet bx-sz-brd>
-        <a ds-fl al-it-cen pd-lf-05 pd-rg-05 id="hd_ref" href="/ind/login">
+        <div ds-fl al-it-cen pd-lf-05 pd-rg-05>
           <i bg-sz-cov class="hd-logo-mini"></i>
           <span mr-lf-05 id="app_name_id" style="font-size: x-large; font-weight: 600;"></span>
-        </a>
+        </div>
       </header>
 
       <main>
@@ -96,7 +99,7 @@
       </main>
 
       <footer ds-fl al-it-cen bx-sz-brd style="padding-left: 2em;">
-        <a id="app_footer_id" href="/ind/login" target="_blank"></a>
+        <div id="app_footer_id"></div>
       </footer>
     </div>
 
@@ -202,7 +205,7 @@
 
         const errText = clon.querySelector("[id=err_msg_id]");
         const err = JSON.parse(responseText);
-        errText.innerText = getTranslate(err.code, err.message);
+        errText.innerText = getTranslate(err.code, err.message) || (err.code + ": " + err.message);
 
         const link_signup = clon.querySelector("[id=link_signup_id]");
         link_signup.innerText = getTranslate("Registration", "link_signup");
