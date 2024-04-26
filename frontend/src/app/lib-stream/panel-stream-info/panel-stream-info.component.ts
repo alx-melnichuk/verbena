@@ -11,6 +11,8 @@ import { LogotypeComponent } from 'src/app/components/logotype/logotype.componen
 import { StreamDto } from '../stream-api.interface';
 import { ScrollHasMaxUtil } from 'src/app/utils/scroll-has-max.util';
 
+const CN_ScrollPanelTimeout = 200; // milliseconds
+
 @Component({
   selector: 'app-panel-stream-info',
   standalone: true,
@@ -58,15 +60,35 @@ export class PanelStreamInfoComponent {
   @HostBinding('class.global-scroll')
   public get isGlobalScroll(): boolean { return true; }
 
-  @HostListener('scrollend', ['$event'])
+  private timerScrollPanel: any = null;
+
+  @HostListener('scroll', ['$event'])
   public doScrollPanel(event:Event):void {
     event.preventDefault();
     event.stopPropagation();
     const elem: Element | null = event.target as Element;
-    if (ScrollHasMaxUtil.check(elem?.scrollTop, elem?.clientHeight, elem?.scrollHeight)) {
-      this.requestNextPage.emit();  
+    if (elem != null) {
+      if (this.timerScrollPanel !== null) {
+        clearTimeout(this.timerScrollPanel);
+      }
+      this.timerScrollPanel = setTimeout(() => {
+        this.timerScrollPanel = null;
+        if (ScrollHasMaxUtil.check(elem?.scrollTop, elem?.clientHeight, elem?.scrollHeight)) {
+          this.requestNextPage.emit();
+        }
+      }, CN_ScrollPanelTimeout);
     }
   }
+  // Doesn't work for old version of Chrome 109 and Safari
+  // @HostListener('scrollend', ['$event'])
+  // public doScrollEndPanel(event:Event):void {
+  //   event.preventDefault();
+  //   event.stopPropagation();
+  //   const elem: Element | null = event.target as Element;
+  //   if (ScrollHasMaxUtil.check(elem?.scrollTop, elem?.clientHeight, elem?.scrollHeight)) {
+  //     this.requestNextPage.emit();
+  //   }
+  // }
 
   constructor(private elementRef: ElementRef) {
   }
