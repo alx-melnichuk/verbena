@@ -20,15 +20,16 @@ import {
   ValidationErrors,
   Validator,
   ValidatorFn,
-  Validators,
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { TranslateModule } from '@ngx-translate/core';
+import { ValidatorUtils } from 'src/app/utils/validator.utils';
 
+export const PASSWORD = "password";
 export const PASSWORD_MIN_LENGTH = 6;
 export const PASSWORD_MAX_LENGTH = 64;
-export const PASSWORD_MAX_PATTERN = '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d\\W_]{6,}$';
+export const PASSWORD_PATTERN = '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d\\W_]{6,}$';
 
 @Component({
   selector: 'app-field-password',
@@ -45,21 +46,25 @@ export const PASSWORD_MAX_PATTERN = '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d\
 })
 export class FieldPasswordComponent implements OnChanges, ControlValueAccessor, Validator {
   @Input()
+  public gist: string = PASSWORD;
+  @Input()
+  public hint: string = '';
+  @Input()
+  public isDisabled: boolean = false;
+  @Input()
   public isReadOnly: boolean = false;
   @Input()
   public isRequired: boolean = false;
   @Input()
   public label: string = 'field-password.label';
   @Input()
-  public minLen: number = PASSWORD_MIN_LENGTH;
-  @Input()
   public maxLen: number = PASSWORD_MAX_LENGTH;
   @Input()
-  public pattern: string = PASSWORD_MAX_PATTERN;
+  public minLen: number = PASSWORD_MIN_LENGTH;
   @Input()
-  public isDisabled: boolean = false;
+  public pattern: string = PASSWORD_PATTERN;
   @Input()
-  public hint: string = '';
+  public type: string = "text";
 
   @ViewChild(MatInput, { static: false })
   public matInput: MatInput | null = null;
@@ -72,7 +77,7 @@ export class FieldPasswordComponent implements OnChanges, ControlValueAccessor, 
   constructor() {}
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen']) {
+    if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen'] || !!changes['pattern'] || !!changes['type']) {
       this.prepareFormGroup();
     }
     if (!!changes['isDisabled']) {
@@ -125,17 +130,7 @@ export class FieldPasswordComponent implements OnChanges, ControlValueAccessor, 
   }
 
   public getErrorMsg(errors: ValidationErrors | null): string {
-    let result: string = '';
-    const errorsProps: string[] = errors != null ? Object.keys(errors) : [];
-    for (let index = 0; index < errorsProps.length && !result; index++) {
-      const error: string = errorsProps[index];
-      result = !result && 'required' === error ? 'Validation.password:required' : result;
-      result = !result && 'minlength' === error ? 'Validation.password:min_length' : result;
-      result = !result && 'maxlength' === error ? 'Validation.password:max_length' : result;
-      result = !result && 'pattern' === error ? 'Validation.password:regex' : result;
-
-    }
-    return result;
+    return ValidatorUtils.getErrorMsg(errors, this.gist || PASSWORD);
   }
 
   public showPassword(isShowPassword: boolean): void {
@@ -148,11 +143,15 @@ export class FieldPasswordComponent implements OnChanges, ControlValueAccessor, 
 
   private prepareFormGroup(): void {
     this.formControl.clearValidators();
-    const newValidator: ValidatorFn[] = [
-      ...(this.isRequired ? [Validators.required] : []),
-      ...(this.minLen > 0 ? [Validators.minLength(this.minLen)] : []),
-      ...(this.maxLen > 0 ? [Validators.maxLength(this.maxLen)] : []),
-    ];
+    const paramsObj = {
+      ...(this.isRequired ? { "required": true } : {}),
+      ...(this.minLen > 0 ? { "minLength": this.minLen } : {}),
+      ...(this.maxLen > 0 ? { "maxLength": this.maxLen } : {}),
+      ...(this.pattern ? { "pattern": this.pattern } : {}),
+      ...(this.type == "email" ? { "email": true } : {})
+    };
+    const newValidator: ValidatorFn[] = ValidatorUtils.prepare(paramsObj);
     this.formControl.setValidators(newValidator);
+    this.formControl.updateValueAndValidity();
   }
 }
