@@ -6,12 +6,11 @@
     <mat-label>{{ label | translate }}</mat-label>
     <input
       matInput
-      type="text"
+      autocomplete="off"
+      [type]="type || 'text'"
       formControlName="nickname"
       [required]="isRequired"
       [attr.maxlength]="maxLen > 0 ? maxLen + 1 : undefined"
-      [pattern]="pattern"
-      autocomplete="off"
       (input)="onChange(formControl.value)"
     />
     <mat-hint>{{ hint | translate }}</mat-hint>
