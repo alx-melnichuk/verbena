@@ -15,23 +15,25 @@ use crate::users::{config_usr, user_models, user_orm::UserOrm};
 use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
 use crate::validators::{msg_validation, Validator};
 
-pub fn configure(cfg: &mut web::ServiceConfig) {
-    //     GET api/users/{id}
-    cfg.service(get_users_by_id)
-        // GET api/users/nickname/{nickname}
-        .service(get_users_by_nickname)
-        // GET api/users/email/{email}
-        .service(get_users_by_email)
-        // GET api/users_current
-        .service(get_user_current)
-        // PUT api/users_current
-        .service(put_user_current)
-        // DELETE api/users_current
-        .service(delete_user_current)
-        // PUT api/users/{id}
-        .service(put_user)
-        // DELETE api/users/{id}
-        .service(delete_user);
+pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
+    |config: &mut web::ServiceConfig| {
+        config // GET api/users/{id}
+            .service(get_users_by_id)
+            // GET api/users/nickname/{nickname}
+            .service(get_users_by_nickname)
+            // GET api/users/email/{email}
+            .service(get_users_by_email)
+            // GET api/users_current
+            .service(get_user_current)
+            // PUT api/users_current
+            .service(put_user_current)
+            // DELETE api/users_current
+            .service(delete_user_current)
+            // PUT api/users/{id}
+            .service(put_user)
+            // DELETE api/users/{id}
+            .service(delete_user);
+    }
 }
 
 fn err_parse_int(err: String) -> AppError {

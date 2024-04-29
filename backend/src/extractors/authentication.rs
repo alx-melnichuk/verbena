@@ -1,8 +1,4 @@
-use std::{
-    borrow,
-    rc::Rc,
-    task::{Context, Poll},
-};
+use std::{borrow, rc::Rc};
 
 use actix_web::{dev, error, http, web, FromRequest, HttpMessage};
 use futures_util::{
@@ -144,7 +140,7 @@ where
     type Future = LocalBoxFuture<'static, Result<Self::Response, actix_web::Error>>;
 
     /// Returns `Ready` when the service is able to process requests.
-    fn poll_ready(&self, ctx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+    fn poll_ready(&self, ctx: &mut core::task::Context<'_>) -> std::task::Poll<Result<(), Self::Error>> {
         self.service.poll_ready(ctx)
     }
     /// The future type representing the asynchronous response.

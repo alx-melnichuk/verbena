@@ -77,7 +77,7 @@ pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
                 web::scope("/api")
                     .configure(user_registr_controller::configure)
                     .configure(user_auth_controller::configure)
-                    .configure(user_controller::configure)
+                    .configure(user_controller::configure())
                     .configure(stream_get_controller::configure)
                     .configure(stream_controller::configure),
             );
