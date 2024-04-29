@@ -20,12 +20,13 @@ import {
   ValidationErrors,
   Validator,
   ValidatorFn,
-  Validators,
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { TranslateModule } from '@ngx-translate/core';
-  
+import { ValidatorUtils } from 'src/app/utils/validator.utils';
+
+export const DESCRIPT = 'descript';
 export const DESCRIPT_MIN_LENGTH = 5;
 export const DESCRIPT_MAX_LENGTH = 2048; // 2*1024
 export const DESCRIPT_MIN_ROWS = 10;
@@ -46,23 +47,26 @@ export const DESCRIPT_MAX_ROWS = 10;
 })
 export class FieldDescriptComponent  implements OnChanges, ControlValueAccessor, Validator {
   @Input()
+  public gist: string = DESCRIPT;
+  @Input()
+  public hint: string = '';
+  @Input()
+  public isDisabled: boolean = false;
+  @Input()
   public isReadOnly: boolean = false;
   @Input()
   public isRequired: boolean = false;
   @Input()
   public label: string = 'field-descript.label';
   @Input()
-  public minLen = DESCRIPT_MIN_LENGTH;
+  public maxLen: number = DESCRIPT_MAX_LENGTH;
   @Input()
-  public maxLen = DESCRIPT_MAX_LENGTH;
-  @Input()
-  public isDisabled = false;
-  @Input()
-  public hint: string = '';
+  public minLen: number = DESCRIPT_MIN_LENGTH;
   @Input()
   public minRows = DESCRIPT_MIN_ROWS;
   @Input()
   public maxRows = DESCRIPT_MAX_ROWS;
+ 
   @ViewChild(MatInput, { static: false })
   public matInput: MatInput | null = null;
 
@@ -119,26 +123,20 @@ export class FieldDescriptComponent  implements OnChanges, ControlValueAccessor,
   }
 
   public getErrorMsg(errors: ValidationErrors | null): string {
-    let result: string = '';
-    const errorsProps: string[] = errors != null ? Object.keys(errors) : [];
-    for (let index = 0; index < errorsProps.length && !result; index++) {
-      const error: string = errorsProps[index];
-      result = !result && 'required' === error ? 'Validation.descript:required' : result;
-      result = !result && 'minlength' === error ? 'Validation.descript:min_length' : result;
-      result = !result && 'maxlength' === error ? 'Validation.descript:max_length' : result;
-    }
-    return result;
+    return ValidatorUtils.getErrorMsg(errors, this.gist || DESCRIPT);
   }
 
   // ** Private API **
 
   private prepareFormGroup(): void {
     this.formControl.clearValidators();
-    const newValidator: ValidatorFn[] = [
-      ...(this.isRequired ? [Validators.required] : []),
-      ...(this.minLen > 0 ? [Validators.minLength(this.minLen)] : []),
-      ...(this.maxLen > 0 ? [Validators.maxLength(this.maxLen)] : []),
-    ];
+    const paramsObj = {
+      ...(this.isRequired ? { "required": true } : {}),
+      ...(this.minLen > 0 ? { "minLength": this.minLen } : {}),
+      ...(this.maxLen > 0 ? { "maxLength": this.maxLen } : {}),
+    };
+    const newValidator: ValidatorFn[] = ValidatorUtils.prepare(paramsObj);
     this.formControl.setValidators(newValidator);
+    this.formControl.updateValueAndValidity();
   }
 }
