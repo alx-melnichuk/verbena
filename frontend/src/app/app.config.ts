@@ -4,7 +4,8 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatNativeDateModule } from '@angular/material/core';
+import { DateAdapter, MAT_DATE_FORMATS, MatNativeDateModule, NativeDateAdapter } from '@angular/material/core';
+import { formatDate } from '@angular/common';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 
@@ -24,6 +25,42 @@ export const INITIALIZE_TRANSLATE_FACTORY = (initializationService: Initializati
 
 export const INITIALIZE_AUTHENTICATION_USER_FACTORY = (initializationService: InitializationService): any => {
   return (): Promise<any> => initializationService.initSession();
+};
+
+class AppDateAdapter extends NativeDateAdapter {
+  override format(date: Date, displayFormat: Object): string {
+    if (displayFormat === 'app-input') {
+      return formatDate(date,'dd-MM-yyyy', this.locale);;
+    } else {
+      return super.format(date, displayFormat);
+    }
+  }
+  override parse(value: any, parseFormat: any): Date | null {
+    let result: Date | null = null;
+    const value_type = typeof value;
+    if (value_type == 'number') {
+      result = new Date(value);
+    } else if (value_type == 'string') {
+      const data = value.slice(6, 10) + '-' + value.slice(3, 5) + '-' + value.slice(0, 2);
+      result = new Date(Date.parse(data));
+    }
+    return result;
+  }
+}
+
+export const APP_DATE_FORMATS = {
+  parse: {
+    dateInput: 'DD-MM-YYYY',
+  },
+  display: {
+    // Property in display section is the date format in which displays the date in input box.
+    dateInput: 'app-input',
+    // Property in display section is the date format in which calendar displays the month-year label.
+    monthYearLabel: {year: 'numeric', month: 'short'},
+    // Related to Accessibility (a11y)
+    dateA11yLabel: {year: 'numeric', month: 'long', day: 'numeric'},
+    monthYearA11yLabel: {year: 'numeric', month: 'long'},
+  }
 };
 
 export const appConfig: ApplicationConfig = {
@@ -47,7 +84,14 @@ export const appConfig: ApplicationConfig = {
       })
     ),
     importProvidersFrom(MatDialogModule, MatSnackBarModule, MatNativeDateModule),
-
+    {
+        provide: DateAdapter,
+        useClass: AppDateAdapter
+    },
+    {
+        provide: MAT_DATE_FORMATS,
+        useValue: APP_DATE_FORMATS
+    },
     {
       provide: APP_INITIALIZER,
       deps: [InitializationService],
