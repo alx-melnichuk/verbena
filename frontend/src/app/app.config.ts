@@ -9,6 +9,7 @@ import { formatDate } from '@angular/common';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 
+import { APP_DATE_FORMATS, AppDateAdapter } from './app-date-adapter';
 import { APP_ROUTES } from './app.routes';
 import { AuthorizationInterceptor } from './common/authorization.interceptor';
 import { InitializationService } from './common/initialization.service';
@@ -27,41 +28,6 @@ export const INITIALIZE_AUTHENTICATION_USER_FACTORY = (initializationService: In
   return (): Promise<any> => initializationService.initSession();
 };
 
-class AppDateAdapter extends NativeDateAdapter {
-  override format(date: Date, displayFormat: Object): string {
-    if (displayFormat === 'app-input') {
-      return formatDate(date,'dd-MM-yyyy', this.locale);;
-    } else {
-      return super.format(date, displayFormat);
-    }
-  }
-  override parse(value: any, parseFormat: any): Date | null {
-    let result: Date | null = null;
-    const value_type = typeof value;
-    if (value_type == 'number') {
-      result = new Date(value);
-    } else if (value_type == 'string') {
-      const data = value.slice(6, 10) + '-' + value.slice(3, 5) + '-' + value.slice(0, 2);
-      result = new Date(Date.parse(data));
-    }
-    return result;
-  }
-}
-
-export const APP_DATE_FORMATS = {
-  parse: {
-    dateInput: 'DD-MM-YYYY',
-  },
-  display: {
-    // Property in display section is the date format in which displays the date in input box.
-    dateInput: 'app-input',
-    // Property in display section is the date format in which calendar displays the month-year label.
-    monthYearLabel: {year: 'numeric', month: 'short'},
-    // Related to Accessibility (a11y)
-    dateA11yLabel: {year: 'numeric', month: 'long', day: 'numeric'},
-    monthYearA11yLabel: {year: 'numeric', month: 'long'},
-  }
-};
 
 export const appConfig: ApplicationConfig = {
   providers: [
