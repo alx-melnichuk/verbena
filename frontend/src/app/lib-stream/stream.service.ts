@@ -125,10 +125,11 @@ export class StreamService {
   }
 
   public redirectToStreamViewPage(streamId: number): void {
-    if (!!streamId) {
-      Promise.resolve().then(() => {
-        this.router.navigate([ROUTE_VIEW, streamId]);
-      });
-    }
+    // TODO Currently under development.
+    // if (!!streamId) {
+    //   Promise.resolve().then(() => {
+    //     this.router.navigate([ROUTE_VIEW, streamId]);
+    //   });
+    // }
   }
 }
