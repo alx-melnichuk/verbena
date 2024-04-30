@@ -79,6 +79,7 @@ export class PanelStreamEditorComponent implements OnChanges {
     title: new FormControl(null,
       [Validators.required, Validators.minLength(this.minLenTitle), Validators.maxLength(this.maxLenTitle)]),
     descript: new FormControl(null, []),
+    logo: new FormControl('', []),
     tags: new FormControl([], []),
     isStartTime: new FormControl(false, []),
     startDate: new FormControl({ value: new Date(Date.now()), disabled: true }, []),
@@ -125,6 +126,8 @@ export class PanelStreamEditorComponent implements OnChanges {
 
   public addFile(file: File): void {
     this.logoFile = file;
+    this.controls.logo.setValue(file.name);
+    this.controls.logo.markAsDirty();
   }
 
   public readFile(buffFile: string[]): void {
@@ -137,6 +140,8 @@ export class PanelStreamEditorComponent implements OnChanges {
   public deleteFileLogo(): void {
     this.logoView = null;
     this.logoOrig = null;
+    this.controls.logo.setValue(null);
+    this.controls.logo.markAsDirty();
   }
 
   public changeIsStartTime(): void {
@@ -213,6 +218,7 @@ export class PanelStreamEditorComponent implements OnChanges {
     this.formGroup.patchValue({
       title: streamDto.title,
       descript: streamDto.descript,
+      logo: streamDto.logo,
       tags: streamDto.tags,
       starttime: streamDto.starttime,
       isStartTime: (streamDto.id > 0 && !!streamDto.starttime),
