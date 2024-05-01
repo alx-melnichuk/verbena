@@ -36,7 +36,7 @@ export class UserApiService {
     });
   }
 
-  public isCeckRefreshToken(method: string, url: string): boolean {
+  public isCheckRefreshToken(method: string, url: string): boolean {
     return method === 'POST' && url === Uri.appUri('appApi://token');
   }
 

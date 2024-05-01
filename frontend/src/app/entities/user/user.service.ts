@@ -52,8 +52,8 @@ export class UserService {
     });
   }
   
-  public isCeckRefreshToken(method: string, url: string): boolean {
-    return this.userApiService.isCeckRefreshToken(method, url);
+  public isCheckRefreshToken(method: string, url: string): boolean {
+    return this.userApiService.isCheckRefreshToken(method, url);
   }
 
   public refreshToken(): Promise<UserTokensDto | HttpErrorResponse> {
@@ -79,7 +79,8 @@ export class UserService {
       return Promise.reject();
     }
     return this.userApiService.logout()
-      .then(() => {
+      .finally(() => {
+        // Reset authorization settings even if an error occurs.
         this.userInfo = null;
         this.userTokensDto = this.setUserTokensDtoToLocalStorage(null);
         return;
