@@ -39,15 +39,17 @@ use crate::{errors::AppError, extractors::authentication::RequireAuth};
 pub const MSG_EMAIL_ALREADY_USE: &str = "email_already_use";
 pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";
 
-pub fn configure(cfg: &mut web::ServiceConfig) {
-    //     POST api/registration
-    cfg.service(registration)
-        // PUT api/registration/{registr_token}
-        .service(confirm_registration)
-        // POST api/recovery
-        .service(recovery)
-        // PUT api/recovery/{recovery_token}
-        .service(confirm_recovery);
+pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
+    |config: &mut web::ServiceConfig| {
+        // POST api/registration
+        config.service(registration)
+            // PUT api/registration/{registr_token}
+            .service(confirm_registration)
+            // POST api/recovery
+            .service(recovery)
+            // PUT api/recovery/{recovery_token}
+            .service(confirm_recovery);
+    }
 }
 
 fn err_database(err: String) -> AppError {
