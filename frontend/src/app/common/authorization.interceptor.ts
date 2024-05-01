@@ -37,8 +37,10 @@ export class AuthorizationInterceptor implements HttpInterceptor {
       catchError((error: HttpErrorResponse) => {
         // If an error occurs when updating the token, then redirect to the login page.
         if (this.refreshTokenInProgress && this.userService.isCheckRefreshToken(request.method, request.url)) {
+            // Clear the authorization token value.
             this.userService.setUserDto();
             this.userService.setUserTokensDto();
+            // And you need to go to the "login" tab.
             this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
             return throwError(() => error);
         }
