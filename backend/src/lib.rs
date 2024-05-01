@@ -32,8 +32,8 @@ pub(crate) mod users;
 pub mod utils;
 pub mod validators;
 
-pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
-    Box::new(move |cfg: &mut web::ServiceConfig| {
+pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
+    |config: &mut web::ServiceConfig| {
         let db_url = env::var("DATABASE_URL").expect("DATABASE_URL not found.");
 
         let pool: dbase::DbPool = dbase::init_db_pool(&db_url);
@@ -43,26 +43,35 @@ pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
         let config_app = settings::config_app::ConfigApp::init_by_env();
         let temp_file_config = TempFileConfig::default().clone().directory(config_app.app_dir_tmp.clone());
 
+        // used: user_registr_controller, static_controller
         let data_config_app = web::Data::new(config_app);
+        // used: user_auth_controller, user_registr_controller
         let data_config_jwt = web::Data::new(config_jwt::ConfigJwt::init_by_env());
-        let config_smtp = config_smtp::ConfigSmtp::init_by_env();
-        let data_config_smtp = web::Data::new(config_smtp.clone());
-        // data_config_smtp.get_ref().clone()
+        // Used "actix-multipart" to upload files. TempFileConfig.from_req()
         let data_temp_file_config = web::Data::new(temp_file_config);
+        // used: user_controller, user_auth_controller, user_registr_controller
         let data_config_usr = web::Data::new(config_usr::ConfigUsr::init_by_env());
+        // used: stream_get_controller, stream_controller
         let data_config_strm = web::Data::new(config_strm::ConfigStrm::init_by_env());
 
         // Adding various entities.
+        let config_smtp = config_smtp::ConfigSmtp::init_by_env();
+        // used: user_registr_controller
         let data_mailer = web::Data::new(mailer::cfg::get_mailer_app(config_smtp));
+        // used: user_controller, user_auth_controller, user_registr_controller
         let data_user_orm = web::Data::new(get_user_orm_app(pool.clone()));
+        // used: user_registr_controller
         let data_user_registr_orm = web::Data::new(get_user_registr_orm_app(pool.clone()));
-        let data_session_orm = web::Data::new(get_session_orm_app(pool.clone()));
+        // used: user_registr_controller
         let data_user_recovery_orm = web::Data::new(get_user_recovery_orm_app(pool.clone()));
+        // used: user_auth_controller, user_registr_controller
+        let data_session_orm = web::Data::new(get_session_orm_app(pool.clone()));
+        // used: stream_get_controller, stream_controller
         let data_stream_orm = web::Data::new(get_stream_orm_app(pool.clone()));
 
-        cfg.app_data(web::Data::clone(&data_config_app))
+        config
+            .app_data(web::Data::clone(&data_config_app))
             .app_data(web::Data::clone(&data_config_jwt))
-            .app_data(web::Data::clone(&data_config_smtp))
             .app_data(web::Data::clone(&data_temp_file_config))
             .app_data(web::Data::clone(&data_config_usr))
             .app_data(web::Data::clone(&data_config_strm))
@@ -72,16 +81,16 @@ pub fn configure_server() -> Box<dyn Fn(&mut web::ServiceConfig)> {
             .app_data(web::Data::clone(&data_session_orm))
             .app_data(web::Data::clone(&data_user_recovery_orm))
             .app_data(web::Data::clone(&data_stream_orm))
-            .configure(static_controller::configure)
+            .configure(static_controller::configure())
             .service(
                 web::scope("/api")
-                    .configure(user_registr_controller::configure)
-                    .configure(user_auth_controller::configure)
+                    .configure(user_registr_controller::configure())
+                    .configure(user_auth_controller::configure())
                     .configure(user_controller::configure())
-                    .configure(stream_get_controller::configure)
-                    .configure(stream_controller::configure),
+                    .configure(stream_get_controller::configure())
+                    .configure(stream_controller::configure()),
             );
-    })
+    }
 }
 
 pub fn create_cors(config_app: settings::config_app::ConfigApp) -> Cors {
