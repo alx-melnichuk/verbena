@@ -21,13 +21,16 @@ use crate::validators::{msg_validation, Validator};
 pub const MSG_WRONG_NICKNAME_EMAIL: &str = "nickname_or_email_incorrect";
 pub const MSG_PASSWORD_INCORRECT: &str = "password_incorrect";
 
-pub fn configure(cfg: &mut web::ServiceConfig) {
-    // POST api/login
-    cfg.service(login)
-        // POST api/logout
-        .service(logout)
-        // POST api/token
-        .service(new_token);
+pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
+    |config: &mut web::ServiceConfig| {
+        // POST api/login
+        config
+            .service(login)
+            // POST api/logout
+            .service(logout)
+            // POST api/token
+            .service(new_token);
+    }
 }
 
 fn err_database(err: String) -> AppError {
