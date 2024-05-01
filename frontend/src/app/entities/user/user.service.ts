@@ -38,6 +38,14 @@ export class UserService {
     return this.userTokensDto?.refreshToken || null;
   }
 
+  public setUserDto(userInfo: UserDto | null = null): void {
+    this.userInfo = userInfo;
+  }
+ 
+  public setUserTokensDto(userTokensDto: UserTokensDto | null = null): void {
+    this.userTokensDto = this.setUserTokensDtoToLocalStorage(userTokensDto);
+  }
+
   public login(nickname: string, password: string): Promise<LoginUserResponseDto | HttpErrorResponse | undefined> {
     if (!nickname || !password) {
       return Promise.reject();

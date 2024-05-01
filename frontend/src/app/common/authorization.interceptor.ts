@@ -1,10 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { Observable, throwError, Subject } from 'rxjs';
 import { catchError, switchMap, take } from 'rxjs/operators';
 
 import { Uri } from './uri';
 import { LIST_PUBLIC_METHODS } from './public-methods';
+import { ROUTE_LOGIN } from './routes';
 
 import { UserService } from '../entities/user/user.service';
 
@@ -20,21 +22,29 @@ export class AuthorizationInterceptor implements HttpInterceptor {
   // List of public methods that do not require authorization.
   private listPublicMethods: { [key: string]: string } = LIST_PUBLIC_METHODS;
 
-  constructor(private userService: UserService) {
+  constructor(
+    private router: Router,
+    private userService: UserService
+  ) {
     console.log(`#3-AuthorizationInterceptor();`); // #-
   }
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     request = this.addAuthenticationToken(request);
+
     return next.handle(request).pipe(
       // tap((evt) => console .log('evt=', evt)),
       catchError((error: HttpErrorResponse) => {
-        // 401 Unauthorized, 403 Forbidden
-        if (this.refreshTokenInProgress && this.userService.isCeckRefreshToken(request.method, request.url)) {
+        // If an error occurs when updating the token, then redirect to the login page.
+        if (this.refreshTokenInProgress && this.userService.isCheckRefreshToken(request.method, request.url)) {
+            this.userService.setUserDto();
+            this.userService.setUserTokensDto();
+            this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
             return throwError(() => error);
         }
+        // 401 Unauthorized, 403 Forbidden
         if ([401, 403].includes(error?.status) && this.userService.isExistRefreshToken()) {
-          // 401 errors are most likely going to be because we have an expired token that we need to refresh.
+          // the errors will most likely occur because we have an expired token that we need to refresh.
           if (!this.refreshTokenInProgress) {
             this.refreshTokenInProgress = true;
             // Get a new token.
@@ -52,7 +62,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
           return throwError(() => error);
         }
       })
-    );
+    ); // as Observable<HttpEvent<unknown>>;
   }
 
   // ** Private **
@@ -65,7 +75,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
     if (!accessToken || isNotIncludes || publicMethod === request.method) {
       return request;
     }
-    return request.clone({ setHeaders: { authorization: CN_BEARER + accessToken } });
+    return request.clone({ setHeaders: { 'Authorization': CN_BEARER + accessToken } });
   }
 
   private refreshAccessToken(): Promise<void> {
