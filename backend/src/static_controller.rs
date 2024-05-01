@@ -1,5 +1,5 @@
 use actix_files::Files;
-use actix_web::{http, web, HttpRequest, HttpResponse};
+use actix_web::{get, http, web, HttpRequest, HttpResponse};
 use std::{io::Error, path};
 
 use crate::{
@@ -7,24 +7,29 @@ use crate::{
     streams::{config_strm, stream_controller},
 };
 
-pub fn configure(cfg: &mut web::ServiceConfig) {
-    let logo = stream_controller::ALIAS_LOGO_FILES;
-    let alias_logo = format!("/{}/{}", logo, "{name_logo:.*}");
+pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
+    |config: &mut web::ServiceConfig| {
+        let logo = stream_controller::ALIAS_LOGO_FILES;
+        let alias_logo = format!("/{}/{}", logo, "{name_logo:.*}");
 
-    cfg.service(Files::new("/static", "static").show_files_listing())
-        .service(Files::new("/assets", "static/assets").show_files_listing())
-        .service(web::resource(&alias_logo).route(web::get().to(load_files_logo)))
-        .service(web::resource("/{name1:.(.+).js|(.+).css}").route(web::get().to(load_files_js_css)))
-        .service(web::resource("/{name2:.(.+).ico|(.+).png|(.+).svg}").route(web::get().to(load_files_images)))
-        // Route returns index.html - FE app
-        .service(web::resource("/ind/{path_url:.*}").route(web::get().to(index_root)));
+        config
+            .service(Files::new("/static", "static").show_files_listing())
+            .service(Files::new("/assets", "static/assets").show_files_listing())
+            .service(web::resource(&alias_logo).route(web::get().to(load_files_logo)))
+            .service(web::resource("/{name1:.(.+).js|(.+).css}").route(web::get().to(load_files_js_css)))
+            .service(web::resource("/{name2:.(.+).ico|(.+).png|(.+).svg}").route(web::get().to(load_files_images)))
+            // Route returns index.html - FE app
+            // .service(web::resource("/ind/{path_url:.*}").route(web::get().to(index_root)));
+            .service(index_root);
+    }
 }
 
 /// Loading the `index.html` file.
-pub async fn index_root() -> Result<HttpResponse, Error> {
+#[get("/ind/{path_url:.*}")]
+pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<HttpResponse, Error> {
     let body_str = include_str!("../static/index.html");
-    let config_app = config_app::ConfigApp::init_by_env();
 
+    let config_app = config_app.get_ref().clone();
     let app_name = format!("<title>{}</title>", &config_app.app_name);
     let body_str = body_str.replacen("<title>APP_NAME</title>", &app_name, 1);
     #[rustfmt::skip]
@@ -36,22 +41,22 @@ pub async fn index_root() -> Result<HttpResponse, Error> {
         .body(body_str))
 }
 
-pub async fn load_files_logo(req: HttpRequest) -> Result<actix_files::NamedFile, Error> {
+pub async fn load_files_logo(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
     let config_strm = config_strm::ConfigStrm::init_by_env();
-    load_file_from_dir(&config_strm.strm_logo_files_dir, &get_param(req, "name_logo")).await
+    load_file_from_dir(&config_strm.strm_logo_files_dir, &get_param(request, "name_logo")).await
 }
 
-pub async fn load_files_js_css(req: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    load_file_from_dir("static", &get_param(req, "name1")).await
+pub async fn load_files_js_css(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
+    load_file_from_dir("static", &get_param(request, "name1")).await
 }
 
-pub async fn load_files_images(req: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    load_file_from_dir("static", &get_param(req, "name2")).await
+pub async fn load_files_images(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
+    load_file_from_dir("static", &get_param(request, "name2")).await
 }
 
 /// Get the value of the parameter.
-fn get_param(req: HttpRequest, param_name: &str) -> String {
-    let path_buf_filename: path::PathBuf = req.match_info().query(param_name).parse().unwrap();
+fn get_param(request: HttpRequest, param_name: &str) -> String {
+    let path_buf_filename: path::PathBuf = request.match_info().query(param_name).parse().unwrap();
     path_buf_filename.to_str().unwrap().to_string()
 }
 
