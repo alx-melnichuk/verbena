@@ -20,13 +20,16 @@ use crate::validators::{msg_validation, Validator};
 
 pub const ALIAS_LOGO_FILES: &str = "logo";
 
-pub fn configure(cfg: &mut web::ServiceConfig) {
-    //     POST api/streams
-    cfg.service(post_stream)
-        // PUT api/streams/{id}
-        .service(put_stream)
-        // DELETE api/streams/{id}
-        .service(delete_stream);
+pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
+    |config: &mut web::ServiceConfig| {
+        // POST api/streams
+        config
+            .service(post_stream)
+            // PUT api/streams/{id}
+            .service(put_stream)
+            // DELETE api/streams/{id}
+            .service(delete_stream);
+    }
 }
 
 fn err_parse_int(err: String) -> AppError {
