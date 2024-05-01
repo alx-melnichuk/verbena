@@ -1,11 +1,11 @@
-import { ChangeDetectionStrategy, Component, ElementRef, HostBinding, Input, Renderer2, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, Renderer2, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { FooterComponent } from './components/footer/footer.component';
 import { HeaderComponent } from './components/header/header.component';
-import { UserService } from './entities/user/user.service';
+import { ACCESS_TOKEN, UserService } from './entities/user/user.service';
 import { AUTHORIZATION_DENIED, ROUTE_LOGIN } from './common/routes';
 import { InitializationService } from './common/initialization.service';
 
@@ -21,6 +21,19 @@ import { InitializationService } from './common/initialization.service';
 export class AppComponent {
   public title = 'verbena';
   public linkLogin = ROUTE_LOGIN;
+
+  @HostListener('window:storage', ['$event'])
+  public windowStorage(event: StorageEvent): void {
+    // Check for the presence of an authorization token.
+    if (event.key == ACCESS_TOKEN && !this.userService.hasAccessTokenInLocalStorage()) {
+      // If there is no authorization token in the storage, then the current session is closed.
+      // Clear the authorization token value.
+      this.userService.setUserDto();
+      this.userService.setUserTokensDto();
+      // And you need to go to the "login" tab.
+      this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
+    }
+  }
 
   constructor(
     public translate: TranslateService,
