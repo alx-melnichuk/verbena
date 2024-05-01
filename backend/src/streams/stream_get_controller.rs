@@ -16,15 +16,18 @@ use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
 
 pub const PERIOD_MAX_NUMBER_DAYS: u16 = 65;
 
-pub fn configure(cfg: &mut web::ServiceConfig) {
-    //     GET api/streams/{id}
-    cfg.service(get_stream_by_id)
-        // GET api/streams
-        .service(get_streams)
-        // GET api/streams_events
-        .service(get_streams_events)
-        // GET api/streams_period
-        .service(get_streams_period);
+pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
+    |config: &mut web::ServiceConfig| {
+        // GET api/streams/{id}
+        config
+            .service(get_stream_by_id)
+            // GET api/streams
+            .service(get_streams)
+            // GET api/streams_events
+            .service(get_streams_events)
+            // GET api/streams_period
+            .service(get_streams_period);
+    }
 }
 
 fn err_parse_int(err: String) -> AppError {
