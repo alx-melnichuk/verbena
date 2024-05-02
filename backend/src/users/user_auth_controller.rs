@@ -60,6 +60,42 @@ fn err_session(user_id: i32) -> AppError {
         .set_status(500)
         .add_param(borrow::Cow::Borrowed("user_id"), &user_id)
 }
+
+/// `login`
+///
+/// User authentication.
+///
+/// Opening of the session.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X POST http://localhost:8080/api/login \
+///   -d '{"nickname": "user", "password": "pass"}' \
+///   -H 'Content-Type: application/json'
+/// ```
+///
+/// Return found `User` with status 200 or 204 not found if `User` is not found from shared in-memory storage.
+#[utoipa::path(
+    responses(
+        (status = 200, description = "User found from storage", body = LoginUserResponseDto),
+        (status = 400, description = "Input data validation error.", body = AppError),
+        (status = 401, description = "The nickname or email address is incorrect.", body = AppError),
+        // (status = 401, description = "The password value is incorrect.", body = AppError),
+        // (status = 500, description = "Error while accessing the database.", body = AppError),
+        (status = 500, description = "The hash value is invalid.", body = AppError),
+        // (status = 500, description = "There was an error encoding the JSON web token.", body = AppError),
+        // (status = 500, description = "Error while updating user session.", body = AppError),
+        // (status = 204, description = "User not found by id",
+        //  body = ErrorResponse, example = json!(ErrorResponse::NotFound(String::from("id = 1")))
+        // )
+    ),
+    // params(
+    //     ("id", description = "Unique storage id of User")
+    // ),
+    // security(
+    //     ("bearer_auth" = [])
+    // )
+)]
 // POST /api/login
 #[post("/api/login")]
 pub async fn login(
