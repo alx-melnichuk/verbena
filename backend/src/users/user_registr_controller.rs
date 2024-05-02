@@ -41,13 +41,13 @@ pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
-        // POST api/registration
+        // POST /api/registration
         config.service(registration)
-            // PUT api/registration/{registr_token}
+            // PUT /api/registration/{registr_token}
             .service(confirm_registration)
-            // POST api/recovery
+            // POST /api/recovery
             .service(recovery)
-            // PUT api/recovery/{recovery_token}
+            // PUT /api/recovery/{recovery_token}
             .service(confirm_recovery);
     }
 }
@@ -113,8 +113,8 @@ fn err_recovery_not_found(user_recovery_id: i32) -> AppError {
 }
 
 // Send a confirmation email to register the user.
-// POST api/registration
-#[post("/registration")]
+// POST /api/registration
+#[post("/api/registration")]
 pub async fn registration(
     config_app: web::Data<config_app::ConfigApp>,
     config_usr: web::Data<config_usr::ConfigUsr>,
@@ -244,8 +244,8 @@ pub async fn registration(
 }
 
 // Confirm user registration.
-// PUT api/registration/{registr_token}
-#[put("/registration/{registr_token}")]
+// PUT /api/registration/{registr_token}
+#[put("/api/registration/{registr_token}")]
 pub async fn confirm_registration(
     request: actix_web::HttpRequest,
     config_usr: web::Data<config_usr::ConfigUsr>,
@@ -329,9 +329,9 @@ pub async fn confirm_registration(
 }
 
 // Send a confirmation email to recover the user's password.
-// POST api/recovery
+// POST /api/recovery
 // errorCode: [400-"Validation",500-"Database",500-"Blocking",404-"NotFound",500-"ErrorSendingEmail,500-"JsonWebToken"]
-#[post("/recovery")]
+#[post("/api/recovery")]
 pub async fn recovery(
     config_app: web::Data<config_app::ConfigApp>,
     config_usr: web::Data<config_usr::ConfigUsr>,
@@ -474,8 +474,8 @@ pub async fn recovery(
 }
 
 // Confirm user password recovery.
-// PUT api/recovery/{recovery_token}
-#[put("/recovery/{recovery_token}")]
+// PUT /api/recovery/{recovery_token}
+#[put("/api/recovery/{recovery_token}")]
 pub async fn confirm_recovery(
     request: actix_web::HttpRequest,
     config_usr: web::Data<config_usr::ConfigUsr>,
@@ -591,9 +591,9 @@ pub async fn confirm_recovery(
 }
 
 // Clean up expired requests
-// GET api/clear_for_expired
+// GET /api/clear_for_expired
 #[rustfmt::skip]
-#[get("/clear_for_expired", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
+#[get("/api/clear_for_expired", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn clear_for_expired(
     config_usr: web::Data<config_usr::ConfigUsr>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,

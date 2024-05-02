@@ -17,21 +17,21 @@ use crate::validators::{msg_validation, Validator};
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
-        config // GET api/users/{id}
+        config // GET /api/users/{id}
             .service(get_users_by_id)
-            // GET api/users/nickname/{nickname}
+            // GET /api/users/nickname/{nickname}
             .service(get_users_by_nickname)
-            // GET api/users/email/{email}
+            // GET /api/users/email/{email}
             .service(get_users_by_email)
-            // GET api/users_current
+            // GET /api/users_current
             .service(get_user_current)
-            // PUT api/users_current
+            // PUT /api/users_current
             .service(put_user_current)
-            // DELETE api/users_current
+            // DELETE /api/users_current
             .service(delete_user_current)
-            // PUT api/users/{id}
+            // PUT /api/users/{id}
             .service(put_user)
-            // DELETE api/users/{id}
+            // DELETE /api/users/{id}
             .service(delete_user);
     }
 }
@@ -49,9 +49,9 @@ fn err_blocking(err: String) -> AppError {
     AppError::new(err::CD_BLOCKING, &err).set_status(500)
 }
 
-// GET api/users/{id}
+// GET /api/users/{id}
 #[rustfmt::skip]
-#[get("/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
+#[get("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
 pub async fn get_users_by_id(
     config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
@@ -82,8 +82,8 @@ pub async fn get_users_by_id(
     }
 }
 
-// GET api/users/nickname/{nickname}
-#[get("/users/nickname/{nickname}")]
+// GET /api/users/nickname/{nickname}
+#[get("/api/users/nickname/{nickname}")]
 pub async fn get_users_by_nickname(
     config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
@@ -114,8 +114,8 @@ pub async fn get_users_by_nickname(
     }
 }
 
-// GET api/users/email/{email}
-#[get("/users/email/{email}")]
+// GET /api/users/email/{email}
+#[get("/api/users/email/{email}")]
 pub async fn get_users_by_email(
     config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
@@ -146,9 +146,9 @@ pub async fn get_users_by_email(
     }
 }
 
-// GET api/users_current
+// GET /api/users_current
 #[rustfmt::skip]
-#[get("/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[get("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_user_current(
     config_usr: web::Data<config_usr::ConfigUsr>,
     authenticated: Authenticated,
@@ -163,9 +163,9 @@ pub async fn get_user_current(
     Ok(HttpResponse::Ok().json(user_dto))
 }
 
-// PUT api/users_current
+// PUT /api/users_current
 #[rustfmt::skip]
-#[put("/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[put("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_user_current(
     config_usr: web::Data<config_usr::ConfigUsr>,
     authenticated: Authenticated,
@@ -205,9 +205,9 @@ pub async fn put_user_current(
     }
 }
 
-// DELETE api/users_current
+// DELETE /api/users_current
 #[rustfmt::skip]
-#[delete("/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[delete("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_user_current(
     config_usr: web::Data<config_usr::ConfigUsr>,
     authenticated: Authenticated,
@@ -237,9 +237,9 @@ pub async fn delete_user_current(
     }
 }
 
-// PUT api/users/{id}
+// PUT /api/users/{id}
 #[rustfmt::skip]
-#[put("/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
+#[put("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn put_user(
     config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
@@ -280,9 +280,9 @@ pub async fn put_user(
     }
 }
 
-// DELETE api/users/{id}
+// DELETE /api/users/{id}
 #[rustfmt::skip]
-#[delete("/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
+#[delete("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn delete_user(
     config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,

@@ -23,12 +23,12 @@ pub const MSG_PASSWORD_INCORRECT: &str = "password_incorrect";
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
-        // POST api/login
+        // POST /api/login
         config
             .service(login)
-            // POST api/logout
+            // POST /api/logout
             .service(logout)
-            // POST api/token
+            // POST /api/token
             .service(new_token);
     }
 }
@@ -60,8 +60,8 @@ fn err_session(user_id: i32) -> AppError {
         .set_status(500)
         .add_param(borrow::Cow::Borrowed("user_id"), &user_id)
 }
-// POST api/login
-#[post("/login")]
+// POST /api/login
+#[post("/api/login")]
 pub async fn login(
     config_usr: web::Data<config_usr::ConfigUsr>,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
@@ -151,9 +151,9 @@ pub async fn login(
     Ok(HttpResponse::Ok().cookie(cookie).json(login_user_response_dto))
 }
 
-// POST api/logout
+// POST /api/logout
 #[rustfmt::skip]
-#[post("/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[post("/api/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn logout(
     config_usr: web::Data<config_usr::ConfigUsr>,
     authenticated: Authenticated,
@@ -182,9 +182,9 @@ pub async fn logout(
     Ok(HttpResponse::Ok().cookie(cookie).body(()))
 }
 
-// POST api/token
+// POST /api/token
 #[rustfmt::skip]
-#[post("/token")]
+#[post("/api/token")]
 pub async fn new_token(
     config_usr: web::Data<config_usr::ConfigUsr>,
     config_jwt: web::Data<config_jwt::ConfigJwt>,

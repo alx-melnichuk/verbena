@@ -22,12 +22,12 @@ pub const ALIAS_LOGO_FILES: &str = "logo";
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
-        // POST api/streams
+        // POST /api/streams
         config
             .service(post_stream)
-            // PUT api/streams/{id}
+            // PUT /api/streams/{id}
             .service(put_stream)
-            // DELETE api/streams/{id}
+            // DELETE /api/streams/{id}
             .service(delete_stream);
     }
 }
@@ -133,9 +133,9 @@ async addStream (
     return await this.streamsService.addStream(request.user.getId(), data, logo);
 }*/
 
-// POST api/streams
+// POST /api/streams
 #[rustfmt::skip]
-#[post("/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[post("/api/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn post_stream(
     authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,
@@ -305,9 +305,9 @@ async updateStream (
     return await this.streamsService.updateStream(streamId, request.user.getId(), data, logo);
 } */
 
-// PUT api/streams/{id}
+// PUT /api/streams/{id}
 #[rustfmt::skip]
-#[put("/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[put("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_stream(
     authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,
@@ -463,9 +463,9 @@ async deleteStream (
 ): Promise<StreamDTO> {
     return await this.streamsService.deleteStream(streamId, request.user.getId());
 } */
-// DELETE api/streams/{id}
+// DELETE /api/streams/{id}
 #[rustfmt::skip]
-#[delete("/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[delete("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_stream(
     authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,

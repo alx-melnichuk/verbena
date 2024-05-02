@@ -18,14 +18,14 @@ pub const PERIOD_MAX_NUMBER_DAYS: u16 = 65;
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
-        // GET api/streams/{id}
+        // GET /api/streams/{id}
         config
             .service(get_stream_by_id)
-            // GET api/streams
+            // GET /api/streams
             .service(get_streams)
-            // GET api/streams_events
+            // GET /api/streams_events
             .service(get_streams_events)
-            // GET api/streams_period
+            // GET /api/streams_period
             .service(get_streams_period);
     }
 }
@@ -56,9 +56,9 @@ fn err_bad_finish_period(max_days_period: u16) -> AppError {
     AppError::new(err::CD_FINISH_GREATER_MAX, &msg).set_status(400)
 }
 
-// GET api/streams/{id}
+// GET /api/streams/{id}
 #[rustfmt::skip]
-#[get("/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[get("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_stream_by_id(
     authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,
@@ -120,9 +120,9 @@ pub async fn get_stream_by_id(
 * - orderDirection (asc / desc, asc by default)
 * @access public
 */
-// GET api/streams
+// GET /api/streams
 #[rustfmt::skip]
-#[get("/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[get("/api/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_streams(
     authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,
@@ -174,9 +174,9 @@ pub async fn get_streams(
 }
 
 // 'starttime' only format Utc ("%Y-%m-%dT%H:%M:%S.%3fZ").
-// GET api/streams_events
+// GET /api/streams_events
 #[rustfmt::skip]
-#[get("/streams_events", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[get("/api/streams_events", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_streams_events(
     authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,
@@ -222,9 +222,9 @@ pub async fn get_streams_events(
     Ok(HttpResponse::Ok().json(result)) // 200
 }
 
-// GET api/streams_period
+// GET /api/streams_period
 #[rustfmt::skip]
-#[get("/streams_period", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[get("/api/streams_period", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_streams_period(
     authenticated: Authenticated,
     config_strm: web::Data<config_strm::ConfigStrm>,
