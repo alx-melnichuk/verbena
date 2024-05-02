@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::schema;
 use crate::utils::serial_datetime;
@@ -72,7 +73,7 @@ pub fn validate_password(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, diesel_derive_enum::DbEnum)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, diesel_derive_enum::DbEnum, ToSchema)]
 #[ExistingTypePath = "crate::schema::sql_types::UserRole"]
 pub enum UserRole {
     Admin,
@@ -105,7 +106,7 @@ pub struct User {
     pub role: UserRole,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Selectable, Insertable, AsChangeset)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Selectable, Insertable, AsChangeset, ToSchema)]
 #[diesel(table_name = schema::users)]
 #[serde(rename_all = "camelCase")]
 pub struct UserDto {
@@ -185,7 +186,7 @@ impl Validator for CreateUserDto {
 
 // ** Section: "Login User" **
 
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset)]
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, ToSchema)]
 #[diesel(table_name = schema::users)]
 pub struct LoginUserDto {
     pub nickname: String,
@@ -204,7 +205,7 @@ impl Validator for LoginUserDto {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginUserResponseDto {
     pub user_dto: UserDto,
@@ -351,7 +352,7 @@ pub struct RecoveryDataResponseDto {
 
 // ** Section: "User Token" **
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct UserTokensDto {
     pub access_token: String,

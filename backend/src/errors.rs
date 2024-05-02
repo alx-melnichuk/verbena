@@ -3,10 +3,11 @@ use std::{borrow::Cow, collections::BTreeMap};
 use actix_web::{http, HttpResponse};
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
+use utoipa::ToSchema;
 
 use crate::{settings::err, validators::ValidationError};
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AppError {
     pub code: Cow<'static, str>,
