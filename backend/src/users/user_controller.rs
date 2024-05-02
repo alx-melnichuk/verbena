@@ -3,6 +3,7 @@ use std::{ops::Deref, time::Instant};
 use actix_web::{delete, get, put, web, HttpResponse};
 use log;
 use serde_json::json;
+use utoipa;
 
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
@@ -36,9 +37,12 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
-fn err_parse_int(err: String) -> AppError {
-    log::error!("{}: id: {}", CD_PARSE_INT_ERROR, err);
+fn err400_parse_int(err: &str) -> AppError {
     AppError::new(CD_PARSE_INT_ERROR, &format!("id: {}", err)).set_status(400)
+}
+fn err_parse_int(err: &str) -> AppError {
+    log::error!("{}: id: {}", CD_PARSE_INT_ERROR, err);
+    err400_parse_int(err)
 }
 fn err_database(err: String) -> AppError {
     log::error!("{}: {}", err::CD_DATABASE, err);
@@ -49,7 +53,31 @@ fn err_blocking(err: String) -> AppError {
     AppError::new(err::CD_BLOCKING, &err).set_status(500)
 }
 
-// GET /api/users/{id}
+/// get_users_by_id
+///
+/// Find a user by ID.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X POST http://localhost:8080/api/login -d '{"nickname": "user", "password": "pass"}'
+/// ```
+///
+/// Return found `User` with status 200 or 204 not found if `User` is not found.
+/// 
+/// Additionally: Administrator rights are required.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Found user with the specified ID.", body = UserDto),
+        (status = 204, description = "The user with the specified ID was not found."),
+        (status = 400, description = "Parameter error.", body = AppError, 
+          example = json!(err400_parse_int("Failed conversion to `i32` from `1a` - invalid digit found in string"))),
+    ),
+    params(
+        ("id", description = "Unique user ID.")
+    ),
+    // security(("bearer_auth" = [])) admin_role
+)]
 #[rustfmt::skip]
 #[get("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
 pub async fn get_users_by_id(
@@ -60,7 +88,7 @@ pub async fn get_users_by_id(
     let now = Instant::now();
     let id_str = request.match_info().query("id").to_string();
 
-    let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
+    let id = parse_i32(&id_str).map_err(|e| err_parse_int(&e))?;
 
     let result_user = web::block(move || {
         // Find user by id.
@@ -76,9 +104,10 @@ pub async fn get_users_by_id(
         log::info!("get_users_by_id() lead time: {:.2?}", now.elapsed());
     }
     if let Some(user) = result_user {
-        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
+        let user_dto = user_models::UserDto::from(user);
+        Ok(HttpResponse::Ok().json(user_dto)) // 200
     } else {
-        Ok(HttpResponse::NoContent().finish())
+        Ok(HttpResponse::NoContent().finish()) // 204
     }
 }
 
@@ -249,7 +278,7 @@ pub async fn put_user(
     let now = Instant::now();
     let id_str = request.match_info().query("id").to_string();
 
-    let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
+    let id = parse_i32(&id_str).map_err(|e| err_parse_int(&e))?;
 
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
@@ -291,7 +320,7 @@ pub async fn delete_user(
     let now = Instant::now();
     let id_str = request.match_info().query("id").to_string();
 
-    let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
+    let id = parse_i32(&id_str).map_err(|e| err_parse_int(&e))?;
 
     let result_count = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
