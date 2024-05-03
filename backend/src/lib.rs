@@ -6,10 +6,7 @@ use actix_web::{
     http,
     web::{self, Data},
 };
-use utoipa::{
-    openapi::security::{ApiKey, ApiKeyValue, HttpAuthScheme, HttpBuilder, SecurityScheme},
-    Modify, OpenApi,
-};
+
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
@@ -19,11 +16,12 @@ use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
 use streams::{config_strm, stream_controller, stream_get_controller, stream_orm::cfg::get_stream_orm_app};
 use tools::evn_data::{check_params_env, update_params_env};
 use users::{
-    config_usr, user_auth_controller, user_controller, user_models, user_orm::cfg::get_user_orm_app,
+    config_usr, user_auth_controller, user_controller, user_orm::cfg::get_user_orm_app,
     user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_controller,
     user_registr_orm::cfg::get_user_registr_orm_app,
 };
 use utils::parser;
+use utoipa::OpenApi;
 
 pub mod cdis;
 pub(crate) mod dbase;
@@ -37,6 +35,7 @@ pub(crate) mod sessions;
 pub mod settings;
 pub(crate) mod static_controller;
 pub mod streams;
+pub mod swagger_docs;
 pub(crate) mod tools;
 pub(crate) mod users;
 pub mod utils;
@@ -80,7 +79,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let stream_orm = Data::new(get_stream_orm_app(pool.clone()));
 
         // Make instance variable of ApiDoc so all worker threads gets the same instance.
-        let openapi = ApiDoc::openapi();
+        let openapi = swagger_docs::ApiDoc::openapi();
 
         config
             .app_data(Data::clone(&config_app))
@@ -94,15 +93,18 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             .app_data(Data::clone(&session_orm))
             .app_data(Data::clone(&user_recovery_orm))
             .app_data(Data::clone(&stream_orm))
+            // Add documentation service "Redoc" and "RapiDoc".
             .service(Redoc::with_url("/redoc", openapi.clone()))
-            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))
             .service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
-            .configure(static_controller::configure())
+            // Add documentation service "SwaggerUi".
+            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))
+            // Add configuration of internal services.
             .configure(user_registr_controller::configure())
             .configure(user_auth_controller::configure())
             .configure(user_controller::configure())
             .configure(stream_get_controller::configure())
-            .configure(stream_controller::configure());
+            .configure(stream_controller::configure())
+            .configure(static_controller::configure());
     }
 }
 
@@ -173,52 +175,5 @@ pub fn update_env() -> Result<usize, String> {
         result.map(|v| v.len())
     } else {
         Ok(0)
-    }
-}
-
-#[derive(OpenApi)]
-#[openapi(
-    paths(
-        user_auth_controller::login,
-        user_controller::get_users_by_id,
-    ),
-    components(
-        schemas(
-            errors::AppError,
-            user_models::UserRole,
-            user_models::UserDto,
-            // user_auth_controller::login
-            user_models::LoginUserDto,
-            user_models::UserTokensDto,
-            user_models::LoginUserResponseDto,
-            // user_controller
-            // user_models::UserDto
-        )
-    ),
-    tags(
-        (name = "user_auth_controller", description = "User session management endpoints."),
-        (name = "user_controller", description = "User information management endpoints.")
-    ),
-    modifiers(&SecurityAddon)
-)]
-struct ApiDoc;
-
-// println!("{}", ApiDoc::openapi().to_pretty_json().unwrap());
-
-struct SecurityAddon;
-
-impl Modify for SecurityAddon {
-    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-        // we can unwrap safely since there already is components registered.
-        let components = openapi.components.as_mut().unwrap();
-        components.add_security_scheme(
-            "api_key",
-            SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("todo_apikey"))),
-        );
-
-        components.add_security_scheme(
-            "bearer_auth",
-            SecurityScheme::Http(HttpBuilder::new().scheme(HttpAuthScheme::Bearer).bearer_format("JWT").build()),
-        );
     }
 }
