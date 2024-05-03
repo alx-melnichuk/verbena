@@ -1,4 +1,4 @@
-pub const CD_PARSE_INT_ERROR: &str = "ParseIntError";
+pub const CD_PARSE_INT_ERROR: &str = "ParseIntError"; // TODO del;
 pub const MSG_PARSE_INT_ERROR: &str = "Failed conversion to `i32` from";
 pub const MSG_PARSE_BOOL_ERROR: &str = "Failed conversion to `bool` from";
 
