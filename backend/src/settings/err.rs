@@ -1,3 +1,7 @@
+// 200 Ok - Request processed successfully.
+// 201 Created - A new entry has been created.
+// 204 No Content - Data not found.
+
 // 400 Bad Request
 pub const CD_VALIDATION: &str = "Validation";
 
@@ -68,16 +72,16 @@ pub const MSG_USER_NOT_FOUND_BY_EMAIL: &str = "The user with the specified email
 
 pub const MSG_STREAM_NOT_FOUND_BY_ID: &str = "The stream with the specified ID was not found.";
 
+// 417 Expectation Failed
+pub const CD_PARSE_ERROR: &str = "ParseError";
+
 // 409
 pub const CD_CONFLICT: &str = "Conflict";
 
 // 500
 pub const CD_INTER_SRV_ERROR: &str = "InternalServerError";
 pub const MSG_INTER_SRV_ERROR: &str = "internal_server_error";
-// Error web::block for waiting for database query to complete.
-pub const CD_BLOCKING: &str = "Blocking";
-// An error occurred while executing a database query.
-pub const CD_DATABASE: &str = "Database";
+
 // Error checking hash value.
 pub const MSG_INVALID_HASH: &str = "invalid_hash";
 // Error encoding web token.
@@ -99,3 +103,11 @@ pub const CD_HASHING_PASSWD: &str = "HashingPassword";
 pub const CD_JSON_WEB_TOKEN: &str = "JsonWebToken";
 
 // pub const MSG_SERVER_ERROR: &str = "An unexpected internal server error occurred.";
+
+// 506 => http::StatusCode::VARIANT_ALSO_NEGOTIATES
+// Error web::block for waiting for database query to complete.
+pub const CD_BLOCKING: &str = "Blocking"; // 506 Variant Also Negotiates
+
+// 507 => http::StatusCode::INSUFFICIENT_STORAGE
+// An error occurred while executing a database query.
+pub const CD_DATABASE: &str = "Database";

@@ -13,7 +13,7 @@ use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::{config_usr, user_models, user_orm::UserOrm};
-use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
+use crate::utils::parser;
 use crate::validators::{msg_validation, Validator};
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
@@ -37,22 +37,6 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
-fn err400_parse_int(err: &str) -> AppError {
-    AppError::new(CD_PARSE_INT_ERROR, &format!("id: {}", err)).set_status(400)
-}
-fn err_parse_int(err: &str) -> AppError {
-    log::error!("{}: id: {}", CD_PARSE_INT_ERROR, err);
-    err400_parse_int(err)
-}
-fn err_database(err: String) -> AppError {
-    log::error!("{}: {}", err::CD_DATABASE, err);
-    AppError::new(err::CD_DATABASE, &err).set_status(500)
-}
-fn err_blocking(err: String) -> AppError {
-    log::error!("{}: {}", err::CD_BLOCKING, err);
-    AppError::new(err::CD_BLOCKING, &err).set_status(500)
-}
-
 /// get_users_by_id
 ///
 /// Find a user by ID.
@@ -70,12 +54,14 @@ fn err_blocking(err: String) -> AppError {
     responses(
         (status = 200, description = "Found user with the specified ID.", body = UserDto),
         (status = 204, description = "The user with the specified ID was not found."),
-        (status = 400, description = "Parameter error.", body = AppError, 
-          example = json!(err400_parse_int("Failed conversion to `i32` from `1a` - invalid digit found in string"))),
+        (status = 417, description = "Parameter error.", body = AppError, 
+            example = json!(AppError::parse417("id", "`1a` - invalid digit found in string"))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
     ),
-    params(
-        ("id", description = "Unique user ID.")
-    ),
+    params(("id", description = "Unique user ID.")),
     // security(("bearer_auth" = [])) admin_role
 )]
 #[rustfmt::skip]
@@ -88,17 +74,26 @@ pub async fn get_users_by_id(
     let now = Instant::now();
     let id_str = request.match_info().query("id").to_string();
 
-    let id = parse_i32(&id_str).map_err(|e| err_parse_int(&e))?;
+    let id = parser::parse_i32(&id_str).map_err(|e| {
+        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
+        AppError::parse417("id", &e)
+    })?;
 
     let result_user = web::block(move || {
         // Find user by id.
         let existing_user =
-            user_orm.find_user_by_id(id).map_err(|e| err_database(e.to_string())).ok()?;
+            user_orm.find_user_by_id(id).map_err(|e| {
+                log::error!("{}: {}", err::CD_DATABASE, &e);
+                AppError::database507(&e)
+            }).ok()?;
 
         existing_user
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))?;
+    .map_err(|e| {
+        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
 
     if config_usr.usr_show_lead_time {
         log::info!("get_users_by_id() lead time: {:.2?}", now.elapsed());
@@ -111,7 +106,31 @@ pub async fn get_users_by_id(
     }
 }
 
-// GET /api/users/nickname/{nickname}
+/// get_users_by_nickname
+///
+/// Search for a user by his nickname.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/users/nickname/demo1
+/// ```
+///
+/// Return found `User` with status 200 or 204 not found if `User` is not found.
+///
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Found user with the specified ID.", body = JSON,
+            example = json!({ "nickname": "demo1" })),
+        (status = 204, description = "The user with the specified ID was not found."),
+        (status = 417, description = "Parameter error.", body = AppError, 
+            example = json!(AppError::parse417("id", "`1a` - invalid digit found in string"))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    params(("nickname", description = "User nickname value.")),
+)]
 #[get("/api/users/nickname/{nickname}")]
 pub async fn get_users_by_nickname(
     config_usr: web::Data<config_usr::ConfigUsr>,
@@ -125,13 +144,19 @@ pub async fn get_users_by_nickname(
         // Find user by nickname.
         let res_user = user_orm
             .find_user_by_nickname_or_email(Some(&nickname), None)
-            .map_err(|e| err_database(e.to_string()))
+            .map_err(|e| {
+                log::error!("{}: {}", err::CD_DATABASE, &e);
+                AppError::database507(&e)
+            })
             .ok()?;
 
         res_user
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))?;
+    .map_err(|e| {
+        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
 
     if config_usr.usr_show_lead_time {
         log::info!("get_users_by_nickname() lead time: {:.2?}", now.elapsed());
@@ -157,13 +182,19 @@ pub async fn get_users_by_email(
         // Find user by nickname. Result <Vec<user_models::User>>.
         let res_user = user_orm
             .find_user_by_nickname_or_email(None, Some(&email))
-            .map_err(|e| err_database(e.to_string()))
+            .map_err(|e| {
+                log::error!("{}: {}", err::CD_DATABASE, &e);
+                AppError::database507(&e)
+            })
             .ok()?;
 
         res_user
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))?;
+    .map_err(|e| {
+        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
 
     if config_usr.usr_show_lead_time {
         log::info!("get_users_by_email() lead time: {:.2?}", now.elapsed());
@@ -217,12 +248,18 @@ pub async fn put_user_current(
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user =
-            user_orm.modify_user(id, modify_user).map_err(|e| err_database(e.to_string()));
+            user_orm.modify_user(id, modify_user).map_err(|e| {
+                log::error!("{}: {}", err::CD_DATABASE, &e);
+                AppError::database507(&e)
+            });
 
         res_user
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))??;
+    .map_err(|e| {
+        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })??;
 
     if config_usr.usr_show_lead_time {
         log::info!("put_user_current() lead time: {:.2?}", now.elapsed());
@@ -249,12 +286,18 @@ pub async fn delete_user_current(
     let result_count = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_count = user_orm.delete_user(id)
-        .map_err(|e| err_database(e.to_string()));
+        .map_err(|e| {
+            log::error!("{}: {}", err::CD_DATABASE, &e);
+            AppError::database507(&e)
+        });
 
         res_count
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))??;
+    .map_err(|e| {
+        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })??;
 
     if config_usr.usr_show_lead_time {
         log::info!("delete_user_current() lead time: {:.2?}", now.elapsed());
@@ -278,7 +321,10 @@ pub async fn put_user(
     let now = Instant::now();
     let id_str = request.match_info().query("id").to_string();
 
-    let id = parse_i32(&id_str).map_err(|e| err_parse_int(&e))?;
+    let id = parser::parse_i32(&id_str).map_err(|e| {
+        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
+        AppError::parse417("id", &e)
+    })?;
 
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
@@ -292,12 +338,18 @@ pub async fn put_user(
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user =
-            user_orm.modify_user(id, modify_user).map_err(|e| err_database(e.to_string()));
+            user_orm.modify_user(id, modify_user).map_err(|e| {
+                log::error!("{}: {}", err::CD_DATABASE, &e);
+                AppError::database507(&e)
+            });
 
         res_user
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))??;
+    .map_err(|e| {
+        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })??;
 
     if config_usr.usr_show_lead_time {
         log::info!("put_user() lead time: {:.2?}", now.elapsed());
@@ -320,17 +372,26 @@ pub async fn delete_user(
     let now = Instant::now();
     let id_str = request.match_info().query("id").to_string();
 
-    let id = parse_i32(&id_str).map_err(|e| err_parse_int(&e))?;
+    let id = parser::parse_i32(&id_str).map_err(|e| {
+        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
+        AppError::parse417("id", &e)
+    })?;
 
     let result_count = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_count = user_orm.delete_user(id)
-        .map_err(|e| err_database(e.to_string()));
+        .map_err(|e| {
+            log::error!("{}: {}", err::CD_DATABASE, &e);
+            AppError::database507(&e)
+        });
 
         res_count
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))??;
+    .map_err(|e| {
+        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })??;
 
     if config_usr.usr_show_lead_time {
         log::info!("delete_user() lead time: {:.2?}", now.elapsed());

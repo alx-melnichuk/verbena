@@ -58,6 +58,8 @@ impl AppError {
             403 => http::StatusCode::FORBIDDEN,
             404 => http::StatusCode::NOT_FOUND,
             409 => http::StatusCode::CONFLICT,
+            506 => http::StatusCode::VARIANT_ALSO_NEGOTIATES,
+            507 => http::StatusCode::INSUFFICIENT_STORAGE,
             _ => http::StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
@@ -87,6 +89,19 @@ impl AppError {
         HttpResponse::build(status_code)
             .insert_header(http::header::ContentType::json())
             .json(json)
+    }
+    /// Error while parsing data. (status_code=417)
+    pub fn parse417(param: &str, message: &str) -> Self {
+        let message = &format!("Failed conversion '{}': {}", param, message);
+        AppError::new(err::CD_PARSE_ERROR, message).set_status(417)
+    }
+    /// Error while blocking process. (status_code=506)
+    pub fn blocking506(err: &str) -> AppError {
+        AppError::new(err::CD_BLOCKING, err).set_status(506)
+    }
+    /// Error when querying the database. (status_code=507)
+    pub fn database507(message: &str) -> Self {
+        AppError::new(err::CD_DATABASE, message).set_status(507)
     }
 }
 
