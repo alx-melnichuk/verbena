@@ -15,7 +15,11 @@ use crate::settings::err;
 use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
-use crate::users::{config_usr, user_models, user_orm::UserOrm};
+use crate::users::{
+    config_usr,
+    user_models::{self, LoginUserDto},
+    user_orm::UserOrm,
+};
 use crate::validators::{msg_validation, Validator};
 
 pub const MSG_WRONG_NICKNAME_EMAIL: &str = "nickname_or_email_incorrect";
@@ -61,17 +65,15 @@ fn err_session(user_id: i32) -> AppError {
         .add_param(borrow::Cow::Borrowed("user_id"), &user_id)
 }
 
-/// `login`
+/// login
 ///
 /// User authentication.
 ///
-/// Opening of the session.
+/// Open a session for the specified user.
 ///
 /// One could call with following curl.
 /// ```text
-/// curl -i -X POST http://localhost:8080/api/login \
-///   -d '{"nickname": "user", "password": "pass"}' \
-///   -H 'Content-Type: application/json'
+/// curl -i -X POST http://localhost:8080/api/login -d '{"nickname": "user", "password": "pass"}'
 /// ```
 ///
 /// Return found `User` with status 200 or 204 not found if `User` is not found from shared in-memory storage.
@@ -103,7 +105,7 @@ pub async fn login(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     user_orm: web::Data<UserOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
-    json_body: web::Json<user_models::LoginUserDto>,
+    json_body: web::Json<LoginUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let now = Instant::now();
     // Checking the validity of the data model.
@@ -114,7 +116,7 @@ pub async fn login(
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
-    let login_user_dto: user_models::LoginUserDto = json_body.into_inner();
+    let login_user_dto: LoginUserDto = json_body.into_inner();
     let nickname = login_user_dto.nickname.clone();
     let email = login_user_dto.nickname.clone();
     let password = login_user_dto.password.clone();
