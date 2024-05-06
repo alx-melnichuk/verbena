@@ -17,7 +17,7 @@ use crate::users::user_orm::inst::UserOrmApp;
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::{
     config_usr,
-    user_models::{self, LoginUserDto},
+    user_models::{self, LoginUserDto, TokenUserDto},
     user_orm::UserOrm,
 };
 use crate::validators::{msg_validation, Validator};
@@ -33,7 +33,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             // POST /api/logout
             .service(logout)
             // POST /api/token
-            .service(new_token);
+            .service(update_token);
     }
 }
 
@@ -223,15 +223,15 @@ pub async fn logout(
 // POST /api/token
 #[rustfmt::skip]
 #[post("/api/token")]
-pub async fn new_token(
+pub async fn update_token(
     config_usr: web::Data<config_usr::ConfigUsr>,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     session_orm: web::Data<SessionOrmApp>,
-    json_token_user_dto: web::Json<user_models::TokenUserDto>,
+    json_token_user_dto: web::Json<TokenUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let now = Instant::now();
     // Get token2 from json.
-    let token_user_dto: user_models::TokenUserDto = json_token_user_dto.into_inner();
+    let token_user_dto: TokenUserDto = json_token_user_dto.into_inner();
     let token = token_user_dto.token;
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
@@ -305,7 +305,7 @@ mod tests {
     use crate::sessions::{config_jwt, session_models::Session, tokens::encode_token};
     use crate::users::{
         config_usr,
-        user_models::{LoginUserDto, User, UserModelsTest, UserRole},
+        user_models::{User, UserModelsTest, UserRole},
         user_orm::tests::UserOrmApp,
     };
 
@@ -363,8 +363,8 @@ mod tests {
     // ** login **
     #[test]
     async fn test_login_no_data() {
-        // POST /login
-        let request = test::TestRequest::post().uri("/login");
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login");
 
         let data_c = (vec![], vec![]);
         let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
@@ -377,8 +377,8 @@ mod tests {
     }
     #[test]
     async fn test_login_empty_json_object() {
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(json!({}));
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(json!({}));
 
         let data_c = (vec![], vec![]);
         let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
@@ -391,8 +391,8 @@ mod tests {
     }
     #[test]
     async fn test_login_invalid_dto_nickname_empty() {
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: "".to_string(),
             password: "passwordD1T1".to_string(),
         });
@@ -409,8 +409,8 @@ mod tests {
     }
     #[test]
     async fn test_login_invalid_dto_nickname_min() {
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: UserModelsTest::nickname_min(),
             password: "passwordD1T1".to_string(),
         });
@@ -427,8 +427,8 @@ mod tests {
     }
     #[test]
     async fn test_login_invalid_dto_nickname_max() {
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: UserModelsTest::nickname_max(),
             password: "passwordD1T1".to_string(),
         });
@@ -445,8 +445,8 @@ mod tests {
     }
     #[test]
     async fn test_login_invalid_dto_nickname_wrong() {
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: UserModelsTest::nickname_wrong(),
             password: "passwordD1T1".to_string(),
         });
@@ -463,8 +463,8 @@ mod tests {
     }
     #[test]
     async fn test_login_invalid_dto_email_min() {
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: UserModelsTest::email_min(),
             password: "passwordD1T1".to_string(),
         });
@@ -481,8 +481,8 @@ mod tests {
     }
     #[test]
     async fn test_login_invalid_dto_email_max() {
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: UserModelsTest::email_max(),
             password: "passwordD1T1".to_string(),
         });
@@ -499,8 +499,8 @@ mod tests {
     }
     #[test]
     async fn test_login_invalid_dto_email_wrong() {
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: UserModelsTest::email_wrong(),
             password: "passwordD1T1".to_string(),
         });
@@ -517,8 +517,8 @@ mod tests {
     }
     #[test]
     async fn test_login_invalid_dto_password_empty() {
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: "James_Smith".to_string(),
             password: "".to_string(),
         });
@@ -535,8 +535,8 @@ mod tests {
     }
     #[test]
     async fn test_login_invalid_dto_password_min() {
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: "James_Smith".to_string(),
             password: UserModelsTest::password_min(),
         });
@@ -553,8 +553,8 @@ mod tests {
     }
     #[test]
     async fn test_login_invalid_dto_password_max() {
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: "James_Smith".to_string(),
             password: UserModelsTest::password_max(),
         });
@@ -571,8 +571,8 @@ mod tests {
     }
     #[test]
     async fn test_login_invalid_dto_password_wrong() {
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: "James_Smith".to_string(),
             password: UserModelsTest::password_wrong(),
         });
@@ -589,8 +589,8 @@ mod tests {
     }
     #[test]
     async fn test_login_if_nickname_not_exist() {
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: "James_Smith".to_string(),
             password: "passwordD1T1".to_string(),
         });
@@ -606,8 +606,8 @@ mod tests {
     }
     #[test]
     async fn test_login_if_email_not_exist() {
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: "James_Smith@gmail.com".to_string(),
             password: "passwordD1T1".to_string(),
         });
@@ -627,8 +627,8 @@ mod tests {
         let user1_nickname = user1.nickname.to_string();
         let user1_password = user1.password.to_string();
 
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: user1_nickname.to_string(),
             password: user1_password.to_string(),
         });
@@ -652,8 +652,8 @@ mod tests {
         let password_hashed = hash_tools::encode_hash(&password).unwrap();
         user1.password = password_hashed;
 
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: user1_nickname.to_string(),
             password: format!("{}a", user1_password),
         });
@@ -677,8 +677,8 @@ mod tests {
         let password_hashed = hash_tools::encode_hash(&password).unwrap();
         user1.password = password_hashed;
 
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: user1_nickname.to_string(),
             password: user1_password,
         });
@@ -704,8 +704,8 @@ mod tests {
         let password_hashed = hash_tools::encode_hash(&password).unwrap();
         user1.password = password_hashed;
 
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: user1_nickname.to_string(),
             password: user1_password,
         });
@@ -733,8 +733,8 @@ mod tests {
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
 
-        // POST /login
-        let request = test::TestRequest::post().uri("/login").set_json(LoginUserDto {
+        // POST /api/login
+        let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
             nickname: user1_nickname.to_string(),
             password: user1_password,
         });
@@ -785,8 +785,8 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // POST /logout
-        let request = test::TestRequest::post().uri("/logout");
+        // POST /api/logout
+        let request = test::TestRequest::post().uri("/api/logout");
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1((cfg_usr(), config_jwt), data_c, logout, request).await;
@@ -813,14 +813,14 @@ mod tests {
 
     // ** new_token **
     #[test]
-    async fn test_new_token_no_data() {
+    async fn test_update_token_no_data() {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
-        // POST /token
-        let request = test::TestRequest::post().uri("/token");
+        // POST /api/token
+        let request = test::TestRequest::post().uri("/api/token");
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, new_token, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, update_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -829,15 +829,15 @@ mod tests {
         assert!(body_str.contains(expected_message));
     }
     #[test]
-    async fn test_new_token_empty_json_object() {
+    async fn test_update_token_empty_json_object() {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
-        // POST /token
-        let request = test::TestRequest::post().uri("/token").set_json(json!({}));
+        // POST /api/token
+        let request = test::TestRequest::post().uri("/api/token").set_json(json!({}));
 
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, new_token, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, update_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -846,17 +846,17 @@ mod tests {
         assert!(body_str.contains(expected_message));
     }
     #[test]
-    async fn test_new_token_invalid_dto_token_empty() {
+    async fn test_update_token_invalid_dto_token_empty() {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
-        // POST /token
+        // POST /api/token
         let request = test::TestRequest::post()
-            .uri("/token")
+            .uri("/api/token")
             .set_json(user_models::TokenUserDto { token: "".to_string() });
 
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, new_token, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, update_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -866,16 +866,16 @@ mod tests {
         assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
     #[test]
-    async fn test_new_token_invalid_dto_token_invalid() {
+    async fn test_update_token_invalid_dto_token_invalid() {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
-        // POST /token
-        let request = test::TestRequest::post().uri("/token").set_json(user_models::TokenUserDto {
+        // POST /api/token
+        let request = test::TestRequest::post().uri("/api/token").set_json(user_models::TokenUserDto {
             token: "invalid_token".to_string(),
         });
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, new_token, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, update_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -885,7 +885,7 @@ mod tests {
         assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
     #[test]
-    async fn test_new_token_unacceptable_token_id() {
+    async fn test_update_token_unacceptable_token_id() {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
@@ -894,12 +894,12 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let user_id_bad = user1.id + 1;
         let token_bad = encode_token(user_id_bad, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // POST /token
-        let request = test::TestRequest::post().uri("/token").set_json(user_models::TokenUserDto {
+        // POST /api/token
+        let request = test::TestRequest::post().uri("/api/token").set_json(user_models::TokenUserDto {
             token: token_bad.to_string(),
         });
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, new_token, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, update_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
 
         let body = test::read_body(resp).await;
@@ -914,7 +914,7 @@ mod tests {
         );
     }
     #[test]
-    async fn test_new_token_unacceptable_token_num() {
+    async fn test_update_token_unacceptable_token_num() {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
@@ -922,12 +922,12 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token_bad = encode_token(user1.id, num_token + 1, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // POST /token
-        let request = test::TestRequest::post().uri("/token").set_json(user_models::TokenUserDto {
+        // POST /api/token
+        let request = test::TestRequest::post().uri("/api/token").set_json(user_models::TokenUserDto {
             token: token_bad.to_string(),
         });
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, new_token, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, update_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -937,7 +937,7 @@ mod tests {
         assert_eq!(app_err.message, err::MSG_UNACCEPTABLE_TOKEN_NUM);
     }
     #[test]
-    async fn test_new_token_valid_dto_token() {
+    async fn test_update_token_valid_dto_token() {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
@@ -946,12 +946,12 @@ mod tests {
         let jwt_access = config_jwt.jwt_access;
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token_bad = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // POST /token
-        let request = test::TestRequest::post().uri("/token").set_json(user_models::TokenUserDto {
+        // POST /api/token
+        let request = test::TestRequest::post().uri("/api/token").set_json(user_models::TokenUserDto {
             token: token_bad.to_string(),
         });
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, new_token, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, update_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let token_cookie_opt = resp.response().cookies().find(|cookie| cookie.name() == "token");
