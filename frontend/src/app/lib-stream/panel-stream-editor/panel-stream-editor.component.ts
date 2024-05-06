@@ -186,10 +186,10 @@ export class PanelStreamEditorComponent implements OnChanges {
     } else { // Mode: "update"
       updateStreamFileDto.id = this.streamDto.id;
       updateStreamFileDto.modifyStreamDto = {
-        title: (this.origStreamDto.title != title ? title : undefined),
-        descript: (this.origStreamDto.descript != descript ? descript : undefined),
-        starttime: (this.origStreamDto.starttime != starttime ? starttime : undefined),
-        tags: (JSON.stringify(this.origStreamDto.tags) != JSON.stringify(tags) ? tags : undefined),
+        title: (this.controls.title.dirty ? title : undefined),
+        descript: (this.controls.descript.dirty ? descript : undefined),
+        starttime: (this.controls.startDate.dirty || this.controls.startTime.dirty ? starttime : undefined),
+        tags: (this.controls.tags.dirty ? tags : undefined),
       }
     }
     updateStreamFileDto.logoFile = this.addedLogoFile;
