@@ -391,15 +391,24 @@ pub mod inst {
 
             let mut err_table = "modify_stream";
             let res_data = conn.transaction::<_, diesel::result::Error, _>(|conn| {
-                // Run query using Diesel to modify the entry (stream). schema::streams::dsl
-                let res_stream = diesel::update(
-                    streams_dsl::streams.filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id))),
-                )
-                .set(&modify_stream)
-                .returning(Stream::as_returning())
-                .get_result(conn)
-                .optional();
-                // lead time: 1.64ms
+                let res_stream = if modify_stream.is_empty() {
+                    // Run query using Diesel to find stream by id and user_id return it.
+                    schema::streams::table
+                        .filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id)))
+                        .first::<Stream>(conn)
+                        .optional()
+                    // lead time: 1.02ms
+                } else {
+                    // Run query using Diesel to modify the entry (stream). schema::streams::dsl
+                    diesel::update(
+                        streams_dsl::streams.filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id))),
+                    )
+                    .set(&modify_stream)
+                    .returning(Stream::as_returning())
+                    .get_result(conn)
+                    .optional()
+                    // lead time: 1.64ms
+                };
 
                 let opt_stream = res_stream?;
                 if let Some(stream) = opt_stream {
@@ -434,7 +443,6 @@ pub mod inst {
                 }
             });
             // lead time: 3.84ms
-            // eprintln!("res_data: {:?}", res_data);
             match res_data {
                 Ok(value) => Ok(value),
                 Err(err) => Err(format!("{}: {}", err_table, err.to_string())),

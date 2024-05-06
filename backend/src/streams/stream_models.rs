@@ -369,6 +369,17 @@ impl ModifyStream {
             source: modify_stream_info.source.clone(),
         }
     }
+    pub fn is_empty(&self) -> bool {
+        let is_title = self.title.is_none();
+        let is_descript = self.descript.is_none();
+        let is_logo = self.logo.is_none();
+        let is_starttime = self.starttime.is_none();
+        let is_started = self.started.is_none();
+        let is_stopped = self.stopped.is_none();
+        let is_source = self.source.is_none();
+
+        is_title && is_descript && is_logo && is_starttime && is_started && is_stopped && is_source
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
