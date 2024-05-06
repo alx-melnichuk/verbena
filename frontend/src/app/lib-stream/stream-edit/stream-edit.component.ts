@@ -5,7 +5,7 @@ import { PanelStreamEditorComponent } from '../panel-stream-editor/panel-stream-
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { ROUTE_STREAM_LIST } from 'src/app/common/routes';
+import { ROUTE_STREAM_EDIT, ROUTE_STREAM_LIST } from 'src/app/common/routes';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 
@@ -37,9 +37,9 @@ export class StreamEditComponent {
     console.log(`StreamEditComponent()`); // #-
     this.streamDto = this.route.snapshot.data['streamDto'];
     console.log(`StreamEditComponent() streamDto: `, this.streamDto); // #-
-    const previousNavigation = this.router.getCurrentNavigation()?.previousNavigation;
-    if (!!previousNavigation && !!previousNavigation.finalUrl) {
-        this.goBackToRoute = previousNavigation.finalUrl.toString();
+    const previousNav = this.router.getCurrentNavigation()?.previousNavigation?.finalUrl?.toString() || ''; 
+    if (!!previousNav && !previousNav.startsWith(ROUTE_STREAM_EDIT)) {
+      this.goBackToRoute = previousNav;
     }
   }
 
