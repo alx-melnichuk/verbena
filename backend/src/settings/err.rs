@@ -3,7 +3,6 @@
 // 204 No Content - Data not found.
 
 // 400 Bad Request
-pub const CD_VALIDATION: &str = "Validation";
 
 pub const CD_INVALID_TAGS_FIELD: &str = "InvalidTagsField";
 pub const MSG_INVALID_TAGS_FIELD: &str = "Error deserializing the \"tags\" field:";
@@ -72,11 +71,14 @@ pub const MSG_USER_NOT_FOUND_BY_EMAIL: &str = "The user with the specified email
 
 pub const MSG_STREAM_NOT_FOUND_BY_ID: &str = "The stream with the specified ID was not found.";
 
-// 417 Expectation Failed
+// 409 Conflict
+pub const CD_CONFLICT: &str = "Conflict";
+
+// 415 Unsupported Media Type
 pub const CD_PARSE_ERROR: &str = "ParseError";
 
-// 409
-pub const CD_CONFLICT: &str = "Conflict";
+// 417 Expectation Failed
+pub const CD_VALIDATION: &str = "Validation";
 
 // 500
 pub const CD_INTER_SRV_ERROR: &str = "InternalServerError";

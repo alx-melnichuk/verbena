@@ -12,20 +12,25 @@ use crate::settings::err;
 use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
-use crate::users::{config_usr, user_models, user_orm::UserOrm};
+use crate::users::{
+    config_usr,
+    user_models::{self, ModifyUserDto},
+    user_orm::UserOrm,
+};
 use crate::utils::parser;
 use crate::validators::{msg_validation, Validator};
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
-        config // GET /api/users/{id}
-            .service(get_users_by_id)
+        config // GET /api/users/email/{email}
+            .service(get_users_by_email)
             // GET /api/users/nickname/{nickname}
             .service(get_users_by_nickname)
-            // GET /api/users/email/{email}
-            .service(get_users_by_email)
+            // GET /api/users/{id}
+            .service(get_users_by_id)
             // GET /api/users_current
             .service(get_user_current)
+            // OLD
             // PUT /api/users_current
             .service(put_user_current)
             // DELETE /api/users_current
@@ -37,57 +42,49 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
-/// get_users_by_id
+/// get_users_by_email
 ///
-/// Find a user by ID.
+/// Search for a user by his email.
 ///
 /// One could call with following curl.
 /// ```text
-/// curl -i -X POST http://localhost:8080/api/login -d '{"nickname": "user", "password": "pass"}'
+/// curl -i -X GET http://localhost:8080/api/users/email/demo1@gmail.us
 /// ```
 ///
-/// Return found `User` with status 200 or 204 not found if `User` is not found.
-/// 
-/// Additionally: Administrator rights are required.
-/// 
+/// Return user information with status 200 or 204 "Not Found" if user is not found.
+///
 #[utoipa::path(
     responses(
-        (status = 200, description = "Found user with the specified ID.", body = UserDto),
-        (status = 204, description = "The user with the specified ID was not found."),
-        (status = 417, description = "Parameter error.", body = AppError, 
-            example = json!(AppError::parse417("id", "`1a` - invalid digit found in string"))),
+        (status = 200, description = "A user with the specified nickname was found.", body = JSON,
+            example = json!({ "email": "demo1@gmail.us" })),
+        (status = 204, description = "The user with the specified nickname was not found."),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
             example = json!(AppError::database507("Error while querying the database."))),
     ),
-    params(("id", description = "Unique user ID.")),
-    // security(("bearer_auth" = [])) admin_role
+    params(("email", description = "User email value.")),
 )]
-#[rustfmt::skip]
-#[get("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
-pub async fn get_users_by_id(
+#[get("/api/users/email/{email}")]
+pub async fn get_users_by_email(
     config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let now = Instant::now();
-    let id_str = request.match_info().query("id").to_string();
-
-    let id = parser::parse_i32(&id_str).map_err(|e| {
-        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
-        AppError::parse417("id", &e)
-    })?;
+    let email = request.match_info().query("email").to_string();
 
     let result_user = web::block(move || {
-        // Find user by id.
-        let existing_user =
-            user_orm.find_user_by_id(id).map_err(|e| {
+        // Find user by nickname. Result <Vec<user_models::User>>.
+        let res_user = user_orm
+            .find_user_by_nickname_or_email(None, Some(&email))
+            .map_err(|e| {
                 log::error!("{}: {}", err::CD_DATABASE, &e);
                 AppError::database507(&e)
-            }).ok()?;
+            })
+            .ok()?;
 
-        existing_user
+        res_user
     })
     .await
     .map_err(|e| {
@@ -96,13 +93,12 @@ pub async fn get_users_by_id(
     })?;
 
     if config_usr.usr_show_lead_time {
-        log::info!("get_users_by_id() lead time: {:.2?}", now.elapsed());
+        log::info!("get_users_by_email() lead time: {:.2?}", now.elapsed());
     }
     if let Some(user) = result_user {
-        let user_dto = user_models::UserDto::from(user);
-        Ok(HttpResponse::Ok().json(user_dto)) // 200
+        Ok(HttpResponse::Ok().json(json!({ "email": user.email })))
     } else {
-        Ok(HttpResponse::NoContent().finish()) // 204
+        Ok(HttpResponse::NoContent().json(""))
     }
 }
 
@@ -115,15 +111,13 @@ pub async fn get_users_by_id(
 /// curl -i -X GET http://localhost:8080/api/users/nickname/demo1
 /// ```
 ///
-/// Return found `User` with status 200 or 204 not found if `User` is not found.
+/// Return user information with status 200 or 204 "Not Found" if user is not found.
 ///
 #[utoipa::path(
     responses(
-        (status = 200, description = "Found user with the specified ID.", body = JSON,
+        (status = 200, description = "A user with the specified nickname was found.", body = JSON,
             example = json!({ "nickname": "demo1" })),
-        (status = 204, description = "The user with the specified ID was not found."),
-        (status = 417, description = "Parameter error.", body = AppError, 
-            example = json!(AppError::parse417("id", "`1a` - invalid digit found in string"))),
+        (status = 204, description = "The user with the specified nickname was not found."),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -168,27 +162,57 @@ pub async fn get_users_by_nickname(
     }
 }
 
-// GET /api/users/email/{email}
-#[get("/api/users/email/{email}")]
-pub async fn get_users_by_email(
+/// get_users_by_id
+///
+/// Search for a user by his ID.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/users/1
+/// ```
+///
+/// Return found user `UserDto` with status 200 or 204 not found if user is not found.
+/// 
+/// Additionally: Administrator rights are required.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "A user with the specified ID was found.", body = UserDto),
+        (status = 204, description = "The user with the specified ID was not found."),
+        (status = 415, description = "Error parsing input parameter.", body = AppError, 
+            example = json!(AppError::parse415("id", "`1a` - invalid digit found in string"))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    params(("id", description = "Unique user ID.")),
+    // security(("bearer_auth" = [])) admin_role
+)]
+#[rustfmt::skip]
+#[get("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
+pub async fn get_users_by_id(
     config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let now = Instant::now();
-    let email = request.match_info().query("email").to_string();
+    let id_str = request.match_info().query("id").to_string();
+
+    let id = parser::parse_i32(&id_str).map_err(|e| {
+        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
+        AppError::parse415("id", &e)
+    })?;
 
     let result_user = web::block(move || {
-        // Find user by nickname. Result <Vec<user_models::User>>.
-        let res_user = user_orm
-            .find_user_by_nickname_or_email(None, Some(&email))
-            .map_err(|e| {
+        // Find user by id.
+        let existing_user =
+            user_orm.find_user_by_id(id).map_err(|e| {
                 log::error!("{}: {}", err::CD_DATABASE, &e);
                 AppError::database507(&e)
-            })
-            .ok()?;
+            }).ok()?;
 
-        res_user
+        existing_user
     })
     .await
     .map_err(|e| {
@@ -197,16 +221,35 @@ pub async fn get_users_by_email(
     })?;
 
     if config_usr.usr_show_lead_time {
-        log::info!("get_users_by_email() lead time: {:.2?}", now.elapsed());
+        log::info!("get_users_by_id() lead time: {:.2?}", now.elapsed());
     }
     if let Some(user) = result_user {
-        Ok(HttpResponse::Ok().json(json!({ "email": user.email })))
+        let user_dto = user_models::UserDto::from(user);
+        Ok(HttpResponse::Ok().json(user_dto)) // 200
     } else {
-        Ok(HttpResponse::NoContent().json(""))
+        Ok(HttpResponse::NoContent().finish()) // 204
     }
 }
 
-// GET /api/users_current
+/// get_user_current
+///
+/// Get information about the current user `UserDto`.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/users_current
+/// ```
+///
+/// Return the current user `UserDto` with status 200.
+/// 
+/// Additionally: authorization required.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Data about the current user.", body = UserDto),
+    ),
+    // security(("bearer_auth" = [])) all_roles
+)]
 #[rustfmt::skip]
 #[get("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_user_current(
@@ -220,17 +263,46 @@ pub async fn get_user_current(
     if config_usr.usr_show_lead_time {
         log::info!("get_user_current() lead time: {:.2?}", now.elapsed());
     }
-    Ok(HttpResponse::Ok().json(user_dto))
+    Ok(HttpResponse::Ok().json(user_dto)) // 200
 }
 
-// PUT /api/users_current
+/// put_user_current
+///
+/// Update current user details `UserDto`.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X PUT http://localhost:8080/api/users  -d {"password": "new_password"}
+/// ```
+///
+/// Return the data of the current user `UserDto` with status 200.
+/// 
+/// Return 204 "not found" if the user was not found (removed from the database).
+/// 
+/// Additionally: authorization required.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Data about the current user.", body = UserDto),
+        (status = 204, description = "The current user was not found."),
+        // (status = 415, description = "Error parsing input parameter.", body = AppError, 
+        //     example = json!(AppError::parse415("id", "`1a` - invalid digit found in string"))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    // param ModifyUserDto
+    // params(("id", description = "Unique user ID.")),
+    // security(("bearer_auth" = [])) admin_role
+)]
 #[rustfmt::skip]
 #[put("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_user_current(
     config_usr: web::Data<config_usr::ConfigUsr>,
     authenticated: Authenticated,
     user_orm: web::Data<UserOrmApp>,
-    json_body: web::Json<user_models::ModifyUserDto>,
+    json_body: web::Json<ModifyUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let now = Instant::now();
     let user = authenticated.deref();
@@ -243,7 +315,7 @@ pub async fn put_user_current(
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
-    let modify_user: user_models::ModifyUserDto = json_body.0.clone();
+    let modify_user: ModifyUserDto = json_body.0.clone();
 
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
@@ -265,9 +337,9 @@ pub async fn put_user_current(
         log::info!("put_user_current() lead time: {:.2?}", now.elapsed());
     }
     if let Some(user) = result_user {
-        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
+        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user))) // 200
     } else {
-        Ok(HttpResponse::NoContent().finish())
+        Ok(HttpResponse::NoContent().finish()) // 204
     }
 }
 
@@ -316,14 +388,14 @@ pub async fn put_user(
     config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
-    json_body: web::Json<user_models::ModifyUserDto>,
+    json_body: web::Json<ModifyUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let now = Instant::now();
     let id_str = request.match_info().query("id").to_string();
 
     let id = parser::parse_i32(&id_str).map_err(|e| {
         log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
-        AppError::parse417("id", &e)
+        AppError::parse415("id", &e)
     })?;
 
     // Checking the validity of the data model.
@@ -333,7 +405,7 @@ pub async fn put_user(
         return Ok(AppError::validations_to_response(validation_errors));
     }
 
-    let modify_user: user_models::ModifyUserDto = json_body.0.clone();
+    let modify_user: ModifyUserDto = json_body.0.clone();
 
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
@@ -374,7 +446,7 @@ pub async fn delete_user(
 
     let id = parser::parse_i32(&id_str).map_err(|e| {
         log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
-        AppError::parse417("id", &e)
+        AppError::parse415("id", &e)
     })?;
 
     let result_count = web::block(move || {
@@ -415,7 +487,7 @@ mod tests {
     };
     use crate::users::{
         config_usr,
-        user_models::{ModifyUserDto, User, UserDto, UserModelsTest, UserRole},
+        user_models::{User, UserDto, UserModelsTest, UserRole},
     };
     use crate::utils::parser::{CD_PARSE_INT_ERROR, MSG_PARSE_INT_ERROR};
 

@@ -10,16 +10,21 @@ use crate::{errors, user_auth_controller, user_controller, users::user_models};
     paths(
         user_auth_controller::login,
         user_controller::get_users_by_id,
+        user_controller::get_users_by_nickname,
+        user_controller::get_users_by_email,
+        user_controller::get_user_current,
+        user_controller::put_user_current,
     ),
     components(
         schemas(
             errors::AppError,
             user_models::UserRole,
+            // user_controller
             user_models::UserDto,
+            // user_controller::put_user_current
+            user_models::ModifyUserDto,
             // user_auth_controller::login
             user_models::LoginUserDto, user_models::UserTokensDto, user_models::LoginUserResponseDto,
-            // user_controller
-            // user_models::UserDto
         )
     ),
     tags(

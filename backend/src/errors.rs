@@ -58,6 +58,8 @@ impl AppError {
             403 => http::StatusCode::FORBIDDEN,
             404 => http::StatusCode::NOT_FOUND,
             409 => http::StatusCode::CONFLICT,
+            415 => http::StatusCode::UNSUPPORTED_MEDIA_TYPE,
+            417 => http::StatusCode::EXPECTATION_FAILED,
             506 => http::StatusCode::VARIANT_ALSO_NEGOTIATES,
             507 => http::StatusCode::INSUFFICIENT_STORAGE,
             _ => http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -71,7 +73,7 @@ impl AppError {
         BTreeMap::new()
     }
     pub fn validations_to_response(errors: Vec<ValidationError>) -> HttpResponse {
-        let status_code = http::StatusCode::BAD_REQUEST; // 400
+        let status_code = http::StatusCode::EXPECTATION_FAILED; // 417
         let mut app_error_vec: Vec<AppError> = vec![];
 
         for error in errors.into_iter() {
@@ -90,10 +92,14 @@ impl AppError {
             .insert_header(http::header::ContentType::json())
             .json(json)
     }
+    /// Error while parsing data. (status_code=415)
+    pub fn parse415(param: &str, message: &str) -> Self {
+        let message = &format!("Failed conversion '{}': {}", param, message);
+        AppError::new(err::CD_PARSE_ERROR, message).set_status(415)
+    }
     /// Error while parsing data. (status_code=417)
     pub fn parse417(param: &str, message: &str) -> Self {
-        let message = &format!("Failed conversion '{}': {}", param, message);
-        AppError::new(err::CD_PARSE_ERROR, message).set_status(417)
+        AppError::new(err::CD_VALIDATION, message).set_status(417)
     }
     /// Error while blocking process. (status_code=506)
     pub fn blocking506(err: &str) -> AppError {
