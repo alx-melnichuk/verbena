@@ -60,11 +60,11 @@ export class PanelStreamEditorComponent implements OnChanges {
   public minDate: Date = new Date(Date.now());
   public maxDate: Date = new Date(this.minDate.getFullYear(), this.minDate.getMonth() + 7, 0);
 
-  public logoOrig: string | null = '';
-  public logoView: string | null = '';
+  public origLogo: string | null = '';
+  public addedLogoView: string = '';
   public maxFileSize = MAX_FILE_SIZE;
   public validFileTypes = IMAGE_VALID_FILE_TYPES;
-  public logoFile: File | undefined;
+  public addedLogoFile: File | null | undefined;
 
   readonly separatorCodes: number[] = [ENTER];
   readonly tagMaxLength: number = 255;
@@ -125,23 +125,27 @@ export class PanelStreamEditorComponent implements OnChanges {
   }
 
   public addFile(file: File): void {
-    this.logoFile = file;
+    this.addedLogoFile = file;
     this.controls.logo.setValue(file.name);
     this.controls.logo.markAsDirty();
   }
 
   public readFile(buffFile: string[]): void {
     if (buffFile.length > 0) {
-      this.logoView = buffFile[1];
+      this.addedLogoView = buffFile[1];
       this.changeDetectorRef.markForCheck();
     }
   }
 
   public deleteFileLogo(): void {
-    this.logoView = null;
-    this.logoOrig = null;
+    this.addedLogoFile = (!!this.origLogo ? null : undefined);
+    this.addedLogoView = '';
     this.controls.logo.setValue(null);
-    this.controls.logo.markAsDirty();
+    if (!!this.origLogo) {
+      this.controls.logo.markAsDirty();
+    } else {
+      this.controls.logo.markAsPristine();
+    }
   }
 
   public changeIsStartTime(): void {
@@ -171,8 +175,8 @@ export class PanelStreamEditorComponent implements OnChanges {
     const tags = (this.controls.tags.value || []);
 
     const updateStreamFileDto: UpdateStreamFileDto = {};
-    
-    if (this.streamDto.id < 0) { // Mode: "create"
+
+    if (this.isCreate) { // Mode: "create"
       updateStreamFileDto.createStreamDto = {
         title: (title || ''),
         descript,
@@ -180,15 +184,15 @@ export class PanelStreamEditorComponent implements OnChanges {
         tags,
       };
     } else { // Mode: "update"
-        updateStreamFileDto.id = this.streamDto.id;
-        updateStreamFileDto.modifyStreamDto = {
-          title: (this.origStreamDto.title != title ? title : undefined),
-          descript: (this.origStreamDto.descript != descript ? descript : undefined),
-          starttime: (this.origStreamDto.starttime != starttime ? starttime : undefined),
-          tags: (JSON.stringify(this.origStreamDto.tags) != JSON.stringify(tags) ? tags : undefined),
-        }
+      updateStreamFileDto.id = this.streamDto.id;
+      updateStreamFileDto.modifyStreamDto = {
+        title: (this.origStreamDto.title != title ? title : undefined),
+        descript: (this.origStreamDto.descript != descript ? descript : undefined),
+        starttime: (this.origStreamDto.starttime != starttime ? starttime : undefined),
+        tags: (JSON.stringify(this.origStreamDto.tags) != JSON.stringify(tags) ? tags : undefined),
+      }
     }
-    updateStreamFileDto.logoFile = this.logoFile;
+    updateStreamFileDto.logoFile = this.addedLogoFile;
     this.updateStream.emit(updateStreamFileDto);
   }
 
@@ -227,8 +231,9 @@ export class PanelStreamEditorComponent implements OnChanges {
     });
     this.linkForVisitors = this.streamService.getLinkForVisitors(streamDto.id, true);
     this.changeIsStartTime();
-    this.logoView = streamDto.logo;
-    this.logoOrig = streamDto.logo;
+    this.addedLogoView = streamDto.logo || '';
+    this.origLogo = streamDto.logo;
+    this.addedLogoFile = undefined;
     this.isCreate = (streamDto.id < 0);
   }
   // '10:12'

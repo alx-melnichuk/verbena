@@ -29,14 +29,14 @@
       <div class="psd-text">{{ 'stream_edit.thumbnail' | translate }}</div>
 
       <div class="psd-logo-block">
-        <app-field-file-upload *ngIf="!logoView"
+        <app-field-file-upload *ngIf="!addedLogoView"
           [maxFileSize]="maxFileSize"
           [validFileTypes]="validFileTypes"
           (addFile)="addFile($event)"
           (readFile)="readFile($event)">
         </app-field-file-upload>
-        <div *ngIf="!!logoView" class="psd-logo-image">
-          <img class="psd-image-view" [src]="logoView" alt="logo unavailable">
+        <div *ngIf="!!addedLogoView" class="psd-logo-image">
+          <img class="psd-image-view" [src]="addedLogoView" alt="logo unavailable">
           <button class="psd-delete-logo" (click)="deleteFileLogo()">
             <span class="psd-delete-box"></span>
           </button>

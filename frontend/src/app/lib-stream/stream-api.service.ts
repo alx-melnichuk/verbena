@@ -159,28 +159,27 @@ constructor(private http: HttpClient) {
    * @ required streamId
    * @ access protected
    */
-  public modifyStream(id: number, modifyStreamDto: ModifyStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
+  public modifyStream(id: number, modifStreamDto: ModifyStreamDto, file?: File | null): Promise<StreamDto | HttpErrorResponse | undefined> {
     const formData: FormData = new FormData();
-    if (!!modifyStreamDto.title) {
-      formData.set('title', modifyStreamDto.title);
+    if (!!modifStreamDto.title) {
+      formData.set('title', modifStreamDto.title);
     }
-    if (!!modifyStreamDto.descript) {
-      formData.set('descript', modifyStreamDto.descript);
+    if (!!modifStreamDto.descript) {
+      formData.set('descript', modifStreamDto.descript);
     }
-    if (!!file) {
-      formData.set('logofile', file, file.name);
-    //   const file2: File = new File([], "foo.txt");
-    //   formData.set('logofile', file2, file2.name);
+    if (file !== undefined) {
+      const currFile: File = (file !== null ? file : new File([], "file"));
+      formData.set('logofile', currFile, currFile.name);
     }
 
-    if (!!modifyStreamDto.starttime) {
-      formData.set('starttime', modifyStreamDto.starttime);
+    if (!!modifStreamDto.starttime) {
+      formData.set('starttime', modifStreamDto.starttime);
     }
-    if (!!modifyStreamDto.source) {
-      formData.set('source', modifyStreamDto.source);
+    if (!!modifStreamDto.source) {
+      formData.set('source', modifStreamDto.source);
     }
-    if (!!modifyStreamDto.tags) {
-      formData.set('tags', JSON.stringify(modifyStreamDto.tags));
+    if (!!modifStreamDto.tags) {
+      formData.set('tags', JSON.stringify(modifStreamDto.tags));
     }
     const headers = new HttpHeaders({ 'enctype': 'multipart/form-data' });
     const url = Uri.appUri(`appApi://streams/${id}`);

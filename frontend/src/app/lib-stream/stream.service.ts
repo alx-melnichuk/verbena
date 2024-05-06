@@ -107,8 +107,8 @@ export class StreamService {
   }
 
   /** Update stream */
-  public modifyStream(id: number, modifyStreamDto: ModifyStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
-    return this.streamApiService.modifyStream(id, modifyStreamDto, file);
+  public modifyStream(id: number, modStreamDto: ModifyStreamDto, file?: File | null): Promise<StreamDto | HttpErrorResponse | undefined> {
+    return this.streamApiService.modifyStream(id, modStreamDto, file);
   }
 
   /** Delete stream */

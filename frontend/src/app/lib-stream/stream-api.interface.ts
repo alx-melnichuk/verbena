@@ -156,7 +156,7 @@ export interface UpdateStreamFileDto {
   id?: number | undefined;
   modifyStreamDto?: ModifyStreamDto | undefined;
   createStreamDto?: CreateStreamDto | undefined;
-  logoFile?: File | undefined;
+  logoFile?: File | null | undefined;
 }
 
 // ** getStreams()  **

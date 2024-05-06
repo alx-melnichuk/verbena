@@ -60,7 +60,7 @@ export class StreamEditComponent {
     
     if (!!updateStreamFile.createStreamDto) {
       buffPromise.push(
-        this.streamService.createStream(updateStreamFile.createStreamDto, updateStreamFile.logoFile)
+        this.streamService.createStream(updateStreamFile.createStreamDto, updateStreamFile.logoFile || undefined)
       );
     } else if (!!updateStreamFile.id && !!updateStreamFile.modifyStreamDto) {
       buffPromise.push(
