@@ -23,26 +23,25 @@ use crate::validators::{msg_validation, Validator};
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
         config // GET /api/users/email/{email}
-            .service(get_users_by_email)
+            .service(get_user_by_email)
             // GET /api/users/nickname/{nickname}
-            .service(get_users_by_nickname)
+            .service(get_user_by_nickname)
             // GET /api/users/{id}
-            .service(get_users_by_id)
-            // GET /api/users_current
-            .service(get_user_current)
-            // OLD
-            // PUT /api/users_current
-            .service(put_user_current)
-            // DELETE /api/users_current
-            .service(delete_user_current)
+            .service(get_user_by_id)
             // PUT /api/users/{id}
             .service(put_user)
             // DELETE /api/users/{id}
-            .service(delete_user);
+            .service(delete_user)
+            // GET /api/users_current
+            .service(get_user_current)
+            // PUT /api/users_current
+            .service(put_user_current)
+            // DELETE /api/users_current
+            .service(delete_user_current);
     }
 }
 
-/// get_users_by_email
+/// get_user_by_email
 ///
 /// Search for a user by his email.
 ///
@@ -66,7 +65,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     params(("email", description = "User email value.")),
 )]
 #[get("/api/users/email/{email}")]
-pub async fn get_users_by_email(
+pub async fn get_user_by_email(
     config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
@@ -93,7 +92,7 @@ pub async fn get_users_by_email(
     })?;
 
     if config_usr.usr_show_lead_time {
-        log::info!("get_users_by_email() lead time: {:.2?}", now.elapsed());
+        log::info!("get_user_by_email() lead time: {:.2?}", now.elapsed());
     }
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(json!({ "email": user.email })))
@@ -102,7 +101,7 @@ pub async fn get_users_by_email(
     }
 }
 
-/// get_users_by_nickname
+/// get_user_by_nickname
 ///
 /// Search for a user by his nickname.
 ///
@@ -126,7 +125,7 @@ pub async fn get_users_by_email(
     params(("nickname", description = "User nickname value.")),
 )]
 #[get("/api/users/nickname/{nickname}")]
-pub async fn get_users_by_nickname(
+pub async fn get_user_by_nickname(
     config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
@@ -153,7 +152,7 @@ pub async fn get_users_by_nickname(
     })?;
 
     if config_usr.usr_show_lead_time {
-        log::info!("get_users_by_nickname() lead time: {:.2?}", now.elapsed());
+        log::info!("get_user_by_nickname() lead time: {:.2?}", now.elapsed());
     }
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(json!({ "nickname": user.nickname })))
@@ -162,7 +161,7 @@ pub async fn get_users_by_nickname(
     }
 }
 
-/// get_users_by_id
+/// get_user_by_id
 ///
 /// Search for a user by his ID.
 ///
@@ -191,7 +190,7 @@ pub async fn get_users_by_nickname(
 )]
 #[rustfmt::skip]
 #[get("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
-pub async fn get_users_by_id(
+pub async fn get_user_by_id(
     config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
@@ -221,13 +220,171 @@ pub async fn get_users_by_id(
     })?;
 
     if config_usr.usr_show_lead_time {
-        log::info!("get_users_by_id() lead time: {:.2?}", now.elapsed());
+        log::info!("get_user_by_id() lead time: {:.2?}", now.elapsed());
     }
     if let Some(user) = result_user {
         let user_dto = user_models::UserDto::from(user);
         Ok(HttpResponse::Ok().json(user_dto)) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
+    }
+}
+
+/// put_user
+///
+/// Update the data of the specified user `UserDto`.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X PUT http://localhost:8080/api/users/1  -d {"password": "new_password"}
+/// ```
+///
+/// Return the data of the specified user `UserDto` with status 200.
+/// 
+/// Return 404 "not found" if the user was not found (removed from the database).
+/// 
+/// Additionally: Administrator rights are required.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Data about the specified user.", body = UserDto),
+        (status = 404, description = "The specified user was not found.", body = AppError,
+            example = json!(AppError::not_found404(err::MSG_USER_NOT_FOUND))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::access_denied403())),
+        (status = 415, description = "Error parsing input parameter.", body = AppError, 
+            example = json!(AppError::parse415("id", "`1a` - invalid digit found in string"))),
+        (status = 417, description = "Validation error.", body = [AppError],
+             example = json!(
+                AppError::validations((PasswordUserDto { password: Some("pas".to_string()) }).validate().err().unwrap())
+            )),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    // security(("bearer_auth" = [])) all_roles
+)]
+#[rustfmt::skip]
+#[put("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
+pub async fn put_user(
+    config_usr: web::Data<config_usr::ConfigUsr>,
+    user_orm: web::Data<UserOrmApp>,
+    request: actix_web::HttpRequest,
+    json_body: web::Json<PasswordUserDto>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
+    let id_str = request.match_info().query("id").to_string();
+
+    let id = parser::parse_i32(&id_str).map_err(|e| {
+        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
+        AppError::parse415("id", &e)
+    })?;
+
+    // Checking the validity of the data model.
+    let validation_res = json_body.validate();
+    if let Err(validation_errors) = validation_res {
+        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
+        return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
+    }
+
+    let password_user: PasswordUserDto = json_body.into_inner();
+    let modify_user: ModifyUserDto = ModifyUserDto { nickname: None, email: None, password: password_user.password, role: None };
+
+    let result_user = web::block(move || {
+        // Modify the entity (user) with new data. Result <user_models::User>.
+        let res_user =
+            user_orm.modify_user(id, modify_user).map_err(|e| {
+                log::error!("{}: {}", err::CD_DATABASE, &e);
+                AppError::database507(&e)
+            });
+
+        res_user
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })??;
+
+    if config_usr.usr_show_lead_time {
+        log::info!("put_user() lead time: {:.2?}", now.elapsed());
+    }
+    if let Some(user) = result_user {
+        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
+    } else {
+        Err(AppError::not_found404(err::MSG_USER_NOT_FOUND)) // 404
+    }
+}
+
+/// delete_user
+///
+/// Delete the specified user.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X DELETE http://localhost:8080/api/users/1
+/// ```
+///
+/// Return the data of the specified user with status 200.
+/// 
+/// Return 404 "not found" if the user was not found (removed from the database).
+/// 
+/// Additionally: Administrator rights are required.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "The specified user was deleted successfully."),
+        (status = 404, description = "The specified user was not found.", body = AppError,
+            example = json!(AppError::not_found404(err::MSG_USER_NOT_FOUND))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::access_denied403())),
+        (status = 415, description = "Error parsing input parameter.", body = AppError, 
+            example = json!(AppError::parse415("id", "`1a` - invalid digit found in string"))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    // security(("bearer_auth" = [])) all_roles
+)]
+#[rustfmt::skip]
+#[delete("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
+pub async fn delete_user(
+    config_usr: web::Data<config_usr::ConfigUsr>,
+    user_orm: web::Data<UserOrmApp>,
+    request: actix_web::HttpRequest,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let now = Instant::now();
+    let id_str = request.match_info().query("id").to_string();
+
+    let id = parser::parse_i32(&id_str).map_err(|e| {
+        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
+        AppError::parse415("id", &e)
+    })?;
+
+    let result_count = web::block(move || {
+        // Modify the entity (user) with new data. Result <user_models::User>.
+        let res_count = user_orm.delete_user(id)
+        .map_err(|e| {
+            log::error!("{}: {}", err::CD_DATABASE, &e);
+            AppError::database507(&e)
+        });
+        res_count
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })??;
+
+    if config_usr.usr_show_lead_time {
+        log::info!("delete_user() lead time: {:.2?}", now.elapsed());
+    }
+    if 0 == result_count {
+        Err(AppError::not_found404(err::MSG_USER_NOT_FOUND)) // 404
+    } else {
+        Ok(HttpResponse::Ok().finish()) // 200
     }
 }
 
@@ -272,7 +429,7 @@ pub async fn get_user_current(
 ///
 /// One could call with following curl.
 /// ```text
-/// curl -i -X PUT http://localhost:8080/api/users  -d {"password": "new_password"}
+/// curl -i -X PUT http://localhost:8080/api/users_current  -d {"password": "new_password"}
 /// ```
 ///
 /// Return the data of the current user `UserDto` with status 200.
@@ -294,7 +451,7 @@ pub async fn get_user_current(
         (status = 507, description = "Database error.", body = AppError, 
             example = json!(AppError::database507("Error while querying the database."))),
     ),
-    // security(("bearer_auth" = [])) admin_role
+    // security(("bearer_auth" = [])) all_roles
 )]
 #[rustfmt::skip]
 #[put("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
@@ -312,7 +469,7 @@ pub async fn put_user_current(
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::to_response(&AppError::validations(validation_errors)));
+        return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
     }
 
     let password_user: PasswordUserDto = json_body.into_inner();
@@ -343,7 +500,33 @@ pub async fn put_user_current(
     }
 }
 
-// DELETE /api/users_current
+/// delete_user_current
+///
+/// Delete the current user.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X DELETE http://localhost:8080/api/users_current
+/// ```
+///
+/// Return the data of the current user `UserDto` with status 200.
+/// 
+/// Return 404 "not found" if the user was not found (removed from the database).
+/// 
+/// Additionally: authorization required.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "The current user was deleted successfully."),
+        (status = 404, description = "The current user was not found.", body = AppError,
+            example = json!(AppError::not_found404(err::MSG_USER_NOT_FOUND))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    // security(("bearer_auth" = [])) all_roles
+)]
 #[rustfmt::skip]
 #[delete("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_user_current(
@@ -375,101 +558,7 @@ pub async fn delete_user_current(
         log::info!("delete_user_current() lead time: {:.2?}", now.elapsed());
     }
    if 0 == result_count {
-        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_USER_NOT_FOUND_BY_ID).set_status(404))
-    } else {
-        Ok(HttpResponse::Ok().finish())
-    }
-}
-
-// PUT /api/users/{id}
-#[rustfmt::skip]
-#[put("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
-pub async fn put_user(
-    config_usr: web::Data<config_usr::ConfigUsr>,
-    user_orm: web::Data<UserOrmApp>,
-    request: actix_web::HttpRequest,
-    json_body: web::Json<ModifyUserDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
-    let id_str = request.match_info().query("id").to_string();
-
-    let id = parser::parse_i32(&id_str).map_err(|e| {
-        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
-        AppError::parse415("id", &e)
-    })?;
-
-    // Checking the validity of the data model.
-    let validation_res = json_body.validate();
-    if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::to_response(&AppError::validations(validation_errors)));
-    }
-
-    let modify_user: ModifyUserDto = json_body.0.clone();
-
-    let result_user = web::block(move || {
-        // Modify the entity (user) with new data. Result <user_models::User>.
-        let res_user =
-            user_orm.modify_user(id, modify_user).map_err(|e| {
-                log::error!("{}: {}", err::CD_DATABASE, &e);
-                AppError::database507(&e)
-            });
-
-        res_user
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
-    })??;
-
-    if config_usr.usr_show_lead_time {
-        log::info!("put_user() lead time: {:.2?}", now.elapsed());
-    }
-    if let Some(user) = result_user {
-        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
-    } else {
-        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_USER_NOT_FOUND_BY_ID).set_status(404))
-    }
-}
-
-// DELETE /api/users/{id}
-#[rustfmt::skip]
-#[delete("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
-pub async fn delete_user(
-    config_usr: web::Data<config_usr::ConfigUsr>,
-    user_orm: web::Data<UserOrmApp>,
-    request: actix_web::HttpRequest,
-) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
-    let id_str = request.match_info().query("id").to_string();
-
-    let id = parser::parse_i32(&id_str).map_err(|e| {
-        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
-        AppError::parse415("id", &e)
-    })?;
-
-    let result_count = web::block(move || {
-        // Modify the entity (user) with new data. Result <user_models::User>.
-        let res_count = user_orm.delete_user(id)
-        .map_err(|e| {
-            log::error!("{}: {}", err::CD_DATABASE, &e);
-            AppError::database507(&e)
-        });
-
-        res_count
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
-    })??;
-
-    if config_usr.usr_show_lead_time {
-        log::info!("delete_user() lead time: {:.2?}", now.elapsed());
-    }
-    if 0 == result_count {
-        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_USER_NOT_FOUND_BY_ID).set_status(404))
+        Err(AppError::not_found404(err::MSG_USER_NOT_FOUND)) // 404
     } else {
         Ok(HttpResponse::Ok().finish())
     }
@@ -489,7 +578,7 @@ mod tests {
         config_usr,
         user_models::{User, UserDto, UserModelsTest, UserRole},
     };
-    use crate::utils::parser::{CD_PARSE_INT_ERROR, MSG_PARSE_INT_ERROR};
+    use crate::utils::parser::MSG_PARSE_INT_ERROR;
 
     use super::*;
 
@@ -561,13 +650,13 @@ mod tests {
         let request = test::TestRequest::get().uri(&format!("/users/{}", user_id_bad.clone()));
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, get_users_by_id, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, get_user_by_id, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CD_PARSE_INT_ERROR);
+        assert_eq!(app_err.code, err::CD_PARSE_ERROR);
         #[rustfmt::skip]
         let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, user_id_bad, MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
@@ -589,7 +678,7 @@ mod tests {
         let request = test::TestRequest::get().uri(&format!("/users/{}", user1.id));
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, get_users_by_id, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, get_user_by_id, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -617,7 +706,7 @@ mod tests {
         let request = test::TestRequest::get().uri(&format!("/users/{}", user1.id + 1));
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, get_users_by_id, request).await;
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, get_user_by_id, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
 
@@ -628,7 +717,7 @@ mod tests {
         // GET /users/nickname/${nickname}
         let request = test::TestRequest::get().uri(&"/users/nickname/JAMES_SMITH");
         let data_c = (vec![user1], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_users_by_nickname, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_by_nickname, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[test]
@@ -639,7 +728,7 @@ mod tests {
         // GET /users/nickname/${nickname}
         let request = test::TestRequest::get().uri(&format!("/users/nickname/{}", nickname));
         let data_c = (vec![user1], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_users_by_nickname, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_by_nickname, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -655,7 +744,7 @@ mod tests {
         // GET /users/email/${email}
         let request = test::TestRequest::get().uri(&"/users/email/JAMES_SMITH@gmail.com");
         let data_c = (vec![user1], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_users_by_email, request).await;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_by_email, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[test]
@@ -666,7 +755,7 @@ mod tests {
         // GET /users/email/${email}
         let request = test::TestRequest::get().uri(&format!("/users/email/{}", email));
         let data_c = (vec![user1], vec![]);
-        let factory = get_users_by_email;
+        let factory = get_user_by_email;
         let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
@@ -808,7 +897,7 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CD_PARSE_INT_ERROR);
+        assert_eq!(app_err.code, err::CD_PARSE_ERROR);
         #[rustfmt::skip]
         let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, user_id_bad, MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
@@ -992,7 +1081,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
-        assert_eq!(app_err.message, err::MSG_USER_NOT_FOUND_BY_ID);
+        assert_eq!(app_err.message, err::MSG_USER_NOT_FOUND);
     }
     #[test]
     async fn test_put_user_valid_id() {
@@ -1073,7 +1162,7 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CD_PARSE_INT_ERROR);
+        assert_eq!(app_err.code, err::CD_PARSE_ERROR);
         #[rustfmt::skip]
         let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, user_id_bad, MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
@@ -1102,7 +1191,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
-        assert_eq!(app_err.message, err::MSG_USER_NOT_FOUND_BY_ID);
+        assert_eq!(app_err.message, err::MSG_USER_NOT_FOUND);
     }
     #[test]
     async fn test_delete_user_user_exists() {

@@ -9,11 +9,14 @@ use crate::{errors, user_auth_controller, user_controller, users::user_models};
 #[openapi(
     paths(
         user_auth_controller::login,
-        user_controller::get_users_by_id,
-        user_controller::get_users_by_nickname,
-        user_controller::get_users_by_email,
+        user_controller::get_user_by_email,
+        user_controller::get_user_by_nickname,
+        user_controller::get_user_by_id,
+        user_controller::put_user,
+        user_controller::delete_user,
         user_controller::get_user_current,
         user_controller::put_user_current,
+        user_controller::delete_user_current,
     ),
     components(
         schemas(
