@@ -130,7 +130,7 @@ pub async fn registration(
     if let Err(validation_errors) = validation_res {
         #[rustfmt::skip]
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::validations_to_response(validation_errors));
+        return Ok(AppError::to_response(&AppError::validations(validation_errors)));
     }
 
     let mut registr_user_dto: user_models::RegistrUserDto = json_body.0.clone();
@@ -347,7 +347,7 @@ pub async fn recovery(
     if let Err(validation_errors) = validation_res {
         #[rustfmt::skip]
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::validations_to_response(validation_errors));
+        return Ok(AppError::to_response(&AppError::validations(validation_errors)));
     }
 
     let mut recovery_user_dto: user_models::RecoveryUserDto = json_body.0.clone();
@@ -491,7 +491,7 @@ pub async fn confirm_recovery(
     if let Err(validation_errors) = validation_res {
         #[rustfmt::skip]
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::validations_to_response(validation_errors));
+        return Ok(AppError::to_response(&AppError::validations(validation_errors)));
     }
 
     let recovery_data_dto: user_models::RecoveryDataDto = json_body.0.clone();

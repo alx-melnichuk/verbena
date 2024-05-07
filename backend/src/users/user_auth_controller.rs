@@ -113,7 +113,7 @@ pub async fn login(
     if let Err(validation_errors) = validation_res {
         #[rustfmt::skip]
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::validations_to_response(validation_errors));
+        return Ok(AppError::to_response(&AppError::validations(validation_errors)));
     }
 
     let login_user_dto: LoginUserDto = json_body.into_inner();

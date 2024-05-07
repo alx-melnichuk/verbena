@@ -1,6 +1,7 @@
 use std::{borrow::Cow, collections::BTreeMap};
 
 use actix_web::{http, HttpResponse};
+use mime;
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
 use utoipa::ToSchema;
@@ -72,40 +73,43 @@ impl AppError {
     pub fn default_params() -> BTreeMap<Cow<'static, str>, Value> {
         BTreeMap::new()
     }
-    pub fn validations_to_response(errors: Vec<ValidationError>) -> HttpResponse {
-        let status_code = http::StatusCode::EXPECTATION_FAILED; // 417
-        let mut app_error_vec: Vec<AppError> = vec![];
-
+    /// List of errors when validating parameters.
+    pub fn validations(errors: Vec<ValidationError>) -> Vec<Self> {
+        let mut result: Vec<Self> = vec![];
         for error in errors.into_iter() {
-            let code = err::CD_VALIDATION;
-            let message = error.message.clone();
-            let mut app_error = AppError::new(&code, &message).set_status(status_code.into());
-
+            // let message = error.message.clone();
+            let mut app_error = AppError::validation417(&error.message.clone());
             for (key, val) in error.params.into_iter() {
                 app_error.add_param(key, &val);
             }
-            app_error_vec.push(app_error);
+            result.push(app_error);
         }
-
-        let json = app_error_vec;
-        HttpResponse::build(status_code)
-            .insert_header(http::header::ContentType::json())
-            .json(json)
+        result
     }
-    /// Error while parsing data. (status_code=415)
+    /// Converting the error vector into http-response.
+    pub fn to_response(errors: &[Self]) -> HttpResponse {
+        let default = AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_INTER_SRV_ERROR);
+        let app_error = errors.get(0).unwrap_or(&default);
+        let status_code = app_error.status_code();
+        HttpResponse::build(status_code)
+            .insert_header(http::header::ContentType(mime::APPLICATION_JSON))
+            .insert_header((mime::CHARSET.as_str(), mime::UTF_8.as_str()))
+            .json(errors)
+    }
+    /// Error while parsing data. (status=415)
     pub fn parse415(param: &str, message: &str) -> Self {
         let message = &format!("Failed conversion '{}': {}", param, message);
         AppError::new(err::CD_PARSE_ERROR, message).set_status(415)
     }
-    /// Error while parsing data. (status_code=417)
-    pub fn parse417(param: &str, message: &str) -> Self {
+    /// Error when data validation. (status=417)
+    pub fn validation417(message: &str) -> Self {
         AppError::new(err::CD_VALIDATION, message).set_status(417)
     }
-    /// Error while blocking process. (status_code=506)
+    /// Error while blocking process. (status=506)
     pub fn blocking506(err: &str) -> AppError {
         AppError::new(err::CD_BLOCKING, err).set_status(506)
     }
-    /// Error when querying the database. (status_code=507)
+    /// Error when querying the database. (status=507)
     pub fn database507(message: &str) -> Self {
         AppError::new(err::CD_DATABASE, message).set_status(507)
     }
@@ -117,7 +121,9 @@ impl actix_web::ResponseError for AppError {
     }
     fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody> {
         HttpResponse::build(self.status_code())
-            .insert_header(http::header::ContentType::json())
+            // .insert_header(http::header::ContentType::json())
+            .insert_header(http::header::ContentType(mime::APPLICATION_JSON))
+            .insert_header((mime::CHARSET.as_str(), mime::UTF_8.as_str()))
             .json(self)
     }
 }

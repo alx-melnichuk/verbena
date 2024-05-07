@@ -155,7 +155,7 @@ pub async fn post_stream(
     let validation_res = create_stream_info_dto.validate();
     if let Err(validation_errors) = validation_res {
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::validations_to_response(validation_errors));
+        return Ok(AppError::to_response(&AppError::validations(validation_errors)));
     }
 
     let config_strm = config_strm.get_ref().clone();
@@ -330,9 +330,9 @@ pub async fn put_stream(
 
     let res_check_required_fields = modify_stream_info_dto.check_required_fields();
     if logofile.is_none() && res_check_required_fields.is_err() {
-        if let Err(errors) = res_check_required_fields {
-            log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&errors));
-            return Ok(AppError::validations_to_response(errors));
+        if let Err(validation_errors) = res_check_required_fields {
+            log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
+            return Ok(AppError::to_response(&AppError::validations(validation_errors)));
         }
     }
     
@@ -340,7 +340,7 @@ pub async fn put_stream(
     let validation_res = modify_stream_info_dto.validate();
     if let Err(validation_errors) = validation_res {
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::validations_to_response(validation_errors));
+        return Ok(AppError::to_response(&AppError::validations(validation_errors)));
     }
     let mut logo: Option<Option<String>> = None;
     let mut is_delete_logo = false;
