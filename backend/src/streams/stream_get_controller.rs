@@ -288,7 +288,7 @@ mod tests {
         user_models::{User, UserRole},
         user_orm::tests::UserOrmApp,
     };
-    use crate::utils::parser::{CD_PARSE_INT_ERROR, MSG_PARSE_INT_ERROR};
+    use crate::utils::parser::MSG_PARSE_INT_ERROR;
 
     use super::*;
 
@@ -376,7 +376,7 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, CD_PARSE_INT_ERROR);
+        assert_eq!(app_err.code, err::CD_PARSE_ERROR);
         #[rustfmt::skip]
         let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, stream_id_bad, MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
