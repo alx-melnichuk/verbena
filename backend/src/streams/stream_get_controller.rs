@@ -12,7 +12,7 @@ use crate::streams::stream_orm::inst::StreamOrmApp;
 use crate::streams::stream_orm::tests::StreamOrmApp;
 use crate::streams::{config_strm, stream_models, stream_orm::StreamOrm};
 use crate::users::user_models::UserRole;
-use crate::utils::parser::{parse_i32, CD_PARSE_INT_ERROR};
+use crate::utils::parser;
 
 pub const PERIOD_MAX_NUMBER_DAYS: u16 = 65;
 
@@ -30,10 +30,6 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
-fn err_parse_int(err: String) -> AppError {
-    log::error!("{}: id: {}", CD_PARSE_INT_ERROR, err);
-    AppError::new(CD_PARSE_INT_ERROR, &format!("id: {}", err)).set_status(400)
-}
 fn err_database(err: String) -> AppError {
     log::error!("{}: {}", err::CD_DATABASE, err);
     AppError::new(err::CD_DATABASE, &err).set_status(500)
@@ -72,7 +68,11 @@ pub async fn get_stream_by_id(
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
-    let id = parse_i32(&id_str).map_err(|e| err_parse_int(e.to_string()))?;
+    let id = parser::parse_i32(&id_str).map_err(|e| {
+        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
+        AppError::parse415("id", &e)
+    })?;
+
 
     let res_data = web::block(move || {
         // Find 'stream' by id.
