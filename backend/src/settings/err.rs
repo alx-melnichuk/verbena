@@ -31,17 +31,20 @@ pub const MSG_FINISH_GREATER_MAX: &str = "The finish date of the search period e
 
 // 401 Unauthorized
 pub const CD_UNAUTHORIZED: &str = "Unauthorized";
-pub const CD_MISSING_TOKEN: &str = "MissingToken";
-pub const MSG_MISSING_TOKEN: &str = "Token value not provided";
+// Authorization token is missing.
+pub const MSG_MISSING_TOKEN: &str = "token_missing";
+// Error when decoding token or expired token
+pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token";
+// According to "num" in the token, the user was not found // "The token "NUM" value is unacceptable."
+pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num";
+// According to "user_id" in the token, the user was not found // "The token "ID" value is unacceptable."
+pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
 
 // 403 Forbidden
 pub const CD_FORBIDDEN: &str = "Forbidden";
-// Error when decoding token or expired token
-pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token";
-// According to "user_id" in the token, the user was not found // "The token "ID" value is unacceptable."
-pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
-// According to "num" in the token, the user was not found // "The token "NUM" value is unacceptable."
-pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num";
+pub const MSG_ACCESS_DENIED: &str = "access_is_denied";
+
+//
 //
 // User_ID from the header does not match the user_ID from the parameters
 pub const CD_UNALLOWABLE_TOKEN: &str = "UnallowableToken";
@@ -53,10 +56,7 @@ pub const MSG_UNALLOWABLE_TOKEN: &str = "oken value is unallowable";
 // pub const CD_BAD_TOKEN: &str = "Bad Token";
 // pub const MSG_BAD_TOKEN: &str = "Bad token value";
 
-pub const CD_ACCESS_DENIED: &str = "AccessDenied";
-pub const MSG_PERMISSION_DENIED: &str = "You are not allowed to perform this action";
-
-// 404
+// 404 Not Found
 pub const CD_NOT_FOUND: &str = "NotFound";
 // Registration record not found
 pub const MSG_REGISTR_NOT_FOUND: &str = "registration_not_found";

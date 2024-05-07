@@ -96,6 +96,14 @@ impl AppError {
             .insert_header((mime::CHARSET.as_str(), mime::UTF_8.as_str()))
             .json(errors)
     }
+    /// Authorization required. (status=401)
+    pub fn unauthorized401(message: &str) -> Self {
+        AppError::new(err::CD_UNAUTHORIZED, message).set_status(401)
+    }
+    /// Access denied: insufficient user rights. (status=403)
+    pub fn access_denied403() -> Self {
+        AppError::new(err::CD_FORBIDDEN, err::MSG_ACCESS_DENIED).set_status(403)
+    }
     /// Error while parsing data. (status=415)
     pub fn parse415(param: &str, message: &str) -> Self {
         let message = &format!("Failed conversion '{}': {}", param, message);

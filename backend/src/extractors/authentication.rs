@@ -163,23 +163,22 @@ where
 
         // If token is missing, return unauthorized error
         if token.is_none() {
-            // eprintln!("##@@ auth() token.is_none()"); // #-
-            log::error!("{}: {}", err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN);
-            let json_error = AppError::new(err::CD_MISSING_TOKEN, err::MSG_MISSING_TOKEN).set_status(401);
-            return Box::pin(ready(Err(error::ErrorUnauthorized(json_error))));
+            log::error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_MISSING_TOKEN);
+            let json_error = AppError::unauthorized401(err::MSG_MISSING_TOKEN);
+            return Box::pin(ready(Err(error::ErrorUnauthorized(json_error)))); // 401
         }
         let token = token.unwrap().to_string();
 
         let config_jwt = req.app_data::<web::Data<config_jwt::ConfigJwt>>().unwrap();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-
+        // Decode the token.
         let token_res = decode_token(&token, jwt_secret);
 
         if let Err(e) = token_res {
             #[rustfmt::skip]
-            log::error!("{}: {} - {}", err::CD_FORBIDDEN, err::MSG_INVALID_OR_EXPIRED_TOKEN, e);
-            let json_error = AppError::new(err::CD_FORBIDDEN, err::MSG_INVALID_OR_EXPIRED_TOKEN).set_status(403);
-            return Box::pin(ready(Err(error::ErrorForbidden(json_error))));
+            log::error!("{}: {} - {}", err::CD_UNAUTHORIZED, err::MSG_INVALID_OR_EXPIRED_TOKEN, e);
+            let json_error = AppError::unauthorized401(err::MSG_INVALID_OR_EXPIRED_TOKEN);
+            return Box::pin(ready(Err(error::ErrorUnauthorized(json_error)))); // 401
         }
 
         let (user_id, num_token) = token_res.unwrap();
@@ -190,48 +189,47 @@ where
         // Handle user extraction and request processing
         async move {
             let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap();
-
+            // Find a session for a given user.
             let session_opt = session_orm.find_session_by_id(user_id).map_err(|e| {
                 log::error!("{}: {}", err::CD_DATABASE, e.to_string());
-                let error = AppError::new(err::CD_DATABASE, &e.to_string()).set_status(500);
-                return error::ErrorInternalServerError(error);
+                let error = AppError::database507(&e.to_string());
+                return error::ErrorInsufficientStorage(error); // 507
             })?;
 
             let session = session_opt.ok_or_else(|| {
-                // eprintln!("##@@ auth() session with {} not found", user_id.clone());
+                // There is no session for this user.
                 #[rustfmt::skip]
                 log::error!("{}: {} - user_id - {}", err::CD_INTER_SRV_ERROR, err::MSG_SESSION_NOT_EXIST, user_id);
-                let error = AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_SESSION_NOT_EXIST)
-                    .set_status(500)
+                let error = AppError::database507(err::MSG_SESSION_NOT_EXIST)
                     .add_param(borrow::Cow::Borrowed("userId"), &user_id);
-                error::ErrorForbidden(error)
+                error::ErrorInsufficientStorage(error) // 507
             })?;
-
+            // Each session contains an additional numeric value.
             let session_num_token = session.num_token.unwrap_or(0);
+            // Compare an additional numeric value from the session and from the token.
             if session_num_token != num_token {
-                // eprintln!("##@@ auth() session_num_token != num_token");
+                // If they do not match, then this is an error.
                 #[rustfmt::skip]
-                log::error!("{}: {} - user_id - {}", err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
-                let error = AppError::new(err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_NUM)
-                    .set_status(403)
+                log::error!("{}: {} - user_id - {}", err::CD_UNAUTHORIZED, err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
+                let error = AppError::unauthorized401(err::MSG_UNACCEPTABLE_TOKEN_NUM)
                     .add_param(borrow::Cow::Borrowed("userId"), &user_id);
-                return Err(error::ErrorForbidden(error));
+                return Err(error::ErrorUnauthorized(error)); // 401
             }
 
             let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap();
 
             let result = user_orm.find_user_by_id(user_id).map_err(|e| {
                 log::error!("{}: {}", err::CD_DATABASE, e.to_string());
-                error::ErrorInternalServerError(AppError::new(err::CD_DATABASE, &e.to_string()))
+                let error = AppError::database507(&e.to_string());
+                error::ErrorInsufficientStorage(error) // 507
             })?;
 
             let user = result.ok_or_else(|| {
                 #[rustfmt::skip]
-                log::error!("{}: {} - user_id - {}", err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_ID, user_id);
-                let error = AppError::new(err::CD_FORBIDDEN, err::MSG_UNACCEPTABLE_TOKEN_ID)
-                    .set_status(403)
+                log::error!("{}: {} - user_id - {}", err::CD_UNAUTHORIZED, err::MSG_UNACCEPTABLE_TOKEN_ID, user_id);
+                let error = AppError::unauthorized401(err::MSG_UNACCEPTABLE_TOKEN_ID)
                     .add_param(borrow::Cow::Borrowed("userId"), &user_id);
-                error::ErrorForbidden(error)
+                error::ErrorUnauthorized(error) // 401
             })?;
 
             // Check if user's role matches the required role
@@ -243,11 +241,9 @@ where
                 Ok(res)
             } else {
                 #[rustfmt::skip]
-                log::error!("{}: {}", err::CD_ACCESS_DENIED, err::MSG_PERMISSION_DENIED);
-                #[rustfmt::skip]
-                let error = AppError::new(err::CD_ACCESS_DENIED, err::MSG_PERMISSION_DENIED)
-                    .set_status(403);
-                Err(error::ErrorForbidden(error))
+                log::error!("{}: {}", err::CD_FORBIDDEN, err::MSG_ACCESS_DENIED);
+                let error = AppError::access_denied403();
+                Err(error::ErrorForbidden(error)) // 403
             }
         }
         .boxed_local()
@@ -401,10 +397,10 @@ mod tests {
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED);
+        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED); // 401
 
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
-        assert_eq!(app_err.code, err::CD_MISSING_TOKEN);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         assert_eq!(app_err.message, err::MSG_MISSING_TOKEN);
     }
     #[test]
@@ -415,10 +411,10 @@ mod tests {
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::FORBIDDEN); // 403
+        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED); // 401
 
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
     #[test]
@@ -437,10 +433,10 @@ mod tests {
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::FORBIDDEN);
+        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED); // 401
 
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
     #[test]
@@ -460,10 +456,10 @@ mod tests {
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::FORBIDDEN);
+        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED); // 401
 
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         assert_eq!(app_err.message, err::MSG_UNACCEPTABLE_TOKEN_ID);
     }
     #[test]
@@ -484,10 +480,10 @@ mod tests {
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::FORBIDDEN);
+        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED); // 401
 
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         assert_eq!(app_err.message, err::MSG_UNACCEPTABLE_TOKEN_NUM);
     }
     #[test]
@@ -507,10 +503,10 @@ mod tests {
         let err = result.expect("Service call succeeded, but an error was expected.");
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::FORBIDDEN);
+        assert_eq!(actual_status, http::StatusCode::FORBIDDEN); // 403
 
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
-        assert_eq!(app_err.code, err::CD_ACCESS_DENIED);
-        assert_eq!(app_err.message, err::MSG_PERMISSION_DENIED);
+        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        assert_eq!(app_err.message, err::MSG_ACCESS_DENIED);
     }
 }
