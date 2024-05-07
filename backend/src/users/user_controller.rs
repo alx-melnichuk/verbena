@@ -14,7 +14,7 @@ use crate::users::user_orm::inst::UserOrmApp;
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::{
     config_usr,
-    user_models::{self, ModifyUserDto},
+    user_models::{self, ModifyUserDto, PasswordUserDto},
     user_orm::UserOrm,
 };
 use crate::utils::parser;
@@ -285,15 +285,15 @@ pub async fn get_user_current(
     responses(
         (status = 200, description = "Data about the current user.", body = UserDto),
         (status = 204, description = "The current user was not found."),
-        // (status = 415, description = "Error parsing input parameter.", body = AppError, 
-        //     example = json!(AppError::parse415("id", "`1a` - invalid digit found in string"))),
+        (status = 417, description = "Validation error.", body = [AppError],
+             example = json!(
+                AppError::validations((PasswordUserDto { password: Some("pas".to_string()) }).validate().err().unwrap())
+            )),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
             example = json!(AppError::database507("Error while querying the database."))),
     ),
-    // param ModifyUserDto
-    // params(("id", description = "Unique user ID.")),
     // security(("bearer_auth" = [])) admin_role
 )]
 #[rustfmt::skip]
@@ -302,7 +302,7 @@ pub async fn put_user_current(
     config_usr: web::Data<config_usr::ConfigUsr>,
     authenticated: Authenticated,
     user_orm: web::Data<UserOrmApp>,
-    json_body: web::Json<ModifyUserDto>,
+    json_body: web::Json<PasswordUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let now = Instant::now();
     let user = authenticated.deref();
@@ -312,10 +312,11 @@ pub async fn put_user_current(
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::validations_to_response(validation_errors));
+        return Ok(AppError::to_response(&AppError::validations(validation_errors)));
     }
 
-    let modify_user: ModifyUserDto = json_body.0.clone();
+    let password_user: PasswordUserDto = json_body.into_inner();
+    let modify_user: ModifyUserDto = ModifyUserDto { nickname: None, email: None, password: password_user.password, role: None };
 
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
@@ -324,7 +325,6 @@ pub async fn put_user_current(
                 log::error!("{}: {}", err::CD_DATABASE, &e);
                 AppError::database507(&e)
             });
-
         res_user
     })
     .await
@@ -402,7 +402,7 @@ pub async fn put_user(
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::validations_to_response(validation_errors));
+        return Ok(AppError::to_response(&AppError::validations(validation_errors)));
     }
 
     let modify_user: ModifyUserDto = json_body.0.clone();

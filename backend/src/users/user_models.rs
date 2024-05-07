@@ -163,6 +163,25 @@ impl Validator for ModifyUserDto {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, ToSchema)]
+#[diesel(table_name = schema::users)]
+pub struct PasswordUserDto {
+    pub password: Option<String>,
+}
+
+impl Validator for PasswordUserDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        if let Some(password_val) = &self.password {
+            errors.push(validate_password(password_val).err());
+        }
+
+        self.filter_errors(errors)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
 #[diesel(table_name = schema::users)]
 pub struct CreateUserDto {
