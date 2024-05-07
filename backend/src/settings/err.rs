@@ -44,31 +44,25 @@ pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
 pub const CD_FORBIDDEN: &str = "Forbidden";
 pub const MSG_ACCESS_DENIED: &str = "access_is_denied";
 
+// 404 Not Found
+pub const CD_NOT_FOUND: &str = "NotFound";
+// Registration record not found.
+pub const MSG_REGISTR_NOT_FOUND: &str = "registration_not_found";
+// Recovery record not found.
+pub const MSG_RECOVERY_NOT_FOUND: &str = "recovery_not_found";
+// User not found.
+pub const MSG_USER_NOT_FOUND: &str = "user_not_found";
+
 //
 //
 // User_ID from the header does not match the user_ID from the parameters
 pub const CD_UNALLOWABLE_TOKEN: &str = "UnallowableToken";
 pub const MSG_UNALLOWABLE_TOKEN: &str = "oken value is unallowable";
 
-// pub const CD_WRONG_TOKEN: &str = "WrongToken";
-// pub const MSG_WRONG_TOKEN: &str = "Wrong token value";
-
-// pub const CD_BAD_TOKEN: &str = "Bad Token";
-// pub const MSG_BAD_TOKEN: &str = "Bad token value";
-
-// 404 Not Found
-pub const CD_NOT_FOUND: &str = "NotFound";
-// Registration record not found
-pub const MSG_REGISTR_NOT_FOUND: &str = "registration_not_found";
-// Recovery record not found
-pub const MSG_RECOVERY_NOT_FOUND: &str = "recovery_not_found";
-
 pub const CD_NO_CONFIRM: &str = "No Confirmation";
 pub const MSG_CONFIRM_NOT_FOUND: &str = "Confirmation not found!";
 
-pub const MSG_USER_NOT_FOUND_BY_ID: &str = "The user with the specified ID was not found.";
-pub const MSG_USER_NOT_FOUND_BY_EMAIL: &str = "The user with the specified email was not found.";
-
+//
 pub const MSG_STREAM_NOT_FOUND_BY_ID: &str = "The stream with the specified ID was not found.";
 
 // 409 Conflict

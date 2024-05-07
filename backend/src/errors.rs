@@ -104,6 +104,10 @@ impl AppError {
     pub fn access_denied403() -> Self {
         AppError::new(err::CD_FORBIDDEN, err::MSG_ACCESS_DENIED).set_status(403)
     }
+    /// Resource is not found.
+    pub fn not_found404(message: &str) -> Self {
+        AppError::new(err::CD_NOT_FOUND, message).set_status(403)
+    }
     /// Error while parsing data. (status=415)
     pub fn parse415(param: &str, message: &str) -> Self {
         let message = &format!("Failed conversion '{}': {}", param, message);
@@ -114,8 +118,8 @@ impl AppError {
         AppError::new(err::CD_VALIDATION, message).set_status(417)
     }
     /// Error while blocking process. (status=506)
-    pub fn blocking506(err: &str) -> AppError {
-        AppError::new(err::CD_BLOCKING, err).set_status(506)
+    pub fn blocking506(message: &str) -> AppError {
+        AppError::new(err::CD_BLOCKING, message).set_status(506)
     }
     /// Error when querying the database. (status=507)
     pub fn database507(message: &str) -> Self {
