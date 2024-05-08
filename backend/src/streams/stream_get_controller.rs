@@ -120,6 +120,13 @@ pub async fn get_stream_by_id(
 * - orderDirection (asc / desc, asc by default)
 * @access public
 */
+/*
+#[utoipa::path(
+    responses(),
+    params(SearchStreamInfoDto), // "IntoParams" add for "SearchStreamInfoDto"
+    security(("bearer_auth" = [])),
+)]
+*/
 // GET /api/streams
 #[rustfmt::skip]
 #[get("/api/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
