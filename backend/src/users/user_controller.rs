@@ -50,7 +50,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// curl -i -X GET http://localhost:8080/api/users/email/demo1@gmail.us
 /// ```
 ///
-/// Return user information with status 200 or 204 "Not Found" if user is not found.
+/// Return found user information with status 200 or 204 (no content) if the user is not found.
 ///
 #[utoipa::path(
     responses(
@@ -95,9 +95,9 @@ pub async fn get_user_by_email(
         log::info!("get_user_by_email() lead time: {:.2?}", now.elapsed());
     }
     if let Some(user) = result_user {
-        Ok(HttpResponse::Ok().json(json!({ "email": user.email })))
+        Ok(HttpResponse::Ok().json(json!({ "email": user.email }))) // 200
     } else {
-        Ok(HttpResponse::NoContent().json(""))
+        Ok(HttpResponse::NoContent().json("")) // 204
     }
 }
 
@@ -110,7 +110,7 @@ pub async fn get_user_by_email(
 /// curl -i -X GET http://localhost:8080/api/users/nickname/demo1
 /// ```
 ///
-/// Return user information with status 200 or 204 "Not Found" if user is not found.
+/// Return found user information with status 200 or 204 (no content) if the user is not found.
 ///
 #[utoipa::path(
     responses(
@@ -155,9 +155,9 @@ pub async fn get_user_by_nickname(
         log::info!("get_user_by_nickname() lead time: {:.2?}", now.elapsed());
     }
     if let Some(user) = result_user {
-        Ok(HttpResponse::Ok().json(json!({ "nickname": user.nickname })))
+        Ok(HttpResponse::Ok().json(json!({ "nickname": user.nickname }))) // 200
     } else {
-        Ok(HttpResponse::NoContent().finish())
+        Ok(HttpResponse::NoContent().finish()) // 204
     }
 }
 
@@ -170,7 +170,7 @@ pub async fn get_user_by_nickname(
 /// curl -i -X GET http://localhost:8080/api/users/1
 /// ```
 ///
-/// Return found user `UserDto` with status 200 or 204 not found if user is not found.
+/// Return the found specified user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
 /// 
 /// Additionally: Administrator rights are required.
 /// 
@@ -178,6 +178,10 @@ pub async fn get_user_by_nickname(
     responses(
         (status = 200, description = "A user with the specified ID was found.", body = UserDto),
         (status = 204, description = "The user with the specified ID was not found."),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::access_denied403())),
         (status = 415, description = "Error parsing input parameter.", body = AppError, 
             example = json!(AppError::parse415("id", "`1a` - invalid digit found in string"))),
         (status = 506, description = "Blocking error.", body = AppError, 
@@ -186,7 +190,7 @@ pub async fn get_user_by_nickname(
             example = json!(AppError::database507("Error while querying the database."))),
     ),
     params(("id", description = "Unique user ID.")),
-    // security(("bearer_auth" = [])) admin_role
+    security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
 #[get("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
@@ -232,24 +236,26 @@ pub async fn get_user_by_id(
 
 /// put_user
 ///
-/// Update the data of the specified user `UserDto`.
+/// Update the data of the specified user (`UserDto`).
 ///
 /// One could call with following curl.
 /// ```text
 /// curl -i -X PUT http://localhost:8080/api/users/1  -d {"password": "new_password"}
 /// ```
 ///
-/// Return the data of the specified user `UserDto` with status 200.
-/// 
-/// Return 404 "not found" if the user was not found (removed from the database).
+/// Return the found specified user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
 /// 
 /// Additionally: Administrator rights are required.
 /// 
 #[utoipa::path(
+    request_body(content = PasswordUserDto, description = "New user properties.",
+        example = json!(PasswordUserDto { password: Some("new_password".to_string()) })
+    ),
     responses(
         (status = 200, description = "Data about the specified user.", body = UserDto),
-        (status = 404, description = "The specified user was not found.", body = AppError,
-            example = json!(AppError::not_found404(err::MSG_USER_NOT_FOUND))),
+        (status = 204, description = "The specified user was not found."),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::access_denied403())),
         (status = 415, description = "Error parsing input parameter.", body = AppError, 
@@ -263,7 +269,7 @@ pub async fn get_user_by_id(
         (status = 507, description = "Database error.", body = AppError, 
             example = json!(AppError::database507("Error while querying the database."))),
     ),
-    // security(("bearer_auth" = [])) all_roles
+    security(("bearer_auth" = []))
 )]
 #[rustfmt::skip]
 #[put("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
@@ -298,7 +304,6 @@ pub async fn put_user(
                 log::error!("{}: {}", err::CD_DATABASE, &e);
                 AppError::database507(&e)
             });
-
         res_user
     })
     .await
@@ -311,9 +316,9 @@ pub async fn put_user(
         log::info!("put_user() lead time: {:.2?}", now.elapsed());
     }
     if let Some(user) = result_user {
-        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user)))
+        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user))) // 200
     } else {
-        Err(AppError::not_found404(err::MSG_USER_NOT_FOUND)) // 404
+        Ok(HttpResponse::NoContent().finish()) // 204
     }
 }
 
@@ -326,17 +331,16 @@ pub async fn put_user(
 /// curl -i -X DELETE http://localhost:8080/api/users/1
 /// ```
 ///
-/// Return the data of the specified user with status 200.
-/// 
-/// Return 404 "not found" if the user was not found (removed from the database).
+/// Return the found specified user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
 /// 
 /// Additionally: Administrator rights are required.
 /// 
 #[utoipa::path(
     responses(
-        (status = 200, description = "The specified user was deleted successfully."),
-        (status = 404, description = "The specified user was not found.", body = AppError,
-            example = json!(AppError::not_found404(err::MSG_USER_NOT_FOUND))),
+        (status = 200, description = "The specified user was deleted successfully.", body = UserDto),
+        (status = 204, description = "The specified user was not found."),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::access_denied403())),
         (status = 415, description = "Error parsing input parameter.", body = AppError, 
@@ -346,7 +350,7 @@ pub async fn put_user(
         (status = 507, description = "Database error.", body = AppError, 
             example = json!(AppError::database507("Error while querying the database."))),
     ),
-    // security(("bearer_auth" = [])) all_roles
+    security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
 #[delete("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
@@ -363,14 +367,14 @@ pub async fn delete_user(
         AppError::parse415("id", &e)
     })?;
 
-    let result_count = web::block(move || {
+    let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
-        let res_count = user_orm.delete_user(id)
+        let res_user = user_orm.delete_user(id)
         .map_err(|e| {
             log::error!("{}: {}", err::CD_DATABASE, &e);
             AppError::database507(&e)
         });
-        res_count
+        res_user
     })
     .await
     .map_err(|e| {
@@ -381,31 +385,36 @@ pub async fn delete_user(
     if config_usr.usr_show_lead_time {
         log::info!("delete_user() lead time: {:.2?}", now.elapsed());
     }
-    if 0 == result_count {
-        Err(AppError::not_found404(err::MSG_USER_NOT_FOUND)) // 404
+    if let Some(user) = result_user {
+        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user))) // 200
     } else {
-        Ok(HttpResponse::Ok().finish()) // 200
+        Ok(HttpResponse::NoContent().finish()) // 204
     }
 }
 
 /// get_user_current
 ///
-/// Get information about the current user `UserDto`.
+/// Get information about the current user (`UserDto`).
 ///
 /// One could call with following curl.
 /// ```text
 /// curl -i -X GET http://localhost:8080/api/users_current
 /// ```
 ///
-/// Return the current user `UserDto` with status 200.
+/// Return the current user (`UserDto`) with status 200.
 /// 
 /// Additionally: authorization required.
 /// 
 #[utoipa::path(
     responses(
         (status = 200, description = "Data about the current user.", body = UserDto),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::access_denied403())),
+
     ),
-    // security(("bearer_auth" = [])) all_roles
+    security(("bearer_auth" = []))
 )]
 #[rustfmt::skip]
 #[get("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
@@ -425,23 +434,28 @@ pub async fn get_user_current(
 
 /// put_user_current
 ///
-/// Update current user details `UserDto`.
+/// Update the data of the current user (`UserDto`).
 ///
 /// One could call with following curl.
 /// ```text
 /// curl -i -X PUT http://localhost:8080/api/users_current  -d {"password": "new_password"}
 /// ```
 ///
-/// Return the data of the current user `UserDto` with status 200.
-/// 
-/// Return 204 "not found" if the user was not found (removed from the database).
+/// Return the current user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
 /// 
 /// Additionally: authorization required.
 /// 
 #[utoipa::path(
+    request_body(content = PasswordUserDto, description = "New user properties.",
+        example = json!(PasswordUserDto { password: Some("new_password".to_string()) })
+    ),
     responses(
         (status = 200, description = "Data about the current user.", body = UserDto),
         (status = 204, description = "The current user was not found."),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::access_denied403())),
         (status = 417, description = "Validation error.", body = [AppError],
              example = json!(
                 AppError::validations((PasswordUserDto { password: Some("pas".to_string()) }).validate().err().unwrap())
@@ -451,7 +465,7 @@ pub async fn get_user_current(
         (status = 507, description = "Database error.", body = AppError, 
             example = json!(AppError::database507("Error while querying the database."))),
     ),
-    // security(("bearer_auth" = [])) all_roles
+    security(("bearer_auth" = []))
 )]
 #[rustfmt::skip]
 #[put("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
@@ -509,23 +523,24 @@ pub async fn put_user_current(
 /// curl -i -X DELETE http://localhost:8080/api/users_current
 /// ```
 ///
-/// Return the data of the current user `UserDto` with status 200.
-/// 
-/// Return 404 "not found" if the user was not found (removed from the database).
+/// Return the current user (`UserDto`) with status 200 or 204 (no content) if the current user is not found.
 /// 
 /// Additionally: authorization required.
 /// 
 #[utoipa::path(
     responses(
-        (status = 200, description = "The current user was deleted successfully."),
-        (status = 404, description = "The current user was not found.", body = AppError,
-            example = json!(AppError::not_found404(err::MSG_USER_NOT_FOUND))),
+        (status = 200, description = "The current user was deleted successfully.", body = UserDto),
+        (status = 204, description = "The current user was not found."),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::access_denied403())),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
             example = json!(AppError::database507("Error while querying the database."))),
     ),
-    // security(("bearer_auth" = [])) all_roles
+    security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
 #[delete("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
@@ -538,15 +553,15 @@ pub async fn delete_user_current(
     let user = authenticated.deref();
     let id = user.id;
 
-    let result_count = web::block(move || {
+    let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
-        let res_count = user_orm.delete_user(id)
+        let res_user = user_orm.delete_user(id)
         .map_err(|e| {
             log::error!("{}: {}", err::CD_DATABASE, &e);
             AppError::database507(&e)
         });
 
-        res_count
+        res_user
     })
     .await
     .map_err(|e| {
@@ -557,10 +572,10 @@ pub async fn delete_user_current(
     if config_usr.usr_show_lead_time {
         log::info!("delete_user_current() lead time: {:.2?}", now.elapsed());
     }
-   if 0 == result_count {
-        Err(AppError::not_found404(err::MSG_USER_NOT_FOUND)) // 404
+    if let Some(user) = result_user {
+        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user))) // 200
     } else {
-        Ok(HttpResponse::Ok().finish())
+        Ok(HttpResponse::NoContent().finish()) // 204
     }
 }
 
@@ -578,12 +593,10 @@ mod tests {
         config_usr,
         user_models::{User, UserDto, UserModelsTest, UserRole},
     };
-    use crate::utils::parser::MSG_PARSE_INT_ERROR;
 
     use super::*;
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
-    const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
 
     fn create_user() -> User {
         let mut user = UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1");
@@ -631,6 +644,61 @@ mod tests {
         test::call_service(&app, request.to_request()).await
     }
 
+    // ** get_user_by_email **
+    #[test]
+    async fn test_get_user_by_email_non_existent_email() {
+        let user1: User = user_with_id(create_user());
+        // GET /api/users/email/${email}
+        let request = test::TestRequest::get().uri(&"/api/users/email/JAMES_SMITH@gmail.com");
+        let data_c = (vec![user1], vec![]);
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_by_email, request).await;
+        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
+    }
+    #[test]
+    async fn test_get_user_by_email_existent_email() {
+        let user1: User = user_with_id(create_user());
+        let user1_email = user1.email.to_string();
+        let email = user1_email.to_uppercase().to_string();
+        // GET /api/users/email/${email}
+        let request = test::TestRequest::get().uri(&format!("/api/users/email/{}", email));
+        let data_c = (vec![user1], vec![]);
+        let factory = get_user_by_email;
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, factory, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let user_dto_res = std::str::from_utf8(&body).unwrap();
+        let str = format!("{}\"email\":\"{}\"{}", "{", user1_email, "}");
+        assert_eq!(user_dto_res, str);
+    }
+
+    // ** get_user_by_nickname **
+    #[test]
+    async fn test_get_user_by_nickname_non_existent_nickname() {
+        let user1: User = user_with_id(create_user());
+        // GET /api/users/nickname/${nickname}
+        let request = test::TestRequest::get().uri(&"/api/users/nickname/JAMES_SMITH");
+        let data_c = (vec![user1], vec![]);
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_by_nickname, request).await;
+        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
+    }
+    #[test]
+    async fn test_get_user_by_nickname_existent_nickname() {
+        let user1: User = user_with_id(create_user());
+        let user1_nickname = user1.nickname.to_string();
+        let nickname = user1_nickname.to_uppercase().to_string();
+        // GET /api/users/nickname/${nickname}
+        let request = test::TestRequest::get().uri(&format!("/api/users/nickname/{}", nickname));
+        let data_c = (vec![user1], vec![]);
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_by_nickname, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let user_dto_res = std::str::from_utf8(&body).unwrap();
+        let str = format!("{}\"nickname\":\"{}\"{}", "{", user1_nickname, "}");
+        assert_eq!(user_dto_res, str);
+    }
+
     // ** get_user_by_id **
     #[test]
     async fn test_get_user_by_id_invalid_id() {
@@ -646,19 +714,18 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        // GET /users/{id}
-        let request = test::TestRequest::get().uri(&format!("/users/{}", user_id_bad.clone()));
+        // GET /api/users/{id}
+        let request = test::TestRequest::get().uri(&format!("/api/users/{}", user_id_bad.clone()));
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1((cfg_usr(), config_jwt), data_c, get_user_by_id, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_PARSE_ERROR);
-        #[rustfmt::skip]
-        let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, user_id_bad, MSG_CASTING_TO_TYPE);
+        let msg = format!("{} '{}': ", err::MSG_FAILED_CONVERSION, "id");
         assert!(app_err.message.starts_with(&msg));
     }
     #[test]
@@ -674,8 +741,8 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // GET /users/{id}
-        let request = test::TestRequest::get().uri(&format!("/users/{}", user1.id));
+        // GET /api/users/{id}
+        let request = test::TestRequest::get().uri(&format!("/api/users/{}", user1.id));
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1((cfg_usr(), config_jwt), data_c, get_user_by_id, request).await;
@@ -702,168 +769,12 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // GET /users/{id}
-        let request = test::TestRequest::get().uri(&format!("/users/{}", user1.id + 1));
+        // GET /api/users/{id}
+        let request = test::TestRequest::get().uri(&format!("/api/users/{}", user1.id + 1));
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1((cfg_usr(), config_jwt), data_c, get_user_by_id, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
-    }
-
-    // ** get_user_by_nickname **
-    #[test]
-    async fn test_get_user_by_nickname_non_existent_nickname() {
-        let user1: User = user_with_id(create_user());
-        // GET /users/nickname/${nickname}
-        let request = test::TestRequest::get().uri(&"/users/nickname/JAMES_SMITH");
-        let data_c = (vec![user1], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_by_nickname, request).await;
-        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
-    }
-    #[test]
-    async fn test_get_user_by_nickname_existent_nickname() {
-        let user1: User = user_with_id(create_user());
-        let user1_nickname = user1.nickname.to_string();
-        let nickname = user1_nickname.to_uppercase().to_string();
-        // GET /users/nickname/${nickname}
-        let request = test::TestRequest::get().uri(&format!("/users/nickname/{}", nickname));
-        let data_c = (vec![user1], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_by_nickname, request).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        let body = test::read_body(resp).await;
-        let user_dto_res = std::str::from_utf8(&body).unwrap();
-        let str = format!("{}\"nickname\":\"{}\"{}", "{", user1_nickname, "}");
-        assert_eq!(user_dto_res, str);
-    }
-
-    // ** get_user_by_email **
-    #[test]
-    async fn test_get_user_by_email_non_existent_email() {
-        let user1: User = user_with_id(create_user());
-        // GET /users/email/${email}
-        let request = test::TestRequest::get().uri(&"/users/email/JAMES_SMITH@gmail.com");
-        let data_c = (vec![user1], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_by_email, request).await;
-        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
-    }
-    #[test]
-    async fn test_get_user_by_email_existent_email() {
-        let user1: User = user_with_id(create_user());
-        let user1_email = user1.email.to_string();
-        let email = user1_email.to_uppercase().to_string();
-        // GET /users/email/${email}
-        let request = test::TestRequest::get().uri(&format!("/users/email/{}", email));
-        let data_c = (vec![user1], vec![]);
-        let factory = get_user_by_email;
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, factory, request).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        let body = test::read_body(resp).await;
-        let user_dto_res = std::str::from_utf8(&body).unwrap();
-        let str = format!("{}\"email\":\"{}\"{}", "{", user1_email, "}");
-        assert_eq!(user_dto_res, str);
-    }
-
-    // ** get_user_current **
-    #[test]
-    async fn test_get_user_current_valid_token() {
-        let user1: User = user_with_id(create_user());
-        let user1b_dto = UserDto::from(user1.clone());
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // GET /users_current
-        let request = test::TestRequest::get().uri("/users_current");
-        let request = request.insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_current, request).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        let body = test::read_body(resp).await;
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let json_user1b_dto = serde_json::json!(user1b_dto).to_string();
-        let user1b_dto_ser: UserDto = serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(user_dto_res, user1b_dto_ser);
-        assert_eq!(user_dto_res.password, "");
-    }
-
-    // ** put_user_current **
-    #[test]
-    async fn test_put_user_current_valid_id() {
-        let user1: User = user_with_id(create_user());
-        let user1_id = user1.id;
-        let new_password = "passwdJ3S9";
-
-        let mut user1mod: User = UserOrmApp::new_user(
-            user1_id,
-            &format!("James_{}", user1.nickname),
-            &format!("James_{}", user1.email),
-            new_password,
-        );
-        user1mod.role = UserRole::Admin;
-        user1mod.created_at = user1.created_at.clone();
-        user1mod.updated_at = Utc::now();
-        let user1mod_dto = UserDto::from(user1mod.clone());
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let request = test::TestRequest::put()
-            .uri(&"/users_current") // PUT /users_current
-            .set_json(ModifyUserDto {
-                nickname: Some(user1mod.nickname),
-                email: Some(user1mod.email),
-                password: Some(new_password.to_string()),
-                role: Some(user1mod.role),
-            })
-            .insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, put_user_current, request).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        let body = test::read_body(resp).await;
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let json_user1mod_dto = serde_json::json!(user1mod_dto).to_string();
-        let user1mod_dto_ser: UserDto = serde_json::from_slice(json_user1mod_dto.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(user_dto_res.id, user1mod_dto_ser.id);
-        assert_eq!(user_dto_res.nickname, user1mod_dto_ser.nickname);
-        assert_eq!(user_dto_res.email, user1mod_dto_ser.email);
-        assert_eq!(user_dto_res.password, user1mod_dto_ser.password);
-        assert_eq!(user_dto_res.password, "");
-        assert_eq!(user_dto_res.role, user1mod_dto_ser.role);
-        assert_eq!(user_dto_res.created_at, user1mod_dto_ser.created_at);
-    }
-
-    // ** delete_user_current **
-    #[test]
-    async fn test_delete_user_current_valid_token() {
-        let user1: User = user_with_id(create_user());
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // DELETE /users_current
-        let request = test::TestRequest::delete().uri("/users_current");
-        let request = request.insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, delete_user_current, request).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
     }
 
     // ** put_user **
@@ -882,7 +793,7 @@ mod tests {
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::put()
-            .uri(&format!("/users/{}", user_id_bad.clone())) // PUT users/{id}
+            .uri(&format!("/api/users/{}", user_id_bad.clone())) // PUT users/{id}
             .set_json(ModifyUserDto {
                 nickname: Some("Oliver_Taylor".to_string()),
                 email: Some("Oliver_Taylor@gmail.com".to_string()),
@@ -892,18 +803,17 @@ mod tests {
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1((cfg_usr(), config_jwt), data_c, put_user, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_PARSE_ERROR);
-        #[rustfmt::skip]
-        let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, user_id_bad, MSG_CASTING_TO_TYPE);
+        let msg = format!("{} '{}': ", err::MSG_FAILED_CONVERSION, "id");
         assert!(app_err.message.starts_with(&msg));
     }
 
-    async fn test_put_user_validate(modify_user: ModifyUserDto, err_msg: &str) {
+    async fn test_put_user_validate(password_user: PasswordUserDto, err_msg: &str) {
         let mut user = create_user();
         user.role = UserRole::Admin;
         let user1: User = user_with_id(user);
@@ -916,12 +826,12 @@ mod tests {
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         // PUT users/{id}
         let request = test::TestRequest::put()
-            .uri(&format!("/users/{}", user1.id))
-            .set_json(modify_user)
+            .uri(&format!("/api/users/{}", user1.id))
+            .set_json(password_user)
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1((cfg_usr(), config_jwt), data_c, put_user, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -930,124 +840,31 @@ mod tests {
         assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, err_msg);
     }
-
-    #[test]
-    async fn test_put_user_invalid_dto_nickname_empty() {
-        let modify_user = ModifyUserDto {
-            nickname: Some("".to_string()),
-            email: Some("Oliver_Taylor@gmail.com".to_string()),
-            password: Some("passwdQ0W0".to_string()),
-            role: Some(UserRole::Admin),
-        };
-        test_put_user_validate(modify_user, user_models::MSG_NICKNAME_REQUIRED).await;
-    }
-    #[test]
-    async fn test_put_user_invalid_dto_nickname_min() {
-        let modify_user = ModifyUserDto {
-            nickname: Some(UserModelsTest::nickname_min()),
-            email: Some("Oliver_Taylor@gmail.com".to_string()),
-            password: Some("passwdQ0W0".to_string()),
-            role: Some(UserRole::Admin),
-        };
-        test_put_user_validate(modify_user, user_models::MSG_NICKNAME_MIN_LENGTH).await;
-    }
-    #[test]
-    async fn test_put_user_invalid_dto_nickname_max() {
-        let modify_user = ModifyUserDto {
-            nickname: Some(UserModelsTest::nickname_max()),
-            email: Some("Oliver_Taylor@gmail.com".to_string()),
-            password: Some("passwdQ0W0".to_string()),
-            role: Some(UserRole::Admin),
-        };
-        test_put_user_validate(modify_user, user_models::MSG_NICKNAME_MAX_LENGTH).await;
-    }
-    #[test]
-    async fn test_put_user_invalid_dto_nickname_wrong() {
-        let modify_user = ModifyUserDto {
-            nickname: Some(UserModelsTest::nickname_wrong()),
-            email: Some("Oliver_Taylor@gmail.com".to_string()),
-            password: Some("passwdQ0W0".to_string()),
-            role: Some(UserRole::Admin),
-        };
-        test_put_user_validate(modify_user, user_models::MSG_NICKNAME_REGEX).await;
-    }
-    #[test]
-    async fn test_put_user_invalid_dto_email_empty() {
-        let modify_user = ModifyUserDto {
-            nickname: Some("Oliver_Taylor".to_string()),
-            email: Some("".to_string()),
-            password: Some("passwdQ0W0".to_string()),
-            role: Some(UserRole::Admin),
-        };
-        test_put_user_validate(modify_user, user_models::MSG_EMAIL_REQUIRED).await;
-    }
-    #[test]
-    async fn test_put_user_invalid_dto_email_min() {
-        let modify_user = ModifyUserDto {
-            nickname: Some("Oliver_Taylor".to_string()),
-            email: Some(UserModelsTest::email_min()),
-            password: Some("passwdQ0W0".to_string()),
-            role: Some(UserRole::Admin),
-        };
-        test_put_user_validate(modify_user, user_models::MSG_EMAIL_MIN_LENGTH).await;
-    }
-    #[test]
-    async fn test_put_user_invalid_dto_email_max() {
-        let modify_user = ModifyUserDto {
-            nickname: Some("Oliver_Taylor".to_string()),
-            email: Some(UserModelsTest::email_max()),
-            password: Some("passwdQ0W0".to_string()),
-            role: Some(UserRole::Admin),
-        };
-        test_put_user_validate(modify_user, user_models::MSG_EMAIL_MAX_LENGTH).await;
-    }
-    #[test]
-    async fn test_put_user_invalid_dto_email_wrong() {
-        let modify_user = ModifyUserDto {
-            nickname: Some("Oliver_Taylor".to_string()),
-            email: Some(UserModelsTest::email_wrong()),
-            password: Some("passwdQ0W0".to_string()),
-            role: Some(UserRole::Admin),
-        };
-        test_put_user_validate(modify_user, user_models::MSG_EMAIL_EMAIL_TYPE).await;
-    }
     #[test]
     async fn test_put_user_invalid_dto_password_empty() {
-        let modify_user = ModifyUserDto {
-            nickname: Some("Oliver_Taylor".to_string()),
-            email: Some("Oliver_Taylor@gmail.com".to_string()),
+        let modify_user = PasswordUserDto {
             password: Some("".to_string()),
-            role: Some(UserRole::Admin),
         };
         test_put_user_validate(modify_user, user_models::MSG_PASSWORD_REQUIRED).await;
     }
     #[test]
     async fn test_put_user_invalid_dto_password_min() {
-        let modify_user = ModifyUserDto {
-            nickname: Some("Oliver_Taylor".to_string()),
-            email: Some("Oliver_Taylor@gmail.com".to_string()),
+        let modify_user = PasswordUserDto {
             password: Some(UserModelsTest::password_min()),
-            role: Some(UserRole::Admin),
         };
         test_put_user_validate(modify_user, user_models::MSG_PASSWORD_MIN_LENGTH).await;
     }
     #[test]
     async fn test_put_user_invalid_dto_password_max() {
-        let modify_user = ModifyUserDto {
-            nickname: Some("Oliver_Taylor".to_string()),
-            email: Some("Oliver_Taylor@gmail.com".to_string()),
+        let modify_user = PasswordUserDto {
             password: Some(UserModelsTest::password_max()),
-            role: Some(UserRole::Admin),
         };
         test_put_user_validate(modify_user, user_models::MSG_PASSWORD_MAX_LENGTH).await;
     }
     #[test]
     async fn test_put_user_invalid_dto_password_wrong() {
-        let modify_user = ModifyUserDto {
-            nickname: Some("Oliver_Taylor".to_string()),
-            email: Some("Oliver_Taylor@gmail.com".to_string()),
+        let modify_user = PasswordUserDto {
             password: Some(UserModelsTest::password_wrong()),
-            role: Some(UserRole::Admin),
         };
         test_put_user_validate(modify_user, user_models::MSG_PASSWORD_REGEX).await;
     }
@@ -1065,23 +882,14 @@ mod tests {
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::put()
-            .uri(&format!("/users/{}", user1.id + 1)) // PUT users/{id}
-            .set_json(ModifyUserDto {
-                nickname: Some("Oliver_Taylor".to_string()),
-                email: Some("Oliver_Taylor@gmail.com".to_string()),
+            .uri(&format!("/api/users/{}", user1.id + 1)) // PUT /api/users/{id}
+            .set_json(PasswordUserDto {
                 password: Some("passwdQ0W0".to_string()),
-                role: Some(UserRole::Admin),
             })
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1((cfg_usr(), config_jwt), data_c, put_user, request).await;
-        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        assert_eq!(app_err.code, err::CD_NOT_FOUND);
-        assert_eq!(app_err.message, err::MSG_USER_NOT_FOUND);
+        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[test]
     async fn test_put_user_valid_id() {
@@ -1091,12 +899,8 @@ mod tests {
         let user1_id = user1.id;
         let new_password = "passwdQ0W0";
 
-        let mut user1mod: User = UserOrmApp::new_user(
-            user1_id,
-            &format!("James_{}", user1.nickname),
-            &format!("James_{}", user1.email),
-            new_password,
-        );
+        let mut user1mod: User =
+            UserOrmApp::new_user(user1_id, &user1.nickname.clone(), &user1.email.clone(), new_password);
         user1mod.role = UserRole::Admin;
         user1mod.created_at = user1.created_at.clone();
         user1mod.updated_at = Utc::now();
@@ -1110,12 +914,9 @@ mod tests {
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let request = test::TestRequest::put()
-            .uri(&format!("/users/{}", &user1_id)) // PUT users/{id}
-            .set_json(ModifyUserDto {
-                nickname: Some(user1mod.nickname),
-                email: Some(user1mod.email),
+            .uri(&format!("/api/users/{}", &user1_id)) // PUT /api/users/{id}
+            .set_json(PasswordUserDto {
                 password: Some(new_password.to_string()),
-                role: Some(user1mod.role),
             })
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
@@ -1153,18 +954,17 @@ mod tests {
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         // DELETE users/{id}
         let request = test::TestRequest::delete()
-            .uri(&format!("/users/{}", user_id_bad.clone()))
+            .uri(&format!("/api/users/{}", user_id_bad.clone()))
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1((cfg_usr(), config_jwt), data_c, delete_user, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_PARSE_ERROR);
-        #[rustfmt::skip]
-        let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, user_id_bad, MSG_CASTING_TO_TYPE);
+        let msg = format!("{} '{}': ", err::MSG_FAILED_CONVERSION, "id");
         assert!(app_err.message.starts_with(&msg));
     }
     #[test]
@@ -1181,23 +981,18 @@ mod tests {
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         // DELETE users/{id}
         let request = test::TestRequest::delete()
-            .uri(&format!("/users/{}", user1.id + 1))
+            .uri(&format!("/api/users/{}", user1.id + 1))
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1((cfg_usr(), config_jwt), data_c, delete_user, request).await;
-        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
-
-        let body = test::read_body(resp).await;
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        assert_eq!(app_err.code, err::CD_NOT_FOUND);
-        assert_eq!(app_err.message, err::MSG_USER_NOT_FOUND);
+        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[test]
     async fn test_delete_user_user_exists() {
         let mut user = create_user();
         user.role = UserRole::Admin;
         let user1: User = user_with_id(user);
+        let user1copy_dto = UserDto::from(user1.clone());
 
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
@@ -1207,10 +1002,131 @@ mod tests {
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         // DELETE users/{id}
         let request = test::TestRequest::delete()
-            .uri(&format!("/users/{}", user1.id))
+            .uri(&format!("/api/users/{}", user1.id))
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1((cfg_usr(), config_jwt), data_c, delete_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json_user1copy_dto = serde_json::json!(user1copy_dto).to_string();
+        let user1copy_dto_ser: UserDto = serde_json::from_slice(json_user1copy_dto.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(user_dto_res.id, user1copy_dto_ser.id);
+        assert_eq!(user_dto_res.nickname, user1copy_dto_ser.nickname);
+        assert_eq!(user_dto_res.email, user1copy_dto_ser.email);
+        assert_eq!(user_dto_res.password, user1copy_dto_ser.password);
+        assert_eq!(user_dto_res.password, "");
+        assert_eq!(user_dto_res.role, user1copy_dto_ser.role);
+        assert_eq!(user_dto_res.created_at, user1copy_dto_ser.created_at);
+        assert_eq!(user_dto_res.updated_at, user1copy_dto_ser.updated_at);
+    }
+
+    // ** get_user_current **
+    #[test]
+    async fn test_get_user_current_valid_token() {
+        let user1: User = user_with_id(create_user());
+        let user1b_dto = UserDto::from(user1.clone());
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        // GET /api/users_current
+        let request = test::TestRequest::get().uri("/api/users_current");
+        let request = request.insert_header(header_auth(&token));
+        let data_c = (vec![user1], vec![session1]);
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_current, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json_user1b_dto = serde_json::json!(user1b_dto).to_string();
+        let user1b_dto_ser: UserDto = serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(user_dto_res, user1b_dto_ser);
+        assert_eq!(user_dto_res.password, "");
+    }
+
+    // ** put_user_current **
+    #[test]
+    async fn test_put_user_current_valid_id() {
+        let user1: User = user_with_id(create_user());
+        let new_password = "passwdJ3S9";
+
+        let mut user1mod: User = user1.clone();
+        user1mod.password = new_password.to_string();
+        let user1mod_dto = UserDto::from(user1mod);
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let request = test::TestRequest::put()
+            .uri(&"/api/users_current") // PUT /api/users_current
+            .set_json(PasswordUserDto {
+                password: Some(new_password.to_string()),
+            })
+            .insert_header(header_auth(&token));
+        let data_c = (vec![user1], vec![session1]);
+        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, put_user_current, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json_user1mod_dto = serde_json::json!(user1mod_dto).to_string();
+        let user1mod_dto_ser: UserDto = serde_json::from_slice(json_user1mod_dto.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(user_dto_res.id, user1mod_dto_ser.id);
+        assert_eq!(user_dto_res.nickname, user1mod_dto_ser.nickname);
+        assert_eq!(user_dto_res.email, user1mod_dto_ser.email);
+        assert_eq!(user_dto_res.password, user1mod_dto_ser.password);
+        assert_eq!(user_dto_res.password, "");
+        assert_eq!(user_dto_res.role, user1mod_dto_ser.role);
+        assert_eq!(user_dto_res.created_at, user1mod_dto_ser.created_at);
+    }
+
+    // ** delete_user_current **
+    #[test]
+    async fn test_delete_user_current_valid_token() {
+        let user1: User = user_with_id(create_user());
+        let user1copy_dto = UserDto::from(user1.clone());
+
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        // DELETE /api/users_current
+        let request = test::TestRequest::delete().uri("/api/users_current");
+        let request = request.insert_header(header_auth(&token));
+        let data_c = (vec![user1], vec![session1]);
+        let resp = call_service1((cfg_usr(), config_jwt), data_c, delete_user_current, request).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let body = test::read_body(resp).await;
+        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json_user1copy_dto = serde_json::json!(user1copy_dto).to_string();
+        let user1copy_dto_ser: UserDto = serde_json::from_slice(json_user1copy_dto.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(user_dto_res.id, user1copy_dto_ser.id);
+        assert_eq!(user_dto_res.nickname, user1copy_dto_ser.nickname);
+        assert_eq!(user_dto_res.email, user1copy_dto_ser.email);
+        assert_eq!(user_dto_res.password, user1copy_dto_ser.password);
+        assert_eq!(user_dto_res.password, "");
+        assert_eq!(user_dto_res.role, user1copy_dto_ser.role);
+        assert_eq!(user_dto_res.created_at, user1copy_dto_ser.created_at);
+        assert_eq!(user_dto_res.updated_at, user1copy_dto_ser.updated_at);
     }
 }
