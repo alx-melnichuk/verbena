@@ -110,7 +110,7 @@ impl AppError {
     }
     /// Error while parsing data. (status=415)
     pub fn parse415(param: &str, message: &str) -> Self {
-        let message = &format!("Failed conversion '{}': {}", param, message);
+        let message = &format!("{} '{}': {}", err::MSG_FAILED_CONVERSION, param, message);
         AppError::new(err::CD_PARSE_ERROR, message).set_status(415)
     }
     /// Error when data validation. (status=417)

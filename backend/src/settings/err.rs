@@ -31,13 +31,13 @@ pub const MSG_FINISH_GREATER_MAX: &str = "The finish date of the search period e
 
 // 401 Unauthorized
 pub const CD_UNAUTHORIZED: &str = "Unauthorized";
-// Authorization token is missing.
+// 401 Unauthorized - Authorization token is missing.
 pub const MSG_MISSING_TOKEN: &str = "token_missing";
-// Error when decoding token or expired token
+// 401 Unauthorized - Error when decoding token or expired token
 pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token";
-// According to "num" in the token, the user was not found // "The token "NUM" value is unacceptable."
+// 401 Unauthorized - According to "num" in the token, the user was not found // "The token "NUM" value is unacceptable."
 pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num";
-// According to "user_id" in the token, the user was not found // "The token "ID" value is unacceptable."
+// 401 Unauthorized - According to "user_id" in the token, the user was not found // "The token "ID" value is unacceptable."
 pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
 
 // 403 Forbidden
@@ -70,6 +70,7 @@ pub const CD_CONFLICT: &str = "Conflict";
 
 // 415 Unsupported Media Type
 pub const CD_PARSE_ERROR: &str = "ParseError";
+pub const MSG_FAILED_CONVERSION: &str = "Failed conversion";
 
 // 417 Expectation Failed
 pub const CD_VALIDATION: &str = "Validation";
