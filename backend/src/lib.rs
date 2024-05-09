@@ -16,7 +16,7 @@ use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
 use streams::{config_strm, stream_controller, stream_get_controller, stream_orm::cfg::get_stream_orm_app};
 use tools::evn_data::{check_params_env, update_params_env};
 use users::{
-    config_usr, user_auth_controller, user_controller, user_orm::cfg::get_user_orm_app,
+    user_auth_controller, user_controller, user_orm::cfg::get_user_orm_app,
     user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_controller,
     user_registr_orm::cfg::get_user_registr_orm_app,
 };
@@ -58,8 +58,6 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let config_jwt = Data::new(config_jwt::ConfigJwt::init_by_env());
         // Used "actix-multipart" to upload files. TempFileConfig.from_req()
         let temp_file_config = Data::new(temp_file_config0);
-        // used: user_controller, user_auth_controller, user_registr_controller
-        let config_usr = Data::new(config_usr::ConfigUsr::init_by_env());
         // used: stream_get_controller, stream_controller
         let config_strm = Data::new(config_strm::ConfigStrm::init_by_env());
 
@@ -85,7 +83,6 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             .app_data(Data::clone(&config_app))
             .app_data(Data::clone(&config_jwt))
             .app_data(Data::clone(&temp_file_config))
-            .app_data(Data::clone(&config_usr))
             .app_data(Data::clone(&config_strm))
             .app_data(Data::clone(&mailer))
             .app_data(Data::clone(&user_orm))

@@ -1,4 +1,4 @@
-use std::{borrow, ops::Deref, time::Instant};
+use std::{borrow, ops::Deref};
 
 use actix_web::{cookie::time::Duration as ActixWebDuration, cookie::Cookie, post, web, HttpResponse};
 
@@ -16,7 +16,6 @@ use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::{
-    config_usr,
     user_models::{self, LoginUserDto, TokenUserDto},
     user_orm::UserOrm,
 };
@@ -101,13 +100,11 @@ fn err_session(user_id: i32) -> AppError {
 // POST /api/login
 #[post("/api/login")]
 pub async fn login(
-    config_usr: web::Data<config_usr::ConfigUsr>,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     user_orm: web::Data<UserOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
     json_body: web::Json<LoginUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
@@ -183,9 +180,6 @@ pub async fn login(
         .http_only(true)
         .finish();
 
-    if config_usr.usr_show_lead_time {
-        log::info!("login() lead time: {:.2?}", now.elapsed());
-    }
     Ok(HttpResponse::Ok().cookie(cookie).json(login_user_response_dto))
 }
 
@@ -193,11 +187,9 @@ pub async fn login(
 #[rustfmt::skip]
 #[post("/api/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn logout(
-    config_usr: web::Data<config_usr::ConfigUsr>,
     authenticated: Authenticated,
     session_orm: web::Data<SessionOrmApp>
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     // Get user ID.
     let user = authenticated.deref().clone();
 
@@ -214,9 +206,6 @@ pub async fn logout(
         .max_age(ActixWebDuration::new(-1, 0))
         .http_only(true)
         .finish();
-    if config_usr.usr_show_lead_time {
-        log::info!("logout() lead time: {:.2?}", now.elapsed());
-    }
     Ok(HttpResponse::Ok().cookie(cookie).body(()))
 }
 
@@ -224,12 +213,10 @@ pub async fn logout(
 #[rustfmt::skip]
 #[post("/api/token")]
 pub async fn update_token(
-    config_usr: web::Data<config_usr::ConfigUsr>,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     session_orm: web::Data<SessionOrmApp>,
     json_token_user_dto: web::Json<TokenUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     // Get token2 from json.
     let token_user_dto: TokenUserDto = json_token_user_dto.into_inner();
     let token = token_user_dto.token;
@@ -290,9 +277,6 @@ pub async fn update_token(
         .max_age(ActixWebDuration::new(config_jwt.jwt_access, 0))
         .http_only(true)
         .finish();
-    if config_usr.usr_show_lead_time {
-        log::info!("new_token() lead time: {:.2?}", now.elapsed());
-    }
     Ok(HttpResponse::Ok().cookie(cookie).json(user_tokens_dto))
 }
 
@@ -304,7 +288,6 @@ mod tests {
     use crate::extractors::authentication::BEARER;
     use crate::sessions::{config_jwt, session_models::Session, tokens::encode_token};
     use crate::users::{
-        config_usr,
         user_models::{User, UserModelsTest, UserRole},
         user_orm::tests::UserOrmApp,
     };
@@ -325,9 +308,6 @@ mod tests {
     fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
         SessionOrmApp::new_session(user_id, num_token)
     }
-    fn cfg_usr() -> config_usr::ConfigUsr {
-        config_usr::get_test_config()
-    }
     fn cfg_jwt() -> config_jwt::ConfigJwt {
         config_jwt::get_test_config()
     }
@@ -336,20 +316,18 @@ mod tests {
         (http::header::AUTHORIZATION, header_value)
     }
     async fn call_service1(
-        cfg_c: (config_usr::ConfigUsr, config_jwt::ConfigJwt),
-        data_c: (Vec<User>, Vec<Session>),
+        cfg_jwt: config_jwt::ConfigJwt,    // configuration
+        data_c: (Vec<User>, Vec<Session>), // cortege of data vectors
         factory: impl dev::HttpServiceFactory + 'static,
         request: TestRequest,
     ) -> dev::ServiceResponse {
-        let data_config_usr = web::Data::new(cfg_c.0);
-        let data_config_jwt = web::Data::new(cfg_c.1);
+        let data_config_jwt = web::Data::new(cfg_jwt);
 
         let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
         let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
 
         let app = test::init_service(
             App::new()
-                .app_data(web::Data::clone(&data_config_usr))
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_user_orm))
                 .app_data(web::Data::clone(&data_session_orm))
@@ -367,7 +345,7 @@ mod tests {
         let request = test::TestRequest::post().uri("/api/login");
 
         let data_c = (vec![], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -381,7 +359,7 @@ mod tests {
         let request = test::TestRequest::post().uri("/api/login").set_json(json!({}));
 
         let data_c = (vec![], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -397,7 +375,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -415,7 +393,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -433,7 +411,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -451,7 +429,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -469,7 +447,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -487,7 +465,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -505,7 +483,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -523,7 +501,7 @@ mod tests {
             password: "".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -541,7 +519,7 @@ mod tests {
             password: UserModelsTest::password_min(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -559,7 +537,7 @@ mod tests {
             password: UserModelsTest::password_max(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -577,7 +555,7 @@ mod tests {
             password: UserModelsTest::password_wrong(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -595,7 +573,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         let body = test::read_body(resp).await;
@@ -612,7 +590,7 @@ mod tests {
             password: "passwordD1T1".to_string(),
         });
         let data_c = (vec![], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         let body = test::read_body(resp).await;
@@ -633,7 +611,7 @@ mod tests {
             password: user1_password.to_string(),
         });
         let data_c = (vec![user1], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
 
         let body = test::read_body(resp).await;
@@ -658,7 +636,7 @@ mod tests {
             password: format!("{}a", user1_password),
         });
         let data_c = (vec![user1], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         let body = test::read_body(resp).await;
@@ -685,7 +663,7 @@ mod tests {
         let mut config_jwt = config_jwt::get_test_config();
         config_jwt.jwt_secret = "".to_string();
         let data_c = (vec![user1], vec![]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, login, request).await;
+        let resp = call_service1(config_jwt, data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
 
         let body = test::read_body(resp).await;
@@ -710,7 +688,7 @@ mod tests {
             password: user1_password,
         });
         let data_c = (vec![user1], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, login, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
 
         let body = test::read_body(resp).await;
@@ -741,7 +719,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_access = config_jwt.jwt_access;
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, login, request).await;
+        let resp = call_service1(config_jwt, data_c, login, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let token_cookie_opt = resp.response().cookies().find(|cookie| cookie.name() == "token");
@@ -789,7 +767,7 @@ mod tests {
         let request = test::TestRequest::post().uri("/api/logout");
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, logout, request).await;
+        let resp = call_service1(config_jwt, data_c, logout, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let token_cookie_opt = resp.response().cookies().find(|cookie| cookie.name() == "token");
@@ -820,7 +798,7 @@ mod tests {
         // POST /api/token
         let request = test::TestRequest::post().uri("/api/token");
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, update_token, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, update_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -837,7 +815,7 @@ mod tests {
         let request = test::TestRequest::post().uri("/api/token").set_json(json!({}));
 
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, update_token, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, update_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         let body = test::read_body(resp).await;
@@ -856,7 +834,7 @@ mod tests {
             .set_json(user_models::TokenUserDto { token: "".to_string() });
 
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, update_token, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, update_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -875,7 +853,7 @@ mod tests {
             token: "invalid_token".to_string(),
         });
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, update_token, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, update_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -899,7 +877,7 @@ mod tests {
             token: token_bad.to_string(),
         });
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, update_token, request).await;
+        let resp = call_service1(config_jwt, data_c, update_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
 
         let body = test::read_body(resp).await;
@@ -927,7 +905,7 @@ mod tests {
             token: token_bad.to_string(),
         });
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, update_token, request).await;
+        let resp = call_service1(config_jwt, data_c, update_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
@@ -951,7 +929,7 @@ mod tests {
             token: token_bad.to_string(),
         });
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, update_token, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, update_token, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let token_cookie_opt = resp.response().cookies().find(|cookie| cookie.name() == "token");

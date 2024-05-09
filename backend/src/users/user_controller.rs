@@ -1,4 +1,4 @@
-use std::{ops::Deref, time::Instant};
+use std::ops::Deref;
 
 use actix_web::{delete, get, put, web, HttpResponse};
 use log;
@@ -13,7 +13,6 @@ use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::{
-    config_usr,
     user_models::{self, ModifyUserDto, PasswordUserDto},
     user_orm::UserOrm,
 };
@@ -66,11 +65,9 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 )]
 #[get("/api/users/email/{email}")]
 pub async fn get_user_by_email(
-    config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     let email = request.match_info().query("email").to_string();
 
     let result_user = web::block(move || {
@@ -91,9 +88,6 @@ pub async fn get_user_by_email(
         AppError::blocking506(&e.to_string())
     })?;
 
-    if config_usr.usr_show_lead_time {
-        log::info!("get_user_by_email() lead time: {:.2?}", now.elapsed());
-    }
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(json!({ "email": user.email }))) // 200
     } else {
@@ -126,11 +120,9 @@ pub async fn get_user_by_email(
 )]
 #[get("/api/users/nickname/{nickname}")]
 pub async fn get_user_by_nickname(
-    config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     let nickname = request.match_info().query("nickname").to_string();
 
     let result_user = web::block(move || {
@@ -151,9 +143,6 @@ pub async fn get_user_by_nickname(
         AppError::blocking506(&e.to_string())
     })?;
 
-    if config_usr.usr_show_lead_time {
-        log::info!("get_user_by_nickname() lead time: {:.2?}", now.elapsed());
-    }
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(json!({ "nickname": user.nickname }))) // 200
     } else {
@@ -195,11 +184,9 @@ pub async fn get_user_by_nickname(
 #[rustfmt::skip]
 #[get("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
 pub async fn get_user_by_id(
-    config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     let id_str = request.match_info().query("id").to_string();
 
     let id = parser::parse_i32(&id_str).map_err(|e| {
@@ -223,9 +210,6 @@ pub async fn get_user_by_id(
         AppError::blocking506(&e.to_string())
     })?;
 
-    if config_usr.usr_show_lead_time {
-        log::info!("get_user_by_id() lead time: {:.2?}", now.elapsed());
-    }
     if let Some(user) = result_user {
         let user_dto = user_models::UserDto::from(user);
         Ok(HttpResponse::Ok().json(user_dto)) // 200
@@ -271,12 +255,10 @@ pub async fn get_user_by_id(
 #[rustfmt::skip]
 #[put("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn put_user(
-    config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
     json_body: web::Json<PasswordUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     let id_str = request.match_info().query("id").to_string();
 
     let id = parser::parse_i32(&id_str).map_err(|e| {
@@ -309,9 +291,6 @@ pub async fn put_user(
         AppError::blocking506(&e.to_string())
     })??;
 
-    if config_usr.usr_show_lead_time {
-        log::info!("put_user() lead time: {:.2?}", now.elapsed());
-    }
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(user_models::UserDto::from(user))) // 200
     } else {
@@ -352,11 +331,9 @@ pub async fn put_user(
 #[rustfmt::skip]
 #[delete("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn delete_user(
-    config_usr: web::Data<config_usr::ConfigUsr>,
     user_orm: web::Data<UserOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     let id_str = request.match_info().query("id").to_string();
 
     let id = parser::parse_i32(&id_str).map_err(|e| {
@@ -379,9 +356,6 @@ pub async fn delete_user(
         AppError::blocking506(&e.to_string())
     })??;
 
-    if config_usr.usr_show_lead_time {
-        log::info!("delete_user() lead time: {:.2?}", now.elapsed());
-    }
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(user_models::UserDto::from(user))) // 200
     } else {
@@ -414,16 +388,11 @@ pub async fn delete_user(
 #[rustfmt::skip]
 #[get("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_user_current(
-    config_usr: web::Data<config_usr::ConfigUsr>,
     authenticated: Authenticated,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     let user = authenticated.deref();
     let user_dto = user_models::UserDto::from(user.clone());
 
-    if config_usr.usr_show_lead_time {
-        log::info!("get_user_current() lead time: {:.2?}", now.elapsed());
-    }
     Ok(HttpResponse::Ok().json(user_dto)) // 200
 }
 
@@ -460,12 +429,10 @@ pub async fn get_user_current(
 #[rustfmt::skip]
 #[put("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_user_current(
-    config_usr: web::Data<config_usr::ConfigUsr>,
     authenticated: Authenticated,
     user_orm: web::Data<UserOrmApp>,
     json_body: web::Json<PasswordUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     let user = authenticated.deref();
     let id = user.id;
 
@@ -494,9 +461,6 @@ pub async fn put_user_current(
         AppError::blocking506(&e.to_string())
     })??;
 
-    if config_usr.usr_show_lead_time {
-        log::info!("put_user_current() lead time: {:.2?}", now.elapsed());
-    }
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(user_models::UserDto::from(user))) // 200
     } else {
@@ -533,11 +497,9 @@ pub async fn put_user_current(
 #[rustfmt::skip]
 #[delete("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_user_current(
-    config_usr: web::Data<config_usr::ConfigUsr>,
     authenticated: Authenticated,
     user_orm: web::Data<UserOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     let user = authenticated.deref();
     let id = user.id;
 
@@ -557,9 +519,6 @@ pub async fn delete_user_current(
         AppError::blocking506(&e.to_string())
     })??;
 
-    if config_usr.usr_show_lead_time {
-        log::info!("delete_user_current() lead time: {:.2?}", now.elapsed());
-    }
     if let Some(user) = result_user {
         Ok(HttpResponse::Ok().json(user_models::UserDto::from(user))) // 200
     } else {
@@ -577,10 +536,7 @@ mod tests {
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
     };
-    use crate::users::{
-        config_usr,
-        user_models::{User, UserDto, UserModelsTest, UserRole},
-    };
+    use crate::users::user_models::{User, UserDto, UserModelsTest, UserRole};
 
     use super::*;
 
@@ -598,9 +554,6 @@ mod tests {
     fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
         SessionOrmApp::new_session(user_id, num_token)
     }
-    fn cfg_usr() -> config_usr::ConfigUsr {
-        config_usr::get_test_config()
-    }
     fn cfg_jwt() -> config_jwt::ConfigJwt {
         config_jwt::get_test_config()
     }
@@ -609,19 +562,17 @@ mod tests {
         (http::header::AUTHORIZATION, header_value)
     }
     async fn call_service1(
-        cfg_c: (config_usr::ConfigUsr, config_jwt::ConfigJwt),
-        data_c: (Vec<User>, Vec<Session>),
+        cfg_jwt: config_jwt::ConfigJwt,    // configuration
+        data_c: (Vec<User>, Vec<Session>), // cortege of data vectors
         factory: impl dev::HttpServiceFactory + 'static,
         request: TestRequest,
     ) -> dev::ServiceResponse {
-        let data_config_usr = web::Data::new(cfg_c.0);
-        let data_config_jwt = web::Data::new(cfg_c.1);
+        let data_config_jwt = web::Data::new(cfg_jwt);
         let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
         let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
 
         let app = test::init_service(
             App::new()
-                .app_data(web::Data::clone(&data_config_usr))
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_user_orm))
                 .app_data(web::Data::clone(&data_session_orm))
@@ -639,7 +590,7 @@ mod tests {
         // GET /api/users/email/${email}
         let request = test::TestRequest::get().uri(&"/api/users/email/JAMES_SMITH@gmail.com");
         let data_c = (vec![user1], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_by_email, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, get_user_by_email, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[test]
@@ -651,7 +602,7 @@ mod tests {
         let request = test::TestRequest::get().uri(&format!("/api/users/email/{}", email));
         let data_c = (vec![user1], vec![]);
         let factory = get_user_by_email;
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, factory, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, factory, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -667,7 +618,7 @@ mod tests {
         // GET /api/users/nickname/${nickname}
         let request = test::TestRequest::get().uri(&"/api/users/nickname/JAMES_SMITH");
         let data_c = (vec![user1], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_by_nickname, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, get_user_by_nickname, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[test]
@@ -678,7 +629,7 @@ mod tests {
         // GET /api/users/nickname/${nickname}
         let request = test::TestRequest::get().uri(&format!("/api/users/nickname/{}", nickname));
         let data_c = (vec![user1], vec![]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_by_nickname, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, get_user_by_nickname, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -706,7 +657,7 @@ mod tests {
         let request = test::TestRequest::get().uri(&format!("/api/users/{}", user_id_bad.clone()));
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, get_user_by_id, request).await;
+        let resp = call_service1(config_jwt, data_c, get_user_by_id, request).await;
         assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
         let body = test::read_body(resp).await;
@@ -732,7 +683,7 @@ mod tests {
         let request = test::TestRequest::get().uri(&format!("/api/users/{}", user1.id));
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, get_user_by_id, request).await;
+        let resp = call_service1(config_jwt, data_c, get_user_by_id, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -760,7 +711,7 @@ mod tests {
         let request = test::TestRequest::get().uri(&format!("/api/users/{}", user1.id + 1));
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, get_user_by_id, request).await;
+        let resp = call_service1(config_jwt, data_c, get_user_by_id, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
 
@@ -789,7 +740,7 @@ mod tests {
             })
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, put_user, request).await;
+        let resp = call_service1(config_jwt, data_c, put_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
         let body = test::read_body(resp).await;
@@ -816,7 +767,7 @@ mod tests {
             .set_json(password_user)
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, put_user, request).await;
+        let resp = call_service1(config_jwt, data_c, put_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
@@ -874,7 +825,7 @@ mod tests {
             })
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, put_user, request).await;
+        let resp = call_service1(config_jwt, data_c, put_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[test]
@@ -906,7 +857,7 @@ mod tests {
             })
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, put_user, request).await;
+        let resp = call_service1(config_jwt, data_c, put_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -943,7 +894,7 @@ mod tests {
             .uri(&format!("/api/users/{}", user_id_bad.clone()))
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, delete_user, request).await;
+        let resp = call_service1(config_jwt, data_c, delete_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
         let body = test::read_body(resp).await;
@@ -969,7 +920,7 @@ mod tests {
             .uri(&format!("/api/users/{}", user1.id + 1))
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, delete_user, request).await;
+        let resp = call_service1(config_jwt, data_c, delete_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[test]
@@ -990,7 +941,7 @@ mod tests {
             .uri(&format!("/api/users/{}", user1.id))
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, delete_user, request).await;
+        let resp = call_service1(config_jwt, data_c, delete_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -1025,7 +976,7 @@ mod tests {
         let request = test::TestRequest::get().uri("/api/users_current");
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, get_user_current, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, get_user_current, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -1062,7 +1013,7 @@ mod tests {
             })
             .insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), cfg_jwt()), data_c, put_user_current, request).await;
+        let resp = call_service1(cfg_jwt(), data_c, put_user_current, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -1096,7 +1047,7 @@ mod tests {
         let request = test::TestRequest::delete().uri("/api/users_current");
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1((cfg_usr(), config_jwt), data_c, delete_user_current, request).await;
+        let resp = call_service1(config_jwt, data_c, delete_user_current, request).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
