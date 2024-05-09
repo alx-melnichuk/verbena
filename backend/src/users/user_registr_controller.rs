@@ -707,7 +707,8 @@ mod tests {
     // ** registration **
     #[test]
     async fn test_registration_no_data() {
-        let request = test::TestRequest::post().uri("/registration"); // POST /registration
+        let request = test::TestRequest::post()
+            .uri("/api/registration"); // POST /api/registration
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
@@ -720,7 +721,7 @@ mod tests {
     #[test]
     async fn test_registration_empty_json_object() {
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(json!({}));
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
@@ -734,7 +735,7 @@ mod tests {
     #[test]
     async fn test_registration_invalid_dto_nickname_empty() {
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: "".to_string(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
@@ -754,7 +755,7 @@ mod tests {
     #[test]
     async fn test_registration_invalid_dto_nickname_min() {
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: UserModelsTest::nickname_min(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
@@ -774,7 +775,7 @@ mod tests {
     #[test]
     async fn test_registration_invalid_dto_nickname_max() {
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: UserModelsTest::nickname_max(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
@@ -794,7 +795,7 @@ mod tests {
     #[test]
     async fn test_registration_invalid_dto_nickname_wrong() {
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: UserModelsTest::nickname_wrong(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
@@ -814,7 +815,7 @@ mod tests {
     #[test]
     async fn test_registration_invalid_dto_email_empty() {
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: "".to_string(),
@@ -834,7 +835,7 @@ mod tests {
     #[test]
     async fn test_registration_invalid_dto_email_min() {
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: UserModelsTest::email_min(),
@@ -854,7 +855,7 @@ mod tests {
     #[test]
     async fn test_registration_invalid_dto_email_max() {
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: UserModelsTest::email_max(),
@@ -874,7 +875,7 @@ mod tests {
     #[test]
     async fn test_registration_invalid_dto_email_wrong() {
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: UserModelsTest::email_wrong(),
@@ -894,7 +895,7 @@ mod tests {
     #[test]
     async fn test_registration_invalid_dto_password_empty() {
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
@@ -914,7 +915,7 @@ mod tests {
     #[test]
     async fn test_registration_invalid_dto_password_min() {
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
@@ -934,7 +935,7 @@ mod tests {
     #[test]
     async fn test_registration_invalid_dto_password_max() {
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
@@ -954,7 +955,7 @@ mod tests {
     #[test]
     async fn test_registration_invalid_dto_password_wrong() {
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
@@ -977,7 +978,7 @@ mod tests {
         let nickname1: String = user1.nickname.to_string();
 
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: nickname1,
                 email: "Mary_Williams@gmail.com".to_string(),
@@ -999,7 +1000,7 @@ mod tests {
         let email1: String = user1.email.to_string();
 
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: "Mary_Williams".to_string(),
                 email: email1,
@@ -1021,7 +1022,7 @@ mod tests {
         let nickname1: String = user_registr1.nickname.to_string();
 
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: nickname1,
                 email: "Mary_Williams@gmail.com".to_string(),
@@ -1043,7 +1044,7 @@ mod tests {
         let email1: String = user_registr1.email.to_string();
 
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: "Mary_Williams".to_string(),
                 email: email1,
@@ -1062,7 +1063,7 @@ mod tests {
     #[test]
     async fn test_login_err_jsonwebtoken_encode() {
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: "Mary_Williams".to_string(),
                 email: "Mary_Williams@gmail.com".to_string(),
@@ -1089,7 +1090,7 @@ mod tests {
         let password = "passwordD2T2".to_string();
 
         let request = test::TestRequest::post()
-            .uri("/registration") // POST /registration
+            .uri("/api/registration") // POST /api/registration
             .set_json(RegistrUserDto {
                 nickname: nickname.to_string(),
                 email: email.to_string(),
@@ -1126,8 +1127,9 @@ mod tests {
     #[test]
     async fn test_registration_confirm_invalid_registr_token() {
         let registr_token = "invalid_registr_token";
-        // PUT /registration/{registr_token}
-        let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
+        // PUT /api/registration/{registr_token}
+        let request = test::TestRequest::put()
+            .uri(&format!("/api/registration/{}", registr_token));
 
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, confirm_registration, request).await;
@@ -1152,8 +1154,9 @@ mod tests {
         let registr_token =
             encode_token(user_reg1_id, num_token, jwt_secret, -reg_duration).unwrap();
 
-        //PUT /registration/{registr_token}
-        let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
+        //PUT /api/registration/{registr_token}
+        let request = test::TestRequest::put()
+            .uri(&format!("/api/registration/{}", registr_token));
 
         let data_c = (vec![], vec![user_reg1], vec![], vec![]);
         let resp = call_service1((cfg_app(), config_jwt), data_c, confirm_registration, request).await;
@@ -1178,8 +1181,8 @@ mod tests {
         let registr_token =
             encode_token(user_reg1_id + 1, num_token, jwt_secret, reg_duration).unwrap();
 
-        //PUT /registration/{registr_token}
-        let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
+        //PUT /api/registration/{registr_token}
+        let request = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token));
 
         let data_c = (vec![], vec![user_reg1], vec![], vec![]);
         let resp = call_service1((cfg_app(), config_jwt), data_c, confirm_registration, request).await;
@@ -1205,8 +1208,8 @@ mod tests {
         let registr_token =
             encode_token(user_reg1.id, num_token, jwt_secret, reg_duration).unwrap();
 
-        //PUT /registration/{registr_token}
-        let request = test::TestRequest::put().uri(&format!("/registration/{}", registr_token));
+        //PUT /api/registration/{registr_token}
+        let request = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token));
 
         let data_c = (vec![], vec![user_reg1], vec![], vec![]);
         let resp = call_service1((cfg_app(), config_jwt), data_c, confirm_registration, request).await;
@@ -1225,7 +1228,7 @@ mod tests {
     // ** recovery **
     #[test]
     async fn test_recovery_no_data() {
-        let request = test::TestRequest::post().uri("/recovery"); //POST /recovery
+        let request = test::TestRequest::post().uri("/api/recovery"); //POST /api/recovery
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
@@ -1237,8 +1240,8 @@ mod tests {
     }
     #[test]
     async fn test_recovery_empty_json_object() {
-        //POST /recovery
-        let request = test::TestRequest::post().uri("/recovery").set_json(json!({}));
+        //POST /api/recovery
+        let request = test::TestRequest::post().uri("/api/recovery").set_json(json!({}));
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
         assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
@@ -1250,8 +1253,8 @@ mod tests {
     }
     #[test]
     async fn test_recovery_invalid_dto_email_empty() {
-        //POST /recovery
-        let request = test::TestRequest::post().uri("/recovery") 
+        //POST /api/recovery
+        let request = test::TestRequest::post().uri("/api/recovery") 
             .set_json(RecoveryUserDto { email: "".to_string() });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
@@ -1266,8 +1269,8 @@ mod tests {
     }
     #[test]
     async fn test_recovery_invalid_dto_email_min() {
-        //POST /recovery
-        let request = test::TestRequest::post().uri("/recovery")
+        //POST /api/recovery
+        let request = test::TestRequest::post().uri("/api/recovery")
             .set_json(RecoveryUserDto { email: UserModelsTest::email_min() });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
@@ -1282,8 +1285,8 @@ mod tests {
     }
     #[test]
     async fn test_recovery_invalid_dto_email_max() {
-         //POST /recovery
-        let request = test::TestRequest::post().uri("/recovery")
+         //POST /api/recovery
+        let request = test::TestRequest::post().uri("/api/recovery")
             .set_json(RecoveryUserDto { email: UserModelsTest::email_max() });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
@@ -1298,8 +1301,8 @@ mod tests {
     }
     #[test]
     async fn test_recovery_invalid_dto_email_wrong() {
-        //POST /recovery
-        let request = test::TestRequest::post().uri("/recovery")
+        //POST /api/recovery
+        let request = test::TestRequest::post().uri("/api/recovery")
             .set_json(RecoveryUserDto { email: UserModelsTest::email_wrong() });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
@@ -1314,8 +1317,8 @@ mod tests {
     }
     #[test]
     async fn test_recovery_if_user_with_email_not_exist() {
-        //POST /recovery
-        let request = test::TestRequest::post().uri("/recovery")
+        //POST /api/recovery
+        let request = test::TestRequest::post().uri("/api/recovery")
             .set_json(RecoveryUserDto { email: "Oliver_Taylor@gmail.com".to_string() });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
@@ -1332,8 +1335,8 @@ mod tests {
         let user1 = user_with_id(create_user());
         let user1_email = user1.email.to_string();
 
-        //POST /recovery
-        let request = test::TestRequest::post().uri("/recovery")
+        //POST /api/recovery
+        let request = test::TestRequest::post().uri("/api/recovery")
             .set_json(RecoveryUserDto { email: user1_email.to_string() });
         let data_c = (vec![user1], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
@@ -1367,8 +1370,8 @@ mod tests {
             create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
         let user_recovery1_id = user_recovery1.id;
 
-        //POST /recovery
-        let request = test::TestRequest::post().uri("/recovery")
+        //POST /api/recovery
+        let request = test::TestRequest::post().uri("/api/recovery")
             .set_json(RecoveryUserDto { email: user1_email.to_string() });
         let data_c = (vec![user1], vec![], vec![], vec![user_recovery1]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
@@ -1401,8 +1404,8 @@ mod tests {
         let user_recovery1 =
             create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
 
-        // POST /recovery
-        let request = test::TestRequest::post().uri("/recovery") 
+        // POST /api/recovery
+        let request = test::TestRequest::post().uri("/api/recovery") 
             .set_json(RecoveryUserDto { email: user1_email.to_string() });
         let mut config_jwt = config_jwt::get_test_config();
         config_jwt.jwt_secret = "".to_string();
@@ -1421,8 +1424,8 @@ mod tests {
     #[test]
     async fn test_recovery_confirm_invalid_dto_password_empty() {
         let recovery_token = "recovery_token";
-        // PUT /recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token))
+        // PUT /api/recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
             .set_json(RecoveryDataDto { password: "".to_string() });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, confirm_recovery, request).await;
@@ -1438,8 +1441,8 @@ mod tests {
     #[test]
     async fn test_recovery_confirm_invalid_dto_password_min() {
         let recovery_token = "recovery_token";
-        // PUT /recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token)) 
+        // PUT /api/recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token)) 
             .set_json(RecoveryDataDto { password: UserModelsTest::password_min() });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, confirm_recovery, request).await;
@@ -1455,8 +1458,8 @@ mod tests {
     #[test]
     async fn test_recovery_confirm_invalid_dto_password_max() {
         let recovery_token = "recovery_token";
-        // PUT /recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token)) 
+        // PUT /api/recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token)) 
             .set_json(RecoveryDataDto { password: UserModelsTest::password_max() });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, confirm_recovery, request).await;
@@ -1472,8 +1475,8 @@ mod tests {
     #[test]
     async fn test_recovery_confirm_invalid_recovery_token() {
         let recovery_token = "invalid_recovery_token";
-        // PUT /recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token)) 
+        // PUT /api/recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token)) 
             .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, confirm_recovery, request).await;
@@ -1501,8 +1504,8 @@ mod tests {
         let recovery_token =
             encode_token(user_recovery1.id, num_token, jwt_secret, -recovery_duration).unwrap();
 
-        // PUT /recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token)) 
+        // PUT /api/recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token)) 
             .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() });
         let data_c = (vec![user1], vec![], vec![], vec![user_recovery1]);
         let resp = call_service1((cfg_app(), config_jwt), data_c, confirm_recovery, request).await;
@@ -1535,8 +1538,8 @@ mod tests {
         )
         .unwrap();
 
-        // PUT /recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token))
+        // PUT /api/recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
             .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() });
         let data_c = (vec![user1], vec![], vec![], vec![user_recovery1]);
         let resp = call_service1((cfg_app(), config_jwt), data_c, confirm_recovery, request).await;
@@ -1570,8 +1573,8 @@ mod tests {
         )
         .unwrap();
 
-        // PUT /recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token)) 
+        // PUT /api/recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token)) 
             .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() });
         let data_c = (vec![user1], vec![], vec![], vec![user_recovery1]);
         let resp = call_service1((cfg_app(), config_jwt), data_c, confirm_recovery, request).await;
@@ -1601,8 +1604,8 @@ mod tests {
         let recovery_token =
             encode_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
 
-        // PUT /recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/recovery/{}", recovery_token)) 
+        // PUT /api/recovery/{recovery_token}
+        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token)) 
             .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() });
         let data_c = (vec![user1], vec![], vec![], vec![user_recovery1]);
         let resp = call_service1((cfg_app(), config_jwt), data_c, confirm_recovery, request).await;
