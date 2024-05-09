@@ -58,6 +58,7 @@ impl AppError {
             401 => http::StatusCode::UNAUTHORIZED,
             403 => http::StatusCode::FORBIDDEN,
             404 => http::StatusCode::NOT_FOUND,
+            406 => http::StatusCode::NOT_ACCEPTABLE,
             409 => http::StatusCode::CONFLICT,
             415 => http::StatusCode::UNSUPPORTED_MEDIA_TYPE,
             417 => http::StatusCode::EXPECTATION_FAILED,
@@ -108,6 +109,14 @@ impl AppError {
     pub fn not_found404(message: &str) -> Self {
         AppError::new(err::CD_NOT_FOUND, message).set_status(403)
     }
+    ///
+    pub fn not_acceptable406(message: &str) -> Self {
+        AppError::new(err::CD_NOT_ACCEPTABLE, message).set_status(406)
+    }
+    /// A conflict situation has arisen.
+    pub fn conflict409(message: &str) -> Self {
+        AppError::new(err::CD_CONFLICT, message).set_status(409)
+    }
     /// Error while parsing data. (status=415)
     pub fn parse415(param: &str, message: &str) -> Self {
         let message = &format!("{}: `{}` - {}", err::MSG_FAILED_CONVERSION, param, message);
@@ -117,6 +126,10 @@ impl AppError {
     pub fn validation417(message: &str) -> Self {
         AppError::new(err::CD_VALIDATION, message).set_status(417)
     }
+    // /// General internal error. (status=500)
+    // pub fn internalError500(message: &str) -> AppError {
+    //     AppError::new(err::CD_INTERNAL_SERVER_ERROR, message).set_status(500)
+    // }
     /// Error while blocking process. (status=506)
     pub fn blocking506(message: &str) -> AppError {
         AppError::new(err::CD_BLOCKING, &format!("{}: {}", err::MSG_BLOCKING, message)).set_status(506)

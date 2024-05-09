@@ -22,12 +22,12 @@ use crate::{errors, user_auth_controller, user_controller, users::user_models};
         schemas(
             errors::AppError,
             user_models::UserRole,
-            // user_controller
+            // user_controller, user_auth_controller
             user_models::UserDto,
-            // user_controller::put_user_current
+            // user_controller
             user_models::PasswordUserDto,
             // user_auth_controller::login
-            user_models::LoginUserDto, user_models::UserTokensDto, user_models::LoginUserResponseDto,
+            user_models::LoginUserDto, user_models::LoginUserResponseDto, user_models::UserTokensDto,
         )
     ),
     tags(

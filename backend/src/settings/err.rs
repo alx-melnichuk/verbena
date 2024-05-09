@@ -18,10 +18,28 @@ pub const CD_FORBIDDEN: &str = "Forbidden";
 // 403 Forbidden - Access denied - insufficient rights
 pub const MSG_ACCESS_DENIED: &str = "access_is_denied";
 
+// 406 Not Acceptable
+pub const CD_NOT_ACCEPTABLE: &str = "NotAcceptable";
+// 406 Not Acceptable - There is no session for this user.
+pub const MSG_SESSION_NOT_EXIST: &str = "session_not_exist";
+
+// 409 Conflict
+pub const CD_CONFLICT: &str = "Conflict";
+// 409 Conflict - Error checking hash value.
+pub const MSG_INVALID_HASH: &str = "invalid_hash";
+// 409 Conflict - Error encoding web token.
+pub const MSG_JSON_WEB_TOKEN_ENCODE: &str = "json_web_token_encode";
+
 // 415 Unsupported Media Type
 pub const CD_PARSE_ERROR: &str = "ParseError";
 // 415 Unsupported Media Type - The specified type could not be converted.
 pub const MSG_FAILED_CONVERSION: &str = "failed_conversion";
+
+// 417 Expectation Failed
+pub const CD_VALIDATION: &str = "Validation";
+
+// 500 Internal Server Error
+pub const CD_INTERNAL_SERVER_ERROR: &str = "InternalServerError";
 
 // 506 Variant Also Negotiates
 pub const CD_BLOCKING: &str = "Blocking";
@@ -83,24 +101,12 @@ pub const MSG_CONFIRM_NOT_FOUND: &str = "Confirmation not found!";
 //
 pub const MSG_STREAM_NOT_FOUND_BY_ID: &str = "The stream with the specified ID was not found.";
 
-// 409 Conflict
-pub const CD_CONFLICT: &str = "Conflict";
-
-// 417 Expectation Failed
-pub const CD_VALIDATION: &str = "Validation";
-
 // 500
 pub const CD_INTER_SRV_ERROR: &str = "InternalServerError";
 pub const MSG_INTER_SRV_ERROR: &str = "internal_server_error";
 
-// Error checking hash value.
-pub const MSG_INVALID_HASH: &str = "invalid_hash";
-// Error encoding web token.
-pub const MSG_JSON_WEB_TOKEN_ENCODE: &str = "json_web_token_encode";
 // Error decoding web token.
 pub const MSG_JSON_WEB_TOKEN_DECODE: &str = "json_web_token_decode";
-// There is no session for this user.
-pub const MSG_SESSION_NOT_EXIST: &str = "session_not_exist";
 // Error when sending email
 pub const MSG_ERROR_SENDING_EMAIL: &str = "error_sending_email";
 // Error creating password hash.
