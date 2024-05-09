@@ -2,6 +2,39 @@
 // 201 Created - A new entry has been created.
 // 204 No Content - Data not found.
 
+// 401 Unauthorized
+pub const CD_UNAUTHORIZED: &str = "Unauthorized";
+// 401 Unauthorized - Authorization token is missing.
+pub const MSG_MISSING_TOKEN: &str = "token_missing";
+// 401 Unauthorized - Error when decoding token or expired token
+pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token";
+// 401 Unauthorized - According to "num" in the token, the user was not found // "The token "NUM" value is unacceptable."
+pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num";
+// 401 Unauthorized - According to "user_id" in the token, the user was not found // "The token "ID" value is unacceptable."
+pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
+
+// 403 Forbidden
+pub const CD_FORBIDDEN: &str = "Forbidden";
+// 403 Forbidden - Access denied - insufficient rights
+pub const MSG_ACCESS_DENIED: &str = "access_is_denied";
+
+// 415 Unsupported Media Type
+pub const CD_PARSE_ERROR: &str = "ParseError";
+// 415 Unsupported Media Type - The specified type could not be converted.
+pub const MSG_FAILED_CONVERSION: &str = "failed_conversion";
+
+// 506 Variant Also Negotiates
+pub const CD_BLOCKING: &str = "Blocking";
+// 506 Variant Also Negotiates - Error web::block for waiting for synchronous operations to complete.
+pub const MSG_BLOCKING: &str = "error_waiting_for_operations";
+
+// 507 Insufficient Storage
+pub const CD_DATABASE: &str = "Database";
+// 507 Insufficient Storage - An error occurred while executing a database query.
+pub const MSG_DATABASE: &str = "database_query_error";
+
+// OLD
+
 // 400 Bad Request
 
 pub const CD_INVALID_TAGS_FIELD: &str = "InvalidTagsField";
@@ -29,21 +62,6 @@ pub const MSG_FINISH_LESS_START: &str = "The finish date is less than start date
 pub const CD_FINISH_GREATER_MAX: &str = "FinishGreaterMax";
 pub const MSG_FINISH_GREATER_MAX: &str = "The finish date of the search period exceeds the limit";
 
-// 401 Unauthorized
-pub const CD_UNAUTHORIZED: &str = "Unauthorized";
-// 401 Unauthorized - Authorization token is missing.
-pub const MSG_MISSING_TOKEN: &str = "token_missing";
-// 401 Unauthorized - Error when decoding token or expired token
-pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token";
-// 401 Unauthorized - According to "num" in the token, the user was not found // "The token "NUM" value is unacceptable."
-pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num";
-// 401 Unauthorized - According to "user_id" in the token, the user was not found // "The token "ID" value is unacceptable."
-pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
-
-// 403 Forbidden
-pub const CD_FORBIDDEN: &str = "Forbidden";
-pub const MSG_ACCESS_DENIED: &str = "access_is_denied";
-
 // 404 Not Found
 pub const CD_NOT_FOUND: &str = "NotFound";
 // Registration record not found.
@@ -67,10 +85,6 @@ pub const MSG_STREAM_NOT_FOUND_BY_ID: &str = "The stream with the specified ID w
 
 // 409 Conflict
 pub const CD_CONFLICT: &str = "Conflict";
-
-// 415 Unsupported Media Type
-pub const CD_PARSE_ERROR: &str = "ParseError";
-pub const MSG_FAILED_CONVERSION: &str = "Failed conversion";
 
 // 417 Expectation Failed
 pub const CD_VALIDATION: &str = "Validation";
@@ -100,11 +114,3 @@ pub const CD_HASHING_PASSWD: &str = "HashingPassword";
 pub const CD_JSON_WEB_TOKEN: &str = "JsonWebToken";
 
 // pub const MSG_SERVER_ERROR: &str = "An unexpected internal server error occurred.";
-
-// 506 => http::StatusCode::VARIANT_ALSO_NEGOTIATES
-// Error web::block for waiting for database query to complete.
-pub const CD_BLOCKING: &str = "Blocking"; // 506 Variant Also Negotiates
-
-// 507 => http::StatusCode::INSUFFICIENT_STORAGE
-// An error occurred while executing a database query.
-pub const CD_DATABASE: &str = "Database";
