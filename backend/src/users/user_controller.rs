@@ -78,7 +78,7 @@ pub async fn get_user_by_email(
         let res_user = user_orm
             .find_user_by_nickname_or_email(None, Some(&email))
             .map_err(|e| {
-                log::error!("{}: {}", err::CD_DATABASE, &e);
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
                 AppError::database507(&e)
             })
             .ok()?;
@@ -87,7 +87,7 @@ pub async fn get_user_by_email(
     })
     .await
     .map_err(|e| {
-        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })?;
 
@@ -138,7 +138,7 @@ pub async fn get_user_by_nickname(
         let res_user = user_orm
             .find_user_by_nickname_or_email(Some(&nickname), None)
             .map_err(|e| {
-                log::error!("{}: {}", err::CD_DATABASE, &e);
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
                 AppError::database507(&e)
             })
             .ok()?;
@@ -147,7 +147,7 @@ pub async fn get_user_by_nickname(
     })
     .await
     .map_err(|e| {
-        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })?;
 
@@ -183,7 +183,7 @@ pub async fn get_user_by_nickname(
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::access_denied403())),
         (status = 415, description = "Error parsing input parameter.", body = AppError, 
-            example = json!(AppError::parse415("id", "`1a` - invalid digit found in string"))),
+            example = json!(AppError::parse415("id", "invalid digit found in string (1a)"))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -211,7 +211,7 @@ pub async fn get_user_by_id(
         // Find user by id.
         let existing_user =
             user_orm.find_user_by_id(id).map_err(|e| {
-                log::error!("{}: {}", err::CD_DATABASE, &e);
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
                 AppError::database507(&e)
             }).ok()?;
 
@@ -219,7 +219,7 @@ pub async fn get_user_by_id(
     })
     .await
     .map_err(|e| {
-        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })?;
 
@@ -248,9 +248,6 @@ pub async fn get_user_by_id(
 /// Additionally: Administrator rights are required.
 /// 
 #[utoipa::path(
-    request_body(content = PasswordUserDto, description = "New user properties.",
-        example = json!(PasswordUserDto { password: Some("new_password".to_string()) })
-    ),
     responses(
         (status = 200, description = "Data about the specified user.", body = UserDto),
         (status = 204, description = "The specified user was not found."),
@@ -259,7 +256,7 @@ pub async fn get_user_by_id(
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::access_denied403())),
         (status = 415, description = "Error parsing input parameter.", body = AppError, 
-            example = json!(AppError::parse415("id", "`1a` - invalid digit found in string"))),
+            example = json!(AppError::parse415("id", "invalid digit found in string (1a)"))),
         (status = 417, description = "Validation error.", body = [AppError],
              example = json!(
                 AppError::validations((PasswordUserDto { password: Some("pas".to_string()) }).validate().err().unwrap())
@@ -301,14 +298,14 @@ pub async fn put_user(
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user =
             user_orm.modify_user(id, modify_user).map_err(|e| {
-                log::error!("{}: {}", err::CD_DATABASE, &e);
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
                 AppError::database507(&e)
             });
         res_user
     })
     .await
     .map_err(|e| {
-        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })??;
 
@@ -344,7 +341,7 @@ pub async fn put_user(
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::access_denied403())),
         (status = 415, description = "Error parsing input parameter.", body = AppError, 
-            example = json!(AppError::parse415("id", "`1a` - invalid digit found in string"))),
+            example = json!(AppError::parse415("id", "invalid digit found in string (1a)"))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -371,14 +368,14 @@ pub async fn delete_user(
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user = user_orm.delete_user(id)
         .map_err(|e| {
-            log::error!("{}: {}", err::CD_DATABASE, &e);
+            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
             AppError::database507(&e)
         });
         res_user
     })
     .await
     .map_err(|e| {
-        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })??;
 
@@ -402,9 +399,7 @@ pub async fn delete_user(
 /// ```
 ///
 /// Return the current user (`UserDto`) with status 200.
-/// 
-/// Additionally: authorization required.
-/// 
+///
 #[utoipa::path(
     responses(
         (status = 200, description = "Data about the current user.", body = UserDto),
@@ -443,12 +438,7 @@ pub async fn get_user_current(
 ///
 /// Return the current user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
 /// 
-/// Additionally: authorization required.
-/// 
 #[utoipa::path(
-    request_body(content = PasswordUserDto, description = "New user properties.",
-        example = json!(PasswordUserDto { password: Some("new_password".to_string()) })
-    ),
     responses(
         (status = 200, description = "Data about the current user.", body = UserDto),
         (status = 204, description = "The current user was not found."),
@@ -493,14 +483,14 @@ pub async fn put_user_current(
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user =
             user_orm.modify_user(id, modify_user).map_err(|e| {
-                log::error!("{}: {}", err::CD_DATABASE, &e);
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
                 AppError::database507(&e)
             });
         res_user
     })
     .await
     .map_err(|e| {
-        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })??;
 
@@ -524,8 +514,6 @@ pub async fn put_user_current(
 /// ```
 ///
 /// Return the current user (`UserDto`) with status 200 or 204 (no content) if the current user is not found.
-/// 
-/// Additionally: authorization required.
 /// 
 #[utoipa::path(
     responses(
@@ -557,7 +545,7 @@ pub async fn delete_user_current(
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user = user_orm.delete_user(id)
         .map_err(|e| {
-            log::error!("{}: {}", err::CD_DATABASE, &e);
+            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
             AppError::database507(&e)
         });
 
@@ -565,7 +553,7 @@ pub async fn delete_user_current(
     })
     .await
     .map_err(|e| {
-        log::error!("{}: {}", err::CD_BLOCKING, &e.to_string());
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })??;
 
@@ -725,8 +713,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_PARSE_ERROR);
-        let msg = format!("{} '{}': ", err::MSG_FAILED_CONVERSION, "id");
-        assert!(app_err.message.starts_with(&msg));
+        assert!(app_err.message.starts_with(&err::MSG_FAILED_CONVERSION));
     }
     #[test]
     async fn test_get_user_by_id_valid_id() {
@@ -809,8 +796,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_PARSE_ERROR);
-        let msg = format!("{} '{}': ", err::MSG_FAILED_CONVERSION, "id");
-        assert!(app_err.message.starts_with(&msg));
+        assert!(app_err.message.starts_with(&err::MSG_FAILED_CONVERSION));
     }
 
     async fn test_put_user_validate(password_user: PasswordUserDto, err_msg: &str) {
@@ -964,8 +950,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_PARSE_ERROR);
-        let msg = format!("{} '{}': ", err::MSG_FAILED_CONVERSION, "id");
-        assert!(app_err.message.starts_with(&msg));
+        assert!(app_err.message.starts_with(&err::MSG_FAILED_CONVERSION));
     }
     #[test]
     async fn test_delete_user_user_not_exist() {
