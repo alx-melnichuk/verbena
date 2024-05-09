@@ -110,7 +110,7 @@ impl AppError {
     }
     /// Error while parsing data. (status=415)
     pub fn parse415(param: &str, message: &str) -> Self {
-        let message = &format!("{} '{}': {}", err::MSG_FAILED_CONVERSION, param, message);
+        let message = &format!("{}: `{}` - {}", err::MSG_FAILED_CONVERSION, param, message);
         AppError::new(err::CD_PARSE_ERROR, message).set_status(415)
     }
     /// Error when data validation. (status=417)
@@ -119,11 +119,11 @@ impl AppError {
     }
     /// Error while blocking process. (status=506)
     pub fn blocking506(message: &str) -> AppError {
-        AppError::new(err::CD_BLOCKING, message).set_status(506)
+        AppError::new(err::CD_BLOCKING, &format!("{}: {}", err::MSG_BLOCKING, message)).set_status(506)
     }
     /// Error when querying the database. (status=507)
     pub fn database507(message: &str) -> Self {
-        AppError::new(err::CD_DATABASE, message).set_status(507)
+        AppError::new(err::CD_DATABASE, &format!("{}: {}", err::MSG_DATABASE, message)).set_status(507)
     }
 }
 
