@@ -1,4 +1,4 @@
-use std::{borrow, rc::Rc};
+use std::rc::Rc;
 
 use actix_web::{dev, error, http, web, FromRequest, HttpMessage};
 use futures_util::{
@@ -175,9 +175,9 @@ where
         let token_res = decode_token(&token, jwt_secret);
 
         if let Err(e) = token_res {
-            #[rustfmt::skip]
-            log::error!("{}: {} - {}", err::CD_UNAUTHORIZED, err::MSG_INVALID_OR_EXPIRED_TOKEN, e);
-            let json_error = AppError::unauthorized401(err::MSG_INVALID_OR_EXPIRED_TOKEN);
+            let message = format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
+            log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
+            let json_error = AppError::unauthorized401(&message);
             return Box::pin(ready(Err(error::ErrorUnauthorized(json_error)))); // 401
         }
 
@@ -190,30 +190,26 @@ where
         async move {
             let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap();
             // Find a session for a given user.
-            let session_opt = session_orm.find_session_by_id(user_id).map_err(|e| {
+            let opt_session = session_orm.find_session_by_id(user_id).map_err(|e| {
                 log::error!("{}: {}", err::CD_DATABASE, e.to_string());
                 let error = AppError::database507(&e.to_string());
                 return error::ErrorInsufficientStorage(error); // 507
             })?;
 
-            let session = session_opt.ok_or_else(|| {
+            let session = opt_session.ok_or_else(|| {
                 // There is no session for this user.
-                #[rustfmt::skip]
-                log::error!("{}: {} - user_id - {}", err::CD_INTER_SRV_ERROR, err::MSG_SESSION_NOT_EXIST, user_id);
-                let error = AppError::database507(err::MSG_SESSION_NOT_EXIST)
-                    .add_param(borrow::Cow::Borrowed("userId"), &user_id);
-                error::ErrorInsufficientStorage(error) // 507
+                let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, user_id);
+                log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
+                error::ErrorNotAcceptable(AppError::not_acceptable406(&message))
             })?;
             // Each session contains an additional numeric value.
             let session_num_token = session.num_token.unwrap_or(0);
             // Compare an additional numeric value from the session and from the token.
             if session_num_token != num_token {
                 // If they do not match, then this is an error.
-                #[rustfmt::skip]
-                log::error!("{}: {} - user_id - {}", err::CD_UNAUTHORIZED, err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
-                let error = AppError::unauthorized401(err::MSG_UNACCEPTABLE_TOKEN_NUM)
-                    .add_param(borrow::Cow::Borrowed("userId"), &user_id);
-                return Err(error::ErrorUnauthorized(error)); // 401
+                let message = format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
+                log::error!("{}: {}", err::CD_UNAUTHORIZED, &message); // 401
+                return Err(error::ErrorUnauthorized(AppError::unauthorized401(&message)));
             }
 
             let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap();
@@ -225,11 +221,9 @@ where
             })?;
 
             let user = result.ok_or_else(|| {
-                #[rustfmt::skip]
-                log::error!("{}: {} - user_id - {}", err::CD_UNAUTHORIZED, err::MSG_UNACCEPTABLE_TOKEN_ID, user_id);
-                let error = AppError::unauthorized401(err::MSG_UNACCEPTABLE_TOKEN_ID)
-                    .add_param(borrow::Cow::Borrowed("userId"), &user_id);
-                error::ErrorUnauthorized(error) // 401
+                let message = format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_ID, user_id);
+                log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
+                error::ErrorUnauthorized(AppError::unauthorized401(&message)) // 401
             })?;
 
             // Check if user's role matches the required role
@@ -405,7 +399,7 @@ mod tests {
     }
     #[test]
     async fn test_authentication_middleware_invalid_token() {
-        let request = test::TestRequest::get().insert_header(header_auth("invalid_token"));
+        let request = test::TestRequest::get().insert_header(header_auth("invalid_token123"));
         let data_c = (vec![], vec![]);
         let result = call_service2(cfg_jwt(), data_c, handler_with_auth, request).await.err();
         let err = result.expect("Service call succeeded, but an error was expected.");
@@ -415,7 +409,7 @@ mod tests {
 
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
-        assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
+        assert!(app_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
     #[test]
     async fn test_authentication_middelware_expired_token() {
@@ -437,7 +431,8 @@ mod tests {
 
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
-        assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
+        #[rustfmt::skip]
+        assert_eq!(app_err.message, format!("{}: ExpiredSignature", err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
     #[test]
     async fn test_authentication_middelware_valid_token_non_existent_user() {
@@ -449,7 +444,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let token = encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
+        // ??
         let request = test::TestRequest::get().insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
         let result = call_service2(config_jwt, data_c, handler_with_auth, request).await.err();
@@ -460,7 +455,8 @@ mod tests {
 
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
-        assert_eq!(app_err.message, err::MSG_UNACCEPTABLE_TOKEN_ID);
+        #[rustfmt::skip]
+        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_ID, user_id));
     }
     #[test]
     async fn test_authentication_middelware_valid_token_non_existent_num() {
@@ -484,7 +480,8 @@ mod tests {
 
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
-        assert_eq!(app_err.message, err::MSG_UNACCEPTABLE_TOKEN_NUM);
+        #[rustfmt::skip]
+        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id));
     }
     #[test]
     async fn test_authentication_middleware_access_admin_only_endpoint_fail() {
