@@ -18,7 +18,8 @@ export class HttpErrorUtil {
         const appError = errResList[index];
         if (typeof appError == 'object') {
           const code = appError['code'] || '';
-          const message = appError['message'] || '';
+          // Extract the first value up to the ":" delimiter.
+          const message = (appError['message'] || '').split(':')[0];
           if (!!code) {
             const key = `${code}${!!message ? '.' + message : ''}`;
             const value2 = HttpErrorUtil.translate?.instant(key, appError['params'] || {}) || key;
