@@ -9,6 +9,8 @@ use crate::{errors, user_auth_controller, user_controller, users::user_models};
 #[openapi(
     paths(
         user_auth_controller::login,
+        user_auth_controller::logout,
+        user_auth_controller::update_token,
         user_controller::get_user_by_email,
         user_controller::get_user_by_nickname,
         user_controller::get_user_by_id,
@@ -26,8 +28,12 @@ use crate::{errors, user_auth_controller, user_controller, users::user_models};
             user_models::UserDto,
             // user_controller
             user_models::PasswordUserDto,
-            // user_auth_controller::login
-            user_models::LoginUserDto, user_models::LoginUserResponseDto, user_models::UserTokensDto,
+            // user_auth_controller
+            user_models::LoginUserDto, user_models::LoginUserResponseDto, 
+            // user_auth_controller::login, user_auth_controller::update_token
+            user_models::UserTokensDto,
+            // user_auth_controller::update_token
+            user_models::TokenUserDto,
         )
     ),
     tags(

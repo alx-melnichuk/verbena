@@ -3,53 +3,51 @@
 // 204 No Content - Data not found.
 
 // 401 Unauthorized
-pub const CD_UNAUTHORIZED: &str = "Unauthorized";
-// 401 Unauthorized - Authorization token is missing.
-pub const MSG_MISSING_TOKEN: &str = "token_missing";
-// 401 Unauthorized - Error when decoding token or expired token
-pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token";
-// 401 Unauthorized - According to "num" in the token, the user was not found // "The token "NUM" value is unacceptable."
-pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num";
-// 401 Unauthorized - According to "user_id" in the token, the user was not found // "The token "ID" value is unacceptable."
-pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
+pub const CD_UNAUTHORIZED: &str = "Unauthorized"; /*+*/
+// 401 Unauthorized - Authorization token is missing. (authentication)
+pub const MSG_MISSING_TOKEN: &str = "token_missing"; /*+*/
+// 401 Unauthorized - Error when decoding token or expired token (authentication)
+pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token"; /*+*/
+// 401 Unauthorized - User's "num" does not match "num" from token. (authentication, user_auth_controller)
+pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num"; /*+*/
+// 401 Unauthorized - According to "user_id" in the token, the user was not found. (authentication)
+// The token "ID" value is unacceptable.
+pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id"; /*+*/
 
-// 403 Forbidden
+// 403 Forbidden - (authentication)
 pub const CD_FORBIDDEN: &str = "Forbidden";
-// 403 Forbidden - Access denied - insufficient rights
+// 403 Forbidden - Access denied - insufficient rights (authentication)
 pub const MSG_ACCESS_DENIED: &str = "access_is_denied";
 
 // 406 Not Acceptable
-pub const CD_NOT_ACCEPTABLE: &str = "NotAcceptable";
-// 406 Not Acceptable - There is no session for this user.
-pub const MSG_SESSION_NOT_EXIST: &str = "session_not_exist";
+pub const CD_NOT_ACCEPTABLE: &str = "NotAcceptable"; /*+*/
+// 406 Not Acceptable - There is no session for this user. (authentication, user_auth_controller)
+pub const MSG_SESSION_NOT_EXIST: &str = "session_not_exist"; /*+*/
 
-// 409 Conflict
-pub const CD_CONFLICT: &str = "Conflict";
-// 409 Conflict - Error checking hash value.
-pub const MSG_INVALID_HASH: &str = "invalid_hash";
-// 409 Conflict - Error encoding web token.
-pub const MSG_JSON_WEB_TOKEN_ENCODE: &str = "json_web_token_encode";
+// 409 Conflict (user_auth_controller)
+pub const CD_CONFLICT: &str = "Conflict"; /*+*/
+// 409 Conflict - Error encoding web token. (user_auth_controller)
+pub const MSG_JSON_WEB_TOKEN_ENCODE: &str = "json_web_token_encode"; /*+*/
+// 409 Conflict - Error decoding web token. /*+*/
+pub const MSG_JSON_WEB_TOKEN_DECODE: &str = "json_web_token_decode"; /*+*/
 
-// 415 Unsupported Media Type
-pub const CD_PARSE_ERROR: &str = "ParseError";
-// 415 Unsupported Media Type - The specified type could not be converted.
-pub const MSG_FAILED_CONVERSION: &str = "failed_conversion";
+// 415 Unsupported Media Type /*+*/
+pub const CD_PARSE_ERROR: &str = "ParseError"; /*+*/
+// 415 Unsupported Media Type - The specified type could not be converted. /*+*/
+pub const MSG_FAILED_CONVERSION: &str = "failed_conversion"; /*+*/
 
-// 417 Expectation Failed
-pub const CD_VALIDATION: &str = "Validation";
+// 417 Expectation Failed /*+*/
+pub const CD_VALIDATION: &str = "Validation"; /*+*/
 
-// 500 Internal Server Error
-pub const CD_INTERNAL_SERVER_ERROR: &str = "InternalServerError";
+// 506 Variant Also Negotiates /*+*/
+pub const CD_BLOCKING: &str = "Blocking"; /*+*/
+// 506 Variant Also Negotiates - Error web::block for waiting for synchronous operations to complete. /*+*/
+pub const MSG_BLOCKING: &str = "error_waiting_for_operations"; /*+*/
 
-// 506 Variant Also Negotiates
-pub const CD_BLOCKING: &str = "Blocking";
-// 506 Variant Also Negotiates - Error web::block for waiting for synchronous operations to complete.
-pub const MSG_BLOCKING: &str = "error_waiting_for_operations";
-
-// 507 Insufficient Storage
-pub const CD_DATABASE: &str = "Database";
-// 507 Insufficient Storage - An error occurred while executing a database query.
-pub const MSG_DATABASE: &str = "database_query_error";
+// 507 Insufficient Storage /*+*/
+pub const CD_DATABASE: &str = "Database"; /*+*/
+// 507 Insufficient Storage - An error occurred while executing a database query. /*+*/
+pub const MSG_DATABASE: &str = "database_query_error"; /*+*/
 
 // OLD
 
@@ -105,8 +103,6 @@ pub const MSG_STREAM_NOT_FOUND_BY_ID: &str = "The stream with the specified ID w
 pub const CD_INTER_SRV_ERROR: &str = "InternalServerError";
 pub const MSG_INTER_SRV_ERROR: &str = "internal_server_error";
 
-// Error decoding web token.
-pub const MSG_JSON_WEB_TOKEN_DECODE: &str = "json_web_token_decode";
 // Error when sending email
 pub const MSG_ERROR_SENDING_EMAIL: &str = "error_sending_email";
 // Error creating password hash.

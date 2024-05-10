@@ -378,7 +378,7 @@ pub struct UserTokensDto {
     pub refresh_token: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct TokenUserDto {
     // refreshToken
     pub token: String,
