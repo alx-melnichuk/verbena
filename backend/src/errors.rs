@@ -126,10 +126,6 @@ impl AppError {
     pub fn validation417(message: &str) -> Self {
         AppError::new(err::CD_VALIDATION, message).set_status(417)
     }
-    // /// General internal error. (status=500)
-    // pub fn internalError500(message: &str) -> AppError {
-    //     AppError::new(err::CD_INTERNAL_SERVER_ERROR, message).set_status(500)
-    // }
     /// Error while blocking process. (status=506)
     pub fn blocking506(message: &str) -> AppError {
         AppError::new(err::CD_BLOCKING, &format!("{}: {}", err::MSG_BLOCKING, message)).set_status(506)
