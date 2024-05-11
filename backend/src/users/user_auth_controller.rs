@@ -269,8 +269,10 @@ pub async fn logout(
 #[utoipa::path(
     responses(
         (status = 200, description = "The new session token.", body = UserTokensDto),
-        (status = 401, description = "The token number specified is invalid.", body = AppError,
-            example = json!(AppError::unauthorized401(&format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, 1)))),
+        (status = 401, description = "The token is invalid or expired.", body = AppError,
+            example = json!(AppError::unauthorized401(&format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidToken")))),
+        (status = 403, description = "The specified token number is incorrect.", body = AppError,
+            example = json!(AppError::forbidden403(&format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, 1)))),
         (status = 406, description = "Error closing session.", body = AppError,
             example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, 1)))),
         (status = 409, description = "Error processing token.", body = AppError,
@@ -295,9 +297,9 @@ pub async fn update_token(
 
     // Get user ID.
     let (user_id, num_token) = tokens::decode_token(&token, jwt_secret).map_err(|e| {
-        #[rustfmt::skip]
-        log::error!("{}: {}: {}", err::CD_UNAUTHORIZED, err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
-        AppError::unauthorized401(err::MSG_INVALID_OR_EXPIRED_TOKEN)
+        let message = format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
+        log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
+        AppError::unauthorized401(&message)
     })?;
 
     let session_orm1 = session_orm.clone();
@@ -329,8 +331,8 @@ pub async fn update_token(
     if session_num_token != num_token {
         // If they do not match, then this is an error.
         let message = format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
-        log::error!("{}: {}", err::CD_UNAUTHORIZED, &message); // 401
-        return Err(AppError::unauthorized401(&message));
+        log::error!("{}: {}", err::CD_FORBIDDEN, &message); // 403
+        return Err(AppError::forbidden403(&message));
     }
 
     let num_token = tokens::generate_num_token();
@@ -933,7 +935,8 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
-        assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
+        #[rustfmt::skip]
+        assert_eq!(app_err.message, format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidSubject"));
     }
     #[test]
     async fn test_update_token_invalid_dto_token_invalid() {
@@ -952,7 +955,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
-        assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
+        assert!(app_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
     #[test]
     async fn test_update_token_unacceptable_token_id() {
@@ -995,12 +998,12 @@ mod tests {
         });
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1(config_jwt, data_c, update_token, request).await;
-        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+        assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        assert_eq!(app_err.code, err::CD_FORBIDDEN);
         #[rustfmt::skip]
         assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user1_id));
     }
