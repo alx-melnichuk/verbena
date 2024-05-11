@@ -75,7 +75,7 @@ pub async fn get_user_by_email(
         let res_user = user_orm
             .find_user_by_nickname_or_email(None, Some(&email))
             .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             })
             .ok()?;
@@ -130,7 +130,7 @@ pub async fn get_user_by_nickname(
         let res_user = user_orm
             .find_user_by_nickname_or_email(Some(&nickname), None)
             .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             })
             .ok()?;
@@ -170,7 +170,7 @@ pub async fn get_user_by_nickname(
         (status = 401, description = "An authorization token is required.", body = AppError,
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::access_denied403())),
+            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
         (status = 415, description = "Error parsing input parameter.", body = AppError, 
             example = json!(AppError::parse415("id", "invalid digit found in string (1a)"))),
         (status = 506, description = "Blocking error.", body = AppError, 
@@ -198,7 +198,7 @@ pub async fn get_user_by_id(
         // Find user by id.
         let existing_user =
             user_orm.find_user_by_id(id).map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             }).ok()?;
 
@@ -238,10 +238,10 @@ pub async fn get_user_by_id(
         (status = 401, description = "An authorization token is required.", body = AppError,
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::access_denied403())),
+            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
         (status = 415, description = "Error parsing input parameter.", body = AppError, 
             example = json!(AppError::parse415("id", "invalid digit found in string (1a)"))),
-        (status = 417, description = "Validation error.", body = [AppError],
+        (status = 417, description = "Validation error. { \"password\": \"pas\" }", body = [AppError],
              example = json!(
                 AppError::validations((PasswordUserDto { password: Some("pas".to_string()) }).validate().err().unwrap())
             )),
@@ -280,7 +280,7 @@ pub async fn put_user(
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user =
             user_orm.modify_user(id, modify_user).map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             });
         res_user
@@ -318,7 +318,7 @@ pub async fn put_user(
         (status = 401, description = "An authorization token is required.", body = AppError,
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::access_denied403())),
+            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
         (status = 415, description = "Error parsing input parameter.", body = AppError, 
             example = json!(AppError::parse415("id", "invalid digit found in string (1a)"))),
         (status = 506, description = "Blocking error.", body = AppError, 
@@ -345,7 +345,7 @@ pub async fn delete_user(
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user = user_orm.delete_user(id)
         .map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
+            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
         res_user
@@ -380,7 +380,7 @@ pub async fn delete_user(
         (status = 401, description = "An authorization token is required.", body = AppError,
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::access_denied403())),
+            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
 
     ),
     security(("bearer_auth" = []))
@@ -414,8 +414,8 @@ pub async fn get_user_current(
         (status = 401, description = "An authorization token is required.", body = AppError,
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::access_denied403())),
-        (status = 417, description = "Validation error.", body = [AppError],
+            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
+        (status = 417, description = "Validation error. { \"password\": \"pas\" }", body = [AppError],
              example = json!(
                 AppError::validations((PasswordUserDto { password: Some("pas".to_string()) }).validate().err().unwrap())
             )),
@@ -450,7 +450,7 @@ pub async fn put_user_current(
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user =
             user_orm.modify_user(id, modify_user).map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             });
         res_user
@@ -486,7 +486,7 @@ pub async fn put_user_current(
         (status = 401, description = "An authorization token is required.", body = AppError,
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::access_denied403())),
+            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -507,7 +507,7 @@ pub async fn delete_user_current(
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user = user_orm.delete_user(id)
         .map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
+            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
 
