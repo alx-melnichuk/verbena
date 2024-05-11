@@ -236,7 +236,7 @@ where
             } else {
                 #[rustfmt::skip]
                 log::error!("{}: {}", err::CD_FORBIDDEN, err::MSG_ACCESS_DENIED);
-                let error = AppError::access_denied403();
+                let error = AppError::forbidden403(err::MSG_ACCESS_DENIED);
                 Err(error::ErrorForbidden(error)) // 403
             }
         }
