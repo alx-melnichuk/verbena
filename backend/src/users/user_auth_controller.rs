@@ -49,7 +49,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// One could call with following curl.
 /// ```text
-/// curl -i -X POST http://localhost:8080/api/login -d '{"nickname": "user", "password": "pass"}'
+/// curl -i -X POST http://localhost:8080/api/login -d '{"nickname": "user", "password": "password"}'
 /// ```
 ///
 /// Return the current user (`UserDto`) and the open session token (`UserTokensDto`) with a status of 200.
@@ -60,15 +60,16 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             body = LoginUserResponseDto),
         (status = 401, description = "The nickname or email address is incorrect.", body = AppError,
             example = json!(AppError::unauthorized401(MSG_WRONG_NICKNAME_EMAIL))),
-        (status = 417, description = "Validation error.", body = [AppError],
+        (status = 417, description = "Validation error. { nickname: \"us\", \"password\": \"pas\" }", body = [AppError],
             example = json!(AppError::validations(
                 (LoginUserDto { nickname: "us".to_string(), password: "pas".to_string() }).validate().err().unwrap())
             )),
         (status = 406, description = "Error opening session.", body = AppError,
             example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, 1)))),
-        (status = 409, description = "Error processing token.", body = AppError,
-            example = json!(AppError::conflict409(
-                &format!("{}: {}", MSG_INVALID_HASH, "Parameter is empty.")))),
+        (status = 409, description = "Error when comparing password hashes.", body = AppError,
+            example = json!(AppError::conflict409(&format!("{}: {}", MSG_INVALID_HASH, "Parameter is empty.")))),
+        (status = 422, description = "Token encoding error.", body = AppError,
+            example = json!(AppError::unprocessable422(&format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -100,7 +101,7 @@ pub async fn login(
         let existing_user = user_orm
             .find_user_by_nickname_or_email(Some(&nickname), Some(&email))
             .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             });
         existing_user
@@ -118,7 +119,7 @@ pub async fn login(
 
     let user_password = user.password.to_string();
     let password_matches = hash_tools::compare_hash(&password, &user_password).map_err(|e| {
-        let message = format!("{}: {}", MSG_INVALID_HASH, e.to_string());
+        let message = format!("{}: {}", MSG_INVALID_HASH, &e);
         log::error!("{}: {}", err::CD_CONFLICT, &message);
         AppError::conflict409(&message)
     })?;
@@ -134,22 +135,22 @@ pub async fn login(
 
     // Packing two parameters (user.id, num_token) into access_token.
     let access_token = tokens::encode_token(user.id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        let message = format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, e.to_string());
-        log::error!("{}: {}", err::CD_CONFLICT, &message);
-        AppError::conflict409(&message)
+        let message = format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
+        AppError::unprocessable422(&message)
     })?;
 
     // Packing two parameters (user.id, num_token) into refresh_token.
     let refresh_token = tokens::encode_token(user.id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        let message = format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, e.to_string());
-        log::error!("{}: {}", err::CD_CONFLICT, &message);
-        AppError::conflict409(&message)
+        let message = format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
+        AppError::unprocessable422(&message)
     })?;
 
     let opt_session = web::block(move || {
         // Modify the entity (session) with new data. Result <Option<Session>>.
         let res_session = session_orm.modify_session(user.id, Some(num_token)).map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
+            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
         res_session
@@ -204,7 +205,7 @@ pub async fn login(
         (status = 401, description = "An authorization token is required.", body = AppError,
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::access_denied403())),
+            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
         (status = 406, description = "Error closing session.", body = AppError,
             example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, 1)))),
         (status = 506, description = "Blocking error.", body = AppError, 
@@ -226,7 +227,7 @@ pub async fn logout(
     let opt_session = web::block(move || {
         // Modify the entity (session) with new data. Result <Option<Session>>.
         let res_session = session_orm.modify_session(user.id, None).map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
+            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
         res_session
@@ -295,7 +296,7 @@ pub async fn update_token(
     // Get user ID.
     let (user_id, num_token) = tokens::decode_token(&token, jwt_secret).map_err(|e| {
         #[rustfmt::skip]
-        log::error!("{}: {}: {}", err::CD_UNAUTHORIZED, err::MSG_INVALID_OR_EXPIRED_TOKEN, e);
+        log::error!("{}: {}: {}", err::CD_UNAUTHORIZED, err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
         AppError::unauthorized401(err::MSG_INVALID_OR_EXPIRED_TOKEN)
     })?;
 
@@ -304,7 +305,7 @@ pub async fn update_token(
     let opt_session = web::block(move || {
         // Find a session for a given user.
         let existing_session = session_orm.find_session_by_id(user_id).map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
+            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
         existing_session
@@ -338,14 +339,14 @@ pub async fn update_token(
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let access_token = tokens::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        let message = format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, e.to_string());
+        let message = format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         log::error!("{}: {}", err::CD_CONFLICT, &message);
         AppError::conflict409(&message)
     })?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let refresh_token = tokens::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        let message = format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, e.to_string());
+        let message = format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         log::error!("{}: {}", err::CD_CONFLICT, &message);
         AppError::conflict409(&message)
     })?;
@@ -353,7 +354,7 @@ pub async fn update_token(
     let opt_session = web::block(move || {
         // Find a session for a given user.
         let existing_session = session_orm1.modify_session(user_id, Some(num_token)).map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e.to_string());
+            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
         existing_session
@@ -400,8 +401,9 @@ mod tests {
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 
-    fn create_user() -> User {
-        let mut user = UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1");
+    fn create_user(nickname: &str, email: &str, password: &str) -> User {
+        let password = hash_tools::encode_hash(password).unwrap(); // hashed
+        let mut user = UserOrmApp::new_user(1, nickname, email, &password);
         user.role = UserRole::User;
         user
     }
@@ -480,7 +482,7 @@ mod tests {
         });
         let data_c = (vec![], vec![]);
         let resp = call_service1(cfg_jwt(), data_c, login, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -498,7 +500,7 @@ mod tests {
         });
         let data_c = (vec![], vec![]);
         let resp = call_service1(cfg_jwt(), data_c, login, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -516,7 +518,7 @@ mod tests {
         });
         let data_c = (vec![], vec![]);
         let resp = call_service1(cfg_jwt(), data_c, login, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -534,7 +536,7 @@ mod tests {
         });
         let data_c = (vec![], vec![]);
         let resp = call_service1(cfg_jwt(), data_c, login, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -552,7 +554,7 @@ mod tests {
         });
         let data_c = (vec![], vec![]);
         let resp = call_service1(cfg_jwt(), data_c, login, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -570,7 +572,7 @@ mod tests {
         });
         let data_c = (vec![], vec![]);
         let resp = call_service1(cfg_jwt(), data_c, login, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -588,7 +590,7 @@ mod tests {
         });
         let data_c = (vec![], vec![]);
         let resp = call_service1(cfg_jwt(), data_c, login, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -606,7 +608,7 @@ mod tests {
         });
         let data_c = (vec![], vec![]);
         let resp = call_service1(cfg_jwt(), data_c, login, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -624,7 +626,7 @@ mod tests {
         });
         let data_c = (vec![], vec![]);
         let resp = call_service1(cfg_jwt(), data_c, login, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -642,7 +644,7 @@ mod tests {
         });
         let data_c = (vec![], vec![]);
         let resp = call_service1(cfg_jwt(), data_c, login, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -660,7 +662,7 @@ mod tests {
         });
         let data_c = (vec![], vec![]);
         let resp = call_service1(cfg_jwt(), data_c, login, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -705,39 +707,34 @@ mod tests {
     }
     #[test]
     async fn test_login_if_password_invalid_hash() {
-        let user1: User = user_with_id(create_user());
-        let user1_nickname = user1.nickname.to_string();
-        let user1_password = user1.password.to_string();
-
+        let nickname = "Oliver_Taylor";
+        let password = "passwdT1R1";
+        let mut user1: User = user_with_id(create_user(nickname, "Oliver_Taylor@gmail.com", password));
+        user1.password = password.to_string();
         // POST /api/login
         let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
-            nickname: user1_nickname.to_string(),
-            password: user1_password.to_string(),
+            nickname: nickname.to_string(),
+            password: format!("{}a", password),
         });
         let data_c = (vec![user1], vec![]);
         let resp = call_service1(cfg_jwt(), data_c, login, request).await;
-        assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
+        assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        assert_eq!(app_err.code, err::CD_INTER_SRV_ERROR);
-        assert_eq!(app_err.message, MSG_INVALID_HASH);
+        assert_eq!(app_err.code, err::CD_CONFLICT);
+        assert!(app_err.message.starts_with(MSG_INVALID_HASH));
     }
     #[test]
     async fn test_login_if_password_incorrect() {
-        let mut user1: User = user_with_id(create_user());
-        let user1_nickname = user1.nickname.to_string();
-        let user1_password = user1.password.to_string();
-
-        let password = user1.password.to_string();
-        let password_hashed = hash_tools::encode_hash(&password).unwrap();
-        user1.password = password_hashed;
+        let nickname = "Oliver_Taylor";
+        let password = "passwdT1R1";
+        let user1: User = user_with_id(create_user(nickname, "Oliver_Taylor@gmail.com", password));
 
         // POST /api/login
         let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
-            nickname: user1_nickname.to_string(),
-            password: format!("{}a", user1_password),
+            nickname: nickname.to_string(),
+            password: format!("{}b", password),
         });
         let data_c = (vec![user1], vec![]);
         let resp = call_service1(cfg_jwt(), data_c, login, request).await;
@@ -751,74 +748,65 @@ mod tests {
     }
     #[test]
     async fn test_login_err_jsonwebtoken_encode() {
-        let mut user1: User = user_with_id(create_user());
-        let user1_nickname = user1.nickname.to_string();
-        let user1_password = user1.password.to_string();
-
-        let password = user1.password.to_string();
-        let password_hashed = hash_tools::encode_hash(&password).unwrap();
-        user1.password = password_hashed;
+        let nickname = "Oliver_Taylor";
+        let password = "passwdT1R1";
+        let user1: User = user_with_id(create_user(nickname, "Oliver_Taylor@gmail.com", password));
 
         // POST /api/login
         let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
-            nickname: user1_nickname.to_string(),
-            password: user1_password,
+            nickname: nickname.to_string(),
+            password: password.to_string(),
         });
         let mut config_jwt = config_jwt::get_test_config();
         config_jwt.jwt_secret = "".to_string();
         let data_c = (vec![user1], vec![]);
         let resp = call_service1(config_jwt, data_c, login, request).await;
-        assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
+        assert_eq!(resp.status(), http::StatusCode::UNPROCESSABLE_ENTITY); // 422
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, err::CD_INTER_SRV_ERROR);
-        assert_eq!(app_err.message, err::MSG_JSON_WEB_TOKEN_ENCODE);
+        assert_eq!(app_err.code, err::CD_UNPROCESSABLE_ENTITY);
+        #[rustfmt::skip]
+        assert_eq!(app_err.message, format!("{}: InvalidKeyFormat", err::MSG_JSON_WEB_TOKEN_ENCODE));
     }
     #[test]
     async fn test_login_if_session_not_exist() {
-        let mut user1: User = user_with_id(create_user());
-        let user1_nickname = user1.nickname.to_string();
-        let user1_password = user1.password.to_string();
-
-        let password = user1.password.to_string();
-        let password_hashed = hash_tools::encode_hash(&password).unwrap();
-        user1.password = password_hashed;
+        let nickname = "Oliver_Taylor";
+        let password = "passwdT1R1";
+        let user1: User = user_with_id(create_user(nickname, "Oliver_Taylor@gmail.com", password));
+        let user1_id = user1.id;
 
         // POST /api/login
         let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
-            nickname: user1_nickname.to_string(),
-            password: user1_password,
+            nickname: nickname.to_string(),
+            password: password.to_string(),
         });
         let data_c = (vec![user1], vec![]);
         let resp = call_service1(cfg_jwt(), data_c, login, request).await;
-        assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
+        assert_eq!(resp.status(), http::StatusCode::NOT_ACCEPTABLE); // 406
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, err::CD_INTER_SRV_ERROR);
-        assert_eq!(app_err.message, err::MSG_SESSION_NOT_EXIST);
+        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        #[rustfmt::skip]
+        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, user1_id));
     }
     #[test]
     async fn test_login_valid_credentials() {
-        let mut user1: User = user_with_id(create_user());
-        let user1_nickname = user1.nickname.to_string();
-        let user1_password = user1.password.to_string();
+        let nickname = "Oliver_Taylor";
+        let password = "passwdT1R1";
+        let user1: User = user_with_id(create_user(nickname, "Oliver_Taylor@gmail.com", password));
         let user1_dto = user_models::UserDto::from(user1.clone());
-
-        let password = user1.password.to_string();
-        let password_hashed = hash_tools::encode_hash(&password).unwrap();
-        user1.password = password_hashed;
 
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
 
         // POST /api/login
         let request = test::TestRequest::post().uri("/api/login").set_json(LoginUserDto {
-            nickname: user1_nickname.to_string(),
-            password: user1_password,
+            nickname: nickname.to_string(),
+            password: password.to_string(),
         });
         let config_jwt = config_jwt::get_test_config();
         let jwt_access = config_jwt.jwt_access;
@@ -859,7 +847,7 @@ mod tests {
     // ** logout **
     #[test]
     async fn test_logout_valid_token() {
-        let user1: User = user_with_id(create_user());
+        let user1: User = user_with_id(create_user("Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1"));
 
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
@@ -893,10 +881,10 @@ mod tests {
         assert_eq!(body_str, "");
     }
 
-    // ** new_token **
+    // ** update_token **
     #[test]
     async fn test_update_token_no_data() {
-        let user1: User = user_with_id(create_user());
+        let user1: User = user_with_id(create_user("Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1"));
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
         // POST /api/token
@@ -912,7 +900,7 @@ mod tests {
     }
     #[test]
     async fn test_update_token_empty_json_object() {
-        let user1: User = user_with_id(create_user());
+        let user1: User = user_with_id(create_user("Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1"));
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
         // POST /api/token
@@ -929,7 +917,7 @@ mod tests {
     }
     #[test]
     async fn test_update_token_invalid_dto_token_empty() {
-        let user1: User = user_with_id(create_user());
+        let user1: User = user_with_id(create_user("Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1"));
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
         // POST /api/token
@@ -939,17 +927,17 @@ mod tests {
 
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1(cfg_jwt(), data_c, update_token, request).await;
-        assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
     #[test]
     async fn test_update_token_invalid_dto_token_invalid() {
-        let user1: User = user_with_id(create_user());
+        let user1: User = user_with_id(create_user("Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1"));
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
         // POST /api/token
@@ -958,17 +946,17 @@ mod tests {
         });
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1(cfg_jwt(), data_c, update_token, request).await;
-        assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
     }
     #[test]
     async fn test_update_token_unacceptable_token_id() {
-        let user1: User = user_with_id(create_user());
+        let user1: User = user_with_id(create_user("Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1"));
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
 
@@ -982,22 +970,19 @@ mod tests {
         });
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1(config_jwt, data_c, update_token, request).await;
-        assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
+        assert_eq!(resp.status(), http::StatusCode::NOT_ACCEPTABLE); // 406
 
         let body = test::read_body(resp).await;
-        dbg!(&body);
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, err::CD_INTER_SRV_ERROR);
-        assert_eq!(app_err.message, err::MSG_SESSION_NOT_EXIST);
-        assert_eq!(
-            app_err.params.get("user_id"),
-            serde_json::json!({ "user_id": user_id_bad }).get("user_id")
-        );
+        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        #[rustfmt::skip]
+        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, user_id_bad));
     }
     #[test]
     async fn test_update_token_unacceptable_token_num() {
-        let user1: User = user_with_id(create_user());
+        let user1: User = user_with_id(create_user("Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1"));
+        let user1_id = user1.id;
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
 
@@ -1010,17 +995,18 @@ mod tests {
         });
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1(config_jwt, data_c, update_token, request).await;
-        assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
-        assert_eq!(app_err.message, err::MSG_UNACCEPTABLE_TOKEN_NUM);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        #[rustfmt::skip]
+        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user1_id));
     }
     #[test]
     async fn test_update_token_valid_dto_token() {
-        let user1: User = user_with_id(create_user());
+        let user1: User = user_with_id(create_user("Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1"));
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
 

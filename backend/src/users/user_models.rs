@@ -265,7 +265,7 @@ pub struct CreateUserRegistrDto {
     pub final_date: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct RegistrUserDto {
     pub nickname: String,
     pub email: String,
@@ -285,7 +285,7 @@ impl Validator for RegistrUserDto {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RegistrUserResponseDto {
     pub nickname: String,
