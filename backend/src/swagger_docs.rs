@@ -19,8 +19,8 @@ use crate::{errors, users::{user_models, user_auth_controller, user_controller, 
         user_controller::get_user_current,
         user_controller::put_user_current,
         user_controller::delete_user_current,
-        // user_registr_controller::registration,
-        // user_registr_controller::confirm_registration,
+        user_registr_controller::registration,
+        user_registr_controller::confirm_registration,
         // user_registr_controller::recovery,
         // user_registr_controller::confirm_recovery,
     ),
@@ -28,7 +28,7 @@ use crate::{errors, users::{user_models, user_auth_controller, user_controller, 
         schemas(
             errors::AppError,
             user_models::UserRole,
-            // user_controller, user_auth_controller
+            // user_controller, user_auth_controller, user_registr_controller
             user_models::UserDto,
             // user_auth_controller
             user_models::LoginUserDto, user_models::LoginUserResponseDto, 

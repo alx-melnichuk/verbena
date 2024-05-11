@@ -2,6 +2,7 @@ use std::borrow;
 
 use actix_web::{get, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
+use utoipa;
 
 use crate::hash_tools;
 #[cfg(not(feature = "mockdata"))]
@@ -25,7 +26,8 @@ use crate::users::user_recovery_orm::inst::UserRecoveryOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_recovery_orm::tests::UserRecoveryOrmApp;
 use crate::users::{
-    user_models, user_orm::UserOrm, user_recovery_orm::UserRecoveryOrm,
+    user_models::{self, RegistrUserDto, RegistrUserResponseDto, UserDto},
+    user_orm::UserOrm, user_recovery_orm::UserRecoveryOrm,
     user_registr_orm::UserRegistrOrm,
 };
 #[cfg(not(feature = "mockdata"))]
@@ -37,6 +39,9 @@ use crate::{errors::AppError, extractors::authentication::RequireAuth};
 
 pub const MSG_EMAIL_ALREADY_USE: &str = "email_already_use";
 pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";
+// 510 Not Extended - Error when sending email.
+pub const MSG_ERROR_SENDING_EMAIL: &str = "error_sending_email";
+
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -59,7 +64,7 @@ fn err_blocking(err: String) -> AppError {
     log::error!("{}: {}", err::CD_BLOCKING, err);
     AppError::new(err::CD_BLOCKING, &err).set_status(500)
 }
-fn err_wrong_email_or_nickname(is_nickname: bool) -> AppError {
+/*fn err_wrong_email_or_nickname(is_nickname: bool) -> AppError {
     let val = if is_nickname {
         MSG_NICKNAME_ALREADY_USE
     } else {
@@ -67,7 +72,7 @@ fn err_wrong_email_or_nickname(is_nickname: bool) -> AppError {
     };
     log::error!("{}: {}", err::CD_CONFLICT, val);
     AppError::new(err::CD_CONFLICT, val).set_status(409)
-}
+}*/
 fn err_jsonwebtoken_encode(err: String) -> AppError {
     #[rustfmt::skip]
     log::error!("{}: {} - {}", err::CD_INTER_SRV_ERROR, err::MSG_JSON_WEB_TOKEN_ENCODE, err);
@@ -76,18 +81,18 @@ fn err_jsonwebtoken_encode(err: String) -> AppError {
         .add_param(borrow::Cow::Borrowed("error"), &err);
     app_err
 }
-fn err_jsonwebtoken_decode(err: String) -> AppError {
+/*fn err_jsonwebtoken_decode(err: String) -> AppError {
     #[rustfmt::skip]
     log::error!("{}: {} - {}", err::CD_FORBIDDEN, err::MSG_INVALID_OR_EXPIRED_TOKEN, err);
     AppError::new(err::CD_FORBIDDEN, err::MSG_INVALID_OR_EXPIRED_TOKEN).set_status(403)
-}
-fn err_sending_email(err: String) -> AppError {
+}*/
+/*fn err_sending_email(err: String) -> AppError {
     #[rustfmt::skip]
-    log::error!("{}: {} - {}", err::CD_INTER_SRV_ERROR, err::MSG_ERROR_SENDING_EMAIL, &err);
-    AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_ERROR_SENDING_EMAIL)
+    log::error!("{}: {} - {}", err::CD_INTER_SRV_ERROR, MSG_ERROR_SENDING_EMAIL, &err);
+    AppError::new(err::CD_INTER_SRV_ERROR, MSG_ERROR_SENDING_EMAIL)
         .set_status(500)
         .add_param(borrow::Cow::Borrowed("error"), &err)
-}
+}*/
 fn err_encode_hash(err: String) -> AppError {
     #[rustfmt::skip]
     log::error!("{}: {} - {}", err::CD_INTER_SRV_ERROR, err::MSG_ERROR_HASHING_PASSWORD, err);
@@ -95,14 +100,14 @@ fn err_encode_hash(err: String) -> AppError {
         .set_status(500)
         .add_param(borrow::Cow::Borrowed("error"), &err)
 }
-fn err_registr_not_found(user_registr_id: i32) -> AppError {
+/*fn err_registr_not_found(user_registr_id: i32) -> AppError {
     #[rustfmt::skip]
     log::error!("{}: {} - user_registr_id - {}", err::CD_NOT_FOUND, err::MSG_REGISTR_NOT_FOUND, user_registr_id);
     let name = borrow::Cow::Borrowed("user_registr_id");
     AppError::new(err::CD_NOT_FOUND, err::MSG_REGISTR_NOT_FOUND)
         .set_status(404)
         .add_param(name, &user_registr_id)
-}
+}*/
 fn err_recovery_not_found(user_recovery_id: i32) -> AppError {
     #[rustfmt::skip]
     log::error!("{}: {} - user_recovery_id - {}", err::CD_NOT_FOUND, err::MSG_RECOVERY_NOT_FOUND, user_recovery_id);
@@ -111,8 +116,40 @@ fn err_recovery_not_found(user_recovery_id: i32) -> AppError {
         .add_param(borrow::Cow::Borrowed("user_recovery_id"), &user_recovery_id)
 }
 
-// Send a confirmation email to register the user.
-// POST /api/registration
+/// registration
+///
+/// Send an email confirming user registration.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X POST http://localhost:8080/api/registration -d '{"nickname": "user", "email": "user@email", "password": "password"}'
+/// ```
+///
+/// Return new user registration parameters (`RegistrUserResponseDto`) with status 201.
+///
+#[utoipa::path(
+    responses(
+        (status = 201, description = "New user registration parameters and registration token.", body = RegistrUserResponseDto),
+        (status = 417, description = "Validation error. { \"nickname\": \"us\", \"email\": \"us_email\", \"password\": \"pas\" }", 
+            body = [AppError],
+            example = json!(AppError::validations(
+                (RegistrUserDto { nickname: "us".to_string(), email: "us_email".to_string(), password: "pas".to_string() })
+                    .validate().err().unwrap())
+            )),
+        (status = 409, description = "Error: nickname (email) is already in use.", body = AppError,
+            example = json!(AppError::conflict409(MSG_NICKNAME_ALREADY_USE))),
+        (status = 422, description = "Token encoding error.", body = AppError,
+            example = json!(AppError::unprocessable422(&format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
+        (status = 500, description = "Error while calculating the password hash.", body = AppError, 
+            example = json!(AppError::internal_err500(&format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty.")))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+        (status = 510, description = "Error sending email.", body = AppError,
+            example = json!(AppError::not_extended510(&format!("{}: {}", MSG_ERROR_SENDING_EMAIL, "The mail server is overloaded.")))),
+    ),
+)]
 #[post("/api/registration")]
 pub async fn registration(
     config_app: web::Data<config_app::ConfigApp>,
@@ -120,22 +157,26 @@ pub async fn registration(
     mailer: web::Data<MailerApp>,
     user_orm: web::Data<UserOrmApp>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,
-    json_body: web::Json<user_models::RegistrUserDto>,
+    json_body: web::Json<RegistrUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
         #[rustfmt::skip]
-        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
+        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors)); // 417
         return Ok(AppError::to_response(&AppError::validations(validation_errors)));
     }
 
-    let mut registr_user_dto: user_models::RegistrUserDto = json_body.0.clone();
+    let mut registr_user_dto: RegistrUserDto = json_body.into_inner();
     registr_user_dto.nickname = registr_user_dto.nickname.to_lowercase();
     registr_user_dto.email = registr_user_dto.email.to_lowercase();
 
     let password = registr_user_dto.password.clone();
-    let password_hashed = hash_tools::encode_hash(&password).map_err(|err| err_encode_hash(err))?;
+    let password_hashed = hash_tools::encode_hash(&password).map_err(|e| {
+        let message = format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, e.to_string());
+        log::error!("{}: {}", err::CD_INTER_ERROR, &message);
+        AppError::internal_err500(&message)
+    })?;
 
     let nickname = registr_user_dto.nickname.clone();
     let email = registr_user_dto.email.clone();
@@ -144,17 +185,26 @@ pub async fn registration(
     let user_opt = web::block(move || {
         let existing_user = user_orm
             .find_user_by_nickname_or_email(Some(&nickname), Some(&email))
-            .map_err(|e| err_database(e.to_string()));
+            .map_err(|e| {
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            });
         existing_user
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))??;
+    .map_err(|e| {
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })??;
 
     let nickname = registr_user_dto.nickname.clone();
 
     // If such an entry exists, then exit with code 409.
     if let Some(user) = user_opt {
-        return Err(err_wrong_email_or_nickname(user.nickname == nickname));
+        #[rustfmt::skip]
+        let message = if user.nickname == nickname { MSG_NICKNAME_ALREADY_USE } else { MSG_EMAIL_ALREADY_USE };
+        log::error!("{}: {}", err::CD_CONFLICT, &message);
+        return Err(AppError::conflict409(&message));
     }
 
     let email = registr_user_dto.email.clone();
@@ -164,18 +214,26 @@ pub async fn registration(
     let user_registr_opt = web::block(move || {
         let existing_user_registr = user_registr_orm2
             .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
-            .map_err(|e| err_database(e.to_string()));
+            .map_err(|e| {
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            });
         existing_user_registr
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))??;
+    .map_err(|e| {
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })??;
 
     let nickname = registr_user_dto.nickname.clone();
 
     // If such an entry exists, then exit with code 409.
     if let Some(user_registr) = user_registr_opt {
-        let is_match_nickname = user_registr.nickname == nickname;
-        return Err(err_wrong_email_or_nickname(is_match_nickname));
+        #[rustfmt::skip]
+        let message = if user_registr.nickname == nickname { MSG_NICKNAME_ALREADY_USE } else { MSG_EMAIL_ALREADY_USE };
+        log::error!("{}: {}", err::CD_CONFLICT, &message);
+        return Err(AppError::conflict409(&message));
     }
 
     // If there is no such record, then add the specified data to the "user_registr" table.
@@ -194,19 +252,28 @@ pub async fn registration(
     let user_registr = web::block(move || {
         let user_registr = user_registr_orm
             .create_user_registr(create_user_registr_dto)
-            .map_err(|e| err_database(e));
+            .map_err(|e| {
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            });
         user_registr
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))??;
+    .map_err(|e| {
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })??;
 
     let num_token = generate_num_token();
     let config_jwt = config_jwt.get_ref().clone();
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Pack two parameters (user_registr.id, num_token) into a registr_token.
-    let registr_token = encode_token(user_registr.id, num_token, jwt_secret, app_registr_duration)
-        .map_err(|err| err_jsonwebtoken_encode(err.to_string()))?;
+    let registr_token = encode_token(user_registr.id, num_token, jwt_secret, app_registr_duration).map_err(|e| {
+        let message = format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, e.to_string());
+        log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
+        AppError::unprocessable422(&message)
+    })?;
 
     // Prepare a letter confirming this registration.
     let domain = &config_app.app_domain;
@@ -225,20 +292,45 @@ pub async fn registration(
     );
 
     if result.is_err() {
-        return Err(err_sending_email(result.unwrap_err()));
+        // err_sending_email(result.unwrap_err())
+        let message = format!("{}: {}", MSG_ERROR_SENDING_EMAIL, result.unwrap_err());
+        log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
+        return Err(AppError::not_extended510(&message));
     }
 
-    let registr_user_response_dto = user_models::RegistrUserResponseDto {
+    let registr_user_response_dto = RegistrUserResponseDto {
         nickname: registr_user_dto.nickname.clone(),
         email: registr_user_dto.email.clone(),
         registr_token: registr_token.clone(),
     };
 
-    Ok(HttpResponse::Created().json(registr_user_response_dto))
+    Ok(HttpResponse::Created().json(registr_user_response_dto)) // 201
 }
 
-// Confirm user registration.
-// PUT /api/registration/{registr_token}
+/// confirm_registration
+///
+/// Confirmation of new user registration.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X PUT http://localhost:8080/api/registration/registr_token1234
+/// ```
+///
+/// Return a new user (`UserDto`) with status 201.
+///
+#[utoipa::path(
+    responses(
+        (status = 201, description = "New user.", body = UserDto),
+        (status = 401, description = "The token is invalid or expired.", body = AppError,
+            example = json!(AppError::unauthorized401(&format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidToken")))),
+        (status = 404, description = "", body = AppError,
+            example = json!(AppError::not_found404(&format!("{}: user_registr_id: {}", err::MSG_REGISTR_NOT_FOUND, 123)))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+)]
 #[put("/api/registration/{registr_token}")]
 pub async fn confirm_registration(
     request: actix_web::HttpRequest,
@@ -253,8 +345,11 @@ pub async fn confirm_registration(
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Check the signature and expiration date on the received “registr_token".
-    let dual_token =
-        decode_token(&registr_token, jwt_secret).map_err(|err| err_jsonwebtoken_decode(err))?;
+    let dual_token = decode_token(&registr_token, jwt_secret).map_err(|e| {
+        let message = format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
+        log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
+        AppError::unauthorized401(&message)
+    })?;
 
     // Get "user_registr ID" from "registr_token".
     let (user_registr_id, _) = dual_token;
@@ -264,20 +359,33 @@ pub async fn confirm_registration(
     let user_registr_opt = web::block(move || {
         let user_registr = user_registr_orm2
             .find_user_registr_by_id(user_registr_id)
-            .map_err(|e| err_database(e));
+            .map_err(|e| {
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            });
         user_registr
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))??;
+    .map_err(|e| {
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })??;
 
     let user_registr_orm2 = user_registr_orm.clone();
     // Delete entries in the "user_registr" table, that are already expired.
     let _ = web::block(move || user_registr_orm2.delete_inactive_final_date(None))
         .await
-        .map_err(|e| err_blocking(e.to_string()))?;
+        .map_err(|e| {
+            log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            AppError::blocking506(&e.to_string())    
+        })?;
 
     // If no such entry exists, then exit with code 404.
-    let user_registr = user_registr_opt.ok_or_else(|| err_registr_not_found(user_registr_id))?;
+    let user_registr = user_registr_opt.ok_or_else(|| {
+        let message = format!("{}: user_registr_id: {}", err::MSG_REGISTR_NOT_FOUND, user_registr_id);
+        log::error!("{}: {}", err::CD_NOT_FOUND, &message);
+        AppError::not_found404(&message)
+    })?;
 
     let user_registr_orm2 = user_registr_orm.clone();
     // If such an entry exists, then add a new user.
@@ -289,12 +397,17 @@ pub async fn confirm_registration(
 
     let user = web::block(move || {
         // Create a new entity (user).
-        let user_res =
-            user_orm.create_user(create_user_dto).map_err(|e| err_database(e.to_string()));
+        let user_res = user_orm.create_user(create_user_dto).map_err(|e| {
+            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        });
         user_res
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))??;
+    .map_err(|e| {
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })??;
 
     let session = Session {
         user_id: user.id,
@@ -302,19 +415,23 @@ pub async fn confirm_registration(
     };
     let _ = web::block(move || {
         // Create a new entity (session).
-        let session_res =
-            session_orm.create_session(session).map_err(|e| err_database(e.to_string()));
-
+        let session_res = session_orm.create_session(session).map_err(|e| {
+            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        });
         user_registr_orm2.delete_user_registr(user_registr_id).ok();
 
         session_res
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))?;
+    .map_err(|e| {
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
 
-    let user_dto = user_models::UserDto::from(user);
+    let user_dto = UserDto::from(user);
 
-    Ok(HttpResponse::Created().json(user_dto))
+    Ok(HttpResponse::Created().json(user_dto)) // 201
 }
 
 // Send a confirmation email to recover the user's password.
@@ -444,7 +561,10 @@ pub async fn recovery(
     );
 
     if result.is_err() {
-        return Err(err_sending_email(result.unwrap_err()));
+        // return Err(err_sending_email(result.unwrap_err()));
+        let message = format!("{}: {}", MSG_ERROR_SENDING_EMAIL, result.unwrap_err());
+        log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
+        return Err(AppError::not_extended510(&message));
     }
 
     let recovery_user_response_dto = user_models::RecoveryUserResponseDto {
@@ -487,8 +607,11 @@ pub async fn confirm_recovery(
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Check the signature and expiration date on the received “recovery_token".
-    let dual_token =
-        decode_token(&recovery_token, jwt_secret).map_err(|err| err_jsonwebtoken_decode(err))?;
+    let dual_token = decode_token(&recovery_token, jwt_secret).map_err(|e| {
+        let message = format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
+        log::error!("{}: {}", err::CD_FORBIDDEN, &message);
+        AppError::forbidden403(&message)
+    })?;
 
     // Get "user_recovery ID" from "recovery_token".
     let (user_recovery_id, _) = dual_token;
@@ -563,7 +686,7 @@ pub async fn confirm_recovery(
     .map_err(|e| err_blocking(e.to_string()))?;
 
     let user = user_opt.ok_or_else(|| err_recovery_not_found(user_recovery_id))?;
-    let user_dto = user_models::UserDto::from(user);
+    let user_dto = UserDto::from(user);
 
     Ok(HttpResponse::Ok().json(user_dto))
 }
@@ -743,7 +866,7 @@ mod tests {
             });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -763,7 +886,7 @@ mod tests {
             });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -783,7 +906,7 @@ mod tests {
             });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -803,7 +926,7 @@ mod tests {
             });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -823,7 +946,7 @@ mod tests {
             });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -843,7 +966,7 @@ mod tests {
             });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -863,7 +986,7 @@ mod tests {
             });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -883,7 +1006,7 @@ mod tests {
             });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -903,7 +1026,7 @@ mod tests {
             });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -923,7 +1046,7 @@ mod tests {
             });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -943,7 +1066,7 @@ mod tests {
             });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -963,7 +1086,7 @@ mod tests {
             });
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         let body = test::read_body(resp).await;
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -1074,13 +1197,13 @@ mod tests {
         config_jwt.jwt_secret = "".to_string();
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), config_jwt), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::INTERNAL_SERVER_ERROR); // 500
+        assert_eq!(resp.status(), http::StatusCode::UNPROCESSABLE_ENTITY); // 422
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        assert_eq!(app_err.code, err::CD_INTER_SRV_ERROR);
-        assert_eq!(app_err.message, err::MSG_JSON_WEB_TOKEN_ENCODE);
+        eprintln!("app_err: {:?}", &app_err);
+        assert_eq!(app_err.code, err::CD_UNPROCESSABLE_ENTITY);
+        assert!(app_err.message.starts_with(err::MSG_JSON_WEB_TOKEN_ENCODE));
     }
     #[test]
     async fn test_registration_new_user() {
@@ -1101,7 +1224,7 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         let body = test::read_body(resp).await;
-        let registr_user_resp: user_models::RegistrUserResponseDto =
+        let registr_user_resp: RegistrUserResponseDto =
             serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let final_date: DateTime<Utc> = Utc::now() + Duration::minutes(20);
@@ -1133,12 +1256,12 @@ mod tests {
 
         let data_c = (vec![], vec![], vec![], vec![]);
         let resp = call_service1((cfg_app(), cfg_jwt()), data_c, confirm_registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
-        assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        assert!(app_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
     #[test]
     async fn test_registration_confirm_final_date_has_expired() {
@@ -1160,12 +1283,12 @@ mod tests {
 
         let data_c = (vec![], vec![user_reg1], vec![], vec![]);
         let resp = call_service1((cfg_app(), config_jwt), data_c, confirm_registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
-        assert_eq!(app_err.message, err::MSG_INVALID_OR_EXPIRED_TOKEN);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        assert_eq!(app_err.message, format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "ExpiredSignature"));
     }
     #[test]
     async fn test_registration_confirm_no_exists_in_user_regist() {
@@ -1178,8 +1301,8 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let registr_token =
-            encode_token(user_reg1_id + 1, num_token, jwt_secret, reg_duration).unwrap();
+        let user_reg_id = user_reg1_id + 1;
+        let registr_token = encode_token(user_reg_id, num_token, jwt_secret, reg_duration).unwrap();
 
         //PUT /api/registration/{registr_token}
         let request = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token));
@@ -1191,7 +1314,8 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
-        assert_eq!(app_err.message, err::MSG_REGISTR_NOT_FOUND);
+        #[rustfmt::skip]
+        assert_eq!(app_err.message, format!("{}: user_registr_id: {}", err::MSG_REGISTR_NOT_FOUND, user_reg_id));
     }
     #[test]
     async fn test_registration_confirm_exists_in_user_regist() {
