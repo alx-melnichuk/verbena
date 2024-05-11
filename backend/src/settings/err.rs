@@ -39,6 +39,15 @@ pub const MSG_FAILED_CONVERSION: &str = "failed_conversion"; /*+*/
 // 417 Expectation Failed /*+*/
 pub const CD_VALIDATION: &str = "Validation"; /*+*/
 
+// 422 Unprocessable Entity (user_registr_controller)
+pub const CD_UNPROCESSABLE_ENTITY: &str = "UnprocessableEntity"; /*+*/
+
+// 500 Internal Server Error /*+*/
+pub const CD_INTER_ERROR: &str = "InternalServerError";
+pub const CD_INTERNAL_SERVER_ERROR: &str = "InternalServerError"; /* # del */
+// 500 Internal Server Error - Error creating password hash. (user_registr_controller)
+pub const MSG_ERROR_HASHING_PASSWORD: &str = "error_hashing_password";
+
 // 506 Variant Also Negotiates /*+*/
 pub const CD_BLOCKING: &str = "Blocking"; /*+*/
 // 506 Variant Also Negotiates - Error web::block for waiting for synchronous operations to complete. /*+*/
@@ -48,6 +57,9 @@ pub const MSG_BLOCKING: &str = "error_waiting_for_operations"; /*+*/
 pub const CD_DATABASE: &str = "Database"; /*+*/
 // 507 Insufficient Storage - An error occurred while executing a database query. /*+*/
 pub const MSG_DATABASE: &str = "database_query_error"; /*+*/
+
+// 510 Not Extended /*+*/
+pub const CD_NOT_EXTENDED: &str = "NotExtended"; /*+*/
 
 // OLD
 
@@ -103,10 +115,6 @@ pub const MSG_STREAM_NOT_FOUND_BY_ID: &str = "The stream with the specified ID w
 pub const CD_INTER_SRV_ERROR: &str = "InternalServerError";
 pub const MSG_INTER_SRV_ERROR: &str = "internal_server_error";
 
-// Error when sending email
-pub const MSG_ERROR_SENDING_EMAIL: &str = "error_sending_email";
-// Error creating password hash.
-pub const MSG_ERROR_HASHING_PASSWORD: &str = "error_hashing_password";
 // Authentication: The entity "user" was not received from the request.
 pub const MSG_USER_NOT_RECEIVED_FROM_REQUEST: &str = "user_not_received_from_request";
 

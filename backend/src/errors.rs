@@ -62,8 +62,11 @@ impl AppError {
             409 => http::StatusCode::CONFLICT,
             415 => http::StatusCode::UNSUPPORTED_MEDIA_TYPE,
             417 => http::StatusCode::EXPECTATION_FAILED,
+            422 => http::StatusCode::UNPROCESSABLE_ENTITY,
+            500 => http::StatusCode::INTERNAL_SERVER_ERROR,
             506 => http::StatusCode::VARIANT_ALSO_NEGOTIATES,
             507 => http::StatusCode::INSUFFICIENT_STORAGE,
+            510 => http::StatusCode::NOT_EXTENDED,
             _ => http::StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
@@ -101,19 +104,19 @@ impl AppError {
     pub fn unauthorized401(message: &str) -> Self {
         AppError::new(err::CD_UNAUTHORIZED, message).set_status(401)
     }
-    /// Access denied: insufficient user rights. (status=403)
-    pub fn access_denied403() -> Self {
-        AppError::new(err::CD_FORBIDDEN, err::MSG_ACCESS_DENIED).set_status(403)
+    /// Insufficient access rights (i.e. access denied). (status=403)
+    pub fn forbidden403(message: &str) -> Self {
+        AppError::new(err::CD_FORBIDDEN, message).set_status(403)
     }
-    /// Resource is not found.
+    /// Resource is not found. (status=404)
     pub fn not_found404(message: &str) -> Self {
-        AppError::new(err::CD_NOT_FOUND, message).set_status(403)
+        AppError::new(err::CD_NOT_FOUND, message).set_status(404)
     }
-    ///
+    /// The value provided is not valid. (status=406)
     pub fn not_acceptable406(message: &str) -> Self {
         AppError::new(err::CD_NOT_ACCEPTABLE, message).set_status(406)
     }
-    /// A conflict situation has arisen.
+    /// A conflict situation has arisen.(status=409)
     pub fn conflict409(message: &str) -> Self {
         AppError::new(err::CD_CONFLICT, message).set_status(409)
     }
@@ -126,6 +129,14 @@ impl AppError {
     pub fn validation417(message: &str) -> Self {
         AppError::new(err::CD_VALIDATION, message).set_status(417)
     }
+    /// Error, data cannot be processed. (status=422)
+    pub fn unprocessable422(message: &str) -> Self {
+        AppError::new(err::CD_UNPROCESSABLE_ENTITY, message).set_status(422)
+    }
+    /// Internal Server Error. (status=500)
+    pub fn internal_err500(message: &str) -> AppError {
+        AppError::new(err::CD_INTER_ERROR, message).set_status(500)
+    }
     /// Error while blocking process. (status=506)
     pub fn blocking506(message: &str) -> AppError {
         AppError::new(err::CD_BLOCKING, &format!("{}: {}", err::MSG_BLOCKING, message)).set_status(506)
@@ -133,6 +144,10 @@ impl AppError {
     /// Error when querying the database. (status=507)
     pub fn database507(message: &str) -> Self {
         AppError::new(err::CD_DATABASE, &format!("{}: {}", err::MSG_DATABASE, message)).set_status(507)
+    }
+    // Error: Not expanded. (status=510)
+    pub fn not_extended510(message: &str) -> AppError {
+        AppError::new(err::CD_NOT_EXTENDED, message).set_status(510)
     }
 }
 
