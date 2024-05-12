@@ -3,7 +3,10 @@ use utoipa::{
     Modify, OpenApi,
 };
 
-use crate::{errors, users::{user_models, user_auth_controller, user_controller, user_registr_controller}};
+use crate::{
+    errors,
+    users::{user_auth_controller, user_controller, user_models, user_registr_controller},
+};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -21,8 +24,9 @@ use crate::{errors, users::{user_models, user_auth_controller, user_controller, 
         user_controller::delete_user_current,
         user_registr_controller::registration,
         user_registr_controller::confirm_registration,
-        // user_registr_controller::recovery,
-        // user_registr_controller::confirm_recovery,
+        user_registr_controller::recovery,
+        user_registr_controller::confirm_recovery,
+        user_registr_controller::clear_for_expired,
     ),
     components(
         schemas(
@@ -31,15 +35,16 @@ use crate::{errors, users::{user_models, user_auth_controller, user_controller, 
             // user_controller, user_auth_controller, user_registr_controller
             user_models::UserDto,
             // user_auth_controller
-            user_models::LoginUserDto, user_models::LoginUserResponseDto, 
-            // user_auth_controller::login, user_auth_controller::update_token
-            user_models::UserTokensDto,
-            // user_auth_controller::update_token
-            user_models::TokenUserDto,
+            user_models::LoginUserDto, user_models::LoginUserResponseDto, // ::login
+            user_models::UserTokensDto, // ::login, ::update_token
+            user_models::TokenUserDto, // ::update_token
             // user_controller
             user_models::PasswordUserDto,
-            // user_registr_controller::registration
-            user_models::RegistrUserDto, user_models::RegistrUserResponseDto,
+            // user_registr_controller
+            user_models::RegistrUserDto, user_models::RegistrUserResponseDto, // ::registration
+            user_models::RecoveryUserDto, user_models::RecoveryUserResponseDto, // ::recovery
+            user_models::RecoveryDataDto, // ::confirm_recovery
+            user_models::ClearForExpiredResponseDto, // ::clear_for_expired
         )
     ),
     tags(

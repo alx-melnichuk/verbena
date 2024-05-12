@@ -321,7 +321,7 @@ pub struct CreateUserRecoveryDto {
     pub final_date: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct RecoveryUserDto {
     pub email: String,
 }
@@ -337,7 +337,7 @@ impl Validator for RecoveryUserDto {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RecoveryUserResponseDto {
     pub id: i32,
@@ -345,7 +345,7 @@ pub struct RecoveryUserResponseDto {
     pub recovery_token: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct RecoveryDataDto {
     pub password: String,
 }
@@ -384,7 +384,7 @@ pub struct TokenUserDto {
     pub token: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ClearForExpiredResponseDto {
     pub count_inactive_registr: usize,
