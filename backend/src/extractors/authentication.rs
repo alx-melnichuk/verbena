@@ -24,6 +24,8 @@ use crate::users::{
 };
 
 pub const BEARER: &str = "Bearer ";
+// 401 Unauthorized - According to "user_id" in the token, the user was not found.
+pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
 
 pub struct Authenticated(User);
 
@@ -221,7 +223,7 @@ where
             })?;
 
             let user = result.ok_or_else(|| {
-                let message = format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_ID, user_id);
+                let message = format!("{}: user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id);
                 log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
                 error::ErrorUnauthorized(AppError::unauthorized401(&message)) // 401
             })?;
@@ -456,7 +458,7 @@ mod tests {
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_ID, user_id));
+        assert_eq!(app_err.message, format!("{}: user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id));
     }
     #[test]
     async fn test_authentication_middelware_valid_token_non_existent_num() {
