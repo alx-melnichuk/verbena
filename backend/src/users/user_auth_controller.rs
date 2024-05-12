@@ -17,6 +17,7 @@ use crate::users::user_orm::inst::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::{
+    user_err as u_err,
     user_models::{self, LoginUserDto, TokenUserDto},
     user_orm::UserOrm,
 };
@@ -60,16 +61,15 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             body = LoginUserResponseDto),
         (status = 401, description = "The nickname or email address is incorrect.", body = AppError,
             example = json!(AppError::unauthorized401(MSG_WRONG_NICKNAME_EMAIL))),
-        (status = 417, description = "Validation error. { nickname: \"us\", \"password\": \"pas\" }", body = [AppError],
+        (status = 417, description = "Validation error. `{ nickname: \"us\", \"password\": \"pas\" }`", body = [AppError],
             example = json!(AppError::validations(
-                (LoginUserDto { nickname: "us".to_string(), password: "pas".to_string() }).validate().err().unwrap())
-            )),
+                (LoginUserDto { nickname: "us".to_string(), password: "pas".to_string() }).validate().err().unwrap()) )),
         (status = 406, description = "Error opening session.", body = AppError,
             example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, 1)))),
         (status = 409, description = "Error when comparing password hashes.", body = AppError,
             example = json!(AppError::conflict409(&format!("{}: {}", MSG_INVALID_HASH, "Parameter is empty.")))),
         (status = 422, description = "Token encoding error.", body = AppError,
-            example = json!(AppError::unprocessable422(&format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
+            example = json!(AppError::unprocessable422(&format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -86,7 +86,6 @@ pub async fn login(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        #[rustfmt::skip]
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors)); // 417
         return Ok(AppError::to_response(&AppError::validations(validation_errors)));
     }
@@ -135,14 +134,14 @@ pub async fn login(
 
     // Packing two parameters (user.id, num_token) into access_token.
     let access_token = tokens::encode_token(user.id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        let message = format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        let message = format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
         AppError::unprocessable422(&message)
     })?;
 
     // Packing two parameters (user.id, num_token) into refresh_token.
     let refresh_token = tokens::encode_token(user.id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        let message = format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        let message = format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
         AppError::unprocessable422(&message)
     })?;
@@ -276,8 +275,7 @@ pub async fn logout(
         (status = 406, description = "Error closing session.", body = AppError,
             example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, 1)))),
         (status = 409, description = "Error processing token.", body = AppError,
-            example = json!(AppError::conflict409(
-                &format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
+            example = json!(AppError::conflict409(&format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -341,14 +339,14 @@ pub async fn update_token(
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let access_token = tokens::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        let message = format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        let message = format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         log::error!("{}: {}", err::CD_CONFLICT, &message);
         AppError::conflict409(&message)
     })?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let refresh_token = tokens::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        let message = format!("{}: {}", err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        let message = format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         log::error!("{}: {}", err::CD_CONFLICT, &message);
         AppError::conflict409(&message)
     })?;
@@ -770,7 +768,7 @@ mod tests {
 
         assert_eq!(app_err.code, err::CD_UNPROCESSABLE_ENTITY);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: InvalidKeyFormat", err::MSG_JSON_WEB_TOKEN_ENCODE));
+        assert_eq!(app_err.message, format!("{}: InvalidKeyFormat", u_err::MSG_JSON_WEB_TOKEN_ENCODE));
     }
     #[test]
     async fn test_login_if_session_not_exist() {
