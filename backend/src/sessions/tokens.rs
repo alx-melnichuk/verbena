@@ -5,11 +5,12 @@ use jsonwebtoken::{self as jwt, errors};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::settings::err;
 use crate::utils::{crypto, parser};
 
 pub const CD_NUM_TOKEN_MIN: usize = 1;
 pub const CD_NUM_TOKEN_MAX: usize = 10000;
+// User_ID from the header does not match the user_ID from the parameters
+pub const CD_UNALLOWABLE_TOKEN: &str = "UnallowableToken";
 
 #[derive(Debug, Serialize, Deserialize)]
 struct TokenClaims {
@@ -102,14 +103,14 @@ pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<(i32, i3
 
     let user_id = parser::parse_i32(user_id_str).map_err(|err| {
         #[rustfmt::skip]
-        log::error!("{}: user_id: {} - {}", err::CD_UNALLOWABLE_TOKEN, user_id_str, err);
-        err::CD_UNALLOWABLE_TOKEN
+        log::error!("{}: user_id: {} - {}", CD_UNALLOWABLE_TOKEN, user_id_str, err);
+        CD_UNALLOWABLE_TOKEN
     })?;
 
     let num_token = parser::parse_i32(num_token_str).map_err(|err| {
         #[rustfmt::skip]
-        log::error!("{}: num_token: {} - {}", err::CD_UNALLOWABLE_TOKEN, num_token_str, err);
-        err::CD_UNALLOWABLE_TOKEN
+        log::error!("{}: num_token: {} - {}", CD_UNALLOWABLE_TOKEN, num_token_str, err);
+        CD_UNALLOWABLE_TOKEN
     })?;
 
     Ok((user_id, num_token))
