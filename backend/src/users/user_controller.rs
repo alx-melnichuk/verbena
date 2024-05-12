@@ -241,15 +241,14 @@ pub async fn get_user_by_id(
             example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
         (status = 415, description = "Error parsing input parameter.", body = AppError, 
             example = json!(AppError::parse415("id", "invalid digit found in string (1a)"))),
-        (status = 417, description = "Validation error. { \"password\": \"pas\" }", body = [AppError],
-             example = json!(
-                AppError::validations((PasswordUserDto { password: Some("pas".to_string()) }).validate().err().unwrap())
-            )),
-        (status = 506, description = "Blocking error.", body = AppError, 
+        (status = 417, description = "Validation error. `{ \"password\": \"pas\" }`", body = [AppError],
+            example = json!(AppError::validations((PasswordUserDto { password: Some("pas".to_string()) }).validate().err().unwrap()) )),
+        (status = 506, description = "Blocking error.", body = AppError,
             example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
+        (status = 507, description = "Database error.", body = AppError,
             example = json!(AppError::database507("Error while querying the database."))),
     ),
+    params(("id", description = "Unique user ID.")),
     security(("bearer_auth" = []))
 )]
 #[rustfmt::skip]
@@ -326,6 +325,7 @@ pub async fn put_user(
         (status = 507, description = "Database error.", body = AppError, 
             example = json!(AppError::database507("Error while querying the database."))),
     ),
+    params(("id", description = "Unique user ID.")),
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
@@ -381,7 +381,6 @@ pub async fn delete_user(
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
-
     ),
     security(("bearer_auth" = []))
 )]
@@ -415,10 +414,8 @@ pub async fn get_user_current(
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
-        (status = 417, description = "Validation error. { \"password\": \"pas\" }", body = [AppError],
-             example = json!(
-                AppError::validations((PasswordUserDto { password: Some("pas".to_string()) }).validate().err().unwrap())
-            )),
+        (status = 417, description = "Validation error. `{ \"password\": \"pas\" }`", body = [AppError],
+            example = json!(AppError::validations((PasswordUserDto { password: Some("pas".to_string()) }).validate().err().unwrap()) )),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
