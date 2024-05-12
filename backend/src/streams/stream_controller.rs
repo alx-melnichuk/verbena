@@ -19,6 +19,8 @@ use crate::utils::parser;
 use crate::validators::{msg_validation, Validator};
 
 pub const ALIAS_LOGO_FILES: &str = "logo";
+// 404 Not Found -
+pub const MSG_STREAM_NOT_FOUND_BY_ID: &str = "The stream with the specified ID was not found.";
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -444,7 +446,7 @@ pub async fn put_stream(
     if let Some(stream_info_dto) = opt_stream_info_dto {
         Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
     } else {
-        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_STREAM_NOT_FOUND_BY_ID).set_status(404))
+        Err(AppError::new(err::CD_NOT_FOUND, MSG_STREAM_NOT_FOUND_BY_ID).set_status(404))
     }
 }
 
@@ -508,7 +510,7 @@ pub async fn delete_stream(
         log::info!("delete_stream() lead time: {:.2?}", now.elapsed());
     }
     if is_opt_stream_none {
-        Err(AppError::new(err::CD_NOT_FOUND, err::MSG_STREAM_NOT_FOUND_BY_ID).set_status(404))
+        Err(AppError::new(err::CD_NOT_FOUND, MSG_STREAM_NOT_FOUND_BY_ID).set_status(404))
     } else {
         Ok(HttpResponse::Ok().finish())
     }
@@ -1472,7 +1474,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
-        assert_eq!(app_err.message, err::MSG_STREAM_NOT_FOUND_BY_ID);
+        assert_eq!(app_err.message, MSG_STREAM_NOT_FOUND_BY_ID);
     }
     #[test]
     async fn test_put_stream_valid_data_without_file() {
@@ -1978,7 +1980,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
-        assert_eq!(app_err.message, err::MSG_STREAM_NOT_FOUND_BY_ID);
+        assert_eq!(app_err.message, MSG_STREAM_NOT_FOUND_BY_ID);
     }
     #[test]
     async fn test_delete_stream_existent_id() {
