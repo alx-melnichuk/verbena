@@ -27,10 +27,10 @@ pub const MSG_SESSION_NOT_EXIST: &str = "session_not_exist"; /*+*/
 // 409 Conflict (user_auth_controller, user_registr_controller)
 pub const CD_CONFLICT: &str = "Conflict"; /*+*/
 
-// 415 Unsupported Media Type (user_controller)
-pub const CD_PARSE_ERROR: &str = "ParseError"; /*+*/
-// 415 Unsupported Media Type - The specified type could not be converted. /*+*/
-pub const MSG_FAILED_CONVERSION: &str = "failed_conversion"; /*+*/
+// 415 Unsupported Media Type (stream_controller)
+pub const CD_UNSUPPORTED_TYPE: &str = "UnsupportedType"; /*+*/
+// 415 Unsupported Media Type - The specified type could not be converted. (stream_controller)
+pub const MSG_PARSING_TYPE_NOT_SUPPORTED: &str = "parsing_type_not_supported"; /*+*/
 
 // 417 Expectation Failed (user_auth_controller, user_registr_controller)
 pub const CD_VALIDATION: &str = "Validation"; /*+*/
@@ -62,9 +62,6 @@ pub const CD_NOT_EXTENDED: &str = "NotExtended"; /*+*/
 pub const CD_INVALID_TAGS_FIELD: &str = "InvalidTagsField";
 pub const MSG_INVALID_TAGS_FIELD: &str = "Error deserializing the \"tags\" field:";
 // Uploading Image Files
-// Mime file type is not valid.
-pub const CD_INVALID_FILE_TYPE: &str = "InvalidFileType";
-pub const MSG_INVALID_IMAGE_FILE: &str = "Invalid image file type.";
 // The file size does not meet the maximum size.
 pub const CD_INVALID_FILE_SIZE: &str = "InvalidFileSize";
 pub const MSG_INVALID_FILE_SIZE: &str = "The file size exceeds the max size.";
