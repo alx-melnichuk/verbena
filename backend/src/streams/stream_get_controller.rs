@@ -69,8 +69,9 @@ pub async fn get_stream_by_id(
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
-        AppError::parse415("id", &e)
+        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        log::error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
+        AppError::unsupported_type415(&message)
     })?;
 
 
@@ -378,12 +379,12 @@ mod tests {
         let cfg_c = (config_jwt, config_strm::get_test_config());
         let data_c = (vec![user1], vec![session1], stream_vec);
         let resp = call_service1(cfg_c, data_c, get_stream_by_id, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, err::CD_PARSE_ERROR);
+        assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
         #[rustfmt::skip]
         let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, stream_id_bad, MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
