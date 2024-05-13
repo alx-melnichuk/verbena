@@ -172,7 +172,7 @@ pub async fn get_user_by_nickname(
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
         (status = 415, description = "Error parsing input parameter.", body = AppError, 
-            example = json!(AppError::parse415("id", "invalid digit found in string (1a)"))),
+            example = json!(AppError::unsupported_type415(&"parsing_type_not_supported: `id` - invalid digit found in string (2a)"))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -190,8 +190,9 @@ pub async fn get_user_by_id(
     let id_str = request.match_info().query("id").to_string();
 
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
-        AppError::parse415("id", &e)
+        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        log::error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
+        AppError::unsupported_type415(&message)
     })?;
 
     let result_user = web::block(move || {
@@ -240,7 +241,7 @@ pub async fn get_user_by_id(
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
         (status = 415, description = "Error parsing input parameter.", body = AppError, 
-            example = json!(AppError::parse415("id", "invalid digit found in string (1a)"))),
+            example = json!(AppError::unsupported_type415(&"parsing_type_not_supported: `id` - invalid digit found in string (2a)"))),
         (status = 417, description = "Validation error. `{ \"password\": \"pas\" }`", body = [AppError],
             example = json!(AppError::validations((PasswordUserDto { password: Some("pas".to_string()) }).validate().err().unwrap()) )),
         (status = 506, description = "Blocking error.", body = AppError,
@@ -261,8 +262,9 @@ pub async fn put_user(
     let id_str = request.match_info().query("id").to_string();
 
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
-        AppError::parse415("id", &e)
+        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        log::error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
+        AppError::unsupported_type415(&message)
     })?;
 
     // Checking the validity of the data model.
@@ -319,7 +321,7 @@ pub async fn put_user(
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
         (status = 415, description = "Error parsing input parameter.", body = AppError, 
-            example = json!(AppError::parse415("id", "invalid digit found in string (1a)"))),
+            example = json!(AppError::unsupported_type415(&"parsing_type_not_supported: `id` - invalid digit found in string (2a)"))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -337,8 +339,9 @@ pub async fn delete_user(
     let id_str = request.match_info().query("id").to_string();
 
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
-        AppError::parse415("id", &e)
+        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        log::error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
+        AppError::unsupported_type415(&message)
     })?;
 
     let result_user = web::block(move || {
@@ -660,8 +663,10 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, err::CD_PARSE_ERROR);
-        assert!(app_err.message.starts_with(&err::MSG_FAILED_CONVERSION));
+        assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
+        #[rustfmt::skip]
+        let msg = format!("{}: `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
+        assert_eq!(app_err.message, msg);
     }
     #[test]
     async fn test_get_user_by_id_valid_id() {
@@ -743,8 +748,10 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, err::CD_PARSE_ERROR);
-        assert!(app_err.message.starts_with(&err::MSG_FAILED_CONVERSION));
+        assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
+        #[rustfmt::skip]
+        let msg = format!("{}: `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
+        assert_eq!(app_err.message, msg);
     }
 
     async fn test_put_user_validate(password_user: PasswordUserDto, err_msg: &str) {
@@ -897,8 +904,10 @@ mod tests {
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, err::CD_PARSE_ERROR);
-        assert!(app_err.message.starts_with(&err::MSG_FAILED_CONVERSION));
+        assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
+        #[rustfmt::skip]
+        let msg = format!("{}: `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
+        assert_eq!(app_err.message, msg);
     }
     #[test]
     async fn test_delete_user_user_not_exist() {
