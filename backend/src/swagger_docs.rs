@@ -5,6 +5,7 @@ use utoipa::{
 
 use crate::{
     errors,
+    streams::{stream_controller, stream_models},
     users::{user_auth_controller, user_controller, user_models, user_registr_controller},
 };
 
@@ -27,6 +28,7 @@ use crate::{
         user_registr_controller::recovery,
         user_registr_controller::confirm_recovery,
         user_registr_controller::clear_for_expired,
+        stream_controller::post_stream,
     ),
     components(
         schemas(
@@ -45,6 +47,8 @@ use crate::{
             user_models::RecoveryUserDto, user_models::RecoveryUserResponseDto, // ::recovery
             user_models::RecoveryDataDto, // ::confirm_recovery
             user_models::ClearForExpiredResponseDto, // ::clear_for_expired
+            // stream_controller
+            stream_controller::CreateStreamForm, stream_models::StreamInfoDto // ::post_stream
         )
     ),
     tags(

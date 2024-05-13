@@ -4,6 +4,7 @@ use chrono::{DateTime, Duration, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json;
+use utoipa::ToSchema;
 
 use crate::schema;
 use crate::utils::{serial_datetime, serial_datetime_option};
@@ -187,7 +188,7 @@ impl Stream {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamInfoDto {
     pub id: i32,
@@ -305,7 +306,7 @@ impl CreateStream {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct CreateStreamInfoDto {
     pub title: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]

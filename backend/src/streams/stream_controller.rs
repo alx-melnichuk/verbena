@@ -1,9 +1,10 @@
-use std::{borrow, ffi::OsStr, ops::Deref, path, time::Instant};
+use std::{borrow::Cow::Borrowed, ffi::OsStr, ops::Deref, path, time::Instant};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, post, put, web, HttpResponse};
 use chrono::{DateTime, Utc};
 use mime::IMAGE;
+use utoipa::ToSchema;
 
 use crate::cdis::coding;
 use crate::errors::AppError;
@@ -14,7 +15,11 @@ use crate::settings::err;
 use crate::streams::stream_orm::inst::StreamOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::streams::stream_orm::tests::StreamOrmApp;
-use crate::streams::{config_strm, stream_models, stream_orm::StreamOrm};
+use crate::streams::{
+    config_strm,
+    stream_models::{self, CreateStreamInfoDto, StreamInfoDto},
+    stream_orm::StreamOrm,
+};
 use crate::utils::parser;
 use crate::validators::{msg_validation, Validator};
 
@@ -34,14 +39,14 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
-fn err_database(err: String) -> AppError {
+/*fn err_database(err: String) -> AppError {
     log::error!("{}: {}", err::CD_DATABASE, err);
     AppError::new(err::CD_DATABASE, &err).set_status(500)
-}
-fn err_blocking(err: String) -> AppError {
+}*/
+/*fn err_blocking(err: String) -> AppError {
     log::error!("{}: {}", err::CD_BLOCKING, err);
     AppError::new(err::CD_BLOCKING, &err).set_status(500)
-}
+}*/
 fn err_invalid_tags(err: String) -> AppError {
     let error = format!("{} {}", err::MSG_INVALID_TAGS_FIELD, err);
     log::error!("{}: {}", err::CD_INVALID_TAGS_FIELD, error);
@@ -51,16 +56,19 @@ fn err_invalid_file_size(err_file_size: usize, max_file_size: usize) -> AppError
     log::error!("{}: {}", err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE);
     let json = serde_json::json!({ "actualFileSize": err_file_size, "maxFileSize": max_file_size });
     AppError::new(err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE)
-        .add_param(borrow::Cow::Borrowed("invalidFileSize"), &json)
+        .add_param(Borrowed("invalidFileSize"), &json)
         .set_status(400)
 }
-fn err_invalid_file_type(valie: &str, valid_types: &str) -> AppError {
+// Uploading Image Files
+// Mime file type is not valid.
+pub const MSG_INVALID_IMAGE_FILE: &str = "invalid_image_file_type";
+/*fn err_invalid_file_type(value: &str, valid_types: &str) -> AppError {
     log::error!("{}: {}", err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE);
-    let json = serde_json::json!({ "actualFileType": valie, "validFileType": valid_types });
+    let json = serde_json::json!({ "actualFileType": value, "validFileType": valid_types });
     AppError::new(err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE)
-        .add_param(borrow::Cow::Borrowed("invalidFileType"), &json)
+        .add_param(Borrowed("invalidFileType"), &json)
         .set_status(400)
-}
+}*/
 fn err_upload_file(err: String) -> AppError {
     let msg = format!("{} {}", err::MSG_ERROR_FILE_UPLOAD, err);
     log::error!("{}: {}", err::CD_ERROR_FILE_UPLOAD, msg);
@@ -81,7 +89,7 @@ fn remove_file_and_log(file_name: &str, msg: &str) {
     }
 }
 
-#[derive(Debug, MultipartForm)]
+#[derive(Debug, MultipartForm, ToSchema)]
 pub struct CreateStreamForm {
     pub title: Text<String>,
     pub descript: Option<Text<String>>,
@@ -114,24 +122,25 @@ impl CreateStreamForm {
         ))
     }
 }
-/* Name: 'Add stream'
-* @route streams
-* @type post
-* @body title, description, starttime, tags (array stringify, 3 max)
-* @files logo (jpg, png and gif only, 5MB)
-* @required title, description
-* @access protected
-@Post()
-@UseInterceptors(FileInterceptor('logo', UploadStreamLogoDTO))
-async addStream (
-    @Req() request: RequestSession,
-    @Body() data: AddStreamDTO,
-    @UploadedFile() logo: Express.Multer.File
-): Promise<StreamDTO> {
-    return await this.streamsService.addStream(request.user.getId(), data, logo);
-}*/
-
-// POST /api/streams
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Create a new stream.", body = StreamInfoDto),
+        //
+        (status = 415, description = "Uploading a file with an invalid type `svg`.", body = AppError, 
+            example = json!(AppError::unsupported_type415(MSG_INVALID_IMAGE_FILE).add_param(Borrowed("invalidFileType"), 
+                &serde_json::json!({ "actualFileType": "image/svg+xml", "validFileType": "image/jpeg,image/gif,image/png,image/bmp" }))
+            )),
+        (status = 417, description = "Validation error. `{ nickname: \"us\", \"password\": \"pas\" }`", body = [AppError],
+            example = json!(AppError::validations(
+                (CreateStreamInfoDto { title: "u".to_string(), descript: None, starttime: None, source: None,  tags: vec!() })
+                    .validate().err().unwrap()) )),
+        //
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+)]
 #[rustfmt::skip]
 #[post("/api/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn post_stream(
@@ -147,12 +156,12 @@ pub async fn post_stream(
 
     // Get data from MultipartForm.
     let (create_stream_info_dto, logofile) = CreateStreamForm::convert(create_stream_form)
-        .map_err(|err| err_invalid_tags(err))?;
+        .map_err(|err| err_invalid_tags(err))?; // ??
 
     // Checking the validity of the data model.
     let validation_res = create_stream_info_dto.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
+        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors)); // 417
         return Ok(AppError::to_response(&AppError::validations(validation_errors)));
     }
 
@@ -173,7 +182,12 @@ pub async fn post_stream(
         let valid_file_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
         // Checking the file for valid mime types.
         if !valid_file_types.contains(&file_mime_type) {
-            return Err(err_invalid_file_type(&file_mime_type, &valid_file_types.join(",")));
+            let json = serde_json::json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_types.join(",") });
+            log::error!("{}: {} {}", err::CD_UNSUPPORTED_TYPE, MSG_INVALID_IMAGE_FILE, json.to_string());
+            let app_error = AppError::unsupported_type415(MSG_INVALID_IMAGE_FILE)
+                .add_param(Borrowed("invalidFileType"), &json);
+            // return Err(err_invalid_file_type(&file_mime_type, &valid_file_types.join(",")));
+            return Err(app_error); // 415
         }
         // Get the name of the new file.
         let path_file = get_new_path_file(curr_user_id, Utc::now(), &file_mime_type, &logo_files_dir);
@@ -215,20 +229,24 @@ pub async fn post_stream(
 
     let res_data = web::block(move || {
         // Add a new entity (stream).
-        let res_data =
-            stream_orm.create_stream(create_stream, &tags)
-            .map_err(|e| err_database(e.to_string()));
-            res_data
+        let res_data = stream_orm.create_stream(create_stream, &tags).map_err(|e| {
+            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        });
+        res_data
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))?;
+    .map_err(|e| {
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
 
     if res_data.is_err() {
         remove_file_and_log(&path_new_logo_file, &"post_stream()");
     }
     let (stream, stream_tags) = res_data?;
     // Merge a "stream" and a corresponding list of "tags".
-    let list = stream_models::StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
+    let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
     let stream_info_dto = list[0].clone();
 
     if config_strm.strm_show_lead_time {
@@ -321,8 +339,9 @@ pub async fn put_stream(
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
-        AppError::parse415("id", &e)
+        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        log::error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
+        AppError::unsupported_type415(&message)
     })?;
     
     // Get data from MultipartForm.
@@ -366,7 +385,12 @@ pub async fn put_stream(
         let valid_file_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
         // Checking the file for valid mime types.
         if !valid_file_types.contains(&file_mime_type) {
-            return Err(err_invalid_file_type(&file_mime_type, &valid_file_types.join(",")));
+            let json = serde_json::json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_types.join(",") });
+            log::error!("{}: {} {}", err::CD_UNSUPPORTED_TYPE, MSG_INVALID_IMAGE_FILE, json.to_string());
+            let app_error = AppError::unsupported_type415(MSG_INVALID_IMAGE_FILE)
+                .add_param(Borrowed("invalidFileType"), &json);
+            // return Err(err_invalid_file_type(&file_mime_type, &valid_file_types.join(",")));
+            return Err(app_error); // 415
         }
         // Get the name of the new file.
         let path_file = get_new_path_file(curr_user_id, Utc::now(), &file_mime_type, &logo_files_dir);
@@ -410,9 +434,11 @@ pub async fn put_stream(
         let mut old_logo_file = "".to_string();
         if is_delete_logo {
             // Get the logo file name for an entity (stream) by ID.
-            let res_get_stream_logo =
-            stream_orm.get_stream_logo_by_id(id, curr_user_id)
-                .map_err(|e| err_database(e.to_string()));
+            let res_get_stream_logo = stream_orm.get_stream_logo_by_id(id, curr_user_id)
+                .map_err(|e| {
+                    log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                    AppError::database507(&e)        
+                });
 
             if let Ok(Some(old_logo)) = res_get_stream_logo {
                 let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
@@ -420,21 +446,26 @@ pub async fn put_stream(
             }
         }
         // Modify an entity (stream).
-        let res_stream =
-            stream_orm.modify_stream(id, curr_user_id, modify_stream, tags)
-            .map_err(|e| err_database(e.to_string()));
+        let res_stream = stream_orm.modify_stream(id, curr_user_id, modify_stream, tags)
+            .map_err(|e| {
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            });
 
         (old_logo_file, res_stream)
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))?;
+    .map_err(|e| {
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
 
     let (path_old_logo_file, res_stream) = res_data;
 
-    let mut opt_stream_info_dto: Option<stream_models::StreamInfoDto> = None;
+    let mut opt_stream_info_dto: Option<StreamInfoDto> = None;
     if let Ok(Some((stream, stream_tags)))= res_stream {
         // Merge a "stream" and a corresponding list of "tags".
-        let list = stream_models::StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
+        let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
         opt_stream_info_dto = Some(list[0].clone());
         remove_file_and_log(&path_old_logo_file, &"put_stream()");
     } else {
@@ -481,19 +512,24 @@ pub async fn delete_stream(
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        log::error!("{}: id: {}", err::CD_PARSE_ERROR, &e);
-        AppError::parse415("id", &e)
+        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        log::error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
+        AppError::unsupported_type415(&message)
     })?;
 
     let res_data = web::block(move || {
         // Add a new entity (stream).
-        let res_data =
-            stream_orm.delete_stream(id, curr_user_id)
-            .map_err(|e| err_database(e.to_string()));
-            res_data
+        let res_data = stream_orm.delete_stream(id, curr_user_id).map_err(|e| {
+            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        });
+        res_data
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))?;
+    .map_err(|e| {
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
 
     let opt_stream = res_data?;
     let is_opt_stream_none = opt_stream.is_none();
@@ -668,8 +704,8 @@ mod tests {
         // Create token values.
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        // POST api/streams
-        let request = test::TestRequest::post().uri("/streams").insert_header(header_auth(&token));
+        // POST /api/streams
+        let request = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token));
         let cfg_c = (config_jwt, config_strm::get_test_config());
         let data_c = (vec![user1], vec![session1], vec![]);
         let resp = call_service1(cfg_c, data_c, post_stream, request).await;
@@ -692,8 +728,8 @@ mod tests {
         let form_builder = MultiPartFormDataBuilder::new();
         let (header, body) = form_builder.build();
 
-        // POST api/streams
-        let request = test::TestRequest::post().uri("/streams").insert_header(header);
+        // POST /api/streams
+        let request = test::TestRequest::post().uri("/api/streams").insert_header(header);
         let request = request.insert_header(header_auth(&token)).set_payload(body);
         let cfg_c = (config_jwt, config_strm::get_test_config());
         let data_c = (vec![user1], vec![session1], vec![]);
@@ -721,10 +757,10 @@ mod tests {
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
 
         let request = if mode == 1 {
-            test::TestRequest::post().uri("/streams") // POST api/streams
+            test::TestRequest::post().uri("/api/streams") // POST /api/streams
         } else {
-            // PUT api/streams/{id}
-            test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id))
+            // PUT /api/streams/{id}
+            test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id))
         };
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
@@ -951,7 +987,7 @@ mod tests {
         form_builder.with_file(path_name1_file.to_string(), "logofile", "image/bmp", name1_file);
         let (header, body) = form_builder.build();
         #[rustfmt::skip]
-        test_stream_validate(1, header, body, err::CD_INVALID_FILE_TYPE, &[err::MSG_INVALID_IMAGE_FILE]).await;
+        test_stream_validate(1, header, body, err::CD_UNSUPPORTED_TYPE, &[MSG_INVALID_IMAGE_FILE]).await;
         let _ = fs::remove_file(&path_name1_file);
     }
     #[test]
@@ -998,8 +1034,8 @@ mod tests {
             .with_text("tags", tags_s);
         let (header, body) = form_builder.build();
 
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").insert_header(header);
+        // POST /api/post_stream
+        let request = test::TestRequest::post().uri("/api/streams").insert_header(header);
         let request = request.insert_header(header_auth(&token)).set_payload(body);
         let cfg_c = (config_jwt, config_strm::get_test_config());
         let data_c = (vec![user1], vec![session1], vec![]);
@@ -1062,8 +1098,8 @@ mod tests {
         let (header, body) = form_builder.build();
         let now = Utc::now();
 
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").insert_header(header);
+        // POST /api/post_stream
+        let request = test::TestRequest::post().uri("/api/streams").insert_header(header);
         let request = request.insert_header(header_auth(&token)).set_payload(body);
 
         let user1_id = user1.id.to_string();
@@ -1126,8 +1162,8 @@ mod tests {
 
         let (header, body) = form_builder.build();
 
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").insert_header(header);
+        // POST /api/post_stream
+        let request = test::TestRequest::post().uri("/api/streams").insert_header(header);
         let request = request.insert_header(header_auth(&token)).set_payload(body);
         let cfg_c = (config_jwt, config_strm::get_test_config());
         let user1_id = user1.id;
@@ -1172,8 +1208,8 @@ mod tests {
         let (header, body) = form_builder.build();
         let now = Utc::now();
 
-        // POST api/post_stream
-        let request = test::TestRequest::post().uri("/streams").insert_header(header);
+        // POST /api/post_stream
+        let request = test::TestRequest::post().uri("/api/streams").insert_header(header);
         let request = request.insert_header(header_auth(&token)).set_payload(body);
 
         let mut config_strm = config_strm::get_test_config();
@@ -1232,8 +1268,8 @@ mod tests {
         // Create token values.
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        // PUT api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/streams/1"));
+        // PUT /api/streams/{id}
+        let request = test::TestRequest::put().uri(&format!("/api/streams/1"));
         let request = request.insert_header(header_auth(&token));
         let cfg_c = (config_jwt, config_strm::get_test_config());
         let data_c = (vec![user1], vec![session1], vec![]);
@@ -1257,8 +1293,8 @@ mod tests {
         let form_builder = MultiPartFormDataBuilder::new();
         let (header, body) = form_builder.build();
 
-        // PUT api/streams/{id}
-        let request = test::TestRequest::put().uri("/streams/1").insert_header(header);
+        // PUT /api/streams/{id}
+        let request = test::TestRequest::put().uri("/api/streams/1").insert_header(header);
         let request = request.insert_header(header_auth(&token)).set_payload(body);
         let cfg_c = (config_jwt, config_strm::get_test_config());
         let data_c = (vec![user1], vec![session1], vec![]);
@@ -1284,19 +1320,19 @@ mod tests {
         form_builder.with_text("title", "".to_string());
         let (header, body) = form_builder.build();
 
-        // PUT api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_id_bad));
+        // PUT /api/streams/{id}
+        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id_bad));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
         let cfg_c = (config_jwt, config_strm::get_test_config());
         let data_c = (vec![user1], vec![session1], vec![]);
         let resp = call_service1(cfg_c, data_c, put_stream, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, err::CD_PARSE_ERROR);
+        assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
         #[rustfmt::skip]
         let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, stream_id_bad, MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
@@ -1422,7 +1458,7 @@ mod tests {
         form_builder.with_file(path_name1_file.to_string(), "logofile", "image/bmp", name1_file);
         let (header, body) = form_builder.build();
         #[rustfmt::skip]
-        test_stream_validate(2, header, body, err::CD_INVALID_FILE_TYPE, &[err::MSG_INVALID_IMAGE_FILE]).await;
+        test_stream_validate(2, header, body, err::CD_UNSUPPORTED_TYPE, &[MSG_INVALID_IMAGE_FILE]).await;
         let _ = fs::remove_file(path_name1_file);
     }
     #[test]
@@ -1461,8 +1497,8 @@ mod tests {
         let (header, body) = form_builder.build();
         let user1_id = user1.id;
 
-        // PUT api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/streams/{}", user1_id + 1));
+        // PUT /api/streams/{id}
+        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", user1_id + 1));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
         let cfg_c = (config_jwt, config_strm::get_test_config());
@@ -1517,8 +1553,8 @@ mod tests {
 
         let (header, body) = form_builder.build();
 
-        // PUT api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
+        // PUT /api/streams/{id}
+        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
         let cfg_c = (config_jwt, config_strm::get_test_config());
@@ -1581,8 +1617,8 @@ mod tests {
         form_builder.with_file(path_name1_file.to_string(), "logofile", "image/png", name1_file);
         let (header, body) = form_builder.build();
 
-        // PUT api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
+        // PUT /api/streams/{id}
+        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
         let cfg_c = (config_jwt, config_strm::get_test_config());
@@ -1646,8 +1682,8 @@ mod tests {
         form_builder.with_file(path_name1_file.to_string(), "logofile", "image/png", name1_file);
         let (header, body) = form_builder.build();
 
-        // PUT api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
+        // PUT /api/streams/{id}
+        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
 
@@ -1729,8 +1765,8 @@ mod tests {
 
         let (header, body) = form_builder.build();
 
-        // PUT api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
+        // PUT /api/streams/{id}
+        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
         let cfg_c = (config_jwt, config_strm::get_test_config());
@@ -1802,8 +1838,8 @@ mod tests {
 
         let (header, body) = form_builder.build();
 
-        // PUT api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
+        // PUT /api/streams/{id}
+        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
         let cfg_c = (config_jwt, config_strm::get_test_config());
@@ -1859,8 +1895,8 @@ mod tests {
 
         let (header, body) = form_builder.build();
 
-        // PUT api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
+        // PUT /api/streams/{id}
+        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
         let cfg_c = (config_jwt, config_strm::get_test_config());
@@ -1904,8 +1940,8 @@ mod tests {
 
         let (header, body) = form_builder.build();
 
-        // PUT api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/streams/{}", stream_dto.id));
+        // PUT /api/streams/{id}
+        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id));
         let request = request.insert_header(header).set_payload(body);
         let request = request.insert_header(header_auth(&token));
         let cfg_c = (config_jwt, config_strm::get_test_config());
@@ -1936,18 +1972,18 @@ mod tests {
 
         let stream_id_bad = "100a".to_string();
 
-        // DELETE api/streams/{id}
-        let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_id_bad));
+        // DELETE /api/streams/{id}
+        let request = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_id_bad));
         let request = request.insert_header(header_auth(&token));
         let cfg_c = (config_jwt, config_strm::get_test_config());
         let data_c = (vec![user1], vec![session1], vec![]);
         let resp = call_service1(cfg_c, data_c, delete_stream, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, err::CD_PARSE_ERROR);
+        assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
         #[rustfmt::skip]
         let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, stream_id_bad, MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
@@ -1968,8 +2004,8 @@ mod tests {
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
 
-        // DELETE api/streams/{id}
-        let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_dto.id + 1));
+        // DELETE /api/streams/{id}
+        let request = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_dto.id + 1));
         let request = request.insert_header(header_auth(&token));
         let cfg_c = (config_jwt, config_strm::get_test_config());
         let data_c = (vec![user1], vec![session1], vec![stream_dto]);
@@ -1998,8 +2034,8 @@ mod tests {
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
 
-        // DELETE api/streams/{id}
-        let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_dto.id));
+        // DELETE /api/streams/{id}
+        let request = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_dto.id));
         let request = request.insert_header(header_auth(&token));
         let cfg_c = (config_jwt, config_strm::get_test_config());
         let data_c = (vec![user1], vec![session1], vec![stream_dto]);
@@ -2031,8 +2067,8 @@ mod tests {
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
 
-        // DELETE api/streams/{id}
-        let request = test::TestRequest::delete().uri(&format!("/streams/{}", stream_dto.id));
+        // DELETE /api/streams/{id}
+        let request = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_dto.id));
         let request = request.insert_header(header_auth(&token));
         let cfg_c = (config_jwt, config_strm::get_test_config());
         let data_c = (vec![user1], vec![session1], vec![stream_dto]);
