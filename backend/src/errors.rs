@@ -60,6 +60,7 @@ impl AppError {
             404 => http::StatusCode::NOT_FOUND,
             406 => http::StatusCode::NOT_ACCEPTABLE,
             409 => http::StatusCode::CONFLICT,
+            413 => http::StatusCode::PAYLOAD_TOO_LARGE,
             415 => http::StatusCode::UNSUPPORTED_MEDIA_TYPE,
             417 => http::StatusCode::EXPECTATION_FAILED,
             422 => http::StatusCode::UNPROCESSABLE_ENTITY,
@@ -119,6 +120,10 @@ impl AppError {
     /// A conflict situation has arisen.(status=409)
     pub fn conflict409(message: &str) -> Self {
         AppError::new(err::CD_CONFLICT, message).set_status(409)
+    }
+    /// The request object exceeds the limits defined by the server. (status=413)
+    pub fn content_large413(message: &str) -> Self {
+        AppError::new(err::CD_CONTENT_TOO_LARGE, message).set_status(413)
     }
     /// Error: Data type is not supported. (status=415)
     pub fn unsupported_type415(message: &str) -> Self {
