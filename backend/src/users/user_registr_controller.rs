@@ -237,7 +237,6 @@ pub async fn registration(
     );
 
     if result.is_err() {
-        // err_sending_email(result.unwrap_err())
         let message = format!("{}: {}", MSG_ERROR_SENDING_EMAIL, result.unwrap_err());
         log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
         return Err(AppError::not_extended510(&message));

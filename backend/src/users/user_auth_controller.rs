@@ -61,7 +61,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             body = LoginUserResponseDto),
         (status = 401, description = "The nickname or email address is incorrect.", body = AppError,
             example = json!(AppError::unauthorized401(MSG_WRONG_NICKNAME_EMAIL))),
-        (status = 417, description = "Validation error. `{ nickname: \"us\", \"password\": \"pas\" }`", body = [AppError],
+        (status = 417, description = "Validation error. `{ \"nickname\": \"us\", \"password\": \"pas\" }`", body = [AppError],
             example = json!(AppError::validations(
                 (LoginUserDto { nickname: "us".to_string(), password: "pas".to_string() }).validate().err().unwrap()) )),
         (status = 406, description = "Error opening session.", body = AppError,
