@@ -27,6 +27,10 @@ pub const MSG_SESSION_NOT_EXIST: &str = "session_not_exist"; /*+*/
 // 409 Conflict (user_auth_controller, user_registr_controller)
 pub const CD_CONFLICT: &str = "Conflict"; /*+*/
 
+// 413 Content too large
+// The request object exceeds the limits defined by the server. (status=413)
+pub const CD_CONTENT_TOO_LARGE: &str = "ContentTooLarge"; /*+*/
+
 // 415 Unsupported Media Type (stream_controller)
 pub const CD_UNSUPPORTED_TYPE: &str = "UnsupportedType"; /*+*/
 // 415 Unsupported Media Type - The specified type could not be converted. (stream_controller)
@@ -59,19 +63,6 @@ pub const CD_NOT_EXTENDED: &str = "NotExtended"; /*+*/
 
 // 400 Bad Request
 
-pub const CD_INVALID_TAGS_FIELD: &str = "InvalidTagsField";
-pub const MSG_INVALID_TAGS_FIELD: &str = "Error deserializing the \"tags\" field:";
-// Uploading Image Files
-// The file size does not meet the maximum size.
-pub const CD_INVALID_FILE_SIZE: &str = "InvalidFileSize";
-pub const MSG_INVALID_FILE_SIZE: &str = "The file size exceeds the max size.";
-// Error uploading file
-pub const CD_ERROR_FILE_UPLOAD: &str = "ErrorUploadFile";
-pub const MSG_ERROR_FILE_UPLOAD: &str = "Error while upload file:";
-// Error convert file
-pub const CD_ERROR_CONVERT_FILE: &str = "ErrorConvertFile";
-pub const MSG_ERROR_CONVERT_FILE: &str = "Error converting file:";
-// Error when receiving another user's streams.
 pub const CD_NO_ACCESS_TO_STREAMS: &str = "NoAccessToStreams";
 pub const MSG_NO_ACCESS_TO_STREAMS: &str = "No access to other user's streams.";
 // Error when end date is less than start date
