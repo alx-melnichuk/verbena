@@ -91,7 +91,7 @@ pub fn validate_tag(tags: &[String]) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, diesel_derive_enum::DbEnum)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, diesel_derive_enum::DbEnum, ToSchema)]
 #[ExistingTypePath = "crate::schema::sql_types::StreamState"]
 #[DbValueStyle = "snake_case"] // BazQuxx => "baz_quxx"
 pub enum StreamState {

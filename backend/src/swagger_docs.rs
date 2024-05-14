@@ -48,7 +48,7 @@ use crate::{
             user_models::RecoveryDataDto, // ::confirm_recovery
             user_models::ClearForExpiredResponseDto, // ::clear_for_expired
             // stream_controller
-            stream_controller::CreateStreamForm, stream_models::StreamInfoDto // ::post_stream
+            stream_models::StreamState, stream_models::StreamInfoDto // ::post_stream
         )
     ),
     tags(
