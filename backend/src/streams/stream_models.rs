@@ -398,6 +398,7 @@ pub struct ModifyStreamInfoDto {
 }
 
 impl ModifyStreamInfoDto {
+    // Checking the presence of at least one field.
     pub fn check_required_fields(&self) -> Result<(), Vec<ValidationError>> {
         let starttime_is_none = self.starttime.is_none();
         let source_is_none = self.source.is_none();
