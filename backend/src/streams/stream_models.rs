@@ -383,7 +383,7 @@ impl ModifyStream {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct ModifyStreamInfoDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
