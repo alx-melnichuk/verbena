@@ -1,4 +1,4 @@
-use std::{borrow, collections::HashMap};
+use std::collections::HashMap;
 
 use chrono::{DateTime, Duration, Utc};
 use diesel::prelude::*;
@@ -395,22 +395,6 @@ pub struct ModifyStreamInfoDto {
     pub source: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<Vec<String>>,
-}
-
-impl ModifyStreamInfoDto {
-    // Checking the presence of at least one field.
-    pub fn check_required_fields(&self) -> Result<(), Vec<ValidationError>> {
-        let starttime_is_none = self.starttime.is_none();
-        let source_is_none = self.source.is_none();
-        let tags_is_none = self.tags.is_none();
-        if self.title.is_none() && self.descript.is_none() && starttime_is_none && source_is_none && tags_is_none {
-            let mut err = ValidationError::new(MSG_NO_REQUIRED_FIELDS);
-            let data = true;
-            err.add_param(borrow::Cow::Borrowed("noRequiredFields"), &data);
-            return Err(vec![err]);
-        }
-        Ok(())
-    }
 }
 
 impl Validator for ModifyStreamInfoDto {
