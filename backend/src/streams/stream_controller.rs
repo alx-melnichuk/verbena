@@ -497,23 +497,17 @@ pub async fn put_stream(
     let (modify_stream_info_dto, logofile) = ModifyStreamForm::convert(modify_stream_form)
         .map_err(|e| {
             let message = format!("{}: {}", MSG_INVALID_FIELD_TAG, e);
-            log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); //406
+            log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
             AppError::not_acceptable406(&message)
         })?;
-    // Checking the presence of at least one field.
-    let res_check_required_fields = modify_stream_info_dto.check_required_fields();
-    if logofile.is_none() && res_check_required_fields.is_err() {
-        if let Err(validation_errors) = res_check_required_fields {
-            log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-            return Ok(AppError::to_response(&AppError::validations(validation_errors))); //417
-        }
-    }
+
+    // If there is not a single field in the MultipartForm, it gives an error 400 "Multipart stream is incomplete".
     
     // Checking the validity of the data model.
     let validation_res = modify_stream_info_dto.validate();
     if let Err(validation_errors) = validation_res {
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::to_response(&AppError::validations(validation_errors))); //417
+        return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
     }
     let mut logo: Option<Option<String>> = None;
     let mut is_delete_logo = false;
@@ -533,7 +527,7 @@ pub async fn put_stream(
         if config_strm.strm_logo_max_size > 0 && temp_file.size > config_strm.strm_logo_max_size {
             let json = serde_json::json!({ "actualFileSize": temp_file.size, "maxFileSize": config_strm.strm_logo_max_size });
             log::error!("{}: {} {}", err::CD_CONTENT_TOO_LARGE, MSG_INVALID_FILE_SIZE, json.to_string());
-            return Err(AppError::content_large413(MSG_INVALID_FILE_SIZE) //413
+            return Err(AppError::content_large413(MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Borrowed("invalidFileSize"), &json));
         }
         #[rustfmt::skip]
@@ -543,7 +537,7 @@ pub async fn put_stream(
         if !valid_file_types.contains(&file_mime_type) {
             let json = serde_json::json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_types.join(",") });
             log::error!("{}: {} {}", err::CD_UNSUPPORTED_TYPE, MSG_INVALID_FILE_TYPE, json.to_string());
-            return Err(AppError::unsupported_type415(MSG_INVALID_FILE_TYPE) //415
+            return Err(AppError::unsupported_type415(MSG_INVALID_FILE_TYPE) // 415
                 .add_param(Borrowed("invalidFileType"), &json));
         }
         // Get the name of the new file.
@@ -749,7 +743,6 @@ mod tests {
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
     const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
-    const MSG_EXPECTED_VALUE_AT_LINE_COLUMN: &str = "expected value at line 1 column 1";
     const MSG_MULTIPART_STREAM_INCOMPLETE: &str = "Multipart stream is incomplete";
     const MSG_CONTENT_TYPE_ERROR: &str = "No Content-Type header found";
 
@@ -833,7 +826,7 @@ mod tests {
         // Create token values.
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let now = Utc::now(); // ?
+        let now = Utc::now(); // The "stream" value will be required for the "put_stream" method.
         let stream = create_stream(0, user1.id, "title0", "tag01,tag02", now);
 
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
@@ -858,7 +851,7 @@ mod tests {
         let _ = fs::File::create(path_file).map_err(|e| e.to_string())?;
         Ok(path_file.to_string())
     }
-    fn save_file_png(path_file: &str, code: u8) -> Result<String, String> {
+    fn save_file_png(path_file: &str, code: u8) -> Result<(u64, String), String> {
         let header: Vec<u8> = vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
         let footer: Vec<u8> = vec![0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82];
         #[rustfmt::skip]
@@ -910,7 +903,9 @@ mod tests {
         file.write_all(buf.as_ref()).map_err(|e| e.to_string())?;
         file.write_all(footer.as_ref()).map_err(|e| e.to_string())?;
 
-        Ok(path_file.to_string())
+        let size = file.metadata().unwrap().len();
+
+        Ok((size, path_file.to_string()))
     }
 
     // ** post_stream **
@@ -953,57 +948,6 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
         assert!(body_str.contains(MSG_MULTIPART_STREAM_INCOMPLETE));
-    }
-
-    async fn test_stream_validate(mode: u8, header: (String, String), body: Vec<u8>, code: &str, msgs: &[&str]) {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let now = Utc::now();
-        let stream = create_stream(0, user1.id, "title0", "tag01,tag02", now);
-
-        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
-        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
-
-        let request = if mode == 1 {
-            test::TestRequest::post().uri("/api/streams") // POST /api/streams
-        } else {
-            // PUT /api/streams/{id}
-            test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id))
-        };
-        let request = request.insert_header(header).set_payload(body);
-        let request = request.insert_header(header_auth(&token));
-        let mut config_strm = config_strm::get_test_config();
-        config_strm.strm_logo_max_size = 160;
-        let cfg_c = (config_jwt, config_strm);
-        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
-
-        let resp = if mode == 1 {
-            call_service1(cfg_c, data_c, post_stream, request).await
-        } else {
-            call_service1(cfg_c, data_c, put_stream, request).await
-        };
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
-        let body = test::read_body(resp).await;
-        let mut app_err_vec: Vec<AppError> = vec![];
-        if err::CD_VALIDATION == code {
-            let app_err_v: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-            app_err_vec.extend(app_err_v);
-        } else {
-            let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-            app_err_vec.extend(vec![app_err]);
-        }
-        assert_eq!(app_err_vec.len(), msgs.len());
-        for (idx, msg) in msgs.iter().enumerate() {
-            let app_err = app_err_vec.get(idx).unwrap();
-            assert_eq!(app_err.code, code);
-            assert_eq!(app_err.message, msg.to_string());
-        }
     }
     #[actix_web::test]
     async fn test_post_stream_title_empty() {
@@ -1607,7 +1551,7 @@ mod tests {
 
     // ** put_stream **
 
-    #[test]
+    #[actix_web::test]
     async fn test_put_stream_no_form() {
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
@@ -1619,11 +1563,13 @@ mod tests {
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
         assert!(body_str.contains(MSG_CONTENT_TYPE_ERROR));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_stream_epmty_form() {
         let (header, body) = MultiPartFormDataBuilder::new().build();
 
@@ -1637,14 +1583,18 @@ mod tests {
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
         assert!(body_str.contains(MSG_MULTIPART_STREAM_INCOMPLETE));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_stream_invalid_id() {
         let stream_id_bad = "100a".to_string();
-        let (header, body) = MultiPartFormDataBuilder::new().with_text("title", "".to_string()).build();
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("title", "".to_string()).build();
 
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
@@ -1656,7 +1606,9 @@ mod tests {
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
         let error = format!("{} ({})", "invalid digit found in string", stream_id_bad);
@@ -1664,7 +1616,7 @@ mod tests {
         assert_eq!(app_err.message, format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &error));
     }
 
-    #[test]
+    #[actix_web::test]
     async fn test_put_stream_title_min() {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("title", StreamModelsTest::title_min())
@@ -1686,7 +1638,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TITLE_MIN_LENGTH]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_stream_title_max() {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("title", StreamModelsTest::title_max())
@@ -1708,7 +1660,7 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TITLE_MAX_LENGTH]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_stream_descript_min() {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("descript", StreamModelsTest::descript_min())
@@ -1731,7 +1683,7 @@ mod tests {
         #[rustfmt::skip]
         check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_DESCRIPT_MIN_LENGTH]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_stream_descript_max() {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("descript", StreamModelsTest::descript_max())
@@ -1754,268 +1706,402 @@ mod tests {
         #[rustfmt::skip]
         check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_DESCRIPT_MAX_LENGTH]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_stream_starttime_now() {
-        let starttime = Utc::now();
-        let starttime_s = starttime.to_rfc3339_opts(SecondsFormat::Millis, true);
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        form_builder.with_text("starttime", starttime_s);
-        let (header, body) = form_builder.build();
+        let starttime_s = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
         #[rustfmt::skip]
-        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_MIN_VALID_STARTTIME]).await;
-    }
-    #[test]
-    async fn test_put_stream_source_min() {
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        form_builder.with_text("source", StreamModelsTest::source_min());
-        let (header, body) = form_builder.build();
-        #[rustfmt::skip]
-        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_SOURCE_MIN_LENGTH]).await;
-    }
-    #[test]
-    async fn test_put_stream_source_max() {
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        form_builder.with_text("source", StreamModelsTest::source_max());
-        let (header, body) = form_builder.build();
-        #[rustfmt::skip]
-        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_SOURCE_MAX_LENGTH]).await;
-    }
-    #[test]
-    async fn test_put_stream_tags_min_amount() {
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        let tag_names_min = StreamModelsTest::tag_names_min();
-        if tag_names_min.len() > 0 {
-            let tags_s = serde_json::to_string(&tag_names_min).unwrap();
-            form_builder.with_text("tags", tags_s);
-            let (header, body) = form_builder.build();
-            #[rustfmt::skip]
-            test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MIN_AMOUNT]).await;
-        }
-    }
-    #[test]
-    async fn test_put_stream_tags_max_amount() {
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        let tags: Vec<String> = StreamModelsTest::tag_names_max();
-        let tags_s = serde_json::to_string(&tags).unwrap();
-        form_builder.with_text("tags", tags_s);
-        let (header, body) = form_builder.build();
-        #[rustfmt::skip]
-        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MAX_AMOUNT]).await;
-    }
-    #[test]
-    async fn test_put_stream_tag_name_min() {
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        let tags: Vec<String> = vec![StreamModelsTest::tag_name_min()];
-        let tags_s = serde_json::to_string(&tags).unwrap();
-        form_builder.with_text("tags", tags_s);
-        let (header, body) = form_builder.build();
-        #[rustfmt::skip]
-        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MIN_LENGTH]).await;
-    }
-    #[test]
-    async fn test_put_stream_tag_name_max() {
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        let tags: Vec<String> = vec![StreamModelsTest::tag_name_max()];
-        let tags_s = serde_json::to_string(&tags).unwrap();
-        form_builder.with_text("tags", tags_s);
-        let (header, body) = form_builder.build();
-        #[rustfmt::skip]
-        test_stream_validate(2, header, body, err::CD_VALIDATION, &[stream_models::MSG_TAG_MAX_LENGTH]).await;
-    }
-    #[test]
-    async fn test_put_stream_invalid_tag() {
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        form_builder.with_text("tags", "aaa");
-        let (header, body) = form_builder.build();
-        #[rustfmt::skip]
-        let error = format!("{} {}", "err::MSG_INVALID_TAGS_FIELD", MSG_EXPECTED_VALUE_AT_LINE_COLUMN);
-        test_stream_validate(2, header, body, "err::CD_INVALID_TAGS_FIELD", &[&error]).await;
-    }
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("starttime", starttime_s).build();
 
-    #[test]
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_MIN_VALID_STARTTIME]);
+    }
+    #[actix_web::test]
+    async fn test_put_stream_source_min() {
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("source", StreamModelsTest::source_min())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_SOURCE_MIN_LENGTH]);
+    }
+    #[actix_web::test]
+    async fn test_put_stream_source_max() {
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("source", StreamModelsTest::source_max())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_SOURCE_MAX_LENGTH]);
+    }
+    #[actix_web::test]
+    async fn test_put_stream_tags_min_amount() {
+        let tags = StreamModelsTest::tag_names_min();
+        if tags.len() <= 0 {
+            return;
+        }
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("tags", serde_json::to_string(&tags).unwrap())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TAG_MIN_AMOUNT]);
+    }
+    #[actix_web::test]
+    async fn test_put_stream_tags_max_amount() {
+        let tags = StreamModelsTest::tag_names_max();
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("tags", serde_json::to_string(&tags).unwrap())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TAG_MAX_AMOUNT]);
+    }
+    #[actix_web::test]
+    async fn test_put_stream_tag_name_min() {
+        let tags: Vec<String> = vec![StreamModelsTest::tag_name_min()];
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("tags", serde_json::to_string(&tags).unwrap())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TAG_MIN_LENGTH]);
+    }
+    #[actix_web::test]
+    async fn test_put_stream_tag_name_max() {
+        let tags: Vec<String> = vec![StreamModelsTest::tag_name_max()];
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("tags", serde_json::to_string(&tags).unwrap())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TAG_MAX_LENGTH]);
+    }
+    #[actix_web::test]
+    async fn test_put_stream_invalid_tag() {
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("tags", "aaa").build();
+
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        #[rustfmt::skip]
+        let message = format!("{}: {}", MSG_INVALID_FIELD_TAG, "expected value at line 1 column 1");
+        assert_eq!(app_err.message, message);
+    }
+    #[actix_web::test]
+    async fn test_put_stream_invalid_tag_vec() {
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("tags", "[\"tag\"").build();
+
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        #[rustfmt::skip]
+        let message = format!("{}: {}", MSG_INVALID_FIELD_TAG, "EOF while parsing a list at line 1 column 6");
+        assert_eq!(app_err.message, message);
+    }
+    #[actix_web::test]
+    async fn test_put_stream_invalid_file_size() {
+        let name1_file = "put_circuit5x5.png";
+        let path_name1_file = format!("./{}", &name1_file);
+        let (size, _name) = save_file_png(&path_name1_file, 2).unwrap();
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let strm_logo_max_size = cfg_c.1.strm_logo_max_size;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        let _ = fs::remove_file(path_name1_file);
+        assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE); // 413
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_CONTENT_TOO_LARGE);
+        assert_eq!(app_err.message, MSG_INVALID_FILE_SIZE);
+        #[rustfmt::skip]
+        let json = serde_json::json!({ "actualFileSize": size, "maxFileSize": strm_logo_max_size });
+        assert_eq!(*app_err.params.get("invalidFileSize").unwrap(), json);
+    }
+    #[actix_web::test]
     async fn test_put_stream_invalid_file_type() {
         let name1_file = "put_ellipse5x5.png";
         let path_name1_file = format!("./{}", &name1_file);
         save_file_png(&path_name1_file, 1).unwrap();
-
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        form_builder.with_file(path_name1_file.clone(), "logofile", "image/bmp", name1_file);
-        let (header, body) = form_builder.build();
         #[rustfmt::skip]
-        test_stream_validate(2, header, body, err::CD_UNSUPPORTED_TYPE, &[MSG_INVALID_FILE_TYPE]).await;
-        let _ = fs::remove_file(path_name1_file);
-    }
-    #[test]
-    async fn test_put_stream_invalid_file_size() {
-        let name1_file = "put_circuit5x5.png";
-        let path_name1_file = format!("./{}", &name1_file);
-        save_file_png(&path_name1_file, 2).unwrap();
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_file(path_name1_file.clone(), "logofile", "image/bmp", name1_file)
+            .build();
 
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        form_builder.with_file(path_name1_file.clone(), "logofile", "image/png", name1_file);
-        let (header, body) = form_builder.build();
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let valid_file_types: Vec<String> = cfg_c.1.strm_logo_valid_types.clone();
         #[rustfmt::skip]
-        test_stream_validate(2, header, body, err::CD_CONTENT_TOO_LARGE, &[MSG_INVALID_FILE_SIZE]).await;
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(path_name1_file);
-    }
-
-    #[test]
-    async fn test_put_stream_non_existent_id() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let now = Utc::now();
-        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
-
-        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
-        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
-
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        form_builder.with_text("title", format!("{}a", StreamModelsTest::title_min()));
-
-        let (header, body) = form_builder.build();
-        let user1_id = user1.id;
-
-        // PUT /api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", user1_id + 1));
-        let request = request.insert_header(header).set_payload(body);
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
-        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
-        assert_eq!(resp.status(), StatusCode::NOT_FOUND); // 404
-
-        let body = test::read_body(resp).await;
+        assert_eq!(resp.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        assert_eq!(app_err.code, err::CD_NOT_FOUND);
-        assert_eq!(app_err.message, "MSG_STREAM_NOT_FOUND_BY_ID");
+        assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
+        assert_eq!(app_err.message, MSG_INVALID_FILE_TYPE);
+        #[rustfmt::skip]
+        let json = serde_json::json!({ "actualFileType": "image/bmp", "validFileType": &valid_file_types.join(",") });
+        assert_eq!(*app_err.params.get("invalidFileType").unwrap(), json);
     }
-    #[test]
+    #[actix_web::test]
+    async fn test_put_stream_non_existent_id() {
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("title", format!("{}a", StreamModelsTest::title_min()))
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let stream_id = data_c.2.get(0).unwrap().id;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id + 1))
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
+    }
+    #[actix_web::test]
     async fn test_put_stream_valid_data_without_file() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let (cfg_c, data_c, token) = get_cfg_data();
 
-        let now = Utc::now();
-        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
-
-        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
-        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
-
-        let mut stream2_dto = stream_dto.clone();
-        stream2_dto.title = "title2".to_string();
-        stream2_dto.descript = "descript2".to_string();
-        stream2_dto.starttime = now + Duration::days(1);
-        stream2_dto.source = format!("{}_2", stream_models::STREAM_SOURCE_DEF.to_string());
-        stream2_dto.tags.clear();
-        stream2_dto.tags.push("tag11".to_string());
-        stream2_dto.tags.push("tag14".to_string());
-        stream2_dto.updated_at = Utc::now();
-        let stream2b_dto = stream2_dto.clone();
-
-        let starttime_s = stream2_dto.starttime.to_rfc3339_opts(SecondsFormat::Millis, true);
-        let tags: Vec<String> = stream2_dto.tags.clone();
+        let stream = data_c.2.get(0).unwrap().clone();
+        let user_id = stream.user_id;
+        let title_s = format!("{}_a", stream.title.clone());
+        let descript_s = format!("{}_a", stream.descript.clone());
+        let logo = stream.logo.clone();
+        let starttime = stream.starttime.clone() + Duration::days(1);
+        let starttime_s = starttime.to_rfc3339_opts(SecondsFormat::Millis, true);
+        let source_s = format!("{}_a", stream.source.to_string());
+        let tags: Vec<String> = stream.tags.clone().iter().map(|v| format!("{}_a", v)).collect();
         let tags_s = serde_json::to_string(&tags).unwrap();
 
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        form_builder
-            .with_text("title", stream2_dto.title.to_string())
-            .with_text("descript", stream2_dto.descript.to_string())
-            .with_text("starttime", starttime_s)
-            .with_text("source", stream2_dto.source.to_string())
-            .with_text("tags", tags_s);
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("title", title_s.clone())
+            .with_text("descript", descript_s.clone())
+            .with_text("starttime", starttime_s.clone())
+            .with_text("source", source_s.clone())
+            .with_text("tags", tags_s.clone())
+            .build();
 
-        let (header, body) = form_builder.build();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream.id))
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
-        // PUT /api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id));
-        let request = request.insert_header(header).set_payload(body);
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
-        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
-
-        let body = test::read_body(resp).await;
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        let json_stream2b_dto = serde_json::json!(stream2b_dto).to_string();
-        let stream2b_dto_ser: StreamInfoDto =
-            serde_json::from_slice(json_stream2b_dto.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(stream_dto_res.id, stream2b_dto_ser.id);
-        assert_eq!(stream_dto_res.user_id, stream2b_dto_ser.user_id);
-        assert_eq!(stream_dto_res.title, stream2b_dto_ser.title);
-        assert_eq!(stream_dto_res.descript, stream2b_dto_ser.descript);
-        assert_eq!(stream_dto_res.logo, stream2b_dto_ser.logo);
-        assert_eq!(stream_dto_res.starttime, stream2b_dto_ser.starttime);
-        assert_eq!(stream_dto_res.live, stream2b_dto_ser.live);
-        assert_eq!(stream_dto_res.state, stream2b_dto_ser.state);
-        assert_eq!(stream_dto_res.started, stream2b_dto_ser.started);
-        assert_eq!(stream_dto_res.stopped, stream2b_dto_ser.stopped);
-        assert_eq!(stream_dto_res.source, stream2b_dto_ser.source);
-        assert_eq!(stream_dto_res.tags, stream2b_dto_ser.tags);
-        assert_eq!(stream_dto_res.is_my_stream, stream2b_dto_ser.is_my_stream);
+        assert_eq!(stream_dto_res.id, stream.id);
+        assert_eq!(stream_dto_res.user_id, user_id);
+        assert_eq!(stream_dto_res.title, title_s);
+        assert_eq!(stream_dto_res.descript, descript_s);
+        assert_eq!(stream_dto_res.logo, logo);
+        #[rustfmt::skip]
+        assert_eq!(stream_dto_res.starttime.to_rfc3339_opts(SecondsFormat::Millis, true), starttime_s);
+        assert_eq!(stream_dto_res.live, stream.live);
+        assert_eq!(stream_dto_res.state, stream.state);
+        assert_eq!(stream_dto_res.started, stream.started);
+        assert_eq!(stream_dto_res.stopped, stream.stopped);
+        assert_eq!(stream_dto_res.source, source_s);
+        assert_eq!(stream_dto_res.tags, tags);
+        assert_eq!(stream_dto_res.is_my_stream, stream.is_my_stream);
         // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
         let res_created_at = stream_dto_res.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
-        let ser_created_at = stream2b_dto_ser.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
-        assert_eq!(res_created_at, ser_created_at);
+        let old_created_at = stream.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        assert_eq!(res_created_at, old_created_at);
         let res_updated_at = stream_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
-        let ser_updated_at = stream2b_dto_ser.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
-        assert_eq!(res_updated_at, ser_updated_at);
-        assert_eq!(stream_dto_res.id, stream2b_dto_ser.id);
+        let old_updated_at = stream.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        assert_eq!(res_updated_at, old_updated_at);
     }
 
-    #[test]
+    #[actix_web::test]
     async fn test_put_stream_valid_data_with_a_logo_old_0_new_1() {
         let name1_file = "put_circle5x5_a_new.png";
         let path_name1_file = format!("./{}", name1_file);
         save_file_png(&path_name1_file, 1).unwrap();
 
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let now = Utc::now();
-        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
-
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
+            .build();
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let user1_id = data_c.0.get(0).unwrap().id;
+        let stream = create_stream(0, user1_id, "title1", "tag11,tag12", Utc::now());
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
-        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
 
-        let mut form_builder = MultiPartFormDataBuilder::new();
+        let data_c = (data_c.0, data_c.1, stream_orm.stream_info_vec.clone());
+        let stream_id = data_c.2.get(0).unwrap().id;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id))
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
-        form_builder.with_file(path_name1_file.clone(), "logofile", "image/png", name1_file);
-        let (header, body) = form_builder.build();
-
-        // PUT /api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id));
-        let request = request.insert_header(header).set_payload(body);
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let user1_id = user1.id.to_string();
-        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
-        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(&path_name1_file);
 
         assert_eq!(resp.status(), StatusCode::OK); // 200
         let config_strm = config_strm::get_test_config();
         let strm_logo_files_dir = config_strm.strm_logo_files_dir;
 
-        let body = test::read_body(resp).await;
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
@@ -2034,42 +2120,24 @@ mod tests {
         let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
-        assert_eq!(file_stem_part1, user1_id);
+        assert_eq!(file_stem_part1, user1_id.to_string());
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
         let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
-        let now_s = now.format(date_format).to_string(); // : 2024-02-06 09:55:41
+        let now_s = Utc::now().format(date_format).to_string(); // : 2024-02-06 09:55:41
         assert_eq!(now_s, date_time2_s);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_stream_valid_data_with_a_logo_old_0_new_1_convert_file_new() {
         let name1_file = "put_triangle_23x19.png";
         let path_name1_file = format!("./{}", name1_file);
         save_file_png(&path_name1_file, 3).unwrap();
 
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let now = Utc::now();
-        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
-
-        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
-        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
-
-        let mut form_builder = MultiPartFormDataBuilder::new();
-
-        form_builder.with_file(path_name1_file.clone(), "logofile", "image/png", name1_file);
-        let (header, body) = form_builder.build();
-
-        // PUT /api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id));
-        let request = request.insert_header(header).set_payload(body);
-        let request = request.insert_header(header_auth(&token));
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
+            .build();
+        let (cfg_c, data_c, token) = get_cfg_data();
 
         let mut config_strm = config_strm::get_test_config();
         let file_ext = "jpeg".to_string();
@@ -2077,16 +2145,27 @@ mod tests {
         config_strm.strm_logo_max_width = 18;
         config_strm.strm_logo_max_height = 18;
         let strm_logo_files_dir = config_strm.strm_logo_files_dir.clone();
+        let cfg_c = (cfg_c.0, config_strm);
 
-        let cfg_c = (config_jwt, config_strm);
-        let user1_id = user1.id.to_string();
-        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
-        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
+        let user1_id = data_c.0.get(0).unwrap().id;
+        let stream = create_stream(0, user1_id, "title1", "tag11,tag12", Utc::now());
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let data_c = (data_c.0, data_c.1, stream_orm.stream_info_vec.clone());
+
+        let stream_id = data_c.2.get(0).unwrap().id;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id))
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(&path_name1_file);
 
         assert_eq!(resp.status(), StatusCode::OK); // 200
-
-        let body = test::read_body(resp).await;
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
@@ -2108,14 +2187,14 @@ mod tests {
         let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
-        assert_eq!(file_stem_part1, user1_id);
+        assert_eq!(file_stem_part1, user1_id.to_string());
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
         let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
-        let now_s = now.format(date_format).to_string(); // : 2024-02-06 09:55:41
+        let now_s = Utc::now().format(date_format).to_string(); // : 2024-02-06 09:55:41
         assert_eq!(now_s, date_time2_s);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_stream_valid_data_with_b_logo_old_1_new_1() {
         let config_strm = config_strm::get_test_config();
         let strm_logo_files_dir = config_strm.strm_logo_files_dir;
@@ -2129,34 +2208,28 @@ mod tests {
         let path_name1_file = format!("./{}", name1_file);
         save_file_png(&path_name1_file, 1).unwrap();
 
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
+            .build();
+        let (cfg_c, data_c, token) = get_cfg_data();
 
-        let now = Utc::now();
-        let mut stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+        let user1_id = data_c.0.get(0).unwrap().id;
+        let mut stream = create_stream(0, user1_id, "title1", "tag11,tag12", Utc::now());
         stream.logo = Some(path_name0_logo);
+        let stream_id = stream.id;
+        let stream_orm = StreamOrmApp::create(&[stream]);
+        let data_c = (data_c.0, data_c.1, stream_orm.stream_info_vec.clone());
 
-        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
-        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id))
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        form_builder.with_file(path_name1_file.clone(), "logofile", "image/png", name1_file);
-
-        let (header, body) = form_builder.build();
-
-        // PUT /api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id));
-        let request = request.insert_header(header).set_payload(body);
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let user1_id = user1.id.to_string();
-        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
-        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
         let _ = fs::remove_file(&path_name0_file);
@@ -2164,8 +2237,7 @@ mod tests {
 
         assert_eq!(resp.status(), StatusCode::OK); // 200
         assert!(!is_exists_logo_old);
-
-        let body = test::read_body(resp).await;
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
@@ -2184,15 +2256,15 @@ mod tests {
         let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
-        assert_eq!(file_stem_part1, user1_id);
+        assert_eq!(file_stem_part1, user1_id.to_string());
 
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
         let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
-        let now_s = now.format(date_format).to_string(); // : 2024-02-06 09:55:41
+        let now_s = Utc::now().format(date_format).to_string(); // : 2024-02-06 09:55:41
         assert_eq!(now_s, date_time2_s);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_stream_valid_data_with_c_logo_old_1_new_0() {
         let config_strm = config_strm::get_test_config();
         let strm_logo_files_dir = config_strm.strm_logo_files_dir;
@@ -2202,41 +2274,34 @@ mod tests {
         save_file_png(&path_name0_file, 1).unwrap();
         let path_name0_logo = format!("/{}/{}", ALIAS_LOGO_FILES, name0_file);
 
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("title", "title1".to_string())
+            .build();
+        let (cfg_c, data_c, token) = get_cfg_data();
 
-        let now = Utc::now();
-        let mut stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+        let user1_id = data_c.0.get(0).unwrap().id;
+        let mut stream = create_stream(0, user1_id, "title1", "tag11,tag12", Utc::now());
         stream.logo = Some(path_name0_logo.clone());
+        let stream_id = stream.id;
+        let stream_orm = StreamOrmApp::create(&[stream]);
+        let data_c = (data_c.0, data_c.1, stream_orm.stream_info_vec.clone());
 
-        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
-        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id))
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        form_builder.with_text("title", "title1".to_string());
-
-        let (header, body) = form_builder.build();
-
-        // PUT /api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id));
-        let request = request.insert_header(header).set_payload(body);
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
-        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
-
         let _ = fs::remove_file(path_name0_file.clone());
-
         assert_eq!(resp.status(), StatusCode::OK); // 200
         assert!(is_exists_logo_old);
 
-        let body = test::read_body(resp).await;
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
@@ -2245,7 +2310,7 @@ mod tests {
         assert!(stream_dto_res_logo.starts_with(&format!("/{}", ALIAS_LOGO_FILES)));
         assert_eq!(&path_name0_logo, &stream_dto_res_logo);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_stream_valid_data_with_d_logo_old_1_new_size0() {
         let config_strm = config_strm::get_test_config();
         let strm_logo_files_dir = config_strm.strm_logo_files_dir;
@@ -2259,84 +2324,70 @@ mod tests {
         let path_name1_file = format!("./{}", name1_file);
         save_empty_file(&path_name1_file).unwrap();
 
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
+            .build();
+        let (cfg_c, data_c, token) = get_cfg_data();
 
-        let now = Utc::now();
-        let mut stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+        let user1_id = data_c.0.get(0).unwrap().id;
+        let mut stream = create_stream(0, user1_id, "title1", "tag11,tag12", Utc::now());
         stream.logo = Some(path_name0_logo);
+        let stream_id = stream.id;
+        let stream_orm = StreamOrmApp::create(&[stream]);
+        let data_c = (data_c.0, data_c.1, stream_orm.stream_info_vec.clone());
 
-        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
-        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id))
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        form_builder.with_file(path_name1_file.clone(), "logofile", "image/png", name1_file);
-
-        let (header, body) = form_builder.build();
-
-        // PUT /api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id));
-        let request = request.insert_header(header).set_payload(body);
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
-        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
-
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
         let _ = fs::remove_file(&path_name0_file);
         let _ = fs::remove_file(&path_name1_file);
-
         assert_eq!(resp.status(), StatusCode::OK); // 200
         assert!(!is_exists_logo_old);
 
-        let body = test::read_body(resp).await;
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         assert!(stream_dto_res.logo.is_none());
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_stream_valid_data_with_e_logo_old_0_new_size0() {
         let name1_file = "put_circle5x5_e_new.png";
         let path_name1_file = format!("./{}", name1_file);
         save_empty_file(&path_name1_file).unwrap();
 
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
+            .build();
+        let (cfg_c, data_c, token) = get_cfg_data();
 
-        let now = Utc::now();
-        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+        let user1_id = data_c.0.get(0).unwrap().id;
+        let stream = create_stream(0, user1_id, "title1", "tag11,tag12", Utc::now());
+        let stream_id = stream.id;
+        let stream_orm = StreamOrmApp::create(&[stream]);
+        let data_c = (data_c.0, data_c.1, stream_orm.stream_info_vec.clone());
 
-        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
-        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id))
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
-        let mut form_builder = MultiPartFormDataBuilder::new();
-        form_builder.with_file(path_name1_file.clone(), "logofile", "image/png", name1_file);
-
-        let (header, body) = form_builder.build();
-
-        // PUT /api/streams/{id}
-        let request = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_dto.id));
-        let request = request.insert_header(header).set_payload(body);
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
-        let resp = call_service1(cfg_c, data_c, put_stream, request).await;
-
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(&path_name1_file);
 
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert!(stream_dto_res.logo.is_none());
@@ -2344,7 +2395,7 @@ mod tests {
 
     // ** delete_stream **
 
-    #[test]
+    #[actix_web::test]
     async fn test_delete_stream_invalid_id() {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
@@ -2364,7 +2415,7 @@ mod tests {
         let resp = call_service1(cfg_c, data_c, delete_stream, request).await;
         assert_eq!(resp.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
-        let body = test::read_body(resp).await;
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
@@ -2372,7 +2423,7 @@ mod tests {
         let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, stream_id_bad, MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_delete_stream_non_existent_id() {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
@@ -2396,13 +2447,13 @@ mod tests {
         let resp = call_service1(cfg_c, data_c, delete_stream, request).await;
         assert_eq!(resp.status(), StatusCode::NOT_FOUND); // 404
 
-        let body = test::read_body(resp).await;
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
         assert_eq!(app_err.message, "MSG_STREAM_NOT_FOUND_BY_ID");
     }
-    #[test]
+    #[actix_web::test]
     async fn test_delete_stream_existent_id() {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
@@ -2426,7 +2477,7 @@ mod tests {
         let resp = call_service1(cfg_c, data_c, delete_stream, request).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
     }
-    #[test]
+    #[actix_web::test]
     async fn test_delete_stream_existent_id_with_logo() {
         let config_strm = config_strm::get_test_config();
         let strm_logo_files_dir = config_strm.strm_logo_files_dir;
