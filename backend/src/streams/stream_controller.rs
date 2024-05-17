@@ -46,50 +46,39 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
-/*fn err_database(err: String) -> AppError {
-    log::error!("{}: {}", err::CD_DATABASE, err);
-    AppError::new(err::CD_DATABASE, &err).set_status(500)
-}*/
-/*fn err_blocking(err: String) -> AppError {
-    log::error!("{}: {}", err::CD_BLOCKING, err);
-    AppError::new(err::CD_BLOCKING, &err).set_status(500)
-}*/
-/*fn err_invalid_tags(err: String) -> AppError {
-    let error = format!("{} {}", err::MSG_INVALID_TAGS_FIELD, err);
-    log::error!("{}: {}", err::CD_INVALID_TAGS_FIELD, error);
-    AppError::new(err::CD_INVALID_TAGS_FIELD, &error).set_status(400)
-}*/
-/*fn err_invalid_file_size(err_file_size: usize, max_file_size: usize) -> AppError {
-    log::error!("{}: {}", err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE);
-    let json = serde_json::json!({ "actualFileSize": err_file_size, "maxFileSize": max_file_size });
-    AppError::new(err::CD_INVALID_FILE_SIZE, err::MSG_INVALID_FILE_SIZE)
-        .add_param(Borrowed("invalidFileSize"), &json)
-        .set_status(400)
-}*/
-/*fn err_invalid_file_type(value: &str, valid_types: &str) -> AppError {
-    log::error!("{}: {}", err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE);
-    let json = serde_json::json!({ "actualFileType": value, "validFileType": valid_types });
-    AppError::new(err::CD_INVALID_FILE_TYPE, err::MSG_INVALID_IMAGE_FILE)
-        .add_param(Borrowed("invalidFileType"), &json)
-        .set_status(400)
-}*/
-/*fn err_upload_file(err: String) -> AppError {
-    let msg = format!("{} {}", err::MSG_ERROR_FILE_UPLOAD, err);
-    log::error!("{}: {}", err::CD_ERROR_FILE_UPLOAD, msg);
-    AppError::new(err::CD_ERROR_FILE_UPLOAD, &msg).set_status(400)
-}*/
-/*fn err_convert_file(err: String) -> AppError {
-    let error = format!("{} {}", err::MSG_ERROR_CONVERT_FILE, err);
-    log::error!("{}: {}", err::CD_ERROR_CONVERT_FILE, error);
-    AppError::new(err::CD_ERROR_CONVERT_FILE, &error).set_status(400)
-}*/
-
 fn remove_file_and_log(file_name: &str, msg: &str) {
     if file_name.len() > 0 {
         let res_remove = std::fs::remove_file(file_name);
         if let Err(err) = res_remove {
             log::error!("{} remove_file({}): error: {:?}", msg, file_name, err);
         }
+    }
+}
+// Convert the file to another mime type.
+#[rustfmt::skip]
+fn convert_logo_file(path_logo_file: &str, config_strm: config_strm::ConfigStrm, name: &str) -> Result<Option<String>, String> {
+    let path: path::PathBuf = path::PathBuf::from(&path_logo_file);
+    let file_source_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap().to_string();
+    let strm_logo_ext = config_strm.strm_logo_ext.clone().unwrap_or(file_source_ext);
+    // If you need to save in the specified format (strm_logo_ext.is_some()) or convert
+    // to the specified size (strm_logo_max_width > 0 || strm_logo_max_height > 0), then do the following.
+    if config_strm.strm_logo_ext.is_some()
+        || config_strm.strm_logo_max_width > 0
+        || config_strm.strm_logo_max_height > 0
+    {
+        // Convert the file to another mime type.
+        let path_file = upload::convert_file(
+            &path_logo_file,
+            &strm_logo_ext,
+            config_strm.strm_logo_max_width,
+            config_strm.strm_logo_max_height,
+        )?;
+        if !path_file.eq(&path_logo_file) {
+            remove_file_and_log(&path_logo_file, name);
+        }
+        Ok(Some(path_file))
+    } else {
+        Ok(None)
     }
 }
 
@@ -276,25 +265,16 @@ pub async fn post_stream(
             return Err(AppError::internal_err500(&message)) // 500
         }
         path_new_logo_file = path_file;
-        
-        let path: path::PathBuf = path::PathBuf::from(&path_new_logo_file);
-        let file_source_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap().to_string();
-        let strm_logo_ext = config_strm.clone().strm_logo_ext.unwrap_or("".to_string());
 
-        if strm_logo_ext.len() > 0 && !strm_logo_ext.eq(&file_source_ext) {
-            // Convert the file to another mime type.
-            let res_convert = upload::convert_file(
-                &path_new_logo_file, &strm_logo_ext, config_strm.strm_logo_max_width, config_strm.strm_logo_max_height);
-            if let Err(e) = res_convert {
+        // Convert the file to another mime type.
+        let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "post_stream()")
+            .map_err(|e| {
                 let message = format!("{}: {}", MSG_ERROR_CONVERT_FILE, e);
                 log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
-                return Err(AppError::not_extended510(&message)); // 510
-            }
-            let path_file = res_convert.unwrap();
-            if !path_file.eq(&path_new_logo_file) {
-                remove_file_and_log(&path_new_logo_file, &"post_stream()");
-            }
-            path_new_logo_file = path_file;
+                AppError::not_extended510(&message) //510
+            })?;
+        if let Some(new_path_file) = res_convert_logo_file {
+            path_new_logo_file = new_path_file;
         }
 
         break;
@@ -551,25 +531,16 @@ pub async fn put_stream(
             return Err(AppError::internal_err500(&message)) //500
         }
         path_new_logo_file = path_file;
-        
-        let path: path::PathBuf = path::PathBuf::from(&path_new_logo_file);
-        let file_source_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap().to_string();
-        let strm_logo_ext = config_strm.strm_logo_ext.unwrap_or("".to_string());
 
-        if strm_logo_ext.len() > 0 && !strm_logo_ext.eq(&file_source_ext) {
-            // Convert the file to another mime type.
-            let res_convert = upload::convert_file(
-                &path_new_logo_file, &strm_logo_ext, config_strm.strm_logo_max_width, config_strm.strm_logo_max_height);
-            if let Err(e) = res_convert {
+        // Convert the file to another mime type.
+        let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "put_stream()")
+            .map_err(|e| {
                 let message = format!("{}: {}", MSG_ERROR_CONVERT_FILE, e);
                 log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
-                return Err(AppError::not_extended510(&message)); //510
-            }
-            let path_file = res_convert.unwrap();
-            if !path_file.eq(&path_new_logo_file) {
-                remove_file_and_log(&path_new_logo_file, &"put_stream()");
-            }
-            path_new_logo_file = path_file;
+                AppError::not_extended510(&message) //510
+            })?;
+        if let Some(new_path_file) = res_convert_logo_file {
+            path_new_logo_file = new_path_file;
         }
 
         let alias_logo_file = path_new_logo_file.replace(&logo_files_dir, &format!("/{}", ALIAS_LOGO_FILES));
@@ -1482,7 +1453,7 @@ mod tests {
         assert_eq!(stream_dto_res.tags, tags);
     }
     #[actix_web::test]
-    async fn test_post_stream_valid_data_with_logo_convert_file_new2() {
+    async fn test_post_stream_valid_data_with_logo_convert_file_new() {
         let name1_file = "post_triangle_23x19.png";
         let path_name1_file = format!("./{}", &name1_file);
         save_file_png(&path_name1_file, 3).unwrap();
