@@ -308,7 +308,7 @@ pub async fn put_user(
 /// curl -i -X DELETE http://localhost:8080/api/users/1
 /// ```
 ///
-/// Return the found specified user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
+/// Return the deleted user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
 /// 
 /// Additionally: Administrator rights are required.
 /// 
