@@ -30,6 +30,7 @@ use crate::{
         user_registr_controller::clear_for_expired,
         stream_controller::post_stream,
         stream_controller::put_stream,
+        stream_controller::delete_stream,
     ),
     components(
         schemas(

@@ -19,6 +19,7 @@ use crate::streams::{
     stream_models::{self, CreateStreamInfoDto, ModifyStreamInfoDto, StreamInfoDto},
     stream_orm::StreamOrm,
 };
+use crate::users::user_models::UserRole;
 use crate::utils::parser;
 use crate::validators::{msg_validation, Validator};
 
@@ -553,11 +554,12 @@ pub async fn put_stream(
     let mut modify_stream = stream_models::ModifyStream::convert(modify_stream_info_dto);
     modify_stream.logo = logo;
 
+    let opt_user_id: Option<i32> = if curr_user.role == UserRole::Admin { None } else { Some(curr_user.id) };
     let res_data = web::block(move || {
         let mut old_logo_file = "".to_string();
         if is_delete_logo {
             // Get the logo file name for an entity (stream) by ID.
-            let res_get_stream_logo = stream_orm.get_stream_logo_by_id(id, curr_user_id)
+            let res_get_stream_logo = stream_orm.get_stream_logo_by_id(id)
                 .map_err(|e| {
                     log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                     AppError::database507(&e)        
@@ -569,7 +571,7 @@ pub async fn put_stream(
             }
         }
         // Modify an entity (stream).
-        let res_stream = stream_orm.modify_stream(id, curr_user_id, modify_stream, tags)
+        let res_stream = stream_orm.modify_stream(id, opt_user_id, modify_stream, tags)
             .map_err(|e| {
                 log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
@@ -604,21 +606,31 @@ pub async fn put_stream(
     }
 }
 
-/* Name: 'Delete stream'
-* @route streams/:streamId
-* @example streams/385e0469-7143-4915-88d0-f23f5b27ed36
-* @type delete
-* @params streamId
-* @required streamId
-* @access protected
-@Delete(':streamId')
-async deleteStream (
-    @Req() request: RequestSession,
-    @Param('streamId', new ParseUUIDPipe()) streamId: string
-): Promise<StreamDTO> {
-    return await this.streamsService.deleteStream(streamId, request.user.getId());
-} */
-// DELETE /api/streams/{id}
+/// delete_stream
+///
+/// Delete the specified stream.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X DELETE http://localhost:8080/api/streams/1
+/// ```
+///
+/// Return the deleted stream (`StreamInfoDto`) with status 200 or 204 (no content) if the stream is not found.
+///
+#[utoipa::path(
+    responses(
+        (status = 200, description = "The specified stream was deleted successfully.", body = StreamInfoDto),
+        (status = 204, description = "The specified stream was not found."),
+        (status = 415, description = "Error parsing input parameter.", body = AppError, 
+            example = json!(AppError::unsupported_type415(&"parsing_type_not_supported: `id` - invalid digit found in string (2a)"))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    params(("id", description = "Unique stream ID.")),
+    security(("bearer_auth" = [])),
+)]
 #[rustfmt::skip]
 #[delete("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_stream(
@@ -627,7 +639,6 @@ pub async fn delete_stream(
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     // Get current user details.
     let curr_user = authenticated.deref();
     let curr_user_id = curr_user.id;
@@ -640,9 +651,10 @@ pub async fn delete_stream(
         AppError::unsupported_type415(&message)
     })?;
 
+    let opt_user_id: Option<i32> = if curr_user.role == UserRole::Admin { None } else { Some(curr_user.id) };
     let res_data = web::block(move || {
         // Add a new entity (stream).
-        let res_data = stream_orm.delete_stream(id, curr_user_id).map_err(|e| {
+        let res_data = stream_orm.delete_stream(id, opt_user_id).map_err(|e| {
             log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
@@ -655,24 +667,25 @@ pub async fn delete_stream(
     })?;
 
     let opt_stream = res_data?;
-    let is_opt_stream_none = opt_stream.is_none();
-    let logo_file: String = opt_stream.map(|s| s.logo.unwrap_or("".to_string())).unwrap_or("".to_string());
 
-    if logo_file.len() > 0 {
-        let config_strm = config_strm.get_ref().clone();
-        let logo_files_dir = config_strm.strm_logo_files_dir.clone();
-        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
-        let logo_name_full_path = logo_file.replace(&alias_logo, &logo_files_dir);
-        remove_file_and_log(&logo_name_full_path, &"delete_stream()");
-    }
-    if config_strm.strm_show_lead_time {
-        log::info!("delete_stream() lead time: {:.2?}", now.elapsed());
-    }
-    if is_opt_stream_none {
-        Ok(HttpResponse::NoContent().finish()) // 204
+    if let Some((stream, stream_tags)) = opt_stream {
+        // Get the path to the "logo" file.
+        let logo_file: String = stream.logo.clone().unwrap_or("".to_string());
+        if logo_file.len() > 0 {
+            // If there is a “logo” file, then delete this file.
+            let config_strm = config_strm.get_ref().clone();
+            let logo_files_dir = config_strm.strm_logo_files_dir.clone();
+            let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
+            let logo_name_full_path = logo_file.replace(&alias_logo, &logo_files_dir);
+            remove_file_and_log(&logo_name_full_path, &"delete_stream()");
+        }
+    
+        // Merge a "stream" and a corresponding list of "tags".
+        let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
+        let stream_info_dto = list[0].clone();
+        Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
     } else {
-        // TODO return stream_info_dto
-        Ok(HttpResponse::Ok().finish())
+        Ok(HttpResponse::NoContent().finish()) // 204
     }
 }
 
@@ -688,9 +701,7 @@ mod tests {
             header::{HeaderValue, CONTENT_TYPE},
             StatusCode,
         },
-        test,
-        test::TestRequest,
-        web, App,
+        test, web, App,
     };
     use chrono::{DateTime, Duration, SecondsFormat, Utc};
 
@@ -708,7 +719,6 @@ mod tests {
         user_models::{User, UserRole},
         user_orm::tests::UserOrmApp,
     };
-    use crate::utils::parser::MSG_PARSE_INT_ERROR;
 
     use super::*;
 
@@ -740,31 +750,6 @@ mod tests {
         (http::header::AUTHORIZATION, header_value)
     }
 
-    async fn call_service1(
-        cfg_c: (config_jwt::ConfigJwt, config_strm::ConfigStrm),
-        data_c: (Vec<User>, Vec<Session>, Vec<StreamInfoDto>),
-        factory: impl dev::HttpServiceFactory + 'static,
-        request: TestRequest,
-    ) -> dev::ServiceResponse {
-        let data_config_jwt = web::Data::new(cfg_c.0);
-        let data_config_strm = web::Data::new(cfg_c.1);
-        let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
-        let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.2));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_config_strm))
-                .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_session_orm))
-                .app_data(web::Data::clone(&data_stream_orm))
-                .service(factory),
-        )
-        .await;
-
-        test::call_service(&app, request.to_request()).await
-    }
     fn configure_stream(
         cfg_c: (config_jwt::ConfigJwt, config_strm::ConfigStrm),
         data_c: (Vec<User>, Vec<Session>, Vec<StreamInfoDto>),
@@ -797,8 +782,8 @@ mod tests {
         // Create token values.
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let now = Utc::now(); // The "stream" value will be required for the "put_stream" method.
-        let stream = create_stream(0, user1.id, "title0", "tag01,tag02", now);
+        // The "stream" value will be required for the "put_stream" method.
+        let stream = create_stream(0, user1.id, "title0", "tag01,tag02", Utc::now());
 
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
@@ -1981,6 +1966,72 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
     #[actix_web::test]
+    async fn test_put_stream_another_user() {
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("title", format!("{}a", StreamModelsTest::title_min()))
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user_vec = data_c.0;
+        #[rustfmt::skip]
+        user_vec.push(UserOrmApp::new_user(2, "Liam_Smith", "Liam_Smith@gmail.com", "passwdL2S2"));
+        let user_orm = UserOrmApp::create(&user_vec);
+        let user2 = user_orm.user_vec.get(1).unwrap().clone();
+        let stream2 = create_stream(1, user2.id, "title2", "tag01,tag02", Utc::now());
+        let mut stream_vec = data_c.2;
+        let stream2_id = stream2.id;
+        stream_vec.push(stream2);
+        let data_c = (user_vec, data_c.1, stream_vec);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream2_id))
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
+    }
+    #[actix_web::test]
+    async fn test_put_stream_another_user_by_admin() {
+        let new_title = format!("{}b", StreamModelsTest::title_min());
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("title", &new_title)
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user_vec = data_c.0;
+        let user1 = user_vec.get_mut(0).unwrap();
+        user1.role = UserRole::Admin;
+        #[rustfmt::skip]
+        user_vec.push(UserOrmApp::new_user(2, "Liam_Smith", "Liam_Smith@gmail.com", "passwdL2S2"));
+        let user_orm = UserOrmApp::create(&user_vec);
+        let user2 = user_orm.user_vec.get(1).unwrap().clone();
+        let stream2 = create_stream(1, user2.id, "title2", "tag01,tag02", Utc::now());
+        let mut stream_vec = data_c.2;
+        stream_vec.push(stream2.clone());
+        let data_c = (user_vec, data_c.1, stream_vec);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream2.id))
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(stream_dto_res.user_id, stream2.user_id);
+        assert_eq!(stream_dto_res.title, new_title);
+        assert_eq!(stream_dto_res.descript, stream2.descript);
+        assert_eq!(stream_dto_res.logo, stream2.logo);
+    }
+    #[actix_web::test]
     async fn test_put_stream_valid_data_without_file() {
         let (cfg_c, data_c, token) = get_cfg_data();
 
@@ -2039,7 +2090,6 @@ mod tests {
         let old_updated_at = stream.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
         assert_eq!(res_updated_at, old_updated_at);
     }
-
     #[actix_web::test]
     async fn test_put_stream_valid_data_with_a_logo_old_0_new_1() {
         let name1_file = "put_circle5x5_a_new.png";
@@ -2357,7 +2407,6 @@ mod tests {
         let _ = fs::remove_file(&path_name1_file);
 
         assert_eq!(resp.status(), StatusCode::OK); // 200
-
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
@@ -2368,88 +2417,59 @@ mod tests {
 
     #[actix_web::test]
     async fn test_delete_stream_invalid_id() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let stream_id_bad = format!("{}a", data_c.2.get(0).unwrap().id);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_id_bad))
+            .insert_header(header_auth(&token)).to_request();
 
-        let stream_id_bad = "100a".to_string();
-
-        // DELETE /api/streams/{id}
-        let request = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_id_bad));
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let data_c = (vec![user1], vec![session1], vec![]);
-        let resp = call_service1(cfg_c, data_c, delete_stream, request).await;
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
-
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
         #[rustfmt::skip]
-        let msg = format!("id: {} `{}` - {}", MSG_PARSE_INT_ERROR, stream_id_bad, MSG_CASTING_TO_TYPE);
+        let msg = format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
     }
     #[actix_web::test]
     async fn test_delete_stream_non_existent_id() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let stream_id = data_c.2.get(0).unwrap().id;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_id + 1))
+            .insert_header(header_auth(&token)).to_request();
 
-        let now = Utc::now();
-        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
-
-        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
-        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
-
-        // DELETE /api/streams/{id}
-        let request = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_dto.id + 1));
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
-        let resp = call_service1(cfg_c, data_c, delete_stream, request).await;
-        assert_eq!(resp.status(), StatusCode::NOT_FOUND); // 404
-
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        assert_eq!(app_err.code, err::CD_NOT_FOUND);
-        assert_eq!(app_err.message, "MSG_STREAM_NOT_FOUND_BY_ID");
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
     #[actix_web::test]
     async fn test_delete_stream_existent_id() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let stream = data_c.2.get(0).unwrap().clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream.id))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
-        let now = Utc::now();
-        let stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
-
-        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
-        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
-
-        // DELETE /api/streams/{id}
-        let request = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_dto.id));
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
-        let resp = call_service1(cfg_c, data_c, delete_stream, request).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json_stream = serde_json::json!(stream).to_string();
+        let stream_dto_org: StreamInfoDto = serde_json::from_slice(json_stream.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(stream_dto_res, stream_dto_org);
     }
     #[actix_web::test]
-    async fn test_delete_stream_existent_id_with_logo() {
+    async fn test_delete_stream_existent_id_with_logo_99() {
         let config_strm = config_strm::get_test_config();
         let strm_logo_files_dir = config_strm.strm_logo_files_dir;
 
@@ -2458,32 +2478,28 @@ mod tests {
         save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_logo = format!("/{}/{}", ALIAS_LOGO_FILES, name0_file);
 
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let now = Utc::now();
-        let mut stream = create_stream(0, user1.id, "title1", "tag11,tag12", now);
+        let (cfg_c, mut data_c, token) = get_cfg_data();
+        let stream = data_c.2.get_mut(0).unwrap();
         stream.logo = Some(path_name0_logo);
-
-        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
-        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
-
-        // DELETE /api/streams/{id}
-        let request = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_dto.id));
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
-        let resp = call_service1(cfg_c, data_c, delete_stream, request).await;
+        let stream2 = stream.clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream2.id))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
         let _ = fs::remove_file(&path_name0_file);
 
         assert_eq!(resp.status(), StatusCode::OK); // 200
         assert!(!is_exists_logo_old);
+
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json_stream = serde_json::json!(stream2).to_string();
+        let stream_dto_org: StreamInfoDto = serde_json::from_slice(json_stream.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(stream_dto_res, stream_dto_org);
     }
 }

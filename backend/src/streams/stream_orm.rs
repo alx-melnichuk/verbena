@@ -20,17 +20,21 @@ pub trait StreamOrm {
         tags: &[String],
     ) -> Result<(Stream, Vec<StreamTagStreamId>), String>;
     /// Get the logo file name for an entity (stream) by ID.
-    fn get_stream_logo_by_id(&self, id: i32, user_id: i32) -> Result<Option<String>, String>;
+    fn get_stream_logo_by_id(&self, id: i32) -> Result<Option<String>, String>;
     /// Modify an entity (stream).
     fn modify_stream(
         &self,
         id: i32,
-        user_id: i32,
+        opt_user_id: Option<i32>,
         modify_stream: ModifyStream,
         opt_tags: Option<Vec<String>>,
     ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
     /// Delete an entity (stream).
-    fn delete_stream(&self, id: i32, user_id: i32) -> Result<Option<Stream>, String>;
+    fn delete_stream(
+        &self,
+        id: i32,
+        opt_user_id: Option<i32>,
+    ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
 }
 
 pub mod cfg {
@@ -359,16 +363,14 @@ pub mod inst {
             }
         }
         /// Get the logo file name for an entity (stream) by ID.
-        fn get_stream_logo_by_id(&self, id: i32, user_id: i32) -> Result<Option<String>, String> {
+        fn get_stream_logo_by_id(&self, id: i32) -> Result<Option<String>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
             // Run query using Diesel to find user by id and return it.
             let opt_stream = schema::streams::table
-                .filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id)))
-                // .returning(Stream::as_returning())
+                .filter(streams_dsl::id.eq(id))
                 .first::<Stream>(&mut conn)
-                // .get_result(conn)
                 .optional()
                 .map_err(|e| format!("find_stream_by_id: {}", e.to_string()))?;
 
@@ -382,7 +384,7 @@ pub mod inst {
         fn modify_stream(
             &self,
             id: i32,
-            user_id: i32,
+            opt_user_id: Option<i32>,
             modify_stream: ModifyStream,
             opt_tags: Option<Vec<String>>,
         ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
@@ -392,25 +394,43 @@ pub mod inst {
             let mut err_table = "modify_stream";
             let res_data = conn.transaction::<_, diesel::result::Error, _>(|conn| {
                 let res_stream = if modify_stream.is_empty() {
-                    // Run query using Diesel to find stream by id and user_id return it.
-                    schema::streams::table
-                        .filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id)))
-                        .first::<Stream>(conn)
-                        .optional()
-                    // lead time: 1.02ms
+                    if let Some(user_id) = opt_user_id {
+                        // Run query using Diesel to find stream by id and user_id return it.
+                        schema::streams::table
+                            .filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id)))
+                            .first::<Stream>(conn)
+                            .optional()
+                    } else {
+                        // Run query using Diesel to find stream by id return it.
+                        schema::streams::table
+                            .filter(streams_dsl::id.eq(id))
+                            .first::<Stream>(conn)
+                            .optional()
+                    }
                 } else {
                     // Run query using Diesel to modify the entry (stream). schema::streams::dsl
-                    diesel::update(
-                        streams_dsl::streams.filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id))),
-                    )
-                    .set(&modify_stream)
-                    .returning(Stream::as_returning())
-                    .get_result(conn)
-                    .optional()
-                    // lead time: 1.64ms
+                    if let Some(user_id) = opt_user_id {
+                        // Run query using Diesel to update a entry (stream) with "user_id".
+                        diesel::update(
+                            streams_dsl::streams.filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id))),
+                        )
+                        .set(&modify_stream)
+                        .returning(Stream::as_returning())
+                        .get_result(conn)
+                        .optional()
+                    } else {
+                        // Run query using Diesel to update a entry (stream) without "user_id"..
+                        diesel::update(streams_dsl::streams.filter(streams_dsl::id.eq(id)))
+                            .set(&modify_stream)
+                            .returning(Stream::as_returning())
+                            .get_result(conn)
+                            .optional()
+                    }
                 };
 
                 let opt_stream = res_stream?;
+                // let opt_stream = res_stream_info.map_err(|e| format!("delete_stream: {}", e.to_string()))?;
+
                 if let Some(stream) = opt_stream {
                     let stream_id = stream.id;
                     let user_id = stream.user_id;
@@ -449,21 +469,43 @@ pub mod inst {
             }
         }
         /// Delete an entity (stream).
-        fn delete_stream(&self, id: i32, user_id: i32) -> Result<Option<Stream>, String> {
+        fn delete_stream(
+            &self,
+            id: i32,
+            opt_user_id: Option<i32>,
+        ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            // Run query using Diesel to delete a entry (stream).
-            let opt_stream: Option<Stream> = diesel::delete(streams_dsl::streams.find(id))
+            // Get a list of "tags" for the specified "stream".
+            let stream_tags = self.get_stream_tags(&mut conn, &[id]).map_err(|e| e.to_string())?;
+
+            let res_stream_info = if let Some(user_id) = opt_user_id {
+                // Run query using Diesel to delete a entry (stream).
+                diesel::delete(
+                    streams_dsl::streams.filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id))),
+                )
                 .returning(Stream::as_returning())
                 .get_result(&mut conn)
                 .optional()
-                .map_err(|e| format!("delete_stream: {}", e.to_string()))?;
+            } else {
+                // Run query using Diesel to delete a entry (stream).
+                diesel::delete(streams_dsl::streams.filter(streams_dsl::id.eq(id)))
+                    .returning(Stream::as_returning())
+                    .get_result(&mut conn)
+                    .optional()
+            };
 
-            // Update the "stream_tags" data for user.
-            let _ = self.update_stream_tags_for_user(&mut conn, user_id);
+            let opt_stream = res_stream_info.map_err(|e| format!("delete_stream: {}", e.to_string()))?;
 
-            Ok(opt_stream)
+            if let Some(stream) = opt_stream {
+                // Update the "stream_tags" data for user.
+                let _ = self.update_stream_tags_for_user(&mut conn, stream.user_id);
+
+                Ok(Some((stream, stream_tags)))
+            } else {
+                Ok(None)
+            }
         }
     }
 }
@@ -506,7 +548,7 @@ pub mod tests {
             StreamOrmApp { stream_info_vec }
         }
         /// Create entity "Stream" from "StreamInfoDto".
-        fn to_stream(stream_info: StreamInfoDto) -> Stream {
+        fn to_stream(stream_info: &StreamInfoDto) -> Stream {
             Stream {
                 id: stream_info.id,
                 user_id: stream_info.user_id,
@@ -524,7 +566,7 @@ pub mod tests {
             }
         }
         /// Get a list of "tags" for the specified "stream".
-        fn get_tags(&self, stream_info: StreamInfoDto) -> Vec<StreamTagStreamId> {
+        fn get_tags(&self, stream_info: &StreamInfoDto) -> Vec<StreamTagStreamId> {
             let mut result: Vec<StreamTagStreamId> = Vec::new();
             let mut id = 0;
             for tag in stream_info.tags.iter() {
@@ -566,8 +608,8 @@ pub mod tests {
                 .map(|stream| stream.clone());
 
             if let Some(stream_info) = stream_info_opt {
-                let stream_tags = self.get_tags(stream_info.clone());
-                Ok(Some((Self::to_stream(stream_info), stream_tags)))
+                let stream_tags = self.get_tags(&stream_info);
+                Ok(Some((Self::to_stream(&stream_info), stream_tags)))
             } else {
                 Ok(None)
             }
@@ -650,7 +692,7 @@ pub mod tests {
             let mut stream_tags: Vec<StreamTagStreamId> = vec![];
             let mut tag_id = 0;
             for stream in streams_info.iter() {
-                streams.push(Self::to_stream(stream.clone()));
+                streams.push(Self::to_stream(stream));
                 for tag in stream.tags.iter() {
                     #[rustfmt::skip]
                     stream_tags.push(StreamTagStreamId {
@@ -698,7 +740,7 @@ pub mod tests {
             let mut stream_tags: Vec<StreamTagStreamId> = vec![];
             let mut tag_id = 0;
             for stream in streams_info.iter() {
-                streams.push(Self::to_stream(stream.clone()));
+                streams.push(Self::to_stream(stream));
                 for tag in stream.tags.iter() {
                     #[rustfmt::skip]
                     stream_tags.push(StreamTagStreamId {
@@ -745,11 +787,11 @@ pub mod tests {
             Ok((stream_saved, stream_tags))
         }
         /// Get the logo file name for an entity (stream) by ID.
-        fn get_stream_logo_by_id(&self, id: i32, user_id: i32) -> Result<Option<String>, String> {
+        fn get_stream_logo_by_id(&self, id: i32) -> Result<Option<String>, String> {
             let stream_info_opt = self
                 .stream_info_vec
                 .iter()
-                .find(|stream| stream.id == id && stream.user_id == user_id)
+                .find(|stream| stream.id == id)
                 .map(|stream| stream.clone());
 
             if let Some(stream_info) = stream_info_opt {
@@ -762,39 +804,45 @@ pub mod tests {
         fn modify_stream(
             &self,
             id: i32,
-            user_id: i32,
+            opt_user_id: Option<i32>,
             modify_stream: ModifyStream,
             opt_tags: Option<Vec<String>>,
         ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
-            let stream_opt = self
-                .stream_info_vec
-                .iter()
-                .find(|stream| stream.id == id && stream.user_id == user_id)
-                .map(|stream| stream.clone());
+            let opt_stream_info = if let Some(user_id) = opt_user_id {
+                self.stream_info_vec
+                    .iter()
+                    .find(|stream| stream.id == id && stream.user_id == user_id)
+                    .map(|stream| stream.clone())
+            } else {
+                self.stream_info_vec
+                    .iter()
+                    .find(|stream| stream.id == id)
+                    .map(|stream| stream.clone())
+            };
 
-            if let Some(stream) = stream_opt {
+            if let Some(stream_info) = opt_stream_info {
                 #[rustfmt::skip]
-                let logo = match modify_stream.logo { Some(logo) => logo, None => stream.logo };
+                let logo = match modify_stream.logo { Some(logo) => logo, None => stream_info.logo };
                 let stream_saved = Stream {
-                    id: stream.id,
-                    user_id: stream.user_id,
-                    title: modify_stream.title.unwrap_or(stream.title.to_string()),
-                    descript: modify_stream.descript.unwrap_or(stream.descript.to_string()),
+                    id: stream_info.id,
+                    user_id: stream_info.user_id,
+                    title: modify_stream.title.unwrap_or(stream_info.title.to_string()),
+                    descript: modify_stream.descript.unwrap_or(stream_info.descript.to_string()),
                     logo,
-                    starttime: modify_stream.starttime.unwrap_or(stream.starttime.clone()),
-                    live: stream.live,
-                    state: stream.state.clone(),
-                    started: stream.started.clone(),
-                    stopped: stream.stopped.clone(),
-                    source: modify_stream.source.unwrap_or(stream.source.to_string()),
-                    created_at: stream.created_at,
+                    starttime: modify_stream.starttime.unwrap_or(stream_info.starttime.clone()),
+                    live: stream_info.live,
+                    state: stream_info.state.clone(),
+                    started: stream_info.started.clone(),
+                    stopped: stream_info.stopped.clone(),
+                    source: modify_stream.source.unwrap_or(stream_info.source.to_string()),
+                    created_at: stream_info.created_at,
                     updated_at: Utc::now(),
                 };
                 let new_tags: Vec<String> = match opt_tags {
                     Some(value) => value,
-                    None => stream.tags.clone(),
+                    None => stream_info.tags.clone(),
                 };
-                let stream_tags = Self::create_stream_tags(stream.id, stream.user_id, &new_tags);
+                let stream_tags = Self::create_stream_tags(stream_info.id, stream_info.user_id, &new_tags);
 
                 Ok(Some((stream_saved, stream_tags)))
             } else {
@@ -802,12 +850,23 @@ pub mod tests {
             }
         }
         /// Delete an entity (stream).
-        fn delete_stream(&self, id: i32, _: i32) -> Result<Option<Stream>, String> {
-            let opt_stream_info = self.stream_info_vec.iter().find(|stream| stream.id == id);
+        fn delete_stream(
+            &self,
+            id: i32,
+            opt_user_id: Option<i32>,
+        ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
+            let opt_stream_info = if let Some(user_id) = opt_user_id {
+                self.stream_info_vec
+                    .iter()
+                    .find(|stream| stream.id == id && stream.user_id == user_id)
+            } else {
+                self.stream_info_vec.iter().find(|stream| stream.id == id)
+            };
 
-            let opt_stream = opt_stream_info.map(|v| Self::to_stream(v.clone()));
-
-            Ok(opt_stream)
+            match opt_stream_info {
+                Some(stream_info) => Ok(Some((Self::to_stream(stream_info), self.get_tags(stream_info)))),
+                None => Ok(None),
+            }
         }
     }
 }
