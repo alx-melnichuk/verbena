@@ -10,7 +10,7 @@ use crate::settings::err;
 use crate::streams::stream_orm::inst::StreamOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::streams::stream_orm::tests::StreamOrmApp;
-use crate::streams::{config_strm, stream_models, stream_orm::StreamOrm};
+use crate::streams::{stream_models, stream_orm::StreamOrm};
 use crate::users::user_models::UserRole;
 use crate::utils::parser;
 
@@ -57,7 +57,6 @@ fn err_bad_finish_period(max_days_period: u16) -> AppError {
 #[get("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_stream_by_id(
     authenticated: Authenticated,
-    config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -129,7 +128,6 @@ pub async fn get_stream_by_id(
 #[get("/api/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_streams(
     authenticated: Authenticated,
-    config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
     query_params: web::Query<stream_models::SearchStreamInfoDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -179,7 +177,6 @@ pub async fn get_streams(
 #[get("/api/streams_events", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_streams_events(
     authenticated: Authenticated,
-    config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
     query_params: web::Query<stream_models::SearchStreamEventDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -223,7 +220,6 @@ pub async fn get_streams_events(
 #[get("/api/streams_period", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_streams_period(
     authenticated: Authenticated,
-    config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
     query_params: web::Query<stream_models::SearchStreamPeriodDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
