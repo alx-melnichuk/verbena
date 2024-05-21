@@ -1,4 +1,4 @@
-use std::{ops::Deref, time::Instant};
+use std::ops::Deref;
 
 use actix_web::{get, web, HttpResponse};
 use chrono::{DateTime, Duration, Utc};
@@ -61,7 +61,6 @@ pub async fn get_stream_by_id(
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now: Instant = Instant::now();
     // Get current user details.
     let curr_user = authenticated.deref();
     let curr_user_id = curr_user.id;
@@ -95,9 +94,6 @@ pub async fn get_stream_by_id(
         None
     };
 
-    if config_strm.strm_show_lead_time {
-        log::info!("get_stream_by_id() lead time: {:.2?}", now.elapsed());
-    }
     if let Some(stream_tag_dto) = opt_stream_tag_dto {
         Ok(HttpResponse::Ok().json(stream_tag_dto)) // 200
     } else {
@@ -137,7 +133,6 @@ pub async fn get_streams(
     stream_orm: web::Data<StreamOrmApp>,
     query_params: web::Query<stream_models::SearchStreamInfoDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     // Get current user details.
     let curr_user = authenticated.deref();
     let curr_user_id = curr_user.id;
@@ -175,9 +170,6 @@ pub async fn get_streams(
 
     let result = stream_models::StreamInfoPageDto { list, limit, count, page, pages };
 
-    if config_strm.strm_show_lead_time {
-        log::info!("get_streams() lead time: {:.2?}", now.elapsed());
-    }
     Ok(HttpResponse::Ok().json(result)) // 200
 }
 
@@ -191,7 +183,6 @@ pub async fn get_streams_events(
     stream_orm: web::Data<StreamOrmApp>,
     query_params: web::Query<stream_models::SearchStreamEventDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     // Get current user details.
     let curr_user = authenticated.deref();
     let curr_user_id = curr_user.id;
@@ -224,9 +215,6 @@ pub async fn get_streams_events(
 
     let result = stream_models::StreamEventPageDto { list, limit, count, page, pages };
 
-    if config_strm.strm_show_lead_time {
-        log::info!("get_streams_events() lead time: {:.2?}", now.elapsed());
-    }
     Ok(HttpResponse::Ok().json(result)) // 200
 }
 
@@ -239,7 +227,6 @@ pub async fn get_streams_period(
     stream_orm: web::Data<StreamOrmApp>,
     query_params: web::Query<stream_models::SearchStreamPeriodDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     // Get current user details.
     let curr_user = authenticated.deref();
     let curr_user_id = curr_user.id;
@@ -271,9 +258,6 @@ pub async fn get_streams_period(
 
     let list: Vec<DateTime<Utc>> = match res_data { Ok(v) => v, Err(e) => return Err(e) };
 
-    if config_strm.strm_show_lead_time {
-        log::info!("get_streams_period() lead time: {:.2?}", now.elapsed());
-    }
     Ok(HttpResponse::Ok().json(list)) // 200
 
 }
