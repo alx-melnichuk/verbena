@@ -2,15 +2,12 @@ use std::{io, path::PathBuf};
 
 use mime::{self, IMAGE, IMAGE_BMP, IMAGE_GIF, IMAGE_JPEG, IMAGE_PNG};
 
-const STRM_SHOW_LEAD_TIME_DEF: bool = false;
 const STRM_LOGO_MAX_WIDTH_DEF: u32 = 0;
 const STRM_LOGO_MAX_HEIGHT_DEF: u32 = 0;
 
 // Stream Logo Properties
 #[derive(Debug, Clone)]
 pub struct ConfigStrm {
-    // A flag to display the execution time of methods.
-    pub strm_show_lead_time: bool,
     // Directory for storing logo files.
     pub strm_logo_files_dir: String, // slp_dir
     // Maximum size for logo files.
@@ -26,9 +23,6 @@ pub struct ConfigStrm {
 
 impl ConfigStrm {
     pub fn init_by_env() -> Self {
-        let def = STRM_SHOW_LEAD_TIME_DEF.to_string();
-        let strm_show_lead_time: bool = std::env::var("STRM_SHOW_LEAD_TIME").unwrap_or(def).trim().parse().unwrap();
-
         let logo_files_dir = std::env::var("STRM_LOGO_FILES_DIR").expect("STRM_LOGO_FILES_DIR must be set");
         let path_dir: PathBuf = PathBuf::from(logo_files_dir).iter().collect();
         let strm_logo_files_dir = path_dir.to_str().unwrap().to_string();
@@ -48,7 +42,6 @@ impl ConfigStrm {
         let logo_max_height: u32 = std::env::var("STRM_LOGO_MAX_HEIGHT").unwrap_or(max_height_def).trim().parse().unwrap();
 
         ConfigStrm {
-            strm_show_lead_time,
             strm_logo_files_dir,
             strm_logo_max_size: logo_max_size.parse::<usize>().unwrap(),
             strm_logo_valid_types: logo_valid_types,
@@ -106,7 +99,6 @@ impl ConfigStrm {
 #[cfg(all(test, feature = "mockdata"))]
 pub fn get_test_config() -> ConfigStrm {
     ConfigStrm {
-        strm_show_lead_time: false,
         strm_logo_files_dir: "./tmp".to_string(),
         strm_logo_max_size: 0,
         strm_logo_valid_types: vec![

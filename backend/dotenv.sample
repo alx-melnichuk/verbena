@@ -93,8 +93,6 @@ USR_SHOW_LEAD_TIME=true
 # -----------------------------------------------------------------------------
 # Stream Controller Settings
 # -----------------------------------------------------------------------------
-# A flag to display the execution time of methods. (default false)
-STRM_SHOW_LEAD_TIME=false
 # Directory for storing logo files.
 STRM_LOGO_FILES_DIR=./logo
 # Maximum size for logo files. (5MB=5242880) If the value is 0, then there is no limit.
