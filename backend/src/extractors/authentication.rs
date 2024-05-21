@@ -236,10 +236,9 @@ where
                 let res = srv.call(req).await?;
                 Ok(res)
             } else {
-                #[rustfmt::skip]
                 log::error!("{}: {}", err::CD_FORBIDDEN, err::MSG_ACCESS_DENIED);
-                let error = AppError::forbidden403(err::MSG_ACCESS_DENIED);
-                Err(error::ErrorForbidden(error)) // 403
+                let err_msg = AppError::forbidden403(err::MSG_ACCESS_DENIED);
+                Err(error::ErrorForbidden(err_msg)) // 403
             }
         }
         .boxed_local()
