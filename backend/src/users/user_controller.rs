@@ -161,8 +161,6 @@ pub async fn get_user_by_nickname(
 ///
 /// Return the found specified user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
 /// 
-/// Additionally: Administrator rights are required.
-/// 
 #[utoipa::path(
     responses(
         (status = 200, description = "A user with the specified ID was found.", body = UserDto),
@@ -229,8 +227,6 @@ pub async fn get_user_by_id(
 /// ```
 ///
 /// Return the found specified user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
-/// 
-/// Additionally: Administrator rights are required.
 /// 
 #[utoipa::path(
     responses(
@@ -309,9 +305,7 @@ pub async fn put_user(
 /// ```
 ///
 /// Return the deleted user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
-/// 
-/// Additionally: Administrator rights are required.
-/// 
+///
 #[utoipa::path(
     responses(
         (status = 200, description = "The specified user was deleted successfully.", body = UserDto),
