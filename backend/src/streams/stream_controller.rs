@@ -1,4 +1,4 @@
-use std::{borrow::Cow::Borrowed, ffi::OsStr, ops::Deref, path, time::Instant};
+use std::{borrow::Cow::Borrowed, ffi::OsStr, ops::Deref, path};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, post, put, web, HttpResponse};
@@ -210,7 +210,6 @@ pub async fn post_stream(
     stream_orm: web::Data<StreamOrmApp>,
     MultipartForm(create_stream_form): MultipartForm<CreateStreamForm>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     // Get current user details.
     let curr_user = authenticated.deref();
     let curr_user_id = curr_user.id;
@@ -310,9 +309,6 @@ pub async fn post_stream(
     let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
     let stream_info_dto = list[0].clone();
 
-    if config_strm.strm_show_lead_time {
-        log::info!("post_stream() lead time: {:.2?}", now.elapsed());
-    }
     Ok(HttpResponse::Created().json(stream_info_dto)) // 201
 }
 
@@ -461,7 +457,6 @@ pub async fn put_stream(
     request: actix_web::HttpRequest,
     MultipartForm(modify_stream_form): MultipartForm<ModifyStreamForm>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let now = Instant::now();
     // Get current user details.
     let curr_user = authenticated.deref();
     let curr_user_id = curr_user.id;
@@ -595,9 +590,6 @@ pub async fn put_stream(
         remove_file_and_log(&path_old_logo_file, &"put_stream()");
     } else {
         remove_file_and_log(&path_new_logo_file, &"put_stream()");
-    }
-    if config_strm.strm_show_lead_time {
-        log::info!("put_stream() lead time: {:.2?}", now.elapsed());
     }
     if let Some(stream_info_dto) = opt_stream_info_dto {
         Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
