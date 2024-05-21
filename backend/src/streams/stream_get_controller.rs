@@ -2,6 +2,7 @@ use std::ops::Deref;
 
 use actix_web::{get, web, HttpResponse};
 use chrono::{DateTime, Duration, Utc};
+use utoipa;
 
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
@@ -10,11 +11,15 @@ use crate::settings::err;
 use crate::streams::stream_orm::inst::StreamOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::streams::stream_orm::tests::StreamOrmApp;
-use crate::streams::{stream_models, stream_orm::StreamOrm};
+use crate::streams::{
+    stream_models::{self, SearchStreamInfoDto, StreamInfoDto, StreamInfoPageDto},
+    stream_orm::StreamOrm,
+};
 use crate::users::user_models::UserRole;
 use crate::utils::parser;
 
 pub const PERIOD_MAX_NUMBER_DAYS: u16 = 65;
+pub const GET_LIST_OTHER_USER_STREAMS: &str = "get list of other user's streams";
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -30,14 +35,14 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
-fn err_database(err: String) -> AppError {
+/*fn err_database(err: String) -> AppError {
     log::error!("{}: {}", err::CD_DATABASE, err);
     AppError::new(err::CD_DATABASE, &err).set_status(500)
-}
-fn err_blocking(err: String) -> AppError {
+}*/
+/*fn err_blocking(err: String) -> AppError {
     log::error!("{}: {}", err::CD_BLOCKING, err);
     AppError::new(err::CD_BLOCKING, &err).set_status(500)
-}
+}*/
 fn err_no_access_to_streams() -> AppError {
     log::error!("{}: {}", err::CD_NO_ACCESS_TO_STREAMS, err::MSG_NO_ACCESS_TO_STREAMS);
     AppError::new(err::CD_NO_ACCESS_TO_STREAMS, err::MSG_NO_ACCESS_TO_STREAMS).set_status(400)
@@ -52,8 +57,33 @@ fn err_bad_finish_period(max_days_period: u16) -> AppError {
     AppError::new(err::CD_FINISH_GREATER_MAX, &msg).set_status(400)
 }
 
-// GET /api/streams/{id}
-#[rustfmt::skip]
+/// get_stream_by_id
+///
+/// Search for a stream by his ID.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/streams/1
+/// ```
+///
+/// Return the found specified stream (`StreamInfoDto`) with status 200 or 204 (no content) if the stream is not found.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "A stream with the specified ID was found.", body = StreamInfoDto),
+        (status = 204, description = "The stream with the specified ID was not found."),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 415, description = "Error parsing input parameter.", body = AppError, 
+            example = json!(AppError::unsupported_type415(&"parsing_type_not_supported: `id` - invalid digit found in string (2a)"))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    params(("id", description = "Unique stream ID.")),
+    security(("bearer_auth" = [])),
+)]#[rustfmt::skip]
 #[get("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_stream_by_id(
     authenticated: Authenticated,
@@ -63,6 +93,7 @@ pub async fn get_stream_by_id(
     // Get current user details.
     let curr_user = authenticated.deref();
     let curr_user_id = curr_user.id;
+    let opt_user_id: Option<i32> = if curr_user.role == UserRole::Admin { None } else { Some(curr_user.id) };
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -72,22 +103,27 @@ pub async fn get_stream_by_id(
         AppError::unsupported_type415(&message)
     })?;
 
-
     let res_data = web::block(move || {
         // Find 'stream' by id.
         let res_data =
-            stream_orm.find_stream_by_id(id, curr_user_id).map_err(|e| err_database(e.to_string()));
+            stream_orm.find_stream_by_id(id, opt_user_id).map_err(|e| {
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)    
+            });
         res_data
     })
     .await
-    .map_err(|e| err_blocking(e.to_string()))?;
+    .map_err(|e| {
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
 
     let opt_data = match res_data { Ok(v) => v, Err(e) => return Err(e) };
 
     let opt_stream_tag_dto = if let Some((stream, stream_tags)) = opt_data {
         let streams: Vec<stream_models::Stream> = vec![stream];
         // Merge a "stream" and a corresponding list of "tags".
-        let list = stream_models::StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, curr_user_id);
+        let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, curr_user_id);
         list.into_iter().nth(0)
     } else {
         None
@@ -100,43 +136,96 @@ pub async fn get_stream_by_id(
     }
 }
 
-/* Name:
-* @route streams
-* @example streams?groupBy=date&userId=385e0469-7143-4915-88d0-f23f5b27ed28/9/2022&orderColumn=title&orderDirection=desc&live=true
-* @type get
-* @query pagination (optional):
-* - userId (only for groupBy "date")
-* - key (keyword by tag or date, the date should be YYYY-MM-DD)
-* - live (false, true)
-* - starttime (none, past, future)
-* - groupBy (none / tag / date, none by default)
-* - page (number, 1 by default)
-* - limit (number, 10 by default)
-* - orderColumn (starttime / title, starttime by default)
-* - orderDirection (asc / desc, asc by default)
-* @access public
-*/
-/*
+/// get_streams
+///
+/// Get a list of your streams page by page.
+///
+/// Request structure:
+/// ```text
+/// {
+///   user_id?: number,          // optional
+///   live?: boolean,            // optional
+///   is_future?: boolean,       // optional
+///   order_column?: OrderColumn, // optional
+///   order_direction?: OrderDirection,  // optional
+///   page?: number,             // optional
+///   limit?: number,            // optional
+/// }
+/// Where:
+/// "user_id" - user identifier (current default user);
+/// "live" - sign of a "live" stream ("state" = ["preparing", "started", "paused"]);
+/// "is_future" - a sign that the stream will start in the future;
+/// "order_column" - sorting column ["starttime" - (default), "title"];
+/// "order_direction" - sort order ["asc" - ascending (default), "desc" - descending];
+/// "page" - page number, stratified from 1 (1 by default);
+/// "limit" - number of records on the page (5 by default);
+/// ```
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/streams?page=1 \
+/// &live=false&is_future=true&order_column=starttime&order_direction=asc
+/// ```
+/// Response structure:
+/// ```text
+/// {
+///   list: [StreamInfoDto],
+///   limit: number,
+///   count: number,
+///   page: number,
+///   pages: number,
+/// }
+/// Where:
+/// "list" - array of streams;
+/// "limit" - number of records per page;
+/// "count" - total records;
+/// "page" - current page number;
+/// "pages" - total pages with a given number of records per page;
+/// ```
+/// 
+/// Return the found data (`StreamInfoPageDto`) with status 200.
+/// 
 #[utoipa::path(
-    responses(),
-    params(SearchStreamInfoDto), // "IntoParams" add for "SearchStreamInfoDto"
+    responses(
+        (status = 200, description = "Result of the stream request.", body = StreamInfoPageDto,
+            /*example = json!(serde_json::json!(
+                {
+                    "list": [
+                        {"id":4,"userId":11,"title":"trip 2024 to spain 1 - E.Allen","descript":"Description of a beautiful trip 2024 to spain 1 - E.Allen","logo":"/assets/images/trip_spain01.jpg","starttime":"2024-02-02T08:00:00.000Z","live":false,"state":"Waiting","source":"obs","tags":["tourism","spain"],"isMyStream":true,"createdAt":"2024-03-01T20:52:52.849Z","updatedAt":"2024-03-01T20:52:52.849Z"},
+                        {"id":6,"userId":11,"title":"trip 2024 to spain 2 - E.Allen","descript":"Description of a beautiful trip 2024 to spain 2 - E.Allen","logo":"/assets/images/trip_spain02.jpg","starttime":"2024-02-02T08:30:00.000Z","live":false,"state":"Waiting","source":"obs","tags":["tourism","spain"],"isMyStream":true,"createdAt":"2024-03-01T20:52:52.849Z","updatedAt":"2024-03-01T20:52:52.849Z"},
+                        {"id":8,"userId":11,"title":"trip 2024 to spain 3 - E.Allen","descript":"Description of a beautiful trip 2024 to spain 3 - E.Allen","logo":"/assets/images/trip_spain03.jpg","starttime":"2024-02-02T09:00:00.000Z","live":false,"state":"Waiting","source":"obs","tags":["tourism","spain"],"isMyStream":true,"createdAt":"2024-03-01T20:52:52.849Z","updatedAt":"2024-03-01T20:52:52.849Z"},
+                        {"id":10,"userId":11,"title":"trip 2024 to spain 4 - E.Allen","descript":"Description of a beautiful trip 2024 to spain 4 - E.Allen","logo":"/assets/images/trip_spain04.jpg","starttime":"2024-02-02T09:30:00.000Z","live":false,"state":"Waiting","source":"obs","tags":["tourism","spain"],"isMyStream":true,"createdAt":"2024-03-01T20:52:52.849Z","updatedAt":"2024-03-01T20:52:52.849Z"},
+                        {"id":12,"userId":11,"title":"trip 2024 to spain 5 - E.Allen","descript":"Description of a beautiful trip 2024 to spain 5 - E.Allen","logo":"/assets/images/trip_spain05.jpg","starttime":"2024-02-02T10:00:00.000Z","live":false,"state":"Waiting","source":"obs","tags":["tourism","spain"],"isMyStream":true,"createdAt":"2024-03-01T20:52:52.849Z","updatedAt":"2024-03-04T13:06:09.198Z"}
+                    ],
+                    "limit":5,"count":9,"page":1,"pages":2
+                }))*/
+        ),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS
+                , "curr_user_id: 1, user_id: 2")))),
+        // (status = 415, description = "Error parsing input parameter.", body = AppError, 
+        //     example = json!(AppError::unsupported_type415(&"parsing_type_not_supported: `id` - invalid digit found in string (2a)"))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
     security(("bearer_auth" = [])),
 )]
-*/
-// GET /api/streams
 #[rustfmt::skip]
 #[get("/api/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_streams(
     authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
-    query_params: web::Query<stream_models::SearchStreamInfoDto>,
+    query_params: web::Query<SearchStreamInfoDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get current user details.
     let curr_user = authenticated.deref();
     let curr_user_id = curr_user.id;
 
     // Get search parameters.
-    let search_stream_info_dto: stream_models::SearchStreamInfoDto = query_params.into_inner();
+    let search_stream_info_dto: SearchStreamInfoDto = query_params.into_inner();
 
     let page: u32 = search_stream_info_dto.page.unwrap_or(stream_models::SEARCH_STREAM_PAGE);
     let limit: u32 = search_stream_info_dto.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT);
@@ -146,27 +235,36 @@ pub async fn get_streams(
         search_stream.user_id = Some(curr_user_id);
     } else if let Some(user_id) = search_stream.user_id {
         if user_id != curr_user_id && curr_user.role != UserRole::Admin {
-            return Err(err_no_access_to_streams());
+            let text = format!("curr_user_id: {}, user_id: {}", curr_user_id, user_id);
+            let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS, &text);
+            log::error!("{}: {}", err::CD_FORBIDDEN, &message);
+            return Err(AppError::forbidden403(&message)); // 403
         }
     }
 
     let res_data = web::block(move || {
         // A query to obtain a list of "streams" based on the specified search parameters.
         let res_data =
-            stream_orm.find_streams(search_stream).map_err(|e| err_database(e.to_string()));
+            stream_orm.find_streams(search_stream).map_err(|e| {
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)    
+            });
         res_data
         })
         .await
-        .map_err(|e| err_blocking(e.to_string()))?;
+        .map_err(|e| {
+            log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            AppError::blocking506(&e.to_string())
+        })?;
         
     let (count, streams, stream_tags) = match res_data { Ok(v) => v, Err(e) => return Err(e) };
 
     // Merge a "stream" and a corresponding list of "tags".
-    let list = stream_models::StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, curr_user_id);
+    let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, curr_user_id);
 
     let pages: u32 = count / limit + if (count % limit) > 0 { 1 } else { 0 };
 
-    let result = stream_models::StreamInfoPageDto { list, limit, count, page, pages };
+    let result = StreamInfoPageDto { list, limit, count, page, pages };
 
     Ok(HttpResponse::Ok().json(result)) // 200
 }
@@ -198,11 +296,17 @@ pub async fn get_streams_events(
     let res_data = web::block(move || {
         // Find for an entity (stream event) by SearchStreamEvent.
         let res_data =
-            stream_orm.find_stream_events(search_stream_event).map_err(|e| err_database(e.to_string()));
+            stream_orm.find_stream_events(search_stream_event).map_err(|e| {
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)    
+            });
         res_data
         })
         .await
-        .map_err(|e| err_blocking(e.to_string()))?;
+        .map_err(|e| {
+            log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            AppError::blocking506(&e.to_string())
+        })?;
 
     let (count, streams) = match res_data { Ok(v) => v, Err(e) => return Err(e) };
 
@@ -246,11 +350,17 @@ pub async fn get_streams_period(
     let res_data = web::block(move || {
         // Find for an entity (stream period) by SearchStreamEvent.
         let res_data =
-            stream_orm.find_streams_period(search_stream_period).map_err(|e| err_database(e.to_string()));
+            stream_orm.find_streams_period(search_stream_period).map_err(|e| {
+                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)    
+            });
         res_data
         })
         .await
-        .map_err(|e| err_blocking(e.to_string()))?;
+        .map_err(|e| {
+            log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            AppError::blocking506(&e.to_string())
+        })?;
 
     let list: Vec<DateTime<Utc>> = match res_data { Ok(v) => v, Err(e) => return Err(e) };
 

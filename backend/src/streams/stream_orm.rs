@@ -6,7 +6,11 @@ use super::stream_models::{
 
 pub trait StreamOrm {
     /// Find for an entity (stream) by id.
-    fn find_stream_by_id(&self, id: i32, user_id: i32) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
+    fn find_stream_by_id(
+        &self,
+        id: i32,
+        opt_user_id: Option<i32>,
+    ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
     /// Find for an entity (stream) by SearchStreamInfo.
     fn find_streams(&self, search_stream: SearchStream) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String>;
     /// Find for an entity (stream event) by SearchStreamEvent.
@@ -126,13 +130,24 @@ pub mod inst {
 
     impl StreamOrm for StreamOrmApp {
         /// Find for an entity (stream) by id.
-        fn find_stream_by_id(&self, id: i32, user_id: i32) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
+        fn find_stream_by_id(
+            &self,
+            id: i32,
+            opt_user_id: Option<i32>,
+        ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            // Run query using Diesel to find user by id and return it.
-            let opt_stream = schema::streams::table
-                .filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id)))
+            let mut query_list = schema::streams::table.into_boxed();
+            // Find stream by id.
+            query_list = query_list.filter(streams_dsl::id.eq(id));
+
+            if let Some(user_id) = opt_user_id {
+                // Find stream by id and user_id.
+                query_list = query_list.filter(streams_dsl::user_id.eq(user_id));
+            }
+            // Run query using Diesel to find user by id (and user_id) and return it.
+            let opt_stream = query_list
                 .first::<Stream>(&mut conn)
                 .optional()
                 .map_err(|e| format!("find_stream_by_id: {}", e.to_string()))?;
@@ -600,14 +615,19 @@ pub mod tests {
 
     impl StreamOrm for StreamOrmApp {
         /// Find for an entity (stream) by id.
-        fn find_stream_by_id(&self, id: i32, user_id: i32) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
-            let stream_info_opt = self
+        #[rustfmt::skip]
+        fn find_stream_by_id(&self, id: i32, opt_user_id: Option<i32>) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
+            let opt_stream_info = self
                 .stream_info_vec
                 .iter()
-                .find(|stream| stream.id == id && stream.user_id == user_id)
+                .find(|stream| {
+                    #[rustfmt::skip]
+                    let val_user_id = match opt_user_id { Some(v) => v, None => stream.user_id };
+                    stream.id == id && stream.user_id == val_user_id
+                })
                 .map(|stream| stream.clone());
 
-            if let Some(stream_info) = stream_info_opt {
+            if let Some(stream_info) = opt_stream_info {
                 let stream_tags = self.get_tags(&stream_info);
                 Ok(Some((Self::to_stream(&stream_info), stream_tags)))
             } else {

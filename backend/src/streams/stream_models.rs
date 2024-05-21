@@ -140,15 +140,15 @@ pub struct Stream {
     pub updated_at: DateTime<Utc>,
 }
 
-#[cfg(any(test, feature = "mockdata"))]
+// #[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_DESCRIPT_DEF: &str = "";
-#[cfg(any(test, feature = "mockdata"))]
+// #[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_STATE_DEF: StreamState = StreamState::Waiting;
-#[cfg(any(test, feature = "mockdata"))]
+// #[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_SOURCE_DEF: &str = "obs";
 
 impl Stream {
-    #[cfg(test)]
+    // #[cfg(test)]
     pub fn new(id: i32, user_id: i32, title: &str, starttime: DateTime<Utc>) -> Stream {
         let now = Utc::now();
         Stream {
@@ -458,7 +458,7 @@ pub struct LinkStreamTagsToStreams {
 
 // **  Section: Search for data "StreamInfoDto" of the "streams" table. **
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum OrderColumn {
     Starttime, // default
@@ -471,7 +471,7 @@ impl std::fmt::Display for OrderColumn {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum OrderDirection {
     Asc, // default
@@ -516,7 +516,7 @@ impl SearchStream {
 
 // * SearchStreamInfoDto *
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchStreamInfoDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -538,12 +538,40 @@ pub struct SearchStreamInfoDto {
 
 // * StreamInfoPageDto *
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+pub fn create_stream(idx: i32, user_id: i32, title: &str, tags: &str, starttime: DateTime<Utc>) -> StreamInfoDto {
+    let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
+    let stream = Stream::new(idx, user_id, title, starttime);
+    StreamInfoDto::convert(stream, user_id, &tags1)
+}
+pub fn create_streams(user_id: i32, amount: i32) -> Vec<StreamInfoDto> {
+    let mut result: Vec<StreamInfoDto> = Vec::new();
+    let mut idx = 1;
+    while idx <= amount {
+        let title = &format!("title_{}", idx);
+        let mut stream = Stream::new(idx, user_id, title, Utc::now());
+        stream.descript = format!("descript_{}", idx);
+
+        let tags = &format!("tag01,tag{:0>2}", idx);
+        let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
+
+        let stream_info_dto = StreamInfoDto::convert(stream, user_id, &tags1);
+        result.push(stream_info_dto);
+        idx += 1;
+    }
+    result
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct StreamInfoPageDto {
+    #[schema(example = json!(create_streams(1,2)))]
     pub list: Vec<StreamInfoDto>,
+    #[schema(example = 5)]
     pub limit: u32,
+    #[schema(example = 2)]
     pub count: u32,
+    #[schema(example = 1)]
     pub page: u32,
+    #[schema(example = 1)]
     pub pages: u32,
 }
 

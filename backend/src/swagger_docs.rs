@@ -5,7 +5,7 @@ use utoipa::{
 
 use crate::{
     errors,
-    streams::{stream_controller, stream_models},
+    streams::{stream_controller, stream_get_controller, stream_models},
     users::{user_auth_controller, user_controller, user_models, user_registr_controller},
 };
 
@@ -31,6 +31,8 @@ use crate::{
         stream_controller::post_stream,
         stream_controller::put_stream,
         stream_controller::delete_stream,
+        stream_get_controller::get_stream_by_id,
+        stream_get_controller::get_streams,
     ),
     components(
         schemas(
@@ -49,16 +51,23 @@ use crate::{
             user_models::RecoveryUserDto, user_models::RecoveryUserResponseDto, // ::recovery
             user_models::RecoveryDataDto, // ::confirm_recovery
             user_models::ClearForExpiredResponseDto, // ::clear_for_expired
+            // stream_controller, stream_get_controller
+            stream_models::StreamInfoDto,
             // stream_controller
-            stream_models::StreamState, stream_models::StreamInfoDto, // ::post_stream, ::put_stream
+            stream_models::StreamState, 
             stream_models::CreateStreamInfoDto, // ::post_stream
             stream_models::ModifyStreamInfoDto, // ::put_stream
+            // stream_get_controller
+            stream_models::SearchStreamInfoDto, // ::get_streams
+            stream_models::StreamInfoPageDto, // ::get_streams
         )
     ),
     tags(
         (name = "user_auth_controller", description = "User session management endpoints."),
         (name = "user_controller", description = "User information management endpoints."),
         (name = "user_registr_controller", description = "User registration management endpoints."),
+        (name = "stream_controller", description = "Stream information management endpoints."),
+        (name = "stream_get_controller", description = "Stream search information management endpoints."),
     ),
     modifiers(&SecurityAddon)
 )]
