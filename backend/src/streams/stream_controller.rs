@@ -4,6 +4,7 @@ use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, post, put, web, HttpResponse};
 use chrono::{DateTime, Utc};
 use mime::IMAGE;
+use utoipa;
 
 use crate::cdis::coding;
 use crate::errors::AppError;
