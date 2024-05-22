@@ -22,6 +22,7 @@ use crate::utils::parser;
 
 pub const PERIOD_MAX_NUMBER_DAYS: u16 = 65;
 pub const GET_LIST_OTHER_USER_STREAMS: &str = "get list of other user's streams";
+pub const GET_LIST_OTHER_USER_EVENT_STREAMS: &str = "get list of other user's event streams";
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -301,15 +302,15 @@ pub async fn get_streams(
 #[utoipa::path(
     responses(
         (status = 200, description = "Result of the short stream request.", body = StreamEventPageDto),
-        // (status = 401, description = "An authorization token is required.", body = AppError,
-        //     example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        // (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-        //     example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS
-        //         , "curr_user_id: 1, user_id: 2")))),
-        // (status = 506, description = "Blocking error.", body = AppError, 
-        //     example = json!(AppError::blocking506("Error while blocking process."))),
-        // (status = 507, description = "Database error.", body = AppError, 
-        //     example = json!(AppError::database507("Error while querying the database."))),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_EVENT_STREAMS
+                , "curr_user_id: 1, user_id: 2")))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
     ),
     security(("bearer_auth" = [])),
 )]
@@ -332,7 +333,10 @@ pub async fn get_streams_events(
     let search_stream_event = stream_models::SearchStreamEvent::convert(search_stream_event_dto, curr_user_id);
         
     if search_stream_event.user_id != curr_user_id && curr_user.role != UserRole::Admin {
-        return Err(err_no_access_to_streams());
+        let text = format!("curr_user_id: {}, user_id: {}", curr_user_id, search_stream_event.user_id);
+        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_EVENT_STREAMS, &text);
+        log::error!("{}: {}", err::CD_FORBIDDEN, &message);
+        return Err(AppError::forbidden403(&message)); // 403
     }
 
     let res_data = web::block(move || {
