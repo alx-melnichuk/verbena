@@ -33,6 +33,7 @@ use crate::{
         stream_controller::delete_stream,
         stream_get_controller::get_stream_by_id,
         stream_get_controller::get_streams,
+        stream_get_controller::get_streams_events,
     ),
     components(
         schemas(
@@ -60,6 +61,8 @@ use crate::{
             // stream_get_controller
             stream_models::SearchStreamInfoDto, // ::get_streams
             stream_models::StreamInfoPageDto, // ::get_streams
+            stream_models::SearchStreamEventDto, // ::get_streams_events
+            stream_models::StreamEventDto, stream_models::StreamEventPageDto, // ::get_streams_events
         )
     ),
     tags(
