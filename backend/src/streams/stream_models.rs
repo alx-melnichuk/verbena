@@ -538,32 +538,9 @@ pub struct SearchStreamInfoDto {
 
 // * StreamInfoPageDto *
 
-pub fn create_stream(idx: i32, user_id: i32, title: &str, tags: &str, starttime: DateTime<Utc>) -> StreamInfoDto {
-    let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
-    let stream = Stream::new(idx, user_id, title, starttime);
-    StreamInfoDto::convert(stream, user_id, &tags1)
-}
-pub fn create_streams(user_id: i32, amount: i32) -> Vec<StreamInfoDto> {
-    let mut result: Vec<StreamInfoDto> = Vec::new();
-    let mut idx = 1;
-    while idx <= amount {
-        let title = &format!("title_{}", idx);
-        let mut stream = Stream::new(idx, user_id, title, Utc::now());
-        stream.descript = format!("descript_{}", idx);
-
-        let tags = &format!("tag01,tag{:0>2}", idx);
-        let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
-
-        let stream_info_dto = StreamInfoDto::convert(stream, user_id, &tags1);
-        result.push(stream_info_dto);
-        idx += 1;
-    }
-    result
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct StreamInfoPageDto {
-    #[schema(example = json!(create_streams(1,2)))]
+    #[schema(example = json!(Self::create_streams(1,2)))]
     pub list: Vec<StreamInfoDto>,
     #[schema(example = 5)]
     pub limit: u32,
@@ -573,6 +550,26 @@ pub struct StreamInfoPageDto {
     pub page: u32,
     #[schema(example = 1)]
     pub pages: u32,
+}
+
+impl StreamInfoPageDto {
+    pub fn create_streams(user_id: i32, amount: i32) -> Vec<StreamInfoDto> {
+        let mut result: Vec<StreamInfoDto> = Vec::new();
+        let mut idx = 1;
+        while idx <= amount {
+            let title = &format!("title_{}", idx);
+            let mut stream = Stream::new(idx, user_id, title, Utc::now());
+            stream.descript = format!("descript_{}", idx);
+
+            let tags = &format!("tag01,tag{:0>2}", idx);
+            let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
+
+            let stream_info_dto = StreamInfoDto::convert(stream, user_id, &tags1);
+            result.push(stream_info_dto);
+            idx += 1;
+        }
+        result
+    }
 }
 
 // **  Section: Search for data "StreamEventDto" of the "streams" table. **
@@ -599,7 +596,7 @@ impl SearchStreamEvent {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchStreamEventDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -614,7 +611,7 @@ pub struct SearchStreamEventDto {
 
 // * StreamEventPageDto *
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamEventDto {
     pub id: i32,
@@ -639,13 +636,33 @@ impl StreamEventDto {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct StreamEventPageDto {
+    #[schema(example = json!(Self::create_events(1,2)))]
     pub list: Vec<StreamEventDto>,
+    #[schema(example = 5)]
     pub limit: u32,
+    #[schema(example = 2)]
     pub count: u32,
+    #[schema(example = 1)]
     pub page: u32,
+    #[schema(example = 1)]
     pub pages: u32,
+}
+
+impl StreamEventPageDto {
+    pub fn create_events(user_id: i32, amount: i32) -> Vec<StreamEventDto> {
+        let mut result: Vec<StreamEventDto> = Vec::new();
+        let mut idx = 1;
+        while idx <= amount {
+            let mut stream = Stream::new(idx, user_id, &format!("title_{}", idx), Utc::now());
+
+            let stream_event_dto = StreamEventDto::convert(stream);
+            result.push(stream_event_dto);
+            idx += 1;
+        }
+        result
+    }
 }
 
 // **  Section: Search for data "StreamPeriodDto" of the "streams" table. **
