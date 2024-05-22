@@ -762,11 +762,8 @@ mod tests {
                 .app_data(web::Data::clone(&data_stream_orm));
         }
     }
-    fn get_cfg_data() -> (
-        (config_jwt::ConfigJwt, config_strm::ConfigStrm),
-        (Vec<User>, Vec<Session>, Vec<StreamInfoDto>),
-        String,
-    ) {
+    #[rustfmt::skip]
+    fn get_cfg_data() -> ((config_jwt::ConfigJwt, config_strm::ConfigStrm), (Vec<User>, Vec<Session>, Vec<StreamInfoDto>), String) {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
         let session1 = create_session(user1.id, Some(num_token));
