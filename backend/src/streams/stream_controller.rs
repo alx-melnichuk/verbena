@@ -133,6 +133,14 @@ impl CreateStreamForm {
 ///   logofile?: TempFile,       // optional
 /// }
 /// ```
+/// Where:
+/// "title" - stream title;
+/// "descript" - description of the stream;
+/// "starttime" - date and time (in Utc-format "2020-01-20T20:10:57.000Z") of the start of the stream;
+/// "source" - source value ("obs" by default) of the stream;
+/// "tags" - serialized array of string values of stream tags("['tag1','tag2']");
+/// "logofile" - attached stream image file (jpeg,gif,png,bmp);
+/// 
 /// The "starttime" field indicates the date of the future stream.
 /// And cannot contain a past period (date and time).
 /// 
@@ -376,6 +384,14 @@ impl ModifyStreamForm {
 ///   tags?: String,             // optional
 ///   logofile?: TempFile,       // optional
 /// }
+/// Where:
+/// "title" - stream title;
+/// "descript" - description of the stream;
+/// "starttime" - date and time (in Utc-format "2020-01-20T20:10:57.000Z") of the start of the stream;
+/// "source" - source value ("obs" by default) of the stream;
+/// "tags" - serialized array of string values of stream tags("['tag1','tag2']");
+/// "logofile" - attached stream image file (jpeg,gif,png,bmp);
+/// 
 /// ```
 /// The "starttime" field indicates the date of the future stream.
 /// And cannot contain a past period (date and time).
