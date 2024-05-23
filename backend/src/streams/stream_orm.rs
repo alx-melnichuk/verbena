@@ -193,10 +193,12 @@ pub mod inst {
                 query_list = query_list.filter(streams_dsl::user_id.eq(user_id));
                 query_count = query_count.filter(streams_dsl::user_id.eq(user_id));
             }
+
             if let Some(live) = search_stream.live {
                 query_list = query_list.filter(streams_dsl::live.eq(live));
                 query_count = query_count.filter(streams_dsl::live.eq(live));
             }
+
             if let Some(is_future) = search_stream.is_future {
                 let now_date = Utc::now().date_naive().and_hms_opt(0, 0, 0).unwrap();
                 if !is_future {
@@ -265,7 +267,6 @@ pub mod inst {
                 .filter(streams_dsl::starttime.ge(start))
                 // starttime < finish
                 .filter(streams_dsl::starttime.lt(finish))
-                .filter(streams_dsl::user_id.eq(search_stream_event.user_id))
                 .offset(offset.into())
                 .limit(limit.into());
 
@@ -275,8 +276,12 @@ pub mod inst {
                 // starttime >= start
                 .filter(streams_dsl::starttime.ge(start))
                 // starttime < finish
-                .filter(streams_dsl::starttime.lt(finish))
-                .filter(streams_dsl::user_id.eq(search_stream_event.user_id));
+                .filter(streams_dsl::starttime.lt(finish));
+
+            if let Some(user_id) = search_stream_event.user_id {
+                query_list = query_list.filter(streams_dsl::user_id.eq(user_id));
+                query_count = query_count.filter(streams_dsl::user_id.eq(user_id));
+            }
 
             query_list = query_list
                 .order_by(streams_dsl::starttime.asc())
@@ -371,7 +376,6 @@ pub mod inst {
                 Ok((stream, stream_tags))
             });
             // lead time: 4.48ms
-            // eprintln!("res_data: {:?}", res_data);
             match res_data {
                 Ok((stream, stream_tags)) => Ok((stream, stream_tags)),
                 Err(err) => Err(format!("{}: {}", err_table, err.to_string())),
@@ -732,10 +736,16 @@ pub mod tests {
             let finish = start + Duration::hours(24);
 
             for stream in self.stream_info_vec.iter() {
-                if stream.user_id == search_stream_event.user_id
-                    && start <= stream.starttime
-                    && stream.starttime < finish
-                {
+                let mut is_add_value = true;
+
+                if stream.user_id != search_stream_event.user_id.unwrap_or(stream.user_id) {
+                    is_add_value = false;
+                }
+                if !(start <= stream.starttime && stream.starttime < finish) {
+                    is_add_value = false;
+                }
+
+                if is_add_value {
                     streams_info.push(stream.clone());
                 }
             }

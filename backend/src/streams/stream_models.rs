@@ -579,16 +579,16 @@ pub const SEARCH_STREAM_EVENT_LIMIT: u32 = 10;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SearchStreamEvent {
-    pub user_id: i32,
+    pub user_id: Option<i32>,
     pub starttime: DateTime<Utc>,
     pub page: Option<u32>,
     pub limit: Option<u32>,
 }
 
 impl SearchStreamEvent {
-    pub fn convert(search_stream_event: SearchStreamEventDto, user_id: i32) -> Self {
+    pub fn convert(search_stream_event: SearchStreamEventDto) -> Self {
         SearchStreamEvent {
-            user_id: search_stream_event.user_id.unwrap_or(user_id),
+            user_id: search_stream_event.user_id.clone(),
             starttime: search_stream_event.starttime.clone(),
             page: search_stream_event.page.clone(),
             limit: search_stream_event.limit.clone(),
@@ -655,8 +655,7 @@ impl StreamEventPageDto {
         let mut result: Vec<StreamEventDto> = Vec::new();
         let mut idx = 1;
         while idx <= amount {
-            let mut stream = Stream::new(idx, user_id, &format!("title_{}", idx), Utc::now());
-
+            let stream = Stream::new(idx, user_id, &format!("title_{}", idx), Utc::now());
             let stream_event_dto = StreamEventDto::convert(stream);
             result.push(stream_event_dto);
             idx += 1;
