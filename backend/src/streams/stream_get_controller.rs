@@ -444,10 +444,10 @@ pub async fn get_streams_period(
     let finish = search_period.finish.clone();
 
     if search_period.user_id != curr_user.id && curr_user.role != UserRole::Admin {
-        let json = serde_json::json!({ "curr_user_id": curr_user.id, "user_id": search_period.user_id });
-        let message = format!("{}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS_PERIOD);
-        log::error!("{}: {}: {}", err::CD_FORBIDDEN, &message, json.to_string());
-        return Err(AppError::forbidden403(&message).add_param(Borrowed("invalidUserId"), &json)); // 403
+        let text = format!("curr_user_id: {}, user_id: {}", curr_user.id, search_period.user_id);
+        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
+        log::error!("{}: {}", err::CD_FORBIDDEN, &message);
+        return Err(AppError::forbidden403(&message)); // 403
     }
     if finish < start {
         let json = serde_json::json!({ "streamPeriodStart": start.to_rfc3339_opts(Millis, true)
@@ -1599,10 +1599,10 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
-        let message = format!("{}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS_PERIOD);
+        let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
+        #[rustfmt::skip]
+        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
         assert_eq!(app_err.message, message);
-        let json = serde_json::json!({ "curr_user_id": user1_id, "user_id": user2_id });
-        assert_eq!(*app_err.params.get("invalidUserId").unwrap(), json);
     }
     #[actix_web::test]
     async fn test_get_streams_period_by_another_user_id_with_role_admin_99() {
