@@ -491,7 +491,7 @@ pub const SEARCH_STREAM_ORDER_DIRECTION: OrderDirection = OrderDirection::Asc;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SearchStream {
-    pub user_id: Option<i32>,
+    pub user_id: i32,
     pub live: Option<bool>,
     pub is_future: Option<bool>,
     pub order_column: Option<OrderColumn>,
@@ -501,9 +501,9 @@ pub struct SearchStream {
 }
 
 impl SearchStream {
-    pub fn convert(search_stream_info: SearchStreamInfoDto) -> Self {
+    pub fn convert(search_stream_info: SearchStreamInfoDto, user_id: i32) -> Self {
         SearchStream {
-            user_id: search_stream_info.user_id.clone(),
+            user_id: search_stream_info.user_id.unwrap_or(user_id),
             live: search_stream_info.live.clone(),
             is_future: search_stream_info.is_future.clone(),
             order_column: search_stream_info.order_column.clone(),
@@ -579,16 +579,16 @@ pub const SEARCH_STREAM_EVENT_LIMIT: u32 = 10;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SearchStreamEvent {
-    pub user_id: Option<i32>,
+    pub user_id: i32,
     pub starttime: DateTime<Utc>,
     pub page: Option<u32>,
     pub limit: Option<u32>,
 }
 
 impl SearchStreamEvent {
-    pub fn convert(search_stream_event: SearchStreamEventDto) -> Self {
+    pub fn convert(search_stream_event: SearchStreamEventDto, user_id: i32) -> Self {
         SearchStreamEvent {
-            user_id: search_stream_event.user_id.clone(),
+            user_id: search_stream_event.user_id.unwrap_or(user_id),
             starttime: search_stream_event.starttime.clone(),
             page: search_stream_event.page.clone(),
             limit: search_stream_event.limit.clone(),

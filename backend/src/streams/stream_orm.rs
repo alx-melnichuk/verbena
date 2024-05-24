@@ -183,16 +183,13 @@ pub mod inst {
             let mut query_list = schema::streams::table.into_boxed();
             query_list = query_list
                 .select(schema::streams::all_columns)
+                .filter(streams_dsl::user_id.eq(search_stream.user_id))
                 .offset(offset.into())
                 .limit(limit.into());
 
             // Create a query to get the number of elements in the list of "streams".
             let mut query_count = schema::streams::table.into_boxed();
-
-            if let Some(user_id) = search_stream.user_id {
-                query_list = query_list.filter(streams_dsl::user_id.eq(user_id));
-                query_count = query_count.filter(streams_dsl::user_id.eq(user_id));
-            }
+            query_count = query_count.filter(streams_dsl::user_id.eq(search_stream.user_id));
 
             if let Some(live) = search_stream.live {
                 query_list = query_list.filter(streams_dsl::live.eq(live));
@@ -249,14 +246,14 @@ pub mod inst {
         }
 
         /// Find for an entity (stream event) by SearchStreamEvent.
-        fn find_stream_events(&self, search_stream_event: SearchStreamEvent) -> Result<(u32, Vec<Stream>), String> {
+        fn find_stream_events(&self, search_event: SearchStreamEvent) -> Result<(u32, Vec<Stream>), String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let page: u32 = search_stream_event.page.unwrap_or(stream_models::SEARCH_STREAM_EVENT_PAGE);
-            let limit: u32 = search_stream_event.limit.unwrap_or(stream_models::SEARCH_STREAM_EVENT_LIMIT);
+            let page: u32 = search_event.page.unwrap_or(stream_models::SEARCH_STREAM_EVENT_PAGE);
+            let limit: u32 = search_event.limit.unwrap_or(stream_models::SEARCH_STREAM_EVENT_LIMIT);
             let offset: u32 = (page - 1) * limit;
-            let start = search_stream_event.starttime;
+            let start = search_event.starttime;
             let finish = start + Duration::hours(24);
 
             // Build a query to find a list of "streams".
@@ -267,6 +264,7 @@ pub mod inst {
                 .filter(streams_dsl::starttime.ge(start))
                 // starttime < finish
                 .filter(streams_dsl::starttime.lt(finish))
+                .filter(streams_dsl::user_id.eq(search_event.user_id))
                 .offset(offset.into())
                 .limit(limit.into());
 
@@ -276,12 +274,8 @@ pub mod inst {
                 // starttime >= start
                 .filter(streams_dsl::starttime.ge(start))
                 // starttime < finish
-                .filter(streams_dsl::starttime.lt(finish));
-
-            if let Some(user_id) = search_stream_event.user_id {
-                query_list = query_list.filter(streams_dsl::user_id.eq(user_id));
-                query_count = query_count.filter(streams_dsl::user_id.eq(user_id));
-            }
+                .filter(streams_dsl::starttime.lt(finish))
+                .filter(streams_dsl::user_id.eq(search_event.user_id));
 
             query_list = query_list
                 .order_by(streams_dsl::starttime.asc())
@@ -305,12 +299,12 @@ pub mod inst {
         }
 
         /// Find for an entity (stream period) by SearchStreamPeriod.
-        fn find_streams_period(&self, search_stream_period: SearchStreamPeriod) -> Result<Vec<DateTime<Utc>>, String> {
+        fn find_streams_period(&self, search_period: SearchStreamPeriod) -> Result<Vec<DateTime<Utc>>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let start = search_stream_period.start;
-            let finish = search_stream_period.finish;
+            let start = search_period.start;
+            let finish = search_period.finish;
             // Build a query to find a list of "streams"
             let query_list = schema::streams::table
                 .select(schema::streams::columns::starttime)
@@ -318,7 +312,7 @@ pub mod inst {
                 .filter(streams_dsl::starttime.ge(start))
                 // starttime <= finish
                 .filter(streams_dsl::starttime.le(finish))
-                .filter(streams_dsl::user_id.eq(search_stream_period.user_id))
+                .filter(streams_dsl::user_id.eq(search_period.user_id))
                 .order_by(streams_dsl::starttime.asc())
                 .then_order_by(streams_dsl::id.asc());
 
@@ -655,7 +649,7 @@ pub mod tests {
             for stream in self.stream_info_vec.iter() {
                 let mut is_add_value = true;
 
-                if stream.user_id != search_stream.user_id.unwrap_or(stream.user_id) {
+                if stream.user_id != search_stream.user_id {
                     is_add_value = false;
                 }
                 if stream.live != search_stream.live.unwrap_or(stream.live) {
@@ -736,16 +730,10 @@ pub mod tests {
             let finish = start + Duration::hours(24);
 
             for stream in self.stream_info_vec.iter() {
-                let mut is_add_value = true;
-
-                if stream.user_id != search_stream_event.user_id.unwrap_or(stream.user_id) {
-                    is_add_value = false;
-                }
-                if !(start <= stream.starttime && stream.starttime < finish) {
-                    is_add_value = false;
-                }
-
-                if is_add_value {
+                if stream.user_id == search_stream_event.user_id
+                    && start <= stream.starttime
+                    && stream.starttime < finish
+                {
                     streams_info.push(stream.clone());
                 }
             }

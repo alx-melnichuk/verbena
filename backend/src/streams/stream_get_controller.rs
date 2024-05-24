@@ -92,7 +92,7 @@ pub async fn get_stream_by_id(
         let res_data =
             stream_orm.find_stream_by_id(id, opt_user_id).map_err(|e| {
                 log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)    
+                AppError::database507(&e)
             });
         res_data
     })
@@ -202,17 +202,13 @@ pub async fn get_streams(
 
     let page: u32 = search_stream_info_dto.page.unwrap_or(stream_models::SEARCH_STREAM_PAGE);
     let limit: u32 = search_stream_info_dto.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT);
-    let mut search_stream = stream_models::SearchStream::convert(search_stream_info_dto);
+    let search_stream = stream_models::SearchStream::convert(search_stream_info_dto, curr_user.id);
 
-    if search_stream.user_id.is_none() {
-        search_stream.user_id = Some(curr_user.id);
-    } else if let Some(user_id) = search_stream.user_id {
-        if user_id != curr_user.id && curr_user.role != UserRole::Admin {
-            let text = format!("curr_user_id: {}, user_id: {}", curr_user.id, user_id);
-            let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS, &text);
-            log::error!("{}: {}", err::CD_FORBIDDEN, &message);
-            return Err(AppError::forbidden403(&message)); // 403
-        }
+    if search_stream.user_id != curr_user.id && curr_user.role != UserRole::Admin {
+        let text = format!("curr_user_id: {}, user_id: {}", curr_user.id, search_stream.user_id);
+        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS, &text);
+        log::error!("{}: {}", err::CD_FORBIDDEN, &message);
+        return Err(AppError::forbidden403(&message)); // 403
     }
 
     let res_data = web::block(move || {
@@ -220,7 +216,7 @@ pub async fn get_streams(
         let res_data =
             stream_orm.find_streams(search_stream).map_err(|e| {
                 log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)    
+                AppError::database507(&e)
             });
         res_data
         })
@@ -327,25 +323,21 @@ pub async fn get_streams_events(
 
     let page: u32 = search_stream_event_dto.page.unwrap_or(stream_models::SEARCH_STREAM_EVENT_PAGE);
     let limit: u32 = search_stream_event_dto.limit.unwrap_or(stream_models::SEARCH_STREAM_EVENT_LIMIT);
-    let mut search_stream_event = stream_models::SearchStreamEvent::convert(search_stream_event_dto);
-        
-    if search_stream_event.user_id.is_none() {
-        search_stream_event.user_id = Some(curr_user.id);
-    } else if let Some(user_id) = search_stream_event.user_id {
-        if user_id != curr_user.id && curr_user.role != UserRole::Admin {
-            let text = format!("curr_user_id: {}, user_id: {}", curr_user.id, user_id);
-            let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
-            log::error!("{}: {}", err::CD_FORBIDDEN, &message);
-            return Err(AppError::forbidden403(&message)); // 403
-        }
-    }
+    let search_event = stream_models::SearchStreamEvent::convert(search_stream_event_dto, curr_user.id);
 
+    if search_event.user_id != curr_user.id && curr_user.role != UserRole::Admin {
+        let text = format!("curr_user_id: {}, user_id: {}", curr_user.id, search_event.user_id);
+        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
+        log::error!("{}: {}", err::CD_FORBIDDEN, &message);
+        return Err(AppError::forbidden403(&message)); // 403
+    }
+    
     let res_data = web::block(move || {
         // Find for an entity (stream event) by SearchStreamEvent.
         let res_data =
-            stream_orm.find_stream_events(search_stream_event).map_err(|e| {
+            stream_orm.find_stream_events(search_event).map_err(|e| {
                 log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)    
+                AppError::database507(&e)
             });
         res_data
         })
