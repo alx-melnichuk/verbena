@@ -683,7 +683,7 @@ impl SearchStreamPeriod {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchStreamPeriodDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]

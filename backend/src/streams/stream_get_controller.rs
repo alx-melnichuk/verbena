@@ -1,7 +1,7 @@
-use std::ops::Deref;
+use std::{borrow::Cow::Borrowed, ops::Deref};
 
 use actix_web::{get, web, HttpResponse};
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Duration, SecondsFormat::Millis, Utc};
 use utoipa;
 
 use crate::errors::AppError;
@@ -13,7 +13,8 @@ use crate::streams::stream_orm::inst::StreamOrmApp;
 use crate::streams::stream_orm::tests::StreamOrmApp;
 use crate::streams::{
     stream_models::{
-        self, SearchStreamEventDto, SearchStreamInfoDto, StreamEventPageDto, StreamInfoDto, StreamInfoPageDto,
+        self, SearchStreamEventDto, SearchStreamInfoDto, SearchStreamPeriodDto, StreamEventPageDto, StreamInfoDto,
+        StreamInfoPageDto,
     },
     stream_orm::StreamOrm,
 };
@@ -21,8 +22,11 @@ use crate::users::user_models::UserRole;
 use crate::utils::parser;
 
 pub const PERIOD_MAX_NUMBER_DAYS: u16 = 65;
+pub const MSG_FINISH_LESS_START: &str = "finish_date_less_start_date";
+pub const MSG_FINISH_EXCEEDS_LIMIT: &str = "finish_date_exceeds_limit";
 pub const GET_LIST_OTHER_USER_STREAMS: &str = "get list of other user's streams";
-pub const GET_LIST_OTHER_USER_EVENT_STREAMS: &str = "get list of other user's event streams";
+pub const GET_LIST_OTHER_USER_STREAMS_EVENTS: &str = "get list of other user's event streams";
+pub const GET_LIST_OTHER_USER_STREAMS_PERIOD: &str = "get the period of other users' streams";
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -36,28 +40,6 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             // GET /api/streams_period
             .service(get_streams_period);
     }
-}
-
-/*fn err_database(err: String) -> AppError {
-    log::error!("{}: {}", err::CD_DATABASE, err);
-    AppError::new(err::CD_DATABASE, &err).set_status(500)
-}*/
-/*fn err_blocking(err: String) -> AppError {
-    log::error!("{}: {}", err::CD_BLOCKING, err);
-    AppError::new(err::CD_BLOCKING, &err).set_status(500)
-}*/
-fn err_no_access_to_streams() -> AppError {
-    log::error!("{}: {}", err::CD_NO_ACCESS_TO_STREAMS, err::MSG_NO_ACCESS_TO_STREAMS);
-    AppError::new(err::CD_NO_ACCESS_TO_STREAMS, err::MSG_NO_ACCESS_TO_STREAMS).set_status(400)
-}
-fn err_finish_less_start() -> AppError {
-    log::error!("{}: {}", err::CD_FINISH_LESS_START, err::MSG_FINISH_LESS_START);
-    AppError::new(err::CD_FINISH_LESS_START, err::MSG_FINISH_LESS_START).set_status(400)
-}
-fn err_bad_finish_period(max_days_period: u16) -> AppError {
-    let msg = format!("{} ({}).", err::MSG_FINISH_GREATER_MAX, max_days_period);
-    log::error!("{}: {}", err::CD_FINISH_GREATER_MAX, msg);
-    AppError::new(err::CD_FINISH_GREATER_MAX, &msg).set_status(400)
 }
 
 /// get_stream_by_id
@@ -95,7 +77,6 @@ pub async fn get_stream_by_id(
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get current user details.
     let curr_user = authenticated.deref();
-    let curr_user_id = curr_user.id;
     let opt_user_id: Option<i32> = if curr_user.role == UserRole::Admin { None } else { Some(curr_user.id) };
 
     // Get data from request.
@@ -126,7 +107,7 @@ pub async fn get_stream_by_id(
     let opt_stream_tag_dto = if let Some((stream, stream_tags)) = opt_data {
         let streams: Vec<stream_models::Stream> = vec![stream];
         // Merge a "stream" and a corresponding list of "tags".
-        let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, curr_user_id);
+        let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, curr_user.id);
         list.into_iter().nth(0)
     } else {
         None
@@ -197,8 +178,8 @@ pub async fn get_stream_by_id(
         (status = 401, description = "An authorization token is required.", body = AppError,
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS
-                , "curr_user_id: 1, user_id: 2")))),
+            example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED,
+                GET_LIST_OTHER_USER_STREAMS, "curr_user_id: 1, user_id: 2")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -215,7 +196,6 @@ pub async fn get_streams(
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get current user details.
     let curr_user = authenticated.deref();
-    let curr_user_id = curr_user.id;
 
     // Get search parameters.
     let search_stream_info_dto: SearchStreamInfoDto = query_params.into_inner();
@@ -225,10 +205,10 @@ pub async fn get_streams(
     let mut search_stream = stream_models::SearchStream::convert(search_stream_info_dto);
 
     if search_stream.user_id.is_none() {
-        search_stream.user_id = Some(curr_user_id);
+        search_stream.user_id = Some(curr_user.id);
     } else if let Some(user_id) = search_stream.user_id {
-        if user_id != curr_user_id && curr_user.role != UserRole::Admin {
-            let text = format!("curr_user_id: {}, user_id: {}", curr_user_id, user_id);
+        if user_id != curr_user.id && curr_user.role != UserRole::Admin {
+            let text = format!("curr_user_id: {}, user_id: {}", curr_user.id, user_id);
             let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS, &text);
             log::error!("{}: {}", err::CD_FORBIDDEN, &message);
             return Err(AppError::forbidden403(&message)); // 403
@@ -253,7 +233,7 @@ pub async fn get_streams(
     let (count, streams, stream_tags) = match res_data { Ok(v) => v, Err(e) => return Err(e) };
 
     // Merge a "stream" and a corresponding list of "tags".
-    let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, curr_user_id);
+    let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, curr_user.id);
 
     let pages: u32 = count / limit + if (count % limit) > 0 { 1 } else { 0 };
 
@@ -280,7 +260,7 @@ pub async fn get_streams(
 /// "page" - page number, stratified from 1 (1 by default);
 /// "limit" - number of records on the page (10 by default);
 /// 
-/// It is recommended to enter the date and time in ISO 8601 format.
+/// It is recommended to enter the date and time in ISO8601 format.
 /// ```text
 /// var d1 = new Date();
 /// { starttime: d1.toISOString() } // "2020-01-20T20:10:57.000Z"
@@ -297,7 +277,7 @@ pub async fn get_streams(
 /// Could be called with all fields with the next curl.
 /// ```text
 /// curl -i -X GET http://localhost:8080/api/streams_events?userId=1 \
-///     starttime=2030-02-02T08:00:00.000Z&page=1&limit=5
+///     &starttime=2030-02-02T08:00:00.000Z&page=1&limit=5
 /// ```
 /// Response structure:
 /// ```text
@@ -323,8 +303,8 @@ pub async fn get_streams(
         (status = 401, description = "An authorization token is required.", body = AppError,
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_EVENT_STREAMS
-                , "curr_user_id: 1, user_id: 2")))),
+            example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED,
+                GET_LIST_OTHER_USER_STREAMS_EVENTS, "curr_user_id: 1, user_id: 2")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -341,7 +321,6 @@ pub async fn get_streams_events(
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get current user details.
     let curr_user = authenticated.deref();
-    let curr_user_id = curr_user.id;
 
     // Get search parameters.
     let search_stream_event_dto: SearchStreamEventDto = query_params.into_inner();
@@ -351,11 +330,11 @@ pub async fn get_streams_events(
     let mut search_stream_event = stream_models::SearchStreamEvent::convert(search_stream_event_dto);
         
     if search_stream_event.user_id.is_none() {
-        search_stream_event.user_id = Some(curr_user_id);
+        search_stream_event.user_id = Some(curr_user.id);
     } else if let Some(user_id) = search_stream_event.user_id {
-        if user_id != curr_user_id && curr_user.role != UserRole::Admin {
-            let text = format!("curr_user_id: {}, user_id: {}", curr_user_id, user_id);
-            let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_EVENT_STREAMS, &text);
+        if user_id != curr_user.id && curr_user.role != UserRole::Admin {
+            let text = format!("curr_user_id: {}, user_id: {}", curr_user.id, user_id);
+            let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
             log::error!("{}: {}", err::CD_FORBIDDEN, &message);
             return Err(AppError::forbidden403(&message)); // 403
         }
@@ -387,38 +366,109 @@ pub async fn get_streams_events(
     Ok(HttpResponse::Ok().json(result)) // 200
 }
 
-// GET /api/streams_period
+/// get_streams_period
+/// ?
+/// Request structure:
+/// ```text
+/// {
+///   userId?: number,       // optional
+///   start: DateTime<Utc>,  // optional
+///   finish: DateTime<Utc>, // optional
+/// }
+/// Where:
+/// "userId" - user identifier (current default user);
+/// "start" start date of the period (in Utc-format);
+/// "finish" end date of the period (in Utc-format);
+/// 
+/// It is recommended to enter the date and time in ISO8601 format.
+/// ```text
+/// var d1 = new Date();
+/// { start: d1.toISOString() } // "2020-01-20T20:10:57.000Z"
+/// ```
+/// It is allowed to specify the date and time with a time zone value.
+/// ```text
+/// { "start": "2020-01-20T22:10:57+02:00" }
+/// 
+/// The maximum period value (the difference between the "finish" date and the "start" date) is 65 days.
+/// 
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/streams_period? \
+///     start=2030-03-01T08:00:00.000Z&finish=2030-03-31T08:00:00.000Z
+/// ```
+/// Could be called with all fields with the next curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/streams_period?userId=1 \
+///     &start=2030-03-01T08:00:00.000Z&finish=2030-03-31T08:00:00.000Z
+/// ```
+/// Return found dates that contain streams ([DateTime<Utc>]) with status 200.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Result is an array with dates containing streams.", body = Vec<DateTime<Utc>>, example = 
+            json!([ "2030-04-01T08:00:00.000Z", "2030-04-04T08:00:00.000Z", "2030-04-10T08:00:00.000Z", "2030-04-0T08:00:00.000Z" ])),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED, 
+                GET_LIST_OTHER_USER_STREAMS_PERIOD, "curr_user_id: 1, user_id: 2")))),
+        (status = 406, description = "The finish date is less than the start date.", body = AppError,
+            example = json!(AppError::not_acceptable406(MSG_FINISH_LESS_START).add_param(Borrowed("invalidPeriod"), &serde_json::json!(
+                { "streamPeriodStart": "2030-03-02T08:00:00.000Z", "streamPeriodFinish": "2030-03-01T08:00:00.000Z" })))),
+        (status = 413, description = "The finish date of the search period exceeds the limit.", body = AppError,
+            example = json!(AppError::content_large413(MSG_FINISH_EXCEEDS_LIMIT).add_param(Borrowed("periodTooLong"), &serde_json::json!(
+                { "actualPeriodFinish": "2030-04-01T08:00:00.000Z", "maxPeriodFinish": "2030-03-10T08:00:00.000Z" 
+                , "periodMaxNumberDys": PERIOD_MAX_NUMBER_DAYS })))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
 #[rustfmt::skip]
 #[get("/api/streams_period", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_streams_period(
     authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
-    query_params: web::Query<stream_models::SearchStreamPeriodDto>,
+    query_params: web::Query<SearchStreamPeriodDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get current user details.
     let curr_user = authenticated.deref();
-    let curr_user_id = curr_user.id;
 
     // Get search parameters.
-    let search_stream_period_dto: stream_models::SearchStreamPeriodDto = query_params.into_inner();
+    let search_period_dto: SearchStreamPeriodDto = query_params.into_inner();
 
-    let search_stream_period = stream_models::SearchStreamPeriod::convert(search_stream_period_dto, curr_user_id);
-        
-    if search_stream_period.user_id != curr_user_id && curr_user.role != UserRole::Admin {
-        return Err(err_no_access_to_streams());
+    let search_period = stream_models::SearchStreamPeriod::convert(search_period_dto, curr_user.id);
+    let start = search_period.start.clone();
+    let finish = search_period.finish.clone();
+
+    if search_period.user_id != curr_user.id && curr_user.role != UserRole::Admin {
+        let json = serde_json::json!({ "curr_user_id": curr_user.id, "user_id": search_period.user_id });
+        let message = format!("{}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS_PERIOD);
+        log::error!("{}: {}: {}", err::CD_FORBIDDEN, &message, json.to_string());
+        return Err(AppError::forbidden403(&message).add_param(Borrowed("invalidUserId"), &json)); // 403
     }
-    if search_stream_period.finish < search_stream_period.start {
-        return Err(err_finish_less_start());
+    if finish < start {
+        let json = serde_json::json!({ "streamPeriodStart": start.to_rfc3339_opts(Millis, true)
+            , "streamPeriodFinish": finish.to_rfc3339_opts(Millis, true) });
+        log::error!("{}: {}: {}", err::CD_NOT_ACCEPTABLE, MSG_FINISH_LESS_START, json.to_string());
+        return Err(AppError::not_acceptable406(MSG_FINISH_LESS_START) // 406
+            .add_param(Borrowed("invalidPeriod"), &json));
     }
-    let finish = search_stream_period.start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
-    if finish <= search_stream_period.finish {
-        return Err(err_bad_finish_period(PERIOD_MAX_NUMBER_DAYS));
+    let max_finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
+    if max_finish <= finish {
+        let json = serde_json::json!({ "actualPeriodFinish": finish.to_rfc3339_opts(Millis, true)
+            , "maxPeriodFinish": max_finish.to_rfc3339_opts(Millis, true), "periodMaxNumberDys": PERIOD_MAX_NUMBER_DAYS });
+        log::error!("{}: {}: {}", err::CD_CONTENT_TOO_LARGE, MSG_FINISH_EXCEEDS_LIMIT, json.to_string());
+        return Err(AppError::content_large413(MSG_FINISH_EXCEEDS_LIMIT) // 413
+            .add_param(Borrowed("periodTooLong"), &json));
     }
 
     let res_data = web::block(move || {
         // Find for an entity (stream period) by SearchStreamEvent.
         let res_data =
-            stream_orm.find_streams_period(search_stream_period).map_err(|e| {
+            stream_orm.find_streams_period(search_period).map_err(|e| {
                 log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)    
             });
@@ -430,7 +480,10 @@ pub async fn get_streams_period(
             AppError::blocking506(&e.to_string())
         })?;
 
-    let list: Vec<DateTime<Utc>> = match res_data { Ok(v) => v, Err(e) => return Err(e) };
+    let list: Vec<DateTime<Utc>> = match res_data {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
 
     Ok(HttpResponse::Ok().json(list)) // 200
 
@@ -441,9 +494,7 @@ mod tests {
     use actix_web::{
         dev,
         http::{self, StatusCode},
-        test,
-        test::TestRequest,
-        web, App,
+        test, web, App,
     };
     use chrono::{DateTime, Datelike, Duration, Local, TimeZone, Utc};
 
@@ -524,37 +575,10 @@ mod tests {
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
 
-        let mut config_strm = config_strm::get_test_config();
-        config_strm.strm_logo_max_size = 160;
+        let config_strm = config_strm::get_test_config();
         let cfg_c = (config_jwt, config_strm);
         let data_c = (vec![user1], vec![session1], vec![stream_dto]);
         (cfg_c, data_c, token)
-    }
-
-    async fn call_service1(
-        cfg_c: (config_jwt::ConfigJwt, config_strm::ConfigStrm),
-        data_c: (Vec<User>, Vec<Session>, Vec<StreamInfoDto>),
-        factory: impl dev::HttpServiceFactory + 'static,
-        request: TestRequest,
-    ) -> dev::ServiceResponse {
-        let data_config_jwt = web::Data::new(cfg_c.0);
-        let data_config_strm = web::Data::new(cfg_c.1);
-        let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
-        let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.2));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_config_strm))
-                .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_session_orm))
-                .app_data(web::Data::clone(&data_stream_orm))
-                .service(factory),
-        )
-        .await;
-
-        test::call_service(&app, request.to_request()).await
     }
 
     // ** get_stream_by_id **
@@ -1132,7 +1156,7 @@ mod tests {
         ];
 
         let data_c = (data_c.0, data_c.1, stream_orm_vec);
-        let starttime = to_utc(today).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let starttime = to_utc(today).to_rfc3339_opts(Millis, true);
         let limit = 2;
         let page = 1;
         #[rustfmt::skip]
@@ -1192,7 +1216,7 @@ mod tests {
         ];
 
         let data_c = (user_vec, data_c.1, stream_orm_vec);
-        let starttime = to_utc(today).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let starttime = to_utc(today).to_rfc3339_opts(Millis, true);
         let limit = 2;
         let page = 1;
         #[rustfmt::skip]
@@ -1249,7 +1273,7 @@ mod tests {
         ];
 
         let data_c = (user_vec, data_c.1, stream_orm_vec);
-        let starttime = to_utc(today).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let starttime = to_utc(today).to_rfc3339_opts(Millis, true);
         let limit = 2;
         let page = 2;
         #[rustfmt::skip]
@@ -1294,7 +1318,7 @@ mod tests {
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
 
         let data_c = (data_c.0, data_c.1, stream_orm_vec);
-        let starttime = to_utc(today).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let starttime = to_utc(today).to_rfc3339_opts(Millis, true);
         let limit = 2;
         let page = 1;
         #[rustfmt::skip]
@@ -1342,7 +1366,7 @@ mod tests {
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
 
         let data_c = (user_vec, data_c.1, stream_orm_vec);
-        let starttime = to_utc(today).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let starttime = to_utc(today).to_rfc3339_opts(Millis, true);
         let limit = 2;
         let page = 1;
         #[rustfmt::skip]
@@ -1360,7 +1384,7 @@ mod tests {
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
         #[rustfmt::skip]
-        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_EVENT_STREAMS, &text);
+        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
         assert_eq!(app_err.message, message);
     }
     #[actix_web::test]
@@ -1393,7 +1417,7 @@ mod tests {
         ];
 
         let data_c = (user_vec, data_c.1, stream_orm_vec);
-        let starttime = to_utc(today).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let starttime = to_utc(today).to_rfc3339_opts(Millis, true);
         let limit = 2;
         let page = 1;
         #[rustfmt::skip]
@@ -1419,73 +1443,63 @@ mod tests {
         assert_eq!(response.page, page);
         assert_eq!(response.pages, 1);
     }
-    /*
+
     // ** get_streams_period **
 
     #[actix_web::test]
     async fn test_get_streams_period_by_finish_less_start() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let user1_id = data_c.0.get(0).unwrap().id;
         let dt = Local::now();
         let start = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
         let finish = start - Duration::seconds(1);
-        let start2 = to_utc(start).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
-        let finish2 = to_utc(finish).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let start_s = to_utc(start).to_rfc3339_opts(Millis, true);
+        let finish_s = to_utc(finish).to_rfc3339_opts(Millis, true);
         #[rustfmt::skip]
-        let uri = format!("/streams_period?userId={}&start={}&finish={}", user1.id, start2, finish2);
-
-        // GET api/streams_period
-        let request = test::TestRequest::get().uri(&uri.to_string());
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let data_c = (vec![user1], vec![session1], vec![]);
-        let resp = call_service1(cfg_c, data_c, get_streams_period, request).await;
-        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+        let app = test::init_service(
+            App::new().service(get_streams_period).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user1_id, start_s, finish_s))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        assert_eq!(app_err.code, err::CD_FINISH_LESS_START);
-        assert_eq!(app_err.message, err::MSG_FINISH_LESS_START);
+        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        assert_eq!(app_err.message, MSG_FINISH_LESS_START);
+        let json = serde_json::json!({ "streamPeriodStart": start_s, "streamPeriodFinish": finish_s });
+        assert_eq!(*app_err.params.get("invalidPeriod").unwrap(), json);
     }
     #[actix_web::test]
     async fn test_get_streams_period_by_finish_more_on_2_month() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let user1_id = data_c.0.get(0).unwrap().id;
         let dt = Local::now();
         let start = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
         let finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
-        let start2 = to_utc(start).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
-        let finish2 = to_utc(finish).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let max_finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
+        let start_s = to_utc(start).to_rfc3339_opts(Millis, true);
+        let finish_s = to_utc(finish).to_rfc3339_opts(Millis, true);
+        let max_finish_s = to_utc(max_finish).to_rfc3339_opts(Millis, true);
         #[rustfmt::skip]
-        let uri = format!("/streams_period?userId={}&start={}&finish={}", user1.id, start2, finish2);
-
-        // GET api/streams_period
-        let request = test::TestRequest::get().uri(&uri.to_string());
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let data_c = (vec![user1], vec![session1], vec![]);
-        let resp = call_service1(cfg_c, data_c, get_streams_period, request).await;
-        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+        let app = test::init_service(
+            App::new().service(get_streams_period).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user1_id, start_s, finish_s))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE); // 413
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        assert_eq!(app_err.code, err::CD_FINISH_GREATER_MAX);
-        let msg = format!("{} ({}).", err::MSG_FINISH_GREATER_MAX, PERIOD_MAX_NUMBER_DAYS);
-        assert_eq!(app_err.message, msg);
+        assert_eq!(app_err.code, err::CD_CONTENT_TOO_LARGE);
+        assert_eq!(app_err.message, MSG_FINISH_EXCEEDS_LIMIT);
+        let json = serde_json::json!({ "actualPeriodFinish": finish_s
+            , "maxPeriodFinish": max_finish_s, "periodMaxNumberDys": PERIOD_MAX_NUMBER_DAYS });
+        assert_eq!(*app_err.params.get("periodTooLong").unwrap(), json);
     }
 
     fn get_streams2(user_id: i32) -> (Vec<StreamInfoDto>, String, String, Vec<DateTime<Utc>>) {
@@ -1506,133 +1520,112 @@ mod tests {
         let stream_info1 = stream_orm.stream_info_vec.get(1).unwrap().clone();
         let stream_info2 = stream_orm.stream_info_vec.get(2).unwrap().clone();
         let result_vec: Vec<DateTime<Utc>> = vec![stream_info1.starttime, stream_info2.starttime];
-        let start = to_utc(d2).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
-        let finish = to_utc(d3).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let start = to_utc(d2).to_rfc3339_opts(Millis, true);
+        let finish = to_utc(d3).to_rfc3339_opts(Millis, true);
 
         (stream_vec, start, finish, result_vec)
     }
     #[actix_web::test]
     async fn test_get_streams_period_by_user_id() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        let (stream_vec, start, finish, res_vec) = get_streams2(user1.id);
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let user1_id = data_c.0.get(0).unwrap().id;
+        let (stream_vec, start, finish, res_vec) = get_streams2(user1_id);
+        let data_c = (data_c.0, data_c.1, stream_vec);
         #[rustfmt::skip]
-        let uri = format!("/streams_period?userId={}&start={}&finish={}", user1.id, start, finish);
-
-        // GET api/streams_period
-        let request = test::TestRequest::get().uri(&uri.to_string());
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let data_c = (vec![user1], vec![session1], stream_vec);
-        let resp = call_service1(cfg_c, data_c, get_streams_period, request).await;
+        let app = test::init_service(
+            App::new().service(get_streams_period).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user1_id, start, finish))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
         let body = test::read_body(resp).await;
 
         let response: Vec<DateTime<Utc>> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json_res_vec = serde_json::json!(res_vec).to_string();
         let res_vec_ser: Vec<DateTime<Utc>> = serde_json::from_slice(json_res_vec.as_bytes()).expect(MSG_FAILED_DESER);
-
         assert_eq!(response.len(), res_vec_ser.len());
         assert_eq!(response, res_vec_ser);
     }
     #[actix_web::test]
     async fn test_get_streams_period_by_without_user_id() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        let (stream_vec, start, finish, res_vec) = get_streams2(user1.id);
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let user1_id = data_c.0.get(0).unwrap().id;
+        let (stream_vec, start, finish, res_vec) = get_streams2(user1_id);
+        let data_c = (data_c.0, data_c.1, stream_vec);
         #[rustfmt::skip]
-        let uri = format!("/streams_period?start={}&finish={}", start, finish);
-
-        // GET api/streams_period
-        let request = test::TestRequest::get().uri(&uri.to_string());
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let data_c = (vec![user1], vec![session1], stream_vec);
-        let resp = call_service1(cfg_c, data_c, get_streams_period, request).await;
+        let app = test::init_service(
+            App::new().service(get_streams_period).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri(&format!("/api/streams_period?start={}&finish={}", start, finish))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
         let body = test::read_body(resp).await;
 
         let response: Vec<DateTime<Utc>> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json_res_vec = serde_json::json!(res_vec).to_string();
         let res_vec_ser: Vec<DateTime<Utc>> = serde_json::from_slice(json_res_vec.as_bytes()).expect(MSG_FAILED_DESER);
-
         assert_eq!(response.len(), res_vec_ser.len());
         assert_eq!(response, res_vec_ser);
     }
     #[actix_web::test]
     async fn test_get_streams_period_by_another_user_id_with_role_user() {
-        let user1 = UserOrmApp::new_user(1, "Jacob_Moore", "Jacob_Moore@gmail.com", "passwdT1R1");
-        let user2 = UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdT1R1");
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let user1 = data_c.0.get(0).unwrap().clone();
+        let user_orm = UserOrmApp::create(&vec![
+            user1,
+            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
+        ]);
+        let user_vec = user_orm.user_vec.clone();
+        let user1_id = user_orm.user_vec.get(0).unwrap().id;
+        let user2_id = user_orm.user_vec.get(1).unwrap().id;
 
-        let user_orm = UserOrmApp::create(&vec![user1, user2]);
-        let user1 = user_orm.user_vec.get(0).unwrap().clone();
-        let user2 = user_orm.user_vec.get(1).unwrap().clone();
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let dt = Local::now();
-        let start = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
-        let finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
-        let start2 = to_utc(start).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
-        let finish2 = to_utc(finish).format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        let (stream_vec, start, finish, _res_vec) = get_streams2(user2_id);
+        let data_c = (user_vec, data_c.1, stream_vec);
         #[rustfmt::skip]
-        let uri = format!("/streams_period?userId={}&start={}&finish={}", user2.id, start2, finish2);
-
-        // GET api/streams_period
-        let request = test::TestRequest::get().uri(&uri.to_string());
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let data_c = (vec![user1], vec![session1], vec![]);
-        let resp = call_service1(cfg_c, data_c, get_streams_period, request).await;
-        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+        let app = test::init_service(
+            App::new().service(get_streams_period).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user2_id, start, finish))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::FORBIDDEN); // 403
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        assert_eq!(app_err.code, err::CD_NO_ACCESS_TO_STREAMS);
-        assert_eq!(app_err.message, err::MSG_NO_ACCESS_TO_STREAMS);
+        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        let message = format!("{}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS_PERIOD);
+        assert_eq!(app_err.message, message);
+        let json = serde_json::json!({ "curr_user_id": user1_id, "user_id": user2_id });
+        assert_eq!(*app_err.params.get("invalidUserId").unwrap(), json);
     }
     #[actix_web::test]
-    async fn test_get_streams_period_by_another_user_id_with_role_admin() {
-        let mut user1 = UserOrmApp::new_user(1, "Jacob_Moore", "Jacob_Moore@gmail.com", "passwdT1R1");
+    async fn test_get_streams_period_by_another_user_id_with_role_admin_99() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user1 = data_c.0.get(0).unwrap().clone();
         user1.role = UserRole::Admin;
-        let user2 = UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdT1R1");
+        let user_orm = UserOrmApp::create(&vec![
+            user1,
+            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
+        ]);
+        let user_vec = user_orm.user_vec.clone();
+        let user2_id = user_orm.user_vec.get(1).unwrap().id;
 
-        let user_orm = UserOrmApp::create(&vec![user1, user2]);
-        let user1 = user_orm.user_vec.get(0).unwrap().clone();
-        let user2 = user_orm.user_vec.get(1).unwrap().clone();
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        let (stream_vec, start, finish, res_vec) = get_streams2(user2.id);
+        let (stream_vec, start, finish, res_vec) = get_streams2(user2_id);
+        let data_c = (user_vec, data_c.1, stream_vec);
         #[rustfmt::skip]
-        let uri = format!("/streams_period?userId={}&start={}&finish={}", user2.id, start, finish);
-
-        // GET api/streams_period
-        let request = test::TestRequest::get().uri(&uri.to_string());
-        let request = request.insert_header(header_auth(&token));
-        let cfg_c = (config_jwt, config_strm::get_test_config());
-        let data_c = (vec![user1], vec![session1], stream_vec);
-        let resp = call_service1(cfg_c, data_c, get_streams_period, request).await;
+        let app = test::init_service(
+            App::new().service(get_streams_period).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user2_id, start, finish))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
@@ -1642,5 +1635,4 @@ mod tests {
         assert_eq!(response.len(), res_vec_ser.len());
         assert_eq!(response, res_vec_ser);
     }
-    */
 }

@@ -34,6 +34,7 @@ use crate::{
         stream_get_controller::get_stream_by_id,
         stream_get_controller::get_streams,
         stream_get_controller::get_streams_events,
+        stream_get_controller::get_streams_period,
     ),
     components(
         schemas(
@@ -63,6 +64,7 @@ use crate::{
             stream_models::StreamInfoPageDto, // ::get_streams
             stream_models::SearchStreamEventDto, // ::get_streams_events
             stream_models::StreamEventDto, stream_models::StreamEventPageDto, // ::get_streams_events
+            stream_models::SearchStreamPeriodDto, // ::get_streams_period
         )
     ),
     tags(
