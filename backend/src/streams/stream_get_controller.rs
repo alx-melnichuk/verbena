@@ -1,7 +1,7 @@
 use std::{borrow::Cow::Borrowed, ops::Deref};
 
 use actix_web::{get, web, HttpResponse};
-use chrono::{DateTime, Duration, SecondsFormat::Millis, Utc};
+use chrono::{Duration, SecondsFormat::Millis};
 use utoipa;
 
 use crate::errors::AppError;
@@ -472,8 +472,8 @@ pub async fn get_streams_period(
             AppError::blocking506(&e.to_string())
         })?;
 
-    let list: Vec<DateTime<Utc>> = match res_data {
-        Ok(v) => v,
+    let list: Vec<String> = match res_data {
+        Ok(v) => v.iter().map(|d| d.to_rfc3339_opts(Millis, true)).collect(),
         Err(e) => return Err(e)
     };
 
