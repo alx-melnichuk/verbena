@@ -24,9 +24,9 @@ use crate::utils::parser;
 pub const PERIOD_MAX_NUMBER_DAYS: u16 = 65;
 pub const MSG_FINISH_LESS_START: &str = "finish_date_less_start_date";
 pub const MSG_FINISH_EXCEEDS_LIMIT: &str = "finish_date_exceeds_limit";
-pub const GET_LIST_OTHER_USER_STREAMS: &str = "get list of other user's streams";
-pub const GET_LIST_OTHER_USER_STREAMS_EVENTS: &str = "get list of other user's event streams";
-pub const GET_LIST_OTHER_USER_STREAMS_PERIOD: &str = "get the period of other users' streams";
+pub const GET_LIST_OTHER_USER_STREAMS: &str = "get_list_other_users_streams";
+pub const GET_LIST_OTHER_USER_STREAMS_EVENTS: &str = "get_list_other_users_event_streams";
+pub const GET_LIST_OTHER_USER_STREAMS_PERIOD: &str = "get_period_other_users_streams";
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
