@@ -178,7 +178,7 @@ export class PanelStreamEditorComponent implements OnChanges {
 
     if (this.isCreate) { // Mode: "create"
       updateStreamFileDto.createStreamDto = {
-        title: (title || ''),
+        title: (title || ""),
         descript,
         starttime,
         tags,
@@ -186,8 +186,8 @@ export class PanelStreamEditorComponent implements OnChanges {
     } else { // Mode: "update"
       updateStreamFileDto.id = this.streamDto.id;
       updateStreamFileDto.modifyStreamDto = {
-        title: (this.controls.title.dirty ? title : undefined),
-        descript: (this.controls.descript.dirty ? descript : undefined),
+        title: (this.controls.title.dirty ? (title || "") : undefined),
+        descript: (this.controls.descript.dirty ? (descript || "") : undefined),
         starttime: (this.controls.startDate.dirty || this.controls.startTime.dirty ? starttime : undefined),
         tags: (this.controls.tags.dirty ? tags : undefined),
       }

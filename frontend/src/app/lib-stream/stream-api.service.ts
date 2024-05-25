@@ -161,17 +161,16 @@ constructor(private http: HttpClient) {
    */
   public modifyStream(id: number, modifStreamDto: ModifyStreamDto, file?: File | null): Promise<StreamDto | HttpErrorResponse | undefined> {
     const formData: FormData = new FormData();
-    if (!!modifStreamDto.title) {
+    if (modifStreamDto.title != null) {
       formData.set('title', modifStreamDto.title);
     }
-    if (!!modifStreamDto.descript) {
+    if (modifStreamDto.descript != null) {
       formData.set('descript', modifStreamDto.descript);
     }
     if (file !== undefined) {
       const currFile: File = (file !== null ? file : new File([], "file"));
       formData.set('logofile', currFile, currFile.name);
     }
-
     if (!!modifStreamDto.starttime) {
       formData.set('starttime', modifStreamDto.starttime);
     }
