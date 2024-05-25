@@ -155,7 +155,7 @@ export class StreamListComponent {
       return Promise.reject();
     }
     let isRefres = false;
-    this.streamService.deleteStream(streamId + 1000) // TODO delete '+ 1000'
+    this.streamService.deleteStream(streamId)
       .then(() => isRefres = true)
       .catch((error: HttpErrorResponse) => {
         this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], 'stream_list.error_delete_stream');
