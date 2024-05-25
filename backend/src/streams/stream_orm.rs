@@ -119,7 +119,7 @@ pub mod inst {
             conn: &mut dbase::DbPooledConnection,
             user_id: i32,
         ) -> Result<(), diesel::result::Error> {
-            // Run a query using Diesel to update the list of "stream_tags" for the user.
+            // Run query using Diesel to update the list of "stream_tags" for the user.
             let query =
                 diesel::sql_query("CALL update_stream_tags_for_user($1);").bind::<sql_types::Integer, _>(user_id);
 
@@ -407,38 +407,31 @@ pub mod inst {
             let mut err_table = "modify_stream";
             let res_data = conn.transaction::<_, diesel::result::Error, _>(|conn| {
                 let res_stream = if modify_stream.is_empty() {
+                    // Prepare an SQL query to get the stream.
+                    let mut query = schema::streams::table.into_boxed();
+                    // Add a filter by unique stream identifier.
+                    query = query.filter(streams_dsl::id.eq(id));
                     if let Some(user_id) = opt_user_id {
-                        // Run query using Diesel to find stream by id and user_id return it.
-                        schema::streams::table
-                            .filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id)))
-                            .first::<Stream>(conn)
-                            .optional()
-                    } else {
-                        // Run query using Diesel to find stream by id return it.
-                        schema::streams::table
-                            .filter(streams_dsl::id.eq(id))
-                            .first::<Stream>(conn)
-                            .optional()
+                        // Add an additional filter by user ID.
+                        query = query.filter(streams_dsl::user_id.eq(user_id));
                     }
+                    // Run query using Diesel to get the entry (stream).
+                    query.first::<Stream>(conn).optional()
                 } else {
-                    // Run query using Diesel to modify the entry (stream). schema::streams::dsl
+                    // Prepare a SQL-request to update the entry (stream).
+                    let mut query = diesel::update(schema::streams::table).into_boxed();
+                    // Add a filter by unique stream identifier.
+                    query = query.filter(streams_dsl::id.eq(id));
                     if let Some(user_id) = opt_user_id {
-                        // Run query using Diesel to update a entry (stream) with "user_id".
-                        diesel::update(
-                            streams_dsl::streams.filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id))),
-                        )
+                        // Add an additional filter by user ID.
+                        query = query.filter(streams_dsl::user_id.eq(user_id));
+                    }
+                    // Run query using Diesel to update the entry (stream).
+                    query
                         .set(&modify_stream)
                         .returning(Stream::as_returning())
                         .get_result(conn)
                         .optional()
-                    } else {
-                        // Run query using Diesel to update a entry (stream) without "user_id"..
-                        diesel::update(streams_dsl::streams.filter(streams_dsl::id.eq(id)))
-                            .set(&modify_stream)
-                            .returning(Stream::as_returning())
-                            .get_result(conn)
-                            .optional()
-                    }
                 };
 
                 let opt_stream = res_stream?;
@@ -493,24 +486,18 @@ pub mod inst {
             // Get a list of "tags" for the specified "stream".
             let stream_tags = self.get_stream_tags(&mut conn, &[id]).map_err(|e| e.to_string())?;
 
-            let res_stream_info = if let Some(user_id) = opt_user_id {
-                // Run query using Diesel to delete a entry (stream).
-                diesel::delete(
-                    streams_dsl::streams.filter(streams_dsl::id.eq(id).and(streams_dsl::user_id.eq(user_id))),
-                )
-                .returning(Stream::as_returning())
-                .get_result(&mut conn)
-                .optional()
-            } else {
-                // Run query using Diesel to delete a entry (stream).
-                diesel::delete(streams_dsl::streams.filter(streams_dsl::id.eq(id)))
-                    .returning(Stream::as_returning())
-                    .get_result(&mut conn)
-                    .optional()
-            };
+            // Prepare a SQL-request to delete the entry (stream).
+            let mut query = diesel::delete(schema::streams::table).into_boxed();
+            // Add a filter by unique stream identifier.
+            query = query.filter(streams_dsl::id.eq(id));
+            if let Some(user_id) = opt_user_id {
+                // Add an additional filter by user ID.
+                query = query.filter(streams_dsl::user_id.eq(user_id));
+            }
+            // Run query using Diesel to delete the entry (stream).
+            let res_stream_info = query.returning(Stream::as_returning()).get_result(&mut conn).optional();
 
             let opt_stream = res_stream_info.map_err(|e| format!("delete_stream: {}", e.to_string()))?;
-
             if let Some(stream) = opt_stream {
                 // Update the "stream_tags" data for user.
                 let _ = self.update_stream_tags_for_user(&mut conn, stream.user_id);
