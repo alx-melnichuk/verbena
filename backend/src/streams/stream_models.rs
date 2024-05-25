@@ -406,7 +406,10 @@ impl Validator for ModifyStreamInfoDto {
             errors.push(validate_title(&value).err());
         }
         if let Some(value) = &self.descript {
-            errors.push(validate_descript(&value).err());
+            // The field is optional and we check if there is a value.
+            if value.len() > 0 {
+                errors.push(validate_descript(&value).err());
+            }
         }
         if let Some(value) = &self.starttime {
             errors.push(validate_starttime(value).err());
