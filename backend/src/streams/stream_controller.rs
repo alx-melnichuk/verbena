@@ -794,8 +794,7 @@ mod tests {
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
 
-        let mut config_strm = config_strm::get_test_config();
-        config_strm.strm_logo_max_size = 160;
+        let config_strm = config_strm::get_test_config();
         let cfg_c = (config_jwt, config_strm);
         let data_c = (vec![user1], vec![session1], vec![stream_dto]);
         (cfg_c, data_c, token)
@@ -1240,6 +1239,9 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
+        let mut config_strm = config_strm::get_test_config();
+        config_strm.strm_logo_max_size = 160;
+        let cfg_c = (cfg_c.0, config_strm);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
@@ -1898,6 +1900,9 @@ mod tests {
             .build();
 
         let (cfg_c, data_c, token) = get_cfg_data();
+        let mut config_strm = config_strm::get_test_config();
+        config_strm.strm_logo_max_size = 160;
+        let cfg_c = (cfg_c.0, config_strm);
         let strm_logo_max_size = cfg_c.1.strm_logo_max_size;
         #[rustfmt::skip]
         let app = test::init_service(
