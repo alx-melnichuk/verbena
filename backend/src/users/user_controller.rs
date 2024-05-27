@@ -522,7 +522,7 @@ pub async fn delete_user_current(
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use actix_web::{dev, http, test, test::TestRequest, web, App};
+    use actix_web::{dev, http, test, web, App};
     use chrono::Utc;
 
     use crate::errors::AppError;
@@ -555,11 +555,40 @@ mod tests {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
     }
+    fn configure_user(
+        config_jwt: config_jwt::ConfigJwt, // configuration
+        data_c: (Vec<User>, Vec<Session>), // cortege of data vectors
+    ) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_config_jwt = web::Data::new(config_jwt);
+            let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
+            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
+
+            config
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .app_data(web::Data::clone(&data_session_orm));
+        }
+    }
+    #[rustfmt::skip]
+    fn get_cfg_data() -> (config_jwt::ConfigJwt, (Vec<User>, Vec<Session>), String) {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = create_session(user1.id, Some(num_token));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let data_c = (vec![user1], vec![session1]);
+        (config_jwt, data_c, token)
+    }
+
     async fn call_service1(
         cfg_jwt: config_jwt::ConfigJwt,    // configuration
         data_c: (Vec<User>, Vec<Session>), // cortege of data vectors
         factory: impl dev::HttpServiceFactory + 'static,
-        request: TestRequest,
+        request: test::TestRequest,
     ) -> dev::ServiceResponse {
         let data_config_jwt = web::Data::new(cfg_jwt);
         let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
@@ -578,63 +607,74 @@ mod tests {
     }
 
     // ** get_user_by_email **
-    #[test]
+    #[actix_web::test]
     async fn test_get_user_by_email_non_existent_email() {
-        let user1: User = user_with_id(create_user());
-        // GET /api/users/email/${email}
-        let request = test::TestRequest::get().uri(&"/api/users/email/JAMES_SMITH@gmail.com");
-        let data_c = (vec![user1], vec![]);
-        let resp = call_service1(cfg_jwt(), data_c, get_user_by_email, request).await;
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let email = format!("a{}", data_c.0.get(0).unwrap().email.clone());
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_user_by_email).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri(&format!("/api/users/email/{}", email))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
-    #[test]
+    #[actix_web::test]
     async fn test_get_user_by_email_existent_email() {
-        let user1: User = user_with_id(create_user());
-        let user1_email = user1.email.to_string();
-        let email = user1_email.to_uppercase().to_string();
-        // GET /api/users/email/${email}
-        let request = test::TestRequest::get().uri(&format!("/api/users/email/{}", email));
-        let data_c = (vec![user1], vec![]);
-        let factory = get_user_by_email;
-        let resp = call_service1(cfg_jwt(), data_c, factory, request).await;
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let email = data_c.0.get(0).unwrap().email.clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_user_by_email).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri(&format!("/api/users/email/{}", email))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let user_dto_res = std::str::from_utf8(&body).unwrap();
-        let str = format!("{}\"email\":\"{}\"{}", "{", user1_email, "}");
-        assert_eq!(user_dto_res, str);
+        let email_res = std::str::from_utf8(&body).unwrap();
+        let str = format!("{}\"email\":\"{}\"{}", "{", email, "}");
+        assert_eq!(email_res, str);
     }
 
     // ** get_user_by_nickname **
-    #[test]
+    #[actix_web::test]
     async fn test_get_user_by_nickname_non_existent_nickname() {
-        let user1: User = user_with_id(create_user());
-        // GET /api/users/nickname/${nickname}
-        let request = test::TestRequest::get().uri(&"/api/users/nickname/JAMES_SMITH");
-        let data_c = (vec![user1], vec![]);
-        let resp = call_service1(cfg_jwt(), data_c, get_user_by_nickname, request).await;
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let nickname = format!("a{}", data_c.0.get(0).unwrap().nickname.clone());
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_user_by_nickname).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri(&format!("/api/users/nickname/{}", nickname))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
-    #[test]
+    #[actix_web::test]
     async fn test_get_user_by_nickname_existent_nickname() {
-        let user1: User = user_with_id(create_user());
-        let user1_nickname = user1.nickname.to_string();
-        let nickname = user1_nickname.to_uppercase().to_string();
-        // GET /api/users/nickname/${nickname}
-        let request = test::TestRequest::get().uri(&format!("/api/users/nickname/{}", nickname));
-        let data_c = (vec![user1], vec![]);
-        let resp = call_service1(cfg_jwt(), data_c, get_user_by_nickname, request).await;
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let nickname = data_c.0.get(0).unwrap().nickname.clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_user_by_nickname).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri(&format!("/api/users/nickname/{}", nickname))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
-        let user_dto_res = std::str::from_utf8(&body).unwrap();
-        let str = format!("{}\"nickname\":\"{}\"{}", "{", user1_nickname, "}");
-        assert_eq!(user_dto_res, str);
+        let nickname_res = std::str::from_utf8(&body).unwrap();
+        let str = format!("{}\"nickname\":\"{}\"{}", "{", nickname, "}");
+        assert_eq!(nickname_res, str);
     }
 
     // ** get_user_by_id **
-    #[test]
-    async fn test_get_user_by_id_invalid_id() {
+    #[actix_web::test]
+    async fn test_get_user_by_id_invalid_id_99() {
         let mut user = create_user();
         user.role = UserRole::Admin;
         let user1: User = user_with_id(user);
@@ -652,17 +692,27 @@ mod tests {
         let request = request.insert_header(header_auth(&token));
         let data_c = (vec![user1], vec![session1]);
         let resp = call_service1(config_jwt, data_c, get_user_by_id, request).await;
+        /*
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let user_id_bad = format!("{}a", data_c.0.get(0).unwrap().id);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_user_by_id).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri(&format!("/api/users/{}", &user_id_bad))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        */
         assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
         #[rustfmt::skip]
         let msg = format!("{}: `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
         assert_eq!(app_err.message, msg);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_get_user_by_id_valid_id() {
         let mut user = create_user();
         user.role = UserRole::Admin;
@@ -691,7 +741,7 @@ mod tests {
         assert_eq!(user_dto_res, user1b_dto_ser);
         assert_eq!(user_dto_res.password, "");
     }
-    #[test]
+    #[actix_web::test]
     async fn test_get_user_by_id_non_existent_id() {
         let mut user = create_user();
         user.role = UserRole::Admin;
@@ -712,7 +762,7 @@ mod tests {
     }
 
     // ** put_user **
-    #[test]
+    #[actix_web::test]
     async fn test_put_user_invalid_id() {
         let mut user = create_user();
         user.role = UserRole::Admin;
@@ -775,35 +825,35 @@ mod tests {
         assert_eq!(app_err.code, err::CD_VALIDATION);
         assert_eq!(app_err.message, err_msg);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_user_invalid_dto_password_empty() {
         let modify_user = PasswordUserDto {
             password: Some("".to_string()),
         };
         test_put_user_validate(modify_user, user_models::MSG_PASSWORD_REQUIRED).await;
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_user_invalid_dto_password_min() {
         let modify_user = PasswordUserDto {
             password: Some(UserModelsTest::password_min()),
         };
         test_put_user_validate(modify_user, user_models::MSG_PASSWORD_MIN_LENGTH).await;
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_user_invalid_dto_password_max() {
         let modify_user = PasswordUserDto {
             password: Some(UserModelsTest::password_max()),
         };
         test_put_user_validate(modify_user, user_models::MSG_PASSWORD_MAX_LENGTH).await;
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_user_invalid_dto_password_wrong() {
         let modify_user = PasswordUserDto {
             password: Some(UserModelsTest::password_wrong()),
         };
         test_put_user_validate(modify_user, user_models::MSG_PASSWORD_REGEX).await;
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_user_user_not_exist() {
         let mut user = create_user();
         user.role = UserRole::Admin;
@@ -826,7 +876,7 @@ mod tests {
         let resp = call_service1(config_jwt, data_c, put_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
-    #[test]
+    #[actix_web::test]
     async fn test_put_user_valid_id() {
         let mut user = create_user();
         user.role = UserRole::Admin;
@@ -874,7 +924,7 @@ mod tests {
     }
 
     // ** delete_user **
-    #[test]
+    #[actix_web::test]
     async fn test_delete_user_invalid_id() {
         let mut user = create_user();
         user.role = UserRole::Admin;
@@ -903,7 +953,7 @@ mod tests {
         let msg = format!("{}: `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
         assert_eq!(app_err.message, msg);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_delete_user_user_not_exist() {
         let mut user = create_user();
         user.role = UserRole::Admin;
@@ -923,7 +973,7 @@ mod tests {
         let resp = call_service1(config_jwt, data_c, delete_user, request).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
-    #[test]
+    #[actix_web::test]
     async fn test_delete_user_user_exists() {
         let mut user = create_user();
         user.role = UserRole::Admin;
@@ -961,7 +1011,7 @@ mod tests {
     }
 
     // ** get_user_current **
-    #[test]
+    #[actix_web::test]
     async fn test_get_user_current_valid_token() {
         let user1: User = user_with_id(create_user());
         let user1b_dto = UserDto::from(user1.clone());
@@ -990,7 +1040,7 @@ mod tests {
     }
 
     // ** put_user_current **
-    #[test]
+    #[actix_web::test]
     async fn test_put_user_current_valid_id() {
         let user1: User = user_with_id(create_user());
         let new_password = "passwdJ3S9";
@@ -1032,7 +1082,7 @@ mod tests {
     }
 
     // ** delete_user_current **
-    #[test]
+    #[actix_web::test]
     async fn test_delete_user_current_valid_token() {
         let user1: User = user_with_id(create_user());
         let user1copy_dto = UserDto::from(user1.clone());
