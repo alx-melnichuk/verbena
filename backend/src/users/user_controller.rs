@@ -522,7 +522,15 @@ pub async fn delete_user_current(
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use actix_web::{dev, http, test, web, App};
+    use actix_web::{
+        body, dev,
+        http::{
+            self,
+            header::{HeaderValue, CONTENT_TYPE},
+            StatusCode,
+        },
+        test, web, App,
+    };
     use chrono::Utc;
 
     use crate::errors::AppError;
@@ -547,9 +555,6 @@ mod tests {
     }
     fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
         SessionOrmApp::new_session(user_id, num_token)
-    }
-    fn cfg_jwt() -> config_jwt::ConfigJwt {
-        config_jwt::get_test_config()
     }
     fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
@@ -583,27 +588,13 @@ mod tests {
         let data_c = (vec![user1], vec![session1]);
         (config_jwt, data_c, token)
     }
-
-    async fn call_service1(
-        cfg_jwt: config_jwt::ConfigJwt,    // configuration
-        data_c: (Vec<User>, Vec<Session>), // cortege of data vectors
-        factory: impl dev::HttpServiceFactory + 'static,
-        request: test::TestRequest,
-    ) -> dev::ServiceResponse {
-        let data_config_jwt = web::Data::new(cfg_jwt);
-        let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
-
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_session_orm))
-                .service(factory),
-        )
-        .await;
-
-        test::call_service(&app, request.to_request()).await
+    fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {
+        assert_eq!(app_err_vec.len(), msgs.len());
+        for (idx, msg) in msgs.iter().enumerate() {
+            let app_err = app_err_vec.get(idx).unwrap();
+            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.message, msg.to_string());
+        }
     }
 
     // ** get_user_by_email **
@@ -674,35 +665,20 @@ mod tests {
 
     // ** get_user_by_id **
     #[actix_web::test]
-    async fn test_get_user_by_id_invalid_id_99() {
-        let mut user = create_user();
-        user.role = UserRole::Admin;
-        let user1: User = user_with_id(user);
-        let user_id_bad = format!("{}a", user1.id);
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        // GET /api/users/{id}
-        let request = test::TestRequest::get().uri(&format!("/api/users/{}", user_id_bad.clone()));
-        let request = request.insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(config_jwt, data_c, get_user_by_id, request).await;
-        /*
+    async fn test_get_user_by_id_invalid_id() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user_id_bad = format!("{}a", data_c.0.get(0).unwrap().id);
+        let mut user_vec = data_c.0;
+        let user1 = user_vec.get_mut(0).unwrap();
+        user1.role = UserRole::Admin;
+        let user_id_bad = format!("{}a", user1.id);
+        let data_c = (user_vec, data_c.1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_user_by_id).configure(configure_user(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/users/{}", &user_id_bad))
+        let req = test::TestRequest::get().uri(&format!("/api/users/{}", user_id_bad))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        */
         assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
         let body = test::read_body(resp).await;
@@ -714,205 +690,231 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_user_by_id_valid_id() {
-        let mut user = create_user();
-        user.role = UserRole::Admin;
-        let user1: User = user_with_id(user);
-        let user1b_dto = UserDto::from(user1.clone());
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // GET /api/users/{id}
-        let request = test::TestRequest::get().uri(&format!("/api/users/{}", user1.id));
-        let request = request.insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(config_jwt, data_c, get_user_by_id, request).await;
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user1 = data_c.0.get(0).unwrap().clone();
+        user1.role = UserRole::Admin;
+        let user_orm = UserOrmApp::create(&vec![
+            user1,
+            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
+        ]);
+        let user_vec = user_orm.user_vec.clone();
+        let user2 = user_vec.get(1).unwrap().clone();
+        let user2_dto = UserDto::from(user2.clone());
+        let data_c = (user_vec, data_c.1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_user_by_id).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri(&format!("/api/users/{}", &user2.id))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let json_user1b_dto = serde_json::json!(user1b_dto).to_string();
-        let user1b_dto_ser: UserDto = serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(user_dto_res, user1b_dto_ser);
+        let json = serde_json::json!(user2_dto).to_string();
+        let user2b_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(user_dto_res, user2b_dto_ser);
         assert_eq!(user_dto_res.password, "");
     }
     #[actix_web::test]
     async fn test_get_user_by_id_non_existent_id() {
-        let mut user = create_user();
-        user.role = UserRole::Admin;
-        let user1: User = user_with_id(user);
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // GET /api/users/{id}
-        let request = test::TestRequest::get().uri(&format!("/api/users/{}", user1.id + 1));
-        let request = request.insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(config_jwt, data_c, get_user_by_id, request).await;
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user1 = data_c.0.get(0).unwrap().clone();
+        user1.role = UserRole::Admin;
+        let user_orm = UserOrmApp::create(&vec![
+            user1,
+            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
+        ]);
+        let user_vec = user_orm.user_vec.clone();
+        let user2 = user_vec.get(1).unwrap().clone();
+        let data_c = (user_vec, data_c.1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_user_by_id).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri(&format!("/api/users/{}", (user2.id + 1)))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
 
     // ** put_user **
     #[actix_web::test]
     async fn test_put_user_invalid_id() {
-        let mut user = create_user();
-        user.role = UserRole::Admin;
-        let user1: User = user_with_id(user);
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user_vec = data_c.0;
+        let user1 = user_vec.get_mut(0).unwrap();
+        user1.role = UserRole::Admin;
         let user_id_bad = format!("{}a", user1.id);
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let request = test::TestRequest::put()
-            .uri(&format!("/api/users/{}", user_id_bad.clone())) // PUT users/{id}
-            .set_json(ModifyUserDto {
-                nickname: Some("Oliver_Taylor".to_string()),
-                email: Some("Oliver_Taylor@gmail.com".to_string()),
+        let data_c = (user_vec, data_c.1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_user).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/users/{}", user_id_bad))
+            .insert_header(header_auth(&token))
+            .set_json(PasswordUserDto {
                 password: Some("passwdQ0W0".to_string()),
-                role: Some(UserRole::Admin),
             })
-            .insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(config_jwt, data_c, put_user, request).await;
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
         #[rustfmt::skip]
         let msg = format!("{}: `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
         assert_eq!(app_err.message, msg);
     }
-
-    async fn test_put_user_validate(password_user: PasswordUserDto, err_msg: &str) {
-        let mut user = create_user();
-        user.role = UserRole::Admin;
-        let user1: User = user_with_id(user);
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // PUT users/{id}
-        let request = test::TestRequest::put()
-            .uri(&format!("/api/users/{}", user1.id))
-            .set_json(password_user)
-            .insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(config_jwt, data_c, put_user, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
-
-        let body = test::read_body(resp).await;
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, err_msg);
-    }
     #[actix_web::test]
     async fn test_put_user_invalid_dto_password_empty() {
-        let modify_user = PasswordUserDto {
-            password: Some("".to_string()),
-        };
-        test_put_user_validate(modify_user, user_models::MSG_PASSWORD_REQUIRED).await;
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user_vec = data_c.0;
+        let user1 = user_vec.get_mut(0).unwrap();
+        user1.role = UserRole::Admin;
+        let user1_id = user1.id;
+        let data_c = (user_vec, data_c.1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_user).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/users/{}", user1_id))
+            .insert_header(header_auth(&token))
+            .set_json(PasswordUserDto { password: Some("".to_string()) })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_put_user_invalid_dto_password_min() {
-        let modify_user = PasswordUserDto {
-            password: Some(UserModelsTest::password_min()),
-        };
-        test_put_user_validate(modify_user, user_models::MSG_PASSWORD_MIN_LENGTH).await;
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user_vec = data_c.0;
+        let user1 = user_vec.get_mut(0).unwrap();
+        user1.role = UserRole::Admin;
+        let user1_id = user1.id;
+        let data_c = (user_vec, data_c.1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_user).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/users/{}", user1_id))
+            .insert_header(header_auth(&token))
+            .set_json(PasswordUserDto { password: Some(UserModelsTest::password_min()) })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_user_invalid_dto_password_max() {
-        let modify_user = PasswordUserDto {
-            password: Some(UserModelsTest::password_max()),
-        };
-        test_put_user_validate(modify_user, user_models::MSG_PASSWORD_MAX_LENGTH).await;
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user_vec = data_c.0;
+        let user1 = user_vec.get_mut(0).unwrap();
+        user1.role = UserRole::Admin;
+        let user1_id = user1.id;
+        let data_c = (user_vec, data_c.1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_user).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/users/{}", user1_id))
+            .insert_header(header_auth(&token))
+            .set_json(PasswordUserDto { password: Some(UserModelsTest::password_max()) })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_user_invalid_dto_password_wrong() {
-        let modify_user = PasswordUserDto {
-            password: Some(UserModelsTest::password_wrong()),
-        };
-        test_put_user_validate(modify_user, user_models::MSG_PASSWORD_REGEX).await;
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user_vec = data_c.0;
+        let user1 = user_vec.get_mut(0).unwrap();
+        user1.role = UserRole::Admin;
+        let user1_id = user1.id;
+        let data_c = (user_vec, data_c.1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_user).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/users/{}", user1_id))
+            .insert_header(header_auth(&token))
+            .set_json(PasswordUserDto { password: Some(UserModelsTest::password_wrong()) })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_REGEX]);
     }
     #[actix_web::test]
     async fn test_put_user_user_not_exist() {
-        let mut user = create_user();
-        user.role = UserRole::Admin;
-        let user1: User = user_with_id(user);
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let request = test::TestRequest::put()
-            .uri(&format!("/api/users/{}", user1.id + 1)) // PUT /api/users/{id}
-            .set_json(PasswordUserDto {
-                password: Some("passwdQ0W0".to_string()),
-            })
-            .insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(config_jwt, data_c, put_user, request).await;
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user_vec = data_c.0;
+        let user1 = user_vec.get_mut(0).unwrap();
+        user1.role = UserRole::Admin;
+        let user1_id = user1.id;
+        let data_c = (user_vec, data_c.1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_user).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/users/{}", user1_id + 1))
+            .insert_header(header_auth(&token))
+            .set_json(PasswordUserDto { password: Some("passwdQ0W0".to_string()) })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[actix_web::test]
     async fn test_put_user_valid_id() {
-        let mut user = create_user();
-        user.role = UserRole::Admin;
-        let user1: User = user_with_id(user);
-        let user1_id = user1.id;
         let new_password = "passwdQ0W0";
-
-        let mut user1mod: User =
-            UserOrmApp::new_user(user1_id, &user1.nickname.clone(), &user1.email.clone(), new_password);
-        user1mod.role = UserRole::Admin;
-        user1mod.created_at = user1.created_at.clone();
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user_vec = data_c.0;
+        let user1 = user_vec.get_mut(0).unwrap();
+        user1.role = UserRole::Admin;
+        let user1_id = user1.id;
+        let mut user1mod: User = user1.clone();
+        user1mod.password = new_password.to_string();
         user1mod.updated_at = Utc::now();
         let user1mod_dto = UserDto::from(user1mod.clone());
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let request = test::TestRequest::put()
-            .uri(&format!("/api/users/{}", &user1_id)) // PUT /api/users/{id}
-            .set_json(PasswordUserDto {
-                password: Some(new_password.to_string()),
-            })
-            .insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(config_jwt, data_c, put_user, request).await;
+        let data_c = (user_vec, data_c.1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_user).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/users/{}", user1_id))
+            .insert_header(header_auth(&token))
+            .set_json(PasswordUserDto { password: Some(new_password.to_string()) })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let json_user1mod_dto = serde_json::json!(user1mod_dto).to_string();
-        let user1mod_dto_ser: UserDto = serde_json::from_slice(json_user1mod_dto.as_bytes()).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(user1mod_dto).to_string();
+        let user1mod_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(user_dto_res.id, user1mod_dto_ser.id);
         assert_eq!(user_dto_res.nickname, user1mod_dto_ser.nickname);
@@ -926,28 +928,23 @@ mod tests {
     // ** delete_user **
     #[actix_web::test]
     async fn test_delete_user_invalid_id() {
-        let mut user = create_user();
-        user.role = UserRole::Admin;
-        let user1: User = user_with_id(user);
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user_vec = data_c.0;
+        let user1 = user_vec.get_mut(0).unwrap();
+        user1.role = UserRole::Admin;
         let user_id_bad = format!("{}a", user1.id);
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // DELETE users/{id}
-        let request = test::TestRequest::delete()
-            .uri(&format!("/api/users/{}", user_id_bad.clone()))
-            .insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(config_jwt, data_c, delete_user, request).await;
+        let data_c = (user_vec, data_c.1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_user).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/users/{}", user_id_bad))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
         let body = test::read_body(resp).await;
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
         #[rustfmt::skip]
         let msg = format!("{}: `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
@@ -955,50 +952,42 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_user_user_not_exist() {
-        let mut user = create_user();
-        user.role = UserRole::Admin;
-        let user1: User = user_with_id(user);
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // DELETE users/{id}
-        let request = test::TestRequest::delete()
-            .uri(&format!("/api/users/{}", user1.id + 1))
-            .insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(config_jwt, data_c, delete_user, request).await;
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user_vec = data_c.0;
+        let user1 = user_vec.get_mut(0).unwrap();
+        user1.role = UserRole::Admin;
+        let user_id = user1.id;
+        let data_c = (user_vec, data_c.1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_user).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/users/{}", user_id + 1))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[actix_web::test]
     async fn test_delete_user_user_exists() {
-        let mut user = create_user();
-        user.role = UserRole::Admin;
-        let user1: User = user_with_id(user);
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user_vec = data_c.0;
+        let user1 = user_vec.get_mut(0).unwrap();
+        user1.role = UserRole::Admin;
         let user1copy_dto = UserDto::from(user1.clone());
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // DELETE users/{id}
-        let request = test::TestRequest::delete()
-            .uri(&format!("/api/users/{}", user1.id))
-            .insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(config_jwt, data_c, delete_user, request).await;
+        let data_c = (user_vec, data_c.1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_user).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/users/{}", user1copy_dto.id))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let json_user1copy_dto = serde_json::json!(user1copy_dto).to_string();
-        let user1copy_dto_ser: UserDto = serde_json::from_slice(json_user1copy_dto.as_bytes()).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(user1copy_dto).to_string();
+        let user1copy_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(user_dto_res.id, user1copy_dto_ser.id);
         assert_eq!(user_dto_res.nickname, user1copy_dto_ser.nickname);
@@ -1013,27 +1002,22 @@ mod tests {
     // ** get_user_current **
     #[actix_web::test]
     async fn test_get_user_current_valid_token() {
-        let user1: User = user_with_id(create_user());
-        let user1b_dto = UserDto::from(user1.clone());
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // GET /api/users_current
-        let request = test::TestRequest::get().uri("/api/users_current");
-        let request = request.insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(cfg_jwt(), data_c, get_user_current, request).await;
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let user1 = data_c.0.get(0).unwrap().clone();
+        let user1_dto = UserDto::from(user1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_user_current).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri("/api/users_current")
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let json_user1b_dto = serde_json::json!(user1b_dto).to_string();
-        let user1b_dto_ser: UserDto = serde_json::from_slice(json_user1b_dto.as_bytes()).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(user1_dto).to_string();
+        let user1b_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(user_dto_res, user1b_dto_ser);
         assert_eq!(user_dto_res.password, "");
@@ -1042,35 +1026,26 @@ mod tests {
     // ** put_user_current **
     #[actix_web::test]
     async fn test_put_user_current_valid_id() {
-        let user1: User = user_with_id(create_user());
         let new_password = "passwdJ3S9";
-
-        let mut user1mod: User = user1.clone();
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut user1mod: User = data_c.0.get(0).unwrap().clone();
         user1mod.password = new_password.to_string();
         let user1mod_dto = UserDto::from(user1mod);
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let request = test::TestRequest::put()
-            .uri(&"/api/users_current") // PUT /api/users_current
-            .set_json(PasswordUserDto {
-                password: Some(new_password.to_string()),
-            })
-            .insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(cfg_jwt(), data_c, put_user_current, request).await;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_user_current).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/users_current")
+            .insert_header(header_auth(&token))
+            .set_json(PasswordUserDto { password: Some(new_password.to_string()) })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let json_user1mod_dto = serde_json::json!(user1mod_dto).to_string();
-        let user1mod_dto_ser: UserDto = serde_json::from_slice(json_user1mod_dto.as_bytes()).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(user1mod_dto).to_string();
+        let user1mod_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(user_dto_res.id, user1mod_dto_ser.id);
         assert_eq!(user_dto_res.nickname, user1mod_dto_ser.nickname);
@@ -1084,27 +1059,23 @@ mod tests {
     // ** delete_user_current **
     #[actix_web::test]
     async fn test_delete_user_current_valid_token() {
-        let user1: User = user_with_id(create_user());
-        let user1copy_dto = UserDto::from(user1.clone());
-
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // DELETE /api/users_current
-        let request = test::TestRequest::delete().uri("/api/users_current");
-        let request = request.insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(config_jwt, data_c, delete_user_current, request).await;
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let user1: User = data_c.0.get(0).unwrap().clone();
+        let user1copy_dto = UserDto::from(user1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_user_current).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/users_current")
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         let body = test::read_body(resp).await;
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        let json_user1copy_dto = serde_json::json!(user1copy_dto).to_string();
-        let user1copy_dto_ser: UserDto = serde_json::from_slice(json_user1copy_dto.as_bytes()).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(user1copy_dto).to_string();
+        let user1copy_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(user_dto_res.id, user1copy_dto_ser.id);
         assert_eq!(user_dto_res.nickname, user1copy_dto_ser.nickname);
