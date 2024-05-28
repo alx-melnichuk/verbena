@@ -22,11 +22,16 @@ use crate::users::user_models::UserRole;
 use crate::utils::parser;
 
 pub const PERIOD_MAX_NUMBER_DAYS: u16 = 65;
+// 406 Not Acceptable - The finish date is less than the start date.
 pub const MSG_FINISH_LESS_START: &str = "finish_date_less_start_date";
+// 413 Content Too Large - The finish date of the search period exceeds the limit.
 pub const MSG_FINISH_EXCEEDS_LIMIT: &str = "finish_date_exceeds_limit";
-pub const GET_LIST_OTHER_USER_STREAMS: &str = "get_list_other_users_streams";
-pub const GET_LIST_OTHER_USER_STREAMS_EVENTS: &str = "get_list_other_users_event_streams";
-pub const GET_LIST_OTHER_USER_STREAMS_PERIOD: &str = "get_period_other_users_streams";
+// 403 Access denied - insufficient user rights.
+pub const MSG_GET_LIST_OTHER_USER_STREAMS: &str = "get_list_other_users_streams";
+// 403 Access denied - insufficient user rights.
+pub const MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS: &str = "get_list_other_users_event_streams";
+// 403 Access denied - insufficient user rights.
+pub const MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD: &str = "get_period_other_users_streams";
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -179,7 +184,7 @@ pub async fn get_stream_by_id(
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED,
-                GET_LIST_OTHER_USER_STREAMS, "curr_user_id: 1, user_id: 2")))),
+                MSG_GET_LIST_OTHER_USER_STREAMS, "curr_user_id: 1, user_id: 2")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -206,7 +211,8 @@ pub async fn get_streams(
 
     if search_stream.user_id != curr_user.id && curr_user.role != UserRole::Admin {
         let text = format!("curr_user_id: {}, user_id: {}", curr_user.id, search_stream.user_id);
-        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS, &text);
+        #[rustfmt::skip]
+        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS, &text);
         log::error!("{}: {}", err::CD_FORBIDDEN, &message);
         return Err(AppError::forbidden403(&message)); // 403
     }
@@ -300,7 +306,7 @@ pub async fn get_streams(
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED,
-                GET_LIST_OTHER_USER_STREAMS_EVENTS, "curr_user_id: 1, user_id: 2")))),
+                MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, "curr_user_id: 1, user_id: 2")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -327,7 +333,8 @@ pub async fn get_streams_events(
 
     if search_event.user_id != curr_user.id && curr_user.role != UserRole::Admin {
         let text = format!("curr_user_id: {}, user_id: {}", curr_user.id, search_event.user_id);
-        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
+        #[rustfmt::skip]
+        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
         log::error!("{}: {}", err::CD_FORBIDDEN, &message);
         return Err(AppError::forbidden403(&message)); // 403
     }
@@ -403,7 +410,7 @@ pub async fn get_streams_events(
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED, 
-                GET_LIST_OTHER_USER_STREAMS_PERIOD, "curr_user_id: 1, user_id: 2")))),
+                MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, "curr_user_id: 1, user_id: 2")))),
         (status = 406, description = "The finish date is less than the start date.", body = AppError,
             example = json!(AppError::not_acceptable406(MSG_FINISH_LESS_START).add_param(Borrowed("invalidPeriod"), &serde_json::json!(
                 { "streamPeriodStart": "2030-03-02T08:00:00.000Z", "streamPeriodFinish": "2030-03-01T08:00:00.000Z" })))),
@@ -437,7 +444,8 @@ pub async fn get_streams_period(
 
     if search_period.user_id != curr_user.id && curr_user.role != UserRole::Admin {
         let text = format!("curr_user_id: {}, user_id: {}", curr_user.id, search_period.user_id);
-        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
+        #[rustfmt::skip]
+        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
         log::error!("{}: {}", err::CD_FORBIDDEN, &message);
         return Err(AppError::forbidden403(&message)); // 403
     }
@@ -845,7 +853,8 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
-        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS, &text);
+        #[rustfmt::skip]
+        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS, &text);
         assert_eq!(app_err.message, message);
     }
     #[actix_web::test]
@@ -1376,7 +1385,7 @@ mod tests {
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
         #[rustfmt::skip]
-        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
+        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
         assert_eq!(app_err.message, message);
     }
     #[actix_web::test]
@@ -1593,7 +1602,7 @@ mod tests {
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
         #[rustfmt::skip]
-        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
+        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
         assert_eq!(app_err.message, message);
     }
     #[actix_web::test]
