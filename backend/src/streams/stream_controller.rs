@@ -12,7 +12,7 @@ use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::file_upload::upload;
 use crate::settings::err;
 #[cfg(not(feature = "mockdata"))]
-use crate::streams::stream_orm::inst::StreamOrmApp;
+use crate::streams::stream_orm::impls::StreamOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::streams::stream_orm::tests::StreamOrmApp;
 use crate::streams::{

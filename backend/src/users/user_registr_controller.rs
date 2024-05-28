@@ -4,12 +4,12 @@ use utoipa;
 
 use crate::hash_tools;
 #[cfg(not(feature = "mockdata"))]
-use crate::send_email::mailer::inst::MailerApp;
+use crate::send_email::mailer::impls::MailerApp;
 #[cfg(feature = "mockdata")]
 use crate::send_email::mailer::tests::MailerApp;
 use crate::send_email::mailer::Mailer;
 #[cfg(not(feature = "mockdata"))]
-use crate::sessions::session_orm::inst::SessionOrmApp;
+use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::{
@@ -20,7 +20,7 @@ use crate::sessions::{
 };
 use crate::settings::{config_app, err};
 #[cfg(not(feature = "mockdata"))]
-use crate::users::user_recovery_orm::inst::UserRecoveryOrmApp;
+use crate::users::user_recovery_orm::impls::UserRecoveryOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_recovery_orm::tests::UserRecoveryOrmApp;
 use crate::users::{
@@ -30,7 +30,7 @@ use crate::users::{
     user_registr_orm::UserRegistrOrm,
 };
 #[cfg(not(feature = "mockdata"))]
-use crate::users::{user_orm::inst::UserOrmApp, user_registr_orm::inst::UserRegistrOrmApp};
+use crate::users::{user_orm::impls::UserOrmApp, user_registr_orm::impls::UserRegistrOrmApp};
 #[cfg(feature = "mockdata")]
 use crate::users::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
 use crate::validators::{msg_validation, Validator};
@@ -40,7 +40,7 @@ pub const MSG_EMAIL_ALREADY_USE: &str = "email_already_use";
 pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";
 // 510 Not Extended - Error when sending email.
 pub const MSG_ERROR_SENDING_EMAIL: &str = "error_sending_email";
-// 404 Not Found -Registration record not found.
+// 404 Not Found - Registration record not found.
 pub const MSG_REGISTR_NOT_FOUND: &str = "registration_not_found";
 // 404 Not Found - Recovery record not found.
 pub const MSG_RECOVERY_NOT_FOUND: &str = "recovery_not_found";

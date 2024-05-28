@@ -21,7 +21,7 @@ pub mod cfg {
     use crate::dbase::DbPool;
 
     #[cfg(not(feature = "mockdata"))]
-    use super::inst::UserOrmApp;
+    use super::impls::UserOrmApp;
     #[cfg(not(feature = "mockdata"))]
     pub fn get_user_orm_app(pool: DbPool) -> UserOrmApp {
         UserOrmApp::new(pool)
@@ -36,7 +36,7 @@ pub mod cfg {
 }
 
 #[cfg(not(feature = "mockdata"))]
-pub mod inst {
+pub mod impls {
 
     use diesel::{self, prelude::*};
 

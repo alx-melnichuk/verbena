@@ -23,7 +23,7 @@ pub mod cfg {
     use crate::dbase::DbPool;
 
     #[cfg(not(feature = "mockdata"))]
-    use super::inst::UserRegistrOrmApp;
+    use super::impls::UserRegistrOrmApp;
     #[cfg(not(feature = "mockdata"))]
     pub fn get_user_registr_orm_app(pool: DbPool) -> UserRegistrOrmApp {
         UserRegistrOrmApp::new(pool)
@@ -38,7 +38,7 @@ pub mod cfg {
 }
 
 #[cfg(not(feature = "mockdata"))]
-pub mod inst {
+pub mod impls {
 
     use chrono::{Duration, Utc};
     use diesel::{self, prelude::*};

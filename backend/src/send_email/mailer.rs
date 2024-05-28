@@ -25,7 +25,7 @@ pub mod cfg {
     use crate::send_email::config_smtp::ConfigSmtp;
 
     #[cfg(not(feature = "mockdata"))]
-    use super::inst::MailerApp;
+    use super::impls::MailerApp;
     #[cfg(not(feature = "mockdata"))]
     pub fn get_mailer_app(config_smtp: ConfigSmtp) -> MailerApp {
         MailerApp::new(config_smtp)
@@ -40,7 +40,7 @@ pub mod cfg {
 }
 
 #[cfg(not(feature = "mockdata"))]
-pub mod inst {
+pub mod impls {
     use lettre::{message::header::ContentType, transport::smtp, Message, SmtpTransport, Transport};
     use std::{collections::HashMap, fs::File, io::Write};
 

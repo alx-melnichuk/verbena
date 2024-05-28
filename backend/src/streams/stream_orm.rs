@@ -45,7 +45,7 @@ pub mod cfg {
     use crate::dbase::DbPool;
 
     #[cfg(not(feature = "mockdata"))]
-    use super::inst::StreamOrmApp;
+    use super::impls::StreamOrmApp;
     #[cfg(not(feature = "mockdata"))]
     pub fn get_stream_orm_app(pool: DbPool) -> StreamOrmApp {
         StreamOrmApp::new(pool)
@@ -60,7 +60,7 @@ pub mod cfg {
 }
 
 #[cfg(not(feature = "mockdata"))]
-pub mod inst {
+pub mod impls {
     use chrono::Duration;
     use diesel::{self, prelude::*, sql_types};
     use schema::streams::dsl as streams_dsl;

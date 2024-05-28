@@ -9,13 +9,13 @@ use log;
 
 use crate::errors::AppError;
 #[cfg(not(feature = "mockdata"))]
-use crate::sessions::session_orm::inst::SessionOrmApp;
+use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::{config_jwt, session_orm::SessionOrm, tokens::decode_token};
 use crate::settings::err;
 #[cfg(not(feature = "mockdata"))]
-use crate::users::user_orm::inst::UserOrmApp;
+use crate::users::user_orm::impls::UserOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::{

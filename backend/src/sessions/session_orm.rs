@@ -14,7 +14,7 @@ pub mod cfg {
     use crate::dbase::DbPool;
 
     #[cfg(not(feature = "mockdata"))]
-    use super::inst::SessionOrmApp;
+    use super::impls::SessionOrmApp;
     #[cfg(not(feature = "mockdata"))]
     pub fn get_session_orm_app(pool: DbPool) -> SessionOrmApp {
         SessionOrmApp::new(pool)
@@ -29,7 +29,7 @@ pub mod cfg {
 }
 
 #[cfg(not(feature = "mockdata"))]
-pub mod inst {
+pub mod impls {
 
     use diesel::{self, prelude::*};
 

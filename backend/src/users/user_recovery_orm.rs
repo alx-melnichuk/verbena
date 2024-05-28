@@ -25,7 +25,7 @@ pub mod cfg {
     use crate::dbase::DbPool;
 
     #[cfg(not(feature = "mockdata"))]
-    use super::inst::UserRecoveryOrmApp;
+    use super::impls::UserRecoveryOrmApp;
     #[cfg(not(feature = "mockdata"))]
     pub fn get_user_recovery_orm_app(pool: DbPool) -> UserRecoveryOrmApp {
         UserRecoveryOrmApp::new(pool)
@@ -40,7 +40,7 @@ pub mod cfg {
 }
 
 #[cfg(not(feature = "mockdata"))]
-pub mod inst {
+pub mod impls {
 
     use chrono::{Duration, Utc};
     use diesel::{self, prelude::*};
