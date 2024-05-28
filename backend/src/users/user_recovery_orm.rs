@@ -197,7 +197,7 @@ pub mod tests {
         #[cfg(test)]
         pub fn create(user_recov_vec: &[UserRecovery]) -> Self {
             let mut user_recovery_vec: Vec<UserRecovery> = Vec::new();
-            let mut idx: i32 = user_recov_vec.len().try_into().unwrap();
+            let mut idx: i32 = 0;
             for user_reg in user_recov_vec.iter() {
                 user_recovery_vec.push(Self::new_user_recovery(
                     USER_RECOVERY_ID + idx,

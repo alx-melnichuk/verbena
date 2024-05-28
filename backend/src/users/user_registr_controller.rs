@@ -151,7 +151,7 @@ pub async fn registration(
         log::error!("{}: {}", err::CD_CONFLICT, &message);
         return Err(AppError::conflict409(&message));
     }
-
+    
     let email = registr_user_dto.email.clone();
     let user_registr_orm2 = user_registr_orm.clone();
 
@@ -799,7 +799,11 @@ pub async fn clear_for_expired(
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use actix_web::{dev, http, test, test::TestRequest, web, App};
+    use actix_web::{
+        body, dev,
+        http::{self, header::{HeaderValue, CONTENT_TYPE}, StatusCode},
+        test, web, App,
+    };
     use chrono::{DateTime, Duration, Utc};
     use serde_json::json;
 
@@ -813,9 +817,8 @@ mod tests {
             RecoveryDataDto, RecoveryUserDto, RecoveryUserResponseDto, RegistrUserDto, User,
             UserDto, UserModelsTest, UserRecovery, UserRegistr, UserRole,
         },
-        user_orm::tests::{UserOrmApp, USER_ID},
-        user_recovery_orm::tests::USER_RECOVERY_ID,
-        user_registr_orm::tests::{UserRegistrOrmApp, USER_REGISTR_ID},
+        user_orm::tests::UserOrmApp,
+        user_registr_orm::tests::UserRegistrOrmApp,
     };
 
     use super::*;
@@ -832,18 +835,15 @@ mod tests {
         let user_orm = UserOrmApp::create(&vec![user]);
         user_orm.user_vec.get(0).unwrap().clone()
     }
-    fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
-        SessionOrmApp::new_session(user_id, num_token)
-    }
     fn create_user_registr() -> UserRegistr {
         let now = Utc::now();
         let final_date: DateTime<Utc> = now + Duration::minutes(20);
 
         let user_registr = UserRegistrOrmApp::new_user_registr(
             1,
-            "Oliver_Taylor",
-            "Oliver_Taylor@gmail.com",
-            "passwdT1R1",
+            "Robert_Brown",
+            "Robert_Brown@gmail.com",
+            "passwdR2B2",
             final_date,
         );
         user_registr
@@ -863,482 +863,572 @@ mod tests {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
     }
-    fn cfg_app() -> config_app::ConfigApp {
-        config_app::get_test_config()
-    }
-    fn cfg_jwt() -> config_jwt::ConfigJwt {
-        config_jwt::get_test_config()
-    }
-    async fn call_service1(
+    fn configure_user(
         cfg_c: (config_app::ConfigApp, config_jwt::ConfigJwt), // cortege of configurations
-        data_c: (Vec<User>, Vec<UserRegistr>, Vec<Session>, Vec<UserRecovery>), // cortege of data vectors
-        factory: impl dev::HttpServiceFactory + 'static,
-        request: TestRequest,
-    ) -> dev::ServiceResponse {
-        let data_config_app = web::Data::new(cfg_c.0);
-        let data_config_jwt = web::Data::new(cfg_c.1);
-        let data_mailer = web::Data::new(MailerApp::new(config_smtp::get_test_config()));
-
-        let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
-        let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.1));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.2));
-        let data_user_recovery_orm = web::Data::new(UserRecoveryOrmApp::create(&data_c.3));
-
-        let app = test::init_service(
-            App::new()
+        data_c: (Vec<User>, Vec<Session>, Vec<UserRegistr>, Vec<UserRecovery>), // cortege of data vectors
+    ) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_config_app = web::Data::new(cfg_c.0);
+            let data_config_jwt = web::Data::new(cfg_c.1);
+            let data_mailer = web::Data::new(MailerApp::new(config_smtp::get_test_config()));
+    
+            let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
+            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
+            let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.2));
+            let data_user_recovery_orm = web::Data::new(UserRecoveryOrmApp::create(&data_c.3));
+    
+            config
                 .app_data(web::Data::clone(&data_config_app))
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_mailer))
                 .app_data(web::Data::clone(&data_user_orm))
                 .app_data(web::Data::clone(&data_user_registr_orm))
                 .app_data(web::Data::clone(&data_session_orm))
-                .app_data(web::Data::clone(&data_user_recovery_orm))
-                .service(factory),
-        )
-        .await;
-
-        test::call_service(&app, request.to_request()).await
+                .app_data(web::Data::clone(&data_user_recovery_orm));
+        }
     }
+    #[rustfmt::skip]
+    fn get_cfg_data(is_registr: bool, opt_recovery_duration: Option<i64>) -> (
+        (config_app::ConfigApp, config_jwt::ConfigJwt), 
+        (Vec<User>, Vec<Session>, Vec<UserRegistr>, Vec<UserRecovery>),
+        String) {
+        let user1: User = user_with_id(create_user());
+        let num_token = 1234;
+        let session1 = SessionOrmApp::new_session(user1.id, Some(num_token));
 
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let config_app = config_app::get_test_config();
+
+        let user_registr_vec:Vec<UserRegistr> = if is_registr {
+            vec![user_registr_with_id(create_user_registr())]
+        } else { vec![] };
+
+        let user_recovery_vec:Vec<UserRecovery> = if let Some(recovery_duration) = opt_recovery_duration {
+            let final_date_utc = Utc::now() + Duration::seconds(recovery_duration);
+            let user_recovery = UserRecoveryOrmApp::new_user_recovery(1, user1.id, final_date_utc);
+            let user_recovery_orm = UserRecoveryOrmApp::create(&vec![user_recovery]);
+            let user_recovery1 = user_recovery_orm.user_recovery_vec.get(0).unwrap().clone();
+            vec![user_recovery1]
+        } else { vec![] };
+        
+        let cfg_c = (config_app, config_jwt);
+        let data_c = (vec![user1], vec![session1], user_registr_vec,  user_recovery_vec);
+
+        (cfg_c, data_c, token)
+    }
+    fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {
+        assert_eq!(app_err_vec.len(), msgs.len());
+        for (idx, msg) in msgs.iter().enumerate() {
+            let app_err = app_err_vec.get(idx).unwrap();
+            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.message, msg.to_string());
+        }
+    }
+    
     // ** registration **
-    #[test]
+    #[actix_web::test]
     async fn test_registration_no_data() {
-        let request = test::TestRequest::post()
-            .uri("/api/registration"); // POST /api/registration
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration").to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
-        let expected_message = "Content type error";
-        assert!(body_str.contains(expected_message));
+        assert!(body_str.contains("Content type error"));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_empty_json_object() {
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
-            .set_json(json!({}));
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
-
-        let body = test::read_body(resp).await;
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration").set_json(json!({}))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
-        let expected_message = "Json deserialize error: missing field";
-        assert!(body_str.contains(expected_message));
+        assert!(body_str.contains("Json deserialize error: missing field"));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_empty() {
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
                 nickname: "".to_string(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: "passwordD1T1".to_string(),
-            });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_NICKNAME_REQUIRED);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_NICKNAME_REQUIRED]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_min() {
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
                 nickname: UserModelsTest::nickname_min(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: "passwordD1T1".to_string(),
-            });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_NICKNAME_MIN_LENGTH);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_NICKNAME_MIN_LENGTH]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_max() {
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
                 nickname: UserModelsTest::nickname_max(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: "passwordD1T1".to_string(),
-            });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_NICKNAME_MAX_LENGTH);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_NICKNAME_MAX_LENGTH]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_wrong() {
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
                 nickname: UserModelsTest::nickname_wrong(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: "passwordD1T1".to_string(),
-            });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_NICKNAME_REGEX);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_NICKNAME_REGEX]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_invalid_dto_email_empty() {
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: "".to_string(),
                 password: "passwordD1T1".to_string(),
-            });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_EMAIL_REQUIRED);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_EMAIL_REQUIRED]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_invalid_dto_email_min() {
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: UserModelsTest::email_min(),
                 password: "passwordD1T1".to_string(),
-            });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_EMAIL_MIN_LENGTH);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_EMAIL_MIN_LENGTH]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_invalid_dto_email_max() {
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: UserModelsTest::email_max(),
                 password: "passwordD1T1".to_string(),
-            });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_EMAIL_MAX_LENGTH);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_EMAIL_MAX_LENGTH]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_invalid_dto_email_wrong() {
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: UserModelsTest::email_wrong(),
                 password: "passwordD1T1".to_string(),
-            });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_EMAIL_EMAIL_TYPE);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_EMAIL_EMAIL_TYPE]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_invalid_dto_password_empty() {
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: "".to_string(),
-            });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_PASSWORD_REQUIRED);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_REQUIRED]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_invalid_dto_password_min() {
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: UserModelsTest::password_min(),
-            });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_PASSWORD_MIN_LENGTH);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_MIN_LENGTH]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_invalid_dto_password_max() {
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: UserModelsTest::password_max(),
-            });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_PASSWORD_MAX_LENGTH);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_MAX_LENGTH]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_invalid_dto_password_wrong() {
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
                 nickname: "Oliver_Taylor".to_string(),
                 email: "Oliver_Taylor@gmail.com".to_string(),
                 password: UserModelsTest::password_wrong(),
-            });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_PASSWORD_REGEX);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_REGEX]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_users() {
-        let user1 = user_with_id(create_user());
-        let nickname1: String = user1.nickname.to_string();
-
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let nickname1 = data_c.0.get(0).unwrap().nickname.clone();
+        let email1 = data_c.0.get(0).unwrap().email.clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
-                nickname: nickname1,
-                email: "Mary_Williams@gmail.com".to_string(),
-                password: "passwordD2T2".to_string(),
-            });
-        let data_c = (vec![user1], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
+                nickname: nickname1, email: format!("A{}", email1), password: "passwordD2T2".to_string(),
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::CONFLICT); // 409
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         assert_eq!(app_err.code, err::CD_CONFLICT);
         assert_eq!(app_err.message, MSG_NICKNAME_ALREADY_USE);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_if_email_exists_in_users() {
-        let user1 = user_with_id(create_user());
-        let email1: String = user1.email.to_string();
-
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let nickname1 = data_c.0.get(0).unwrap().nickname.clone();
+        let email1 = data_c.0.get(0).unwrap().email.clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
-                nickname: "Mary_Williams".to_string(),
-                email: email1,
-                password: "passwordD2T2".to_string(),
-            });
-        let data_c = (vec![user1], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
+                nickname: format!("A{}", nickname1), email: email1, password: "passwordD2T2".to_string(),
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::CONFLICT); // 409
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         assert_eq!(app_err.code, err::CD_CONFLICT);
         assert_eq!(app_err.message, MSG_EMAIL_ALREADY_USE);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_registr() {
-        let user_registr1: UserRegistr = create_user_registr();
-        let nickname1: String = user_registr1.nickname.to_string();
-
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(true, None);
+        let nickname1 = data_c.2.get(0).unwrap().nickname.clone();
+        let email1 = data_c.2.get(0).unwrap().email.clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
-                nickname: nickname1,
-                email: "Mary_Williams@gmail.com".to_string(),
-                password: "passwordD2T2".to_string(),
-            });
-        let data_c = (vec![], vec![user_registr1], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
+                nickname: nickname1, email: format!("A{}", email1), password: "passwordD2T2".to_string(),
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::CONFLICT); // 409
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         assert_eq!(app_err.code, err::CD_CONFLICT);
         assert_eq!(app_err.message, MSG_NICKNAME_ALREADY_USE);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_if_email_exists_in_registr() {
-        let user_registr1: UserRegistr = create_user_registr();
-        let email1: String = user_registr1.email.to_string();
-
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let (cfg_c, data_c, _token) = get_cfg_data(true, None);
+        let nickname1 = data_c.2.get(0).unwrap().nickname.clone();
+        let email1 = data_c.2.get(0).unwrap().email.clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
-                nickname: "Mary_Williams".to_string(),
-                email: email1,
-                password: "passwordD2T2".to_string(),
-            });
-        let data_c = (vec![], vec![user_registr1], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
+                nickname: format!("A{}", nickname1), email: email1, password: "passwordD2T2".to_string(),
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::CONFLICT); // 409
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         assert_eq!(app_err.code, err::CD_CONFLICT);
         assert_eq!(app_err.message, MSG_EMAIL_ALREADY_USE);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_login_err_jsonwebtoken_encode() {
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
-            .set_json(RegistrUserDto {
-                nickname: "Mary_Williams".to_string(),
-                email: "Mary_Williams@gmail.com".to_string(),
-                password: "passwordD2T2".to_string(),
-            });
-
-        let mut config_jwt = config_jwt::get_test_config();
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let mut config_jwt = cfg_c.1;
         config_jwt.jwt_secret = "".to_string();
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), config_jwt), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::UNPROCESSABLE_ENTITY); // 422
+        let cfg_c = (cfg_c.0, config_jwt);
+        let nickname = "Mary_Williams".to_string();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
+            .set_json(RegistrUserDto {
+                nickname: nickname.clone(), email: format!("{}@gmail.com", nickname), password: "passwordD2T2".to_string(),
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY); // 422
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        eprintln!("app_err: {:?}", &app_err);
         assert_eq!(app_err.code, err::CD_UNPROCESSABLE_ENTITY);
         assert!(app_err.message.starts_with(u_err::MSG_JSON_WEB_TOKEN_ENCODE));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_registration_new_user() {
-        let user_registr1: UserRegistr = create_user_registr();
-        let nickname = "Mary_Williams".to_string();
-        let email = "Mary_Williams@gmail.com".to_string();
-        let password = "passwordD2T2".to_string();
-
-        let request = test::TestRequest::post()
-            .uri("/api/registration") // POST /api/registration
+        let user_registr1 = user_registr_with_id(create_user_registr());
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrUserDto {
-                nickname: nickname.to_string(),
-                email: email.to_string(),
-                password: password.to_string(),
-            });
-        let data_c = (vec![], vec![user_registr1], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
+                nickname: user_registr1.nickname.clone(),
+                email: user_registr1.email.clone(),
+                password: user_registr1.password.clone(),
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::CREATED); // 201
 
-        let body = test::read_body(resp).await;
-        let registr_user_resp: RegistrUserResponseDto =
-            serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        
+        let registr_user_resp: RegistrUserResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(user_registr1.nickname, registr_user_resp.nickname);
+        assert_eq!(user_registr1.email, registr_user_resp.email);
 
-        let final_date: DateTime<Utc> = Utc::now() + Duration::minutes(20);
-        let user_registr = UserRegistrOrmApp::new_user_registr(
-            1,
-            &nickname.to_string(),
-            &email.to_string(),
-            &password.to_string(),
-            final_date,
-        );
-        assert_eq!(user_registr.nickname, registr_user_resp.nickname);
-        assert_eq!(user_registr.email, registr_user_resp.email);
-
-        let registr_token = registr_user_resp.registr_token;
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-
-        let (user_registr_id, _) = decode_token(&registr_token, jwt_secret).unwrap();
-        assert_eq!(USER_REGISTR_ID + 1, user_registr_id);
+        let (user_registr_id, _) = decode_token(&registr_user_resp.registr_token, jwt_secret).unwrap();
+        assert_eq!(user_registr1.id, user_registr_id);
     }
 
     // ** confirm_registration **
-    #[test]
+    #[actix_web::test]
     async fn test_confirm_registration_invalid_registr_token() {
-        let registr_token = "invalid_registr_token";
-        // PUT /api/registration/{registr_token}
-        let request = test::TestRequest::put()
-            .uri(&format!("/api/registration/{}", registr_token));
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/registration/{}", "invalid_registr_token"))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
 
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, confirm_registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
-
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         assert!(app_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_confirm_registration_final_date_has_expired() {
-        let user_reg1 = user_registr_with_id(create_user_registr());
+        let (cfg_c, data_c, _token) = get_cfg_data(true, None);
+        let user_reg1 = data_c.2.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
         let num_token = 1234;
@@ -1347,25 +1437,28 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let registr_token =
-            encode_token(user_reg1_id, num_token, jwt_secret, -reg_duration).unwrap();
+        let registr_token = encode_token(user_reg1_id, num_token, jwt_secret, -reg_duration).unwrap();
 
-        //PUT /api/registration/{registr_token}
-        let request = test::TestRequest::put()
-            .uri(&format!("/api/registration/{}", registr_token));
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
 
-        let data_c = (vec![], vec![user_reg1], vec![], vec![]);
-        let resp = call_service1((cfg_app(), config_jwt), data_c, confirm_registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
-
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         assert_eq!(app_err.message, format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "ExpiredSignature"));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_confirm_registration_no_exists_in_user_regist() {
-        let user_reg1 = user_registr_with_id(create_user_registr());
+        let (cfg_c, data_c, _token) = get_cfg_data(true, None);
+        let user_reg1 = data_c.2.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
         let num_token = 1234;
@@ -1377,22 +1470,28 @@ mod tests {
         let user_reg_id = user_reg1_id + 1;
         let registr_token = encode_token(user_reg_id, num_token, jwt_secret, reg_duration).unwrap();
 
-        //PUT /api/registration/{registr_token}
-        let request = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token));
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND); // 404
 
-        let data_c = (vec![], vec![user_reg1], vec![], vec![]);
-        let resp = call_service1((cfg_app(), config_jwt), data_c, confirm_registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
-
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
         #[rustfmt::skip]
         assert_eq!(app_err.message, format!("{}: user_registr_id: {}", MSG_REGISTR_NOT_FOUND, user_reg_id));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_confirm_registration_exists_in_user_regist() {
-        let user_reg1 = user_registr_with_id(create_user_registr());
+        let (cfg_c, data_c, _token) = get_cfg_data(true, None);
+        let last_user_id = data_c.0.last().unwrap().id;
+        let user_reg1 = data_c.2.get(0).unwrap().clone();
         let nickname = user_reg1.nickname.to_string();
         let email = user_reg1.email.to_string();
 
@@ -1405,17 +1504,20 @@ mod tests {
         let registr_token =
             encode_token(user_reg1.id, num_token, jwt_secret, reg_duration).unwrap();
 
-        //PUT /api/registration/{registr_token}
-        let request = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token));
+            #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_registration).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::CREATED); // 201
 
-        let data_c = (vec![], vec![user_reg1], vec![], vec![]);
-        let resp = call_service1((cfg_app(), config_jwt), data_c, confirm_registration, request).await;
-        assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
-
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        assert_eq!(user_dto_res.id, USER_ID);
+        assert_eq!(user_dto_res.id, last_user_id + 1);
         assert_eq!(user_dto_res.nickname, nickname);
         assert_eq!(user_dto_res.email, email);
         assert_eq!(user_dto_res.password, "");
@@ -1423,129 +1525,169 @@ mod tests {
     }
 
     // ** recovery **
-    #[test]
+    #[actix_web::test]
     async fn test_recovery_no_data() {
-         //POST /api/recovery
-        let request = test::TestRequest::post().uri("/api/recovery");
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/recovery")
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
         let expected_message = "Content type error";
         assert!(body_str.contains(expected_message));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_recovery_empty_json_object() {
-        //POST /api/recovery
-        let request = test::TestRequest::post().uri("/api/recovery").set_json(json!({}));
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/recovery").set_json(json!({}))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
         let expected_message = "Json deserialize error: missing field";
         assert!(body_str.contains(expected_message));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_recovery_invalid_dto_email_empty() {
-        //POST /api/recovery
-        let request = test::TestRequest::post().uri("/api/recovery") 
-            .set_json(RecoveryUserDto { email: "".to_string() });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/recovery")
+            .set_json(RecoveryUserDto { email: "".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_EMAIL_REQUIRED);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_EMAIL_REQUIRED]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_recovery_invalid_dto_email_min() {
-        //POST /api/recovery
-        let request = test::TestRequest::post().uri("/api/recovery")
-            .set_json(RecoveryUserDto { email: UserModelsTest::email_min() });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/recovery")
+            .set_json(RecoveryUserDto { email: UserModelsTest::email_min() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_EMAIL_MIN_LENGTH);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_EMAIL_MIN_LENGTH]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_recovery_invalid_dto_email_max() {
-         //POST /api/recovery
-        let request = test::TestRequest::post().uri("/api/recovery")
-            .set_json(RecoveryUserDto { email: UserModelsTest::email_max() });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/recovery")
+            .set_json(RecoveryUserDto { email: UserModelsTest::email_max() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_EMAIL_MAX_LENGTH);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_EMAIL_MAX_LENGTH]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_recovery_invalid_dto_email_wrong() {
-        //POST /api/recovery
-        let request = test::TestRequest::post().uri("/api/recovery")
-            .set_json(RecoveryUserDto { email: UserModelsTest::email_wrong() });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/recovery")
+            .set_json(RecoveryUserDto { email: UserModelsTest::email_wrong() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_EMAIL_EMAIL_TYPE);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_EMAIL_EMAIL_TYPE]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_recovery_if_user_with_email_not_exist() {
-        let email = "Oliver_Taylor@gmail.com";
-        //POST /api/recovery
-        let request = test::TestRequest::post().uri("/api/recovery")
-            .set_json(RecoveryUserDto { email: email.to_string() });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let email = format!("A{}", data_c.0.get(0).unwrap().email.clone());
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/recovery")
+            .set_json(RecoveryUserDto { email: email.to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND); // 404
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
         assert_eq!(app_err.message, format!("{}: email: {}", MSG_USER_NOT_FOUND, &email.to_lowercase()));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_recovery_if_user_recovery_not_exist() {
-        let user1 = user_with_id(create_user());
-        let user1_email = user1.email.to_string();
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let user1_id = data_c.0.get(0).unwrap().id;
+        let user1_email = data_c.0.get(0).unwrap().email.clone();
+        let final_date_utc = Utc::now() + Duration::seconds(600);
+        let user_recovery1 = create_user_recovery_with_id(create_user_recovery(0, user1_id, final_date_utc));
+        let user_recovery1_id = user_recovery1.id;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/recovery")
+            .set_json(RecoveryUserDto { email: user1_email.to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::CREATED); // 201
 
-        //POST /api/recovery
-        let request = test::TestRequest::post().uri("/api/recovery")
-            .set_json(RecoveryUserDto { email: user1_email.to_string() });
-        let data_c = (vec![user1], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let user_recov_res: RecoveryUserResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        let body = test::read_body(resp).await;
-        let user_recov_res: RecoveryUserResponseDto =
-            serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        assert_eq!(user_recov_res.id, USER_RECOVERY_ID);
+        assert_eq!(user_recov_res.id, user_recovery1_id);
         assert_eq!(user_recov_res.email, user1_email.to_string());
 
         let config_jwt = config_jwt::get_test_config();
@@ -1553,31 +1695,28 @@ mod tests {
         let recovery_token = user_recov_res.recovery_token;
         // Check the signature and expiration date on the “recovery_token".
         let (user_recovery_id, _) = decode_token(&recovery_token, jwt_secret).expect("decode_token error");
-        assert_eq!(USER_RECOVERY_ID, user_recovery_id);
+        assert_eq!(user_recovery_id, user_recovery1_id);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_recovery_if_user_recovery_already_exists() {
-        let user1 = user_with_id(create_user());
-        let user1_email = user1.email.to_string();
-
-        let config_app = config_app::get_test_config();
-        let app_recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let final_date_utc = Utc::now() + Duration::seconds(app_recovery_duration.into());
-
-        let user_recovery1 =
-            create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
+        let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
+        let user1_email = data_c.0.get(0).unwrap().email.clone();
+        let user_recovery1 = data_c.3.get(0).unwrap().clone();
         let user_recovery1_id = user_recovery1.id;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/recovery")
+            .set_json(RecoveryUserDto { email: user1_email.to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::CREATED); // 201
 
-        //POST /api/recovery
-        let request = test::TestRequest::post().uri("/api/recovery")
-            .set_json(RecoveryUserDto { email: user1_email.to_string() });
-        let data_c = (vec![user1], vec![], vec![], vec![user_recovery1]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
-
-        let body = test::read_body(resp).await;
-        let user_recov_res: RecoveryUserResponseDto =
-            serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let user_recov_res: RecoveryUserResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(user_recov_res.id, user_recovery1_id);
         assert_eq!(user_recov_res.email, user1_email.to_string());
@@ -1589,229 +1728,220 @@ mod tests {
         let (user_recovery_id, _) = decode_token(&recovery_token, jwt_secret).expect("decode_token error");
         assert_eq!(user_recovery1_id, user_recovery_id);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_recovery_err_jsonwebtoken_encode() {
-        let user1 = user_with_id(create_user());
-        let user1_email = user1.email.to_string();
-
-        let config_app = config_app::get_test_config();
-        let app_recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let final_date_utc = Utc::now() + Duration::seconds(app_recovery_duration.into());
-
-        let user_recovery1 =
-            create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
-
-        // POST /api/recovery
-        let request = test::TestRequest::post().uri("/api/recovery") 
-            .set_json(RecoveryUserDto { email: user1_email.to_string() });
-        let mut config_jwt = config_jwt::get_test_config();
+        let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
+        let user1_email = data_c.0.get(0).unwrap().email.clone();
+        let mut config_jwt = cfg_c.1;
         config_jwt.jwt_secret = "".to_string();
-        let data_c = (vec![user1], vec![], vec![], vec![user_recovery1]);
-        let resp = call_service1((cfg_app(), config_jwt), data_c, recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::UNPROCESSABLE_ENTITY); // 422
+        let cfg_c = (cfg_c.0, config_jwt);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/recovery")
+            .set_json(RecoveryUserDto { email: user1_email.to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY); // 422
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         assert_eq!(app_err.code, err::CD_UNPROCESSABLE_ENTITY);
         assert!(app_err.message.starts_with(u_err::MSG_JSON_WEB_TOKEN_ENCODE));
     }
 
     // ** confirm recovery **
-    #[test]
+    #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_empty() {
-        let recovery_token = "recovery_token";
-        // PUT /api/recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
-            .set_json(RecoveryDataDto { password: "".to_string() });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, confirm_recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
+            .set_json(RecoveryDataDto { password: "".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_PASSWORD_REQUIRED);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_REQUIRED]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_min() {
-        let recovery_token = "recovery_token";
-        // PUT /api/recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token)) 
-            .set_json(RecoveryDataDto { password: UserModelsTest::password_min() });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, confirm_recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
+            .set_json(RecoveryDataDto { password: UserModelsTest::password_min() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_PASSWORD_MIN_LENGTH);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_MIN_LENGTH]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_max() {
-        let recovery_token = "recovery_token";
-        // PUT /api/recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token)) 
-            .set_json(RecoveryDataDto { password: UserModelsTest::password_max() });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, confirm_recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
+            .set_json(RecoveryDataDto { password: UserModelsTest::password_max() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err_vec.len(), 1);
-        let app_err = app_err_vec.get(0).unwrap();
-        assert_eq!(app_err.code, err::CD_VALIDATION);
-        assert_eq!(app_err.message, user_models::MSG_PASSWORD_MAX_LENGTH);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_MAX_LENGTH]);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_confirm_recovery_invalid_recovery_token() {
-        let recovery_token = "invalid_recovery_token";
-        // PUT /api/recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token)) 
-            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() });
-        let data_c = (vec![], vec![], vec![], vec![]);
-        let resp = call_service1((cfg_app(), cfg_jwt()), data_c, confirm_recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "invalid_recovery_token"))
+            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         assert!(app_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_confirm_recovery_final_date_has_expired() {
-        let user1 = user_with_id(create_user());
-
-        let config_app = config_app::get_test_config();
-        let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let final_date_utc = Utc::now() + Duration::seconds(-recovery_duration);
-
-        let user_recovery1 =
-            create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
-
+        let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
+        let user_recovery1 = data_c.3.get(0).unwrap().clone();
+    
         let num_token = 1234;
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let recovery_token =
-            encode_token(user_recovery1.id, num_token, jwt_secret, -recovery_duration).unwrap();
+        let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
+        let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
+        let recovery_token = encode_token(user_recovery1.id, num_token, jwt_secret, -recovery_duration).unwrap();
+        
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
+            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
 
-        // PUT /api/recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token)) 
-            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() });
-        let data_c = (vec![user1], vec![], vec![], vec![user_recovery1]);
-        let resp = call_service1((cfg_app(), config_jwt), data_c, confirm_recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
-
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         assert_eq!(app_err.message, format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "ExpiredSignature"));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_confirm_recovery_no_exists_in_user_recovery() {
-        let user1 = user_with_id(create_user());
-
-        let config_app = config_app::get_test_config();
-        let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let final_date_utc = Utc::now() + Duration::seconds(recovery_duration);
-
-        let user_recovery1 =
-            create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
-
-        let num_token = 1234;
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
+        let user_recovery1 = data_c.3.get(0).unwrap().clone();
         let user_recovery_id = user_recovery1.id + 1;
-        let recovery_token = encode_token(
-            user_recovery_id,
-            num_token,
-            jwt_secret,
-            recovery_duration,
-        )
-        .unwrap();
+        let num_token = 1234;
+        let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
+        let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
+        let recovery_token = encode_token(user_recovery_id, num_token, jwt_secret, recovery_duration).unwrap();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
+            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND); // 404
 
-        // PUT /api/recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
-            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() });
-        let data_c = (vec![user1], vec![], vec![], vec![user_recovery1]);
-        let resp = call_service1((cfg_app(), config_jwt), data_c, confirm_recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
-
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
         assert_eq!(app_err.message, format!("{}: user_recovery_id: {}", MSG_RECOVERY_NOT_FOUND, user_recovery_id));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_confirm_recovery_no_exists_in_user() {
-        let user1 = user_with_id(create_user());
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let user1 = data_c.0.get(0).unwrap().clone();
 
-        let config_app = config_app::get_test_config();
-        let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
+        let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
         let final_date_utc = Utc::now() + Duration::seconds(recovery_duration);
-
         let user_id = user1.id + 1;
-        let user_recovery1 = create_user_recovery_with_id(create_user_recovery(1, user_id, final_date_utc));
-
+        let user_recovery1 = create_user_recovery_with_id(create_user_recovery(0, user_id, final_date_utc));
         let num_token = 1234;
+        let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
+        let recovery_token = encode_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
 
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let recovery_token = encode_token(
-            user_recovery1.id,
-            num_token,
-            jwt_secret,
-            recovery_duration,
-        )
-        .unwrap();
+        let data_c = (data_c.0, data_c.1, data_c.2, vec![user_recovery1]);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
+            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND); // 404
 
-        // PUT /api/recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token)) 
-            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() });
-        let data_c = (vec![user1], vec![], vec![], vec![user_recovery1]);
-        let resp = call_service1((cfg_app(), config_jwt), data_c, confirm_recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
-
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
         assert_eq!(app_err.message, format!("{}: user_id: {}", MSG_USER_NOT_FOUND, user_id));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_confirm_recovery_success() {
-        let user1 = user_with_id(create_user());
-        let user1b = user1.clone();
-
-        let config_app = config_app::get_test_config();
-        let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let final_date_utc = Utc::now() + Duration::seconds(recovery_duration);
-
-        let user_recovery1 =
-            create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_utc));
+        let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
+        let user1b = data_c.0.get(0).unwrap().clone();
+        let user_recovery1 = data_c.3.get(0).unwrap().clone();
+        let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
 
         let num_token = 1234;
+        let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
+        let recovery_token = encode_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
+            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
 
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let recovery_token =
-            encode_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
-
-        // PUT /api/recovery/{recovery_token}
-        let request = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token)) 
-            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() });
-        let data_c = (vec![user1], vec![], vec![], vec![user_recovery1]);
-        let resp = call_service1((cfg_app(), config_jwt), data_c, confirm_recovery, request).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         assert_eq!(user_dto_res.id, user1b.id);
         assert_eq!(user_dto_res.nickname, user1b.nickname);
         assert_eq!(user_dto_res.email, user1b.email);
@@ -1820,44 +1950,37 @@ mod tests {
     }
 
     // ** clear_for_expired **
-    #[test]
+    #[actix_web::test]
     async fn test_clear_for_expired_user_recovery() {
-        let mut user = create_user();
-        user.role = UserRole::Admin;
-        let user1: User = user_with_id(user);
+        let (cfg_c, data_c, token) = get_cfg_data(true, Some(600));
+        let mut user1 = data_c.0.get(0).unwrap().clone();
+        user1.role = UserRole::Admin;
 
-        let config_app = config_app::get_test_config();
-
-        let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let final_date_recovery = Utc::now() - Duration::seconds(recovery_duration);
-
-        let user_recovery1 =
-            create_user_recovery_with_id(create_user_recovery(1, user1.id, final_date_recovery));
-
-        let registr_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
+        let registr_duration: i64 = cfg_c.0.app_registr_duration.try_into().unwrap();
         let final_date_registr = Utc::now() - Duration::seconds(registr_duration);
+        let mut user_registr1 = data_c.2.get(0).unwrap().clone();
+        user_registr1.final_date = final_date_registr;
 
-        let mut user_registr: UserRegistr = create_user_registr();
-        user_registr.final_date = final_date_registr;
-        let user_registr1 = user_registr_with_id(user_registr);
+        let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
+        let final_date_recovery = Utc::now() - Duration::seconds(recovery_duration);
+        let mut user_recovery1 = data_c.3.get(0).unwrap().clone();
+        user_recovery1.final_date = final_date_recovery;
 
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
+        let data_c = (vec![user1], data_c.1, vec![user_registr1], vec![user_recovery1]);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(clear_for_expired).configure(configure_user(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri(&"/api/clear_for_expired")
+            .insert_header(header_auth(&token))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
 
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // GET api/clear_for_expired
-        let request = test::TestRequest::get().uri(&"/api/clear_for_expired");
-        let request = request.insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![user_registr1], vec![session1], vec![user_recovery1]);
-        let resp = call_service1((cfg_app(), config_jwt), data_c, clear_for_expired, request).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        let body = test::read_body(resp).await;
-        let response_dto: user_models::ClearForExpiredResponseDto =
-            serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let response_dto: user_models::ClearForExpiredResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(response_dto.count_inactive_registr, 1);
         assert_eq!(response_dto.count_inactive_recover, 1);
     }
