@@ -745,9 +745,6 @@ mod tests {
         let user_orm = UserOrmApp::create(&vec![user]);
         user_orm.user_vec.get(0).unwrap().clone()
     }
-    fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
-        SessionOrmApp::new_session(user_id, num_token)
-    }
     fn create_stream(idx: i32, user_id: i32, title: &str, tags: &str, starttime: DateTime<Utc>) -> StreamInfoDto {
         let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
         let stream = Stream::new(STREAM_ID + idx, user_id, title, starttime);
@@ -782,7 +779,8 @@ mod tests {
     fn get_cfg_data() -> ((config_jwt::ConfigJwt, config_strm::ConfigStrm), (Vec<User>, Vec<Session>, Vec<StreamInfoDto>), String) {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
+        let session1 = SessionOrmApp::new_session(user1.id, Some(num_token));
+
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
