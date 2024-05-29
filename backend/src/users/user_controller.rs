@@ -523,12 +523,8 @@ pub async fn delete_user_current(
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{
-        body, dev,
-        http::{
-            self,
-            header::{HeaderValue, CONTENT_TYPE},
-            StatusCode,
-        },
+        body, dev, http,
+        http::header::{HeaderValue, CONTENT_TYPE},
         test, web, App,
     };
     use chrono::Utc;
@@ -553,9 +549,6 @@ mod tests {
         let user_orm = UserOrmApp::create(&vec![user]);
         user_orm.user_vec.get(0).unwrap().clone()
     }
-    fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
-        SessionOrmApp::new_session(user_id, num_token)
-    }
     fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
@@ -579,7 +572,7 @@ mod tests {
     fn get_cfg_data() -> (config_jwt::ConfigJwt, (Vec<User>, Vec<Session>), String) {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
+        let session1 = SessionOrmApp::new_session(user1.id, Some(num_token));
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
@@ -610,6 +603,8 @@ mod tests {
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
     }
     #[actix_web::test]
     async fn test_get_user_by_email_existent_email() {
@@ -624,7 +619,9 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let email_res = std::str::from_utf8(&body).unwrap();
         let str = format!("{}\"email\":\"{}\"{}", "{", email, "}");
         assert_eq!(email_res, str);
@@ -657,7 +654,9 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let nickname_res = std::str::from_utf8(&body).unwrap();
         let str = format!("{}\"nickname\":\"{}\"{}", "{", nickname, "}");
         assert_eq!(nickname_res, str);
@@ -681,7 +680,9 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
         #[rustfmt::skip]
@@ -710,7 +711,9 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(user2_dto).to_string();
         let user2b_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
@@ -761,7 +764,9 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
         #[rustfmt::skip]
@@ -785,7 +790,7 @@ mod tests {
             .set_json(PasswordUserDto { password: Some("".to_string()) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -810,7 +815,7 @@ mod tests {
             .set_json(PasswordUserDto { password: Some(UserModelsTest::password_min()) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -835,7 +840,7 @@ mod tests {
             .set_json(PasswordUserDto { password: Some(UserModelsTest::password_max()) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -860,7 +865,7 @@ mod tests {
             .set_json(PasswordUserDto { password: Some(UserModelsTest::password_wrong()) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -911,7 +916,9 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(user1mod_dto).to_string();
         let user1mod_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
@@ -943,7 +950,9 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
         #[rustfmt::skip]
@@ -984,7 +993,9 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(user1copy_dto).to_string();
         let user1copy_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
@@ -1014,7 +1025,9 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(user1_dto).to_string();
         let user1b_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
@@ -1042,7 +1055,9 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(user1mod_dto).to_string();
         let user1mod_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
@@ -1071,7 +1086,9 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json = serde_json::json!(user1copy_dto).to_string();
