@@ -492,8 +492,8 @@ pub async fn get_streams_period(
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{
-        dev,
-        http::{self, StatusCode},
+        body, dev, http,
+        http::header::{HeaderValue, CONTENT_TYPE},
         test, web, App,
     };
     use chrono::{DateTime, Datelike, Duration, Local, TimeZone, Utc};
@@ -595,9 +595,11 @@ mod tests {
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream_id_bad))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
+        assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
         #[rustfmt::skip]
@@ -615,8 +617,11 @@ mod tests {
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream_dto.id))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-        let body = test::read_body(resp).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream = serde_json::json!(stream_dto).to_string();
@@ -634,7 +639,7 @@ mod tests {
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream_id + 1))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
+        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[actix_web::test]
     async fn test_get_stream_by_id_another_user() {
@@ -661,7 +666,7 @@ mod tests {
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream2.id))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
+        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
     #[actix_web::test]
     async fn test_get_stream_by_id_another_user_by_admin() {
@@ -690,9 +695,11 @@ mod tests {
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream2.id))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let mut stream2b = stream2.clone();
@@ -728,9 +735,11 @@ mod tests {
             .uri(&format!("/api/streams?userId={}&page={}&limit={}", user1.id, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(stream1b_vec).to_string();
         let stream1b_vec_ser: Vec<StreamInfoDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
@@ -764,9 +773,11 @@ mod tests {
             .uri(&format!("/api/streams?page={}&limit={}", page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
@@ -805,9 +816,11 @@ mod tests {
             .uri(&format!("/api/streams?userId={}&page={}&limit={}", user1.id, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
@@ -847,9 +860,11 @@ mod tests {
             .uri(&format!("/api/streams?userId={}&page=1&limit=2", user2_id))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::FORBIDDEN); // 403
+        assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
@@ -890,8 +905,10 @@ mod tests {
             .uri(&format!("/api/streams?userId={}&page={}&limit={}", user2_id, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-        let body = test::read_body(resp).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json = serde_json::json!(stream_vec).to_string();
@@ -932,9 +949,11 @@ mod tests {
             .uri(&format!("/api/streams?live={}&page={}&limit={}", live, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let count = stream_vec.len() as u32;
         let json = serde_json::json!(stream_vec).to_string();
@@ -973,9 +992,11 @@ mod tests {
             .uri(&format!("/api/streams?isFuture={}&page={}&limit={}", true, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let count = stream_vec.len() as u32;
         let json = serde_json::json!(stream_vec).to_string();
@@ -1013,9 +1034,11 @@ mod tests {
             .uri(&format!("/api/streams?isFuture={}&page={}&limit={}", false, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let count = stream_vec.len() as u32;
         let json = serde_json::json!(stream_vec).to_string();
@@ -1063,9 +1086,11 @@ mod tests {
                 order_column, order_dir, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let count = stream_vec.len() as u32;
         let json = serde_json::json!(stream_vec).to_string();
@@ -1113,9 +1138,11 @@ mod tests {
                 order_column, order_dir, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let count = stream_vec.len() as u32;
         let json = serde_json::json!(stream_vec).to_string();
@@ -1169,9 +1196,11 @@ mod tests {
                 user1_id, starttime, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamEventPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let count = stream_vec.len() as u32;
         let json = serde_json::json!(stream_vec).to_string();
@@ -1228,9 +1257,11 @@ mod tests {
             .uri(&format!("/api/streams_events?starttime={}&page={}&limit={}", starttime, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamEventPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let count = stream_vec.len() as u32;
         let json = serde_json::json!(stream_vec).to_string();
@@ -1285,9 +1316,11 @@ mod tests {
             .uri(&format!("/api/streams_events?starttime={}&page={}&limit={}", starttime, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamEventPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(stream_vec).to_string();
         let stream_vec_ser: Vec<StreamEventDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
@@ -1330,11 +1363,12 @@ mod tests {
             .uri(&format!("/api/streams_events?starttime={}&page={}&limit={}", starttime, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamEventPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         assert_eq!(response.list, vec![]);
         assert_eq!(response.list.len(), 0);
         assert_eq!(response.limit, limit);
@@ -1378,9 +1412,11 @@ mod tests {
             .uri(&format!("/api/streams_events?userId={}&starttime={}&page={}&limit={}", user2_id, starttime, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::FORBIDDEN); // 403
+        assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
@@ -1429,9 +1465,11 @@ mod tests {
             .uri(&format!("/api/streams_events?userId={}&starttime={}&page={}&limit={}", user2_id, starttime, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamEventPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json = serde_json::json!(stream_vec).to_string();
@@ -1464,9 +1502,11 @@ mod tests {
             .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user1_id, start_s, finish_s))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
+        assert_eq!(resp.status(), http::StatusCode::NOT_ACCEPTABLE); // 406
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
         assert_eq!(app_err.message, MSG_FINISH_LESS_START);
@@ -1492,9 +1532,11 @@ mod tests {
             .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user1_id, start_s, finish_s))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE); // 413
+        assert_eq!(resp.status(), http::StatusCode::PAYLOAD_TOO_LARGE); // 413
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_CONTENT_TOO_LARGE);
         assert_eq!(app_err.message, MSG_FINISH_EXCEEDS_LIMIT);
@@ -1540,8 +1582,10 @@ mod tests {
             .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user1_id, start, finish))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-        let body = test::read_body(resp).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
 
         let response: Vec<DateTime<Utc>> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json_res_vec = serde_json::json!(res_vec).to_string();
@@ -1563,9 +1607,11 @@ mod tests {
             .uri(&format!("/api/streams_period?start={}&finish={}", start, finish))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-        let body = test::read_body(resp).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: Vec<DateTime<Utc>> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json_res_vec = serde_json::json!(res_vec).to_string();
         let res_vec_ser: Vec<DateTime<Utc>> = serde_json::from_slice(json_res_vec.as_bytes()).expect(MSG_FAILED_DESER);
@@ -1594,11 +1640,12 @@ mod tests {
             .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user2_id, start, finish))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::FORBIDDEN); // 403
+        assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
         #[rustfmt::skip]
@@ -1627,9 +1674,11 @@ mod tests {
             .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user2_id, start, finish))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
-        let body = test::read_body(resp).await;
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: Vec<DateTime<Utc>> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json_res_vec = serde_json::json!(res_vec).to_string();
         let res_vec_ser: Vec<DateTime<Utc>> = serde_json::from_slice(json_res_vec.as_bytes()).expect(MSG_FAILED_DESER);
