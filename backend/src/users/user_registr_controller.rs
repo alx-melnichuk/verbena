@@ -801,7 +801,7 @@ pub async fn clear_for_expired(
 mod tests {
     use actix_web::{
         body, dev,
-        http::{self, header::{HeaderValue, CONTENT_TYPE}, StatusCode},
+        http, http::header::{HeaderValue, CONTENT_TYPE},
         test, web, App,
     };
     use chrono::{DateTime, Duration, Utc};
@@ -939,7 +939,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration").to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
@@ -956,7 +956,7 @@ mod tests {
         let req = test::TestRequest::post().uri("/api/registration").set_json(json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
@@ -978,7 +978,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1002,7 +1002,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1026,7 +1026,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1050,7 +1050,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1074,7 +1074,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1098,7 +1098,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1122,7 +1122,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1146,7 +1146,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1170,7 +1170,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1194,7 +1194,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1218,7 +1218,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1242,7 +1242,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1266,7 +1266,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::CONFLICT); // 409
+        assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1290,7 +1290,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::CONFLICT); // 409
+        assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1314,7 +1314,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::CONFLICT); // 409
+        assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1338,7 +1338,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::CONFLICT); // 409
+        assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1364,7 +1364,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY); // 422
+        assert_eq!(resp.status(), http::StatusCode::UNPROCESSABLE_ENTITY); // 422
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1389,7 +1389,7 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::CREATED); // 201
+        assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1416,7 +1416,7 @@ mod tests {
         let req = test::TestRequest::put().uri(&format!("/api/registration/{}", "invalid_registr_token"))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1446,7 +1446,7 @@ mod tests {
         let req = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1477,7 +1477,7 @@ mod tests {
         let req = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::NOT_FOUND); // 404
+        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1511,7 +1511,7 @@ mod tests {
         let req = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::CREATED); // 201
+        assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1535,7 +1535,7 @@ mod tests {
         let req = test::TestRequest::post().uri("/api/recovery")
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
@@ -1554,7 +1554,7 @@ mod tests {
         let req = test::TestRequest::post().uri("/api/recovery").set_json(json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
@@ -1574,7 +1574,7 @@ mod tests {
             .set_json(RecoveryUserDto { email: "".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1594,7 +1594,7 @@ mod tests {
             .set_json(RecoveryUserDto { email: UserModelsTest::email_min() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1614,7 +1614,7 @@ mod tests {
             .set_json(RecoveryUserDto { email: UserModelsTest::email_max() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1634,7 +1634,7 @@ mod tests {
             .set_json(RecoveryUserDto { email: UserModelsTest::email_wrong() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1655,7 +1655,7 @@ mod tests {
             .set_json(RecoveryUserDto { email: email.to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::NOT_FOUND); // 404
+        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1680,7 +1680,7 @@ mod tests {
             .set_json(RecoveryUserDto { email: user1_email.to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::CREATED); // 201
+        assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1711,7 +1711,7 @@ mod tests {
             .set_json(RecoveryUserDto { email: user1_email.to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::CREATED); // 201
+        assert_eq!(resp.status(), http::StatusCode::CREATED); // 201
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1743,7 +1743,7 @@ mod tests {
             .set_json(RecoveryUserDto { email: user1_email.to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY); // 422
+        assert_eq!(resp.status(), http::StatusCode::UNPROCESSABLE_ENTITY); // 422
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1765,7 +1765,7 @@ mod tests {
             .set_json(RecoveryDataDto { password: "".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1785,7 +1785,7 @@ mod tests {
             .set_json(RecoveryDataDto { password: UserModelsTest::password_min() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1805,7 +1805,7 @@ mod tests {
             .set_json(RecoveryDataDto { password: UserModelsTest::password_max() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1825,7 +1825,7 @@ mod tests {
             .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1852,7 +1852,7 @@ mod tests {
             .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1878,7 +1878,7 @@ mod tests {
             .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::NOT_FOUND); // 404
+        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1909,7 +1909,7 @@ mod tests {
             .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::NOT_FOUND); // 404
+        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1936,7 +1936,7 @@ mod tests {
             .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
@@ -1975,7 +1975,7 @@ mod tests {
             .insert_header(header_auth(&token))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
