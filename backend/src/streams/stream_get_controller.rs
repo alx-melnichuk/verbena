@@ -64,8 +64,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
         (status = 204, description = "The stream with the specified ID was not found."),
         (status = 401, description = "An authorization token is required.", body = AppError,
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 415, description = "Error parsing input parameter.", body = AppError, 
-            example = json!(AppError::unsupported_type415(
+        (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/streams/2a`", 
+            body = AppError, example = json!(AppError::range_not_satisfiable416(
                 &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
@@ -89,8 +89,8 @@ pub async fn get_stream_by_id(
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
-        AppError::unsupported_type415(&message)
+        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        AppError::range_not_satisfiable416(&message) // 416
     })?;
 
     let res_data = web::block(move || {
@@ -98,14 +98,14 @@ pub async fn get_stream_by_id(
         let res_data =
             stream_orm.find_stream_by_id(id, opt_user_id).map_err(|e| {
                 log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
+                AppError::database507(&e) // 507
             });
         res_data
     })
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        AppError::blocking506(&e.to_string()) // 506
     })?;
 
     let opt_data = match res_data { Ok(v) => v, Err(e) => return Err(e) };
@@ -596,13 +596,13 @@ mod tests {
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream_id_bad))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
+        assert_eq!(resp.status(), http::StatusCode::RANGE_NOT_SATISFIABLE); // 416
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
+        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
         #[rustfmt::skip]
         let msg = format!("{}: `{}` - {} ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE, stream_id_bad);
         assert_eq!(app_err.message, msg);
