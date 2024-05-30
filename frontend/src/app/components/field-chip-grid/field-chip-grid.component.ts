@@ -43,9 +43,9 @@ export class FieldChipGridComponent implements OnChanges, ControlValueAccessor, 
   @Input()
   public maxLength: number | null = null;
   @Input()
-  public minQuantity: number | null = null;
+  public minAmount: number | null = null;
   @Input()
-  public maxQuantity: number | null = null;
+  public maxAmount: number | null = null;
   @Input()
   public separatorCodes: readonly number[] | ReadonlySet<number> = [ENTER];
   
@@ -61,7 +61,7 @@ export class FieldChipGridComponent implements OnChanges, ControlValueAccessor, 
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['isRequired'] || !!changes['minLength'] || !!changes['maxLength']
-      || !!changes['minQuantity'] || !!changes['maxQuantity']) {
+      || !!changes['minAmount'] || !!changes['maxAmount']) {
       this.prepareFormGroup();
     }
     if (!!changes['isDisabled']) {
@@ -112,8 +112,8 @@ export class FieldChipGridComponent implements OnChanges, ControlValueAccessor, 
     for (let index = 0; index < errorsProps.length && !result; index++) {
       const error: string = errorsProps[index];
       result = !result && 'required' === error ? 'Validation.tag:required' : result;
-      result = !result && 'minQuantity' === error ? 'Validation.tag:min_quantity' : result;
-      result = !result && 'maxQuantity' === error ? 'Validation.tag:max_quantity' : result;
+      result = !result && 'minAmount' === error ? 'Validation.tag:min_amount' : result;
+      result = !result && 'maxAmount' === error ? 'Validation.tag:max_amount' : result;
       result = !result && 'minlength' === error ? 'Validation.tag:min_length' : result;
       result = !result && 'maxlength' === error ? 'Validation.tag:max_length' : result;
     }
@@ -149,8 +149,8 @@ export class FieldChipGridComponent implements OnChanges, ControlValueAccessor, 
       ...(!!this.isRequired ? [this.requiredValidator] : []),
       ...((this.minLength || 0) > 0 ? [this.minLengthValidator] : []),
       ...((this.maxLength || 0) > 0 ? [this.maxLengthValidator] : []),
-      ...((this.minQuantity || 0) > 0 ? [this.minQuantityValidator] : []),
-      ...((this.maxQuantity || 0) > 0 ? [this.maxQuantityValidator] : []),
+      ...((this.minAmount || 0) > 0 ? [this.minAmountValidator] : []),
+      ...((this.maxAmount || 0) > 0 ? [this.maxAmountValidator] : []),
     ];
     this.formControl.setValidators(newValidator);
   }
@@ -159,20 +159,20 @@ export class FieldChipGridComponent implements OnChanges, ControlValueAccessor, 
     const length = (curr || []).length;
     return !!curr && length == 0 ? { 'required': true } : null;
   }
-  private minQuantityValidator: ValidatorFn = (): ValidationErrors | null => {
+  private minAmountValidator: ValidatorFn = (): ValidationErrors | null => {
     const curr: string[] | null = this.formControl.value;
     const length = (curr || []).length;
-    const min = this.minQuantity || 0;
+    const min = this.minAmount || 0;
     return !!curr && length > 0 && length < min
-      ? { 'minQuantity': { "actualQuantity": length, "requiredQuantity": min }}
+      ? { 'minAmount': { "actualAmount": length, "requiredAmount": min }}
       : null;
   }
-  private maxQuantityValidator: ValidatorFn = (): ValidationErrors | null => {
+  private maxAmountValidator: ValidatorFn = (): ValidationErrors | null => {
     const curr: string[] | null = this.formControl.value;
     const length = (curr || []).length;
-    const max = this.maxQuantity || 0;
+    const max = this.maxAmount || 0;
     return !!curr && length > 0 && length > max 
-      ? { 'maxQuantity': { "actualQuantity": length, "requiredQuantity": max }}
+      ? { 'maxAmount': { "actualAmount": length, "requiredAmount": max }}
       : null;
   }
   private minLengthValidator: ValidatorFn = (): ValidationErrors | null => {

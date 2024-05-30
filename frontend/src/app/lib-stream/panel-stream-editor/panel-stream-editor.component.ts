@@ -69,8 +69,8 @@ export class PanelStreamEditorComponent implements OnChanges {
   readonly separatorCodes: number[] = [ENTER];
   readonly tagMaxLength: number = 255;
   readonly tagMinLength: number = 2;
-  readonly tagMaxQuantity: number = 4;
-  readonly tagMinQuantity: number = 1;
+  readonly tagMaxAmount: number = 4;
+  readonly tagMinAmount: number = 1;
   readonly isTagRemovable = true;
 
   public isCreate = true;

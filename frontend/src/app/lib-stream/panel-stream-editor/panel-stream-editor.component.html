@@ -48,13 +48,13 @@
       <app-field-chip-grid
         formControlName="tags"
         [label]="'stream_edit.add_tags'"
-        [isReadonly]="(controls.tags.value || '').length == tagMaxQuantity ? true : null"
+        [isReadonly]="(controls.tags.value || '').length == tagMaxAmount ? true : null"
         [isRequired]="true"
         [isRemovable]="isTagRemovable"
         [minLength]="tagMinLength"
         [maxLength]="tagMaxLength"
-        [minQuantity]="tagMinQuantity"
-        [maxQuantity]="tagMaxQuantity"
+        [minAmount]="tagMinAmount"
+        [maxAmount]="tagMaxAmount"
         [separatorCodes]="separatorCodes"
         [hint]="'stream_edit.tags_hint'"
       >
