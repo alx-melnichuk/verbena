@@ -65,7 +65,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
         (status = 401, description = "An authorization token is required.", body = AppError,
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 415, description = "Error parsing input parameter.", body = AppError, 
-            example = json!(AppError::unsupported_type415(&"parsing_type_not_supported: `id` - invalid digit found in string (2a)"))),
+            example = json!(AppError::unsupported_type415(
+                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -417,7 +418,7 @@ pub async fn get_streams_events(
         (status = 413, description = "The finish date of the search period exceeds the limit.", body = AppError,
             example = json!(AppError::content_large413(MSG_FINISH_EXCEEDS_LIMIT).add_param(Borrowed("periodTooLong"), &serde_json::json!(
                 { "actualPeriodFinish": "2030-04-01T08:00:00.000Z", "maxPeriodFinish": "2030-03-10T08:00:00.000Z" 
-                , "periodMaxNumberDys": PERIOD_MAX_NUMBER_DAYS })))),
+                , "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS })))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -459,7 +460,7 @@ pub async fn get_streams_period(
     let max_finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
     if max_finish <= finish {
         let json = serde_json::json!({ "actualPeriodFinish": finish.to_rfc3339_opts(Millis, true)
-            , "maxPeriodFinish": max_finish.to_rfc3339_opts(Millis, true), "periodMaxNumberDys": PERIOD_MAX_NUMBER_DAYS });
+            , "maxPeriodFinish": max_finish.to_rfc3339_opts(Millis, true), "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS });
         log::error!("{}: {}: {}", err::CD_CONTENT_TOO_LARGE, MSG_FINISH_EXCEEDS_LIMIT, json.to_string());
         return Err(AppError::content_large413(MSG_FINISH_EXCEEDS_LIMIT) // 413
             .add_param(Borrowed("periodTooLong"), &json));
@@ -1541,7 +1542,7 @@ mod tests {
         assert_eq!(app_err.code, err::CD_CONTENT_TOO_LARGE);
         assert_eq!(app_err.message, MSG_FINISH_EXCEEDS_LIMIT);
         let json = serde_json::json!({ "actualPeriodFinish": finish_s
-            , "maxPeriodFinish": max_finish_s, "periodMaxNumberDys": PERIOD_MAX_NUMBER_DAYS });
+            , "maxPeriodFinish": max_finish_s, "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS });
         assert_eq!(*app_err.params.get("periodTooLong").unwrap(), json);
     }
 
