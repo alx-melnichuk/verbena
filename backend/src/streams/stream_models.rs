@@ -28,17 +28,16 @@ pub const MSG_LOGO_MAX_LENGTH: &str = "logo:max_length";
 
 pub const MSG_MIN_VALID_STARTTIME: &str = "starttime:min_valid_date";
 
-pub const MSG_SOURCE_REQUIRED: &str = "source:required";
 pub const SOURCE_MIN: u8 = 2;
 pub const MSG_SOURCE_MIN_LENGTH: &str = "source:min_length";
 pub const SOURCE_MAX: u16 = 255;
 pub const MSG_SOURCE_MAX_LENGTH: &str = "source:max_length";
 
+pub const MSG_TAG_REQUIRED: &str = "tag:required";
 pub const TAG_MIN_AMOUNT: u8 = 1;
 pub const MSG_TAG_MIN_AMOUNT: &str = "tag:min_amount";
 pub const TAG_MAX_AMOUNT: u8 = 4;
 pub const MSG_TAG_MAX_AMOUNT: &str = "tag:max_amount";
-pub const MSG_TAG_REQUIRED: &str = "tag:required";
 pub const TAG_MIN: u8 = 2;
 pub const MSG_TAG_MIN_LENGTH: &str = "tag:min_length";
 pub const TAG_MAX: u16 = 255;
@@ -66,7 +65,6 @@ pub fn validate_starttime(value: &DateTime<Utc>) -> Result<(), ValidationError> 
     Ok(())
 }
 pub fn validate_source(value: &str) -> Result<(), ValidationError> {
-    ValidationChecks::required(value, MSG_SOURCE_REQUIRED)?;
     ValidationChecks::min_length(value, SOURCE_MIN.into(), MSG_SOURCE_MIN_LENGTH)?;
     ValidationChecks::max_length(&value, SOURCE_MAX.into(), MSG_SOURCE_MAX_LENGTH)?;
     Ok(())
@@ -335,7 +333,11 @@ impl Validator for CreateStreamInfoDto {
         if let Some(value) = &self.source {
             errors.push(validate_source(&value).err());
         }
-        errors.push(validate_tag(&self.tags).err());
+        if self.tags.len() == 0 {
+            errors.push(ValidationChecks::required(&self.tags.join(","), MSG_TAG_REQUIRED).err());
+        } else {
+            errors.push(validate_tag(&self.tags).err());
+        }
 
         self.filter_errors(errors)
     }
@@ -415,7 +417,10 @@ impl Validator for ModifyStreamInfoDto {
             errors.push(validate_starttime(value).err());
         }
         if let Some(value) = &self.source {
-            errors.push(validate_source(&value).err());
+            // The field is optional and we check if there is a value.
+            if value.len() > 0 {
+                errors.push(validate_source(&value).err());
+            }
         }
         if let Some(value) = &self.tags {
             errors.push(validate_tag(value).err());

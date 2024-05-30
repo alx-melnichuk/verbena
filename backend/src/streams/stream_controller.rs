@@ -34,7 +34,7 @@ pub const MSG_INVALID_FILE_TYPE: &str = "invalid_file_type";
 // 500 Internal Server Error - Error uploading file
 pub const MSG_ERROR_UPLOAD_FILE: &str = "error_upload_file";
 // 510 Not Extended - Error while converting file.
-pub const MSG_ERROR_CONVERT_FILE: &str = "error_converting_file";
+pub const MSG_ERROR_CONVERT_FILE: &str = "error_convert_file";
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -179,7 +179,7 @@ impl CreateStreamForm {
         (status = 201, description = "Create a new stream.", body = StreamInfoDto),
         (status = 406, description = "Error deserializing field \"tags\". `curl -X POST http://localhost:8080/api/streams
             -F 'title=title' -F 'tags=[\"tag\"'`",
-        body = AppError, example = json!(AppError::not_acceptable406(
+            body = AppError, example = json!(AppError::not_acceptable406(
                 &format!("{}: {}", MSG_INVALID_FIELD_TAG, "EOF while parsing a list at line 1 column 6")))),
         (status = 413, description = "Invalid image file size. `curl -i -X POST http://localhost:8080/api/streams
             -F 'title=title2'  -F 'tags=[\"tag1\"]' -F 'logofile=@image.jpg'`", body = AppError,
@@ -430,19 +430,23 @@ impl ModifyStreamForm {
     responses(
         (status = 200, description = "Update the stream with new data.", body = StreamInfoDto),
         (status = 204, description = "The stream with the specified ID was not found."),
-        (status = 406, description = "Error deserializing field \"tags\". `curl -X PUT http://localhost:8080/api/streams
+        (status = 406, description = "Error deserializing field \"tags\". `curl -X PUT http://localhost:8080/api/streams/1
             -F 'title=title' -F 'tags=[\"tag\"'`",
             body = AppError, example = json!(AppError::not_acceptable406(
                 &format!("{}: {}", MSG_INVALID_FIELD_TAG, "EOF while parsing a list at line 1 column 6")))),
-        (status = 413, description = "Invalid image file size. `curl -i -X PUT http://localhost:8080/api/streams
+        (status = 413, description = "Invalid image file size. `curl -i -X PUT http://localhost:8080/api/streams/1
             -F 'title=title2'  -F 'tags=[\"tag1\"]' -F 'logofile=@image.jpg'`", body = AppError,
             example = json!(AppError::content_large413(MSG_INVALID_FILE_SIZE).add_param(Borrowed("invalidFileSize"),
                 &serde_json::json!({ "actualFileSize": 186, "maxFileSize": 160 })))),
-        (status = 415, description = "Uploading a file with an invalid type `svg`. `curl -i -X PUT http://localhost:8080/api/streams
+        (status = 415, description = "Uploading a file with an invalid type `svg`. `curl -i -X PUT http://localhost:8080/api/streams/1
             -F 'title=title3'  -F 'tags=[\"tag3\"]' -F 'logofile=@image.svg'`", body = AppError,
             example = json!(AppError::unsupported_type415(MSG_INVALID_FILE_TYPE).add_param(Borrowed("invalidFileType"),
                 &serde_json::json!({ "actualFileType": "image/svg+xml", "validFileType": "image/jpeg,image/png" })))),
-        (status = 417, description = "Validation error. `curl -X PUT http://localhost:8080/api/streams
+        (status = 416, description = "Error parsing input parameter. `curl -i -X PUT http://localhost:8080/api/streams/2a
+                -F 'title=title3'  -F 'tags=[\"tag3\"]'`", body = AppError,
+            example = json!(AppError::range_not_satisfiable416(
+                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
+        (status = 417, description = "Validation error. `curl -X PUT http://localhost:8080/api/streams/1
             -F 'title=t' -F 'descript=d' -F 'starttime=2020-01-20T20:10:57.000Z' -F 'tags=[]'`", body = [AppError],
             example = json!(AppError::validations(
                 (ModifyStreamInfoDto {
@@ -482,8 +486,8 @@ pub async fn put_stream(
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
-        AppError::unsupported_type415(&message) // 415
+        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        AppError::range_not_satisfiable416(&message) // 416
     })?;
     
     // Get data from MultipartForm.
@@ -541,7 +545,7 @@ pub async fn put_stream(
         if let Err(err) = res_upload {
             let message = format!("{}: {}: {}", MSG_ERROR_UPLOAD_FILE, &path_file, err.to_string());
             log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
-            return Err(AppError::internal_err500(&message)) //500
+            return Err(AppError::internal_err500(&message)) // 500
         }
         path_new_logo_file = path_file;
 
@@ -630,8 +634,9 @@ pub async fn put_stream(
     responses(
         (status = 200, description = "The specified stream was deleted successfully.", body = StreamInfoDto),
         (status = 204, description = "The specified stream was not found."),
-        (status = 415, description = "Error parsing input parameter.", body = AppError, 
-            example = json!(AppError::unsupported_type415(&"parsing_type_not_supported: `id` - invalid digit found in string (2a)"))),
+        (status = 416, description = "Error parsing input parameter. `curl -i -X DELETE http://localhost:8080/api/streams/1a`",
+            body = AppError, example = json!(AppError::range_not_satisfiable416(
+            &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -657,7 +662,7 @@ pub async fn delete_stream(
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
         log::error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
-        AppError::unsupported_type415(&message)
+        AppError::range_not_satisfiable416(&message) // 416
     })?;
 
     let opt_user_id: Option<i32> = if curr_user.role == UserRole::Admin { None } else { Some(curr_user.id) };
@@ -665,14 +670,14 @@ pub async fn delete_stream(
         // Add a new entity (stream).
         let res_data = stream_orm.delete_stream(id, opt_user_id).map_err(|e| {
             log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
+            AppError::database507(&e) // 507
         });
         res_data
     })
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        AppError::blocking506(&e.to_string()) // 506
     })?;
 
     let opt_stream = res_data?;
@@ -1107,6 +1112,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_stream_tags_min_amount() {
         let tags: Vec<String> = StreamModelsTest::tag_names_min();
+        let tags_len = tags.len();
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("title", StreamModelsTest::title_enough())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
@@ -1126,7 +1132,8 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TAG_MIN_AMOUNT]);
+        let msg = if tags_len == 0 { stream_models::MSG_TAG_REQUIRED } else { stream_models::MSG_TAG_MIN_AMOUNT };
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[msg]);
     }
     #[actix_web::test]
     async fn test_post_stream_tags_max_amount() {
@@ -1567,12 +1574,12 @@ mod tests {
             .insert_header(header_auth(&token)).insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
+        assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
+        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
         let error = format!("{} ({})", "invalid digit found in string", stream_id_bad);
         #[rustfmt::skip]
         assert_eq!(app_err.message, format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &error));
@@ -2436,10 +2443,10 @@ mod tests {
             .insert_header(header_auth(&token)).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
+        assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
+        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
         #[rustfmt::skip]
         let msg = format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
