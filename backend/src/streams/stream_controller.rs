@@ -179,7 +179,7 @@ impl CreateStreamForm {
         (status = 201, description = "Create a new stream.", body = StreamInfoDto),
         (status = 406, description = "Error deserializing field \"tags\". `curl -X POST http://localhost:8080/api/streams
             -F 'title=title' -F 'tags=[\"tag\"'`",
-            body = AppError, example = json!(AppError::not_acceptable406(
+        body = AppError, example = json!(AppError::not_acceptable406(
                 &format!("{}: {}", MSG_INVALID_FIELD_TAG, "EOF while parsing a list at line 1 column 6")))),
         (status = 413, description = "Invalid image file size. `curl -i -X POST http://localhost:8080/api/streams
             -F 'title=title2'  -F 'tags=[\"tag1\"]' -F 'logofile=@image.jpg'`", body = AppError,
@@ -270,7 +270,7 @@ pub async fn post_stream(
         let res_upload = temp_file.file.persist(&path_file);
         if let Err(err) = res_upload {
             let message = format!("{}: {}: {}", MSG_ERROR_UPLOAD_FILE, &path_file, err.to_string());
-            log::error!("{}: {}", err::CD_INTER_ERROR, &message);
+            log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
             return Err(AppError::internal_err500(&message)) // 500
         }
         path_new_logo_file = path_file;
@@ -540,7 +540,7 @@ pub async fn put_stream(
         let res_upload = temp_file.file.persist(&path_file);
         if let Err(err) = res_upload {
             let message = format!("{}: {}: {}", MSG_ERROR_UPLOAD_FILE, &path_file, err.to_string());
-            log::error!("{}: {}", err::CD_INTER_ERROR, &message);
+            log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
             return Err(AppError::internal_err500(&message)) //500
         }
         path_new_logo_file = path_file;

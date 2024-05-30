@@ -119,7 +119,7 @@ pub async fn registration(
     let password = registr_user_dto.password.clone();
     let password_hashed = hash_tools::encode_hash(&password).map_err(|e| {
         let message = format!("{}: {}", MSG_ERROR_HASHING_PASSWORD, e.to_string());
-        log::error!("{}: {}", err::CD_INTER_ERROR, &message);
+        log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
         AppError::internal_err500(&message)
     })?;
 
@@ -615,7 +615,7 @@ pub async fn confirm_recovery(
     // Prepare a password hash.
     let password_hashed = hash_tools::encode_hash(&recovery_data_dto.password).map_err(|e| {
         let message = format!("{}: {}", MSG_ERROR_HASHING_PASSWORD, e.to_string());
-        log::error!("{}: {}", err::CD_INTER_ERROR, &message);
+        log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
         AppError::internal_err500(&message)
     })?;
     
