@@ -101,31 +101,31 @@ pub async fn login(
             .find_user_by_nickname_or_email(Some(&nickname), Some(&email))
             .map_err(|e| {
                 log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
+                AppError::database507(&e) // 507
             });
         existing_user
     })
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        AppError::blocking506(&e.to_string()) // 506
     })??;
 
     let user: user_models::User = user.ok_or_else(|| {
         log::error!("{}: {}", err::CD_UNAUTHORIZED, MSG_WRONG_NICKNAME_EMAIL);
-        AppError::unauthorized401(MSG_WRONG_NICKNAME_EMAIL)
+        AppError::unauthorized401(MSG_WRONG_NICKNAME_EMAIL) // 401
     })?;
 
     let user_password = user.password.to_string();
     let password_matches = hash_tools::compare_hash(&password, &user_password).map_err(|e| {
         let message = format!("{}: {}", MSG_INVALID_HASH, &e);
         log::error!("{}: {}", err::CD_CONFLICT, &message);
-        AppError::conflict409(&message)
+        AppError::conflict409(&message) // 409
     })?;
 
     if !password_matches {
         log::error!("{}: {}", err::CD_UNAUTHORIZED, MSG_PASSWORD_INCORRECT);
-        return Err(AppError::unauthorized401(MSG_PASSWORD_INCORRECT));
+        return Err(AppError::unauthorized401(MSG_PASSWORD_INCORRECT)); // 401
     }
 
     let num_token = tokens::generate_num_token();
@@ -136,7 +136,7 @@ pub async fn login(
     let access_token = tokens::encode_token(user.id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
         let message = format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
-        AppError::unprocessable422(&message)
+        AppError::unprocessable422(&message) // 422
     })?;
 
     // Packing two parameters (user.id, num_token) into refresh_token.
@@ -150,20 +150,20 @@ pub async fn login(
         // Modify the entity (session) with new data. Result <Option<Session>>.
         let res_session = session_orm.modify_session(user.id, Some(num_token)).map_err(|e| {
             log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
+            AppError::database507(&e) // 507
         });
         res_session
     })
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        AppError::blocking506(&e.to_string()) // 506
     })??;
 
     if opt_session.is_none() {
         let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, user.id);
         log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
-        return Err(AppError::not_acceptable406(&message));
+        return Err(AppError::not_acceptable406(&message)); // 406
     }
 
     let user_tokens_dto = user_models::UserTokensDto {
@@ -227,20 +227,20 @@ pub async fn logout(
         // Modify the entity (session) with new data. Result <Option<Session>>.
         let res_session = session_orm.modify_session(user.id, None).map_err(|e| {
             log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
+            AppError::database507(&e) // 507
         });
         res_session
     })
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        AppError::blocking506(&e.to_string()) // 506
     })??;
 
     if opt_session.is_none() {
         let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, user.id);
         log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
-        return Err(AppError::not_acceptable406(&message));
+        return Err(AppError::not_acceptable406(&message)); // 406
     }
 
     // If a cookie has expired, the browser will delete the existing cookie.
@@ -268,14 +268,18 @@ pub async fn logout(
 #[utoipa::path(
     responses(
         (status = 200, description = "The new session token.", body = UserTokensDto),
-        (status = 401, description = "The token is invalid or expired.", body = AppError,
-            example = json!(AppError::unauthorized401(&format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidToken")))),
-        (status = 403, description = "The specified token number is incorrect.", body = AppError,
-            example = json!(AppError::forbidden403(&format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, 1)))),
+        (status = 401, description = "Authorization required.", body = AppError, examples(
+            ("Token" = (summary = "Token is invalid or expired",
+                description = "The token is invalid or expired.",
+                value = json!(AppError::unauthorized401(&format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidToken"))))),
+            ("Token_number" = (summary = "Token number is incorrect", 
+                description = "The specified token number is incorrect.",
+                value = json!(AppError::unauthorized401(&format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, 1)))))
+        )),
         (status = 406, description = "Error closing session.", body = AppError,
             example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, 1)))),
-        (status = 409, description = "Error processing token.", body = AppError,
-            example = json!(AppError::conflict409(&format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
+        (status = 422, description = "Token encoding error.", body = AppError,
+            example = json!(AppError::unprocessable422(&format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -297,7 +301,7 @@ pub async fn update_token(
     let (user_id, num_token) = tokens::decode_token(&token, jwt_secret).map_err(|e| {
         let message = format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
         log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
-        AppError::unauthorized401(&message)
+        AppError::unauthorized401(&message) // 401
     })?;
 
     let session_orm1 = session_orm.clone();
@@ -306,21 +310,21 @@ pub async fn update_token(
         // Find a session for a given user.
         let existing_session = session_orm.find_session_by_id(user_id).map_err(|e| {
             log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
+            AppError::database507(&e) // 507
         });
         existing_session
     })
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        AppError::blocking506(&e.to_string()) // 506
     })??;
 
     let session = opt_session.ok_or_else(|| {
         // There is no session for this user.
         let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, user_id);
-        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
-        AppError::not_acceptable406(&message)
+        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
+        AppError::not_acceptable406(&message) // 406
     })?;
 
     // Each session contains an additional numeric value.
@@ -329,8 +333,8 @@ pub async fn update_token(
     if session_num_token != num_token {
         // If they do not match, then this is an error.
         let message = format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
-        log::error!("{}: {}", err::CD_FORBIDDEN, &message); // 403
-        return Err(AppError::forbidden403(&message));
+        log::error!("{}: {}", err::CD_UNAUTHORIZED, &message); // 401
+        return Err(AppError::unauthorized401(&message));
     }
 
     let num_token = tokens::generate_num_token();
@@ -340,29 +344,29 @@ pub async fn update_token(
     // Pack two parameters (user.id, num_token) into a access_token.
     let access_token = tokens::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
         let message = format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
-        log::error!("{}: {}", err::CD_CONFLICT, &message);
-        AppError::conflict409(&message)
+        log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
+        AppError::unprocessable422(&message) // 422
     })?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let refresh_token = tokens::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
         let message = format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
-        log::error!("{}: {}", err::CD_CONFLICT, &message);
-        AppError::conflict409(&message)
+        log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
+        AppError::unprocessable422(&message) // 422
     })?;
 
     let opt_session = web::block(move || {
         // Find a session for a given user.
         let existing_session = session_orm1.modify_session(user_id, Some(num_token)).map_err(|e| {
             log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
+            AppError::database507(&e) // 507
         });
         existing_session
     })
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        AppError::blocking506(&e.to_string()) // 506
     })??;
 
     if opt_session.is_none() {
@@ -1096,13 +1100,13 @@ mod tests {
             .set_json(user_models::TokenUserDto { token: token_bad })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         #[rustfmt::skip]
         assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user1_id));
     }
