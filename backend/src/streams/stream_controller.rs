@@ -634,7 +634,7 @@ pub async fn put_stream(
     responses(
         (status = 200, description = "The specified stream was deleted successfully.", body = StreamInfoDto),
         (status = 204, description = "The specified stream was not found."),
-        (status = 416, description = "Error parsing input parameter. `curl -i -X DELETE http://localhost:8080/api/streams/1a`",
+        (status = 416, description = "Error parsing input parameter. `curl -i -X DELETE http://localhost:8080/api/streams/2a`",
             body = AppError, example = json!(AppError::range_not_satisfiable416(
             &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
         (status = 506, description = "Blocking error.", body = AppError, 
