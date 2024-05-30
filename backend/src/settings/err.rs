@@ -35,6 +35,9 @@ pub const CD_UNSUPPORTED_TYPE: &str = "UnsupportedType"; /*+*/
 // 415 Unsupported Media Type - The specified type could not be converted. (stream_controller)
 pub const MSG_PARSING_TYPE_NOT_SUPPORTED: &str = "parsing_type_not_supported"; /*+*/
 
+// 416 Requested Range Not Satisfiable
+pub const CD_RANGE_NOT_SATISFIABLE: &str = "RangeNotSatisfiable";
+
 // 417 Expectation Failed (user_auth_controller, user_registr_controller)
 pub const CD_VALIDATION: &str = "Validation"; /*+*/
 

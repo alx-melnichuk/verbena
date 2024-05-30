@@ -65,6 +65,7 @@ impl AppError {
             409 => http::StatusCode::CONFLICT,
             413 => http::StatusCode::PAYLOAD_TOO_LARGE,
             415 => http::StatusCode::UNSUPPORTED_MEDIA_TYPE,
+            416 => http::StatusCode::RANGE_NOT_SATISFIABLE,
             417 => http::StatusCode::EXPECTATION_FAILED,
             422 => http::StatusCode::UNPROCESSABLE_ENTITY,
             500 => http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -131,6 +132,10 @@ impl AppError {
     /// Error: Data type is not supported. (status=415)
     pub fn unsupported_type415(message: &str) -> Self {
         AppError::new(err::CD_UNSUPPORTED_TYPE, message).set_status(415)
+    }
+    /// Error, requested range not satisfiable. (status=416)
+    pub fn range_not_satisfiable416(message: &str) -> Self {
+        AppError::new(err::CD_RANGE_NOT_SATISFIABLE, message).set_status(416)
     }
     /// Error when data validation. (status=417)
     pub fn validation417(message: &str) -> Self {
