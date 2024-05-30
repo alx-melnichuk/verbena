@@ -76,7 +76,7 @@ pub async fn get_user_by_email(
             .find_user_by_nickname_or_email(None, Some(&email))
             .map_err(|e| {
                 log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
+                AppError::database507(&e) // 507
             })
             .ok()?;
 
@@ -85,7 +85,7 @@ pub async fn get_user_by_email(
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        AppError::blocking506(&e.to_string()) // 506
     })?;
 
     if let Some(user) = result_user {
@@ -131,7 +131,7 @@ pub async fn get_user_by_nickname(
             .find_user_by_nickname_or_email(Some(&nickname), None)
             .map_err(|e| {
                 log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
+                AppError::database507(&e) // 507
             })
             .ok()?;
 
@@ -140,7 +140,7 @@ pub async fn get_user_by_nickname(
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        AppError::blocking506(&e.to_string()) // 506
     })?;
 
     if let Some(user) = result_user {
@@ -224,7 +224,7 @@ pub async fn get_user_by_id(
 ///
 /// One could call with following curl.
 /// ```text
-/// curl -i -X PUT http://localhost:8080/api/users/1  -d {"password": "new_password"}
+/// curl -i -X PUT http://localhost:8080/api/users/1 -d {"password": "new_password"}
 /// ```
 ///
 /// Return the found specified user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
@@ -347,14 +347,14 @@ pub async fn delete_user(
         let res_user = user_orm.delete_user(id)
         .map_err(|e| {
             log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
+            AppError::database507(&e) // 507
         });
         res_user
     })
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        AppError::blocking506(&e.to_string()) // 506
     })??;
 
     if let Some(user) = result_user {
@@ -449,14 +449,14 @@ pub async fn put_user_current(
         let res_user =
             user_orm.modify_user(id, modify_user).map_err(|e| {
                 log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
+                AppError::database507(&e) // 507
             });
         res_user
     })
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        AppError::blocking506(&e.to_string()) // 506
     })??;
 
     if let Some(user) = result_user {
@@ -506,7 +506,7 @@ pub async fn delete_user_current(
         let res_user = user_orm.delete_user(id)
         .map_err(|e| {
             log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
+            AppError::database507(&e) // 507
         });
 
         res_user
@@ -514,7 +514,7 @@ pub async fn delete_user_current(
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        AppError::blocking506(&e.to_string()) //506
     })??;
 
     if let Some(user) = result_user {
