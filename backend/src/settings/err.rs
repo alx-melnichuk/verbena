@@ -27,8 +27,7 @@ pub const MSG_SESSION_NOT_EXIST: &str = "session_not_exist"; /*+*/
 // 409 Conflict (user_auth_controller, user_registr_controller)
 pub const CD_CONFLICT: &str = "Conflict"; /*+*/
 
-// 413 Content too large
-// The request object exceeds the limits defined by the server. (status=413)
+// 413 Content too large // The request object exceeds the limits defined by the server.
 pub const CD_CONTENT_TOO_LARGE: &str = "ContentTooLarge"; /*+*/
 
 // 415 Unsupported Media Type (stream_controller)
@@ -43,8 +42,7 @@ pub const CD_VALIDATION: &str = "Validation"; /*+*/
 pub const CD_UNPROCESSABLE_ENTITY: &str = "UnprocessableEntity";
 
 // 500 Internal Server Error (user_registr_controller)
-pub const CD_INTER_ERROR: &str = "InternalServerError";
-pub const CD_INTERNAL_SERVER_ERROR: &str = "InternalServerError"; /* # del */
+pub const CD_INTERNAL_ERROR: &str = "InternalServerError";
 
 // 506 Variant Also Negotiates /*+*/
 pub const CD_BLOCKING: &str = "Blocking"; /*+*/
@@ -58,25 +56,3 @@ pub const MSG_DATABASE: &str = "database_query_error"; /*+*/
 
 // 510 Not Extended (user_registr_controller)
 pub const CD_NOT_EXTENDED: &str = "NotExtended"; /*+*/
-
-// OLD
-
-// 400 Bad Request
-
-pub const CD_NO_ACCESS_TO_STREAMS: &str = "NoAccessToStreams";
-pub const MSG_NO_ACCESS_TO_STREAMS: &str = "No access to other user's streams.";
-// Error when the finish period is greater than the maximum.
-pub const CD_FINISH_GREATER_MAX: &str = "FinishGreaterMax";
-pub const MSG_FINISH_GREATER_MAX: &str = "The finish date of the search period exceeds the limit";
-
-//
-//
-pub const CD_NO_CONFIRM: &str = "No Confirmation";
-pub const MSG_CONFIRM_NOT_FOUND: &str = "Confirmation not found!";
-
-// 500
-pub const CD_INTER_SRV_ERROR: &str = "InternalServerError";
-pub const MSG_INTER_SRV_ERROR: &str = "internal_server_error";
-
-// Authentication: The entity "user" was not received from the request.
-pub const MSG_USER_NOT_RECEIVED_FROM_REQUEST: &str = "user_not_received_from_request";

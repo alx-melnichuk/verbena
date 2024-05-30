@@ -8,6 +8,9 @@ use utoipa::ToSchema;
 
 use crate::{settings::err, validators::ValidationError};
 
+// 500 Internal Server Error - Internal error when accessing the server API.
+pub const MSG_INTER_SRV_ERROR: &str = "internal_error_accessing_server_api";
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AppError {
@@ -31,9 +34,9 @@ impl std::fmt::Display for AppError {
 impl AppError {
     pub fn new<'a>(code: &'a str, message: &'a str) -> Self {
         #[rustfmt::skip]
-        let code = if code.len() > 0 { code } else { err::CD_INTER_SRV_ERROR };
+        let code = if code.len() > 0 { code } else { err::CD_INTERNAL_ERROR };
         #[rustfmt::skip]
-        let message = if message.len() > 0 { message } else { err::MSG_INTER_SRV_ERROR };
+        let message = if message.len() > 0 { message } else { MSG_INTER_SRV_ERROR };
         AppError {
             code: Cow::from(code.to_string()),
             message: Cow::from(message.to_string()),
@@ -93,7 +96,7 @@ impl AppError {
     }
     /// Converting the error vector into http-response.
     pub fn to_response(errors: &[Self]) -> HttpResponse {
-        let default = AppError::new(err::CD_INTER_SRV_ERROR, err::MSG_INTER_SRV_ERROR);
+        let default = AppError::internal_err500(MSG_INTER_SRV_ERROR);
         let app_error = errors.get(0).unwrap_or(&default);
         let status_code = app_error.status_code();
         HttpResponse::build(status_code)
@@ -139,7 +142,7 @@ impl AppError {
     }
     /// Internal Server Error. (status=500)
     pub fn internal_err500(message: &str) -> AppError {
-        AppError::new(err::CD_INTER_ERROR, message).set_status(500)
+        AppError::new(err::CD_INTERNAL_ERROR, message).set_status(500)
     }
     /// Error while blocking process. (status=506)
     pub fn blocking506(message: &str) -> AppError {
