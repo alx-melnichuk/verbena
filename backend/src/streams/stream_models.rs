@@ -78,9 +78,9 @@ pub fn validate_tag_name(value: &str) -> Result<(), ValidationError> {
 }
 pub fn validate_tag_amount(tags: &[String]) -> Result<(), ValidationError> {
     let min_amount = TAG_MIN_AMOUNT;
-    ValidationChecks::min_quantity(tags.len(), min_amount.into(), MSG_TAG_MIN_AMOUNT)?;
+    ValidationChecks::min_amount(tags.len(), min_amount.into(), MSG_TAG_MIN_AMOUNT)?;
     let max_amount = TAG_MAX_AMOUNT;
-    ValidationChecks::max_quantity(tags.len(), max_amount.into(), MSG_TAG_MAX_AMOUNT)?;
+    ValidationChecks::max_amount(tags.len(), max_amount.into(), MSG_TAG_MAX_AMOUNT)?;
     Ok(())
 }
 pub fn validate_tag(tags: &[String]) -> Result<(), ValidationError> {

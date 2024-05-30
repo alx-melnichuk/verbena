@@ -91,24 +91,24 @@ impl ValidationChecks {
     }
     /// Checking the amount of elements of a array with a minimum value.
     #[rustfmt::skip]
-    pub fn min_quantity(amount: usize, min: usize, msg: &'static str) -> Result<(), ValidationError> {
+    pub fn min_amount(amount: usize, min: usize, msg: &'static str) -> Result<(), ValidationError> {
         if amount < min {
             let mut err = ValidationError::new(msg);
             let json =
-                serde_json::json!({ "actualQuantity": amount, "requiredQuantity": min });
-            err.add_param(borrow::Cow::Borrowed("minQuantity"), &json);
+                serde_json::json!({ "actualAmount": amount, "requiredAmount": min });
+            err.add_param(borrow::Cow::Borrowed("minAmount"), &json);
             return Err(err);
         }
         Ok(())
     }
     /// Checking the amount of elements of a array with a maximum value.
     #[rustfmt::skip]
-    pub fn max_quantity(amount: usize, max: usize, msg: &'static str) -> Result<(), ValidationError> {
+    pub fn max_amount(amount: usize, max: usize, msg: &'static str) -> Result<(), ValidationError> {
         if max < amount {
             let mut err = ValidationError::new(msg);
             let json =
-                serde_json::json!({ "actualQuantity": amount, "requiredQuantity": max });
-            err.add_param(borrow::Cow::Borrowed("maxQuantity"), &json);
+                serde_json::json!({ "actualAmount": amount, "requiredAmount": max });
+            err.add_param(borrow::Cow::Borrowed("maxAmount"), &json);
             return Err(err);
         }
         Ok(())
