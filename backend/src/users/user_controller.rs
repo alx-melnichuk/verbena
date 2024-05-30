@@ -169,8 +169,9 @@ pub async fn get_user_by_nickname(
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
-        (status = 415, description = "Error parsing input parameter.", body = AppError, 
-            example = json!(AppError::unsupported_type415(&"parsing_type_not_supported: `id` - invalid digit found in string (2a)"))),
+        (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/users/2a`", 
+            body = AppError, example = json!(AppError::range_not_satisfiable416(
+                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -189,8 +190,8 @@ pub async fn get_user_by_id(
 
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
-        AppError::unsupported_type415(&message)
+        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        AppError::range_not_satisfiable416(&message) // 416
     })?;
 
     let result_user = web::block(move || {
@@ -198,7 +199,7 @@ pub async fn get_user_by_id(
         let existing_user =
             user_orm.find_user_by_id(id).map_err(|e| {
                 log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
+                AppError::database507(&e) // 507
             }).ok()?;
 
         existing_user
@@ -206,7 +207,7 @@ pub async fn get_user_by_id(
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        AppError::blocking506(&e.to_string()) //506
     })?;
 
     if let Some(user) = result_user {
@@ -236,8 +237,10 @@ pub async fn get_user_by_id(
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
-        (status = 415, description = "Error parsing input parameter.", body = AppError, 
-            example = json!(AppError::unsupported_type415(&"parsing_type_not_supported: `id` - invalid digit found in string (2a)"))),
+        (status = 416, description = 
+            "Error parsing input parameter. `curl -i -X PUT http://localhost:8080/api/users/2a -d '{\"password\": \"Pass_2\"}'`",
+            body = AppError, example = json!(AppError::range_not_satisfiable416(
+                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
         (status = 417, description = "Validation error. `{ \"password\": \"pas\" }`", body = [AppError],
             example = json!(AppError::validations((PasswordUserDto { password: Some("pas".to_string()) }).validate().err().unwrap()) )),
         (status = 506, description = "Blocking error.", body = AppError,
@@ -259,8 +262,8 @@ pub async fn put_user(
 
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
-        AppError::unsupported_type415(&message)
+        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        AppError::range_not_satisfiable416(&message) // 416
     })?;
 
     // Checking the validity of the data model.
@@ -278,14 +281,14 @@ pub async fn put_user(
         let res_user =
             user_orm.modify_user(id, modify_user).map_err(|e| {
                 log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
+                AppError::database507(&e) //507
             });
         res_user
     })
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        AppError::blocking506(&e.to_string()) // 506
     })??;
 
     if let Some(user) = result_user {
@@ -314,8 +317,9 @@ pub async fn put_user(
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
-        (status = 415, description = "Error parsing input parameter.", body = AppError, 
-            example = json!(AppError::unsupported_type415(&"parsing_type_not_supported: `id` - invalid digit found in string (2a)"))),
+        (status = 416, description = "Error parsing input parameter. `curl -i -X DELETE http://localhost:8080/api/users/2a`",
+            body = AppError, example = json!(AppError::range_not_satisfiable416(
+                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -334,8 +338,8 @@ pub async fn delete_user(
 
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
-        AppError::unsupported_type415(&message)
+        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        AppError::range_not_satisfiable416(&message) // 416
     })?;
 
     let result_user = web::block(move || {
@@ -678,13 +682,13 @@ mod tests {
         let req = test::TestRequest::get().uri(&format!("/api/users/{}", user_id_bad))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
+        assert_eq!(resp.status(), http::StatusCode::RANGE_NOT_SATISFIABLE); // 416
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
+        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
         #[rustfmt::skip]
         let msg = format!("{}: `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
         assert_eq!(app_err.message, msg);
@@ -762,13 +766,13 @@ mod tests {
             })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
+        assert_eq!(resp.status(), http::StatusCode::RANGE_NOT_SATISFIABLE); // 416
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
+        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
         #[rustfmt::skip]
         let msg = format!("{}: `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
         assert_eq!(app_err.message, msg);
@@ -948,13 +952,13 @@ mod tests {
         let req = test::TestRequest::delete().uri(&format!("/api/users/{}", user_id_bad))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
+        assert_eq!(resp.status(), http::StatusCode::RANGE_NOT_SATISFIABLE); // 416
 
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
+        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
         #[rustfmt::skip]
         let msg = format!("{}: `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
         assert_eq!(app_err.message, msg);
