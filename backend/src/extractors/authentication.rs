@@ -26,6 +26,8 @@ use crate::users::{
 pub const BEARER: &str = "Bearer ";
 // 401 Unauthorized - According to "user_id" in the token, the user was not found.
 pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
+// 500 Internal Server Error - Authentication: The entity "user" was not received from the request.
+pub const MSG_USER_NOT_RECEIVED_FROM_REQUEST: &str = "user_not_received_from_request";
 
 pub struct Authenticated(User);
 
@@ -37,10 +39,8 @@ impl FromRequest for Authenticated {
         let value = req.extensions().get::<User>().cloned();
         let result = match value {
             Some(user) => Ok(Authenticated(user)),
-            None => Err(error::ErrorInternalServerError(AppError::new(
-                err::CD_INTER_SRV_ERROR,
-                err::MSG_USER_NOT_RECEIVED_FROM_REQUEST,
-            ))),
+            #[rustfmt::skip]
+            None => Err(error::ErrorInternalServerError(AppError::internal_err500(MSG_USER_NOT_RECEIVED_FROM_REQUEST))),
         };
         ready(result)
     }
