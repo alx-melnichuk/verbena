@@ -23,53 +23,103 @@
     "confirmation": "Confirmation"
   },
   "Validation": {
-    "nickname:required": "The nickname field is required.",
-    "nickname:min_length": "The nickname must have at least {{ minlength.requiredLength }} characters.",
-    "nickname:max_length": "The nickname must have no more {{ maxlength.requiredLength }} characters.",
-    "nickname:regex": "Available in nickname: lowercase and uppercase letters, numbers and underscores.",
-    "email:required": "The email field is required.",
-    "email:min_length": "The email must have at least {{ minlength.requiredLength }} characters.",
-    "email:max_length": "The email must have no more {{ maxlength.requiredLength }} characters.",
-    "email:email_type": "The email must comply with the standard (john.smith@example.com).",
-    "password:required": "The password field is required.",
-    "password:min_length": "The password must have at least {{ minlength.requiredLength }} characters.",
-    "password:max_length": "The password must have no more {{ maxlength.requiredLength }} characters.",
-    "password:regex": "The password must contain: a lowercase letter, an uppercase letter and a number.",
-    "title:required": "The title field is required.",
-    "title:min_length": "The title must have at least {{ minlength.requiredLength }} characters.",
-    "title:max_length": "The title must have no more {{ maxlength.requiredLength }} characters.",
-    "descript:required": "The description field is required.",
-    "descript:min_length": "The description must have at least {{ minlength.requiredLength }} characters.",
-    "descript:max_length": "The description must have no more {{ maxlength.requiredLength }} characters.",
+    "status": 417,
+    "nickname:required" : "The nickname field is required.",
+    "nickname:min_length" : "The nickname must have at least {{ minlength.requiredLength }} characters.",
+    "nickname:max_length" : "The nickname must have no more {{ maxlength.requiredLength }} characters.",
+    "nickname:regex" : "Available in nickname: lowercase and uppercase letters, numbers and underscores.",
+    "email:required" : "The email field is required.",
+    "email:min_length" : "The email must have at least {{ minlength.requiredLength }} characters.",
+    "email:max_length" : "The email must have no more {{ maxlength.requiredLength }} characters.",
+    "email:email_type" : "The email must comply with the standard (john.smith@example.com).",
+    "password:required" : "The password field is required.",
+    "password:min_length" : "The password must have at least {{ minlength.requiredLength }} characters.",
+    "password:max_length" : "The password must have no more {{ maxlength.requiredLength }} characters.",
+    "password:regex" : "The password must contain: a lowercase letter, an uppercase letter and a number.",
+    "title:required" : "The title field is required.",
+    "title:min_length" : "The title must have at least {{ minlength.requiredLength }} characters.",
+    "title:max_length" : "The title must have no more {{ maxlength.requiredLength }} characters.",
+    "descript:min_length" : "The description must have at least {{ minlength.requiredLength }} characters.",
+    "descript:max_length" : "The description must have no more {{ maxlength.requiredLength }} characters.",
+    "starttime:min_valid_date" : "The date \"{{ minValidDateTime.actualDateTime }}\" is less than the minimum value \"{{ minValidDateTime.minDateTime }}\".",
+    "source:min_length" : "The source must have at least {{ minlength.requiredLength }} characters.",
+    "source:max_length" : "The source must have no more {{ maxlength.requiredLength }} characters.",
+    "tag:required" : "The tags field is required.",
+    "tag:min_amount" : "The number of tags ({{ minAmount.actualAmount }}) is less than the minimum value ({{ minAmount.requiredAmount }}).",
+    "tag:max_amount" : "The number of tags ({{ maxAmount.actualAmount }}) is greater than the maximum value ({{ maxAmount.requiredAmount }}).",
+    "tag:min_length" : "The tag must have at least {{ minlength.requiredLength }} characters ({{ minlength.actualValue }}).",
+    "tag:max_length" : "The tag must have no more {{ maxlength.requiredLength }} characters ({{ maxlength.actualValue }}).",
     "time:required": "The time field is required.",
     "time:min": "The time must be more {{ min.requiredMin }}.",
-    "time:max": "The time must be less {{ max.requiredMax }}.",
-    "tag:required": "The tags field is required.",
-    "tag:min_quantity": "Tags must have a minimum number of {{ minQuantity.requiredQuantity }}.",
-    "tag:max_quantity": "Tags must have a maximum number of {{ maxQuantity.requiredQuantity }}.",
-    "tag:min_length": "The tag must have at least {{ minlength.requiredLength }} characters ({{ minlength.actualValue }}).",
-    "tag:max_length": "The tag must have no more {{ maxlength.requiredLength }} characters ({{ maxlength.actualValue }})."
+    "time:max": "The time must be less {{ max.requiredMax }}."
   },
   "Conflict": {
-    "email_already_use": "The email address you provided is already in use.",
-    "nickname_already_use": "The nickname you provided is already in use."
+    "status": 409,
+    "invalid_hash" : "Invalid password hash value.",
+    "email_already_use" : "The email address you provided is already in use.",
+    "nickname_already_use" : "The nickname you provided is already in use."
   },
   "Forbidden": {
-    "invalid_or_expired_token": "Invalid or expired token.",
-    "unacceptable_token": "Unacceptable token value."
+    "status": 403,
+    "access_denied" : "Access is denied."
   },
   "Unauthorized": {
-    "nickname_or_email_incorrect": "The nickname or email address is incorrect.",
-    "password_incorrect": "The password specified is incorrect."
+    "status": 401,
+    "token_missing" : "Authorization token is missing.",
+    "invalid_or_expired_token" : "Invalid or expired token.",
+    "unacceptable_token_num" : "Unacceptable token number",
+    "unacceptable_token_id" : "Unacceptable token id",
+    "nickname_or_email_incorrect" : "The nickname or email address is incorrect.",
+    "password_incorrect" : "The password specified is incorrect."
+  },
+  "NotFound": {
+    "status": 404,
+    "registration_not_found" : "An record for registering a new user was not found.",
+    "user_not_found" : "User not found.",
+    "recovery_not_found" : "An record to recover the user's password was not found."
+  },
+  "NotAcceptable": {
+    "status": 406,
+    "finish_date_less_start_date" : "The finish date \"{{ invalidPeriod.streamPeriodFinish }}\" is less than the start date \"{{ invalidPeriod.streamPeriodStart }}\".",
+    "invalid_field_tag" : "Error deserializing field tag.",
+    "session_not_exist" : "There is no session for this user."
+  },
+  "ContentTooLarge": {
+    "status": 413,
+    "finish_date_exceeds_limit" : "The finish date \"{{ periodTooLong.actualPeriodFinish }}\" of the search period exceeds the limit \"{{ periodTooLong.periodMaxNumberDays }}\".",
+    "invalid_file_size" : "File size ({{ invalidFileSize.actualFileSize }}) exceeds max ({{ invalidFileSize.maxFileSize }})."
+  },
+  "UnsupportedType": {
+    "status": 415,
+    "invalid_file_type" : "File type MIME upload ({{ invalidFileType.actualFileType }}) is not in the list of available ones ({{ invalidFileType.validFileType }})."
+  },
+  "RangeNotSatisfiable": {
+    "status": 416,
+    "parsing_type_not_supported" : "The data type is not supported during parsing."
+  },
+  "UnprocessableEntity": {
+    "status": 422,
+    "json_web_token_encode" : "Error encoding web token."
   },
   "InternalServerError": {
-    "invalid_hash": "Invalid password hash value.",
-    "json_web_encode_token": "Error encoding web token.",
-    "json_web_decode_token": "Error decoding web token.",
-    "session_not_exist": "There is no session for this user.",
-    "error_sending_email": "Error when sending email.",
-    "error_hashing_password": "Error when hashing password",
-    "user_not_received_from_request": "The entity \"user\" was not received from the request."
+    "status": 500,
+    "internal_error_accessing_server_api" : "Internal error when accessing the server API.",
+    "user_not_received_from_request" : "Authentication - the entity \"user\" was not received from the request.",
+    "error_upload_file" : "Error uploading file",
+    "error_hashing_password" : "Error when hashing password"
+  },
+  "Blocking": {
+    "status": 506,
+    "error_waiting_for_operations" : "An error occurred while waiting for the operation to complete."
+  },
+  "Database": {
+    "status": 507,
+    "database_query_error" : "Error executing database query."
+  },
+  "NotExtended": {
+    "status": 510,
+    "error_convert_file" : "Error while converting file.",
+    "error_sending_email" : "Error when sending email."
   },
   "field-email": {
     "err_minlength_symbol_search": "The symbol search should have {{value}} characters or more.",
