@@ -14,7 +14,7 @@ pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num"; /*+*/
 // 403 Forbidden - (authentication, user_auth_controller)
 pub const CD_FORBIDDEN: &str = "Forbidden";
 // 403 Forbidden - Access denied - insufficient rights (authentication)
-pub const MSG_ACCESS_DENIED: &str = "access_is_denied";
+pub const MSG_ACCESS_DENIED: &str = "access_denied";
 
 // 404 Not Found (user_registr_controller)
 pub const CD_NOT_FOUND: &str = "NotFound";
