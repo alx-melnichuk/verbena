@@ -222,5 +222,27 @@
     "error_editing_stream": "Error editing stream",
     "copy_stream_link_to_clipboard": "Copy stream link to clipboard",
     "stream_link_copied_to_clipboard": "Stream link copied to clipboard"
+  },
+  "about": {
+    "title": "About the {{app_name}} website.",
+    "label": "The {{app_name}} site is a demo site. And has no commercial purposes.",
+    "label_swagger": "swagger visual interface",
+    "label_redoc": "redoc documentation",
+    "label_rapidoc": "rapidoc documentation",
+    "frontend_used": "On the Frontend we used:",
+    "frontend_items": [
+        "angular v.16",
+        "ngx-translate v.15",
+        "angular/material v.16",
+        "angular/mat-datepicker",
+        "input components with ControlValueAccessor implementation",
+        "component for outputting an image file",
+        "DragAndDrop directive",
+        "service and component for displaying modal windows",
+        "Interceptor for updating the authorization token",
+        "Guard to control access to menu items",
+        "\"infinite scroll\" for page-by-page data loading"
+    ],
+    "backend_used": "On the Backend we used:"
   }
 }

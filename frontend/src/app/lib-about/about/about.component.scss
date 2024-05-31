@@ -1,0 +1,65 @@
+/*# sourceURL=about.component.scss */
+
+@use '../../../styles-dimensions.scss' as dimensions;
+
+app-about {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+
+  .ab-content {
+    box-sizing: border-box;
+    height: 100%;
+    padding: 2em 0;
+  }
+  .ab-panel {
+    @media screen and (width <= dimensions.$mobile-480) {
+      --ab-pd: 0.5em;
+      --ab-wd: 100%;
+    }
+    @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
+      --ab-pd: 1.5em;
+      --ab-wd: 39em; // 30em;
+    }
+    @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
+      --ab-pd: 2em;
+      --ab-wd: 41em; // 32em;
+    }
+    @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
+      --ab-pd: 2.5em;
+      --ab-wd: 43em; //34em;
+    }
+    @media screen and (dimensions.$desktop-1280 < width) {
+      --ab-pd: 3em;
+      --ab-wd: 45em; //36em;
+    }
+    border-radius: var(--ab-pd);
+    border: 1px solid var(--app-site-border-cl);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: var(--ab-pd);
+    width: var(--ab-wd);
+  }
+  .ab-title {
+    font-size: calc(100% + 6px);
+    font-weight: 500;
+    margin-bottom: 1em;
+    text-align: center;
+  }
+  .ab-box {
+    box-sizing: border-box;
+    // flex: 1 1 auto;
+    margin-top: 1em;
+    // height: 70%;
+    overflow-y: auto;
+    ul {
+      margin-block-start: 0px;
+      padding-inline-start: 2em;
+    }
+  }
+
+}
