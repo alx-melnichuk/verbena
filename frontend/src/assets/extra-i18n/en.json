@@ -13,11 +13,19 @@
     "link_signup": "Go to the registration page."
     
   },
-  "Forbidden": {
+  "Unauthorized": {
     "invalid_or_expired_token":"Invalid or expired token."
   },
   "NotFound": {
-    "recovery_not_found": "This request has already been processed previously."
+    "registration_not_found":"An record for registering a new user was not found.",
+    "user_not_found":"User not found.",
+    "recovery_not_found":"An record to recover the user's password was not found."
+  },
+  "Blocking": {
+    "error_waiting_for_operations":"An error occurred while waiting for the operation to complete."
+  },
+  "Database": {
+    "database_query_error":"Error executing database query."
   },
   "Change_password": {
     "title":"Change password",
@@ -35,8 +43,8 @@
   },
   "Validation": {
     "password:required":"The password field is required.",
-    "password:min_length":"The password should have 6 characters or more.",
-    "password:max_length":"The password should be less than 64 characters.",
+    "password:min_length":"The password must have at least 6 characters.",
+    "password:max_length":"The password must have no more 64 characters.",
     "password:regex":"The password must contain: a lowercase letter, an uppercase letter and a number."
   }
 }
