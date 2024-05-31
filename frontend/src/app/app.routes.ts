@@ -1,9 +1,13 @@
 import { Routes } from '@angular/router';
 
-import { R_FORGOT_PASSWORD, R_LOGIN, R_SIGNUP, R_STREAM, R_VIEW } from './common/routes';
+import { R_ABOUT, R_FORGOT_PASSWORD, R_LOGIN, R_SIGNUP, R_STREAM, R_VIEW } from './common/routes';
 import { authenticationGuard } from './common/authentication.guard';
 
 export const APP_ROUTES: Routes = [
+  {
+    path: R_ABOUT,
+    loadComponent: () => import('./pg-about/pg-about.component').then((c) => c.PgAboutComponent),
+  },
   {
     path: R_LOGIN,
     loadComponent: () => import('./pg-login/pg-login.component').then((c) => c.PgLoginComponent),

@@ -1,17 +1,23 @@
 // ** Route **
 export const R_ROOT = 'ind';
 
-// ** Login **
+// ** Page: About **
+export const R_ABOUT = R_ROOT + '/' + 'about'; // 'ind/about'
+export const ROUTE_ABOUT = '/' + R_ABOUT;      // '/ind/about'
+
+// ** Page: Login **
 export const R_LOGIN = R_ROOT + '/' + 'login'; // 'ind/login'
 export const ROUTE_LOGIN = '/' + R_LOGIN;      // '/ind/login'
 
+// ** Page: Signup **
 export const R_SIGNUP = R_ROOT + '/' + 'signup'; // 'ind/signup'
 export const ROUTE_SIGNUP = '/' + R_SIGNUP;      // '/ind/signup'
 
+// ** Page: Forgot-password **
 export const R_FORGOT_PASSWORD = R_ROOT + '/' + 'forgot-password'; // 'ind/forgot-password'
 export const ROUTE_FORGOT_PASSWORD = '/' + R_FORGOT_PASSWORD; // '/ind/forgot-password'
 
-// ** Stream **
+// ** Page: Stream **
 export const R_STREAM = R_ROOT + '/' + 'stream'; // 'ind/stream'
 export const ROUTE_STREAM = '/' + R_STREAM;
 
@@ -31,7 +37,7 @@ export const R_STREAM_CREATE = R_STREAM + '/' + E_STREAM_CREATE; //  'ind/stream
 export const ROUTE_STREAM_CREATE = '/' + R_STREAM_CREATE;        // '/ind/stream/create'
 // export const ROUTE_STREAM_CREATE = '/' + R_STREAM + '/' + R_STREAM_CREATE;
 
-// ** View **
+// ** Page: View **
 export const R_VIEW = R_ROOT + '/' + 'view'; // 'ind/view'
 export const ROUTE_VIEW = '/' + R_VIEW; // '/ind/view'
 
