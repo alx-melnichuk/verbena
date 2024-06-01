@@ -12,6 +12,9 @@
     "no": "No"
   },
   "main_menu": {
+    "about": "About",
+    "login": "Log in",
+    "signup": "Sign up",
     "my_profile_": "My profile",
     "my_streams": "My streams",
     "create_stream": "Create stream",

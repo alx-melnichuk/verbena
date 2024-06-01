@@ -62,3 +62,17 @@ export const AUTHORIZATION_DENIED = [
   // ROUTE_CONFIRMATION_FORGOT_PASSWORD,
   // ROUTE_TECHNICAL,
 ];
+
+export interface MainMenu {
+  isAuth: boolean | null;
+  name: string;
+  link: string;
+};
+
+export const mainMenuList = [
+  { isAuth: null, name: "main_menu.about", link: ROUTE_ABOUT },
+  { isAuth: false, name: "main_menu.login", link: ROUTE_LOGIN },
+  { isAuth: false, name: "main_menu.signup", link: ROUTE_SIGNUP },
+  { isAuth: true, name: "main_menu.my_streams", link: ROUTE_STREAM_LIST },
+  { isAuth: true, name: "main_menu.create_stream", link: ROUTE_STREAM_CREATE },
+];
