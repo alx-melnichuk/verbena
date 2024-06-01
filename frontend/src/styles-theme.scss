@@ -104,11 +104,22 @@ body {
     --mat-chip-color: white;
     
 
-    --app-site-unauth: hsl(24, 70%, 60%);
-    --app-site-auth: hsl(140, 40%, 30%);
+    --app-site-unauth-h: 24;
+    --app-site-unauth-s: 70%;
+    --app-site-unauth-l: 60%;
+    --demo-site-unauth: hsl(24, 70%, 60%);
+    --app-site-unauth: hsl(var(--app-site-unauth-h),var(--app-site-unauth-s),var(--app-site-unauth-l));
+    
+    --app-site-auth-h: 140;
+    --app-site-auth-s: 14%;
+    --app-site-auth-l: 50%;
+    --demo-site-auth: hsl(140, 14%, 50%);
+    --app-site-auth: hsl(var(--app-site-auth-h),var(--app-site-auth-s),var(--app-site-auth-l));
 
-    --app-pn-stream: hsl(210, 20%, 15%);  // --app-theme-background-panel-2: hsl(210, 20%, 15%);
-    --app-pn-stream-low: hsl(210, 20%, 25%);
+    --app-pn-stream: hsl(210, 11%, 38%);
+    --app-pn-stream-low: hsl(210, 11%, 48%);
+    --app-pn-stream-day: hsl(140, 40%, 27%);
+
   }
   .light-theme {
     color-scheme: light;
@@ -139,14 +150,24 @@ body {
     --mat-chip-color: #000000de;
     --mat-chip-color2: hsla(0, 0%, 0%, 0.87);
     
-
   
-    --app-site-unauth: hsl(27, 95%, 90%);
-    --app-site-auth: hsl(140, 40%, 90%);
+    --app-site-unauth-h: 27;
+    --app-site-unauth-s: 95%;
+    --app-site-unauth-l: 90%;
+    --demo-site-unauth: hsl(27, 95%, 90%);
+    --app-site-unauth: hsl(var(--app-site-unauth-h),var(--app-site-unauth-s),var(--app-site-unauth-l));
+
+
+    --app-site-auth-h: 140;
+    --app-site-auth-s: 40%;
+    --app-site-auth-l: 90%;
+    --demo-site-auth: hsl(140, 40%, 90%);
+    --app-site-auth: hsl(var(--app-site-auth-h),var(--app-site-auth-s),var(--app-site-auth-l));
 
     --app-pn-stream: hsl(222, 50%, 96%);  // --app-theme-background-panel-2: hsl(222, 50%, 96%);
     --app-pn-stream-low: hsl(222, 50%, 86%);
-  
+    --app-pn-stream-day: hsl(140, 40%, 75%);
+
   }
 
 
