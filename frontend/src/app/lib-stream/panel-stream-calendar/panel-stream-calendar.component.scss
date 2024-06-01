@@ -12,7 +12,7 @@ app-panel-stream-calendar {
     min-height: 24em;
   }
   button.psc-day-with-streams {
-    background: var(--green-200);
+    background: var(--app-pn-stream-day);
     border-radius: 100%;
   }
 
@@ -21,3 +21,12 @@ app-panel-stream-calendar {
   }
 }
 
+
+.dark-theme app-panel-stream-calendar {
+  .mat-calendar-table-header, .mat-calendar-body-label {
+    color: inherit;
+  }
+  .mat-calendar-body-cell-content, .mat-date-range-input-separator {
+    color: inherit;
+  }
+}
