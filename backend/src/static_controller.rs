@@ -76,9 +76,7 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
         format!("'backend02':['{}']", app_backend02.join("','")),
         format!("'backend03':['{}']", app_backend03.join("','")),
     );
-    // eprintln!("app_about_s: {}", &app_about_s);
     let body_str = body_str.replacen("<script>var APP_ABOUT;</script>", &app_about_s, 1);
-    // eprintln!("body_str: {}", body_str);
 
     Ok(HttpResponse::build(http::StatusCode::OK)
         .content_type("text/html; charset=utf-8")
