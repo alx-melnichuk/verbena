@@ -1,5 +1,9 @@
 <header>
-  <app-header [userInfo]="userService.userInfo" (logout)="doLogout()"></app-header>
+  <app-header
+    [userInfo]="userService.userInfo"
+    [currentRoute]="currentRoute"
+    (logout)="doLogout()">
+  </app-header>
 </header>
 <main>
   <router-outlet></router-outlet>

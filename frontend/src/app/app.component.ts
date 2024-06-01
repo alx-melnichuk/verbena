@@ -35,6 +35,12 @@ export class AppComponent {
     }
   }
 
+  public get currentRoute(): string {
+    return window.location.pathname;
+  }
+  public set currentRoute(value: string) {
+  }
+  
   constructor(
     public translate: TranslateService,
     public userService: UserService,
