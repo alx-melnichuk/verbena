@@ -14,9 +14,7 @@ import { AboutComponent } from '../lib-about/about/about.component';
 })
 export class PgAboutComponent {
 
-  constructor(
-  ) {
-    console.log('PgAboutComponent();');
+  constructor() {
   }
 
   // ** Public API **
