@@ -2,21 +2,20 @@
 
   <div class="ab-panel">
 
-    <div class="ab-title">{{ title }}</div>
-    
-    <p class="">{{ label }}</p>
-    
-    <p><a href="{{ linkSwaggerUi }}" target="_blank">Swagger-UI</a> - {{ 'about.label_swagger' | translate }}</p>
-    <p><a href="{{ linkRapidoc }}" target="_blank">RapiDoc</a> - {{ 'about.label_rapidoc' | translate }}</p>
-    <p><a href="{{ linkRedoc }}" target="_blank">ReDoc</a> - {{ 'about.label_redoc' | translate }}</p>
+    <div pd-ver>
+        <div class="ab-title">{{ title }}</div>
+        <p>{{ label }}</p>
+        <p><a href="{{ linkSwaggerUi }}" target="_blank">Swagger-UI</a> - {{ 'about.label_swagger' | translate }}</p>
+        <p><a href="{{ linkRapidoc }}" target="_blank">RapiDoc</a> - {{ 'about.label_rapidoc' | translate }}</p>
+        <p><a href="{{ linkRedoc }}" target="_blank">ReDoc</a> - {{ 'about.label_redoc' | translate }}</p>
+    </div>
 
-    <div class="ab-box global-scroll">
+    <div pd-ver class="ab-box global-scroll">
         
       <span>{{ 'about.frontend_used' | translate }}</span>
       <ul>
         <li *ngFor="let item of frontendItems">{{ item }}</li>
       </ul>
-      <br/>
       <span>{{ 'about.backend_used' | translate }}</span>
       <ul>
         <li>{{ backendItem01 }}</li>

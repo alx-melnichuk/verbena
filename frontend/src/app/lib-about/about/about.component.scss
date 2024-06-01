@@ -41,7 +41,7 @@ app-about {
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: var(--ab-pd);
+    padding: var(--ab-pd) 0;
     width: var(--ab-wd);
   }
   .ab-title {
@@ -50,11 +50,13 @@ app-about {
     margin-bottom: 1em;
     text-align: center;
   }
+  [pd-ver] {
+    padding-left: var(--ab-pd);
+    padding-right: var(--ab-pd);
+  }
   .ab-box {
     box-sizing: border-box;
-    // flex: 1 1 auto;
     margin-top: 1em;
-    // height: 70%;
     overflow-y: auto;
     ul {
       margin-block-start: 0px;
