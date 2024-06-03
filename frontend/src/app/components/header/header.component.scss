@@ -9,13 +9,15 @@ app-header {
     ---hd-bg-h: var(--app-site-unauth-h);
     ---hd-bg-s: var(--app-site-unauth-s);
     ---hd-bg-l: var(--app-site-unauth-l);
-    ---hd-bg-delta: -7%;
+    ---hd-bg-delta1: -8%;
+    ---hd-bg-delta2: -5%;
   }
   &.hd-user-info {
     ---hd-bg-h: var(--app-site-auth-h);
     ---hd-bg-s: var(--app-site-auth-s);
     ---hd-bg-l: var(--app-site-auth-l);
-    ---hd-bg-delta: 7%;
+    ---hd-bg-delta1: 8%;
+    ---hd-bg-delta2: 5%;
   }
 
   background-color: hsl(var(---hd-bg-h), var(---hd-bg-s), var(---hd-bg-l));
@@ -64,12 +66,18 @@ app-header {
 //   }
   // "box-actions"
   .hd-menu {
+    border-radius: 0.3em;
     font-size: calc(1em + 1px);
     font-weight: 500;
     padding: 0.3em 0.5em;
-    &:hover {
-      background-color: hsl(var(---hd-bg-h), var(---hd-bg-s), calc(var(---hd-bg-l) + var(---hd-bg-delta)));
+    &.active {
+      ---hd-bg-delta: var(---hd-bg-delta1);
     }
+    &:hover {
+      ---hd-bg-delta: var(---hd-bg-delta2);
+    }
+    background-color: hsl(var(---hd-bg-h), var(---hd-bg-s), calc(var(---hd-bg-l) + var(---hd-bg-delta)));
+
   }
   // "box-user"
   .hd-user-info {

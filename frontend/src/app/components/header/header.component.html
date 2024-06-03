@@ -15,7 +15,9 @@
 <div class="hd-box-actions">
   <!-- <span>box-actions</span> -->
   <ng-container *ngFor="let item of menuList">
-    <a class="hd-menu" routerLink="{{ item.link }}">{{ item.name | translate }}</a>
+    <a class="hd-menu" routerLink="{{ item.link }}" routerLinkActive="active" ariaCurrentWhenActive="page">
+      {{ item.name | translate }}
+    </a>
   </ng-container>
 </div>
 

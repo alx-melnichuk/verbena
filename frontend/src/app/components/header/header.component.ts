@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, OnChanges, Output, Renderer2, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { UserDto } from 'src/app/entities/user/user-dto';
@@ -14,7 +14,7 @@ import { MainMenu, ROUTE_LOGIN, mainMenuList } from 'src/app/common/routes';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule, MainMenuComponent],
+  imports: [CommonModule, RouterLink, RouterLinkActive, TranslateModule, MainMenuComponent],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -59,7 +59,7 @@ export class HeaderComponent implements OnChanges {
   // ** Private API **
 
   private getMainMenuList(list: MainMenu[], currentRoute: string, isAuth: boolean): MainMenu[] {
-    const result = list.filter((item) => isAuth == (item.isAuth !== null ? item.isAuth : isAuth) && currentRoute != item.link);
+    const result = list.filter((item) => isAuth == (item.isAuth !== null ? item.isAuth : isAuth));
     return result;
   }
 
