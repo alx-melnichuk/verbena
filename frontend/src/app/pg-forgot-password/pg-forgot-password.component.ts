@@ -49,8 +49,8 @@ export class PgForgotPasswordComponent {
     this.errMsgList = [];
     this.userService.recovery(email)
       .then(() => {
-        const appName = this.translate.instant('app_name');
-        const title = this.translate.instant('forgot-password.dialog_title', { app_name: appName });
+        const appName = this.translate.instant('app.name');
+        const title = this.translate.instant('forgot-password.dialog_title', { appName: appName });
         const message = this.translate.instant('forgot-password.dialog_message', { value: email });
         this.dialogService.openConfirmation(message, title, null, 'buttons.ok').then(() => {
           this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });

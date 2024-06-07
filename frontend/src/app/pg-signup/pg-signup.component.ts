@@ -52,8 +52,8 @@ export class PgSignupComponent {
     this.errMsgList = [];
     this.userService.registration(nickname, email, password)
       .then(() => {
-        const appName = this.translate.instant('app_name');
-        const title = this.translate.instant('signup.dialog_title', { app_name: appName });
+        const appName = this.translate.instant('app.name');
+        const title = this.translate.instant('signup.dialog_title', { appName: appName });
         const message = this.translate.instant('signup.dialog_message', { value: email });
         this.dialogService.openConfirmation(message, title, null, 'buttons.ok').then(() => {
           this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });

@@ -31,9 +31,9 @@ export class AboutComponent {
   }
 
   constructor(private translate: TranslateService,) {
-    const appName = this.translate.instant('app_name') || '';
-    this.title = this.translate.instant('about.title', { app_name: appName }) || '';
-    this.label = this.translate.instant('about.label', { app_name: appName }) || '';
+    const appName = this.translate.instant('app.name') || '';
+    this.title = this.translate.instant('about.title', { appName: appName }) || '';
+    this.label = this.translate.instant('about.label', { appName: appName }) || '';
     this.frontendItems = this.translate.instant('about.frontend_items') || [];
   }
   
