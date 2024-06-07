@@ -7,9 +7,17 @@
   <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
 
     <style type="text/css">
-      html { height: 100%; }
-      body { height: 100%; line-height: 1.5; margin: 0 !important; padding: 0 !important;
-        -webkit-text-size-adjust: 100% !important; -ms-text-size-adjust: 100% !important; -webkit-font-smoothing: antialiased !important;  }
+      html {
+        font-family: Roboto, 'Helvetica Neue', sans-serif;
+        font-size: 14px;
+        height: 100%;
+        line-height: 1.5;
+      }
+      body {
+        height: 100%;
+        margin: 0;
+        -webkit-text-size-adjust: 100% !important; -ms-text-size-adjust: 100% !important; -webkit-font-smoothing: antialiased !important;
+      }
       [al-it-cen] { align-items: center; }
       [bg-sz-cov] { background-size: cover; }
       [bx-sz-brd] { box-sizing: border-box; }
@@ -39,8 +47,32 @@
   <body>
 
     <style>
-      .s-desktop {  --a-hd-hg: 4.4em; --a-hd-bg: hsl(140, 40%, 90%); --a-ft-hg: 2.3em; --a-ft-bg: hsl(140, 40%, 90%);
-        font-family: sans-serif; }
+      @media (width <= 480px) {
+        .s-desktop { --a-hd-hg: min(18vh, 80px); }
+        .s-content { --pd: 0.5em; --wd: 100%; }
+      }
+      @media (480px < width <= 768px) {
+        .s-desktop { --a-hd-hg: 74px; }
+        .s-content { --pd: 1.5em; --wd: 30em; }
+      }
+      @media (768px < width <= 1024px) {
+        .s-desktop { --a-hd-hg: 68px; }
+        .s-content { --pd: 2em; --wd: 32em; }
+      }
+      @media (1024px < width <= 1280px) {
+        .s-desktop { --a-hd-hg: 64px; }
+        .s-content { --pd: 2.5em; --wd: 34em; }
+      }
+      @media (1280px < width) {
+        .s-desktop { --a-hd-hg: 62px; }
+        .s-content { --pd: 3em; --wd: 36em; }
+      }
+      .s-desktop {
+        --a-site-unauth: hsl(55, 80%, 88%);
+        --a-hd-bg: var(--a-site-unauth);
+        --a-ft-hg: 1.75em;
+        --a-ft-bg: var(--a-site-unauth);
+      }
       header { background-color: var(--a-hd-bg); border-bottom: 1px solid lightgrey; flex: 0 0 var(--a-hd-hg); }
       footer { background-color: var(--a-ft-bg); border-top: 1px solid lightgrey; flex: 0 0 var(--a-ft-hg); }
       main { flex: 1 1 auto; height: fit-content; }
@@ -56,11 +88,6 @@
         padding: var(--pd);
         width: var(--wd);
       }
-      @media (width <= 480px) { .s-content { --pd: 0.5em; --wd: 100%; } }
-      @media (480px < width <= 768px) { .s-content { --pd: 1.5em; --wd: 30em; } }
-      @media (768px < width <= 1024px) { .s-content { --pd: 2em; --wd: 32em; } }
-      @media (1024px < width <= 1280px) { .s-content { --pd: 2.5em; --wd: 34em; } }
-      @media (1280px < width) { .s-content { --pd: 3em; --wd: 36em; } }
       .s-title {
         font-size: calc(100% + 4px);
         font-weight: bold;
@@ -126,13 +153,18 @@
       .s-hint:not(.s-err) { color: hsl(210, 8%, 35%); }
       .s-submit { background-color: #3f51b5; color: #fff; }
 
+      .s-footer {
+        height: 100%;
+        line-height: 1;
+        padding-left: 0.8em;
+      }
     </style>
 
     <div ds-fl fl-dr-col hg-100 class="s-desktop">
       <header ds-fl js-cn-bet bx-sz-brd>
         <div ds-fl al-it-cen pd-lf-05 pd-rg-05>
           <i bg-sz-cov class="hd-logo-mini"></i>
-          <span mr-lf-05 id="app_name_id" style="font-size: x-large; font-weight: 600;"></span>
+          <span mr-lf-05 id="app_name_id1" style="font-size: x-large; font-weight: 600;"></span>
         </div>
       </header>
 
@@ -174,8 +206,8 @@
         </div>
       </main>
 
-      <footer ds-fl al-it-cen bx-sz-brd style="padding-left: 2em;">
-        <div id="app_footer_id"></div>
+      <footer ds-fl al-it-cen bx-sz-brd class="s-footer">
+        <a href="/ind/about" id="app_name_id2"></a>&nbsp;<span id="app_demo_site_id"></span>
       </footer>
     </div>
 
@@ -308,11 +340,14 @@
       }
 
       function prepareData() {
-        const app_name = document.getElementById("app_name_id");
-        app_name.innerText = getTranslate("app", "name");
-
-        const app_footer = document.getElementById("app_footer_id");
-        app_footer.innerText = getTranslate("app", "footer");
+        // Header
+        const app_name1 = document.getElementById("app_name_id1");
+        app_name1.innerText = getTranslate("app", "name");
+        // Footer
+        const app_name2 = document.getElementById("app_name_id2");
+        app_name2.innerText = getTranslate("app", "name");
+        const app_demo_site = document.getElementById("app_demo_site_id");
+        app_demo_site.innerText = getTranslate("app", "demo_site");
 
         const content = document.getElementById("content_id");
 
