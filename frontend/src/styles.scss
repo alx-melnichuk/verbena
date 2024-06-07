@@ -6,18 +6,21 @@
 @import './styles-theme.scss';
 @import './styles-mdc-infix.scss';
 
-html,
-body {
+html {
   --scrollbarBG: rgb(207 216 220 / 20%);
   --thumbBG: #90a4ae;
-  box-sizing: border-box;
   font-family: Roboto, 'Helvetica Neue', sans-serif;
   font-size: 14px;
   height: 100%;
   line-height: 1.5;
-  margin: 0;
 }
-
+body {
+  height: 100%;
+  margin: 0;
+  -webkit-text-size-adjust: 100% !important;
+  -ms-text-size-adjust: 100% !important;
+  -webkit-font-smoothing: antialiased !important;
+}
 h1,
 h2,
 h3,
@@ -38,9 +41,9 @@ a:hover {
 //   color: hsl(209.84, 78.72%, 45%); 
 //   color: #1976d2; // hsl(209.84, 78.72%, 46.08%);
 }
-a:not([decor]),
-a:visited:not([decor]),
-a:hover:not([decor]) {
+a[nodecor],
+a:visited[nodecor],
+a:hover[nodecor] {
   text-decoration: none;
 }
 
