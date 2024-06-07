@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Verbéna",
-    "footer": "Verbéna demo site."
+    "demo_site": " demo site."
   },
   "Registration": {
     "title":"Registration",

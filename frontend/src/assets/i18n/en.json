@@ -1,6 +1,8 @@
 {
-  "app_name": "Verbéna",
-  "demo_site": " demo site.",
+  "app": {
+    "name": "Verbéna",
+    "demo_site": " demo site."
+  },
   "error": {
     "required": "Enter a required field.",
     "server_api_call": "An error occurred while calling the server API."
@@ -164,7 +166,7 @@
     "button_signup": "Sign up",
     "already_registered": "Already registered ?",
     "go_to_login_page": "Go to the login page.",
-    "dialog_title": "Welcome to the {{app_name}} !",
+    "dialog_title": "Welcome to the {{appName}} !",
     "dialog_message": "We have sent a registration link to \"{{value}}\"."
   },
   "forgot-password": {
@@ -173,7 +175,7 @@
     "email_address": "Email Address",
     "button_send": "Send request",
     "go_to_login_page": "Go to the login page.",
-    "dialog_title": "Welcome to the {{app_name}} !",
+    "dialog_title": "Welcome to the {{appName}} !",
     "dialog_message": "We have sent a link to change your password to \"{{value}}\"."
   },
   "logotype": {
@@ -227,8 +229,8 @@
     "stream_link_copied_to_clipboard": "Stream link copied to clipboard"
   },
   "about": {
-    "title": "About the {{app_name}} website.",
-    "label": "The {{app_name}} site is a demo site. And has no commercial purposes.",
+    "title": "About the {{appName}} website.",
+    "label": "The {{appName}} site is a demo site. And has no commercial purposes.",
     "label_swagger": "swagger visual interface",
     "label_redoc": "redoc documentation",
     "label_rapidoc": "rapidoc documentation",
