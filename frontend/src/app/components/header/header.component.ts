@@ -30,7 +30,6 @@ export class HeaderComponent implements OnChanges {
 
   public menuList: MainMenu[] = [];
   public linkLogin = ROUTE_LOGIN;
-  public linkDashboard: string = 'login';
 
   @HostBinding('class.hd-user-info')
   get isUserInfo(): boolean {

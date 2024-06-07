@@ -9,16 +9,14 @@ app-header {
     ---hd-bg-h: var(--app-site-unauth-h);
     ---hd-bg-s: var(--app-site-unauth-s);
     ---hd-bg-l: var(--app-site-unauth-l);
-    ---hd-bg-delta1: -8%;
-    ---hd-bg-delta2: -5%;
   }
   &.hd-user-info {
     ---hd-bg-h: var(--app-site-auth-h);
     ---hd-bg-s: var(--app-site-auth-s);
     ---hd-bg-l: var(--app-site-auth-l);
-    ---hd-bg-delta1: 8%;
-    ---hd-bg-delta2: 5%;
   }
+  ---hd-bg-act: -10%;
+  ---hd-bg-hov: -7%;
 
   background-color: hsl(var(---hd-bg-h), var(---hd-bg-s), var(---hd-bg-l));
 
@@ -41,11 +39,6 @@ app-header {
   }
 
   // Section: "box-logo"
-  .hd-logo-link {
-    align-items: center;
-    color: inherit;
-    display: flex;
-  }
   .hd-logo-text {
     font-size: x-large;
     font-weight: 500;
@@ -78,10 +71,10 @@ app-header {
     font-weight: 500;
     padding: 0.3em 0.5em;
     &.active {
-      ---hd-bg-delta: var(---hd-bg-delta1);
+      ---hd-bg-delta: var(---hd-bg-act);
     }
     &:hover {
-      ---hd-bg-delta: var(---hd-bg-delta2);
+      ---hd-bg-delta: var(---hd-bg-hov);
     }
     background-color: hsl(var(---hd-bg-h), var(---hd-bg-s), calc(var(---hd-bg-l) + var(---hd-bg-delta)));
 

@@ -1,11 +1,6 @@
 <div class="hd-box-logo">
-  <a
-    class="hd-logo-link"
-    [routerLink]="[linkDashboard]"
-  >
-    <i class="hd-icon hd-logo-mini"></i>
-    <span class="hd-logo-text">{{ 'app_name' | translate }}</span>
-  </a>
+  <i class="hd-icon hd-logo-mini"></i>
+  <span class="hd-logo-text">{{ 'app.name' | translate }}</span>
 </div>
 
 <!-- <div class="hd-box-search" style="display: none;">
@@ -17,7 +12,7 @@
   <nav>
     <ul>
       <li *ngFor="let item of menuList">
-        <a class="hd-menu" routerLink="{{ item.link }}" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <a nodecor class="hd-menu" routerLink="{{ item.link }}" routerLinkActive="active" ariaCurrentWhenActive="page">
           {{ item.name | translate }}
         </a>
       </li>
