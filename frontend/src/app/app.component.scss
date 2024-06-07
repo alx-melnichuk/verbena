@@ -3,7 +3,7 @@
 @use '../styles-dimensions.scss' as dimensions;
 
 app-root {
-  --footer-hg: 20px;
+  --footer-hg: 1.75em;
   @media screen and (width <= dimensions.$mobile-480) {
     --header-hg: min(18vh, 80px);
   }
