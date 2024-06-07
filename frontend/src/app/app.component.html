@@ -11,27 +11,3 @@
 <footer>
   <app-footer [userInfo]="userService.userInfo"></app-footer>
 </footer>
-
-<!-- <section class="tmp-routes">
-  <span>
-    <select
-        #langSelect
-        (change)="translate.use(langSelect.value)"
-    >
-        <option
-        *ngFor="let lang of translate.getLangs()"
-        [value]="lang"
-        [selected]="lang === translate.currentLang"
-        >
-        {{ lang }}
-        </option>
-    </select>
-  </span>
-  <button routerLink="ind/login">login</button>
-  <button routerLink="ind/signup">signup</button>
-  <button routerLink="ind/forgot-password">forgot</button>
-  <button routerLink="ind/stream/list">stream/list</button>
-  <button routerLink="ind/stream/edit/561">stream/edit</button>
-  <button routerLink="ind/stream/create">stream/create</button>
-  
-</section> -->
