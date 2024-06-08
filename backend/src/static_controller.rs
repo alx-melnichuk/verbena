@@ -36,18 +36,18 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
     let app_domain = format!("<script>var APP_DOMAIN='{}';</script>", &config_app.app_domain );
     let body_str = body_str.replacen("<script>var APP_DOMAIN;</script>", &app_domain, 1);
 
-    let app_backend01 = "rustc v.1.77";
+    let app_backend01 = "rustc v.1.78";
     let app_backend02: Vec<&str> = vec![
         "actix = \"0.13.3\"",
         "actix-cors = \"0.7.0\"",
         "actix-files = \"0.6.5\"",
         "actix-multipart = \"0.6.1\"",
-        "actix-web = { version = \"4.5.1\", features = [\"openssl\"] }",
+        "actix-web = { version = \"4.6.0\", features = [\"openssl\"] }",
         "argon2 = \"0.5.3\"",
-        "chrono = { version = \"0.4.37\", features = [\"serde\"] }",
-        "diesel = { version = \"2.1.5\", features = [\"postgres\", \"r2d2\", \"chrono\"] }",
+        "chrono = { version = \"0.4.38\", features = [\"serde\"] }",
+        "diesel = { version = \"2.2.0\", features = [\"postgres\", \"r2d2\", \"chrono\"] }",
         "diesel-derive-enum = { version = \"2.1.0\", features = [\"postgres\"] }",
-        "diesel_migrations = \"2.1.0\"",
+        "diesel_migrations = \"2.2.0\"",
         "dotenv = \"0.15.0\"",
         "email_address = \"0.2.4\"",
         "env_logger = \"0.11.3\"",
@@ -55,19 +55,19 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
         "handlebars = \"5.1.2\"",
         "image = \"0.24.9\"",
         "jsonwebtoken = \"9.3.0\"",
-        "lettre = { version = \"0.11.5\", features = [\"tokio1\", \"tokio1-native-tls\"] }",
+        "lettre = { version = \"0.11.7\", features = [\"tokio1\", \"tokio1-native-tls\"] }",
         "log = \"0.4.21\"",
         "mime = \"0.3.17\"",
         "openssl = \"0.10.64\"",
         "r2d2 = \"0.8.10\"",
         "rand = \"0.8.5\"",
         "regex = \"1.10.4\"",
-        "serde = { version = \"1.0.197\", features = [\"derive\"] }",
-        "serde_json = \"1.0.115\"",
+        "serde = { version = \"1.0.203\", features = [\"derive\"] }",
+        "serde_json = \"1.0.117\"",
         "utoipa = { version = \"4.2.0\", features = [\"chrono\", \"actix_extras\"] }",
-        "utoipa-swagger-ui = { version = \"6.0.0\", features = [\"actix-web\"] }",
-        "utoipa-redoc = { version = \"3.0.0\", features = [\"actix-web\"] }",
-        "utoipa-rapidoc = { version = \"3.0.0\", features = [\"actix-web\"] }",
+        "utoipa-swagger-ui = { version = \"7.1.0\", features = [\"actix-web\"] }",
+        "utoipa-redoc = { version = \"4.0.0\", features = [\"actix-web\"] }",
+        "utoipa-rapidoc = { version = \"4.0.0\", features = [\"actix-web\"] }",
     ];
     let app_backend03: Vec<&str> = vec!["actix-multipart-test = \"0.0.3\""];
     let app_about_s = format!(
