@@ -1,10 +1,11 @@
-<div class="psd-card">
-  <div class="psd-card-content">
+<div class="pse-panel">
+  <div class="pse-content pse-over-auto global-scroll">
+
     <form [formGroup]="formGroup" novalidate>
         
-      <div class="psd-text">{{ 'stream_edit.caption' | translate }}</div>
+      <div class="pse-text">{{ 'stream_edit.caption' | translate }}</div>
 
-      <mat-form-field class="psd-max-wd" appearance="outline" color="primary">
+      <mat-form-field class="pse-max-wd" appearance="outline" color="primary">
         <mat-label>{{ 'stream_edit.title' | translate }}</mat-label>
         <input matInput
           type="text"
@@ -16,7 +17,7 @@
         <mat-error>{{ getErrorMsg(controls.title.errors, 'title') | translate : controls.title.errors }}</mat-error>
       </mat-form-field>
 
-      <app-field-descript class="psd-max-wd psd-mr-tp"
+      <app-field-descript class="pse-max-wd pse-mr-tp"
         formControlName="descript"
         [isRequired]="false"
         [label]="'stream_edit.descript'"
@@ -26,24 +27,24 @@
         [maxRows]="countRowsDescription">
       </app-field-descript>
 
-      <div class="psd-text">{{ 'stream_edit.thumbnail' | translate }}</div>
+      <div class="pse-text">{{ 'stream_edit.thumbnail' | translate }}</div>
 
-      <div class="psd-logo-block">
+      <div class="pse-logo-block">
         <app-field-file-upload *ngIf="!addedLogoView"
           [maxFileSize]="maxFileSize"
           [validFileTypes]="validFileTypes"
           (addFile)="addFile($event)"
           (readFile)="readFile($event)">
         </app-field-file-upload>
-        <div *ngIf="!!addedLogoView" class="psd-logo-image">
-          <img class="psd-image-view" [src]="addedLogoView" alt="logo unavailable">
-          <button class="psd-delete-logo" (click)="deleteFileLogo()">
-            <span class="psd-delete-box"></span>
+        <div *ngIf="!!addedLogoView" class="pse-logo-image">
+          <img class="pse-image-view" [src]="addedLogoView" alt="logo unavailable">
+          <button class="pse-delete-logo" (click)="deleteFileLogo()">
+            <span class="pse-delete-box"></span>
           </button>
         </div>
       </div>
 
-      <div class="psd-text">{{ 'stream_edit.tags' | translate }}</div>
+      <div class="pse-text">{{ 'stream_edit.tags' | translate }}</div>
 
       <app-field-chip-grid
         formControlName="tags"
@@ -60,16 +61,16 @@
       >
       </app-field-chip-grid>
 
-      <div class="psd-start-date-time-label">
-        <span class="psd-text">{{ 'stream_edit.set_date_and_time_or_now' | translate }}</span>
-        <mat-slide-toggle  class="psd-toggle"
+      <div class="pse-start-date-time-label">
+        <span class="pse-text">{{ 'stream_edit.set_date_and_time_or_now' | translate }}</span>
+        <mat-slide-toggle  class="pse-toggle"
           color="primary"
           formControlName="isStartTime"
           (change)="changeIsStartTime()">
         </mat-slide-toggle>
       </div>
 
-      <div class="psd-start-date-time">
+      <div class="pse-start-date-time">
         
         <mat-form-field appearance="outline" color="primary">
           <mat-label>{{ 'stream_edit.start_date' | translate }}</mat-label>
@@ -80,7 +81,7 @@
           <mat-datepicker #datepickerStartDate></mat-datepicker>
         </mat-form-field>
 
-        <app-field-time class="psd-start-time"
+        <app-field-time class="pse-start-time"
           formControlName="startTime"
           [isRequired]="true">
         </app-field-time>
@@ -88,13 +89,13 @@
 
       <ng-container *ngIf="!isCreate">
         <div class="">
-          <div class="psd-text">{{ 'stream_edit.link_for_visitors' | translate }}</div>
+          <div class="pse-text">{{ 'stream_edit.link_for_visitors' | translate }}</div>
         </div>
-        <div class="psd-link-param">
-          <div class="psd-ellipsis">
+        <div class="pse-link-param">
+          <div class="pse-ellipsis">
             <span>{{ linkForVisitors }}</span>
           </div>
-          <div class="psd-icon psd-copy"
+          <div class="pse-icon pse-copy"
             [matTooltip]="'stream_edit.copy_stream_link_to_clipboard' | translate"
             matTooltipPosition="above"
             (click)="doCopyToClipboard(linkForVisitors)"
@@ -105,20 +106,21 @@
     </form>
 
   </div>
-  <div class="psd-card-actions">
+
+  <div class="pse-card-actions">
 
     <button mat-raised-button color="primary"
       [disabled]="formGroup.pristine || formGroup.invalid"
       (click)="saveStreamCard()">
-      <span class="psd-card-actions-label">
-        <i class="psd-save-file"></i>
+      <span class="pse-card-actions-label">
+        <i class="pse-save-file"></i>
         {{ (isCreate ? 'stream_edit.go_public' : 'stream_edit.save') | translate }}
       </span>
     </button>
     
-    <button mat-raised-button class="psd-cancel"
+    <button mat-raised-button class="pse-cancel"
       (click)="cancelStreamCard()">
-      <span class="psd-card-actions-label">
+      <span class="pse-card-actions-label">
         {{ 'buttons.cancel' | translate }}
       </span>
     </button>
