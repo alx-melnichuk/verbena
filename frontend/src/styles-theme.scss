@@ -120,6 +120,9 @@ body {
     --app-pn-stream-low: hsl(210, 11%, 48%);
     --app-pn-stream-day: hsl(140, 40%, 27%);
 
+    --app-pn-profile: hsl(300, 15%, 35%);
+    --app-pn-profile-low: hsl(300, 15%, 45%);
+
   }
   .light-theme {
     color-scheme: light;
@@ -167,6 +170,9 @@ body {
     --app-pn-stream: hsl(222, 50%, 96%);  // --app-theme-background-panel-2: hsl(222, 50%, 96%);
     --app-pn-stream-low: hsl(222, 50%, 86%);
     --app-pn-stream-day: hsl(140, 40%, 75%);
+
+    --app-pn-profile: hsl(300, 35%, 95%);
+    --app-pn-profile-low: hsl(300, 35%, 85%);
 
   }
 

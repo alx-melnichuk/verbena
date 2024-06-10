@@ -1,0 +1,108 @@
+/*# sourceURL=panel-profile-info.component.scss */
+
+@use '../../../styles-dimensions.scss' as dimensions;
+
+app-panel-profile-info {
+  ---ppi-pn-bg: var(--app-pn-profile);
+  ---ppi-pn-brd: var(--app-pn-profile-low);
+
+  @media screen and (width <= dimensions.$mobile-480) {
+    ---ppi-crd-wd: 100vw;
+    ---ppi-pd: 0.5em;
+    ---ppi-wd: 100%;
+  }
+  @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
+    ---ppi-crd-wd: 100vw;
+    ---ppi-pd: 1em;
+    ---ppi-wd: 39em; // 30em;
+  }
+  @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
+    ---ppi-crd-wd: 80vw;
+    ---ppi-pd: 1.5em;
+    ---ppi-wd: 41em; // 32em;
+  }
+  @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
+    ---ppi-crd-wd: 60vw;
+    ---ppi-pd: 2em;
+    ---ppi-wd: 43em; //34em;
+  }
+  @media screen and (dimensions.$desktop-1280 < width) {
+    ---ppi-crd-wd: 40vw;
+    ---ppi-pd: 2.5em;
+    ---ppi-wd: 45em; //36em;
+  }
+
+  box-sizing: border-box;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  padding: var(---ppi-pd) 0;
+  user-select: none;
+
+  [mr-bt-05] { margin-bottom: 0.5em; }
+  [mr-tp-05] { margin-top: 0.5em; }
+  [wd-100] { width: 100%; }
+
+  .ppi-panel {
+    background-color:  var(--ppi-pn-bg,var(---ppi-pn-bg));
+    border-color: var(--ppi-pn-brd, var(---ppi-pn-brd));
+    border-style: solid;
+    border-width: 1px;
+    border-radius: var(--ppi-pn-brd-rd, var(---ppi-pd));
+    box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: var(---ppi-pd) 0;
+    width: var(---ppi-wd);
+  }
+  .ppi-content {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    padding: 0 var(---ppi-pd);
+  }
+  .ppi-over-auto {
+    overflow: auto;
+  }
+
+
+  .ppi-title {
+    font-size: calc(100% + 6px);
+    font-weight: 500;
+    margin-bottom: 1em;
+    text-align: center;
+  }
+
+  app-field-nickname {
+    height: calc(78px + 1.5em);
+  }
+
+  // ** Card Actions **
+
+  .ppi-actions {
+    display: flex;
+    justify-content: space-evenly;
+    padding: var(---ppi-pd) var(---ppi-pd) 0 var(---ppi-pd);
+  }
+  .ppi-actions-label {
+    display: flex;
+    align-items: center;
+  }
+
+  .mat-mdc-raised-button.ppi-cancel {
+    --mdc-protected-button-container-color: #DCDCDC; // #FFDAB9 #D2B48C #fff;
+    --mdc-protected-button-label-text-color: #000;
+  }
+
+  .ppi-save {
+    width: 25px;
+    height: 25px;
+    display: inline-block;
+    background: transparent none no-repeat center center;
+    background-image: url('../../../assets/icons/save-file.svg');
+    margin-right: 0.5em;
+  }
+
+}

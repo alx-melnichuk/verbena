@@ -17,7 +17,7 @@
     "about": "About",
     "login": "Log in",
     "signup": "Sign up",
-    "my_profile_": "My profile",
+    "profile": "Profile",
     "my_streams": "My streams",
     "create_stream": "Create stream",
     "my_follows_": "My follows",
@@ -249,5 +249,10 @@
         "\"infinite scroll\" for page-by-page data loading"
     ],
     "backend_used": "On the Backend we used:"
+  },
+  "profile": {
+    "title": "Personal information",
+    "new_password": "New password",
+    "save": "Save"
   }
 }

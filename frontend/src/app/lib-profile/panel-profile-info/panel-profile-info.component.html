@@ -1,0 +1,62 @@
+<div class="ppi-panel">
+  <div class="ppi-content ppi-over-auto global-scroll">
+  
+    <div>
+      <div class="ppi-title">{{ 'profile.title' | translate }}</div>
+    </div>
+    <form [formGroup]="formGroup" novalidate>
+          
+      <app-field-nickname
+        wd-100
+        formControlName="nickname"
+        [isRequired]="true"
+        label="field-nickname.label"
+        hint="field-nickname.nickname_hint"
+        (input)="updateErrMsg()">
+      </app-field-nickname>
+
+      <app-field-email
+        mr-tp-05
+        wd-100
+        formControlName="email"
+        [isRequired]="true"
+        label="field-email.label"
+        (input)="updateErrMsg()">
+      </app-field-email>
+
+      <app-field-password
+        mr-tp-05
+        wd-100
+        formControlName="password"
+        [isRequired]="false"
+        label="profile.new_password"
+        hint="field-password.password_hint"
+        (input)="updateErrMsg()">
+      </app-field-password>
+
+
+      <div>&nbsp;</div>
+    </form>
+
+  </div>
+
+  <div class="ppi-actions">
+
+    <button mat-raised-button color="primary"
+      [disabled]="formGroup.pristine || formGroup.invalid"
+      (click)="saveProfile()">
+      <span class="ppi-actions-label">
+        <i class="ppi-save"></i>
+        {{ 'profile.save' | translate }}
+      </span>
+    </button>
+  
+    <button mat-raised-button class="ppi-cancel"
+      (click)="cancelProfile()">
+      <span class="ppi-actions-label">
+        {{ 'buttons.cancel' | translate }}
+      </span>
+    </button>
+
+  </div>
+</div>

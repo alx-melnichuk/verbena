@@ -54,6 +54,17 @@ export class UserDtoUtil {
       updatedAt: typeof value.updatedAt == 'string' ? new Date(value['updatedAt']) : value['updatedAt'],
     };
   }
+  public static create(userDto?: Partial<UserDto>): UserDto {
+    return {
+      id: (userDto?.id || -1),
+      nickname: (userDto?.nickname || ''),
+      email: (userDto?.email || ''),
+      password: (userDto?.password || ''),
+      role: (userDto?.role || ''),
+      createdAt: (userDto?.createdAt || ''),
+      updatedAt: (userDto?.updatedAt || ''),
+    };
+  }
 }
 
 // ** User Tokens **

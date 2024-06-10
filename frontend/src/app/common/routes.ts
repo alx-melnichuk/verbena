@@ -17,6 +17,11 @@ export const ROUTE_SIGNUP = '/' + R_SIGNUP;      // '/ind/signup'
 export const R_FORGOT_PASSWORD = R_ROOT + '/' + 'forgot-password'; // 'ind/forgot-password'
 export const ROUTE_FORGOT_PASSWORD = '/' + R_FORGOT_PASSWORD; // '/ind/forgot-password'
 
+// ** Page: Profile **
+
+export const R_PROFILE = R_ROOT + '/' + 'profile'; // 'ind/profile'
+export const ROUTE_PROFILE = '/' + R_PROFILE;      // '/ind/profile'
+
 // ** Page: Stream **
 export const R_STREAM = R_ROOT + '/' + 'stream'; // 'ind/stream'
 export const ROUTE_STREAM = '/' + R_STREAM;
@@ -47,8 +52,8 @@ export const ROUTE_VIEW = '/' + R_VIEW; // '/ind/view'
 export const REDIRECT_AFTER_LOGIN = ROUTE_STREAM_LIST;
 
 export const AUTHORIZATION_REQUIRED = [
-  ROUTE_STREAM
-  // ROUTE_PROFILE,
+  ROUTE_STREAM,
+  ROUTE_PROFILE,
   // ROUTE_FOLLOWERS,
   // ROUTE_FOLLOWS,
   // ROUTE_BANNED
@@ -61,18 +66,4 @@ export const AUTHORIZATION_DENIED = [
   // ROUTE_CONFIRMATION_RECOVERY,
   // ROUTE_CONFIRMATION_FORGOT_PASSWORD,
   // ROUTE_TECHNICAL,
-];
-
-export interface MainMenu {
-  isAuth: boolean | null;
-  name: string;
-  link: string;
-};
-
-export const mainMenuList = [
-  { isAuth: null, name: "main_menu.about", link: ROUTE_ABOUT },
-  { isAuth: false, name: "main_menu.login", link: ROUTE_LOGIN },
-  { isAuth: false, name: "main_menu.signup", link: ROUTE_SIGNUP },
-  { isAuth: true, name: "main_menu.my_streams", link: ROUTE_STREAM_LIST },
-  { isAuth: true, name: "main_menu.create_stream", link: ROUTE_STREAM_CREATE },
 ];
