@@ -90,10 +90,6 @@ export class PanelStreamEditorComponent implements OnChanges {
 
   public formGroup: FormGroup = new FormGroup(this.controls);
 
-  @HostBinding('class.global-scroll')
-  public get isGlobalScroll(): boolean { return true; }
-  
-
   private origStreamDto: StreamDto = StreamDtoUtil.create();
   
   constructor(

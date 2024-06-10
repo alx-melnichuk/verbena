@@ -63,12 +63,13 @@ app-panel-stream-editor {
     overflow: auto;
   }
 
-  .pse-max-wd {
-    width: 100%;
-  }
-  .pse-mr-tp {
+  [mr-tp-025] {
     margin-top: 0.25em;
   }
+  [wd-100] {
+    width: 100%;
+  }
+
 
   // ** Card Content **
 
@@ -155,12 +156,13 @@ app-panel-stream-editor {
   }
 
   // ** Card Actions **
-  .pse-card-actions {
+
+  .pse-actions {
     display: flex;
     justify-content: space-evenly;
     padding: var(---pse-pd) var(---pse-pd) 0 var(---pse-pd);
   }
-  .pse-card-actions-label {
+  .pse-actions-label {
     display: flex;
     align-items: center;
   }
@@ -177,7 +179,7 @@ app-panel-stream-editor {
     background: transparent none no-repeat center center;
     background-image: url('../../../assets/icons/delete-box.svg');
   }
-  .pse-save-file {
+  .pse-save {
     width: 25px;
     height: 25px;
     display: inline-block;

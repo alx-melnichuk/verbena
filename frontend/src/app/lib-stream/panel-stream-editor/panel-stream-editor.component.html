@@ -5,7 +5,7 @@
         
       <div class="pse-text">{{ 'stream_edit.caption' | translate }}</div>
 
-      <mat-form-field class="pse-max-wd" appearance="outline" color="primary">
+      <mat-form-field wd-100 appearance="outline" color="primary">
         <mat-label>{{ 'stream_edit.title' | translate }}</mat-label>
         <input matInput
           type="text"
@@ -17,7 +17,7 @@
         <mat-error>{{ getErrorMsg(controls.title.errors, 'title') | translate : controls.title.errors }}</mat-error>
       </mat-form-field>
 
-      <app-field-descript class="pse-max-wd pse-mr-tp"
+      <app-field-descript wd-100 mr-tp-025
         formControlName="descript"
         [isRequired]="false"
         [label]="'stream_edit.descript'"
@@ -107,20 +107,20 @@
 
   </div>
 
-  <div class="pse-card-actions">
+  <div class="pse-actions">
 
     <button mat-raised-button color="primary"
       [disabled]="formGroup.pristine || formGroup.invalid"
       (click)="saveStreamCard()">
-      <span class="pse-card-actions-label">
-        <i class="pse-save-file"></i>
+      <span class="pse-actions-label">
+        <i class="pse-save"></i>
         {{ (isCreate ? 'stream_edit.go_public' : 'stream_edit.save') | translate }}
       </span>
     </button>
     
     <button mat-raised-button class="pse-cancel"
       (click)="cancelStreamCard()">
-      <span class="pse-card-actions-label">
+      <span class="pse-actions-label">
         {{ 'buttons.cancel' | translate }}
       </span>
     </button>
