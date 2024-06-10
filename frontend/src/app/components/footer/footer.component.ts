@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { UserDto } from 'src/app/entities/user/user-dto';
 import { ROUTE_LOGIN } from 'src/app/common/routes';
+import { UserDto } from 'src/app/lib-user/user-api.interface';
 
 @Component({
   selector: 'app-footer',

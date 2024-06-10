@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 // import { Subject } from 'rxjs';
 import { UserApiService } from './user-api.service';
-import { LoginUserResponseDto, UserDto, UserTokensDto } from './user-dto';
+import { LoginUserResponseDto, UserDto, UserTokensDto } from './user-api.interface';
 
 export const ACCESS_TOKEN = 'accessToken';
 export const REFRESH_TOKEN = 'refreshToken';

@@ -5,9 +5,9 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { FooterComponent } from './components/footer/footer.component';
 import { HeaderComponent } from './components/header/header.component';
-import { ACCESS_TOKEN, UserService } from './entities/user/user.service';
 import { AUTHORIZATION_DENIED, ROUTE_LOGIN } from './common/routes';
 import { InitializationService } from './common/initialization.service';
+import { ACCESS_TOKEN, UserService } from './lib-user/user.service';
 
 @Component({
   selector: 'app-root',

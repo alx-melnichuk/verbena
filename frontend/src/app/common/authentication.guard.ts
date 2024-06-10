@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { ROUTE_LOGIN } from './routes';
 
-import { UserService } from '../entities/user/user.service';
+import { UserService } from '../lib-user/user.service';
 
 export const authenticationGuard: CanActivateFn = (
     route: ActivatedRouteSnapshot,

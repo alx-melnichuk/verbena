@@ -3,8 +3,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 
 import { ROUTE_LOGIN } from '../common/routes';
-import { UserDto } from '../entities/user/user-dto';
-import { UserService } from '../entities/user/user.service';
+import { UserService } from '../lib-user/user.service';
+import { UserDto } from '../lib-user/user-api.interface';
 
 export const pgUserResolver: ResolveFn<UserDto | HttpErrorResponse | undefined> = 
 (_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) => {

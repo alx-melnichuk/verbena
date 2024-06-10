@@ -8,7 +8,7 @@ import { Uri } from './uri';
 import { LIST_PUBLIC_METHODS } from './public-methods';
 import { ROUTE_LOGIN } from './routes';
 
-import { UserService } from '../entities/user/user.service';
+import { UserService } from '../lib-user/user.service';
 
 const CN_BEARER = 'Bearer ';
 

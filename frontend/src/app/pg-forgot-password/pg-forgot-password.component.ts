@@ -7,8 +7,8 @@ import { Router } from '@angular/router';
 import { ForgotPasswordComponent } from '../components/forgot-password/forgot-password.component';
 import { StrParams } from '../common/str-params';
 import { ROUTE_LOGIN } from '../common/routes';
-import { UserService } from '../entities/user/user.service';
 import { DialogService } from '../lib-dialog/dialog.service';
+import { UserService } from '../lib-user/user.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
 @Component({

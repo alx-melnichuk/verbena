@@ -5,11 +5,11 @@ import {
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { UserDto } from 'src/app/entities/user/user-dto';
 import { MainMenuComponent } from '../main-menu/main-menu.component';
 import { InitializationService } from 'src/app/common/initialization.service';
 import { MainMenu, MainMenuUtil } from 'src/app/common/main-menu';
 import { ROUTE_LOGIN } from 'src/app/common/routes';
+import { UserDto } from 'src/app/lib-user/user-api.interface';
 
 
 @Component({

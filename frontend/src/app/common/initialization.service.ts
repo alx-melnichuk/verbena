@@ -1,12 +1,12 @@
 import { Injectable, Renderer2 } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
+import { DateAdapter } from '@angular/material/core';
 import { first } from 'rxjs/operators';
 import { ROUTE_LOGIN } from './routes';
 import { AuthorizationUtil } from '../utils/authorization.util';
-import { UserService } from '../entities/user/user.service';
-import { DateAdapter } from '@angular/material/core';
 import { HttpErrorUtil } from '../utils/http-error.util';
+import { UserService } from '../lib-user/user.service';
 
 @Injectable({
   providedIn: 'root',

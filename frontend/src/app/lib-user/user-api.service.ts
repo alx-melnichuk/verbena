@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 import { Uri } from 'src/app/common/uri';
 import {
   CreateUserDto, LoginUserDto, LoginUserResponseDto, RecoveryUserDto, TokenUserDto, UserDto, UserDtoUtil, UserTokensDto
-} from './user-dto';
+} from './user-api.interface';
 import { HttpObservableUtil } from 'src/app/utils/http-observable.util';
 
 @Injectable({
