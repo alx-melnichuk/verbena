@@ -1,37 +1,33 @@
-<div class="ab-content">
+<div class="ab-panel">
 
-  <div class="ab-panel">
-
-    <div pd-ver>
-        <div class="ab-title">{{ title }}</div>
-        <p>{{ label }}</p>
-        <p><a href="{{ linkSwaggerUi }}" target="_blank">Swagger-UI</a> - {{ 'about.label_swagger' | translate }}</p>
-        <p><a href="{{ linkRapidoc }}" target="_blank">RapiDoc</a> - {{ 'about.label_rapidoc' | translate }}</p>
-        <p><a href="{{ linkRedoc }}" target="_blank">ReDoc</a> - {{ 'about.label_redoc' | translate }}</p>
-    </div>
-
-    <div pd-ver class="ab-box global-scroll">
-        
-      <span>{{ 'about.frontend_used' | translate }}</span>
-      <ul>
-        <li *ngFor="let item of frontendItems">{{ item }}</li>
-      </ul>
-      <span>{{ 'about.backend_used' | translate }}</span>
-      <ul>
-        <li>{{ backendItem01 }}</li>
-        <li>[dependencies]
-          <ul>
-            <li *ngFor="let item of backendItem02">{{ item }}</li>
-          </ul>
-        </li>
-        <li>[dev-dependencies]
-            <ul>
-            <li *ngFor="let item of backendItem03">{{ item }}</li>
-            </ul>
-        </li>
-      </ul>
-    </div>
-      
+  <div pd-ver>
+    <div class="ab-title">{{ title }}</div>
+    <p>{{ label }}</p>
+    <p><a href="{{ linkSwaggerUi }}" target="_blank">Swagger-UI</a> - {{ 'about.label_swagger' | translate }}</p>
+    <p><a href="{{ linkRapidoc }}" target="_blank">RapiDoc</a> - {{ 'about.label_rapidoc' | translate }}</p>
+    <p><a href="{{ linkRedoc }}" target="_blank">ReDoc</a> - {{ 'about.label_redoc' | translate }}</p>
   </div>
 
+  <div pd-ver mr-tp-1 class="ab-over-auto global-scroll">
+    <span>{{ 'about.frontend_used' | translate }}</span>
+    <ul>
+      <li *ngFor="let item of frontendItems">{{ item }}</li>
+    </ul>
+    <span>{{ 'about.backend_used' | translate }}</span>
+    <ul>
+      <li>{{ backendItem01 }}</li>
+      <li>[dependencies]
+        <ul>
+          <li *ngFor="let item of backendItem02">{{ item }}</li>
+        </ul>
+      </li>
+      <li>[dev-dependencies]
+          <ul>
+          <li *ngFor="let item of backendItem03">{{ item }}</li>
+          </ul>
+      </li>
+    </ul>
+  </div>
+      
 </div>
+

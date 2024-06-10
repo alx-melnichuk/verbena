@@ -3,46 +3,42 @@
 @use '../../../styles-dimensions.scss' as dimensions;
 
 app-about {
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  height: 100%;
-
-  .ab-content {
-    box-sizing: border-box;
-    height: 100%;
-    padding: 2em 0;
+  @media screen and (width <= dimensions.$mobile-480) {
+    ---ab-pd: 0.5em;
+    ---ab-wd: 100%;
   }
+  @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
+    ---ab-pd: 1em;
+    ---ab-wd: 39em; // 30em;
+  }
+  @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
+    ---ab-pd: 1.5em;
+    ---ab-wd: 41em; // 32em;
+  }
+  @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
+    ---ab-pd: 2em;
+    ---ab-wd: 43em; //34em;
+  }
+  @media screen and (dimensions.$desktop-1280 < width) {
+    ---ab-pd: 2.5em;
+    ---ab-wd: 45em; //36em;
+  }
+
+  box-sizing: border-box;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  padding: var(---ab-pd) 0;
+
   .ab-panel {
-    @media screen and (width <= dimensions.$mobile-480) {
-      --ab-pd: 0.5em;
-      --ab-wd: 100%;
-    }
-    @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
-      --ab-pd: 1.5em;
-      --ab-wd: 39em; // 30em;
-    }
-    @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
-      --ab-pd: 2em;
-      --ab-wd: 41em; // 32em;
-    }
-    @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
-      --ab-pd: 2.5em;
-      --ab-wd: 43em; //34em;
-    }
-    @media screen and (dimensions.$desktop-1280 < width) {
-      --ab-pd: 3em;
-      --ab-wd: 45em; //36em;
-    }
-    border-radius: var(--ab-pd);
+    border-radius: var(---ab-pd);
     border: 1px solid var(--app-site-border-cl);
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: var(--ab-pd) 0;
-    width: var(--ab-wd);
+    padding: var(---ab-pd) 0;
+    width: var(---ab-wd);
   }
   .ab-title {
     font-size: calc(100% + 6px);
@@ -51,17 +47,17 @@ app-about {
     text-align: center;
   }
   [pd-ver] {
-    padding-left: var(--ab-pd);
-    padding-right: var(--ab-pd);
+    padding-left: var(---ab-pd);
+    padding-right: var(---ab-pd);
   }
-  .ab-box {
-    box-sizing: border-box;
-    margin-top: 1em;
-    overflow-y: auto;
+  .ab-over-auto {
+    overflow: auto;
     ul {
       margin-block-start: 0px;
       padding-inline-start: 2em;
     }
   }
-
+  [mr-tp-1] {
+    margin-top: 1em;
+  }
 }
