@@ -12,8 +12,7 @@
       [isRequired]="true"
       label="field-nickname.label"
       hint="field-nickname.nickname_hint"
-      (input)="updateErrMsg()"
-    >
+      (input)="updateErrMsg()">
     </app-field-nickname>
 
     <app-field-email
@@ -22,8 +21,7 @@
       formControlName="email"
       [isRequired]="true"
       label="field-email.label"
-      (input)="updateErrMsg()"
-    >
+      (input)="updateErrMsg()">
     </app-field-email>
 
     <app-field-password
@@ -32,8 +30,8 @@
       formControlName="password"
       [isRequired]="true"
       hint="field-password.password_hint"
-      (input)="updateErrMsg()"
-    ></app-field-password>
+      (input)="updateErrMsg()">
+    </app-field-password>
 
     <button
       type="button"
@@ -43,8 +41,7 @@
       wd-100
       class="mat-primary"
       [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
-      (click)="doSignup()"
-    >
+      (click)="doSignup()">
       {{ 'signup.button_signup' | translate }}
     </button>
 
