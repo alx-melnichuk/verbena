@@ -47,10 +47,12 @@ export class InitializationService {
   }
 
   public async initSession(): Promise<void> {
-    const isAuthorizationRequired = AuthorizationUtil.isAuthorizationRequired();
-    const isNotRequiredNotDenied = AuthorizationUtil.isAuthorizationNotRequiredNotDenied();
+    const isAuthorizationRequired = AuthorizationUtil.isAuthorizationRequired(window.location.pathname);
+    const isAuthorizationDenied = AuthorizationUtil.isAuthorizationDenied(window.location.pathname);
+    const isNotAuthorizationDenied = !isAuthorizationDenied;
+
     const isExistAccessToken = this.userService.hasAccessTokenInLocalStorage();
-    if (isAuthorizationRequired || (isNotRequiredNotDenied && isExistAccessToken)) {
+    if (isAuthorizationRequired || (isNotAuthorizationDenied && isExistAccessToken)) {
       try {
         await this.userService.getCurrentUser();
       } catch {

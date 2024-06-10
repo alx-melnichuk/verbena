@@ -8,7 +8,8 @@ import { TranslateModule } from '@ngx-translate/core';
 import { UserDto } from 'src/app/entities/user/user-dto';
 import { MainMenuComponent } from '../main-menu/main-menu.component';
 import { InitializationService } from 'src/app/common/initialization.service';
-import { MainMenu, ROUTE_LOGIN, mainMenuList } from 'src/app/common/routes';
+import { MainMenu, MainMenuUtil } from 'src/app/common/main-menu';
+import { ROUTE_LOGIN } from 'src/app/common/routes';
 
 
 @Component({
@@ -41,7 +42,7 @@ export class HeaderComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['userInfo'] || !!changes['currentRoute']) {
-      this.menuList = this.getMainMenuList(mainMenuList, this.currentRoute || '', this.userInfo != null);
+      this.menuList = MainMenuUtil.getList(this.currentRoute || '', this.userInfo != null);
     }
   }
 
@@ -56,10 +57,5 @@ export class HeaderComponent implements OnChanges {
   }
 
   // ** Private API **
-
-  private getMainMenuList(list: MainMenu[], currentRoute: string, isAuth: boolean): MainMenu[] {
-    const result = list.filter((item) => isAuth == (item.isAuth !== null ? item.isAuth : isAuth));
-    return result;
-  }
 
 }

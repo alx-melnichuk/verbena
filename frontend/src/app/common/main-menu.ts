@@ -21,8 +21,8 @@ export class MainMenuUtil {
     const list2 = list || mainMenuList;
     for (let index = 0; index < list2.length; index++) {
         const item: MainMenu = list2[index];
-        const isAuthorizationRequired = AuthorizationUtil.isAuthorizationRequired2(item.link);
-        const isAuthorizationDenied = AuthorizationUtil.isAuthorizationDenied2(item.link);
+        const isAuthorizationRequired = AuthorizationUtil.isAuthorizationRequired(item.link);
+        const isAuthorizationDenied = AuthorizationUtil.isAuthorizationDenied(item.link);
         if ((isAuth && isAuthorizationRequired) || (!isAuth && isAuthorizationDenied)
           || (!isAuthorizationRequired && !isAuthorizationDenied)) {
           result.push(item);
