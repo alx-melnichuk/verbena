@@ -6,4 +6,7 @@ app-field-time {
   .mat-mdc-form-field-infix {
     width: 7em;
   }
+  .mat-mdc-form-field-subscript-wrapper {
+    --mdc-typography-caption-line-height: 1.25;
+  }
 }

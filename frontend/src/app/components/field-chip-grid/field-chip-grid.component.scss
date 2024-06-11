@@ -17,5 +17,8 @@ app-field-chip-grid {
   mat-form-field {
     width: 100%;
   }
+  .mat-mdc-form-field-subscript-wrapper {
+    --mdc-typography-caption-line-height: 1.25;
+  }
 }
   
