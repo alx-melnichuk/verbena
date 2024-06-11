@@ -53,9 +53,6 @@ export class PanelStreamEditorComponent implements OnChanges {
   
   public minLenTitle = 2;
   public maxLenTitle = 255;
-  public minLenDescription = 2;
-  public maxLenDescription = 2048;
-  public countRowsDescription = 4;
 
   public minDate: Date = new Date(Date.now());
   public maxDate: Date = new Date(this.minDate.getFullYear(), this.minDate.getMonth() + 7, 0);
