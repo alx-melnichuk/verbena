@@ -80,8 +80,8 @@ body {
     // "default" background-color
     --app-default-bg-h: 0;
     --app-default-bg-s: 0%;
-    --app-default-bg-l: 17%;
-    --demo-default-bg: hsl(0, 0%, 17%); // #2b2b2b // Old hsl(0, 5%, 10%); #1b1818
+    --app-default-bg-l: 30%;
+    --demo-default-bg: hsl(0, 0%, 30%); // #2b2b2b // Old hsl(0, 5%, 10%); #1b1818
     --app-default-bg: hsl(var(--app-default-bg-h),var(--app-default-bg-s),var(--app-default-bg-l));
 
     // "default" color
@@ -120,8 +120,8 @@ body {
     --app-pn-stream-low: hsl(210, 11%, 48%);
     --app-pn-stream-day: hsl(140, 40%, 27%);
 
-    --app-pn-profile: hsl(300, 15%, 35%);
-    --app-pn-profile-low: hsl(300, 15%, 45%);
+    --app-pn-profile: hsl(300, 15%, 30%);
+    --app-pn-profile-low: hsl(300, 15%, 40%);
 
   }
   .light-theme {

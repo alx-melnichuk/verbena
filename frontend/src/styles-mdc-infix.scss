@@ -9,12 +9,20 @@
     --infix-button-ordinary-brd: var(--app-ordinary-low); // high
     --demo-button-ordinary-bg : hsl(0, 0%, 19%);
     --infix-button-ordinary-bg: hsl(var(--app-ordinary-h), var(--app-ordinary-s), calc(var(--app-ordinary-l) - 28%));
+    --infix-form-field-hint-cl: hsla(0, 0%, 100%, 0.6);
+    .mdc-text-field:not(.mdc-text-field--disabled) .mdc-text-field__input {
+      color: inherit;
     }
+    .mdc-text-field:not(.mdc-text-field--disabled) .mdc-floating-label {
+      color: rgba(256, 256, 256, 0.6);
+    }
+  }
   &.light-theme {
     --infix-button-ordinary-brd: var(--app-ordinary-high);
     --demo-button-ordinary-bg : hsl(0, 0%, 84%);
     --infix-button-ordinary-bg: hsl(var(--app-ordinary-h), var(--app-ordinary-s), calc(var(--app-ordinary-l) + 37%));
-    }
+    --infix-form-field-hint-cl: hsl(210, 8%, 35%);
+  }
 
             
   button.app-infix {
@@ -41,6 +49,6 @@
     padding-top: 1em;
   }
   .mat-mdc-form-field-hint {
-    color: var(--black-600);
+    color: var(--infix-form-field-hint-cl);
   }
 }
