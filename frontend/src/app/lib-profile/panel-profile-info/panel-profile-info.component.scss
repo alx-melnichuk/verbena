@@ -39,9 +39,12 @@ app-panel-profile-info {
   padding: var(---ppi-pd) 0;
   user-select: none;
 
-  [mr-bt-05] { margin-bottom: 0.5em; }
-  [mr-tp-05] { margin-top: 0.5em; }
+  [mr-bt-0_5] { margin-bottom: 0.5em; }
+  [mr-tp-0_5] { margin-top: 0.5em; }
+  [mr-tp-1] { margin-top: 1em; }
+  [mr-tp-1_5] { margin-top: 1.5em; }
   [wd-100] { width: 100%; }
+  [hg-100] { height: 100%; }
 
   .ppi-panel {
     background-color:  var(--ppi-pn-bg,var(---ppi-pn-bg));
@@ -67,16 +70,43 @@ app-panel-profile-info {
     overflow: auto;
   }
 
-
   .ppi-title {
     font-size: calc(100% + 6px);
     font-weight: 500;
-    margin-bottom: 1em;
     text-align: center;
   }
 
-  app-field-nickname {
-    height: calc(78px + 1.5em);
+  .ppi-avatar {
+    border-color: var(--pse-logo-brd-cl, rgba(0, 0, 0, 0.38));
+    border-style: solid;
+    border-width: 1px;
+    border-radius: var(--pse-logo-brd-rd, 0.3em);
+    box-sizing: border-box;
+    height: 10em;
+    text-align: center;
+  }
+  .ppi-avatar-image {
+    height: 100%;
+    display: inline-block;
+    position: relative;
+  }
+  .ppi-avatar-view {
+    height: 100%;
+    border-radius: 0.5em;
+  }
+  .ppi-delete-logo {
+    position: absolute;
+    right: -2.5vw;
+    width: 20px;
+    height: 22px;
+    top: 0;
+    background-color: transparent;
+    border: none;
+    padding: 0 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
   }
 
   // ** Card Actions **
@@ -84,7 +114,8 @@ app-panel-profile-info {
   .ppi-actions {
     display: flex;
     justify-content: space-evenly;
-    padding: var(---ppi-pd) var(---ppi-pd) 0 var(---ppi-pd);
+    padding-left: var(---ppi-pd);
+    padding-right: var(---ppi-pd);
   }
   .ppi-actions-label {
     display: flex;
@@ -96,6 +127,13 @@ app-panel-profile-info {
     --mdc-protected-button-label-text-color: #000;
   }
 
+  .ppi-delete-box {
+    width: 14px;
+    height: 18px;
+    display: inline-block;
+    background: transparent none no-repeat center center;
+    background-image: url('../../../assets/icons/delete-box.svg');
+  }
   .ppi-save {
     width: 25px;
     height: 25px;
@@ -104,5 +142,4 @@ app-panel-profile-info {
     background-image: url('../../../assets/icons/save-file.svg');
     margin-right: 0.5em;
   }
-
 }

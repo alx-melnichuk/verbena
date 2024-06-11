@@ -1,13 +1,26 @@
 <div class="ppi-panel">
   <div class="ppi-content ppi-over-auto global-scroll">
   
-    <div>
-      <div class="ppi-title">{{ 'profile.title' | translate }}</div>
-    </div>
+    <div class="ppi-title">{{ 'profile.title' | translate }}</div>
+
     <form [formGroup]="formGroup" novalidate>
           
-      <app-field-nickname
-        wd-100
+      <div mr-tp-1 class="ppi-avatar">
+        <app-field-file-upload hg-100 *ngIf="!addedLogoView"
+          [maxFileSize]="maxFileSize"
+          [validFileTypes]="validFileTypes"
+          (addFile)="addFile($event)"
+          (readFile)="readFile($event)">
+        </app-field-file-upload>
+        <div *ngIf="!!addedLogoView" class="ppi-avatar-image">
+          <img class="ppi-avatar-view" [src]="addedLogoView" alt="logo unavailable">
+          <button class="ppi-delete-logo" (click)="deleteFileLogo()">
+            <span class="ppi-delete-box"></span>
+          </button>
+        </div>
+      </div>
+
+      <app-field-nickname wd-100 mr-tp-1
         formControlName="nickname"
         [isRequired]="true"
         label="field-nickname.label"
@@ -15,18 +28,14 @@
         (input)="updateErrMsg()">
       </app-field-nickname>
 
-      <app-field-email
-        mr-tp-05
-        wd-100
+      <app-field-email wd-100 mr-tp-1_5
         formControlName="email"
         [isRequired]="true"
         label="field-email.label"
         (input)="updateErrMsg()">
       </app-field-email>
 
-      <app-field-password
-        mr-tp-05
-        wd-100
+      <app-field-password wd-100 mr-tp-0_5
         formControlName="password"
         [isRequired]="false"
         label="profile.new_password"
@@ -34,13 +43,17 @@
         (input)="updateErrMsg()">
       </app-field-password>
 
+      <app-field-descript wd-100 mr-tp-1_5
+        formControlName="descript"
+        [isRequired]="false"
+        label="stream_edit.descript">
+      </app-field-descript>
 
-      <div>&nbsp;</div>
     </form>
 
   </div>
 
-  <div class="ppi-actions">
+  <div mr-tp-1 class="ppi-actions">
 
     <button mat-raised-button color="primary"
       [disabled]="formGroup.pristine || formGroup.invalid"
