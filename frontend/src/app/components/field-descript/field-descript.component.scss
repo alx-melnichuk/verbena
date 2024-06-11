@@ -10,4 +10,7 @@ app-field-descript {
   .mat-form-field-infix {
     line-height: 20px;
   }
+  &[no-resize] textarea {
+    resize: none;
+  }
 }

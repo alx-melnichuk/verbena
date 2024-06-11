@@ -1,25 +1,10 @@
 import {
-  ChangeDetectionStrategy,
-  Component,
-  Input,
-  OnChanges,
-  SimpleChanges,
-  ViewChild,
-  ViewEncapsulation,
-  forwardRef,
+  ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewChild, ViewEncapsulation, forwardRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  AbstractControl,
-  ControlValueAccessor,
-  FormControl,
-  FormGroup,
-  NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validator,
-  ValidatorFn,
+  AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule,
+  ValidationErrors, Validator, ValidatorFn,
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
@@ -29,8 +14,7 @@ import { ValidatorUtils } from 'src/app/utils/validator.utils';
 export const DESCRIPT = 'descript';
 export const DESCRIPT_MIN_LENGTH = 5;
 export const DESCRIPT_MAX_LENGTH = 2048; // 2*1024
-export const DESCRIPT_MIN_ROWS = 10;
-export const DESCRIPT_MAX_ROWS = 10;
+export const DESCRIPT_ROWS = 6;
 
 @Component({
   selector: 'app-field-descript',
@@ -63,9 +47,7 @@ export class FieldDescriptComponent  implements OnChanges, ControlValueAccessor,
   @Input()
   public minLen: number = DESCRIPT_MIN_LENGTH;
   @Input()
-  public minRows = DESCRIPT_MIN_ROWS;
-  @Input()
-  public maxRows = DESCRIPT_MAX_ROWS;
+  public numberRows = DESCRIPT_ROWS;
  
   @ViewChild(MatInput, { static: false })
   public matInput: MatInput | null = null;
