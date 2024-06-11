@@ -2,4 +2,8 @@
 
 app-field-time {
   display: block;
+
+  .mat-mdc-form-field-infix {
+    width: 7em;
+  }
 }
