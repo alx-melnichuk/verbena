@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, Output, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -15,7 +15,7 @@ let idx = 0;
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class FieldFileUploadComponent implements OnInit {
+export class FieldFileUploadComponent {
   @Input()
   public isMultiple = false;
   @Input()
@@ -32,10 +32,6 @@ export class FieldFileUploadComponent implements OnInit {
   public id = 'fileDropId_' + (++idx);
 
   constructor() {
-    console.log(`FieldFileUploadComponent()`);
-  }
-
-  ngOnInit(): void {
   }
 
   // ** Public API **

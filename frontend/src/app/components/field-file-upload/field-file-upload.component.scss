@@ -2,12 +2,16 @@
 
 app-field-file-upload {
   align-items: center;
-  border: 1px solid var(--app-theme-input-border);
   border-radius: 0.286em;
   box-sizing: border-box;
   display: flex;
   justify-content: center;
   padding: 0.5em 0.5em;
+
+  &[is-border] {
+    border: 1px solid var(--app-theme-input-border);
+  }
+  [cr-pnt] { cursor: pointer; }
 
   mat-form-field {
     max-width: inherit;
@@ -21,6 +25,9 @@ app-field-file-upload {
     justify-content: center;
 
     &>.ffu-upload-file { margin-top: 4%; }
+    &>label {
+      color: var(--app-theme-primary);
+    }
   }
   input[type='file'] {
     display: none;
@@ -36,8 +43,5 @@ app-field-file-upload {
     background: transparent none no-repeat center center;
     background-image: url('../../../assets/icons/upload-file.svg');
   }
-  .ffu-label {
-    cursor: pointer;
-    color: var(--app-theme-primary);
-  }  
+    
 }
