@@ -3,9 +3,6 @@
 app-field-chip-grid {
   display: block;
 
-  .fcg-max-wd {
-    width: 100%;
-  }
   .fcg-btn-chip-remove {
     background-color: transparent;
     border: none;
@@ -16,6 +13,9 @@ app-field-chip-grid {
     align-items: center;
     width: 1vw;
     height: 1.3vh;
+  }
+  mat-form-field {
+    width: 100%;
   }
 }
   
