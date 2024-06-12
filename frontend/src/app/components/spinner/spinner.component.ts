@@ -28,7 +28,7 @@ export class SpinnerComponent {
   @Input()
   public color: ThemePalette = 'primary';
   @Input()
-  public isFillParent: string = '';
+  public isFillParent: string | null | undefined;
   @Input()
   public diameter = DEAULT_DIAMETER;
 

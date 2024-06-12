@@ -1,14 +1,13 @@
 /*# sourceURL=panel-view-list.component.scss */
 
 app-spinner {
-  display: contents;
+  align-items: center;
+  display: flex;
   height: 100%;
+  justify-content: center;
 
   &.fill-parent {
-    align-items: center;
-    display: flex;
     inset: 0 0 0 0;
-    justify-content: center;
     position: absolute;
     z-index: 1;
   }
