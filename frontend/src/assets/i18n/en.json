@@ -61,8 +61,8 @@
   "Conflict": {
     "status": 409,
     "invalid_hash" : "Invalid password hash value.",
-    "email_already_use" : "The email address you provided is already in use.",
-    "nickname_already_use" : "The nickname you provided is already in use."
+    "email_already_use" : "This email is already in use or is being registered.",
+    "nickname_already_use" : "This nickname is already in use or is being registered."
   },
   "Forbidden": {
     "status": 403,
