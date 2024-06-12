@@ -115,6 +115,10 @@ export class FieldNicknameComponent implements OnChanges, ControlValueAccessor, 
     return ValidatorUtils.getErrorMsg(errors, this.gist || NICKNAME);
   }
 
+  public getFormControl(): FormControl {
+    return this.formControl;
+  }
+
   // ** Private API **
 
   private prepareFormGroup(): void {
