@@ -36,8 +36,8 @@ use crate::users::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserReg
 use crate::validators::{msg_validation, Validator};
 use crate::{errors::AppError, extractors::authentication::RequireAuth};
 
-pub const MSG_EMAIL_ALREADY_USED: &str = "email_already_used";
-pub const MSG_NICKNAME_ALREADY_USED: &str = "nickname_already_used";
+pub const MSG_EMAIL_ALREADY_USE: &str = "email_already_use";
+pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";
 // 510 Not Extended - Error when sending email.
 pub const MSG_ERROR_SENDING_EMAIL: &str = "error_sending_email";
 // 404 Not Found - Registration record not found.
@@ -80,10 +80,10 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
         (status = 409, description = "Error: nickname (email) is already in use.", body = AppError, examples(
             ("Nickname" = (summary = "Nickname already used",
                 description = "The nickname value has already been used.",
-                value = json!(AppError::conflict409(MSG_NICKNAME_ALREADY_USED)))),
+                value = json!(AppError::conflict409(MSG_NICKNAME_ALREADY_USE)))),
             ("Email" = (summary = "Email already used", 
                 description = "The email value has already been used.",
-                value = json!(AppError::conflict409(MSG_EMAIL_ALREADY_USED))))
+                value = json!(AppError::conflict409(MSG_EMAIL_ALREADY_USE))))
         )),
         (status = 417, body = [AppError], description = "Validation error. `curl -i
              -X POST http://localhost:8080/api/login -d '{ \"nickname\": \"us\", \"email\": \"us_email\", \"password\": \"pas\" }'`",
@@ -153,7 +153,7 @@ pub async fn registration(
     // If such an entry exists, then exit with code 409.
     if let Some(user) = opt_user {
         #[rustfmt::skip]
-        let message = if user.nickname == nickname { MSG_NICKNAME_ALREADY_USED } else { MSG_EMAIL_ALREADY_USED };
+        let message = if user.nickname == nickname { MSG_NICKNAME_ALREADY_USE } else { MSG_EMAIL_ALREADY_USE };
         log::error!("{}: {}", err::CD_CONFLICT, &message);
         return Err(AppError::conflict409(&message)); // 409
     }
@@ -182,7 +182,7 @@ pub async fn registration(
     // If such an entry exists, then exit with code 409.
     if let Some(user_registr) = opt_user_registr {
         #[rustfmt::skip]
-        let message = if user_registr.nickname == nickname { MSG_NICKNAME_ALREADY_USED } else { MSG_EMAIL_ALREADY_USED };
+        let message = if user_registr.nickname == nickname { MSG_NICKNAME_ALREADY_USE } else { MSG_EMAIL_ALREADY_USE };
         log::error!("{}: {}", err::CD_CONFLICT, &message);
         return Err(AppError::conflict409(&message)); // 409
     }
@@ -1288,7 +1288,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_CONFLICT);
-        assert_eq!(app_err.message, MSG_NICKNAME_ALREADY_USED);
+        assert_eq!(app_err.message, MSG_NICKNAME_ALREADY_USE);
     }
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_users() {
@@ -1312,7 +1312,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_CONFLICT);
-        assert_eq!(app_err.message, MSG_EMAIL_ALREADY_USED);
+        assert_eq!(app_err.message, MSG_EMAIL_ALREADY_USE);
     }
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_registr() {
@@ -1336,7 +1336,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_CONFLICT);
-        assert_eq!(app_err.message, MSG_NICKNAME_ALREADY_USED);
+        assert_eq!(app_err.message, MSG_NICKNAME_ALREADY_USE);
     }
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_registr() {
@@ -1360,7 +1360,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_CONFLICT);
-        assert_eq!(app_err.message, MSG_EMAIL_ALREADY_USED);
+        assert_eq!(app_err.message, MSG_EMAIL_ALREADY_USE);
     }
     #[actix_web::test]
     async fn test_login_err_jsonwebtoken_encode() {
