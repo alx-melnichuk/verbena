@@ -84,6 +84,6 @@ export class AuthorizationInterceptor implements HttpInterceptor {
     return this.userService
       .refreshToken()
       .then(() => Promise.resolve())
-      .catch((error) => Promise.reject(error))
+      .catch((error) => Promise.reject(error));
   }
 }
