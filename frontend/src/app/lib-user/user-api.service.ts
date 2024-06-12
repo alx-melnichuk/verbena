@@ -49,5 +49,14 @@ export class UserApiService {
     const url = Uri.appUri('appApi://logout');
     return this.http.post<void | HttpErrorResponse>(url, null).toPromise();
   }
-
+  
+  public uniqueness(nickname: string, email: string): Promise<unknown | HttpErrorResponse | undefined> {
+    if (!nickname && !email) {
+      return Promise.resolve();
+    }
+    // const search = { nickname: (!nickname ? nickname : null), email: (!email ? email : null) };
+    // const params: HttpParams = HttpParamsUtil.create(search);
+    const url = Uri.appUri(`appApi://users/nickname/${nickname}`);
+    return this.http.get<unknown | HttpErrorResponse>(url, /*{ params }*/).toPromise();
+  }
 }
