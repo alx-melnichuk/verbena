@@ -1,8 +1,7 @@
 <ng-container [formGroup]="formGroup">
   <mat-form-field
     appearance="outline"
-    color="primary"
-  >
+    color="primary">
     <mat-label>{{ label | translate }}</mat-label>
     <input
       matInput
@@ -14,6 +13,6 @@
       (input)="onChange(formControl.value)"
     />
     <mat-hint>{{ hint | translate }}</mat-hint>
-    <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
+    <mat-error>{{ (errMsg || getErrorMsg(formControl.errors)) | translate : formControl.errors }}</mat-error>
   </mat-form-field>
-</ng-container>
+</ng-container>    
