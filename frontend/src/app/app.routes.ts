@@ -35,5 +35,5 @@ export const APP_ROUTES: Routes = [
     loadChildren: () => import('./pg-stream/pg-stream.routes').then(c => c.PG_STREAM_ROUTES),
     canActivate: [authenticationGuard],
   },
-  { path: '**', redirectTo: R_LOGIN },
+  { path: '**', redirectTo: R_ABOUT },
 ];
