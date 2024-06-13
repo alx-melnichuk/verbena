@@ -14,6 +14,7 @@ import { ENTER } from '@angular/cdk/keycodes';
 
 @Component({
   selector: 'app-field-chip-grid',
+  exportAs: 'appFieldChipGrid',
   standalone: true,
   imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, MatChipsModule],
   templateUrl: './field-chip-grid.component.html',

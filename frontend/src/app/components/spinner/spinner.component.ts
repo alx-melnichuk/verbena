@@ -17,6 +17,7 @@ const DEAULT_DIAMETER = 100;
 
 @Component({
   selector: 'app-spinner',
+  exportAs: 'appSpinner',
   standalone: true,
   imports: [CommonModule, MatProgressSpinnerModule],
   templateUrl: './spinner.component.html',

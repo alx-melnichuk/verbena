@@ -17,6 +17,7 @@ export const FT_LENGTH_MIN = 5;
 
 @Component({
   selector: 'app-field-time',
+  exportAs: 'appFieldTime',
   standalone: true,
   imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule],
   templateUrl: './field-time.component.html',
