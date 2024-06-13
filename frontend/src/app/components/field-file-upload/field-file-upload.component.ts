@@ -8,6 +8,7 @@ let idx = 0;
 
 @Component({
   selector: 'app-field-file-upload',
+  exportAs: 'appFieldFileUpload',
   standalone: true,
   imports: [CommonModule, FieldDragAndDropDirective, TranslateModule],
   templateUrl: './field-file-upload.component.html',
