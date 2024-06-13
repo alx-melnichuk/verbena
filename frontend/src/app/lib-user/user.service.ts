@@ -1,6 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-// import { Subject } from 'rxjs';
 import { UserApiService } from './user-api.service';
 import { LoginUserResponseDto, UserDto, UserTokensDto } from './user-api.interface';
 
@@ -11,14 +10,10 @@ export const REFRESH_TOKEN = 'refreshToken';
   providedIn: 'root',
 })
 export class UserService {
-  //   public sessionDto: SessionDto | null = null;
   public userInfo: UserDto | null = null;
   public userTokensDto: UserTokensDto | null = null;
-  //   private innSessionDto: Subject<SessionDto | null> = new Subject<SessionDto | null>();
-  //   public sessionDTO$ = this.innSessionDto.asObservable();
-
+  
   constructor(private userApiService: UserApiService) {
-    console.log(`#1-UserService();`); // #
     this.userTokensDto = this.getUserTokensDtoFromLocalStorage();
   }
 
@@ -119,7 +114,7 @@ export class UserService {
     return this.userApiService.uniqueness(nickname, email);
   }
 
-  // ** Private **
+  // ** Private Api **
 
   private updateItemInLocalStorage(name: string, value: string | null): void {
     if (!!name) {
@@ -147,11 +142,4 @@ export class UserService {
     }
     return result;
   }
-
-  // ** Private Api **
-
-  //   private updateSessionDTO(sessionDto: SessionDto | null): void {
-  //     this.sessionDto = (!!sessionDto ? { ...sessionDto } : null);
-  //     this.innSessionDto.next(this.sessionDto);
-  //   }
 }
