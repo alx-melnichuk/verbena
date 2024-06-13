@@ -108,21 +108,6 @@ app-panel-profile-info {
     align-items: center;
     cursor: pointer;
   }
-  .ppi-loading-wrap {
-    position: relative;
-   }
-  .ppi-loading {
-    height: 40px;
-    margin-right: 0.5em;
-    margin-top: 0.5em;
-    position: absolute;
-    right: 0px;
-    top: 0px;
-    width: 40px;
-    &:not(.show) {
-      display: none;
-    }
-  }
   // ** Card Actions **
 
   .ppi-actions {
