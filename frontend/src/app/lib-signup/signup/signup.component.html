@@ -4,21 +4,33 @@
 
     <div class="su-title">{{ 'signup.title' | translate }}</div>
   
-    <app-field-nickname wd-100
-      formControlName="nickname"
-      [isRequired]="true"
-      label="field-nickname.label"
-      hint="field-nickname.nickname_hint"
-      (input)="updateErrMsg()">
-    </app-field-nickname>
+    <app-uniqueness-check
+      #uniquenessCheckNickname="appUniquenessCheck"
+      [debounceDelay]="debounceDelay"
+      [checkUniquenessFn]="checkUniquenessNickname">
+      <app-field-nickname wd-100
+        formControlName="nickname"
+        [isRequired]="true"
+        label="field-nickname.label"
+        hint="field-nickname.nickname_hint"
+        [errMsg]="uniquenessCheckNickname.isUniquenessError ? 'Conflict.nickname_already_use' : undefined"
+        (input)="updateErrMsg(); uniquenessCheckNickname.checkParameter(controls.nickname.value);">
+      </app-field-nickname>
+    </app-uniqueness-check>
   
-    <app-field-email wd-100 mr-tp-05
-      formControlName="email"
-      [isRequired]="true"
-      label="field-email.label"
-      (input)="updateErrMsg()">
-    </app-field-email>
-  
+    <app-uniqueness-check mr-tp-05
+      #uniquenessCheckEmail="appUniquenessCheck"
+      [debounceDelay]="debounceDelay"
+      [checkUniquenessFn]="checkUniquenessEmail">
+      <app-field-email wd-100 
+        formControlName="email"
+        [isRequired]="true"
+        label="field-email.label"
+        [errMsg]="uniquenessCheckEmail.isUniquenessError ? 'Conflict.email_already_use' : undefined"
+        (input)="updateErrMsg(); uniquenessCheckEmail.checkParameter(controls.email.value);">
+      </app-field-email>
+    </app-uniqueness-check>
+
     <app-field-password wd-100 mr-tp-05
       formControlName="password"
       [isRequired]="true"

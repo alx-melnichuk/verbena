@@ -15,12 +15,16 @@ import { FieldNicknameComponent } from 'src/app/components/field-nickname/field-
 import { FieldPasswordComponent } from 'src/app/components/field-password/field-password.component';
 import { ROUTE_LOGIN } from 'src/app/common/routes';
 import { StrParams } from 'src/app/common/str-params';
+import { UniquenessCheckComponent } from 'src/app/components/uniqueness-check/uniqueness-check.component';
+import { UserService } from 'src/app/lib-user/user.service';
+
+export const SG_DEBOUNCE_DELAY = 900;
 
 @Component({
   selector: 'app-signup',
   standalone: true,
   imports: [ CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslateModule,
-    FieldEmailComponent, FieldNicknameComponent, FieldPasswordComponent,],
+    FieldEmailComponent, FieldNicknameComponent, FieldPasswordComponent, UniquenessCheckComponent],
   templateUrl: './signup.component.html',
   styleUrls: ['./signup.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -35,7 +39,8 @@ export class SignupComponent implements OnChanges {
   readonly signup: EventEmitter<StrParams> = new EventEmitter();
 
   public linkLogin = ROUTE_LOGIN;
-  
+  public debounceDelay: number = SG_DEBOUNCE_DELAY;
+
   public controls = {
     nickname: new FormControl<string | null>(null, []),
     email: new FormControl<string | null>(null, []),
@@ -43,7 +48,11 @@ export class SignupComponent implements OnChanges {
   };
   public formGroup: FormGroup = new FormGroup(this.controls);
 
-  constructor(private changeDetector: ChangeDetectorRef) {}
+  constructor(
+    private changeDetector: ChangeDetectorRef,
+    private userService: UserService,
+  ) {
+  }
 
   @HostListener('document:keypress', ['$event'])
   public keyEvent(event: KeyboardEvent): void {
@@ -62,6 +71,20 @@ export class SignupComponent implements OnChanges {
   }
 
   // ** Public API **
+
+  public checkUniquenessNickname = (nickname: string | null | undefined): Promise<boolean> => {
+    if (!nickname) {
+      return Promise.resolve(true);
+    }
+    return this.userService.uniqueness(nickname || '', '').then((response) => response == null);
+  }
+
+  public checkUniquenessEmail = (email: string | null | undefined): Promise<boolean> => {
+    if (!email) {
+      return Promise.resolve(true);
+    }
+    return this.userService.uniqueness('', email || '').then((response) => response == null);
+  }
 
   public doSignup(): void {
     if (this.formGroup.invalid || this.isDisabledSubmit) {
