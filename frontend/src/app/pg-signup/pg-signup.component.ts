@@ -4,11 +4,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 
-import { SignupComponent } from '../components/signup/signup.component';
 import { StrParams } from '../common/str-params';
 import { ROUTE_LOGIN } from '../common/routes';
 import { DialogService } from '../lib-dialog/dialog.service';
 import { UserService } from '../lib-user/user.service';
+import { SignupComponent } from '../lib-signup/signup/signup.component';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
 @Component({

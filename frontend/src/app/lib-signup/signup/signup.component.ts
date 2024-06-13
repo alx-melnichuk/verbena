@@ -10,27 +10,17 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { StrParams } from '../../common/str-params';
-import { FieldPasswordComponent } from '../field-password/field-password.component';
-import { FieldEmailComponent } from '../field-email/field-email.component';
-import { FieldNicknameComponent } from '../field-nickname/field-nickname.component';
+import { FieldEmailComponent } from 'src/app/components/field-email/field-email.component';
+import { FieldNicknameComponent } from 'src/app/components/field-nickname/field-nickname.component';
+import { FieldPasswordComponent } from 'src/app/components/field-password/field-password.component';
 import { ROUTE_LOGIN } from 'src/app/common/routes';
+import { StrParams } from 'src/app/common/str-params';
 
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterLink,
-    TranslateModule,
-    ReactiveFormsModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    FieldEmailComponent,
-    FieldNicknameComponent,
-    FieldPasswordComponent,
-  ],
+  imports: [ CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslateModule,
+    FieldEmailComponent, FieldNicknameComponent, FieldPasswordComponent,],
   templateUrl: './signup.component.html',
   styleUrls: ['./signup.component.scss'],
   encapsulation: ViewEncapsulation.None,
