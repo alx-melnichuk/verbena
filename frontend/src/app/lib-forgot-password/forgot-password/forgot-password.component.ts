@@ -10,23 +10,15 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { StrParams } from '../../common/str-params';
-import { FieldEmailComponent } from '../field-email/field-email.component';
+import { FieldEmailComponent } from 'src/app/components/field-email/field-email.component';
 import { ROUTE_LOGIN } from 'src/app/common/routes';
+import { StrParams } from 'src/app/common/str-params';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterLink,
-    TranslateModule,
-    ReactiveFormsModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    FieldEmailComponent,
-  ],
+  imports: [ CommonModule, RouterLink, TranslateModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule,
+    MatInputModule, FieldEmailComponent,],
   templateUrl: './forgot-password.component.html',
   styleUrls: ['./forgot-password.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -47,7 +39,8 @@ export class ForgotPasswordComponent implements OnChanges {
   };
   public formGroup: FormGroup = new FormGroup(this.controls);
 
-  constructor(private changeDetector: ChangeDetectorRef) {}
+  constructor(private changeDetector: ChangeDetectorRef) {
+  }
 
   @HostListener('document:keypress', ['$event'])
   public keyEvent(event: KeyboardEvent): void {

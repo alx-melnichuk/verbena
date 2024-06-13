@@ -4,10 +4,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 
-import { ForgotPasswordComponent } from '../components/forgot-password/forgot-password.component';
 import { StrParams } from '../common/str-params';
 import { ROUTE_LOGIN } from '../common/routes';
 import { DialogService } from '../lib-dialog/dialog.service';
+import { ForgotPasswordComponent } from '../lib-forgot-password/forgot-password/forgot-password.component';
 import { UserService } from '../lib-user/user.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
