@@ -56,7 +56,7 @@ export class UserApiService {
     }
     // const search = { nickname: (!nickname ? nickname : null), email: (!email ? email : null) };
     // const params: HttpParams = HttpParamsUtil.create(search);
-    const url = Uri.appUri(`appApi://users/nickname/${nickname}`);
+    const url = Uri.appUri((!!nickname ? `appApi://users/nickname/${nickname}` : `appApi://users/email/${email}`));
     return this.http.get<unknown | HttpErrorResponse>(url, /*{ params }*/).toPromise();
   }
 }
