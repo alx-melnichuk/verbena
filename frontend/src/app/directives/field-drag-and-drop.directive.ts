@@ -10,7 +10,6 @@ export class FieldDragAndDropDirective {
   readonly fileDropped: EventEmitter<FileList> = new EventEmitter();
 
   constructor() { 
-    console.log(`FieldDragAndDropDirective()`);
   }
 
   @HostBinding('class.fileover')

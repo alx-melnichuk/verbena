@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 
@@ -11,12 +11,9 @@ import { RouterOutlet } from '@angular/router';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PgStreamComponent implements OnInit {
+export class PgStreamComponent {
   constructor() {
     console.log(`PgStreamComponent()`); // #-
-  }
-  ngOnInit(): void {
-    console.log(`PgStreamComponent().OnInit()`); // #-
   }
 }
   

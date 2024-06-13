@@ -34,9 +34,7 @@ export class StreamEditComponent {
     private streamService: StreamService,
     private alertService: AlertService,
   ) {
-    console.log(`StreamEditComponent()`); // #-
     this.streamDto = this.route.snapshot.data['streamDto'];
-    console.log(`StreamEditComponent() streamDto: `, this.streamDto); // #-
     const previousNav = this.router.getCurrentNavigation()?.previousNavigation?.finalUrl?.toString() || ''; 
     if (!!previousNav && !previousNav.startsWith(ROUTE_STREAM_EDIT)) {
       this.goBackToRoute = previousNav;
