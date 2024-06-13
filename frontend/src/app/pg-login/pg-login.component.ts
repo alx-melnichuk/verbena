@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 
 import { StrParams } from '../common/str-params';
 import { REDIRECT_AFTER_LOGIN } from '../common/routes';
-import { LoginComponent } from '../components/login/login.component';
+import { LoginComponent } from '../lib-login/login/login.component';
 import { UserService } from '../lib-user/user.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
 

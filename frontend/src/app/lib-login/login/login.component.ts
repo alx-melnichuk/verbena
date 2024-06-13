@@ -10,28 +10,18 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { StrParams } from '../../common/str-params';
-import {
-  FieldNicknameComponent, NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH, NICKNAME_PATTERN
-} from '../field-nickname/field-nickname.component';
-import { FieldPasswordComponent } from '../field-password/field-password.component';
+import { EMAIL_MAX_LENGTH, EMAIL_MIN_LENGTH } from 'src/app/components/field-email/field-email.component';
+import { FieldNicknameComponent, NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH, NICKNAME_PATTERN
+} from 'src/app/components/field-nickname/field-nickname.component';
+import { FieldPasswordComponent } from 'src/app/components/field-password/field-password.component';
+import { StrParams } from 'src/app/common/str-params';
 import { ROUTE_FORGOT_PASSWORD, ROUTE_SIGNUP } from 'src/app/common/routes';
-import { EMAIL_MAX_LENGTH, EMAIL_MIN_LENGTH } from '../field-email/field-email.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterLink,
-    TranslateModule,
-    ReactiveFormsModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    FieldNicknameComponent,
-    FieldPasswordComponent,
-  ],
+  imports: [ CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslateModule,
+    FieldNicknameComponent, FieldPasswordComponent,],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
   encapsulation: ViewEncapsulation.None,

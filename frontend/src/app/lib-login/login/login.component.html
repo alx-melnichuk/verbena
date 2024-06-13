@@ -1,13 +1,10 @@
 <div class="lg-content">
-  <form
-    class="lg-form"
-    [formGroup]="formGroup"
-    novalidate
-  >
-    <div class="lg-title">{{ 'login.title' | translate }}</div>
+  <form class="lg-form" novalidate
+    [formGroup]="formGroup">
 
-    <app-field-nickname
-      wd-100
+    <div class="lg-title">{{ 'login.title' | translate }}</div>
+  
+    <app-field-nickname wd-100
       formControlName="nickname"
       [gist]="isEmail ? 'email' : 'nickname'"
       [isRequired]="true"
@@ -17,39 +14,30 @@
       [pattern]="isEmail ? '' : nicknamePattern"
       [type]="isEmail ? 'email' : 'text'"
       (input)="changeType($event['target']);updateErrMsg();"
-      (focusout)="nicknameFocusout()"
-    >
+      (focusout)="nicknameFocusout()">
     </app-field-nickname>
-
-    <app-field-password
-      mr-tp-05
-      wd-100
+  
+    <app-field-password wd-100 mr-tp-05
       formControlName="password"
       [isRequired]="true"
-      (input)="updateErrMsg()"
-    ></app-field-password>
-
-    <button
-      type="button"
-      mat-raised-button
-      mr-bt-05 
-      mr-tp-05
-      wd-100
+      (input)="updateErrMsg()">
+    </app-field-password>
+  
+    <button type="button" wd-100 mr-bt-05 mr-tp-05 mat-raised-button
       class="mat-primary"
       [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
-      (click)="doLogin()"
-    >
+      (click)="doLogin()">
       {{ 'login.button_login' | translate }}
     </button>
-
+  
     <ng-container *ngFor="let errMsg of errMsgList">
       <mat-error class="lg-err">{{ errMsg }}</mat-error>
     </ng-container>
-  </form>
 
+  </form>
   <div class="lg-note">
     <a nodecor routerLink="{{linkSignup}}">{{ 'login.create_an_account' | translate }}</a>
     <a nodecor routerLink="{{linkForgotPassword}}">{{ 'login.forgot_password' | translate }}</a>
   </div>
-
 </div>
+  
