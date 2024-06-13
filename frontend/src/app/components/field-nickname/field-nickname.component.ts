@@ -55,7 +55,7 @@ export class FieldNicknameComponent implements OnChanges, ControlValueAccessor, 
   @Input()
   public type: string = "text";
   @Input()
-  public errMsg: string | null | undefined;
+  public errorMsg: string | null | undefined;
 
   @ViewChild(MatInput, { static: false })
   public matInput: MatInput | null = null;
@@ -72,8 +72,8 @@ export class FieldNicknameComponent implements OnChanges, ControlValueAccessor, 
     if (!!changes['isDisabled']) {
       this.setDisabledState(this.isDisabled);
     }
-    if (!!changes['errMsg']) {
-      this.prepareErrMsg(this.errMsg);
+    if (!!changes['errorMsg']) {
+      this.prepareErrMsg(this.errorMsg);
     }
   }
 

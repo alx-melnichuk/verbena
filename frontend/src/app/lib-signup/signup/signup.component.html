@@ -13,7 +13,7 @@
         [isRequired]="true"
         label="field-nickname.label"
         hint="field-nickname.nickname_hint"
-        [errMsg]="uniquenessCheckNickname.isUniquenessError ? 'Conflict.nickname_already_use' : undefined"
+        [errorMsg]="uniquenessCheckNickname.isUniquenessError ? 'Conflict.nickname_already_use' : undefined"
         (input)="updateErrMsg(); uniquenessCheckNickname.checkParameter(controls.nickname.value);">
       </app-field-nickname>
     </app-uniqueness-check>
@@ -26,7 +26,7 @@
         formControlName="email"
         [isRequired]="true"
         label="field-email.label"
-        [errMsg]="uniquenessCheckEmail.isUniquenessError ? 'Conflict.email_already_use' : undefined"
+        [errorMsg]="uniquenessCheckEmail.isUniquenessError ? 'Conflict.email_already_use' : undefined"
         (input)="updateErrMsg(); uniquenessCheckEmail.checkParameter(controls.email.value);">
       </app-field-email>
     </app-uniqueness-check>

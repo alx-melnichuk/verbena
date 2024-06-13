@@ -14,6 +14,6 @@
       (input)="onChange(formControl.value)"
     />
     <mat-hint>{{ hint | translate }}</mat-hint>
-    <mat-error>{{ (errMsg || getErrorMsg(formControl.errors)) | translate : formControl.errors }}</mat-error>
+    <mat-error>{{ (errorMsg || getErrorMsg(formControl.errors)) | translate : formControl.errors }}</mat-error>
   </mat-form-field>
 </ng-container>    

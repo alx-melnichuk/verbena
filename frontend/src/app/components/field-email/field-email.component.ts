@@ -57,7 +57,7 @@ export class FieldEmailComponent implements OnChanges, ControlValueAccessor, Val
   @Input()
   public type: string = "email";
   @Input()
-  public errMsg: string | null | undefined;
+  public errorMsg: string | null | undefined;
 
   @ViewChild(MatInput, { static: false })
   public matInput: MatInput | null = null;
@@ -74,8 +74,8 @@ export class FieldEmailComponent implements OnChanges, ControlValueAccessor, Val
     if (!!changes['isDisabled']) {
       this.setDisabledState(this.isDisabled);
     }
-    if (!!changes['errMsg']) {
-      this.prepareErrMsg(this.errMsg);
+    if (!!changes['errorMsg']) {
+      this.prepareErrMsg(this.errorMsg);
     }
   }
 
