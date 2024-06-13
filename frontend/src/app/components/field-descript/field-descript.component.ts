@@ -18,6 +18,7 @@ export const DESCRIPT_ROWS = 6;
 
 @Component({
   selector: 'app-field-descript',
+  exportAs: 'appFieldDescript',
   standalone: true,
   imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule],
   templateUrl: './field-descript.component.html',
@@ -40,6 +41,8 @@ export class FieldDescriptComponent  implements OnChanges, ControlValueAccessor,
   public isReadOnly: boolean = false;
   @Input()
   public isRequired: boolean = false;
+  @Input()
+  public isSpellcheck: boolean = false;
   @Input()
   public label: string = 'field-descript.label';
   @Input()

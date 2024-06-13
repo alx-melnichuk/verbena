@@ -15,10 +15,11 @@ export const NICKNAME = 'nickname';
 export const NICKNAME_MIN_LENGTH = 3;
 export const NICKNAME_MAX_LENGTH = 64;
 export const NICKNAME_PATTERN = '^[a-zA-Z]+[\\w]+$';
-export const NICKNAME_CUSTOM_ERROR = 'customError';
+export const CUSTOM_ERROR = 'customError';
 
 @Component({
   selector: 'app-field-nickname',
+  exportAs: 'appFieldNickname',
   standalone: true,
   imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule],
   templateUrl: './field-nickname.component.html',
@@ -41,6 +42,8 @@ export class FieldNicknameComponent implements OnChanges, ControlValueAccessor, 
   public isReadOnly: boolean = false;
   @Input()
   public isRequired: boolean = false;
+  @Input()
+  public isSpellcheck: boolean = false;
   @Input()
   public label: string = 'field-nickname.label';
   @Input()
@@ -145,7 +148,7 @@ export class FieldNicknameComponent implements OnChanges, ControlValueAccessor, 
       let res: ValidationErrors = {};
       for (let index = 0; index < list.length; index++) {
         const key = list[index];
-        if (key !== NICKNAME_CUSTOM_ERROR) {
+        if (key !== CUSTOM_ERROR) {
           res[key] = errorsObj[key];
         }
       }

@@ -3,13 +3,14 @@
     appearance="outline"
     color="primary">
     <mat-label>{{ label | translate }}</mat-label>
-    <input
+    <input [type]="type || 'text'"
       matInput
       autocomplete="off"
-      [type]="type || 'text'"
+      autocapitalize="off"
       formControlName="nickname"
       [required]="isRequired"
       [attr.maxlength]="maxLen > 0 ? maxLen + 1 : undefined"
+      [attr.spellcheck] ="!!isSpellcheck"
       (input)="onChange(formControl.value)"
     />
     <mat-hint>{{ hint | translate }}</mat-hint>

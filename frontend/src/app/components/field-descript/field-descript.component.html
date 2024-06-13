@@ -7,9 +7,11 @@
       class="global-scroll"
       matInput
       autocomplete="off"
+      autocapitalize="off"
       formControlName="description"
       [required]="isRequired"
       [attr.maxlength]="maxLen > 0 ? maxLen + 1 : undefined"
+      [attr.spellcheck] ="!!isSpellcheck"
       (input)="onChange(formControl.value)"
       [rows]="numberRows">
     </textarea>
