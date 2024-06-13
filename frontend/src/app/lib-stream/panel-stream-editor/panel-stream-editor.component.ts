@@ -94,7 +94,6 @@ export class PanelStreamEditorComponent implements OnChanges {
     private alertService: AlertService,
     private streamService: StreamService,
   ) {
-    console.log(`PanelStreamEditorComponent()`); // #-
   }
 
   ngOnChanges(changes: SimpleChanges): void {
