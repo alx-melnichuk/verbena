@@ -203,7 +203,18 @@ impl Validator for CreateUserDto {
     }
 }
 
-// ** Section: "Login User" **
+// * UniquenessUserDto *
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct UniquenessUserDto {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nickname: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+}
+
+// ** Section: "LoginUser" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, ToSchema)]
 #[diesel(table_name = schema::users)]
@@ -231,7 +242,7 @@ pub struct LoginUserResponseDto {
     pub user_tokens_dto: UserTokensDto,
 }
 
-// ** Section: database "user_registration" **
+// ** Section: "UserRegistr" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
 #[diesel(table_name = schema::user_registration)]
@@ -293,7 +304,7 @@ pub struct RegistrUserResponseDto {
     pub registr_token: String,
 }
 
-// ** Section: database "user_recovery" **
+// ** Section: "UserRecovery" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
 #[diesel(table_name = schema::user_recovery)]
@@ -369,7 +380,7 @@ pub struct RecoveryDataResponseDto {
     pub registr_token: String,
 }
 
-// ** Section: "User Token" **
+// ** Section: "UserToken" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
