@@ -897,8 +897,8 @@ mod tests {
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_mailer))
                 .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_user_registr_orm))
                 .app_data(web::Data::clone(&data_session_orm))
+                .app_data(web::Data::clone(&data_user_registr_orm))
                 .app_data(web::Data::clone(&data_user_recovery_orm));
         }
     }
