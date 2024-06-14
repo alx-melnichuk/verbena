@@ -58,12 +58,6 @@
     "time:min": "The time must be more {{ min.requiredMin }}.",
     "time:max": "The time must be less {{ max.requiredMax }}."
   },
-  "Conflict": {
-    "status": 409,
-    "invalid_hash" : "Invalid password hash value.",
-    "email_already_use" : "This email is already in use or is being registered.",
-    "nickname_already_use" : "This nickname is already in use or is being registered."
-  },
   "Forbidden": {
     "status": 403,
     "access_denied" : "Access is denied."
@@ -87,7 +81,14 @@
     "status": 406,
     "finish_date_less_start_date" : "The finish date \"{{ invalidPeriod.streamPeriodFinish }}\" is less than the start date \"{{ invalidPeriod.streamPeriodStart }}\".",
     "invalid_field_tag" : "Error deserializing field tag.",
-    "session_not_exist" : "There is no session for this user."
+    "session_not_exist" : "There is no session for this user.",
+    "parameters_not_specified": "Parameters not specified"
+  },
+  "Conflict": {
+    "status": 409,
+    "invalid_hash" : "Invalid password hash value.",
+    "email_already_use" : "This email is already in use or is being registered.",
+    "nickname_already_use" : "This nickname is already in use or is being registered."
   },
   "ContentTooLarge": {
     "status": 413,

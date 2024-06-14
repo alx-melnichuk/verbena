@@ -77,14 +77,14 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     if (!nickname || this.origUserDto.nickname.toLowerCase() == nickname.toLowerCase()) {
       return Promise.resolve(true);
     }
-    return this.userService.uniqueness(nickname || '', '').then((response) => response == null);
+    return this.userService.uniqueness(nickname, '').then((response) => response == null);
   }
 
   public checkUniquenessEmail = (email: string | null | undefined): Promise<boolean> => {
     if (!email || this.origUserDto.email.toLowerCase() == email.toLowerCase()) {
       return Promise.resolve(true);
     }
-    return this.userService.uniqueness('', email || '').then((response) => response == null);
+    return this.userService.uniqueness('', email).then((response) => response == null);
   }
 
   public addFile(file: File): void {
