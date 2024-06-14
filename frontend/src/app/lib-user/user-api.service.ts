@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { Uri } from 'src/app/common/uri';
@@ -6,6 +6,7 @@ import {
   CreateUserDto, LoginUserDto, LoginUserResponseDto, RecoveryUserDto, TokenUserDto, UserDto, UserDtoUtil, UserTokensDto
 } from './user-api.interface';
 import { HttpObservableUtil } from 'src/app/utils/http-observable.util';
+import { HttpParamsUtil } from '../utils/http-params.util';
 
 @Injectable({
   providedIn: 'root',
@@ -54,9 +55,10 @@ export class UserApiService {
     if (!nickname && !email) {
       return Promise.resolve();
     }
-    // const search = { nickname: (!nickname ? nickname : null), email: (!email ? email : null) };
-    // const params: HttpParams = HttpParamsUtil.create(search);
-    const url = Uri.appUri((!!nickname ? `appApi://users/nickname/${nickname}` : `appApi://users/email/${email}`));
-    return this.http.get<unknown | HttpErrorResponse>(url, /*{ params }*/).toPromise();
+    const search = { nickname: (!nickname ? null : nickname), email: (!email ? null : email) };
+    const params: HttpParams = HttpParamsUtil.create(search);
+
+    const url = Uri.appUri("appApi://users/uniqueness");
+    return this.http.get<unknown | HttpErrorResponse>(url, { params }).toPromise();
   }
 }
