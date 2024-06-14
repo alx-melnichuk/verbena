@@ -21,7 +21,7 @@ use crate::utils::parser;
 use crate::validators::{msg_validation, Validator};
 
 // None of the parameters are specified.
-const MSG_NONE_PARAMETERS_SPECIFIED: &str = "none_parameters_specified";
+const MSG_PARAMETERS_NOT_SPECIFIED: &str = "parameters_not_specified";
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -128,7 +128,7 @@ pub async fn get_user_by_email(
                 value = json!({ "uniqueness": true })))
         )),
         (status = 406, description = "None of the parameters are specified.", body = AppError,
-            example = json!(AppError::not_acceptable406(MSG_NONE_PARAMETERS_SPECIFIED)
+            example = json!(AppError::not_acceptable406(MSG_PARAMETERS_NOT_SPECIFIED)
                 .add_param(Borrowed("invalidParams"), &serde_json::json!({ "nickname": "null", "email": "null" })))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
@@ -153,8 +153,8 @@ pub async fn uniqueness_check(
     if !is_nickname && !is_email {
         let json = serde_json::json!({ "nickname": "null", "email": "null" });
         #[rustfmt::skip]
-        log::error!("{}: {}: {}", err::CD_NOT_ACCEPTABLE, MSG_NONE_PARAMETERS_SPECIFIED, json.to_string());
-        return Err(AppError::not_acceptable406(MSG_NONE_PARAMETERS_SPECIFIED) // 406
+        log::error!("{}: {}: {}", err::CD_NOT_ACCEPTABLE, MSG_PARAMETERS_NOT_SPECIFIED, json.to_string());
+        return Err(AppError::not_acceptable406(MSG_PARAMETERS_NOT_SPECIFIED) // 406
             .add_param(Borrowed("invalidParams"), &json));
     }
 
@@ -788,7 +788,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
-        assert_eq!(app_err.message, MSG_NONE_PARAMETERS_SPECIFIED);
+        assert_eq!(app_err.message, MSG_PARAMETERS_NOT_SPECIFIED);
     }
     #[actix_web::test]
     async fn test_uniqueness_check_nickname_empty() {
@@ -807,7 +807,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
-        assert_eq!(app_err.message, MSG_NONE_PARAMETERS_SPECIFIED);
+        assert_eq!(app_err.message, MSG_PARAMETERS_NOT_SPECIFIED);
     }
     #[actix_web::test]
     async fn test_uniqueness_check_email_empty() {
@@ -826,7 +826,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
-        assert_eq!(app_err.message, MSG_NONE_PARAMETERS_SPECIFIED);
+        assert_eq!(app_err.message, MSG_PARAMETERS_NOT_SPECIFIED);
     }
     #[actix_web::test]
     async fn test_uniqueness_check_non_existent_nickname() {
