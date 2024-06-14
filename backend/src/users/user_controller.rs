@@ -25,11 +25,7 @@ const MSG_PARAMETERS_NOT_SPECIFIED: &str = "parameters_not_specified";
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
-        config // GET /api/users/email/{email}
-            .service(get_user_by_email)
-            // GET /api/users/nickname/{nickname}
-            .service(get_user_by_nickname)
-            // GET /api/users/uniqueness
+        config // GET /api/users/uniqueness
             .service(uniqueness_check)
             // GET /api/users/{id}
             .service(get_user_by_id)
@@ -43,61 +39,6 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             .service(put_user_current)
             // DELETE /api/users_current
             .service(delete_user_current);
-    }
-}
-
-/// get_user_by_email
-///
-/// Search for a user by his email.
-///
-/// One could call with following curl.
-/// ```text
-/// curl -i -X GET http://localhost:8080/api/users/email/demo1@gmail.us
-/// ```
-///
-/// Return found user information with status 200 or 204 (no content) if the user is not found.
-///
-#[utoipa::path(
-    responses(
-        (status = 200, description = "A user with the specified nickname was found.", body = JSON,
-            example = json!({ "email": "demo1@gmail.us" })),
-        (status = 204, description = "The user with the specified nickname was not found."),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
-    ),
-    params(("email", description = "User email value.")),
-)]
-#[get("/api/users/email/{email}")]
-pub async fn get_user_by_email(
-    user_orm: web::Data<UserOrmApp>,
-    request: actix_web::HttpRequest,
-) -> actix_web::Result<HttpResponse, AppError> {
-    let email = request.match_info().query("email").to_string();
-
-    let result_user = web::block(move || {
-        // Find user by nickname. Result <Vec<user_models::User>>.
-        let res_user = user_orm
-            .find_user_by_nickname_or_email(None, Some(&email))
-            .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e) // 507
-            })
-            .ok()?;
-
-        res_user
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
-    })?;
-
-    if let Some(user) = result_user {
-        Ok(HttpResponse::Ok().json(json!({ "email": user.email }))) // 200
-    } else {
-        Ok(HttpResponse::NoContent().json("")) // 204
     }
 }
 
@@ -210,61 +151,6 @@ pub async fn uniqueness_check(
 
     // Ok(HttpResponse::Ok().json(json!({ "uniqueness": opt_user.is_none() }))) // 200
     Ok(HttpResponse::Ok().json(json!({ "uniqueness": uniqueness }))) // 200
-}
-
-/// get_user_by_nickname
-///
-/// Search for a user by his nickname.
-///
-/// One could call with following curl.
-/// ```text
-/// curl -i -X GET http://localhost:8080/api/users/nickname/demo1
-/// ```
-///
-/// Return found user information with status 200 or 204 (no content) if the user is not found.
-///
-#[utoipa::path(
-    responses(
-        (status = 200, description = "A user with the specified nickname was found.", body = JSON,
-            example = json!({ "nickname": "demo1" })),
-        (status = 204, description = "The user with the specified nickname was not found."),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
-    ),
-    params(("nickname", description = "User nickname value.")),
-)]
-#[get("/api/users/nickname/{nickname}")]
-pub async fn get_user_by_nickname(
-    user_orm: web::Data<UserOrmApp>,
-    request: actix_web::HttpRequest,
-) -> actix_web::Result<HttpResponse, AppError> {
-    let nickname = request.match_info().query("nickname").to_string();
-
-    let result_user = web::block(move || {
-        // Find user by nickname.
-        let res_user = user_orm
-            .find_user_by_nickname_or_email(Some(&nickname), None)
-            .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e) // 507
-            })
-            .ok()?;
-
-        res_user
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
-    })?;
-
-    if let Some(user) = result_user {
-        Ok(HttpResponse::Ok().json(json!({ "nickname": user.nickname }))) // 200
-    } else {
-        Ok(HttpResponse::NoContent().finish()) // 204
-    }
 }
 
 /// get_user_by_id
@@ -733,43 +619,6 @@ mod tests {
         }
     }
 
-    // ** get_user_by_email **
-    #[actix_web::test]
-    async fn test_get_user_by_email_non_existent_email() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let email = format!("a{}", data_c.0.get(0).unwrap().email.clone());
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_user_by_email).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/users/email/{}", email))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-    }
-    #[actix_web::test]
-    async fn test_get_user_by_email_existent_email() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let email = data_c.0.get(0).unwrap().email.clone();
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_user_by_email).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/users/email/{}", email))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let email_res = std::str::from_utf8(&body).unwrap();
-        let str = format!("{{\"email\":\"{}\"}}", email);
-        assert_eq!(email_res, str);
-    }
-
     // ** uniqueness_check **
     #[actix_web::test]
     async fn test_uniqueness_check_non_params() {
@@ -941,41 +790,6 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let nickname_res = std::str::from_utf8(&body).unwrap();
         assert_eq!(nickname_res, "{\"uniqueness\":false}");
-    }
-
-    // ** get_user_by_nickname **
-    #[actix_web::test]
-    async fn test_get_user_by_nickname_non_existent_nickname() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let nickname = format!("a{}", data_c.0.get(0).unwrap().nickname.clone());
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_user_by_nickname).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/users/nickname/{}", nickname))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
-    }
-    #[actix_web::test]
-    async fn test_get_user_by_nickname_existent_nickname() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let nickname = data_c.0.get(0).unwrap().nickname.clone();
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_user_by_nickname).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/users/nickname/{}", nickname))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let nickname_res = std::str::from_utf8(&body).unwrap();
-        let str = format!("{{\"nickname\":\"{}\"}}", nickname);
-        assert_eq!(nickname_res, str);
     }
 
     // ** get_user_by_id **
