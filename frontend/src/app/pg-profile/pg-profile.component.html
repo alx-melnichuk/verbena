@@ -1,3 +1,7 @@
+<app-spinner isFillParent *ngIf="isLoadDataProfile">
+</app-spinner>
 <app-panel-profile-info
-  [userInfo]="userDto">
+  [userInfo]="userDto"
+  (updateProfile)="doUpdateProfile($event)"
+  (cancelProfile)="doCancelProfile()">
 </app-panel-profile-info>
