@@ -8,7 +8,7 @@ import {
   SearchStreamsPeriodDto,
   StreamsPeriodDto
 } from './stream-api.interface';
-import { StringDate, StringDateTime, StringDateTimeUtil } from '../common/string-date-time';
+import { StringDateTime, StringDateTimeUtil } from '../common/string-date-time';
 import { map } from 'rxjs/operators';
 
 @Injectable({
