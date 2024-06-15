@@ -4,21 +4,14 @@
     <div class="ppi-title">{{ 'profile.title' | translate }}</div>
 
     <form [formGroup]="formGroup" novalidate>
-          
-      <div mr-tp-1 class="ppi-avatar">
-        <app-field-file-upload hg-100 *ngIf="!addedLogoView"
-          [maxFileSize]="maxFileSize"
-          [validFileTypes]="validFileTypes"
-          (addFile)="addFile($event)"
-          (readFile)="readFile($event)">
-        </app-field-file-upload>
-        <div *ngIf="!!addedLogoView" class="ppi-avatar-image">
-          <img class="ppi-avatar-view" [src]="addedLogoView" alt="logo unavailable">
-          <button class="ppi-delete-logo" (click)="deleteFileLogo()">
-            <span class="ppi-delete-box"></span>
-          </button>
-        </div>
-      </div>
+
+      <app-field-image-and-upload mr-tp-1 class="ppi-avatar"
+        formControlName="avatar"
+        [maxSize]="maxSize"
+        [validTypes]="validTypes"
+        (addFile)="addAvatarFile($event)"
+        (deleteFile)="deleteAvatarFile()">
+      </app-field-image-and-upload>
 
       <app-uniqueness-check mr-tp-1
         #uniquenessCheckNickname="appUniquenessCheck"
@@ -69,7 +62,7 @@
 
     <button mat-raised-button color="primary"
       [disabled]="formGroup.pristine || formGroup.invalid"
-      (click)="saveProfile()">
+      (click)="saveProfileCard()">
       <span class="ppi-actions-label">
         <i class="ppi-save"></i>
         {{ 'profile.save' | translate }}
@@ -77,7 +70,7 @@
     </button>
   
     <button mat-raised-button class="ppi-cancel"
-      (click)="cancelProfile()">
+      (click)="cancelProfileCard()">
       <span class="ppi-actions-label">
         {{ 'buttons.cancel' | translate }}
       </span>
