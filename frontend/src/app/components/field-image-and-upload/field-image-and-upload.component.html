@@ -1,0 +1,25 @@
+<ng-container [formGroup]="formGroup">
+  <input type="text" formControlName="image" />
+  <ng-container *ngIf="!imageView; else templateImage">
+    <app-field-file-upload class="fiau-file-upload"
+      [isDisabled]="isDisabledVal"
+      [isReadonly]="isReadonly"
+      [maxFileSize]="maxSize"
+      [validFileTypes]="validTypes"
+      (addFile)="addImage($event)"
+      (readFile)="readImage($event)">
+    </app-field-file-upload>
+  </ng-container>
+  <ng-template #templateImage>
+    <div [ngClass]="['fiau-image-box', (isDisabledVal || isReadonly ? 'is-disabled':''), (isReadonly ? 'is-non-event':'')]">
+      <img class="fiau-image-img"
+        [src]="imageView"
+        alt="image unavailable"
+      />
+      <button class="fiau-delete" *ngIf="!isDisabledVal && !isReadonly"
+        (click)="deleteImage()">
+        <span class="fiau-delete-box"></span>
+      </button>
+    </div>
+  </ng-template>
+</ng-container>
