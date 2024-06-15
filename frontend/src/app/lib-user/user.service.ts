@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { UserApiService } from './user-api.service';
-import { LoginUserResponseDto, UserDto, UserTokensDto } from './user-api.interface';
+import { LoginUserResponseDto, ModifyProfileDto, UserDto, UserProfileDto, UserTokensDto } from './user-api.interface';
 
 export const ACCESS_TOKEN = 'accessToken';
 export const REFRESH_TOKEN = 'refreshToken';
@@ -114,6 +114,12 @@ export class UserService {
     return this.userApiService.uniqueness(nickname, email);
   }
 
+  public modifyProfile(
+    id: number, modifyProfileDto: ModifyProfileDto, file?: File | null
+  ): Promise<UserProfileDto | HttpErrorResponse | undefined> {
+    return this.userApiService.modifyProfile(id, modifyProfileDto, file);
+  }
+  
   // ** Private Api **
 
   private updateItemInLocalStorage(name: string, value: string | null): void {

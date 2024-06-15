@@ -81,4 +81,32 @@ export interface TokenUserDto {
   token: string;
 }
 
+// ** UserProfile **
+
+export interface UserProfileDto {
+    id: number;
+    nickname: string;
+    email: string;
+    password: string;
+    role: string;
+    avatar: string;
+    descript: string;
+  }
+  
+export interface UpdateProfileFileDto {
+  id?: number | undefined;
+  nickname?: string | undefined;
+  email?: string | undefined;
+  password?: string | undefined;
+  descript?: string | undefined;
+  avatarFile?: File | null | undefined;
+}
+
+export interface ModifyProfileDto {
+  nickname?: string | undefined;
+  email?: string | undefined;
+  password?: string | undefined;
+  descript?: string | undefined;
+}
+  
 // ** **
