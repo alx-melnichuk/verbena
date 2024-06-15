@@ -11,7 +11,16 @@ app-field-file-upload {
   &[is-border] {
     border: 1px solid var(--app-theme-input-border);
   }
-  [cr-pnt] { cursor: pointer; }
+  &.is-disabled {
+    opacity: 0.6;
+  }
+  &.is-non-event {
+    pointer-events: none;
+  }
+
+  label:not(.is-disabled) {
+    cursor: pointer;
+  }
 
   mat-form-field {
     max-width: inherit;
@@ -25,7 +34,7 @@ app-field-file-upload {
     justify-content: center;
 
     &>.ffu-upload-file { margin-top: 4%; }
-    &>label {
+    &>label:not(.is-disabled) {
       color: var(--app-theme-primary);
     }
   }

@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, Output, ViewEncapsulation
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { FieldDragAndDropDirective } from 'src/app/directives/field-drag-and-drop.directive';
 
@@ -18,6 +20,10 @@ let idx = 0;
 })
 export class FieldFileUploadComponent {
   @Input()
+  public isDisabled: boolean = false;
+  @Input()
+  public isReadonly: boolean = false;
+  @Input()
   public isMultiple = false;
   @Input()
   public maxFileSize = -1;
@@ -29,21 +35,34 @@ export class FieldFileUploadComponent {
   @Output()
   readonly readFile: EventEmitter<string[]> = new EventEmitter();
 
+  @HostBinding('class.is-disabled')
+  public get classIsDisabledVal(): boolean {
+    return this.isDisabled
+  }
+  @HostBinding('class.is-non-event')
+  public get isNonEvent(): boolean {
+    return this.isDisabled || this.isReadonly;
+  }
+
   public files: File[] = [];
   public id = 'fileDropId_' + (++idx);
 
-  constructor() {
+  constructor(private translate: TranslateService) {
   }
 
   // ** Public API **
 
   // on file drop handler
   public doFileDropped(event: FileList): void {
-    this.prepareFilesList(event);
+    if (!this.isDisabled && !this.isReadonly) {
+      this.prepareFilesList(event);
+    }
   }
   // handle file from browsing
   public fileBrowseHandler(target: any): void {
-    this.prepareFilesList(target.files);
+    if (!this.isDisabled && !this.isReadonly) {
+      this.prepareFilesList(target.files);
+    }
   }
   // Delete file from files list
   public deleteFile(index: number): void {
@@ -59,19 +78,6 @@ export class FieldFileUploadComponent {
         this.readDataFile(itemFile);
       }
     }
-  }
-  private checkFile(file: File, validFileTypes: string, maxFileSize: number): boolean {
-    let result = false;
-    const types = validFileTypes.split(','); // ['png', 'jpg', 'jpeg', 'gif'];
-    const isExist = types.some((item) => file.type.includes(item));
-    if (!!types && !isExist) {
-      alert('Please upload images and use png/jpg/jpeg/gif file formats.');
-    } else if (maxFileSize > 0 && file.size > maxFileSize) {
-      alert(`The file size must not exceed the maximum ${maxFileSize}.`);
-    } else {
-      result = true;
-    }
-    return result;
   }
   // format bytes
   public formatBytes(bytes: number, decimals: number): string {
@@ -94,5 +100,20 @@ export class FieldFileUploadComponent {
       this.readFile.emit([file.name, result]);
     };
     reader.readAsDataURL(file); // convert to base64 string and render as a preview
+  }
+  private checkFile(file: File, validFileTypes: string, maxFileSize: number): boolean {
+    let result = false;
+    const types = validFileTypes.split(','); // ['png', 'jpg', 'jpeg', 'gif'];
+    const isExist = types.some((item) => file.type.includes(item));
+    if (!!types && !isExist) {
+      const msg = this.translate.instant('field-file-upload.upload_images_use_valid_types', { 'validTypes': types });
+      alert(msg);
+    } else if (maxFileSize > 0 && file.size > maxFileSize) {
+      const msg = this.translate.instant('field-file-upload.file_size_must_not_exceed_max', { 'maxFileSize': maxFileSize });
+      alert(msg);
+    } else {
+      result = true;
+    }
+    return result;
   }
 }

@@ -2,12 +2,14 @@
   appFieldDragAndDrop
   (fileDropped)="doFileDropped($event)">
   <input type="file" #fileDropRef [attr.id]="id"
-    [attr.multiple]="isMultiple"
+    [attr.multiple]="isMultiple ? '': undefined"
+    [attr.disabled]="isDisabled || isReadonly ? '': undefined"
+    [attr.readonly]="isReadonly ? '': undefined"
     (change)="fileBrowseHandler($event.target)"
   />
   <div class="ffu-upload-file"></div>
   <h3>{{ 'field-file-upload.drag_and_drop_file_or' | translate }}</h3>
-  <label cr-pnt class="ffu-label" [attr.for]="id">
+  <label [ngClass]="['ffu-label', (isDisabled || isReadonly ? 'is-disabled':'')]" [attr.for]="id">
     {{ 'field-file-upload.browse_for_file' | translate }}
   </label>
 </div>
