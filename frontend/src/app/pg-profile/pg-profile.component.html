@@ -1,6 +1,6 @@
 <app-spinner isFillParent *ngIf="isLoadDataProfile">
 </app-spinner>
-<app-panel-profile-info
+<app-panel-profile-info class="pgp-over-auto global-scroll "
   [userInfo]="userDto"
   (updateProfile)="doUpdateProfile($event)"
   (cancelProfile)="doCancelProfile()">
