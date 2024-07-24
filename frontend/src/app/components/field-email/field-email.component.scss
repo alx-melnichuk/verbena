@@ -3,6 +3,9 @@
 app-field-email {
   display: block;
 
+  &[wd-100] {
+    width: 100%;
+  }
   mat-form-field {
     max-width: inherit;
     width: inherit;

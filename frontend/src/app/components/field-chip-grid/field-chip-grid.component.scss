@@ -14,8 +14,12 @@ app-field-chip-grid {
     width: 1vw;
     height: 1.3vh;
   }
-  mat-form-field {
+  &[wd-100] {
     width: 100%;
+  }
+  mat-form-field {
+    max-width: inherit;
+    width: inherit;
   }
   .mat-mdc-form-field-subscript-wrapper {
     --mdc-typography-caption-line-height: 1.25;
