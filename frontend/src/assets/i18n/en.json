@@ -254,9 +254,16 @@
     "backend_used": "On the Backend we used:"
   },
   "profile": {
-    "title": "Personal information",
-    "new_password": "New password",
+    "title_profile": "Personal information",
     "save": "Save",
-    "error_editing_profile": "Error editing profile"
+    "error_editing_profile": "Error editing profile",
+    "title_change_password": "Change password",
+    "current_password": "Current Password",
+    "new_password": "New password",
+    "set_password": "Set password",
+    "delete_account": "Delete account",
+    "note_before_deleting_account": "You will lose all data and content from this account, such as emails, files and photos. This data can no longer be restored.",
+    "are_you_sure_want_delete_account?": "Are you sure you want to delete your account?",
+    "delete_your_account": "Delete your account"
   }
 }
