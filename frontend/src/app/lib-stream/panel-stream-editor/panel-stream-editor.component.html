@@ -5,7 +5,7 @@
         
       <div class="pse-text">{{ 'stream_edit.caption' | translate }}</div>
 
-      <mat-form-field wd-100 appearance="outline" color="primary">
+      <mat-form-field wd-100 appearance="outline" color="primary" class="pse-title">
         <mat-label>{{ 'stream_edit.title' | translate }}</mat-label>
         <input matInput
           type="text"
@@ -26,7 +26,7 @@
       <div class="pse-text">{{ 'stream_edit.thumbnail' | translate }}</div>
 
       <div class="pse-logo">
-        <app-field-file-upload hg-100 *ngIf="!addedLogoView"
+        <app-field-file-upload hg-100 class="pse-file-upload" *ngIf="!addedLogoView"
           [maxFileSize]="maxFileSize"
           [validFileTypes]="validFileTypes"
           (addFile)="addFile($event)"
@@ -42,7 +42,7 @@
 
       <div class="pse-text">{{ 'stream_edit.tags' | translate }}</div>
 
-      <app-field-chip-grid
+      <app-field-chip-grid wd-100
         formControlName="tags"
         [label]="'stream_edit.add_tags'"
         [isReadonly]="(controls.tags.value || '').length == tagMaxAmount ? true : null"
@@ -59,7 +59,7 @@
 
       <div class="pse-start-date-time-label">
         <span class="pse-text">{{ 'stream_edit.set_date_and_time_or_now' | translate }}</span>
-        <mat-slide-toggle  class="pse-toggle"
+        <mat-slide-toggle class="pse-toggle"
           color="primary"
           formControlName="isStartTime"
           (change)="changeIsStartTime()">
