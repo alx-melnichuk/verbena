@@ -1,9 +1,9 @@
 <div class="ppi-panel">
-  <div class="ppi-content ppi-over-auto global-scroll">
   
-    <div class="ppi-title">{{ 'profile.title' | translate }}</div>
-
-    <form [formGroup]="formGroup" novalidate>
+  <div class="ppi-content">
+    <div class="ppi-title">{{ 'profile.title_profile' | translate }}</div>
+    
+    <form [formGroup]="formGroup1" novalidate>
 
       <app-field-image-and-upload mr-tp-1 class="ppi-avatar"
         formControlName="avatar"
@@ -23,7 +23,7 @@
           label="field-nickname.label"
           hint="field-nickname.nickname_hint"
           [errorMsg]="uniquenessCheckNickname.isUniquenessError ? 'Conflict.nickname_already_use' : undefined"
-          (input)="updateErrMsg(); uniquenessCheckNickname.checkParameter(controls.nickname.value);">
+          (input)="updateErrMsg1(); uniquenessCheckNickname.checkParameter(controls1.nickname.value);">
         </app-field-nickname>
       </app-uniqueness-check>
 
@@ -36,18 +36,10 @@
           [isRequired]="true"
           label="field-email.label"
           [errorMsg]="uniquenessCheckEmail.isUniquenessError ? 'Conflict.email_already_use' : undefined"
-          (input)="updateErrMsg(); uniquenessCheckEmail.checkParameter(controls.email.value);">
+          (input)="updateErrMsg1(); uniquenessCheckEmail.checkParameter(controls1.email.value);">
         </app-field-email>
       </app-uniqueness-check>
-
-      <app-field-password wd-100 mr-tp-0_5
-        formControlName="password"
-        [isRequired]="false"
-        label="profile.new_password"
-        hint="field-password.password_hint"
-        (input)="updateErrMsg()">
-      </app-field-password>
-
+        
       <app-field-descript wd-100 mr-tp-1_5
         formControlName="descript"
         [isRequired]="false"
@@ -55,26 +47,69 @@
       </app-field-descript>
 
     </form>
-
+    <div class="ppi-actions">
+      <button mat-raised-button color="primary"
+        [disabled]="formGroup1.pristine || formGroup1.invalid"
+        (click)="saveProfileCard()">
+        <span class="ppi-actions-label">
+          <i class="ppi-save"></i>
+          {{ 'profile.save' | translate }}
+        </span>
+      </button>
+    </div>
   </div>
 
-  <div mr-tp-1 class="ppi-actions">
+  <div class="ppi-content">
+    <div class="ppi-title">{{ 'profile.title_change_password' | translate }}</div>
 
-    <button mat-raised-button color="primary"
-      [disabled]="formGroup.pristine || formGroup.invalid"
-      (click)="saveProfileCard()">
-      <span class="ppi-actions-label">
-        <i class="ppi-save"></i>
-        {{ 'profile.save' | translate }}
-      </span>
-    </button>
-  
-    <button mat-raised-button class="ppi-cancel"
-      (click)="cancelProfileCard()">
-      <span class="ppi-actions-label">
-        {{ 'buttons.cancel' | translate }}
-      </span>
-    </button>
+    <form [formGroup]="formGroup2" novalidate>
 
+      <app-field-password wd-100 mr-tp-0_5
+        formControlName="password"
+        [isRequired]="false"
+        label="profile.current_password"
+        hint="field-password.password_hint"
+        (input)="updateErrMsg2()">
+      </app-field-password>
+
+      <app-field-password wd-100 mr-tp-1_5
+        formControlName="new_password"
+        [isRequired]="false"
+        label="profile.new_password"
+        hint="field-password.password_hint"
+        (input)="updateErrMsg2()">
+      </app-field-password>
+    </form>
+
+    <div class="ppi-actions" mr-tp-1_5>
+      <button mat-raised-button color="primary"
+        [disabled]="formGroup2.pristine || formGroup2.invalid"
+        (click)="saveProfileCard()">
+        <span class="ppi-actions-label">
+          <i class="ppi-save"></i>
+          {{ 'profile.set_password' | translate }}
+        </span>
+      </button>
+    </div>
   </div>
+
+  <div class="ppi-content">
+    <div class="ppi-title">{{ 'profile.delete_your_account' | translate }}</div>
+    <div mr-tp-1_5>
+      <span>
+        {{ 'profile.note_before_deleting_account' | translate }}
+      </span>
+    </div>
+    <div class="ppi-actions" mr-tp-1_5>
+      <button mat-raised-button color="primary"
+        [disabled]="formGroup2.pristine || formGroup2.invalid"
+        (click)="saveProfileCard()">
+        <span class="ppi-actions-label">
+          <i class="ppi-save"></i>
+          {{ 'profile.delete_account' | translate }}
+        </span>
+      </button>
+    </div>
+  </div>
+  <span>&nbsp;</span>
 </div>

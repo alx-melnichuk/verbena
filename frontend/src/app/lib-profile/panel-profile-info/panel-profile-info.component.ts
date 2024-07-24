@@ -35,7 +35,9 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   @Input()
   public isDisabledSubmit: boolean = false;
   @Input()
-  public errMsgList: string[] = [];
+  public errMsgList1: string[] = [];
+  @Input()
+  public errMsgList2: string[] = [];
   
   @ViewChild(FieldNicknameComponent, { static: true })
   public fieldNicknameComp!: FieldNicknameComponent;
@@ -47,14 +49,20 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   @Output()
   readonly cancelProfile: EventEmitter<void> = new EventEmitter();
 
-  public controls = {
+  public controls1 = {
     nickname: new FormControl(null, []),
     email: new FormControl(null, []),
     password: new FormControl(null, []),
     avatar: new FormControl('', []),
     descript: new FormControl(null, []),
   };
-  public formGroup: FormGroup = new FormGroup(this.controls);
+  public formGroup1: FormGroup = new FormGroup(this.controls1);
+
+  public controls2 = {
+    password: new FormControl(null, []),
+    new_password: new FormControl(null, []),
+  };
+  public formGroup2: FormGroup = new FormGroup(this.controls2);
 
   public debounceDelay: number = PPI_DEBOUNCE_DELAY;
   // Avatar Image Options
@@ -105,35 +113,39 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   public deleteAvatarFile(): void {
     this.avatarFile = (!!this.initIsAvatar ? null : undefined);
     if (!!this.initIsAvatar) {
-      this.controls.avatar.markAsDirty();
+      this.controls1.avatar.markAsDirty();
     } else {
-      this.controls.avatar.markAsPristine();
+      this.controls1.avatar.markAsPristine();
     }
   }
 
-  public updateErrMsg(errMsgList: string[] = []): void {
-    this.errMsgList = errMsgList;
+  public updateErrMsg1(errMsgList: string[] = []): void {
+    this.errMsgList1 = errMsgList;
+  }
+
+  public updateErrMsg2(errMsgList: string[] = []): void {
+    this.errMsgList2 = errMsgList;
   }
 
   public saveProfileCard(): void {
-    const nickname: string | undefined = this.controls.nickname.value || undefined;
-    const email: string | undefined = this.controls.email.value || undefined;
-    const password: string | undefined = this.controls.password.value || undefined;
-    const descript: string | undefined = this.controls.descript.value || undefined;
+    const nickname: string | undefined = this.controls1.nickname.value || undefined;
+    const email: string | undefined = this.controls1.email.value || undefined;
+    const password: string | undefined = this.controls1.password.value || undefined;
+    const descript: string | undefined = this.controls1.descript.value || undefined;
 
     const updateProfileFileDto: UpdateProfileFileDto = {
       id: this.origUserDto.id,
-      nickname: (this.controls.nickname.dirty ? nickname : undefined),
-      email: (this.controls.email.dirty ? email : undefined),
-      password: (this.controls.password.dirty ? password : undefined),
-      descript: (this.controls.descript.dirty ? descript : undefined),
+      nickname: (this.controls1.nickname.dirty ? nickname : undefined),
+      email: (this.controls1.email.dirty ? email : undefined),
+      password: (this.controls1.password.dirty ? password : undefined),
+      descript: (this.controls1.descript.dirty ? descript : undefined),
       avatarFile: this.avatarFile,
     };
     this.updateProfile.emit(updateProfileFileDto);
   }
 
-  public cancelProfileCard(): void {
-    this.cancelProfile.emit();
+  public setNewPassword(): void {
+    console.log();
   }
 
   // ** Private API **
@@ -145,7 +157,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     this.origUserDto = { ...userInfo };
     Object.freeze(this.origUserDto);
 
-    this.formGroup.patchValue({
+    this.formGroup1.patchValue({
       avatar: '/logo/10_02280e22j4di504.png',
       nickname: userInfo.nickname,
       email: userInfo.email,
@@ -153,7 +165,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
       descript: 'Description of a beautiful trip 2024 to greece 6 - E.Allen',
     });
     this.avatarFile = undefined;
-    this.initIsAvatar = !!this.controls.avatar.value;
+    this.initIsAvatar = !!this.controls1.avatar.value;
      this.avatarView = ''; // /*streamDto.logo ||*/ '/logo/10_02280e22j4di504.png';
      this.isAvatarOrig = !!this.avatarView;
     // this.controls.avatar.disable();

@@ -19,18 +19,25 @@ app-panel-profile-info {
   @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
     ---ppi-crd-wd: 80vw;
     ---ppi-pd: 1.5em;
-    ---ppi-wd: 41em; // 32em;
+    ---ppi-wd: 50%; // 41em; // 32em;
+    ---ppi-fl-wr: wrap;
   }
   @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
     ---ppi-crd-wd: 60vw;
     ---ppi-pd: 2em;
-    ---ppi-wd: 43em; //34em;
+    ---ppi-wd: 50%; //  43em; //34em;
+    ---ppi-fl-wr: wrap;
   }
   @media screen and (dimensions.$desktop-1280 < width) {
     ---ppi-crd-wd: 40vw;
     ---ppi-pd: 2.5em;
     ---ppi-wd: 45em; //36em;
+    ---ppi-fl-wr: wrap;
   }
+
+  [mr-tp-0_5] { margin-top: 0.5em; }
+  [mr-tp-1] { margin-top: 1em; }
+  [mr-tp-1_5] { margin-top: 1.5em; }
 
   box-sizing: border-box;
   display: flex;
@@ -39,14 +46,16 @@ app-panel-profile-info {
   padding: var(---ppi-pd) 0;
   user-select: none;
 
-  [mr-bt-0_5] { margin-bottom: 0.5em; }
-  [mr-tp-0_5] { margin-top: 0.5em; }
-  [mr-tp-1] { margin-top: 1em; }
-  [mr-tp-1_5] { margin-top: 1.5em; }
-  [wd-100] { width: 100%; }
-  [hg-100] { height: 100%; }
-
   .ppi-panel {
+    align-content: center;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: var(---ppi-fl-wr, nowrap);
+    height: 100%;
+    width: 100%;
+  }
+  .ppi-content {
     background-color:  var(--ppi-pn-bg,var(---ppi-pn-bg));
     border-color: var(--ppi-pn-brd, var(---ppi-pn-brd));
     border-style: solid;
@@ -56,18 +65,12 @@ app-panel-profile-info {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    height: 100%;
-    padding: var(---ppi-pd) 0;
-    width: var(---ppi-wd);
-  }
-  .ppi-content {
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    padding: 0 var(---ppi-pd);
-  }
-  .ppi-over-auto {
-    overflow: auto;
+    margin-bottom: var(---ppi-pd);
+    margin-top: var(---ppi-pd);
+    margin-left: calc(var(---ppi-pd) / 2);
+    margin-right: calc(var(---ppi-pd) / 2);
+    padding: var(---ppi-pd);
+    width: calc(var(---ppi-wd) - var(---ppi-pd));
   }
 
   .ppi-title {
@@ -79,13 +82,12 @@ app-panel-profile-info {
   .ppi-avatar {
     height: 10em;
   }
+
   // ** Card Actions **
 
   .ppi-actions {
     display: flex;
-    justify-content: space-evenly;
-    padding-left: var(---ppi-pd);
-    padding-right: var(---ppi-pd);
+    justify-content: center;
   }
   .ppi-actions-label {
     display: flex;
