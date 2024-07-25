@@ -104,8 +104,8 @@
   </div>
 
   <div class="pse-actions">
-
     <button mat-raised-button color="primary"
+      class="app-infix app-ordinary"
       [disabled]="formGroup.pristine || formGroup.invalid"
       (click)="saveStreamCard()">
       <span class="pse-actions-label">
@@ -113,13 +113,5 @@
         {{ (isCreate ? 'stream_edit.go_public' : 'stream_edit.save') | translate }}
       </span>
     </button>
-    
-    <button mat-raised-button class="pse-cancel"
-      (click)="cancelStreamCard()">
-      <span class="pse-actions-label">
-        {{ 'buttons.cancel' | translate }}
-      </span>
-    </button>
-  
   </div>
 </div>
