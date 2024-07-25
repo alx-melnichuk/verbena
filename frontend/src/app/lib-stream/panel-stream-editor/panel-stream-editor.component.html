@@ -1,5 +1,5 @@
 <div class="pse-panel">
-  <div class="pse-content pse-over-auto global-scroll">
+  <div class="pse-content">
 
     <form [formGroup]="formGroup" novalidate>
         
@@ -67,7 +67,6 @@
       </div>
 
       <div class="pse-start-date-time">
-        
         <mat-form-field appearance="outline" color="primary">
           <mat-label>{{ 'stream_edit.start_date' | translate }}</mat-label>
           <input matInput formControlName="startDate"
@@ -84,9 +83,8 @@
       </div>
 
       <ng-container *ngIf="!isCreate">
-        <div class="">
-          <div class="pse-text">{{ 'stream_edit.link_for_visitors' | translate }}</div>
-        </div>
+        <div class="pse-text">{{ 'stream_edit.link_for_visitors' | translate }}</div>
+
         <div class="pse-link-param">
           <div class="pse-ellipsis">
             <span>{{ linkForVisitors }}</span>
@@ -101,17 +99,17 @@
 
     </form>
 
-  </div>
+    <div class="pse-actions">
+      <button mat-raised-button color="primary"
+        class="app-infix app-ordinary"
+        [disabled]="formGroup.pristine || formGroup.invalid"
+        (click)="saveStreamCard()">
+        <span class="pse-actions-label">
+          <i class="pse-save"></i>
+          {{ (isCreate ? 'stream_edit.go_public' : 'stream_edit.save') | translate }}
+        </span>
+      </button>
+    </div>
 
-  <div class="pse-actions">
-    <button mat-raised-button color="primary"
-      class="app-infix app-ordinary"
-      [disabled]="formGroup.pristine || formGroup.invalid"
-      (click)="saveStreamCard()">
-      <span class="pse-actions-label">
-        <i class="pse-save"></i>
-        {{ (isCreate ? 'stream_edit.go_public' : 'stream_edit.save') | translate }}
-      </span>
-    </button>
   </div>
 </div>

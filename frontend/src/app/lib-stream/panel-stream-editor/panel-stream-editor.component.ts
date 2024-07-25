@@ -51,6 +51,9 @@ export class PanelStreamEditorComponent implements OnChanges {
   @Output()
   readonly cancelStream: EventEmitter<void> = new EventEmitter();
   
+  @HostBinding('class.global-scroll')
+  public get isGlobalScroll(): boolean { return true; }
+
   public minLenTitle = 2;
   public maxLenTitle = 255;
 
