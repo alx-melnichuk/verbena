@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, HostBinding, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { PanelStreamEditorComponent } from '../panel-stream-editor/panel-stream-editor.component';
@@ -27,6 +27,11 @@ export class StreamEditComponent {
   
   private goBackToRoute: string = ROUTE_STREAM_LIST;
 
+  @HostBinding('class.global-scroll')
+  public get classGlobalScrollVal(): boolean {
+    return true;
+  }
+  
   constructor(
     private changeDetectorRef: ChangeDetectorRef,
     private route: ActivatedRoute,
