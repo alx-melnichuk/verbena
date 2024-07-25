@@ -5,7 +5,7 @@
         
       <div class="pse-text">{{ 'stream_edit.caption' | translate }}</div>
 
-      <mat-form-field wd-100 appearance="outline" color="primary" class="pse-title">
+      <mat-form-field appearance="outline" color="primary" class="pse-title">
         <mat-label>{{ 'stream_edit.title' | translate }}</mat-label>
         <input matInput
           type="text"
@@ -17,7 +17,7 @@
         <mat-error>{{ getErrorMsg(controls.title.errors, 'title') | translate : controls.title.errors }}</mat-error>
       </mat-form-field>
 
-      <app-field-descript wd-100 mr-tp-025
+      <app-field-descript wd100 mr-tp-025
         formControlName="descript"
         [isRequired]="false"
         label="stream_edit.descript">
@@ -42,7 +42,7 @@
 
       <div class="pse-text">{{ 'stream_edit.tags' | translate }}</div>
 
-      <app-field-chip-grid wd-100
+      <app-field-chip-grid wd100
         formControlName="tags"
         [label]="'stream_edit.add_tags'"
         [isReadonly]="(controls.tags.value || '').length == tagMaxAmount ? true : null"

@@ -17,7 +17,7 @@
         #uniquenessCheckNickname="appUniquenessCheck"
         [debounceDelay]="debounceDelay"
         [checkUniquenessFn]="checkUniquenessNickname">
-        <app-field-nickname wd-100
+        <app-field-nickname wd100
           formControlName="nickname"
           [isRequired]="true"
           label="field-nickname.label"
@@ -31,7 +31,7 @@
         #uniquenessCheckEmail="appUniquenessCheck"
         [debounceDelay]="debounceDelay"
         [checkUniquenessFn]="checkUniquenessEmail">
-        <app-field-email wd-100 
+        <app-field-email wd100 
           formControlName="email"
           [isRequired]="true"
           label="field-email.label"
@@ -40,7 +40,7 @@
         </app-field-email>
       </app-uniqueness-check>
         
-      <app-field-descript wd-100 mr-tp-1_5
+      <app-field-descript wd100 mr-tp-1_5
         formControlName="descript"
         [isRequired]="false"
         label="stream_edit.descript">
@@ -65,7 +65,7 @@
 
     <form [formGroup]="formGroup2" novalidate>
 
-      <app-field-password wd-100 mr-tp-0_5
+      <app-field-password wd100 mr-tp-0_5
         formControlName="password"
         [isRequired]="false"
         label="profile.current_password"
@@ -73,7 +73,7 @@
         (input)="updateErrMsg2()">
       </app-field-password>
 
-      <app-field-password wd-100 mr-tp-1_5
+      <app-field-password wd100 mr-tp-1_5
         formControlName="new_password"
         [isRequired]="false"
         label="profile.new_password"

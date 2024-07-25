@@ -8,7 +8,7 @@
       #uniquenessCheckNickname="appUniquenessCheck"
       [debounceDelay]="debounceDelay"
       [checkUniquenessFn]="checkUniquenessNickname">
-      <app-field-nickname wd-100
+      <app-field-nickname wd100
         formControlName="nickname"
         [isRequired]="true"
         label="field-nickname.label"
@@ -22,7 +22,7 @@
       #uniquenessCheckEmail="appUniquenessCheck"
       [debounceDelay]="debounceDelay"
       [checkUniquenessFn]="checkUniquenessEmail">
-      <app-field-email wd-100 
+      <app-field-email wd100 
         formControlName="email"
         [isRequired]="true"
         label="field-email.label"
@@ -31,14 +31,14 @@
       </app-field-email>
     </app-uniqueness-check>
 
-    <app-field-password wd-100 mr-tp-05
+    <app-field-password wd100 mr-tp-05
       formControlName="password"
       [isRequired]="true"
       hint="field-password.password_hint"
       (input)="updateErrMsg()">
     </app-field-password>
   
-    <button type="button" wd-100 mr-bt-05 mr-tp-05 mat-raised-button
+    <button type="button" mr-bt-05 mr-tp-05 mat-raised-button
       class="mat-primary"
       [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
       (click)="doSignup()">
