@@ -7,7 +7,10 @@
     
   &.dark-theme {
     --infix-button-ordinary-brd: var(--app-ordinary-low); // high
-    --demo-button-ordinary-bg : hsl(0, 0%, 19%);
+    // --demo--button-ordinary-text-cl: hsl(0, 0%, 100%); // #ffffff
+    --infix-button-ordinary-text-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
+    --infix-button-ordinary-text-dis-cl: hsla(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l),0.50);
+    // --demo--button-ordinary-bg : hsl(0, 0%, 19%);
     --infix-button-ordinary-bg: hsl(var(--app-ordinary-h), var(--app-ordinary-s), calc(var(--app-ordinary-l) - 28%));
     --infix-form-field-hint-cl: hsla(0, 0%, 100%, 0.6);
     .mdc-text-field:not(.mdc-text-field--disabled) .mdc-text-field__input {
@@ -19,18 +22,27 @@
   }
   &.light-theme {
     --infix-button-ordinary-brd: var(--app-ordinary-high);
-    --demo-button-ordinary-bg : hsl(0, 0%, 84%);
+    // --demo--button-ordinary-text-cl: hsl(0, 0%, 0%); // #000000
+    --app-default-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
+    --infix-button-ordinary-text-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
+    --infix-button-ordinary-text-dis-cl: hsla(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l),0.50);
+    // --demo-button-ordinary-bg : hsl(0, 0%, 84%);
     --infix-button-ordinary-bg: hsl(var(--app-ordinary-h), var(--app-ordinary-s), calc(var(--app-ordinary-l) + 37%));
     --infix-form-field-hint-cl: hsl(210, 8%, 35%);
   }
 
             
-  button.app-infix {
-    --mdc-outlined-button-label-text-color: none; // use color:inherit
-    &.app-ordinary {
-      --mdc-outlined-button-outline-color: var(--infix-button-ordinary-brd);
-      background-color: var(--infix-button-ordinary-bg);
-    }
+  button.app-infix.app-ordinary {
+    --mdc-outlined-button-outline-color: var(--infix-button-ordinary-brd);
+    --mdc-outlined-button-label-text-color: var(--infix-button-ordinary-text-cl);
+    --mdc-outlined-button-disabled-label-text-color: var(--infix-button-ordinary-text-dis-cl);
+    --mdc-outlined-button-disabled-outline-color: var(--infix-button-ordinary-brd);
+
+    --mdc-protected-button-label-text-color: var(--infix-button-ordinary-text-cl);
+    --mdc-protected-button-disabled-label-text-color: var(--infix-button-ordinary-text-dis-cl);
+
+    --mdc-outlined-button-container-color: var(--infix-button-ordinary-bg);
+    --mdc-protected-button-container-color: var(--infix-button-ordinary-bg);
   }
 
 //   .mat-mdc-button.mat-primary, .mat-mdc-outlined-button.mat-primary {
