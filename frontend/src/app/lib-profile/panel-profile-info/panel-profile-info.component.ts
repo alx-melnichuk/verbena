@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, ViewEncapsulation
+  ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -48,6 +48,11 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   readonly updateProfile: EventEmitter<UpdateProfileFileDto> = new EventEmitter();
   @Output()
   readonly cancelProfile: EventEmitter<void> = new EventEmitter();
+
+  @HostBinding('class.global-scroll')
+  public get classGlobalScrollVal(): boolean {
+    return true;
+  }
 
   public controls1 = {
     nickname: new FormControl(null, []),
