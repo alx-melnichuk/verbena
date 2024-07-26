@@ -47,6 +47,7 @@ use crate::{
             user_models::TokenUserDto, // ::update_token
             // user_controller
             user_models::PasswordUserDto,
+            user_models::NewPasswordUserDto,
             user_models::UniquenessUserDto,
             // user_registr_controller
             user_models::RegistrUserDto, user_models::RegistrUserResponseDto, // ::registration

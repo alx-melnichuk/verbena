@@ -37,6 +37,7 @@ pub const MSG_PASSWORD_REQUIRED: &str = "password:required";
 pub const MSG_PASSWORD_MIN_LENGTH: &str = "password:min_length";
 pub const MSG_PASSWORD_MAX_LENGTH: &str = "password:max_length";
 pub const MSG_PASSWORD_REGEX: &str = "password:regex";
+pub const MSG_PASSWORD_VALUE_AS_OLD: &str = "password:value_as_old";
 // MIN=3,MAX=64,"^[a-zA-Z]+[\\w]+$"
 pub fn validate_nickname(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_NICKNAME_REQUIRED)?;
@@ -70,6 +71,13 @@ pub fn validate_password(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::regexp(value, PASSWORD_LOWERCASE_LETTER_REGEX, MSG_PASSWORD_REGEX)?;
     ValidationChecks::regexp(value, PASSWORD_CAPITAL_LETTER_REGEX, MSG_PASSWORD_REGEX)?;
     ValidationChecks::regexp(value, PASSWORD_NUMBER_REGEX, MSG_PASSWORD_REGEX)?;
+    Ok(())
+}
+pub fn validate_inequality(value1: &str, value2: &str) -> Result<(), ValidationError> {
+    if value1.starts_with(value2) && value1.len() == value2.len() {
+        let err = ValidationError::new(MSG_PASSWORD_VALUE_AS_OLD);
+        return Err(err);
+    }
     Ok(())
 }
 
@@ -177,6 +185,27 @@ impl Validator for PasswordUserDto {
         if let Some(password_val) = &self.password {
             errors.push(validate_password(password_val).err());
         }
+
+        self.filter_errors(errors)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+pub struct NewPasswordUserDto {
+    pub password: String,
+    pub new_password: String,
+}
+
+impl Validator for NewPasswordUserDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        errors.push(validate_password(&self.password).err());
+
+        errors.push(validate_password(&self.new_password).err());
+
+        errors.push(validate_inequality(&self.new_password, &self.password).err());
 
         self.filter_errors(errors)
     }

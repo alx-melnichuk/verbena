@@ -10,6 +10,10 @@ pub const MSG_MISSING_TOKEN: &str = "token_missing"; /*+*/
 pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token"; /*+*/
 // 401 Unauthorized - User's "num" does not match "num" from token. (authentication, user_auth_controller)
 pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num"; /*+*/
+// 401 Unauthorized
+pub const MSG_WRONG_NICKNAME_EMAIL: &str = "nickname_or_email_incorrect";
+// 401 Unauthorized
+pub const MSG_PASSWORD_INCORRECT: &str = "password_incorrect";
 
 // 403 Forbidden - (authentication, user_auth_controller)
 pub const CD_FORBIDDEN: &str = "Forbidden";
@@ -26,6 +30,8 @@ pub const MSG_SESSION_NOT_EXIST: &str = "session_not_exist"; /*+*/
 
 // 409 Conflict (user_auth_controller, user_registr_controller)
 pub const CD_CONFLICT: &str = "Conflict"; /*+*/
+// 409 Conflict - Error checking hash value.
+pub const MSG_INVALID_HASH: &str = "invalid_hash";
 
 // 413 Content too large // The request object exceeds the limits defined by the server.
 pub const CD_CONTENT_TOO_LARGE: &str = "ContentTooLarge"; /*+*/
