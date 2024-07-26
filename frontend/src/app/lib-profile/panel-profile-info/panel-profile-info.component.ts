@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, ValidatorFn } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -46,6 +46,8 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
 
   @Output()
   readonly updateProfile: EventEmitter<UpdateProfileFileDto> = new EventEmitter();
+//   @Output()
+//   readonly updatePassword: EventEmitter<UpdateProfileFileDto> = new EventEmitter();
   @Output()
   readonly cancelProfile: EventEmitter<void> = new EventEmitter();
 
@@ -68,6 +70,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     new_password: new FormControl(null, []),
   };
   public formGroup2: FormGroup = new FormGroup(this.controls2);
+  public isRequiredPassword: boolean = false;
 
   public debounceDelay: number = PPI_DEBOUNCE_DELAY;
   // Avatar Image Options
@@ -75,8 +78,8 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   public validTypes = IMAGE_VALID_FILE_TYPES;
   public avatarFile: File | null | undefined;
   public initIsAvatar: boolean = false; // original has an avatar.
-  public  avatarView: string = '';
-  public  isAvatarOrig: boolean = false; // original has an avatar.
+  public avatarView: string = '';
+  public isAvatarOrig: boolean = false; // original has an avatar.
   
   private origUserDto: UserDto = UserDtoUtil.create();
 
@@ -92,12 +95,14 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['userInfo']) {
-      this.prepareFormGroupByUserDto(this.userInfo);
+      this.prepareForm1GroupByUserDto(this.userInfo);
     }
   }
  
   // ** Public API **
   
+  // ** FormGroup1 **
+
   public checkUniquenessNickname = (nickname: string | null | undefined): Promise<boolean> => {
     if (!nickname || this.origUserDto.nickname.toLowerCase() == nickname.toLowerCase()) {
       return Promise.resolve(true);
@@ -128,10 +133,6 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     this.errMsgList1 = errMsgList;
   }
 
-  public updateErrMsg2(errMsgList: string[] = []): void {
-    this.errMsgList2 = errMsgList;
-  }
-
   public saveProfileCard(): void {
     const nickname: string | undefined = this.controls1.nickname.value || undefined;
     const email: string | undefined = this.controls1.email.value || undefined;
@@ -149,13 +150,24 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     this.updateProfile.emit(updateProfileFileDto);
   }
 
+  // ** FormGroup2 **
+
+  public updatePassword(passwordValue: string | null) {
+    this.isRequiredPassword = !!passwordValue;
+    console.log(`updatePassword(${passwordValue})`);
+  }
+
   public setNewPassword(): void {
-    console.log();
+    console.log(`setNewPassword();`);
+  }
+
+  public updateErrMsg2(errMsgList: string[] = []): void {
+    this.errMsgList2 = errMsgList;
   }
 
   // ** Private API **
 
-  private prepareFormGroupByUserDto(userInfo: UserDto | null): void {
+  private prepareForm1GroupByUserDto(userInfo: UserDto | null): void {
     if (!userInfo) {
       return;
     }
@@ -174,5 +186,5 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
      this.avatarView = ''; // /*streamDto.logo ||*/ '/logo/10_02280e22j4di504.png';
      this.isAvatarOrig = !!this.avatarView;
     // this.controls.avatar.disable();
-  }  
+  }
 }

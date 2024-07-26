@@ -67,25 +67,26 @@
 
       <app-field-password wd100 mr-tp-0_5
         formControlName="password"
-        [isRequired]="false"
+        [isRequired]="isRequiredPassword"
         label="profile.current_password"
         hint="field-password.password_hint"
-        (input)="updateErrMsg2()">
+        (input)="updateErrMsg2();updatePassword(controls2.password.value);">
       </app-field-password>
 
       <app-field-password wd100 mr-tp-1_5
         formControlName="new_password"
-        [isRequired]="false"
+        [isRequired]="isRequiredPassword"
         label="profile.new_password"
         hint="field-password.password_hint"
-        (input)="updateErrMsg2()">
+        (input)="updateErrMsg2();updatePassword(controls2.password.value || controls2.new_password.value);">
       </app-field-password>
     </form>
 
     <div class="ppi-actions" mr-tp-1_5>
       <button mat-raised-button color="primary"
         class="app-infix app-ordinary"
-        [disabled]="formGroup2.pristine || formGroup2.invalid"
+        [disabled]="controls2.password.pristine || controls2.password.invalid
+                 || controls2.new_password.pristine || controls2.new_password.invalid"
         (click)="saveProfileCard()">
         <span class="ppi-actions-label">
           <i class="ppi-save"></i>
