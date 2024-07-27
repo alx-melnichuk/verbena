@@ -17,10 +17,9 @@ use crate::{
         user_auth_controller::update_token,
         user_controller::uniqueness_check,
         user_controller::get_user_by_id,
-        user_controller::put_user,
         user_controller::delete_user,
         user_controller::get_user_current,
-        user_controller::put_user_current,
+        user_controller::put_user_new_password,
         user_controller::delete_user_current,
         user_registr_controller::registration,
         user_registr_controller::confirm_registration,
@@ -46,7 +45,6 @@ use crate::{
             user_models::UserTokensDto, // ::login, ::update_token
             user_models::TokenUserDto, // ::update_token
             // user_controller
-            user_models::PasswordUserDto,
             user_models::NewPasswordUserDto,
             user_models::UniquenessUserDto,
             // user_registr_controller
