@@ -10,7 +10,7 @@ use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::hash_tools;
 use crate::settings::err;
 use crate::users::{
-    user_models::{self, ModifyUserDto, NewPasswordUserDto, PasswordUserDto, UniquenessUserDto},
+    user_models::{self, ModifyUserDto, NewPasswordUserDto, UniquenessUserDto},
     user_orm::UserOrm,
     user_registr_orm::UserRegistrOrm,
 };
@@ -30,16 +30,12 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             .service(uniqueness_check)
             // GET /api/users/{id}
             .service(get_user_by_id)
-            // PUT /api/users/{id}
-            .service(put_user)
             // DELETE /api/users/{id}
             .service(delete_user)
             // GET /api/users_current
             .service(get_user_current)
-            // PUT /api/users_current
-            .service(put_user_current)
             // PUT /api/users_new_password
-            .service(put_users_new_password)
+            .service(put_user_new_password)
             // DELETE /api/users_current
             .service(delete_user_current);
     }
@@ -224,87 +220,6 @@ pub async fn get_user_by_id(
     }
 }
 
-/// put_user
-///
-/// Update the data of the specified user (`UserDto`).
-///
-/// One could call with following curl.
-/// ```text
-/// curl -i -X PUT http://localhost:8080/api/users/1 -d {"password": "new_password"}
-/// ```
-///
-/// Return the found specified user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
-/// 
-#[utoipa::path(
-    responses(
-        (status = 200, description = "Data about the specified user.", body = UserDto),
-        (status = 204, description = "The specified user was not found."),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
-        (status = 416, description = 
-            "Error parsing input parameter. `curl -i -X PUT http://localhost:8080/api/users/2a -d '{\"password\": \"Pass_2\"}'`",
-            body = AppError, example = json!(AppError::range_not_satisfiable416(
-                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
-        (status = 417, description = "Validation error. `curl -i -X PUT http://localhost:8080/api/users/2 -d '{\"password\": \"pas\"}'`", 
-            body = [AppError],
-            example = json!(AppError::validations((PasswordUserDto { password: Some("pas".to_string()) }).validate().err().unwrap()) )),
-        (status = 506, description = "Blocking error.", body = AppError,
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError,
-            example = json!(AppError::database507("Error while querying the database."))),
-    ),
-    params(("id", description = "Unique user ID.")),
-    security(("bearer_auth" = []))
-)]
-#[rustfmt::skip]
-#[put("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
-pub async fn put_user(
-    user_orm: web::Data<UserOrmApp>,
-    request: actix_web::HttpRequest,
-    json_body: web::Json<PasswordUserDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
-    let id_str = request.match_info().query("id").to_string();
-
-    let id = parser::parse_i32(&id_str).map_err(|e| {
-        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
-        AppError::range_not_satisfiable416(&message) // 416
-    })?;
-
-    // Checking the validity of the data model.
-    let validation_res = json_body.validate();
-    if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
-    }
-
-    let password_user: PasswordUserDto = json_body.into_inner();
-    let modify_user: ModifyUserDto = ModifyUserDto { nickname: None, email: None, password: password_user.password, role: None };
-
-    let result_user = web::block(move || {
-        // Modify the entity (user) with new data. Result <user_models::User>.
-        let res_user =
-            user_orm.modify_user(id, modify_user).map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e) //507
-            });
-        res_user
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
-    })??;
-
-    if let Some(user) = result_user {
-        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user))) // 200
-    } else {
-        Ok(HttpResponse::NoContent().finish()) // 204
-    }
-}
-
 /// delete_user
 ///
 /// Delete the specified user.
@@ -403,78 +318,7 @@ pub async fn get_user_current(
     Ok(HttpResponse::Ok().json(user_dto)) // 200
 }
 
-/// put_user_current
-///
-/// Update the data of the current user (`UserDto`).
-///
-/// One could call with following curl.
-/// ```text
-/// curl -i -X PUT http://localhost:8080/api/users_current  -d {"password": "new_password"}
-/// ```
-///
-/// Return the current user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
-/// 
-#[utoipa::path(
-    responses(
-        (status = 200, description = "Data about the current user.", body = UserDto),
-        (status = 204, description = "The current user was not found."),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
-        (status = 417, body = [AppError],
-            description = "Validation error. `curl -i -X PUT http://localhost:8080/api/users_current -d '{\"password\": \"pas\"}'`",
-            example = json!(AppError::validations((PasswordUserDto { password: Some("pas".to_string()) }).validate().err().unwrap()) )),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
-    ),
-    security(("bearer_auth" = []))
-)]
-#[rustfmt::skip]
-#[put("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn put_user_current(
-    authenticated: Authenticated,
-    user_orm: web::Data<UserOrmApp>,
-    json_body: web::Json<PasswordUserDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
-    let user = authenticated.deref();
-    let id = user.id;
-
-    // Checking the validity of the data model.
-    let validation_res = json_body.validate();
-    if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
-    }
-
-    let password_user: PasswordUserDto = json_body.into_inner();
-    let modify_user: ModifyUserDto = ModifyUserDto { nickname: None, email: None, password: password_user.password, role: None };
-
-    let result_user = web::block(move || {
-        // Modify the entity (user) with new data. Result <user_models::User>.
-        let res_user =
-            user_orm.modify_user(id, modify_user).map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e) // 507
-            });
-        res_user
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
-    })??;
-
-    if let Some(user) = result_user {
-        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user))) // 200
-    } else {
-        Ok(HttpResponse::NoContent().finish()) // 204
-    }
-}
-
-/// put_users_new_password
+/// put_user_new_password
 ///
 /// Update the password of the current user (`UserDto`).
 ///
@@ -518,7 +362,7 @@ pub async fn put_user_current(
 )]
 #[rustfmt::skip]
 #[put("/api/users_new_password", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn put_users_new_password(
+pub async fn put_user_new_password(
     authenticated: Authenticated,
     user_orm: web::Data<UserOrmApp>,
     json_body: web::Json<NewPasswordUserDto>,
@@ -1005,196 +849,6 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
 
-    // ** put_user **
-    #[actix_web::test]
-    async fn test_put_user_invalid_id() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let mut user_vec = data_c.0;
-        let user1 = user_vec.get_mut(0).unwrap();
-        user1.role = UserRole::Admin;
-        let user_id_bad = format!("{}a", user1.id);
-        let data_c = (user_vec, data_c.1, data_c.2);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_user).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/users/{}", user_id_bad))
-            .insert_header(header_auth(&token))
-            .set_json(PasswordUserDto {
-                password: Some("passwdQ0W0".to_string()),
-            })
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::RANGE_NOT_SATISFIABLE); // 416
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
-        #[rustfmt::skip]
-        let msg = format!("{}: `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
-        assert_eq!(app_err.message, msg);
-    }
-    #[actix_web::test]
-    async fn test_put_user_invalid_dto_password_empty() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let mut user_vec = data_c.0;
-        let user1 = user_vec.get_mut(0).unwrap();
-        user1.role = UserRole::Admin;
-        let user1_id = user1.id;
-        let data_c = (user_vec, data_c.1, data_c.2);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_user).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/users/{}", user1_id))
-            .insert_header(header_auth(&token))
-            .set_json(PasswordUserDto { password: Some("".to_string()) })
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_REQUIRED]);
-    }
-    #[actix_web::test]
-    async fn test_put_user_invalid_dto_password_min() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let mut user_vec = data_c.0;
-        let user1 = user_vec.get_mut(0).unwrap();
-        user1.role = UserRole::Admin;
-        let user1_id = user1.id;
-        let data_c = (user_vec, data_c.1, data_c.2);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_user).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/users/{}", user1_id))
-            .insert_header(header_auth(&token))
-            .set_json(PasswordUserDto { password: Some(UserModelsTest::password_min()) })
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_MIN_LENGTH]);
-    }
-    #[actix_web::test]
-    async fn test_put_user_invalid_dto_password_max() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let mut user_vec = data_c.0;
-        let user1 = user_vec.get_mut(0).unwrap();
-        user1.role = UserRole::Admin;
-        let user1_id = user1.id;
-        let data_c = (user_vec, data_c.1, data_c.2);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_user).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/users/{}", user1_id))
-            .insert_header(header_auth(&token))
-            .set_json(PasswordUserDto { password: Some(UserModelsTest::password_max()) })
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_MAX_LENGTH]);
-    }
-    #[actix_web::test]
-    async fn test_put_user_invalid_dto_password_wrong() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let mut user_vec = data_c.0;
-        let user1 = user_vec.get_mut(0).unwrap();
-        user1.role = UserRole::Admin;
-        let user1_id = user1.id;
-        let data_c = (user_vec, data_c.1, data_c.2);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_user).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/users/{}", user1_id))
-            .insert_header(header_auth(&token))
-            .set_json(PasswordUserDto { password: Some(UserModelsTest::password_wrong()) })
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_REGEX]);
-    }
-    #[actix_web::test]
-    async fn test_put_user_user_not_exist() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let mut user_vec = data_c.0;
-        let user1 = user_vec.get_mut(0).unwrap();
-        user1.role = UserRole::Admin;
-        let user1_id = user1.id;
-        let data_c = (user_vec, data_c.1, data_c.2);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_user).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/users/{}", user1_id + 1))
-            .insert_header(header_auth(&token))
-            .set_json(PasswordUserDto { password: Some("passwdQ0W0".to_string()) })
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
-    }
-    #[actix_web::test]
-    async fn test_put_user_valid_id() {
-        let new_password = "passwdQ0W0";
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let mut user_vec = data_c.0;
-        let user1 = user_vec.get_mut(0).unwrap();
-        user1.role = UserRole::Admin;
-        let user1_id = user1.id;
-        let mut user1mod: User = user1.clone();
-        user1mod.password = new_password.to_string();
-        user1mod.updated_at = Utc::now();
-        let user1mod_dto = UserDto::from(user1mod.clone());
-        let data_c = (user_vec, data_c.1, data_c.2);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_user).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/users/{}", user1_id))
-            .insert_header(header_auth(&token))
-            .set_json(PasswordUserDto { password: Some(new_password.to_string()) })
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(user1mod_dto).to_string();
-        let user1mod_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(user_dto_res.id, user1mod_dto_ser.id);
-        assert_eq!(user_dto_res.nickname, user1mod_dto_ser.nickname);
-        assert_eq!(user_dto_res.email, user1mod_dto_ser.email);
-        assert_eq!(user_dto_res.password, user1mod_dto_ser.password);
-        assert_eq!(user_dto_res.password, "");
-        assert_eq!(user_dto_res.role, user1mod_dto_ser.role);
-        assert_eq!(user_dto_res.created_at, user1mod_dto_ser.created_at);
-    }
-
     // ** delete_user **
     #[actix_web::test]
     async fn test_delete_user_invalid_id() {
@@ -1299,49 +953,13 @@ mod tests {
         assert_eq!(user_dto_res.password, "");
     }
 
-    // ** put_user_current **
+    // ** put_user_new_password **
     #[actix_web::test]
-    #[ignore]
-    async fn test_put_user_current_valid_id() {
-        let new_password = "passwdJ3S9";
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let mut user1mod: User = data_c.0.get(0).unwrap().clone();
-        user1mod.password = new_password.to_string();
-        let user1mod_dto = UserDto::from(user1mod);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_user_current).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/users_current")
-            .insert_header(header_auth(&token))
-            .set_json(PasswordUserDto { password: Some(new_password.to_string()) })
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(user1mod_dto).to_string();
-        let user1mod_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(user_dto_res.id, user1mod_dto_ser.id);
-        assert_eq!(user_dto_res.nickname, user1mod_dto_ser.nickname);
-        assert_eq!(user_dto_res.email, user1mod_dto_ser.email);
-        assert_eq!(user_dto_res.password, user1mod_dto_ser.password);
-        assert_eq!(user_dto_res.password, "");
-        assert_eq!(user_dto_res.role, user1mod_dto_ser.role);
-        assert_eq!(user_dto_res.created_at, user1mod_dto_ser.created_at);
-    }
-
-    // ** put_users_new_password **
-    #[actix_web::test]
-    async fn test_put_users_new_password_no_data() {
+    async fn test_put_user_new_password_no_data() {
         let (cfg_c, data_c, token) = get_cfg_data(false);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_users_new_password).configure(configure_user(cfg_c, data_c))).await;
+            App::new().service(put_user_new_password).configure(configure_user(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/users_new_password")
             .insert_header(header_auth(&token))
@@ -1357,11 +975,11 @@ mod tests {
         assert!(body_str.contains(expected_message));
     }
     #[actix_web::test]
-    async fn test_put_users_new_password_empty_json_object() {
+    async fn test_put_user_new_password_empty_json_object() {
         let (cfg_c, data_c, token) = get_cfg_data(false);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_users_new_password).configure(configure_user(cfg_c, data_c))).await;
+            App::new().service(put_user_new_password).configure(configure_user(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/users_new_password")
             .insert_header(header_auth(&token))
@@ -1378,11 +996,11 @@ mod tests {
         assert!(body_str.contains(expected_message));
     }
     #[actix_web::test]
-    async fn test_put_users_new_password_invalid_dto_password_empty() {
+    async fn test_put_user_new_password_invalid_dto_password_empty() {
         let (cfg_c, data_c, token) = get_cfg_data(false);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_users_new_password).configure(configure_user(cfg_c, data_c))).await;
+            App::new().service(put_user_new_password).configure(configure_user(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/users_new_password")
             .insert_header(header_auth(&token))
@@ -1401,11 +1019,11 @@ mod tests {
         check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_REQUIRED]);
     }
     #[actix_web::test]
-    async fn test_put_users_new_password_invalid_dto_password_min() {
+    async fn test_put_user_new_password_invalid_dto_password_min() {
         let (cfg_c, data_c, token) = get_cfg_data(false);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_users_new_password).configure(configure_user(cfg_c, data_c))).await;
+            App::new().service(put_user_new_password).configure(configure_user(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/users_new_password")
             .insert_header(header_auth(&token))
@@ -1424,11 +1042,11 @@ mod tests {
         check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_MIN_LENGTH]);
     }
     #[actix_web::test]
-    async fn test_put_users_new_password_invalid_dto_password_max() {
+    async fn test_put_user_new_password_invalid_dto_password_max() {
         let (cfg_c, data_c, token) = get_cfg_data(false);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_users_new_password).configure(configure_user(cfg_c, data_c))).await;
+            App::new().service(put_user_new_password).configure(configure_user(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/users_new_password")
             .insert_header(header_auth(&token))
@@ -1447,11 +1065,11 @@ mod tests {
         check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_MAX_LENGTH]);
     }
     #[actix_web::test]
-    async fn test_put_users_new_password_invalid_dto_password_wrong() {
+    async fn test_put_user_new_password_invalid_dto_password_wrong() {
         let (cfg_c, data_c, token) = get_cfg_data(false);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_users_new_password).configure(configure_user(cfg_c, data_c))).await;
+            App::new().service(put_user_new_password).configure(configure_user(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/users_new_password")
             .insert_header(header_auth(&token))
@@ -1470,12 +1088,12 @@ mod tests {
         check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_PASSWORD_REGEX]);
     }
     #[actix_web::test]
-    async fn test_put_users_new_password_invalid_dto_new_password_empty() {
+    async fn test_put_user_new_password_invalid_dto_new_password_empty() {
         let old_password = user_with_id(create_user(false)).password;
         let (cfg_c, data_c, token) = get_cfg_data(false);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_users_new_password).configure(configure_user(cfg_c, data_c))).await;
+            App::new().service(put_user_new_password).configure(configure_user(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/users_new_password")
             .insert_header(header_auth(&token))
@@ -1494,12 +1112,12 @@ mod tests {
         check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_NEW_PASSWORD_REQUIRED]);
     }
     #[actix_web::test]
-    async fn test_put_users_new_password_invalid_dto_new_password_min() {
+    async fn test_put_user_new_password_invalid_dto_new_password_min() {
         let old_password = user_with_id(create_user(false)).password;
         let (cfg_c, data_c, token) = get_cfg_data(false);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_users_new_password).configure(configure_user(cfg_c, data_c))).await;
+            App::new().service(put_user_new_password).configure(configure_user(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/users_new_password")
             .insert_header(header_auth(&token))
@@ -1518,12 +1136,12 @@ mod tests {
         check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_NEW_PASSWORD_MIN_LENGTH]);
     }
     #[actix_web::test]
-    async fn test_put_users_new_password_invalid_dto_new_password_max() {
+    async fn test_put_user_new_password_invalid_dto_new_password_max() {
         let old_password = user_with_id(create_user(false)).password;
         let (cfg_c, data_c, token) = get_cfg_data(false);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_users_new_password).configure(configure_user(cfg_c, data_c))).await;
+            App::new().service(put_user_new_password).configure(configure_user(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/users_new_password")
             .insert_header(header_auth(&token))
@@ -1542,12 +1160,12 @@ mod tests {
         check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_NEW_PASSWORD_MAX_LENGTH]);
     }
     #[actix_web::test]
-    async fn test_put_users_new_password_invalid_dto_new_password_wrong() {
+    async fn test_put_user_new_password_invalid_dto_new_password_wrong() {
         let old_password = user_with_id(create_user(false)).password;
         let (cfg_c, data_c, token) = get_cfg_data(false);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_users_new_password).configure(configure_user(cfg_c, data_c))).await;
+            App::new().service(put_user_new_password).configure(configure_user(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/users_new_password")
             .insert_header(header_auth(&token))
@@ -1566,12 +1184,12 @@ mod tests {
         check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_NEW_PASSWORD_REGEX]);
     }
     #[actix_web::test]
-    async fn test_put_users_new_password_invalid_dto_new_password_equal_old_value() {
+    async fn test_put_user_new_password_invalid_dto_new_password_equal_old_value() {
         let old_password = user_with_id(create_user(false)).password;
         let (cfg_c, data_c, token) = get_cfg_data(false);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_users_new_password).configure(configure_user(cfg_c, data_c))).await;
+            App::new().service(put_user_new_password).configure(configure_user(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/users_new_password")
             .insert_header(header_auth(&token))
@@ -1590,7 +1208,7 @@ mod tests {
         check_app_err(app_err_vec, err::CD_VALIDATION, &[user_models::MSG_NEW_PASSWORD_EQUAL_OLD_VALUE]);
     }
     #[actix_web::test]
-    async fn test_put_users_new_password_invalid_hash_password() {
+    async fn test_put_user_new_password_invalid_hash_password() {
         let user1 = user_with_id(create_user(false));
         let old_password = user1.password.clone();
         // let old_password = user_with_id(create_user(false)).password;
@@ -1598,7 +1216,7 @@ mod tests {
         let data_c = (vec![user1], data_c.1, data_c.2);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_users_new_password).configure(configure_user(cfg_c, data_c))).await;
+            App::new().service(put_user_new_password).configure(configure_user(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/users_new_password")
             .insert_header(header_auth(&token))
@@ -1617,12 +1235,12 @@ mod tests {
         assert!(app_err.message.starts_with(err::MSG_INVALID_HASH));
     }
     #[actix_web::test]
-    async fn test_put_users_new_password_invalid_password() {
+    async fn test_put_user_new_password_invalid_password() {
         let old_password = user_with_id(create_user(false)).password;
         let (cfg_c, data_c, token) = get_cfg_data(false);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_users_new_password).configure(configure_user(cfg_c, data_c))).await;
+            App::new().service(put_user_new_password).configure(configure_user(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/users_new_password")
             .insert_header(header_auth(&token))
@@ -1641,7 +1259,7 @@ mod tests {
         assert_eq!(app_err.message, err::MSG_PASSWORD_INCORRECT);
     }
     #[actix_web::test]
-    async fn test_put_users_new_password_valid_data() {
+    async fn test_put_user_new_password_valid_data() {
         let old_password = user_with_id(create_user(false)).password;
         let (cfg_c, data_c, token) = get_cfg_data(false);
         let user1mod: User = data_c.0.get(0).unwrap().clone();
@@ -1649,7 +1267,7 @@ mod tests {
 
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_users_new_password).configure(configure_user(cfg_c, data_c))).await;
+            App::new().service(put_user_new_password).configure(configure_user(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/users_new_password")
             .insert_header(header_auth(&token))
