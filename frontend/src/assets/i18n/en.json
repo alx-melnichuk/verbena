@@ -29,6 +29,10 @@
   },
   "Validation": {
     "status": 417,
+    "new_password:required" : "The new_password field is required.",
+    "new_password:min_length" : "The new_password must have at least {{ minlength.requiredLength }} characters.",
+    "new_password:max_length" : "The new_password must have no more {{ maxlength.requiredLength }} characters.",
+    "new_password:regex" : "The new_password must contain: a lowercase letter, an uppercase letter and a number.",
     "nickname:required" : "The nickname field is required.",
     "nickname:min_length" : "The nickname must have at least {{ minlength.requiredLength }} characters.",
     "nickname:max_length" : "The nickname must have no more {{ maxlength.requiredLength }} characters.",
