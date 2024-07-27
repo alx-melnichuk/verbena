@@ -23,13 +23,6 @@ use crate::users::{
 };
 use crate::validators::{msg_validation, Validator};
 
-// 409 Conflict - Error checking hash value.
-pub const MSG_INVALID_HASH: &str = "invalid_hash";
-// 401 Unauthorized
-pub const MSG_WRONG_NICKNAME_EMAIL: &str = "nickname_or_email_incorrect";
-// 401 Unauthorized
-pub const MSG_PASSWORD_INCORRECT: &str = "password_incorrect";
-
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
         // POST /api/login
@@ -57,19 +50,25 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 #[utoipa::path(
     responses(
-        (status = 200, description = "The current user and the open session token.",
+        ( status = 200, description = "The current user and the open session token.",
             body = LoginUserResponseDto),
-        (status = 401, description = "The nickname or email address is incorrect.", body = AppError,
-            example = json!(AppError::unauthorized401(MSG_WRONG_NICKNAME_EMAIL))),
+        (status = 401, description = "The nickname or password is incorrect.", body = AppError, examples(
+            ("Nickname" = (summary = "Nickname is incorrect",
+                description = "The nickname is incorrect.",
+                value = json!(AppError::unauthorized401(err::MSG_WRONG_NICKNAME_EMAIL)))),
+            ("Password" = (summary = "Password is incorrect", 
+                description = "The password is incorrect.",
+                value = json!(AppError::unauthorized401(err::MSG_PASSWORD_INCORRECT))))
+        )),
         (status = 417, body = [AppError], description = 
             "Validation error. `curl -i -X POST http://localhost:8080/api/login -d '{ \"nickname\": \"us\", \"password\": \"pas\" }'`",
             example = json!(AppError::validations(
                 (LoginUserDto { nickname: "us".to_string(), password: "pas".to_string() }).validate().err().unwrap()) )),
-        (status = 406, description = "Error opening session.", body = AppError,
+        ( status = 406, description = "Error opening session.", body = AppError,
             example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, 1)))),
         (status = 409, description = "Error when comparing password hashes.", body = AppError,
-            example = json!(AppError::conflict409(&format!("{}: {}", MSG_INVALID_HASH, "Parameter is empty.")))),
-        (status = 422, description = "Token encoding error.", body = AppError,
+            example = json!(AppError::conflict409(&format!("{}: {}", err::MSG_INVALID_HASH, "Parameter is empty.")))),
+        ( status = 422, description = "Token encoding error.", body = AppError,
             example = json!(AppError::unprocessable422(&format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
@@ -113,20 +112,20 @@ pub async fn login(
     })??;
 
     let user: user_models::User = user.ok_or_else(|| {
-        log::error!("{}: {}", err::CD_UNAUTHORIZED, MSG_WRONG_NICKNAME_EMAIL);
-        AppError::unauthorized401(MSG_WRONG_NICKNAME_EMAIL) // 401
+        log::error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_WRONG_NICKNAME_EMAIL);
+        AppError::unauthorized401(err::MSG_WRONG_NICKNAME_EMAIL) // 401
     })?;
 
     let user_password = user.password.to_string();
     let password_matches = hash_tools::compare_hash(&password, &user_password).map_err(|e| {
-        let message = format!("{}: {}", MSG_INVALID_HASH, &e);
+        let message = format!("{}: {}", err::MSG_INVALID_HASH, &e);
         log::error!("{}: {}", err::CD_CONFLICT, &message);
         AppError::conflict409(&message) // 409
     })?;
 
     if !password_matches {
-        log::error!("{}: {}", err::CD_UNAUTHORIZED, MSG_PASSWORD_INCORRECT);
-        return Err(AppError::unauthorized401(MSG_PASSWORD_INCORRECT)); // 401
+        log::error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_PASSWORD_INCORRECT);
+        return Err(AppError::unauthorized401(err::MSG_PASSWORD_INCORRECT)); // 401
     }
 
     let num_token = tokens::generate_num_token();
@@ -760,7 +759,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
-        assert_eq!(app_err.message, MSG_WRONG_NICKNAME_EMAIL);
+        assert_eq!(app_err.message, err::MSG_WRONG_NICKNAME_EMAIL);
     }
     #[actix_web::test]
     async fn test_login_if_email_not_exist() {
@@ -783,7 +782,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
-        assert_eq!(app_err.message, MSG_WRONG_NICKNAME_EMAIL);
+        assert_eq!(app_err.message, err::MSG_WRONG_NICKNAME_EMAIL);
     }
     #[actix_web::test]
     async fn test_login_if_password_invalid_hash() {
@@ -810,7 +809,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_CONFLICT);
-        assert!(app_err.message.starts_with(MSG_INVALID_HASH));
+        assert!(app_err.message.starts_with(err::MSG_INVALID_HASH));
     }
     #[actix_web::test]
     async fn test_login_if_password_incorrect() {
@@ -837,7 +836,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
-        assert_eq!(app_err.message, MSG_PASSWORD_INCORRECT);
+        assert_eq!(app_err.message, err::MSG_PASSWORD_INCORRECT);
     }
     #[actix_web::test]
     async fn test_login_err_jsonwebtoken_encode() {
