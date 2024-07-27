@@ -37,7 +37,11 @@ pub const MSG_PASSWORD_REQUIRED: &str = "password:required";
 pub const MSG_PASSWORD_MIN_LENGTH: &str = "password:min_length";
 pub const MSG_PASSWORD_MAX_LENGTH: &str = "password:max_length";
 pub const MSG_PASSWORD_REGEX: &str = "password:regex";
-pub const MSG_PASSWORD_VALUE_AS_OLD: &str = "password:value_as_old";
+pub const MSG_NEW_PASSWORD_REQUIRED: &str = "new_password:required";
+pub const MSG_NEW_PASSWORD_MIN_LENGTH: &str = "new_password:min_length";
+pub const MSG_NEW_PASSWORD_MAX_LENGTH: &str = "new_password:max_length";
+pub const MSG_NEW_PASSWORD_REGEX: &str = "new_password:regex";
+pub const MSG_NEW_PASSWORD_EQUAL_OLD_VALUE: &str = "new_password:equal_to_old_value";
 // MIN=3,MAX=64,"^[a-zA-Z]+[\\w]+$"
 pub fn validate_nickname(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_NICKNAME_REQUIRED)?;
@@ -73,9 +77,19 @@ pub fn validate_password(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::regexp(value, PASSWORD_NUMBER_REGEX, MSG_PASSWORD_REGEX)?;
     Ok(())
 }
+// MIN=6,MAX=64,"[a-z]+","[A-Z]+","[\\d]+"
+pub fn validate_new_password(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::required(value, MSG_NEW_PASSWORD_REQUIRED)?;
+    ValidationChecks::min_length(value, PASSWORD_MIN.into(), MSG_NEW_PASSWORD_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, PASSWORD_MAX.into(), MSG_NEW_PASSWORD_MAX_LENGTH)?;
+    ValidationChecks::regexp(value, PASSWORD_LOWERCASE_LETTER_REGEX, MSG_NEW_PASSWORD_REGEX)?;
+    ValidationChecks::regexp(value, PASSWORD_CAPITAL_LETTER_REGEX, MSG_NEW_PASSWORD_REGEX)?;
+    ValidationChecks::regexp(value, PASSWORD_NUMBER_REGEX, MSG_NEW_PASSWORD_REGEX)?;
+    Ok(())
+}
 pub fn validate_inequality(value1: &str, value2: &str) -> Result<(), ValidationError> {
     if value1.starts_with(value2) && value1.len() == value2.len() {
-        let err = ValidationError::new(MSG_PASSWORD_VALUE_AS_OLD);
+        let err = ValidationError::new(MSG_NEW_PASSWORD_EQUAL_OLD_VALUE);
         return Err(err);
     }
     Ok(())
@@ -203,7 +217,7 @@ impl Validator for NewPasswordUserDto {
 
         errors.push(validate_password(&self.password).err());
 
-        errors.push(validate_password(&self.new_password).err());
+        errors.push(validate_new_password(&self.new_password).err());
 
         errors.push(validate_inequality(&self.new_password, &self.password).err());
 
