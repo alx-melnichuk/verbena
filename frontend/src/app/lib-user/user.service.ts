@@ -124,6 +124,10 @@ export class UserService {
     return this.userApiService.new_password(updatePasswordDto);
   }
 
+  public delete_user_current(): Promise<UserDto | HttpErrorResponse | undefined> {
+    return this.userApiService.delete_user_current();
+  }
+
   // ** Private Api **
 
   private updateItemInLocalStorage(name: string, value: string | null): void {

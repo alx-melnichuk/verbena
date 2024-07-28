@@ -95,4 +95,8 @@ export class UserApiService {
     return this.http.put<UserDto | HttpErrorResponse>(url, updatePasswordDto).toPromise();
   }
 
+  public delete_user_current(): Promise<UserDto | HttpErrorResponse | undefined> {
+    const url = Uri.appUri("appApi://users_current");
+    return this.http.delete<UserDto | HttpErrorResponse>(url).toPromise();
+  }
 }
