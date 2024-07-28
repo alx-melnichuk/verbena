@@ -25,37 +25,38 @@ app-signup {
 
   .su-content {
     @media screen and (width <= dimensions.$mobile-480) {
-      --sg-pd: 0.5em;
-      --sg-wd: 100%;
+      ---sg-pd: 0.5em;
+      ---sg-wd: 100%;
     }
     @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
-      --sg-pd: 1.5em;
-      --sg-wd: 30em;
+      ---sg-pd: 1.5em;
+      ---sg-wd: 30em;
     }
     @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
-      --sg-pd: 2em;
-      --sg-wd: 32em;
+      ---sg-pd: 2em;
+      ---sg-wd: 32em;
     }
     @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
-      --sg-pd: 2.5em;
-      --sg-wd: 34em;
+      ---sg-pd: 2.5em;
+      ---sg-wd: 34em;
     }
     @media screen and (dimensions.$desktop-1280 < width) {
-      --sg-pd: 3em;
-      --sg-wd: 36em;
+      ---sg-pd: 3em;
+      ---sg-wd: 36em;
     }
     
-    border-radius: var(--sg-pd);
+    border-radius: var(---sg-pd);
     border: 1px solid var(--app-site-border-cl);
     box-sizing: border-box;
     margin-bottom: 7em;
-    padding: var(--sg-pd);
-    width: var(--sg-wd);
+    padding: var(---sg-pd);
+    width: var(---sg-wd);
   }
   
   .su-form {
     display: flex;
     flex-direction: column;
+    padding-bottom: 0.5em;
   }
 
   .su-title {
@@ -78,6 +79,6 @@ app-signup {
   }
 
   .su-err {
-    font-size: 13px;
+    font-size: calc(1em - 1px);
   }
 }

@@ -45,11 +45,12 @@
       {{ 'signup.button_signup' | translate }}
     </button>
   
-    <ng-container *ngFor="let errMsg of errMsgList">
-      <mat-error class="su-err">{{ errMsg | translate }}</mat-error>
-    </ng-container>
+ </form>
 
-  </form>
+  <ng-container *ngFor="let errMsg of errMsgList">
+    <mat-error class="su-err">{{ errMsg | translate }}</mat-error>
+  </ng-container>
+
   <div class="su-note">
     <span>{{ 'signup.already_registered' | translate }}</span>&nbsp;
     <a nodecor routerLink="{{linkLogin}}">{{ 'signup.go_to_login_page' | translate }}</a>
