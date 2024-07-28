@@ -23,18 +23,19 @@
       (input)="updateErrMsg()">
     </app-field-password>
   
-    <button type="button" mr-bt-05 mr-tp-05 mat-raised-button
+    <button type="button" mr-tp-05 mat-raised-button
       class="mat-primary"
       [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
       (click)="doLogin()">
       {{ 'login.button_login' | translate }}
     </button>
   
-    <ng-container *ngFor="let errMsg of errMsgList">
-      <mat-error class="lg-err">{{ errMsg }}</mat-error>
-    </ng-container>
-
   </form>
+
+  <ng-container *ngFor="let errMsg of errMsgList">
+    <mat-error class="lg-err">{{ errMsg }}</mat-error>
+  </ng-container>
+
   <div class="lg-note">
     <a nodecor routerLink="{{linkSignup}}">{{ 'login.create_an_account' | translate }}</a>
     <a nodecor routerLink="{{linkForgotPassword}}">{{ 'login.forgot_password' | translate }}</a>
