@@ -148,7 +148,6 @@ pub async fn uniqueness_check(
         uniqueness = opt_user_registr.is_none();
     }
 
-    // Ok(HttpResponse::Ok().json(json!({ "uniqueness": opt_user.is_none() }))) // 200
     Ok(HttpResponse::Ok().json(json!({ "uniqueness": uniqueness }))) // 200
 }
 
@@ -328,7 +327,7 @@ pub async fn get_user_current(
 /// ```
 ///
 /// Return the current user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
-/// 
+///
 #[utoipa::path(
     responses(
         (status = 200, description = "Data about the current user.", body = UserDto),
@@ -353,6 +352,8 @@ pub async fn get_user_current(
             -d '{\"password\": \"pas\" \"new_password\": \"word\"}'`",
             example = json!(AppError::validations(
                 (NewPasswordUserDto {password: "pas".to_string(), new_password: "word".to_string()}).validate().err().unwrap()) )),
+        (status = 500, description = "Error while calculating the password hash.", body = AppError, 
+            example = json!(AppError::internal_err500(&format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty.")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -367,6 +368,7 @@ pub async fn put_user_new_password(
     user_orm: web::Data<UserOrmApp>,
     json_body: web::Json<NewPasswordUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    // 1.308634s
     let user = authenticated.deref();
     let id = user.id;
 
@@ -378,7 +380,14 @@ pub async fn put_user_new_password(
     }
 
     let new_password_user: NewPasswordUserDto = json_body.into_inner();
-    
+    let new_password = new_password_user.new_password.clone();
+    // Get a hash of the new password.
+    let new_password_hashed = hash_tools::encode_hash(&new_password).map_err(|e| {
+        let message = format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, e.to_string());
+        log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
+        AppError::internal_err500(&message) // 500
+    })?;
+
     // Get the user's current password.
     let nickname = user.nickname.clone();
     let email = user.nickname.clone();
@@ -404,10 +413,10 @@ pub async fn put_user_new_password(
         AppError::unauthorized401(err::MSG_WRONG_NICKNAME_EMAIL) // 401
     })?;
 
-    let password = new_password_user.password.clone();
-    let user2_hashed_param = user2.password.to_string();
-    let password_matches = hash_tools::compare_hash(&password, &user2_hashed_param).map_err(|e| {
-        let message = format!("{}: {}", err::MSG_INVALID_HASH, &e);
+    let old_password = new_password_user.password.clone();
+    let user2_hashed_old_password = user2.password.to_string();
+    let password_matches = hash_tools::compare_hash(&old_password, &user2_hashed_old_password).map_err(|e| {
+        let message = format!("{}; {}", err::MSG_INVALID_HASH, &e);
         log::error!("{}: {}", err::CD_CONFLICT, &message);
         AppError::conflict409(&message) // 409
     })?;
@@ -418,8 +427,7 @@ pub async fn put_user_new_password(
     }
 
     // Set a new user password.
-    let new_password = new_password_user.new_password.clone();
-    let modify_user: ModifyUserDto = ModifyUserDto { nickname: None, email: None, password: Some(new_password), role: None };
+    let modify_user: ModifyUserDto = ModifyUserDto { nickname: None, email: None, password: Some(new_password_hashed), role: None };
 
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
