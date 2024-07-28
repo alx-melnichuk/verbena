@@ -118,7 +118,7 @@ pub async fn login(
 
     let user_password = user.password.to_string();
     let password_matches = hash_tools::compare_hash(&password, &user_password).map_err(|e| {
-        let message = format!("{}: {}", err::MSG_INVALID_HASH, &e);
+        let message = format!("{}; {}", err::MSG_INVALID_HASH, &e);
         log::error!("{}: {}", err::CD_CONFLICT, &message);
         AppError::conflict409(&message) // 409
     })?;
