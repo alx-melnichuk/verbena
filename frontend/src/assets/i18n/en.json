@@ -33,6 +33,7 @@
     "new_password:min_length" : "The new_password must have at least {{ minlength.requiredLength }} characters.",
     "new_password:max_length" : "The new_password must have no more {{ maxlength.requiredLength }} characters.",
     "new_password:regex" : "The new_password must contain: a lowercase letter, an uppercase letter and a number.",
+    "new_password:equal_to_old_value": "The new_password must be different from the old value.",
     "nickname:required" : "The nickname field is required.",
     "nickname:min_length" : "The nickname must have at least {{ minlength.requiredLength }} characters.",
     "nickname:max_length" : "The nickname must have no more {{ maxlength.requiredLength }} characters.",
@@ -261,13 +262,18 @@
     "title_profile": "Personal information",
     "save": "Save",
     "error_editing_profile": "Error editing profile",
+    
     "title_change_password": "Change password",
     "current_password": "Current Password",
     "new_password": "New password",
     "set_password": "Set password",
-    "delete_account": "Delete account",
+    "error_update_password": "Error setting new password. Record \"{{nickname}}\" not found.",
+    "dialog_title_password": "Password change operation.",
+    "dialog_message_password": "The password change operation was completed successfully !",
+    
+    "title_delete_account": "Delete your account",
     "note_before_deleting_account": "You will lose all data and content from this account, such as emails, files and photos. This data can no longer be restored.",
     "are_you_sure_want_delete_account?": "Are you sure you want to delete your account?",
-    "delete_your_account": "Delete your account"
+    "delete_account": "Delete account"
   }
 }

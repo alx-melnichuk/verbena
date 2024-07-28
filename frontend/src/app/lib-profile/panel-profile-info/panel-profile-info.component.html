@@ -3,7 +3,7 @@
   <div class="ppi-content">
     <div class="ppi-title">{{ 'profile.title_profile' | translate }}</div>
     
-    <form [formGroup]="formGroup1" novalidate>
+    <form [formGroup]="formGroup1" class="ppi-form" novalidate>
 
       <app-field-image-and-upload mr-tp-1 class="ppi-avatar"
         formControlName="avatar"
@@ -23,7 +23,7 @@
           label="field-nickname.label"
           hint="field-nickname.nickname_hint"
           [errorMsg]="uniquenessCheckNickname.isUniquenessError ? 'Conflict.nickname_already_use' : undefined"
-          (input)="updateErrMsg1(); uniquenessCheckNickname.checkParameter(controls1.nickname.value);">
+          (input)="updateErrMsgsProfile(); uniquenessCheckNickname.checkParameter(controls1.nickname.value);">
         </app-field-nickname>
       </app-uniqueness-check>
 
@@ -36,7 +36,7 @@
           [isRequired]="true"
           label="field-email.label"
           [errorMsg]="uniquenessCheckEmail.isUniquenessError ? 'Conflict.email_already_use' : undefined"
-          (input)="updateErrMsg1(); uniquenessCheckEmail.checkParameter(controls1.email.value);">
+          (input)="updateErrMsgsProfile(); uniquenessCheckEmail.checkParameter(controls1.email.value);">
         </app-field-email>
       </app-uniqueness-check>
         
@@ -45,32 +45,36 @@
         [isRequired]="false"
         label="stream_edit.descript">
       </app-field-descript>
-
+      
+      <div class="ppi-actions">
+        <button mat-raised-button color="primary"
+          class="app-infix app-ordinary"
+          [disabled]="formGroup1.pristine || formGroup1.invalid"
+          (click)="saveProfileCard()">
+          <span class="ppi-actions-label">
+            <i class="ppi-save"></i>
+            {{ 'profile.save' | translate }}
+          </span>
+        </button>
+      </div>
     </form>
-    <div class="ppi-actions">
-      <button mat-raised-button color="primary"
-        class="app-infix app-ordinary"
-        [disabled]="formGroup1.pristine || formGroup1.invalid"
-        (click)="saveProfileCard()">
-        <span class="ppi-actions-label">
-          <i class="ppi-save"></i>
-          {{ 'profile.save' | translate }}
-        </span>
-      </button>
-    </div>
+
+    <ng-container *ngFor="let errMsg of errMsgsProfile">
+      <mat-error class="ppi-err">{{ errMsg | translate }}</mat-error>
+    </ng-container>
   </div>
 
   <div class="ppi-content">
     <div class="ppi-title">{{ 'profile.title_change_password' | translate }}</div>
 
-    <form [formGroup]="formGroup2" novalidate>
+    <form [formGroup]="formGroup2" class="ppi-form" novalidate>
 
       <app-field-password wd100 mr-tp-0_5
         formControlName="password"
         [isRequired]="isRequiredPassword"
         label="profile.current_password"
         hint="field-password.password_hint"
-        (input)="updateErrMsg2();updatePassword(controls2.password.value);">
+        (input)="updateErrMsgsPassword();statePasswordField(controls2.password.value);">
       </app-field-password>
 
       <app-field-password wd100 mr-tp-1_5
@@ -78,26 +82,30 @@
         [isRequired]="isRequiredPassword"
         label="profile.new_password"
         hint="field-password.password_hint"
-        (input)="updateErrMsg2();updatePassword(controls2.password.value || controls2.new_password.value);">
+        (input)="updateErrMsgsPassword();statePasswordField(controls2.password.value || controls2.new_password.value);">
       </app-field-password>
+
+      <div class="ppi-actions" mr-tp-1_5>
+        <button mat-raised-button color="primary"
+          class="app-infix app-ordinary"
+          [disabled]="controls2.password.pristine || controls2.password.invalid
+                   || controls2.new_password.pristine || controls2.new_password.invalid"
+          (click)="setNewPassword()">
+          <span class="ppi-actions-label">
+            <i class="ppi-save"></i>
+            {{ 'profile.set_password' | translate }}
+          </span>
+        </button>
+      </div>
     </form>
 
-    <div class="ppi-actions" mr-tp-1_5>
-      <button mat-raised-button color="primary"
-        class="app-infix app-ordinary"
-        [disabled]="controls2.password.pristine || controls2.password.invalid
-                 || controls2.new_password.pristine || controls2.new_password.invalid"
-        (click)="saveProfileCard()">
-        <span class="ppi-actions-label">
-          <i class="ppi-save"></i>
-          {{ 'profile.set_password' | translate }}
-        </span>
-      </button>
-    </div>
+    <ng-container *ngFor="let errMsg of errMsgsPassword">
+      <mat-error class="ppi-err">{{ errMsg | translate }}</mat-error>
+    </ng-container>
   </div>
 
   <div class="ppi-content">
-    <div class="ppi-title">{{ 'profile.delete_your_account' | translate }}</div>
+    <div class="ppi-title">{{ 'profile.title_delete_account' | translate }}</div>
     <div mr-tp-1_5>
       <span>
         {{ 'profile.note_before_deleting_account' | translate }}

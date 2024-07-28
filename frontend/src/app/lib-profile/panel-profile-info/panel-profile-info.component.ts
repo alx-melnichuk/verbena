@@ -1,9 +1,11 @@
 import {
-  ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, ViewEncapsulation
+  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, 
+  SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormControl, FormGroup, ReactiveFormsModule, ValidatorFn } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { IMAGE_VALID_FILE_TYPES, MAX_FILE_SIZE } from 'src/app/common/constants';
@@ -13,7 +15,7 @@ import { FieldFileUploadComponent } from 'src/app/components/field-file-upload/f
 import { FieldNicknameComponent } from 'src/app/components/field-nickname/field-nickname.component';
 import { FieldPasswordComponent } from 'src/app/components/field-password/field-password.component';
 import { UniquenessCheckComponent } from 'src/app/components/uniqueness-check/uniqueness-check.component';
-import { UserDto, UserDtoUtil, UpdateProfileFileDto } from 'src/app/lib-user/user-api.interface';
+import { UserDto, UserDtoUtil, UpdateProfileFileDto, UpdatePasswordDto } from 'src/app/lib-user/user-api.interface';
 import { UserService } from 'src/app/lib-user/user.service';
 import { FieldImageAndUploadComponent } from 'src/app/components/field-image-and-upload/field-image-and-upload.component';
 
@@ -22,8 +24,9 @@ export const PPI_DEBOUNCE_DELAY = 900;
 @Component({
   selector: 'app-panel-profile-info',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, TranslateModule, FieldNicknameComponent, FieldEmailComponent,
-    FieldPasswordComponent, FieldDescriptComponent, FieldFileUploadComponent, FieldImageAndUploadComponent, UniquenessCheckComponent],
+  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, TranslateModule, FieldNicknameComponent,
+    FieldEmailComponent, FieldPasswordComponent, FieldDescriptComponent, FieldFileUploadComponent, FieldImageAndUploadComponent,
+     UniquenessCheckComponent],
   templateUrl: './panel-profile-info.component.html',
   styleUrls: ['./panel-profile-info.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -35,9 +38,9 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   @Input()
   public isDisabledSubmit: boolean = false;
   @Input()
-  public errMsgList1: string[] = [];
+  public errMsgsProfile: string[] = [];
   @Input()
-  public errMsgList2: string[] = [];
+  public errMsgsPassword: string[] = [];
   
   @ViewChild(FieldNicknameComponent, { static: true })
   public fieldNicknameComp!: FieldNicknameComponent;
@@ -46,8 +49,8 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
 
   @Output()
   readonly updateProfile: EventEmitter<UpdateProfileFileDto> = new EventEmitter();
-//   @Output()
-//   readonly updatePassword: EventEmitter<UpdateProfileFileDto> = new EventEmitter();
+  @Output()
+  readonly updatePassword: EventEmitter<UpdatePasswordDto> = new EventEmitter();
   @Output()
   readonly cancelProfile: EventEmitter<void> = new EventEmitter();
 
@@ -84,6 +87,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   private origUserDto: UserDto = UserDtoUtil.create();
 
   constructor(
+    private changeDetector: ChangeDetectorRef,
     private userService: UserService
   ) {
   }
@@ -96,6 +100,26 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['userInfo']) {
       this.prepareForm1GroupByUserDto(this.userInfo);
+    }
+    if (!!changes['isDisabledSubmit']) {
+      if (this.isDisabledSubmit != this.formGroup1.disabled) {
+        this.isDisabledSubmit ? this.formGroup1.disable() : this.formGroup1.enable();
+        this.changeDetector.markForCheck();
+      }
+      if (this.isDisabledSubmit != this.formGroup2.disabled) {
+        this.isDisabledSubmit ? this.formGroup2.disable() : this.formGroup2.enable();
+        this.changeDetector.markForCheck();
+      }
+    }
+    if (!!changes['userInfo']) {
+      if (!!this.controls2.password.value) {
+        this.controls2.password.setValue(null);
+        this.isRequiredPassword = false;
+      }
+      if (!!this.controls2.new_password.value) {
+        this.controls2.new_password.setValue(null);
+        this.isRequiredPassword = false;
+      }
     }
   }
  
@@ -129,8 +153,8 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     }
   }
 
-  public updateErrMsg1(errMsgList: string[] = []): void {
-    this.errMsgList1 = errMsgList;
+  public updateErrMsgsProfile(errMsgList: string[] = []): void {
+    this.errMsgsProfile = errMsgList;
   }
 
   public saveProfileCard(): void {
@@ -152,17 +176,24 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
 
   // ** FormGroup2 **
 
-  public updatePassword(passwordValue: string | null) {
-    this.isRequiredPassword = !!passwordValue;
-    console.log(`updatePassword(${passwordValue})`);
+  public statePasswordField(passwordValue: string | null) {
+    if (this.isRequiredPassword !== !!passwordValue) {
+      this.isRequiredPassword = !!passwordValue;
+    }
   }
 
   public setNewPassword(): void {
-    console.log(`setNewPassword();`);
+    if (this.controls2.password.pristine || this.controls2.password.invalid
+    || this.controls2.new_password.pristine || this.controls2.new_password.invalid
+    || !this.controls2.password.value
+    || !this.controls2.new_password.value) {
+        return;
+    }
+    this.updatePassword.emit({ password: this.controls2.password.value, new_password: this.controls2.new_password.value });
   }
 
-  public updateErrMsg2(errMsgList: string[] = []): void {
-    this.errMsgList2 = errMsgList;
+  public updateErrMsgsPassword(errMsgList: string[] = []): void {
+    this.errMsgsPassword = errMsgList;
   }
 
   // ** Private API **

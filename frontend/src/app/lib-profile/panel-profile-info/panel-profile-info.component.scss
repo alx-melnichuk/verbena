@@ -70,7 +70,7 @@ app-panel-profile-info {
     margin-top: var(---ppi-pd);
     margin-left: calc(var(---ppi-pd) / 2);
     margin-right: calc(var(---ppi-pd) / 2);
-    padding: var(---ppi-pd);
+    padding: var(---ppi-pd) var(---ppi-pd) calc(var(---ppi-pd) / 2) var(---ppi-pd);
     width: calc(var(---ppi-wd) - var(---ppi-pd));
   }
 
@@ -108,4 +108,12 @@ app-panel-profile-info {
     background-image: url('../../../assets/icons/save-file.svg');
     margin-right: 0.5em;
   }
+
+  .ppi-form {
+    padding-bottom: calc(var(---ppi-pd) / 2);
+  }
+  .ppi-err {
+    font-size: calc(1em - 1px);
+  }
+
 }
