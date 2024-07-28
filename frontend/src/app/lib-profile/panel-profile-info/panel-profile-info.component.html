@@ -111,17 +111,22 @@
         {{ 'profile.note_before_deleting_account' | translate }}
       </span>
     </div>
-    <div class="ppi-actions" mr-tp-1_5>
+    <div class="ppi-actions ppi-form" mr-tp-1_5>
       <button mat-raised-button color="primary"
         class="app-infix app-ordinary"
-        [disabled]="formGroup2.pristine || formGroup2.invalid"
-        (click)="saveProfileCard()">
+        [disabled]="isDisabledSubmit"
+        (click)="performDeleteAccount()">
         <span class="ppi-actions-label">
           <i class="ppi-save"></i>
           {{ 'profile.delete_account' | translate }}
         </span>
       </button>
     </div>
+
+    <ng-container *ngFor="let errMsg of errMsgsAccount">
+      <mat-error class="ppi-err">{{ errMsg | translate }}</mat-error>
+    </ng-container>
+
   </div>
   <span>&nbsp;</span>
 </div>

@@ -3,12 +3,11 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 
 import { SpinnerComponent } from '../components/spinner/spinner.component';
-
-import { AlertService } from '../lib-dialog/alert.service';
+import { ROUTE_LOGIN } from '../common/routes';
 import { DialogService } from '../lib-dialog/dialog.service';
 import { UserService } from '../lib-user/user.service';
 import { ModifyProfileDto, UpdatePasswordDto, UpdateProfileFileDto, UserDto } from '../lib-user/user-api.interface';
@@ -30,25 +29,24 @@ export class PgProfileComponent {
   public isLoadData = false;
   public errMsgsProfile: string[] = [];
   public errMsgsPassword: string[] = [];
-  
-  private goBackToRoute: string = '/ind/about';
+  public errMsgsAccount: string[] = [];
   
   constructor(
     private changeDetectorRef: ChangeDetectorRef,
     private route: ActivatedRoute,
+    private router: Router,
     private translate: TranslateService,
     private dialogService: DialogService,
     private userService: UserService,
-    private alertService: AlertService,
   ) {
     this.userDto = this.route.snapshot.data['userDto'];
-    console.log(`PgProfile() userDto=`, this.userDto); // #
   }
   
   // ** Public API **
 
+  // ** Section "Udate profile" FormGroup1 **
+
   public doUpdateProfile(updateProfileFile: UpdateProfileFileDto): void {
-    this.alertService.hide();
     if (!updateProfileFile || (!updateProfileFile.id)) {
       return;
     }
@@ -67,11 +65,7 @@ export class PgProfileComponent {
     //       });
     //   })
       .catch((error: HttpErrorResponse) => {
-        console.error(`error: `, error); // #
-        //  const title = 'profile.error_editing_profile';
         this.errMsgsProfile = HttpErrorUtil.getMsgs(error);
-        // this.alertService.showError(this.errMsgsProfile[0], title);
-        throw error;
       })
       .finally(() => {
         this.isLoadData = false;
@@ -79,9 +73,9 @@ export class PgProfileComponent {
       });
   }
 
+  // ** Section "Set new password" FormGroup2 **
 
   public doUpdatePassword(updatePasswordDto: UpdatePasswordDto): void {
-    this.alertService.hide();
     if (!updatePasswordDto) {
       return;
     }
@@ -99,6 +93,35 @@ export class PgProfileComponent {
       })
       .catch((error: HttpErrorResponse) => {
         this.errMsgsPassword = HttpErrorUtil.getMsgs(error);
+      })
+      .finally(() => {
+        this.isLoadData = false;
+        this.changeDetectorRef.markForCheck();
+      });
+  }
+
+  // ** Section "Delete Account" **
+
+  public doDeleteAccount(): void {
+    this.isLoadData = true;
+    this.userService.delete_user_current()
+    .then((response: UserDto | HttpErrorResponse | undefined) => {
+        if (!response) {
+          this.errMsgsAccount = [this.translate.instant('profile.error_delete_account', { nickname: this.userDto.nickname })];
+        } else {
+          const title = this.translate.instant('profile.dialog_title_delete_account');
+          const message = this.translate.instant('profile.dialog_message_delete_account');
+          this.dialogService.openConfirmation(message, title, null, 'buttons.ok')
+          .finally(() => {
+            // Closing the session.
+            this.userService.setUserDto(null);
+            this.userService.setUserTokensDto(null);
+            this.router.navigate([ROUTE_LOGIN]);
+          })
+        }
+      })
+      .catch((error: HttpErrorResponse) => {
+        this.errMsgsAccount = HttpErrorUtil.getMsgs(error);
       })
       .finally(() => {
         this.isLoadData = false;

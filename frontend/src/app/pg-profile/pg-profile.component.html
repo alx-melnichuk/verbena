@@ -5,6 +5,8 @@
   [isDisabledSubmit]="isLoadData"
   [errMsgsProfile]="errMsgsProfile"
   [errMsgsPassword]="errMsgsPassword"
+  [errMsgsAccount]="errMsgsAccount"
   (updateProfile)="doUpdateProfile($event)"
-  (updatePassword)="doUpdatePassword($event)">
+  (updatePassword)="doUpdatePassword($event)"
+  (deleteAccount)="doDeleteAccount()">
 </app-panel-profile-info>

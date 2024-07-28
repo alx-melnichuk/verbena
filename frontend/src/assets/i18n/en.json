@@ -273,7 +273,11 @@
     
     "title_delete_account": "Delete your account",
     "note_before_deleting_account": "You will lose all data and content from this account, such as emails, files and photos. This data can no longer be restored.",
-    "are_you_sure_want_delete_account?": "Are you sure you want to delete your account?",
-    "delete_account": "Delete account"
+    "dialog_title_question_account": "Delete your account",
+    "dialog_message_question_account": "Are you sure you want to delete your account \"{{nickname}}\" on the \"{{appName}}\" website?",
+    "delete_account": "Delete account",
+    "error_delete_account": "Error deleting account. Record \"{{nickname}}\" not found.",
+    "dialog_title_delete_account": "Account deletion operation.",
+    "dialog_message_delete_account": "The account deletion operation has been successfully completed!"
   }
 }

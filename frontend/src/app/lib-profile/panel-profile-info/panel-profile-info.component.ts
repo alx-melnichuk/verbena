@@ -6,18 +6,19 @@ import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { IMAGE_VALID_FILE_TYPES, MAX_FILE_SIZE } from 'src/app/common/constants';
 import { FieldDescriptComponent } from 'src/app/components/field-descript/field-descript.component';
 import { FieldEmailComponent    } from 'src/app/components/field-email/field-email.component';
 import { FieldFileUploadComponent } from 'src/app/components/field-file-upload/field-file-upload.component';
+import { FieldImageAndUploadComponent } from 'src/app/components/field-image-and-upload/field-image-and-upload.component';
 import { FieldNicknameComponent } from 'src/app/components/field-nickname/field-nickname.component';
 import { FieldPasswordComponent } from 'src/app/components/field-password/field-password.component';
 import { UniquenessCheckComponent } from 'src/app/components/uniqueness-check/uniqueness-check.component';
-import { UserDto, UserDtoUtil, UpdateProfileFileDto, UpdatePasswordDto } from 'src/app/lib-user/user-api.interface';
+import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { UserService } from 'src/app/lib-user/user.service';
-import { FieldImageAndUploadComponent } from 'src/app/components/field-image-and-upload/field-image-and-upload.component';
+import { UserDto, UserDtoUtil, UpdateProfileFileDto, UpdatePasswordDto } from 'src/app/lib-user/user-api.interface';
 
 export const PPI_DEBOUNCE_DELAY = 900;
 
@@ -41,6 +42,8 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   public errMsgsProfile: string[] = [];
   @Input()
   public errMsgsPassword: string[] = [];
+  @Input()
+  public errMsgsAccount: string[] = [];
   
   @ViewChild(FieldNicknameComponent, { static: true })
   public fieldNicknameComp!: FieldNicknameComponent;
@@ -52,7 +55,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   @Output()
   readonly updatePassword: EventEmitter<UpdatePasswordDto> = new EventEmitter();
   @Output()
-  readonly cancelProfile: EventEmitter<void> = new EventEmitter();
+  readonly deleteAccount: EventEmitter<void> = new EventEmitter();
 
   @HostBinding('class.global-scroll')
   public get classGlobalScrollVal(): boolean {
@@ -88,6 +91,8 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
 
   constructor(
     private changeDetector: ChangeDetectorRef,
+    private translate: TranslateService,
+    private dialogService: DialogService,
     private userService: UserService
   ) {
   }
@@ -125,7 +130,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
  
   // ** Public API **
   
-  // ** FormGroup1 **
+  // ** Section "Udate profile" FormGroup1 **
 
   public checkUniquenessNickname = (nickname: string | null | undefined): Promise<boolean> => {
     if (!nickname || this.origUserDto.nickname.toLowerCase() == nickname.toLowerCase()) {
@@ -174,7 +179,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     this.updateProfile.emit(updateProfileFileDto);
   }
 
-  // ** FormGroup2 **
+  // ** Section "Set new password" FormGroup2 **
 
   public statePasswordField(passwordValue: string | null) {
     if (this.isRequiredPassword !== !!passwordValue) {
@@ -194,6 +199,20 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
 
   public updateErrMsgsPassword(errMsgList: string[] = []): void {
     this.errMsgsPassword = errMsgList;
+  }
+
+  // ** Section "Delete Account" **
+
+  public performDeleteAccount(): void {
+    const title = this.translate.instant('profile.dialog_title_question_account');
+    const nickname = this.userInfo?.nickname || '';
+    const appName = this.translate.instant('app.name');
+    const message = this.translate.instant('profile.dialog_message_question_account', { nickname, appName: appName });
+    this.dialogService.openConfirmation(message, title, 'buttons.no', 'buttons.yes').then((respose) => {
+      if (!!respose) {
+        this.deleteAccount.emit();
+      }
+    });
   }
 
   // ** Private API **
