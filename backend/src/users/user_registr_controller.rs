@@ -46,9 +46,6 @@ pub const MSG_REGISTR_NOT_FOUND: &str = "registration_not_found";
 pub const MSG_RECOVERY_NOT_FOUND: &str = "recovery_not_found";
 // 404 Not Found - User not found.
 pub const MSG_USER_NOT_FOUND: &str = "user_not_found";
-// 500 Internal Server Error - Error creating password hash. (user_registr_controller, user_registr_controller)
-pub const MSG_ERROR_HASHING_PASSWORD: &str = "error_hashing_password";
-
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -93,7 +90,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
         (status = 422, description = "Token encoding error.", body = AppError,
             example = json!(AppError::unprocessable422(&format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
         (status = 500, description = "Error while calculating the password hash.", body = AppError, 
-            example = json!(AppError::internal_err500(&format!("{}: {}", MSG_ERROR_HASHING_PASSWORD, "Parameter is empty.")))),
+            example = json!(AppError::internal_err500(&format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty.")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -124,7 +121,7 @@ pub async fn registration(
 
     let password = registr_user_dto.password.clone();
     let password_hashed = hash_tools::encode_hash(&password).map_err(|e| {
-        let message = format!("{}: {}", MSG_ERROR_HASHING_PASSWORD, e.to_string());
+        let message = format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, e.to_string());
         log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
         AppError::internal_err500(&message) // 500
     })?;
@@ -601,7 +598,7 @@ pub async fn recovery(
             description = "Validation error. `curl -i -X PUT http://localhost:8080/api/recovery/1234 -d '{ \"password\": \"pas\" }'`",
             example = json!(AppError::validations((RecoveryDataDto { password: "pas".to_string() }).validate().err().unwrap()) )),
         (status = 500, description = "Error while calculating the password hash.", body = AppError, 
-            example = json!(AppError::internal_err500(&format!("{}: {}", MSG_ERROR_HASHING_PASSWORD, "Parameter is empty.")))),
+            example = json!(AppError::internal_err500(&format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty.")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -629,7 +626,7 @@ pub async fn confirm_recovery(
 
     // Prepare a password hash.
     let password_hashed = hash_tools::encode_hash(&recovery_data_dto.password).map_err(|e| {
-        let message = format!("{}: {}", MSG_ERROR_HASHING_PASSWORD, e.to_string());
+        let message = format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, e.to_string());
         log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
         AppError::internal_err500(&message) // 500
     })?;

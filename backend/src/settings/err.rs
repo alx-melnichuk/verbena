@@ -52,6 +52,8 @@ pub const CD_UNPROCESSABLE_ENTITY: &str = "UnprocessableEntity";
 
 // 500 Internal Server Error (user_registr_controller)
 pub const CD_INTERNAL_ERROR: &str = "InternalServerError";
+// 500 Internal Server Error - Error creating password hash. (user_registr_controller, user_registr_controller)
+pub const MSG_ERROR_HASHING_PASSWORD: &str = "error_hashing_password";
 
 // 506 Variant Also Negotiates /*+*/
 pub const CD_BLOCKING: &str = "Blocking"; /*+*/
