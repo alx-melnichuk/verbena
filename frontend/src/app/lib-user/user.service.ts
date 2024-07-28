@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { UserApiService } from './user-api.service';
-import { LoginUserResponseDto, ModifyProfileDto, UserDto, UserProfileDto, UserTokensDto } from './user-api.interface';
+import { LoginUserResponseDto, ModifyProfileDto, UpdatePasswordDto, UserDto, UserProfileDto, UserTokensDto } from './user-api.interface';
 
 export const ACCESS_TOKEN = 'accessToken';
 export const REFRESH_TOKEN = 'refreshToken';
@@ -120,6 +120,10 @@ export class UserService {
     return this.userApiService.modifyProfile(id, modifyProfileDto, file);
   }
   
+  public new_password(updatePasswordDto: UpdatePasswordDto): Promise<UserDto | HttpErrorResponse | undefined> {
+    return this.userApiService.new_password(updatePasswordDto);
+  }
+
   // ** Private Api **
 
   private updateItemInLocalStorage(name: string, value: string | null): void {
