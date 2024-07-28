@@ -157,7 +157,7 @@ impl From<User> for UserDto {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset)]
 #[diesel(table_name = schema::users)]
 pub struct ModifyUserDto {
     pub nickname: Option<String>,
