@@ -11,6 +11,7 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 
+use profiles::profile_orm::cfg::get_profile_orm_app;
 use send_email::{config_smtp, mailer};
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
 use streams::{config_strm, stream_controller, stream_get_controller, stream_orm::cfg::get_stream_orm_app};
@@ -29,6 +30,7 @@ pub(crate) mod errors;
 pub(crate) mod extractors;
 pub mod file_upload;
 pub(crate) mod hash_tools;
+pub(crate) mod profiles;
 pub(crate) mod schema;
 pub(crate) mod send_email;
 pub(crate) mod sessions;
@@ -75,6 +77,9 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let session_orm = Data::new(get_session_orm_app(pool.clone()));
         // used: stream_get_controller, stream_controller
         let stream_orm = Data::new(get_stream_orm_app(pool.clone()));
+
+        let profile_orm = Data::new(get_profile_orm_app(pool.clone()));
+        println!("profile_orm.pool.max_size(): {}", profile_orm.pool.max_size());
 
         // Make instance variable of ApiDoc so all worker threads gets the same instance.
         let openapi = swagger_docs::ApiDoc::openapi();
