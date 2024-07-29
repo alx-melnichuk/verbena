@@ -138,15 +138,11 @@ pub struct Stream {
     pub updated_at: DateTime<Utc>,
 }
 
-// #[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_DESCRIPT_DEF: &str = "";
-// #[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_STATE_DEF: StreamState = StreamState::Waiting;
-// #[cfg(any(test, feature = "mockdata"))]
 pub const STREAM_SOURCE_DEF: &str = "obs";
 
 impl Stream {
-    // #[cfg(test)]
     pub fn new(id: i32, user_id: i32, title: &str, starttime: DateTime<Utc>) -> Stream {
         let now = Utc::now();
         Stream {
