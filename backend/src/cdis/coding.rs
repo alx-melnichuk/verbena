@@ -21,6 +21,9 @@ pub const MSG_INVALID_SECOND: &str = "Invalid second";
 ///
 /// Example: Encode a date (in milliseconds, precision = 0) into a string.
 /// ```
+/// use chrono::NaiveDate;
+/// use verbena::cdis::coding::encode;
+///
 /// let date_time = NaiveDate::from_ymd_opt(2015, 5, 15)
 ///     .and_then(|d| d.and_hms_milli_opt(11, 12, 13, 456)).unwrap().and_utc();
 ///
@@ -31,6 +34,9 @@ pub const MSG_INVALID_SECOND: &str = "Invalid second";
 ///
 /// Example: Encode the date (with microseconds, accuracy=1) into a string.
 /// ```
+/// use chrono::NaiveDate;
+/// use verbena::cdis::coding::encode;
+///
 /// let date_time = NaiveDate::from_ymd_opt(2015, 5, 15)
 ///     .and_then(|d| d.and_hms_micro_opt(11, 12, 13, 456789)).unwrap().and_utc();
 ///
@@ -41,6 +47,9 @@ pub const MSG_INVALID_SECOND: &str = "Invalid second";
 ///
 /// Example: Encode the date (with nanoseconds, accuracy=2) into a string.
 /// ```
+/// use chrono::NaiveDate;
+/// use verbena::cdis::coding::encode;
+///
 /// let date_time = NaiveDate::from_ymd_opt(2015, 5, 15)
 ///     .and_then(|d| d.and_hms_nano_opt(11, 12, 13, 456789123)).unwrap().and_utc();
 ///
@@ -94,7 +103,10 @@ pub fn encode(date_time: DateTime<Utc>, accuracy: u8) -> String {
 ///
 /// Example: Decode a string (in milliseconds, accuracy=0) into a date.
 /// ```
-/// let date_time: DateTime<Utc> = decode("42550f61b5cd".to_string(), 0).unwrap();
+/// use chrono::{DateTime, Datelike, NaiveDate, Timelike, Utc};
+/// use verbena::cdis::coding::decode;
+///
+/// let date_time: DateTime<Utc> = decode("42550f61b5cd", 0).unwrap();
 ///
 /// assert_eq!(2015, date_time.year());
 /// assert_eq!(5, date_time.month());
@@ -109,6 +121,9 @@ pub fn encode(date_time: DateTime<Utc>, accuracy: u8) -> String {
 ///
 /// Example: Decode a string (in microseconds, accuracy=1) into a date.
 /// ```
+/// use chrono::{DateTime, Datelike, NaiveDate, Timelike, Utc};
+/// use verbena::cdis::coding::decode;
+///
 /// let date_time: DateTime<Utc> = decode("42550f61b5cd987", 1).unwrap();
 ///
 /// assert_eq!(2015, date_time.year());
@@ -124,6 +139,9 @@ pub fn encode(date_time: DateTime<Utc>, accuracy: u8) -> String {
 ///
 /// Example: Decode a string (in nanoseconds, accuracy=2) into a date.
 /// ```
+/// use chrono::{DateTime, Datelike, NaiveDate, Timelike, Utc};
+/// use verbena::cdis::coding::decode;
+///
 /// let date_time: DateTime<Utc> = decode("42550f61b5cd987321", 2).unwrap();
 ///
 /// assert_eq!(2015, date_time.year());
