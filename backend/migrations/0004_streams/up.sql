@@ -217,5 +217,5 @@ AS $$
   WHERE
     L.stream_tag_id = T.id and L.stream_id = B.id
   ORDER BY
-   L.stream_id ASC, T.user_id  ASC, T.id ASC;
+    L.stream_id ASC, T.user_id  ASC, T.id ASC;
 $$;
