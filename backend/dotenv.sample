@@ -63,8 +63,6 @@ APP_DIR_TMP=./tmp
 # JSON Web Token Credentials
 # -----------------------------------------------------------------------------
 JWT_SECRET_KEY=jwt_secret_key
-# (900 seconds = 15 minutes)
-JWT_MAXAGE=900
 # Access token duration (in seconds). (900 seconds = 15 minutes)
 JWT_ACCESS_TOKEN_DURATION=900
 # Refresh token duration (in seconds). (345600 seconds = 4 days  60sec*60min*24hour*4days)
