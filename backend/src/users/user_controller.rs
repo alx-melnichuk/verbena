@@ -333,14 +333,11 @@ pub async fn get_user_current(
         (status = 200, description = "Data about the current user.", body = UserDto),
         (status = 204, description = "The current user was not found."),
         (status = 401, description = "The nickname or password is incorrect or the token is missing.", body = AppError, examples(
-            ("Missing_Token" = (summary = "missing token",
-                description = "An authorization token is required.",
+            ("Missing_Token" = (summary = "missing token", description = "An authorization token is required.",
                 value = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN)))),
-            ("Nickname" = (summary = "Nickname is incorrect",
-                description = "The nickname is incorrect.",
+            ("Nickname" = (summary = "Nickname is incorrect", description = "The nickname is incorrect.",
                 value = json!(AppError::unauthorized401(err::MSG_WRONG_NICKNAME_EMAIL)))),
-            ("Password" = (summary = "Password is incorrect", 
-                description = "The password is incorrect.",
+            ("Password" = (summary = "Password is incorrect", description = "The password is incorrect.",
                 value = json!(AppError::unauthorized401(err::MSG_PASSWORD_INCORRECT))))
         )),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
