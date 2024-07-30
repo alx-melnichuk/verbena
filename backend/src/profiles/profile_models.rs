@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::schema;
-use crate::users::user_models::User;
 use crate::utils::serial_datetime;
 
 // ** Section: database "profiles" **
@@ -24,18 +24,19 @@ pub struct Profile {
 }
 
 pub const PROFILE_DESCRIPT_DEF: &str = "";
-pub const PROFILE_THEME_DEF: &str = "light";
+pub const PROFILE_THEME_LIGHT_DEF: &str = "light";
+pub const PROFILE_THEME_DARK: &str = "dark";
 
 impl Profile {
-    pub fn new(user_id: i32, avatar: Option<String>, descript: Option<String>) -> Profile {
+    pub fn new(user_id: i32, avatar: Option<&str>, descript: &str, theme: &str) -> Profile {
         let now = Utc::now();
         Profile {
-            user_id: user_id,
-            avatar: avatar,
-            descript: descript.unwrap_or(PROFILE_DESCRIPT_DEF.to_string()),
-            theme: PROFILE_THEME_DEF.to_string(),
-            created_at: now,
-            updated_at: now,
+            user_id,
+            avatar: avatar.map(|v| v.to_string()),
+            descript: descript.to_string(),
+            theme: theme.to_string(),
+            created_at: now.clone(),
+            updated_at: now.clone(),
         }
     }
 }
@@ -61,17 +62,44 @@ pub struct ProfileUser {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+impl ProfileUser {
+    pub fn new(
+        user_id: i32,
+        nickname: &str,
+        email: &str,
+        avatar: Option<&str>,
+        descript: &str,
+        theme: &str,
+    ) -> ProfileUser {
+        let now = Utc::now();
+        ProfileUser {
+            user_id,
+            nickname: nickname.to_string(),
+            email: email.to_string(),
+            avatar: avatar.map(|v| v.to_string()),
+            descript: descript.to_string(),
+            theme: theme.to_string(),
+            created_at: now.clone(),
+            updated_at: now.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ProfileUserDto {
     pub id: i32,
+    #[schema(example = "Emma_Johnson2")]
     pub nickname: String,
+    #[schema(example = "Emma_Johnson2@gmail.us")]
     pub email: String,
     // Link to user avatar, optional
     pub avatar: Option<String>, // min_len=2 max_len=255 Nullable
     // User description.
+    #[schema(example = "Description Emma_Johnson2")]
     pub descript: String, // type: Text default ""
     // Default color theme. ["light","dark"]
+    #[schema(example = "light")]
     pub theme: String, // min_len=2 max_len=32 default "light"
     #[serde(with = "serial_datetime")]
     pub created_at: DateTime<Utc>,
@@ -80,21 +108,16 @@ pub struct ProfileUserDto {
 }
 
 impl ProfileUserDto {
-    pub fn new(user: User, profile: Profile) -> ProfileUserDto {
-        let updated_at = if user.updated_at > profile.updated_at {
-            user.updated_at
-        } else {
-            profile.updated_at
-        };
+    pub fn from(profile_user: ProfileUser) -> ProfileUserDto {
         ProfileUserDto {
-            id: user.id,
-            nickname: user.nickname,
-            email: user.email,
-            avatar: profile.avatar,
-            descript: profile.descript,
-            theme: profile.theme,
-            created_at: user.created_at,
-            updated_at: updated_at,
+            id: profile_user.user_id,
+            nickname: profile_user.nickname,
+            email: profile_user.email,
+            avatar: profile_user.avatar.clone(),
+            descript: profile_user.descript.clone(),
+            theme: profile_user.theme.clone(),
+            created_at: profile_user.created_at.clone(),
+            updated_at: profile_user.updated_at.clone(),
         }
     }
 }

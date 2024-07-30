@@ -1,17 +1,19 @@
 use utoipa::{
-    openapi::security::{ApiKey, ApiKeyValue, HttpAuthScheme, HttpBuilder, SecurityScheme},
+    openapi::security::{/*ApiKey, ApiKeyValue,*/ HttpAuthScheme, HttpBuilder, SecurityScheme},
     Modify, OpenApi,
 };
 
 use crate::{
-    errors,
-    streams::{stream_controller, stream_get_controller, stream_models},
-    users::{user_auth_controller, user_controller, user_models, user_registr_controller},
+    errors, 
+    profiles::{profile_controller, profile_models}, 
+    streams::{stream_controller, stream_get_controller, stream_models}, 
+    users::{user_auth_controller, user_controller, user_models, user_registr_controller}
 };
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        profile_controller::get_profile_current,
         user_auth_controller::login,
         user_auth_controller::logout,
         user_auth_controller::update_token,
@@ -37,6 +39,9 @@ use crate::{
     components(
         schemas(
             errors::AppError,
+            // profile_controller
+            profile_models::ProfileUserDto,
+            // user model
             user_models::UserRole,
             // user_controller, user_auth_controller, user_registr_controller
             user_models::UserDto,
@@ -85,10 +90,10 @@ impl Modify for SecurityAddon {
     fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
         // NOTE: we can unwrap safely since there already is components registered.
         let components = openapi.components.as_mut().unwrap();
-        components.add_security_scheme(
-            "api_key",
-            SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("todo_apikey"))),
-        );
+        // components.add_security_scheme(
+        //     "api_key",
+        //     SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("todo_apikey"))),
+        // );
 
         components.add_security_scheme(
             "bearer_auth",

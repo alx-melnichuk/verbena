@@ -11,7 +11,7 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 
-use profiles::profile_orm::cfg::get_profile_orm_app;
+use profiles::{profile_controller, profile_orm::cfg::get_profile_orm_app};
 use send_email::{config_smtp, mailer};
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
 use streams::{config_strm, stream_controller, stream_get_controller, stream_orm::cfg::get_stream_orm_app};
@@ -77,9 +77,8 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let session_orm = Data::new(get_session_orm_app(pool.clone()));
         // used: stream_get_controller, stream_controller
         let stream_orm = Data::new(get_stream_orm_app(pool.clone()));
-
+        // used: profile_controller
         let profile_orm = Data::new(get_profile_orm_app(pool.clone()));
-        println!("profile_orm.pool.max_size(): {}", profile_orm.pool.max_size());
 
         // Make instance variable of ApiDoc so all worker threads gets the same instance.
         let openapi = swagger_docs::ApiDoc::openapi();
@@ -95,6 +94,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             .app_data(Data::clone(&session_orm))
             .app_data(Data::clone(&user_recovery_orm))
             .app_data(Data::clone(&stream_orm))
+            .app_data(Data::clone(&profile_orm))
             // Add documentation service "Redoc" and "RapiDoc".
             .service(Redoc::with_url("/redoc", openapi.clone()))
             .service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
@@ -106,6 +106,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             .configure(user_controller::configure())
             .configure(stream_get_controller::configure())
             .configure(stream_controller::configure())
+            .configure(profile_controller::configure())
             .configure(static_controller::configure());
     }
 }
