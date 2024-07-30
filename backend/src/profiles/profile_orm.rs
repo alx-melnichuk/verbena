@@ -38,9 +38,8 @@ pub mod cfg {
 pub mod impls {
 
     use diesel::{self, prelude::*, sql_types};
-    // use schema::streams::dsl as streams_dsl;
 
-    // use crate::schema;
+    use crate::dbase;
 
     use super::*;
 
