@@ -82,8 +82,8 @@ pub async fn get_stream_by_id(
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get current user details.
-    let curr_user = authenticated.deref();
-    let opt_user_id: Option<i32> = if curr_user.role == UserRole::Admin { None } else { Some(curr_user.id) };
+    let profile_user = authenticated.deref();
+    let opt_user_id: Option<i32> = if profile_user.role == UserRole::Admin { None } else { Some(profile_user.user_id) };
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -113,7 +113,7 @@ pub async fn get_stream_by_id(
     let opt_stream_tag_dto = if let Some((stream, stream_tags)) = opt_data {
         let streams: Vec<stream_models::Stream> = vec![stream];
         // Merge a "stream" and a corresponding list of "tags".
-        let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, curr_user.id);
+        let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, profile_user.user_id);
         list.into_iter().nth(0)
     } else {
         None
@@ -201,17 +201,17 @@ pub async fn get_streams(
     query_params: web::Query<SearchStreamInfoDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get current user details.
-    let curr_user = authenticated.deref();
+    let profile_user = authenticated.deref();
 
     // Get search parameters.
     let search_stream_info_dto: SearchStreamInfoDto = query_params.into_inner();
 
     let page: u32 = search_stream_info_dto.page.unwrap_or(stream_models::SEARCH_STREAM_PAGE);
     let limit: u32 = search_stream_info_dto.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT);
-    let search_stream = stream_models::SearchStream::convert(search_stream_info_dto, curr_user.id);
+    let search_stream = stream_models::SearchStream::convert(search_stream_info_dto, profile_user.user_id);
 
-    if search_stream.user_id != curr_user.id && curr_user.role != UserRole::Admin {
-        let text = format!("curr_user_id: {}, user_id: {}", curr_user.id, search_stream.user_id);
+    if search_stream.user_id != profile_user.user_id && profile_user.role != UserRole::Admin {
+        let text = format!("curr_user_id: {}, user_id: {}", profile_user.user_id, search_stream.user_id);
         #[rustfmt::skip]
         let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS, &text);
         log::error!("{}: {}", err::CD_FORBIDDEN, &message);
@@ -236,7 +236,7 @@ pub async fn get_streams(
     let (count, streams, stream_tags) = match res_data { Ok(v) => v, Err(e) => return Err(e) };
 
     // Merge a "stream" and a corresponding list of "tags".
-    let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, curr_user.id);
+    let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, profile_user.user_id);
 
     let pages: u32 = count / limit + if (count % limit) > 0 { 1 } else { 0 };
 
@@ -323,17 +323,17 @@ pub async fn get_streams_events(
     query_params: web::Query<SearchStreamEventDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get current user details.
-    let curr_user = authenticated.deref();
+    let profile_user = authenticated.deref();
 
     // Get search parameters.
     let search_stream_event_dto: SearchStreamEventDto = query_params.into_inner();
 
     let page: u32 = search_stream_event_dto.page.unwrap_or(stream_models::SEARCH_STREAM_EVENT_PAGE);
     let limit: u32 = search_stream_event_dto.limit.unwrap_or(stream_models::SEARCH_STREAM_EVENT_LIMIT);
-    let search_event = stream_models::SearchStreamEvent::convert(search_stream_event_dto, curr_user.id);
+    let search_event = stream_models::SearchStreamEvent::convert(search_stream_event_dto, profile_user.user_id);
 
-    if search_event.user_id != curr_user.id && curr_user.role != UserRole::Admin {
-        let text = format!("curr_user_id: {}, user_id: {}", curr_user.id, search_event.user_id);
+    if search_event.user_id != profile_user.user_id && profile_user.role != UserRole::Admin {
+        let text = format!("curr_user_id: {}, user_id: {}", profile_user.user_id, search_event.user_id);
         #[rustfmt::skip]
         let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
         log::error!("{}: {}", err::CD_FORBIDDEN, &message);
@@ -434,17 +434,17 @@ pub async fn get_streams_period(
     query_params: web::Query<SearchStreamPeriodDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get current user details.
-    let curr_user = authenticated.deref();
+    let profile_user = authenticated.deref();
 
     // Get search parameters.
     let search_period_dto: SearchStreamPeriodDto = query_params.into_inner();
 
-    let search_period = stream_models::SearchStreamPeriod::convert(search_period_dto, curr_user.id);
+    let search_period = stream_models::SearchStreamPeriod::convert(search_period_dto, profile_user.user_id);
     let start = search_period.start.clone();
     let finish = search_period.finish.clone();
 
-    if search_period.user_id != curr_user.id && curr_user.role != UserRole::Admin {
-        let text = format!("curr_user_id: {}, user_id: {}", curr_user.id, search_period.user_id);
+    if search_period.user_id != profile_user.user_id && profile_user.role != UserRole::Admin {
+        let text = format!("curr_user_id: {}, user_id: {}", profile_user.user_id, search_period.user_id);
         #[rustfmt::skip]
         let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
         log::error!("{}: {}", err::CD_FORBIDDEN, &message);

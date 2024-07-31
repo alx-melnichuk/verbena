@@ -220,8 +220,8 @@ pub async fn post_stream(
     MultipartForm(create_stream_form): MultipartForm<CreateStreamForm>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get current user details.
-    let curr_user = authenticated.deref();
-    let curr_user_id = curr_user.id;
+    let profile_user = authenticated.deref();
+    let curr_user_id = profile_user.user_id;
 
     // Get data from MultipartForm.
     let (create_stream_info_dto, logofile) = CreateStreamForm::convert(create_stream_form)
@@ -479,8 +479,8 @@ pub async fn put_stream(
     MultipartForm(modify_stream_form): MultipartForm<ModifyStreamForm>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get current user details.
-    let curr_user = authenticated.deref();
-    let curr_user_id = curr_user.id;
+    let profile_user = authenticated.deref();
+    let curr_user_id = profile_user.user_id;
     
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -570,7 +570,7 @@ pub async fn put_stream(
     let mut modify_stream = stream_models::ModifyStream::convert(modify_stream_info_dto);
     modify_stream.logo = logo;
 
-    let opt_user_id: Option<i32> = if curr_user.role == UserRole::Admin { None } else { Some(curr_user.id) };
+    let opt_user_id: Option<i32> = if profile_user.role == UserRole::Admin { None } else { Some(profile_user.user_id) };
     let res_data = web::block(move || {
         let mut old_logo_file = "".to_string();
         if is_delete_logo {
@@ -654,8 +654,8 @@ pub async fn delete_stream(
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get current user details.
-    let curr_user = authenticated.deref();
-    let curr_user_id = curr_user.id;
+    let profile_user = authenticated.deref();
+    let curr_user_id = profile_user.user_id;
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -665,7 +665,7 @@ pub async fn delete_stream(
         AppError::range_not_satisfiable416(&message) // 416
     })?;
 
-    let opt_user_id: Option<i32> = if curr_user.role == UserRole::Admin { None } else { Some(curr_user.id) };
+    let opt_user_id: Option<i32> = if profile_user.role == UserRole::Admin { None } else { Some(profile_user.user_id) };
     let res_data = web::block(move || {
         // Add a new entity (stream).
         let res_data = stream_orm.delete_stream(id, opt_user_id).map_err(|e| {
