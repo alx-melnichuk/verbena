@@ -19,10 +19,7 @@ use crate::sessions::session_orm::impls::SessionOrmApp;
 use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::{config_jwt, session_orm::SessionOrm, tokens::decode_token};
 use crate::settings::err;
-use crate::users::{
-    user_models::{User, UserRole},
-    // user_orm::UserOrm,
-};
+use crate::users::user_models::{User, UserRole};
 
 pub const BEARER: &str = "Bearer ";
 // 401 Unauthorized - According to "user_id" in the token, the user was not found.
@@ -148,6 +145,7 @@ where
     }
     /// The future type representing the asynchronous response.
     fn call(&self, req: dev::ServiceRequest) -> Self::Future {
+        const IS_PRINT: bool = false;
         let timer0 = std::time::Instant::now();
         // Attempt to extract token from cookie or authorization header
         let token = req.cookie("token").map(|c| c.value().to_string()).or_else(|| {
@@ -233,7 +231,9 @@ where
             })?;
 
             let timer0s = format!("{:.2?}", timer0.elapsed());
-            eprintln!("## timer0: {}, timer1: {}, timer2: {}", timer0s, timer1s, timer2s);
+            if IS_PRINT {
+                eprintln!("## timer0: {}, timer1: {}, timer2: {}", timer0s, timer1s, timer2s);
+            }
             // Check if user's role matches the required role
             if allowed_roles.contains(&profile_user.role) {
                 // Insert user information into request extensions
