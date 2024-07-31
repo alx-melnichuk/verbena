@@ -450,7 +450,6 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
         // Create profile values.
         let profile1 = create_profile(user1.clone());
 
