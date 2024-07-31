@@ -9,18 +9,19 @@ use log;
 
 use crate::errors::AppError;
 #[cfg(not(feature = "mockdata"))]
+use crate::profiles::profile_orm::impls::ProfileOrmApp;
+#[cfg(feature = "mockdata")]
+use crate::profiles::profile_orm::tests::ProfileOrmApp;
+use crate::profiles::{profile_models::ProfileUser, profile_orm::ProfileOrm};
+#[cfg(not(feature = "mockdata"))]
 use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::{config_jwt, session_orm::SessionOrm, tokens::decode_token};
 use crate::settings::err;
-#[cfg(not(feature = "mockdata"))]
-use crate::users::user_orm::impls::UserOrmApp;
-#[cfg(feature = "mockdata")]
-use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::{
     user_models::{User, UserRole},
-    user_orm::UserOrm,
+    // user_orm::UserOrm,
 };
 
 pub const BEARER: &str = "Bearer ";
@@ -29,14 +30,14 @@ pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
 // 500 Internal Server Error - Authentication: The entity "user" was not received from the request.
 pub const MSG_USER_NOT_RECEIVED_FROM_REQUEST: &str = "user_not_received_from_request";
 
-pub struct Authenticated(User);
+pub struct Authenticated(ProfileUser);
 
 impl FromRequest for Authenticated {
     type Error = actix_web::Error;
     type Future = Ready<Result<Self, Self::Error>>;
 
     fn from_request(req: &actix_web::HttpRequest, _payload: &mut dev::Payload) -> Self::Future {
-        let value = req.extensions().get::<User>().cloned();
+        let value = req.extensions().get::<ProfileUser>().cloned();
         let result = match value {
             Some(user) => Ok(Authenticated(user)),
             #[rustfmt::skip]
@@ -47,8 +48,8 @@ impl FromRequest for Authenticated {
 }
 
 impl std::ops::Deref for Authenticated {
-    type Target = User;
-    /// Implement the deref method to access the inner User value of Authenticated.
+    type Target = ProfileUser;
+    /// Implement the deref method to access the inner ProfileUser value of Authenticated.
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -147,6 +148,7 @@ where
     }
     /// The future type representing the asynchronous response.
     fn call(&self, req: dev::ServiceRequest) -> Self::Future {
+        let timer0 = std::time::Instant::now();
         // Attempt to extract token from cookie or authorization header
         let token = req.cookie("token").map(|c| c.value().to_string()).or_else(|| {
             let header_token = req
@@ -190,6 +192,7 @@ where
 
         // Handle user extraction and request processing
         async move {
+            let timer1 = std::time::Instant::now();
             let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap();
             // Find a session for a given user.
             let opt_session = session_orm.find_session_by_id(user_id).map_err(|e| {
@@ -197,7 +200,7 @@ where
                 let error = AppError::database507(&e.to_string());
                 return error::ErrorInsufficientStorage(error); // 507
             })?;
-
+            let timer1s = format!("{:.2?}", timer1.elapsed());
             let session = opt_session.ok_or_else(|| {
                 // There is no session for this user.
                 let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, user_id);
@@ -214,24 +217,28 @@ where
                 return Err(error::ErrorUnauthorized(AppError::unauthorized401(&message)));
             }
 
-            let user_orm = req.app_data::<web::Data<UserOrmApp>>().unwrap();
-
-            let result = user_orm.find_user_by_id(user_id).map_err(|e| {
+            let profile_orm = req.app_data::<web::Data<ProfileOrmApp>>().unwrap();
+            let timer2 = std::time::Instant::now();
+            let result = profile_orm.get_profile_by_user_id(user_id).map_err(|e| {
                 log::error!("{}: {}", err::CD_DATABASE, e.to_string());
                 let error = AppError::database507(&e.to_string());
                 error::ErrorInsufficientStorage(error) // 507
             })?;
+            let timer2s = format!("{:.2?}", timer2.elapsed());
 
-            let user = result.ok_or_else(|| {
+            let profile_user = result.ok_or_else(|| {
                 let message = format!("{}: user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id);
                 log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
                 error::ErrorUnauthorized(AppError::unauthorized401(&message)) // 401
             })?;
 
+            let timer0s = format!("{:.2?}", timer0.elapsed());
+            eprintln!("## timer0: {}, timer1: {}, timer2: {}", timer0s, timer1s, timer2s);
             // Check if user's role matches the required role
-            if allowed_roles.contains(&user.role) {
+            if allowed_roles.contains(&profile_user.role) {
                 // Insert user information into request extensions
-                req.extensions_mut().insert::<User>(user);
+                req.extensions_mut().insert::<User>(profile_user.clone().to_user());
+                req.extensions_mut().insert::<ProfileUser>(profile_user);
                 // Call the wrapped service to handle the request
                 let res = srv.call(req).await?;
                 Ok(res)
@@ -247,17 +254,18 @@ where
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use actix_web::{cookie::Cookie, dev, get, http, test, test::TestRequest, web, App, HttpResponse};
+    use actix_web::{cookie::Cookie, dev, get, http, test, web, App, HttpResponse};
 
-    use crate::sessions::{
-        config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
-    };
-    use crate::users::{
-        user_models::{User, UserRole},
-        user_orm::tests::UserOrmApp,
+    use crate::{
+        profiles::profile_models::{PROFILE_DESCRIPT_DEF, PROFILE_THEME_LIGHT_DEF},
+        sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token},
+        users::{user_models::UserRole, user_orm::tests::UserOrmApp},
     };
 
     use super::*;
+
+    const MSG_ERROR_WAS_EXPECTED: &str = "Service call succeeded, but an error was expected.";
+    const MSG_FAILED_TO_DESER: &str = "Failed to deserialize JSON string";
 
     #[get("/", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
     async fn handler_with_auth() -> HttpResponse {
@@ -265,21 +273,22 @@ mod tests {
     }
 
     #[get("/", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
-    async fn handler_with_requireonlyadmin() -> HttpResponse {
+    async fn handler_with_require_only_admin() -> HttpResponse {
         HttpResponse::Ok().into()
     }
 
-    fn create_user() -> User {
+    fn create_profile() -> ProfileUser {
         let mut user = UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwrN1T1");
         user.role = UserRole::User;
-        user
-    }
-    fn user_with_id(user: User) -> User {
-        let user_orm = UserOrmApp::create(&vec![user]);
-        user_orm.user_vec.get(0).unwrap().clone()
-    }
-    fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
-        SessionOrmApp::new_session(user_id, num_token)
+        ProfileUser::new(
+            user.id,
+            &user.nickname,
+            &user.email,
+            user.role.clone(),
+            None,
+            PROFILE_DESCRIPT_DEF,
+            PROFILE_THEME_LIGHT_DEF,
+        )
     }
     fn cfg_jwt() -> config_jwt::ConfigJwt {
         config_jwt::get_test_config()
@@ -288,222 +297,209 @@ mod tests {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
     }
-    async fn call_service1(
-        cfg_jwt: config_jwt::ConfigJwt,
-        vec: (Vec<User>, Vec<Session>),
-        factory: impl dev::HttpServiceFactory + 'static,
-        request: TestRequest,
-    ) -> dev::ServiceResponse {
-        let data_config_jwt = web::Data::new(cfg_jwt);
+    #[rustfmt::skip]
+    fn get_cfg_data() -> (config_jwt::ConfigJwt, (Vec<ProfileUser>, Vec<Session>), String) {
+        let profile1 = create_profile();
+        let num_token = 1234;
+        let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token));
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(&vec.0));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(&vec.1));
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_session_orm))
-                .service(factory),
-        )
-        .await;
+        let data_c = (vec![profile1], vec![session1]);
 
-        test::call_service(&app, request.to_request()).await
+        (config_jwt, data_c, token)
     }
-    async fn call_service2(
-        config_jwt: config_jwt::ConfigJwt,
-        vec: (Vec<User>, Vec<Session>),
-        factory: impl dev::HttpServiceFactory + 'static,
-        request: TestRequest,
-    ) -> Result<dev::ServiceResponse, actix_web::Error> {
-        let data_config_jwt = web::Data::new(config_jwt);
+    fn configure_auth(
+        config_jwt: config_jwt::ConfigJwt,        // configuration
+        data_c: (Vec<ProfileUser>, Vec<Session>), // cortege of data vectors
+    ) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_config_jwt = web::Data::new(config_jwt);
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
+            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
 
-        let data_user_orm = web::Data::new(UserOrmApp::create(&vec.0));
-        let data_session_orm = web::Data::new(SessionOrmApp::create(&vec.1));
-
-        let app = test::init_service(
-            App::new()
+            config
                 .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_session_orm))
-                .service(factory),
-        )
-        .await;
-
-        test::try_call_service(&app, request.to_request()).await
+                .app_data(web::Data::clone(&data_profile_orm))
+                .app_data(web::Data::clone(&data_session_orm));
+        }
     }
 
     #[test]
     async fn test_authentication_middelware_valid_token() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(handler_with_auth).configure(configure_auth(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().insert_header(header_auth(&token))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let request = test::TestRequest::get().insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(config_jwt, data_c, handler_with_auth, request).await;
-        assert_eq!(resp.status(), http::StatusCode::OK);
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
     }
 
     #[test]
     async fn test_authentication_middelware_valid_token_with_cookie() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(handler_with_auth).configure(configure_auth(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().cookie(Cookie::new("token", token))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token_val = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let request = test::TestRequest::get().cookie(Cookie::new("token", token_val));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(config_jwt, data_c, handler_with_auth, request).await;
-        assert_eq!(resp.status(), http::StatusCode::OK);
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
     }
 
     #[test]
     async fn test_authentication_middleware_access_admin_only_endpoint_success() {
-        let mut user1a = create_user();
-        user1a.role = UserRole::Admin;
-        let user1: User = user_with_id(user1a);
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut profile = data_c.0.get(0).unwrap().clone();
+        profile.role = UserRole::Admin;
+        let data_c = (vec![profile], data_c.1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(handler_with_require_only_admin).configure(configure_auth(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().insert_header(header_auth(&token))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let request = test::TestRequest::get().insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let resp = call_service1(config_jwt, data_c, handler_with_auth, request).await;
-        assert_eq!(resp.status(), http::StatusCode::OK);
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
     }
 
     #[test]
     async fn test_authentication_middleware_missing_token() {
-        let request = test::TestRequest::get();
+        let cfg_c = cfg_jwt();
         let data_c = (vec![], vec![]);
-        let result = call_service2(cfg_jwt(), data_c, handler_with_auth, request).await.err();
-        let err = result.expect("Service call succeeded, but an error was expected.");
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(handler_with_auth).configure(configure_auth(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().to_request();
+        let result = test::try_call_service(&app, req).await.err();
+        let err = result.expect(MSG_ERROR_WAS_EXPECTED);
 
         let actual_status = err.as_response_error().status_code();
         assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED); // 401
 
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         assert_eq!(app_err.message, err::MSG_MISSING_TOKEN);
     }
     #[test]
     async fn test_authentication_middleware_invalid_token() {
-        let request = test::TestRequest::get().insert_header(header_auth("invalid_token123"));
+        let cfg_c = cfg_jwt();
         let data_c = (vec![], vec![]);
-        let result = call_service2(cfg_jwt(), data_c, handler_with_auth, request).await.err();
-        let err = result.expect("Service call succeeded, but an error was expected.");
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(handler_with_auth).configure(configure_auth(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().insert_header(header_auth("invalid_token123"))
+            .to_request();
+        let result = test::try_call_service(&app, req).await.err();
+        let err = result.expect(MSG_ERROR_WAS_EXPECTED);
 
         let actual_status = err.as_response_error().status_code();
         assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED); // 401
 
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         assert!(app_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
     #[test]
     async fn test_authentication_middelware_expired_token() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, -config_jwt.jwt_access).unwrap();
-
-        let request = test::TestRequest::get().insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let result = call_service2(config_jwt, data_c, handler_with_auth, request).await.err();
-        let err = result.expect("Service call succeeded, but an error was expected.");
+        let (cfg_c, data_c, _token) = get_cfg_data();
+        let num_token = data_c.1.get(0).unwrap().num_token.unwrap_or(0);
+        let user_id = data_c.0.get(0).unwrap().user_id;
+        let jwt_secret: &[u8] = cfg_c.jwt_secret.as_bytes();
+        let token = encode_token(user_id, num_token, &jwt_secret, -cfg_c.jwt_access).unwrap();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(handler_with_auth).configure(configure_auth(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().insert_header(header_auth(&token))
+            .to_request();
+        let result = test::try_call_service(&app, req).await.err();
+        let err = result.expect(MSG_ERROR_WAS_EXPECTED);
 
         let actual_status = err.as_response_error().status_code();
         assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED); // 401
 
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         #[rustfmt::skip]
         assert_eq!(app_err.message, format!("{}: ExpiredSignature", err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
     #[test]
     async fn test_authentication_middelware_valid_token_non_existent_user() {
-        let user1: User = user_with_id(create_user());
-        let user_id = user1.id + 1;
-        let num_token = 1234;
-        let session1 = create_session(user_id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-        // ??
-        let request = test::TestRequest::get().insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let result = call_service2(config_jwt, data_c, handler_with_auth, request).await.err();
-        let err = result.expect("Service call succeeded, but an error was expected.");
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let mut profile = data_c.0.get(0).unwrap().clone();
+        let user_id = profile.user_id;
+        profile.user_id = profile.user_id + 1;
+        let data_c = (vec![profile], data_c.1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(handler_with_auth).configure(configure_auth(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().insert_header(header_auth(&token))
+            .to_request();
+        let result = test::try_call_service(&app, req).await.err();
+        let err = result.expect(MSG_ERROR_WAS_EXPECTED);
 
         let actual_status = err.as_response_error().status_code();
         assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED); // 401
 
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         #[rustfmt::skip]
         assert_eq!(app_err.message, format!("{}: user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id));
     }
     #[test]
     async fn test_authentication_middelware_valid_token_non_existent_num() {
-        let user1: User = user_with_id(create_user());
-        let user_id = user1.id;
-
-        let num_token = 1234;
-        let session1 = create_session(user_id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user_id, num_token + 1, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let request = test::TestRequest::get().insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
-        let result = call_service2(config_jwt, data_c, handler_with_auth, request).await.err();
-        let err = result.expect("Service call succeeded, but an error was expected.");
+        let (cfg_c, data_c, _token) = get_cfg_data();
+        let num_token = data_c.1.get(0).unwrap().num_token.unwrap_or(0);
+        let user_id = data_c.0.get(0).unwrap().user_id;
+        let jwt_secret: &[u8] = cfg_c.jwt_secret.as_bytes();
+        let token = encode_token(user_id, num_token + 1, &jwt_secret, cfg_c.jwt_access).unwrap();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(handler_with_auth).configure(configure_auth(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().insert_header(header_auth(&token))
+            .to_request();
+        let result = test::try_call_service(&app, req).await.err();
+        let err = result.expect(MSG_ERROR_WAS_EXPECTED);
 
         let actual_status = err.as_response_error().status_code();
         assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED); // 401
 
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         #[rustfmt::skip]
         assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id));
     }
     #[test]
     async fn test_authentication_middleware_access_admin_only_endpoint_fail() {
-        let user1: User = user_with_id(create_user());
-        let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let request = test::TestRequest::get().insert_header(header_auth(&token));
-        let data_c = (vec![user1], vec![session1]);
+        let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-        let result = call_service2(config_jwt, data_c, handler_with_requireonlyadmin, request).await.err();
-        let err = result.expect("Service call succeeded, but an error was expected.");
+        let app = test::init_service(
+            App::new().service(handler_with_require_only_admin).configure(configure_auth(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().insert_header(header_auth(&token))
+            .to_request();
+        let result = test::try_call_service(&app, req).await.err();
+        let err = result.expect(MSG_ERROR_WAS_EXPECTED);
 
         let actual_status = err.as_response_error().status_code();
         assert_eq!(actual_status, http::StatusCode::FORBIDDEN); // 403
 
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect("Failed to deserialize JSON string");
+        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
         assert_eq!(app_err.message, err::MSG_ACCESS_DENIED);
     }
