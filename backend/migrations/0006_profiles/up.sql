@@ -1,7 +1,7 @@
 
 /* Create "profiles" table. */
 CREATE TABLE profiles (
-    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     /* Link to user avatar, optional */
     avatar VARCHAR(255) NULL,
     /* user description */
@@ -15,9 +15,6 @@ CREATE TABLE profiles (
 
 SELECT diesel_manage_updated_at('profiles');
 
-/* Create indexes for the "profiles" table. */
-CREATE INDEX idx_profiles_user_id ON profiles(user_id);
-
 /* Add data from the "users" table. */
 INSERT INTO profiles (user_id, created_at, updated_at) 
 (SELECT id, created_at, updated_at FROM users);
@@ -28,6 +25,7 @@ CREATE OR REPLACE FUNCTION get_profile_user(
   OUT user_id INTEGER,
   OUT nickname VARCHAR,
   OUT email VARCHAR,
+  OUT "role" VARCHAR,
   OUT avatar VARCHAR,
   OUT descript VARCHAR,
   OUT theme VARCHAR,
@@ -39,6 +37,7 @@ AS $$
     u.id AS user_id, 
     u.nickname,
     u.email,
+    u."role",
     p.avatar,
     p.descript,
     p.theme,
