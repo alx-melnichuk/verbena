@@ -220,12 +220,12 @@ pub async fn logout(
     session_orm: web::Data<SessionOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get user ID.
-    let user = authenticated.deref().clone();
+    let profile_user = authenticated.deref().clone();
 
     // Clear "num_token" value.
     let opt_session = web::block(move || {
         // Modify the entity (session) with new data. Result <Option<Session>>.
-        let res_session = session_orm.modify_session(user.id, None).map_err(|e| {
+        let res_session = session_orm.modify_session(profile_user.user_id, None).map_err(|e| {
             log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
@@ -238,7 +238,7 @@ pub async fn logout(
     })??;
 
     if opt_session.is_none() {
-        let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, user.id);
+        let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, profile_user.user_id);
         log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
         return Err(AppError::not_acceptable406(&message)); // 406
     }
@@ -398,13 +398,19 @@ mod tests {
     };
     use serde_json::json;
 
-    use crate::extractors::authentication::BEARER;
-    use crate::sessions::{config_jwt, session_models::Session, tokens::encode_token};
-    use crate::users::{
-        user_models::{User, UserModelsTest, UserRole},
-        user_orm::tests::UserOrmApp,
+    use crate::{
+        extractors::authentication::BEARER,
+        profiles::{
+            profile_models::{ProfileUser, PROFILE_DESCRIPT_DEF, PROFILE_THEME_LIGHT_DEF},
+            profile_orm::tests::ProfileOrmApp,
+        },
+        sessions::{config_jwt, session_models::Session, tokens::encode_token},
+        users::{
+            user_models::{User, UserModelsTest, UserRole},
+            user_orm::tests::UserOrmApp,
+        },
     };
-
+    
     use super::*;
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -419,27 +425,23 @@ mod tests {
         let user_orm = UserOrmApp::create(&vec![user]);
         user_orm.user_vec.get(0).unwrap().clone()
     }
+    fn create_profile(user: User) -> ProfileUser {
+        ProfileUser::new(
+            user.id,
+            &user.nickname,
+            &user.email,
+            user.role.clone(),
+            None,
+            PROFILE_DESCRIPT_DEF,
+            PROFILE_THEME_LIGHT_DEF,
+        )
+    }
     fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
     }
-    fn configure_user(
-        config_jwt: config_jwt::ConfigJwt, // configuration
-        data_c: (Vec<User>, Vec<Session>), // cortege of data vectors
-    ) -> impl FnOnce(&mut web::ServiceConfig) {
-        move |config: &mut web::ServiceConfig| {
-            let data_config_jwt = web::Data::new(config_jwt);
-            let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
-            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
-
-            config
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_session_orm));
-        }
-    }
     #[rustfmt::skip]
-    fn get_cfg_data() -> (config_jwt::ConfigJwt, (Vec<User>, Vec<Session>), String) {
+    fn get_cfg_data() -> (config_jwt::ConfigJwt, (Vec<User>, Vec<ProfileUser>, Vec<Session>), String) {
         let user1: User = user_with_id(create_user(
             "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1"));
         let num_token = 1234;
@@ -449,8 +451,29 @@ mod tests {
         // Create token values.
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let data_c = (vec![user1], vec![session1]);
+        // Create profile values.
+        let profile1 = create_profile(user1.clone());
+
+        let data_c = (vec![user1], vec![profile1], vec![session1]);
+        
         (config_jwt, data_c, token)
+    }
+    fn configure_user(
+        config_jwt: config_jwt::ConfigJwt, // configuration
+        data_c: (Vec<User>, Vec<ProfileUser>, Vec<Session>), // cortege of data vectors
+    ) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_config_jwt = web::Data::new(config_jwt);
+            let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.1));
+            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.2));
+
+            config
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .app_data(web::Data::clone(&data_profile_orm))
+                .app_data(web::Data::clone(&data_session_orm));
+        }
     }
     fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
@@ -791,7 +814,8 @@ mod tests {
         let mut user1 = user_with_id(create_user(nickname, &format!("{}@gmail.com", nickname), password));
         user1.password = password.to_string();
         let cfg_c = config_jwt::get_test_config();
-        let data_c = (vec![user1], vec![]);
+        let profile1 = create_profile(user1.clone());
+        let data_c = (vec![user1], vec![profile1], vec![]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login).configure(configure_user(cfg_c, data_c))).await;
@@ -816,9 +840,9 @@ mod tests {
         let nickname = "Robert_Brown";
         let password = "passwdR2B2";
         let user1 = user_with_id(create_user(nickname, &format!("{}@gmail.com", nickname), password));
-
         let cfg_c = config_jwt::get_test_config();
-        let data_c = (vec![user1], vec![]);
+        let profile1 = create_profile(user1.clone());
+        let data_c = (vec![user1], vec![profile1], vec![]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login).configure(configure_user(cfg_c, data_c))).await;
@@ -843,10 +867,10 @@ mod tests {
         let nickname = "Robert_Brown";
         let password = "passwdR2B2";
         let user1 = user_with_id(create_user(nickname, &format!("{}@gmail.com", nickname), password));
-
         let mut cfg_c = config_jwt::get_test_config();
         cfg_c.jwt_secret = "".to_string();
-        let data_c = (vec![user1], vec![]);
+        let profile1 = create_profile(user1.clone());
+        let data_c = (vec![user1], vec![profile1], vec![]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login).configure(configure_user(cfg_c, data_c))).await;
@@ -871,9 +895,9 @@ mod tests {
         let password = "passwdR2B2";
         let user1 = user_with_id(create_user(nickname, &format!("{}@gmail.com", nickname), password));
         let user1_id = user1.id;
-
         let cfg_c = config_jwt::get_test_config();
-        let data_c = (vec![user1], vec![]);
+        let profile1 = create_profile(user1.clone());
+        let data_c = (vec![user1], vec![profile1], vec![]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login).configure(configure_user(cfg_c, data_c))).await;
@@ -902,8 +926,9 @@ mod tests {
         let num_token = 1234;
         let session1 = SessionOrmApp::new_session(user1.id, Some(num_token));
         let cfg_c = config_jwt::get_test_config();
+        let profile1 = create_profile(user1.clone());
+        let data_c = (vec![user1], vec![profile1], vec![session1]);
         let jwt_access = cfg_c.jwt_access;
-        let data_c = (vec![user1], vec![session1]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login).configure(configure_user(cfg_c, data_c))).await;
