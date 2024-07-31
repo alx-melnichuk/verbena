@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use crate::schema;
+use crate::users::user_models::{User, UserRole};
 use crate::utils::serial_datetime;
 
 // ** Section: database "profiles" **
@@ -55,6 +56,9 @@ pub struct ProfileUser {
     #[diesel(sql_type = diesel::sql_types::Text)]
     #[diesel(column_name = "email")]
     pub email: String,
+    #[diesel(sql_type = crate::schema::sql_types::UserRole)]
+    #[diesel(column_name = "role")]
+    pub role: UserRole,
     pub avatar: Option<String>,
     pub descript: String,
     pub theme: String,
@@ -67,6 +71,7 @@ impl ProfileUser {
         user_id: i32,
         nickname: &str,
         email: &str,
+        role: UserRole,
         avatar: Option<&str>,
         descript: &str,
         theme: &str,
@@ -76,11 +81,23 @@ impl ProfileUser {
             user_id,
             nickname: nickname.to_string(),
             email: email.to_string(),
+            role,
             avatar: avatar.map(|v| v.to_string()),
             descript: descript.to_string(),
             theme: theme.to_string(),
             created_at: now.clone(),
             updated_at: now.clone(),
+        }
+    }
+    pub fn to_user(&self) -> User {
+        User {
+            id: self.user_id,
+            nickname: self.nickname.to_string(),
+            email: self.email.to_string(),
+            password: "".to_string(),
+            created_at: self.created_at.clone(),
+            updated_at: self.updated_at.clone(),
+            role: self.role.clone(),
         }
     }
 }
@@ -89,17 +106,14 @@ impl ProfileUser {
 #[serde(rename_all = "camelCase")]
 pub struct ProfileUserDto {
     pub id: i32,
-    #[schema(example = "Emma_Johnson2")]
     pub nickname: String,
-    #[schema(example = "Emma_Johnson2@gmail.us")]
     pub email: String,
+    pub role: UserRole,
     // Link to user avatar, optional
     pub avatar: Option<String>, // min_len=2 max_len=255 Nullable
     // User description.
-    #[schema(example = "Description Emma_Johnson2")]
     pub descript: String, // type: Text default ""
     // Default color theme. ["light","dark"]
-    #[schema(example = "light")]
     pub theme: String, // min_len=2 max_len=32 default "light"
     #[serde(with = "serial_datetime")]
     pub created_at: DateTime<Utc>,
@@ -113,6 +127,7 @@ impl ProfileUserDto {
             id: profile_user.user_id,
             nickname: profile_user.nickname,
             email: profile_user.email,
+            role: profile_user.role.clone(),
             avatar: profile_user.avatar.clone(),
             descript: profile_user.descript.clone(),
             theme: profile_user.theme.clone(),
