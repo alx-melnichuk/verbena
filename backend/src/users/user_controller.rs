@@ -308,11 +308,11 @@ pub async fn delete_user(
 )]
 #[rustfmt::skip]
 #[get("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn get_user_current(
+pub async fn get_user_current( // TODO replace on "get_profile_current"
     authenticated: Authenticated,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let user = authenticated.deref();
-    let user_dto = user_models::UserDto::from(user.clone());
+    let profile_user = authenticated.deref();
+    let user_dto = user_models::UserDto::from(profile_user.clone().to_user());
 
     Ok(HttpResponse::Ok().json(user_dto)) // 200
 }
@@ -366,8 +366,8 @@ pub async fn put_user_new_password(
     json_body: web::Json<NewPasswordUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // 1.308634s
-    let user = authenticated.deref();
-    let id = user.id;
+    let profile_user = authenticated.deref();
+    let id = profile_user.user_id;
 
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
@@ -386,8 +386,8 @@ pub async fn put_user_new_password(
     })?;
 
     // Get the user's current password.
-    let nickname = user.nickname.clone();
-    let email = user.nickname.clone();
+    let nickname = profile_user.nickname.clone();
+    let email = profile_user.nickname.clone();
     let user_orm2 = user_orm.clone();
     let user2 = web::block(move || {
         // Find user by nickname or email.
@@ -480,8 +480,8 @@ pub async fn delete_user_current(
     authenticated: Authenticated,
     user_orm: web::Data<UserOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let user = authenticated.deref();
-    let id = user.id;
+    let profile_user = authenticated.deref();
+    let id = profile_user.user_id;
 
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.
@@ -515,12 +515,16 @@ mod tests {
     };
     use chrono::{DateTime, Duration, Utc};
 
-    use crate::errors::AppError;
-    use crate::extractors::authentication::BEARER;
-    use crate::sessions::{
-        config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
+    use crate::{
+        errors::AppError,
+        extractors::authentication::BEARER,
+        profiles::{
+            profile_models::{ProfileUser, ProfileUserDto, PROFILE_DESCRIPT_DEF, PROFILE_THEME_LIGHT_DEF},
+            profile_orm::tests::ProfileOrmApp,
+        },
+        sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token},
+        users::user_models::{User, UserDto, UserModelsTest, UserRegistr, UserRole},
     };
-    use crate::users::user_models::{User, UserDto, UserModelsTest, UserRegistr, UserRole};
 
     use super::*;
 
@@ -540,6 +544,17 @@ mod tests {
         let user_orm = UserOrmApp::create(&vec![user]);
         user_orm.user_vec.get(0).unwrap().clone()
     }
+    fn create_profile(user: User) -> ProfileUser {
+        ProfileUser::new(
+            user.id,
+            &user.nickname,
+            &user.email,
+            user.role.clone(),
+            None,
+            PROFILE_DESCRIPT_DEF,
+            PROFILE_THEME_LIGHT_DEF,
+        )
+    }
     fn create_user_registr() -> UserRegistr {
         let now = Utc::now();
         let final_date: DateTime<Utc> = now + Duration::minutes(20);
@@ -556,25 +571,12 @@ mod tests {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
     }
-    fn configure_user(
-        config_jwt: config_jwt::ConfigJwt,                   // configuration
-        data_c: (Vec<User>, Vec<Session>, Vec<UserRegistr>), // cortege of data vectors
-    ) -> impl FnOnce(&mut web::ServiceConfig) {
-        move |config: &mut web::ServiceConfig| {
-            let data_config_jwt = web::Data::new(config_jwt);
-            let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
-            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
-            let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.2));
-
-            config
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_session_orm))
-                .app_data(web::Data::clone(&data_user_registr_orm));
-        }
-    }
     #[rustfmt::skip]
-    fn get_cfg_data(is_registr: bool) -> (config_jwt::ConfigJwt, (Vec<User>, Vec<Session>, Vec<UserRegistr>), String) {
+    fn get_cfg_data(is_registr: bool) -> (
+        config_jwt::ConfigJwt, 
+        (Vec<User>, Vec<ProfileUser>, Vec<Session>, Vec<UserRegistr>),
+        String
+    ) {
         let user1: User = user_with_id(create_user(true));
         let num_token = 1234;
         let session1 = SessionOrmApp::new_session(user1.id, Some(num_token));
@@ -583,14 +585,35 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        // Create profile values.
+        let profile1 = create_profile(user1.clone());
 
         let user_registr_vec:Vec<UserRegistr> = if is_registr {
             vec![user_registr_with_id(create_user_registr())]
         } else { vec![] };
 
-        let data_c = (vec![user1], vec![session1], user_registr_vec);
+        let data_c = (vec![user1], vec![profile1], vec![session1], user_registr_vec);
 
         (config_jwt, data_c, token)
+    }
+    fn configure_user(
+        config_jwt: config_jwt::ConfigJwt,                                     // configuration
+        data_c: (Vec<User>, Vec<ProfileUser>, Vec<Session>, Vec<UserRegistr>), // cortege of data vectors
+    ) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_config_jwt = web::Data::new(config_jwt);
+            let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.1));
+            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.2));
+            let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.3));
+
+            config
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .app_data(web::Data::clone(&data_profile_orm))
+                .app_data(web::Data::clone(&data_session_orm))
+                .app_data(web::Data::clone(&data_user_registr_orm));
+        }
     }
     fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
@@ -738,7 +761,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_existent_registr_nickname() {
         let (cfg_c, data_c, _token) = get_cfg_data(true);
-        let nickname = data_c.2.get(0).unwrap().nickname.clone();
+        let nickname = data_c.3.get(0).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check).configure(configure_user(cfg_c, data_c))).await;
@@ -757,7 +780,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_existent_registr_email99() {
         let (cfg_c, data_c, _token) = get_cfg_data(true);
-        let email = data_c.2.get(0).unwrap().email.clone();
+        let email = data_c.3.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check).configure(configure_user(cfg_c, data_c))).await;
@@ -782,7 +805,8 @@ mod tests {
         let user1 = user_vec.get_mut(0).unwrap();
         user1.role = UserRole::Admin;
         let user_id_bad = format!("{}a", user1.id);
-        let data_c = (user_vec, data_c.1, vec![]);
+        let profile1 = create_profile(user1.clone());
+        let data_c = (user_vec, vec![profile1], data_c.2, vec![]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_user_by_id).configure(configure_user(cfg_c, data_c))).await;
@@ -807,13 +831,15 @@ mod tests {
         let mut user1 = data_c.0.get(0).unwrap().clone();
         user1.role = UserRole::Admin;
         let user_orm = UserOrmApp::create(&vec![
-            user1,
+            user1.clone(),
             UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
         ]);
         let user_vec = user_orm.user_vec.clone();
         let user2 = user_vec.get(1).unwrap().clone();
         let user2_dto = UserDto::from(user2.clone());
-        let data_c = (user_vec, data_c.1, data_c.2);
+        let profile1 = create_profile(user1.clone());
+        let profile2 = create_profile(user2.clone());
+        let data_c = (user_vec, vec![profile1, profile2], data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_user_by_id).configure(configure_user(cfg_c, data_c))).await;
@@ -838,12 +864,14 @@ mod tests {
         let mut user1 = data_c.0.get(0).unwrap().clone();
         user1.role = UserRole::Admin;
         let user_orm = UserOrmApp::create(&vec![
-            user1,
+            user1.clone(),
             UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
         ]);
         let user_vec = user_orm.user_vec.clone();
         let user2 = user_vec.get(1).unwrap().clone();
-        let data_c = (user_vec, data_c.1, data_c.2);
+        let profile1 = create_profile(user1.clone());
+        let profile2 = create_profile(user2.clone());
+        let data_c = (user_vec, vec![profile1, profile2], data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_user_by_id).configure(configure_user(cfg_c, data_c))).await;
@@ -862,7 +890,8 @@ mod tests {
         let user1 = user_vec.get_mut(0).unwrap();
         user1.role = UserRole::Admin;
         let user_id_bad = format!("{}a", user1.id);
-        let data_c = (user_vec, data_c.1, data_c.2);
+        let profile1 = create_profile(user1.clone());
+        let data_c = (user_vec, vec![profile1], data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_user).configure(configure_user(cfg_c, data_c))).await;
@@ -888,7 +917,8 @@ mod tests {
         let user1 = user_vec.get_mut(0).unwrap();
         user1.role = UserRole::Admin;
         let user_id = user1.id;
-        let data_c = (user_vec, data_c.1, data_c.2);
+        let profile1 = create_profile(user1.clone());
+        let data_c = (user_vec, vec![profile1], data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_user).configure(configure_user(cfg_c, data_c))).await;
@@ -905,7 +935,8 @@ mod tests {
         let user1 = user_vec.get_mut(0).unwrap();
         user1.role = UserRole::Admin;
         let user1copy_dto = UserDto::from(user1.clone());
-        let data_c = (user_vec, data_c.1, data_c.2);
+        let profile1 = create_profile(user1.clone());
+        let data_c = (user_vec, vec![profile1], data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_user).configure(configure_user(cfg_c, data_c))).await;
@@ -938,6 +969,8 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data(false);
         let user1 = data_c.0.get(0).unwrap().clone();
         let user1_dto = UserDto::from(user1);
+        let profile1 = data_c.1.get(0).unwrap().clone();
+        let profile1_dto = ProfileUserDto::from(profile1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_user_current).configure(configure_user(cfg_c, data_c))).await;
@@ -953,9 +986,18 @@ mod tests {
         let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(user1_dto).to_string();
         let user1b_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let json2 = serde_json::json!(profile1_dto).to_string();
+        let profile1_dto_ser: ProfileUserDto = serde_json::from_slice(json2.as_bytes()).expect(MSG_FAILED_DESER);
 
-        assert_eq!(user_dto_res, user1b_dto_ser);
+        // assert_eq!(user_dto_res, user1b_dto_ser); // TODO
+        assert_eq!(user_dto_res.id, user1b_dto_ser.id);
+        assert_eq!(user_dto_res.nickname, user1b_dto_ser.nickname);
+        assert_eq!(user_dto_res.email, user1b_dto_ser.email);
+        assert_eq!(user_dto_res.password, user1b_dto_ser.password);
         assert_eq!(user_dto_res.password, "");
+        assert_eq!(user_dto_res.role, user1b_dto_ser.role);
+        assert_eq!(user_dto_res.created_at, profile1_dto_ser.created_at);
+        assert_eq!(user_dto_res.updated_at, profile1_dto_ser.updated_at);
     }
 
     // ** put_user_new_password **
@@ -1216,9 +1258,8 @@ mod tests {
     async fn test_put_user_new_password_invalid_hash_password() {
         let user1 = user_with_id(create_user(false));
         let old_password = user1.password.clone();
-        // let old_password = user_with_id(create_user(false)).password;
         let (cfg_c, data_c, token) = get_cfg_data(false);
-        let data_c = (vec![user1], data_c.1, data_c.2);
+        let data_c = (vec![user1], data_c.1, data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_user_new_password).configure(configure_user(cfg_c, data_c))).await;
