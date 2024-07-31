@@ -1,5 +1,6 @@
 use crate::utils::parser::parse_bool;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct ConfigSmtp {
     pub smtp_host: String,
