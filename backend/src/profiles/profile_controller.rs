@@ -14,6 +14,7 @@ use crate::{
         profile_orm::ProfileOrm,
     },
     settings::err,
+    users::user_models::UserRole,
 };
 
 #[cfg(not(feature = "mockdata"))]
@@ -48,12 +49,13 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             examples(
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(ProfileUserDto::from(
-                    ProfileUser::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", Some("/avatar/1234151234.png"),
+                    ProfileUser::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
                         "Description Emma_Johnson", PROFILE_THEME_LIGHT_DEF))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
                 value = json!(ProfileUserDto::from(
-                    ProfileUser::new(2, "James_Miller", "James_Miller@gmail.us", None, PROFILE_DESCRIPT_DEF, PROFILE_THEME_DARK))
+                    ProfileUser::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, PROFILE_DESCRIPT_DEF,
+                        PROFILE_THEME_DARK))
             )))),
         ),
         (status = 204, description = "The current user was not found."),
@@ -74,8 +76,8 @@ pub async fn get_profile_current(
     authenticated: Authenticated,
     profile_orm: web::Data<ProfileOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let user = authenticated.deref();
-    let user_id = user.id;
+    let profile_user0 = authenticated.deref();
+    let user_id = profile_user0.user_id;
 
     let opt_profile_user = web::block(move || {
         // Find profile by user id.
@@ -108,17 +110,16 @@ mod tests {
         http::header::{HeaderValue, CONTENT_TYPE},
         test, web, App,
     };
-    // use chrono::{DateTime, Duration, Utc};
 
-    use crate::users::{
-        user_models::{User, UserDto, UserRole},
-        user_orm::tests::UserOrmApp,
-    };
-    // use crate::{errors::AppError, hash_tools};
     use crate::{
         extractors::authentication::BEARER,
         hash_tools,
+        profiles::profile_models::{PROFILE_DESCRIPT_DEF, PROFILE_THEME_LIGHT_DEF},
         sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token},
+        users::{
+            user_models::{User, UserDto, UserRole},
+            user_orm::tests::UserOrmApp,
+        },
     };
 
     use super::*;
@@ -140,35 +141,22 @@ mod tests {
         user_orm.user_vec.get(0).unwrap().clone()
     }
     fn create_profile(user: User) -> ProfileUser {
-        ProfileOrmApp::new_profile_user(user.id, &user.nickname, &user.email)
-    }
-    fn profile_with_id(profile_user: ProfileUser) -> ProfileUser {
-        let profile_orm = ProfileOrmApp::create(&vec![profile_user]);
-        profile_orm.profile_user_vec.get(0).unwrap().clone()
+        ProfileUser::new(
+            user.id,
+            &user.nickname,
+            &user.email,
+            user.role.clone(),
+            None,
+            PROFILE_DESCRIPT_DEF,
+            PROFILE_THEME_LIGHT_DEF,
+        )
     }
     fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
     }
-    fn configure_profile(
-        config_jwt: config_jwt::ConfigJwt,                   // configuration
-        data_c: (Vec<User>, Vec<Session>, Vec<ProfileUser>), // cortege of data vectors
-    ) -> impl FnOnce(&mut web::ServiceConfig) {
-        move |config: &mut web::ServiceConfig| {
-            let data_config_jwt = web::Data::new(config_jwt);
-            let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
-            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
-            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.2));
-
-            config
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_session_orm))
-                .app_data(web::Data::clone(&data_profile_orm));
-        }
-    }
     #[rustfmt::skip]
-    fn get_cfg_data() -> (config_jwt::ConfigJwt, (Vec<User>, Vec<Session>, Vec<ProfileUser>), String) {
+    fn get_cfg_data() -> (config_jwt::ConfigJwt, (Vec<User>, Vec<ProfileUser>, Vec<Session>), String) {
         let user1: User = user_with_id(create_user(true));
         let num_token = 1234;
         let session1 = SessionOrmApp::new_session(user1.id, Some(num_token));
@@ -178,35 +166,38 @@ mod tests {
         // Create token values.
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         // Create profile values.
-        let profile1 = profile_with_id(create_profile(user1.clone()));
+        let profile1 = create_profile(user1.clone());
 
-        let data_c = (vec![user1], vec![session1], vec![profile1]);
+        let data_c = (vec![user1], vec![profile1], vec![session1]);
 
         (config_jwt, data_c, token)
     }
 
-    // ** get_profile_current **
-    #[actix_web::test]
-    async fn test_get_profile_current_bad_user_id() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        let mut profile1 = data_c.2.get(0).unwrap().clone();
-        profile1.user_id = profile1.user_id + 100;
-        let data_c = (data_c.0, data_c.1, vec![profile1]);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_profile_current).configure(configure_profile(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri("/api/profiles_current")
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
+    fn configure_profile(
+        config_jwt: config_jwt::ConfigJwt,                   // configuration
+        data_c: (Vec<User>, Vec<ProfileUser>, Vec<Session>), // cortege of data vectors
+    ) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_config_jwt = web::Data::new(config_jwt);
+            let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.1));
+            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.2));
+
+            config
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_user_orm))
+                .app_data(web::Data::clone(&data_session_orm))
+                .app_data(web::Data::clone(&data_profile_orm));
+        }
     }
+
+    // ** get_profile_current **
     #[actix_web::test]
     async fn test_get_profile_current_valid_token() {
         let (cfg_c, data_c, token) = get_cfg_data();
         let user1 = data_c.0.get(0).unwrap().clone();
         let user1_dto = UserDto::from(user1);
-        let profile1 = data_c.2.get(0).unwrap().clone();
+        let profile1 = data_c.1.get(0).unwrap().clone();
         let profile1_dto = ProfileUserDto::from(profile1);
         #[rustfmt::skip]
         let app = test::init_service(

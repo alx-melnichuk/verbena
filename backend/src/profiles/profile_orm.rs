@@ -84,7 +84,7 @@ pub mod impls {
 pub mod tests {
     use chrono::{Duration, Utc};
 
-    use crate::profiles::profile_models;
+    use crate::{profiles::profile_models, users::user_models::UserRole};
 
     use super::*;
 
@@ -109,6 +109,7 @@ pub mod tests {
                     user_id: profile_user.user_id,
                     nickname: profile_user.nickname.to_lowercase(),
                     email: profile_user.email.to_lowercase(),
+                    role: profile_user.role.clone(),
                     avatar: profile_user.avatar.clone(),
                     descript: profile_user.descript.to_string(),
                     theme: profile_user.theme.to_string(),
@@ -127,6 +128,7 @@ pub mod tests {
                 user_id,
                 nickname: nickname.to_lowercase(),
                 email: email.to_lowercase(),
+                role: UserRole::User,
                 avatar: None,
                 descript: profile_models::PROFILE_DESCRIPT_DEF.to_string(),
                 theme: profile_models::PROFILE_THEME_LIGHT_DEF.to_string(),
