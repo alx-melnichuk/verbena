@@ -60,26 +60,26 @@ pub mod impls {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to find user by id and return it.
-            let session_opt: Option<Session> = schema::sessions::table
+            let opt_session: Option<Session> = schema::sessions::table
                 .filter(schema::sessions::dsl::user_id.eq(user_id))
                 .first::<Session>(&mut conn)
                 .optional()
                 .map_err(|e| format!("find_session_by_id: {}", e.to_string()))?;
 
-            Ok(session_opt)
+            Ok(opt_session)
         }
         /// Add a new session entry.
         fn create_session(&self, session: Session) -> Result<Session, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to add a new session entry.
-            let session: Session = diesel::insert_into(schema::sessions::table)
+            let result: Session = diesel::insert_into(schema::sessions::table)
                 .values(session)
                 .returning(Session::as_returning())
                 .get_result(&mut conn)
                 .map_err(|e| format!("create_session: {}", e.to_string()))?;
 
-            Ok(session)
+            Ok(result)
         }
         /// Perform a full or partial change to a session record.
         fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
@@ -134,13 +134,13 @@ pub mod tests {
     impl SessionOrm for SessionOrmApp {
         /// Find for an entity (session) by id.
         fn find_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
-            let session_opt: Option<Session> = self
+            let opt_session: Option<Session> = self
                 .session_vec
                 .iter()
                 .find(|session| session.user_id == user_id)
                 .map(|session| session.clone());
 
-            Ok(session_opt)
+            Ok(opt_session)
         }
         /// Add a new entity (session).
         fn create_session(&self, session: Session) -> Result<Session, String> {
@@ -156,8 +156,8 @@ pub mod tests {
         }
         /// Modify the entity (session).
         fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
-            let session_opt: Option<Session> = self.find_session_by_id(user_id)?;
-            let mut res_session = match session_opt {
+            let opt_session: Option<Session> = self.find_session_by_id(user_id)?;
+            let mut res_session = match opt_session {
                 Some(v) => v,
                 None => {
                     return Ok(None);
