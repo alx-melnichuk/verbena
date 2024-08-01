@@ -249,8 +249,8 @@ pub mod tests {
             let user_id = create_user_recovery_dto.user_id;
             let final_date = create_user_recovery_dto.final_date.clone();
 
-            let res_user1_opt: Option<UserRecovery> = self.find_user_recovery_by_user_id(user_id)?;
-            if res_user1_opt.is_some() {
+            let opt_res_user1: Option<UserRecovery> = self.find_user_recovery_by_user_id(user_id)?;
+            if opt_res_user1.is_some() {
                 return Err("\"User recovery\" already exists.".to_string());
             }
 
