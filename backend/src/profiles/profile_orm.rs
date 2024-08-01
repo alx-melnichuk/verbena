@@ -65,8 +65,6 @@ pub mod impls {
 
             let query = diesel::sql_query("select * from get_profile_user($1);").bind::<sql_types::Integer, _>(user_id);
 
-            // query.get_results::<Option<ProfileUser>>(&conn)
-
             // Run query using Diesel to find user by id (and user_id) and return it.
             let opt_profile_user = query
                 .get_result::<ProfileUser>(&mut conn)
