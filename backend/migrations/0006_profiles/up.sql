@@ -47,3 +47,32 @@ AS $$
   FROM users u, profiles p
   WHERE u.id = id1 AND u.id = p.user_id;
 $$;
+
+-- call create_user2('nickname1', 'email1','passwd1','user');
+
+/* Create a stored procedure to add a new user. */
+CREATE OR REPLACE PROCEDURE create_user2(
+  IN _nickname VARCHAR,
+  IN _email VARCHAR,
+  IN _password VARCHAR,
+  IN _role user_role,
+  INOUT "id" INTEGER DEFAULT NULL,
+  INOUT nickname VARCHAR DEFAULT NULL,
+  INOUT email VARCHAR DEFAULT NULL,
+  INOUT "password" VARCHAR DEFAULT NULL,
+  INOUT "role" VARCHAR DEFAULT NULL,
+  INOUT created_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+  INOUT updated_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
+) LANGUAGE 'plpgsql'
+AS $$
+BEGIN
+  INSERT INTO users (nickname, email, "password", "role")
+  VALUES (_nickname, _email, _password, _role)
+  RETURNING
+      users.id, users.nickname, users.email, users."password", users."role", users.created_at, users.updated_at
+    INTO 
+      "id", nickname, email, "password", "role", created_at, updated_at;
+
+  RETURN;
+END ;
+$$;

@@ -291,7 +291,6 @@ pub async fn confirm_registration(
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     user_orm: web::Data<UserOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
-    profile_orm: web::Data<ProfileOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let registr_token = request.match_info().query("registr_token").to_string();
 
@@ -338,7 +337,10 @@ pub async fn confirm_registration(
 
     let user_registr_orm2 = user_registr_orm.clone();
     // If such an entry exists, then add a new user.
-    let create_user_dto = user_models::CreateUserDto {
+    let create_user = user_models::CreateUser::new(
+        &user_registr.nickname, &user_registr.email, &user_registr.password, None
+    );
+    let _create_user_dto = user_models::CreateUserDto {
         nickname: user_registr.nickname,
         email: user_registr.email,
         password: user_registr.password,
@@ -346,7 +348,7 @@ pub async fn confirm_registration(
 
     let user = web::block(move || {
         // Create a new entity (user).
-        let user_res = user_orm.create_user(create_user_dto).map_err(|e| {
+        let user_res = user_orm.create_user2(create_user).map_err(|e| {
             log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
@@ -359,12 +361,12 @@ pub async fn confirm_registration(
     })??;
 
     let _ = web::block(move || {
-        let profile: Profile = Profile::new(user.id, None, None, None);
-        // Create a new entity (profile).
-        let res_profile = profile_orm.create_profile(profile).map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
-        });
+        // let profile: Profile = Profile::new(user.id, None, None, None);
+        // // Create a new entity (profile).
+        // let res_profile = profile_orm.create_profile(profile).map_err(|e| {
+        //     log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+        //     AppError::database507(&e)
+        // });
         let session = Session { user_id: user.id, num_token: None };
         // Create a new entity (session).
         let session_res = session_orm.create_session(session).map_err(|e| {
@@ -373,7 +375,7 @@ pub async fn confirm_registration(
         });
         user_registr_orm2.delete_user_registr(user_registr_id).ok();
 
-        (res_profile, session_res)
+        session_res // (res_profile, session_res)
     })
     .await
     .map_err(|e| {

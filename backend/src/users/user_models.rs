@@ -115,7 +115,7 @@ impl UserRole {
 
 // ** Section: database "users" **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName, Queryable, Selectable)]
 #[diesel(table_name = schema::users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct User {
@@ -206,12 +206,34 @@ impl Validator for NewPasswordUserDto {
     }
 }
 
+// **  Section: table "streams" data creation **
+
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
+#[diesel(table_name = schema::users)]
+pub struct CreateUser {
+    pub nickname: String,       // min_len=3 max_len=64
+    pub email: String,          // min_len=5 max_len=254
+    pub password: String,       // min_len=6 max_len=64
+    pub role: Option<UserRole>, // default "user"
+}
+
+impl CreateUser {
+    pub fn new(nickname: &str, email: &str, password: &str, role: Option<UserRole>) -> CreateUser {
+        CreateUser {
+            nickname: nickname.to_string(),
+            email: email.to_string(),
+            password: password.to_string(),
+            role: role.clone(),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
 #[diesel(table_name = schema::users)]
 pub struct CreateUserDto {
-    pub nickname: String,
-    pub email: String,
-    pub password: String,
+    pub nickname: String, // min_len=3 max_len=64
+    pub email: String,    // min_len=5 max_len=254
+    pub password: String, // min_len=6 max_len=64
 }
 
 impl Validator for CreateUserDto {
