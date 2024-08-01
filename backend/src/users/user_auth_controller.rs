@@ -398,17 +398,15 @@ mod tests {
     };
     use serde_json::json;
 
-    use crate::{
-        extractors::authentication::BEARER,
-        profiles::{
-            profile_models::{ProfileUser, PROFILE_DESCRIPT_DEF, PROFILE_THEME_LIGHT_DEF},
-            profile_orm::tests::ProfileOrmApp,
-        },
-        sessions::{config_jwt, session_models::Session, tokens::encode_token},
-        users::{
-            user_models::{User, UserModelsTest, UserRole},
-            user_orm::tests::UserOrmApp,
-        },
+    use crate::extractors::authentication::BEARER;
+    use crate::profiles::{
+        profile_models::{ProfileUser, PROFILE_DESCRIPT_DEF, PROFILE_THEME_LIGHT_DEF},
+        profile_orm::tests::ProfileOrmApp,
+    };
+    use crate::sessions::{config_jwt, session_models::Session, tokens::encode_token};
+    use crate::users::{
+        user_models::{User, UserModelsTest, UserRole},
+        user_orm::tests::UserOrmApp,
     };
     
     use super::*;
