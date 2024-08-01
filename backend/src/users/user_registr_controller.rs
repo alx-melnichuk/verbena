@@ -4,6 +4,11 @@ use utoipa;
 
 use crate::hash_tools;
 #[cfg(not(feature = "mockdata"))]
+use crate::profiles::profile_orm::impls::ProfileOrmApp;
+#[cfg(feature = "mockdata")]
+use crate::profiles::profile_orm::tests::ProfileOrmApp;
+use crate::profiles::{profile_models::Profile, profile_orm::ProfileOrm};
+#[cfg(not(feature = "mockdata"))]
 use crate::send_email::mailer::impls::MailerApp;
 #[cfg(feature = "mockdata")]
 use crate::send_email::mailer::tests::MailerApp;
@@ -286,6 +291,7 @@ pub async fn confirm_registration(
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     user_orm: web::Data<UserOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
+    profile_orm: web::Data<ProfileOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let registr_token = request.match_info().query("registr_token").to_string();
 
@@ -352,11 +358,14 @@ pub async fn confirm_registration(
         AppError::blocking506(&e.to_string())
     })??;
 
-    let session = Session {
-        user_id: user.id,
-        num_token: None,
-    };
     let _ = web::block(move || {
+        let profile: Profile = Profile::new(user.id, None, None, None);
+        // Create a new entity (profile).
+        let res_profile = profile_orm.create_profile(profile).map_err(|e| {
+            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        });
+        let session = Session { user_id: user.id, num_token: None };
         // Create a new entity (session).
         let session_res = session_orm.create_session(session).map_err(|e| {
             log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
@@ -364,7 +373,7 @@ pub async fn confirm_registration(
         });
         user_registr_orm2.delete_user_registr(user_registr_id).ok();
 
-        session_res
+        (res_profile, session_res)
     })
     .await
     .map_err(|e| {
@@ -758,6 +767,8 @@ pub async fn confirm_recovery(
     responses(
         (status = 200, description = "The number of deleted user registration and expired password recovery records.",
             body = ClearForExpiredResponseDto),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -820,6 +831,7 @@ mod tests {
     use serde_json::json;
 
     use crate::errors::AppError;
+    use crate::profiles::profile_models::{ProfileUser, PROFILE_DESCRIPT_DEF, PROFILE_THEME_LIGHT_DEF};
     use crate::extractors::authentication::BEARER;
     use crate::send_email::config_smtp;
     use crate::sessions::{config_jwt, tokens::decode_token};
@@ -846,6 +858,17 @@ mod tests {
     fn user_with_id(user: User) -> User {
         let user_orm = UserOrmApp::create(&vec![user]);
         user_orm.user_vec.get(0).unwrap().clone()
+    }
+    fn create_profile(user: User) -> ProfileUser {
+        ProfileUser::new(
+            user.id,
+            &user.nickname,
+            &user.email,
+            user.role.clone(),
+            None,
+            PROFILE_DESCRIPT_DEF,
+            PROFILE_THEME_LIGHT_DEF,
+        )
     }
     fn create_user_registr() -> UserRegistr {
         let now = Utc::now();
@@ -875,34 +898,10 @@ mod tests {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
     }
-    fn configure_user(
-        cfg_c: (config_app::ConfigApp, config_jwt::ConfigJwt), // cortege of configurations
-        data_c: (Vec<User>, Vec<Session>, Vec<UserRegistr>, Vec<UserRecovery>), // cortege of data vectors
-    ) -> impl FnOnce(&mut web::ServiceConfig) {
-        move |config: &mut web::ServiceConfig| {
-            let data_config_app = web::Data::new(cfg_c.0);
-            let data_config_jwt = web::Data::new(cfg_c.1);
-            let data_mailer = web::Data::new(MailerApp::new(config_smtp::get_test_config()));
-    
-            let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
-            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
-            let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.2));
-            let data_user_recovery_orm = web::Data::new(UserRecoveryOrmApp::create(&data_c.3));
-    
-            config
-                .app_data(web::Data::clone(&data_config_app))
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_mailer))
-                .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_session_orm))
-                .app_data(web::Data::clone(&data_user_registr_orm))
-                .app_data(web::Data::clone(&data_user_recovery_orm));
-        }
-    }
     #[rustfmt::skip]
     fn get_cfg_data(is_registr: bool, opt_recovery_duration: Option<i64>) -> (
         (config_app::ConfigApp, config_jwt::ConfigJwt), 
-        (Vec<User>, Vec<Session>, Vec<UserRegistr>, Vec<UserRecovery>),
+        (Vec<User>, Vec<ProfileUser>, Vec<Session>, Vec<UserRegistr>, Vec<UserRecovery>),
         String) {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
@@ -912,6 +911,8 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
         let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        // Create profile values.
+        let profile1 = create_profile(user1.clone());
 
         let config_app = config_app::get_test_config();
 
@@ -928,9 +929,35 @@ mod tests {
         } else { vec![] };
         
         let cfg_c = (config_app, config_jwt);
-        let data_c = (vec![user1], vec![session1], user_registr_vec,  user_recovery_vec);
+        let data_c = (vec![user1], vec![profile1], vec![session1], user_registr_vec,  user_recovery_vec);
 
         (cfg_c, data_c, token)
+    }
+    fn configure_user(
+        cfg_c: (config_app::ConfigApp, config_jwt::ConfigJwt), // cortege of configurations
+        data_c: (Vec<User>, Vec<ProfileUser>, Vec<Session>, Vec<UserRegistr>, Vec<UserRecovery>), // cortege of data vectors
+    ) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_config_app = web::Data::new(cfg_c.0);
+            let data_config_jwt = web::Data::new(cfg_c.1);
+            let data_mailer = web::Data::new(MailerApp::new(config_smtp::get_test_config()));
+    
+            let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.1));
+            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.2));
+            let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.3));
+            let data_user_recovery_orm = web::Data::new(UserRecoveryOrmApp::create(&data_c.4));
+    
+            config
+                .app_data(web::Data::clone(&data_config_app))
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_mailer))
+                .app_data(web::Data::clone(&data_user_orm))
+                .app_data(web::Data::clone(&data_profile_orm))
+                .app_data(web::Data::clone(&data_session_orm))
+                .app_data(web::Data::clone(&data_user_registr_orm))
+                .app_data(web::Data::clone(&data_user_recovery_orm));
+        }
     }
     fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
@@ -1314,8 +1341,8 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_registr() {
         let (cfg_c, data_c, _token) = get_cfg_data(true, None);
-        let nickname1 = data_c.2.get(0).unwrap().nickname.clone();
-        let email1 = data_c.2.get(0).unwrap().email.clone();
+        let nickname1 = data_c.3.get(0).unwrap().nickname.clone();
+        let email1 = data_c.3.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
@@ -1338,8 +1365,8 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_registr() {
         let (cfg_c, data_c, _token) = get_cfg_data(true, None);
-        let nickname1 = data_c.2.get(0).unwrap().nickname.clone();
-        let email1 = data_c.2.get(0).unwrap().email.clone();
+        let nickname1 = data_c.3.get(0).unwrap().nickname.clone();
+        let email1 = data_c.3.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration).configure(configure_user(cfg_c, data_c))).await;
@@ -1440,7 +1467,7 @@ mod tests {
     #[actix_web::test]
     async fn test_confirm_registration_final_date_has_expired() {
         let (cfg_c, data_c, _token) = get_cfg_data(true, None);
-        let user_reg1 = data_c.2.get(0).unwrap().clone();
+        let user_reg1 = data_c.3.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
         let num_token = 1234;
@@ -1470,7 +1497,7 @@ mod tests {
     #[actix_web::test]
     async fn test_confirm_registration_no_exists_in_user_regist() {
         let (cfg_c, data_c, _token) = get_cfg_data(true, None);
-        let user_reg1 = data_c.2.get(0).unwrap().clone();
+        let user_reg1 = data_c.3.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
         let num_token = 1234;
@@ -1503,7 +1530,7 @@ mod tests {
     async fn test_confirm_registration_exists_in_user_regist() {
         let (cfg_c, data_c, _token) = get_cfg_data(true, None);
         let last_user_id = data_c.0.last().unwrap().id;
-        let user_reg1 = data_c.2.get(0).unwrap().clone();
+        let user_reg1 = data_c.3.get(0).unwrap().clone();
         let nickname = user_reg1.nickname.to_string();
         let email = user_reg1.email.to_string();
 
@@ -1713,7 +1740,7 @@ mod tests {
     async fn test_recovery_if_user_recovery_already_exists() {
         let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
         let user1_email = data_c.0.get(0).unwrap().email.clone();
-        let user_recovery1 = data_c.3.get(0).unwrap().clone();
+        let user_recovery1 = data_c.4.get(0).unwrap().clone();
         let user_recovery1_id = user_recovery1.id;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -1849,7 +1876,7 @@ mod tests {
     #[actix_web::test]
     async fn test_confirm_recovery_final_date_has_expired() {
         let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
-        let user_recovery1 = data_c.3.get(0).unwrap().clone();
+        let user_recovery1 = data_c.4.get(0).unwrap().clone();
     
         let num_token = 1234;
         let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
@@ -1876,7 +1903,7 @@ mod tests {
     #[actix_web::test]
     async fn test_confirm_recovery_no_exists_in_user_recovery() {
         let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
-        let user_recovery1 = data_c.3.get(0).unwrap().clone();
+        let user_recovery1 = data_c.4.get(0).unwrap().clone();
         let user_recovery_id = user_recovery1.id + 1;
         let num_token = 1234;
         let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
@@ -1912,7 +1939,7 @@ mod tests {
         let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
         let recovery_token = encode_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
 
-        let data_c = (data_c.0, data_c.1, data_c.2, vec![user_recovery1]);
+        let data_c = (data_c.0, data_c.1, data_c.2, data_c.3, vec![user_recovery1]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery).configure(configure_user(cfg_c, data_c))).await;
@@ -1934,7 +1961,7 @@ mod tests {
     async fn test_confirm_recovery_success() {
         let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
         let user1b = data_c.0.get(0).unwrap().clone();
-        let user_recovery1 = data_c.3.get(0).unwrap().clone();
+        let user_recovery1 = data_c.4.get(0).unwrap().clone();
         let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
 
         let num_token = 1234;
@@ -1967,18 +1994,19 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data(true, Some(600));
         let mut user1 = data_c.0.get(0).unwrap().clone();
         user1.role = UserRole::Admin;
+        let profile1 = create_profile(user1.clone());
 
         let registr_duration: i64 = cfg_c.0.app_registr_duration.try_into().unwrap();
         let final_date_registr = Utc::now() - Duration::seconds(registr_duration);
-        let mut user_registr1 = data_c.2.get(0).unwrap().clone();
+        let mut user_registr1 = data_c.3.get(0).unwrap().clone();
         user_registr1.final_date = final_date_registr;
 
         let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
         let final_date_recovery = Utc::now() - Duration::seconds(recovery_duration);
-        let mut user_recovery1 = data_c.3.get(0).unwrap().clone();
+        let mut user_recovery1 = data_c.4.get(0).unwrap().clone();
         user_recovery1.final_date = final_date_recovery;
 
-        let data_c = (vec![user1], data_c.1, vec![user_registr1], vec![user_recovery1]);
+        let data_c = (vec![user1], vec![profile1], data_c.2, vec![user_registr1], vec![user_recovery1]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(clear_for_expired).configure(configure_user(cfg_c, data_c))).await;

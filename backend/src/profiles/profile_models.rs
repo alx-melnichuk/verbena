@@ -29,13 +29,13 @@ pub const PROFILE_THEME_LIGHT_DEF: &str = "light";
 pub const PROFILE_THEME_DARK: &str = "dark";
 
 impl Profile {
-    pub fn new(user_id: i32, avatar: Option<&str>, descript: &str, theme: &str) -> Profile {
+    pub fn new(user_id: i32, avatar: Option<&str>, descript: Option<&str>, theme: Option<&str>) -> Profile {
         let now = Utc::now();
         Profile {
             user_id,
             avatar: avatar.map(|v| v.to_string()),
-            descript: descript.to_string(),
-            theme: theme.to_string(),
+            descript: descript.unwrap_or(PROFILE_DESCRIPT_DEF).to_string(),
+            theme: theme.unwrap_or(PROFILE_THEME_LIGHT_DEF).to_string(),
             created_at: now.clone(),
             updated_at: now.clone(),
         }
