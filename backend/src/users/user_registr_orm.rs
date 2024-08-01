@@ -298,9 +298,9 @@ pub mod tests {
             let password = create_user_registr_dto.password.clone();
             let final_date = create_user_registr_dto.final_date.clone();
 
-            let res_user1_opt: Option<UserRegistr> =
+            let opt_res_user1: Option<UserRegistr> =
                 self.find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))?;
-            if res_user1_opt.is_some() {
+            if opt_res_user1.is_some() {
                 return Err("\"User Registration\" already exists.".to_string());
             }
 
@@ -316,11 +316,11 @@ pub mod tests {
         }
         /// Delete an entity (user_registration).
         fn delete_user_registr(&self, id: i32) -> Result<usize, String> {
-            let user_registr_opt: Option<&UserRegistr> =
+            let opt_user_registr: Option<&UserRegistr> =
                 self.user_registr_vec.iter().find(|user_registr| user_registr.id == id);
 
             #[rustfmt::skip]
-            let result = if user_registr_opt.is_none() { 0 } else { 1 };
+            let result = if opt_user_registr.is_none() { 0 } else { 1 };
             Ok(result)
         }
         /// Delete all entities (user_registration) with an inactive "final_date".
