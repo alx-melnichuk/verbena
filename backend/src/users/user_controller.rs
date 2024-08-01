@@ -465,8 +465,6 @@ pub async fn put_user_new_password(
         (status = 204, description = "The current user was not found."),
         (status = 401, description = "An authorization token is required.", body = AppError,
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -515,16 +513,16 @@ mod tests {
     };
     use chrono::{DateTime, Duration, Utc};
 
-    use crate::{
-        errors::AppError,
-        extractors::authentication::BEARER,
-        profiles::{
-            profile_models::{ProfileUser, ProfileUserDto, PROFILE_DESCRIPT_DEF, PROFILE_THEME_LIGHT_DEF},
-            profile_orm::tests::ProfileOrmApp,
-        },
-        sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token},
-        users::user_models::{User, UserDto, UserModelsTest, UserRegistr, UserRole},
+    use crate::errors::AppError;
+    use crate::extractors::authentication::BEARER;
+    use crate::profiles::{
+        profile_models::{ProfileUser, ProfileUserDto, PROFILE_DESCRIPT_DEF, PROFILE_THEME_LIGHT_DEF},
+        profile_orm::tests::ProfileOrmApp,
     };
+    use crate::sessions::{
+        config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
+    };
+    use crate::users::user_models::{User, UserDto, UserModelsTest, UserRegistr, UserRole};
 
     use super::*;
 
