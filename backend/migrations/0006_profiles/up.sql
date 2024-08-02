@@ -48,24 +48,84 @@ AS $$
   WHERE u.id = id1 AND u.id = p.user_id;
 $$;
 
--- call create_user2('nickname1', 'email1','passwd1','user');
+/* Create a stored procedure to add a new user. */
+CREATE OR REPLACE FUNCTION create_user5(
+  IN _nickname VARCHAR,
+  IN _email VARCHAR,
+  IN _password VARCHAR,
+  IN _role user_role
+) RETURNS table (
+  user_id INTEGER,
+  nickname VARCHAR,
+  email VARCHAR,
+  "role" user_role,
+  avatar VARCHAR,
+  descript TEXT,
+  theme VARCHAR,
+  created_at TIMESTAMP WITH TIME ZONE,
+  updated_at TIMESTAMP WITH TIME ZONE
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE 
+  rec1 RECORD;
+  rec2 RECORD;
+BEGIN
+  -- Add a new entry to the "users" table.
+  INSERT INTO users(nickname, email, "password", "role")
+  VALUES (_nickname, _email, _password, _role)
+  RETURNING users.id, users.nickname, users.email, users."password", users."role", users.created_at, users.updated_at
+    INTO rec1;
+
+  -- Add a new entry to the "profiles" table.
+  INSERT INTO profiles(user_id)
+  VALUES (rec1.id)
+  RETURNING profiles.user_id, profiles.avatar, profiles.descript, profiles.theme, profiles.created_at, profiles.updated_at
+    INTO rec2;
+
+  -- Add a new entry to the "sessions" table.
+  INSERT INTO sessions(user_id)
+  VALUES (rec1.id);
+
+  RETURN QUERY SELECT
+    rec2.user_id, rec1.nickname, rec1.email, rec1."role", rec2.avatar, rec2.descript, rec2.theme,
+    rec1.created_at,
+    CASE WHEN rec1.updated_at > rec2.updated_at THEN rec1.updated_at ELSE rec2.updated_at END as updated_at;
+END;
+$$;
 
 /* Create a stored procedure to add a new user. */
-CREATE OR REPLACE PROCEDURE create_user2(
+/*CREATE OR REPLACE PROCEDURE create_user3(
+  IN _nickname VARCHAR,
+  IN _email VARCHAR,
+  IN _password VARCHAR,
+  IN _role user_role
+) LANGUAGE 'plpgsql'
+AS $$
+BEGIN
+  INSERT INTO users (nickname, email, "password", "role")
+  VALUES (_nickname, _email, _password, _role);
+  COMMIT;
+END ;
+$$;*/
+
+/* Create a function to add a new user. */
+/*CREATE OR REPLACE FUNCTION create_user4(
   IN _nickname VARCHAR,
   IN _email VARCHAR,
   IN _password VARCHAR,
   IN _role user_role,
-  INOUT "id" INTEGER DEFAULT NULL,
-  INOUT nickname VARCHAR DEFAULT NULL,
-  INOUT email VARCHAR DEFAULT NULL,
-  INOUT "password" VARCHAR DEFAULT NULL,
-  INOUT "role" VARCHAR DEFAULT NULL,
-  INOUT created_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-  INOUT updated_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
-) LANGUAGE 'plpgsql'
+  OUT "id" INTEGER,
+  OUT nickname VARCHAR,
+  OUT email VARCHAR,
+  OUT "password" VARCHAR,
+  OUT "role" VARCHAR,
+  OUT created_at TIMESTAMP WITH TIME ZONE,
+  OUT updated_at TIMESTAMP WITH TIME ZONE
+) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 BEGIN
+  -- Add a new entry to the "users" table.
   INSERT INTO users (nickname, email, "password", "role")
   VALUES (_nickname, _email, _password, _role)
   RETURNING
@@ -73,6 +133,41 @@ BEGIN
     INTO 
       "id", nickname, email, "password", "role", created_at, updated_at;
 
-  RETURN;
+  -- Add a new entry to the "profiles" table.
+  INSERT INTO profiles (user_id, descript, theme)
+  VALUES ("id", '', 'light');
+
+  SELECT "id", nickname, email, "password", "role", created_at, updated_at;
 END ;
-$$;
+$$;*/
+
+
+
+/*CREATE OR REPLACE FUNCTION get_profile_user4(
+  IN _id INTEGER
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+DECLARE
+  user_id INTEGER;
+  nickname VARCHAR;
+  email VARCHAR;
+  "role" VARCHAR;
+  avatar VARCHAR;
+  descript VARCHAR;
+  theme VARCHAR;
+  created_at TIMESTAMP WITH TIME ZONE;
+  updated_at TIMESTAMP WITH TIME ZONE;
+BEGIN
+  SELECT
+    u.id AS user_id, u.nickname, u.email, u."role", p.avatar, p.descript, p.theme, u.created_at,
+    CASE WHEN u.updated_at > p.updated_at THEN u.updated_at ELSE p.updated_at END as updated_at
+    INTO 
+      user_id, nickname, email, "role", avatar, descript, theme, created_at, updated_at
+  FROM users u, profiles p
+  WHERE u.id = _id AND u.id = p.user_id;
+
+  RETURN QUERY
+    SELECT user_id,nickname,email,"role",avatar,descript,theme,created_at,updated_at;
+END ;
+$$;*/
+

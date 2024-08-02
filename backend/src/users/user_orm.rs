@@ -1,3 +1,4 @@
+use crate::profiles::profile_models::ProfileUser;
 use crate::users::user_models::{CreateUser, CreateUserDto, ModifyUserDto, User};
 
 pub trait UserOrm {
@@ -12,7 +13,7 @@ pub trait UserOrm {
     /// Add a new entity (user).
     fn create_user(&self, create_user_dto: CreateUserDto) -> Result<User, String>;
     /// Add a new entity (user).
-    fn create_user2(&self, create_user: CreateUser) -> Result<User, String>;
+    fn create_user2(&self, create_user: CreateUser) -> Result<ProfileUser, String>;
     /// Modify an entity (user).
     fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String>;
     /// Delete an entity (user).
@@ -161,7 +162,7 @@ pub mod impls {
             Ok(user)
         }
         /// Add a new entity (user).
-        fn create_user2(&self, create_user: CreateUser) -> Result<User, String> {
+        fn create_user2(&self, create_user: CreateUser) -> Result<ProfileUser, String> {
             let nickname = create_user.nickname.to_lowercase(); // #?
             let email = create_user.email.to_lowercase();
             let password = create_user.password.clone();
@@ -170,21 +171,34 @@ pub mod impls {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query(
-                "CALL public.create_user2($1,$2, $3, $4);",
-                // "CALL create_user2($1,$2, $3, $4, 0, ''::VARCHAR, ''::VARCHAR, ''::VARCHAR, ''::VARCHAR, NOW(), NOW());",
-            )
-            .bind::<sql_types::Text, _>(nickname)
-            .bind::<sql_types::Text, _>(email)
-            .bind::<sql_types::Text, _>(password)
-            .bind::<sql_types::Text, _>(role.to_str().to_string());
+            // "CALL public.create_user3($1,$2, $3, $4);",
+            // "CALL create_user2($1,$2, $3, $4, 0, ''::VARCHAR, ''::VARCHAR, ''::VARCHAR, ''::VARCHAR, NOW(), NOW());",
+            // "select * from create_user4($1,$2, $3, $4);"
+            let query = diesel::sql_query("select * from create_user5($1,$2, $3, $4);")
+                .bind::<sql_types::Text, _>(nickname.to_string())
+                .bind::<sql_types::Text, _>(email.to_string())
+                .bind::<sql_types::Text, _>(password.to_string())
+                .bind::<sql_types::Text, _>(role.to_str().to_string());
 
             // Run a query with Diesel to create a new user and return it.
-            let user = query
-                .get_result::<User>(&mut conn)
+            let profile_user = query
+                .get_result::<ProfileUser>(&mut conn)
                 .map_err(|e| format!("create_user: {}", e.to_string()))?;
-            eprintln!("create_user2() user: {:?}", &user);
-            Ok(user)
+
+            eprintln!("create_user5() res: {:?}", &profile_user);
+
+            /*let cr_dt = Utc::now() + Duration::minutes(-10);
+            let user = User {
+                id: 111,
+                nickname: nickname.to_lowercase(),
+                email: email.to_lowercase(),
+                password: password.to_string(),
+                created_at: cr_dt,
+                updated_at: cr_dt,
+                role: UserRole::User,
+            };*/
+
+            Ok(profile_user)
         }
         /// Modify an entity (user).
         fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String> {

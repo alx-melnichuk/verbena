@@ -2,12 +2,12 @@ use actix_web::{get, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
 use utoipa;
 
-use crate::hash_tools;
+use crate::{hash_tools, profiles::profile_models::ProfileUserDto};
 #[cfg(not(feature = "mockdata"))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
-use crate::profiles::{profile_models::Profile, profile_orm::ProfileOrm};
+// #use crate::profiles::{profile_models::Profile, profile_orm::ProfileOrm};
 #[cfg(not(feature = "mockdata"))]
 use crate::send_email::mailer::impls::MailerApp;
 #[cfg(feature = "mockdata")]
@@ -268,11 +268,11 @@ pub async fn registration(
 /// curl -i -X PUT http://localhost:8080/api/registration/registr_token1234
 /// ```
 ///
-/// Return a new user (`UserDto`) with status 201.
+/// Return the new user's profile. (`ProfileUserDto`) with status 201.
 ///
 #[utoipa::path(
     responses(
-        (status = 201, description = "New user.", body = UserDto),
+        (status = 201, description = "New user profile.", body = ProfileUserDto),
         (status = 401, description = "The token is invalid or expired.", body = AppError,
             example = json!(AppError::unauthorized401(&format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidToken")))),
         (status = 404, description = "An entry for registering a new user was not found.", body = AppError,
@@ -346,21 +346,21 @@ pub async fn confirm_registration(
         password: user_registr.password,
     };
 
-    let user = web::block(move || {
+    let profile_user = web::block(move || {
         // Create a new entity (user).
-        let user_res = user_orm.create_user2(create_user).map_err(|e| {
+        let res_profile_user = user_orm.create_user2(create_user).map_err(|e| {
             log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
-        user_res
+        res_profile_user
     })
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })??;
-
-    let _ = web::block(move || {
+    // ProfileUser
+    /*let _ = web::block(move || {
         // let profile: Profile = Profile::new(user.id, None, None, None);
         // // Create a new entity (profile).
         // let res_profile = profile_orm.create_profile(profile).map_err(|e| {
@@ -381,11 +381,11 @@ pub async fn confirm_registration(
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
-    })?;
+    })?;*/
 
-    let user_dto = UserDto::from(user);
+    let profile_user_dto = ProfileUserDto::from(profile_user);
 
-    Ok(HttpResponse::Created().json(user_dto)) // 201
+    Ok(HttpResponse::Created().json(profile_user_dto)) // 201
 }
 
 /// recovery
