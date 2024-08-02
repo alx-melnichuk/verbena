@@ -206,8 +206,6 @@ impl Validator for NewPasswordUserDto {
     }
 }
 
-// **  Section: table "streams" data creation **
-
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
 #[diesel(table_name = schema::users)]
 pub struct CreateUser {
