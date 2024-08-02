@@ -110,20 +110,6 @@ diesel::table! {
     }
 }
 
-diesel::table! {
-    users2 (id) {
-        id -> Int4,
-        #[max_length = 255]
-        nickname -> Varchar,
-        #[max_length = 255]
-        email -> Varchar,
-        #[max_length = 255]
-        password -> Varchar,
-        created_at -> Timestamptz,
-        updated_at -> Timestamptz,
-    }
-}
-
 diesel::joinable!(link_stream_tags_to_streams -> stream_tags (stream_tag_id));
 diesel::joinable!(link_stream_tags_to_streams -> streams (stream_id));
 diesel::joinable!(profiles -> users (user_id));
@@ -141,5 +127,4 @@ diesel::allow_tables_to_appear_in_same_query!(
     user_recovery,
     user_registration,
     users,
-    users2,
 );
