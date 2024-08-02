@@ -136,3 +136,28 @@ impl ProfileUserDto {
         }
     }
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CreateProfileUser {
+    pub nickname: String,
+    pub email: String,
+    pub password: String,
+    pub role: Option<UserRole>,
+    pub avatar: Option<String>,   // min_len=2 max_len=255 Nullable
+    pub descript: Option<String>, // type: Text default ""
+    pub theme: Option<String>,    // min_len=2 max_len=32 default "light"
+}
+
+impl CreateProfileUser {
+    pub fn new(nickname: &str, email: &str, password: &str, role: Option<UserRole>) -> CreateProfileUser {
+        CreateProfileUser {
+            nickname: nickname.to_string(),
+            email: email.to_string(),
+            password: password.to_string(),
+            role: role.clone(),
+            avatar: None,
+            descript: None,
+            theme: None,
+        }
+    }
+}

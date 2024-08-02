@@ -7,7 +7,7 @@ use crate::{hash_tools, profiles::profile_models::ProfileUserDto};
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
-// #use crate::profiles::{profile_models::Profile, profile_orm::ProfileOrm};
+use crate::profiles::{profile_models::CreateProfileUser, profile_orm::ProfileOrm};
 #[cfg(not(feature = "mockdata"))]
 use crate::send_email::mailer::impls::MailerApp;
 #[cfg(feature = "mockdata")]
@@ -290,6 +290,7 @@ pub async fn confirm_registration(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     user_orm: web::Data<UserOrmApp>,
+    profile_orm: web::Data<ProfileOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let registr_token = request.match_info().query("registr_token").to_string();
@@ -335,7 +336,24 @@ pub async fn confirm_registration(
         AppError::not_found404(&message) // 404
     })?;
 
-    let user_registr_orm2 = user_registr_orm.clone();
+    let create_profile = CreateProfileUser::new(&user_registr.nickname, &user_registr.email, &user_registr.password, None);
+
+    let profile_user = web::block(move || {
+        // Create a new entity (user).
+        let res_profile_user = profile_orm.create_profile_user(create_profile)
+        .map_err(|e| {
+            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        });
+        res_profile_user
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })??;
+
+    /*let user_registr_orm2 = user_registr_orm.clone();
     // If such an entry exists, then add a new user.
     let create_user = user_models::CreateUser::new(
         &user_registr.nickname, &user_registr.email, &user_registr.password, None
@@ -358,15 +376,16 @@ pub async fn confirm_registration(
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
-    })??;
+    })??;*/
+
     // ProfileUser
     /*let _ = web::block(move || {
-        // let profile: Profile = Profile::new(user.id, None, None, None);
-        // // Create a new entity (profile).
-        // let res_profile = profile_orm.create_profile(profile).map_err(|e| {
-        //     log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-        //     AppError::database507(&e)
-        // });
+        let profile: Profile = Profile::new(user.id, None, None, None);
+        // Create a new entity (profile).
+        let res_profile = profile_orm.create_profile(profile).map_err(|e| {
+            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        });
         let session = Session { user_id: user.id, num_token: None };
         // Create a new entity (session).
         let session_res = session_orm.create_session(session).map_err(|e| {

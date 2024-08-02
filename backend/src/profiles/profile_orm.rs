@@ -1,11 +1,16 @@
 use crate::profiles::profile_models::{Profile, ProfileUser};
 
+use super::profile_models::CreateProfileUser;
+
 pub trait ProfileOrm {
     /// Find for an entity (profile + user) by user_id.
     fn get_profile_by_user_id(&self, user_id: i32) -> Result<Option<ProfileUser>, String>;
 
     /// Add a new entry (profile).
     fn create_profile(&self, profile: Profile) -> Result<Profile, String>;
+
+    /// Add a new entry (profile, user).
+    fn create_profile_user(&self, create_profile: CreateProfileUser) -> Result<ProfileUser, String>;
 
     // /// Modify an entity (user).
     // fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String>;
@@ -86,12 +91,40 @@ pub mod impls {
 
             Ok(result)
         }
+        /// Add a new entry (profile, user).
+        fn create_profile_user(&self, create_profile: CreateProfileUser) -> Result<ProfileUser, String> {
+            let nickname = create_profile.nickname.to_lowercase(); // #?
+            let email = create_profile.email.to_lowercase();
+            let password = create_profile.password.clone();
+            // let role = create_profile.role.unwrap_or(UserRole::User);
+
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let query = diesel::sql_query("select * from create_user6($1,$2,$3);")
+                .bind::<sql_types::Text, _>(nickname.to_string())
+                .bind::<sql_types::Text, _>(email.to_string())
+                .bind::<sql_types::Text, _>(password.to_string())
+                // .bind::<sql_types::Text, _>(role.to_str().to_string())
+                ;
+
+            // Run a query with Diesel to create a new user and return it.
+            let profile_user = query
+                .get_result::<ProfileUser>(&mut conn)
+                .map_err(|e| format!("create_user: {}", e.to_string()))?;
+
+            eprintln!("create_user6() res: {:?}", &profile_user);
+
+            Ok(profile_user)
+        }
     }
 }
 
 #[cfg(feature = "mockdata")]
 pub mod tests {
     use chrono::{Duration, Utc};
+
+    use crate::users::user_models::UserRole;
 
     use super::*;
 
@@ -112,17 +145,18 @@ pub mod tests {
         pub fn create(profile_user_list: &[ProfileUser]) -> Self {
             let mut profile_user_vec: Vec<ProfileUser> = Vec::new();
             for profile_user in profile_user_list.iter() {
-                profile_user_vec.push(ProfileUser {
-                    user_id: profile_user.user_id,
-                    nickname: profile_user.nickname.to_lowercase(),
-                    email: profile_user.email.to_lowercase(),
-                    role: profile_user.role.clone(),
-                    avatar: profile_user.avatar.clone(),
-                    descript: profile_user.descript.to_string(),
-                    theme: profile_user.theme.to_string(),
-                    created_at: profile_user.created_at,
-                    updated_at: profile_user.updated_at,
-                });
+                let mut profile_user2 = ProfileUser::new(
+                    profile_user.user_id,
+                    &profile_user.nickname.to_lowercase(),
+                    &profile_user.email.to_lowercase(),
+                    profile_user.role.clone(),
+                    profile_user.avatar.as_deref(),
+                    &profile_user.descript,
+                    &profile_user.theme,
+                );
+                profile_user2.created_at = profile_user.created_at;
+                profile_user2.updated_at = profile_user.updated_at;
+                profile_user_vec.push(profile_user2);
             }
             ProfileOrmApp { profile_user_vec }
         }
@@ -169,6 +203,19 @@ pub mod tests {
             );
 
             Ok(result)
+        }
+        /// Add a new entry (profile, user).
+        fn create_profile_user(&self, create_profile: CreateProfileUser) -> Result<ProfileUser, String> {
+            let profile_user = ProfileUser::new(
+                1234,
+                &create_profile.nickname.to_lowercase(),
+                &create_profile.email.to_lowercase(),
+                create_profile.role.unwrap_or(UserRole::User),
+                create_profile.avatar.as_deref(),
+                &create_profile.descript,
+                &create_profile.theme,
+            );
+            Ok(profile_user)
         }
     }
 }
