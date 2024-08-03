@@ -1,4 +1,5 @@
 use crate::profiles::profile_models::{Profile, ProfileUser};
+use crate::users::user_models::UserRole;
 
 use super::profile_models::CreateProfileUser;
 
@@ -93,27 +94,26 @@ pub mod impls {
         }
         /// Add a new entry (profile, user).
         fn create_profile_user(&self, create_profile: CreateProfileUser) -> Result<ProfileUser, String> {
+            use crate::schema::sql_types::UserRole as SqlUserRole;
+
             let nickname = create_profile.nickname.to_lowercase(); // #?
             let email = create_profile.email.to_lowercase();
             let password = create_profile.password.clone();
-            // let role = create_profile.role.unwrap_or(UserRole::User);
+            let role = create_profile.role.unwrap_or(UserRole::User);
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select * from create_user6($1,$2,$3);")
+            let query = diesel::sql_query("select * from create_profile_user($1,$2,$3,$4);")
                 .bind::<sql_types::Text, _>(nickname.to_string())
                 .bind::<sql_types::Text, _>(email.to_string())
                 .bind::<sql_types::Text, _>(password.to_string())
-                // .bind::<sql_types::Text, _>(role.to_str().to_string())
-                ;
+                .bind::<SqlUserRole, _>(role);
 
             // Run a query with Diesel to create a new user and return it.
             let profile_user = query
                 .get_result::<ProfileUser>(&mut conn)
-                .map_err(|e| format!("create_user: {}", e.to_string()))?;
-
-            eprintln!("create_user6() res: {:?}", &profile_user);
+                .map_err(|e| format!("create_profile_user: {}", e.to_string()))?;
 
             Ok(profile_user)
         }
@@ -123,8 +123,6 @@ pub mod impls {
 #[cfg(feature = "mockdata")]
 pub mod tests {
     use chrono::{Duration, Utc};
-
-    use crate::users::user_models::UserRole;
 
     use super::*;
 

@@ -21,7 +21,7 @@ INSERT INTO profiles (user_id, created_at, updated_at)
 
 /* Stored function to retrieve data from the "profiles" and "users" tables. */
 CREATE OR REPLACE FUNCTION get_profile_user(
-  IN id1 INTEGER,
+  IN _id INTEGER,
   OUT user_id INTEGER,
   OUT nickname VARCHAR,
   OUT email VARCHAR,
@@ -45,15 +45,15 @@ AS $$
     CASE WHEN u.updated_at > p.updated_at
       THEN u.updated_at ELSE p.updated_at END as updated_at
   FROM users u, profiles p
-  WHERE u.id = id1 AND u.id = p.user_id;
+  WHERE u.id = _id AND u.id = p.user_id;
 $$;
 
 /* Create a stored procedure to add a new user. */
-CREATE OR REPLACE FUNCTION create_user6(
+CREATE OR REPLACE FUNCTION create_profile_user(
   IN _nickname VARCHAR,
   IN _email VARCHAR,
   IN _password VARCHAR,
-  -- IN _role user_role,
+  IN _role user_role,
   OUT user_id INTEGER,
   OUT nickname VARCHAR,
   OUT email VARCHAR,
@@ -70,8 +70,8 @@ DECLARE
   rec2 RECORD;
 BEGIN
   -- Add a new entry to the "users" table.
-  INSERT INTO users(nickname, email, "password")
-  VALUES (_nickname, _email, _password)
+  INSERT INTO users(nickname, email, "password", "role")
+  VALUES (_nickname, _email, _password, _role)
   RETURNING users.id, users.nickname, users.email, users."password", users."role", users.created_at, users.updated_at
     INTO rec1;
 

@@ -1,5 +1,4 @@
-use crate::profiles::profile_models::ProfileUser;
-use crate::users::user_models::{CreateUser, CreateUserDto, ModifyUserDto, User};
+use crate::users::user_models::{ModifyUserDto, User};
 
 pub trait UserOrm {
     /// Find for an entity (user) by id.
@@ -10,10 +9,6 @@ pub trait UserOrm {
         nickname: Option<&str>,
         email: Option<&str>,
     ) -> Result<Option<User>, String>;
-    /// Add a new entity (user).
-    fn create_user(&self, create_user_dto: CreateUserDto) -> Result<User, String>;
-    /// Add a new entity (user).
-    fn create_user2(&self, create_user: CreateUser) -> Result<ProfileUser, String>;
     /// Modify an entity (user).
     fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String>;
     /// Delete an entity (user).
@@ -41,11 +36,10 @@ pub mod cfg {
 #[cfg(not(feature = "mockdata"))]
 pub mod impls {
 
-    use diesel::{self, prelude::*, sql_types};
+    use diesel::{self, prelude::*};
 
     use crate::dbase;
     use crate::schema;
-    use crate::users::user_models::UserRole;
 
     use super::*;
 
@@ -144,8 +138,8 @@ pub mod impls {
             };
             Ok(result)
         }
-        /// Add a new entity (user).
-        fn create_user(&self, create_user_dto: CreateUserDto) -> Result<User, String> {
+        // Add a new entity (user).
+        /*fn create_user(&self, create_user_dto: CreateUserDto) -> Result<User, String> {
             let mut create_user_dto2 = create_user_dto.clone();
             create_user_dto2.nickname = create_user_dto2.nickname.to_lowercase(); // #?
             create_user_dto2.email = create_user_dto2.email.to_lowercase();
@@ -160,46 +154,7 @@ pub mod impls {
                 .map_err(|e| format!("create_user: {}", e.to_string()))?;
 
             Ok(user)
-        }
-        /// Add a new entity (user).
-        fn create_user2(&self, create_user: CreateUser) -> Result<ProfileUser, String> {
-            let nickname = create_user.nickname.to_lowercase(); // #?
-            let email = create_user.email.to_lowercase();
-            let password = create_user.password.clone();
-            let role = create_user.role.unwrap_or(UserRole::User);
-
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-
-            // "CALL public.create_user3($1,$2, $3, $4);",
-            // "CALL create_user2($1,$2, $3, $4, 0, ''::VARCHAR, ''::VARCHAR, ''::VARCHAR, ''::VARCHAR, NOW(), NOW());",
-            // "select * from create_user4($1,$2, $3, $4);"
-            let query = diesel::sql_query("select * from create_user5($1,$2, $3, $4);")
-                .bind::<sql_types::Text, _>(nickname.to_string())
-                .bind::<sql_types::Text, _>(email.to_string())
-                .bind::<sql_types::Text, _>(password.to_string())
-                .bind::<sql_types::Text, _>(role.to_str().to_string());
-
-            // Run a query with Diesel to create a new user and return it.
-            let profile_user = query
-                .get_result::<ProfileUser>(&mut conn)
-                .map_err(|e| format!("create_user: {}", e.to_string()))?;
-
-            eprintln!("create_user5() res: {:?}", &profile_user);
-
-            /*let cr_dt = Utc::now() + Duration::minutes(-10);
-            let user = User {
-                id: 111,
-                nickname: nickname.to_lowercase(),
-                email: email.to_lowercase(),
-                password: password.to_string(),
-                created_at: cr_dt,
-                updated_at: cr_dt,
-                role: UserRole::User,
-            };*/
-
-            Ok(profile_user)
-        }
+        }*/
         /// Modify an entity (user).
         fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String> {
             let mut modify_user_dto2: ModifyUserDto = modify_user_dto.clone();
@@ -324,8 +279,8 @@ pub mod tests {
 
             Ok(result)
         }
-        /// Add a new entity (user).
-        fn create_user(&self, create_user_dto: CreateUserDto) -> Result<User, String> {
+        // Add a new entity (user).
+        /*fn create_user(&self, create_user_dto: CreateUserDto) -> Result<User, String> {
             let nickname = create_user_dto.nickname.to_lowercase();
             let email = create_user_dto.email.to_lowercase();
 
@@ -341,25 +296,7 @@ pub mod tests {
             let user_saved: User = UserOrmApp::new_user(new_id, &nickname, &email, &password);
 
             Ok(user_saved)
-        }
-        /// Add a new entity (user).
-        fn create_user2(&self, create_user: CreateUser) -> Result<User, String> {
-            let nickname = create_user.nickname.to_lowercase();
-            let email = create_user.email.to_lowercase();
-
-            let user1_opt = self.find_user_by_nickname_or_email(Some(&nickname), Some(&email))?;
-            if user1_opt.is_some() {
-                return Err("Session already exists".to_string());
-            }
-            let password = create_user.password.clone();
-
-            let idx: i32 = self.user_vec.len().try_into().unwrap();
-            let new_id: i32 = USER_ID + idx;
-
-            let user_saved: User = UserOrmApp::new_user(new_id, &nickname, &email, &password);
-
-            Ok(user_saved)
-        }
+        }*/
         /// Modify an entity (user).
         fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String> {
             let user_opt = self.user_vec.iter().find(|user| user.id == id);

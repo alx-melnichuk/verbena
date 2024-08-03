@@ -289,9 +289,7 @@ pub async fn confirm_registration(
     request: actix_web::HttpRequest,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,
-    user_orm: web::Data<UserOrmApp>,
     profile_orm: web::Data<ProfileOrmApp>,
-    session_orm: web::Data<SessionOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let registr_token = request.match_info().query("registr_token").to_string();
 
@@ -336,15 +334,18 @@ pub async fn confirm_registration(
         AppError::not_found404(&message) // 404
     })?;
 
-    let create_profile = CreateProfileUser::new(&user_registr.nickname, &user_registr.email, &user_registr.password, None);
+    // If such an entry exists, then add a new user.
+    let create_profile = 
+        CreateProfileUser::new(&user_registr.nickname, &user_registr.email, &user_registr.password, None);
 
     let profile_user = web::block(move || {
-        // Create a new entity (user).
+        // Create a new entity (profile,user).
         let res_profile_user = profile_orm.create_profile_user(create_profile)
         .map_err(|e| {
             log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
+
         res_profile_user
     })
     .await
@@ -353,54 +354,15 @@ pub async fn confirm_registration(
         AppError::blocking506(&e.to_string())
     })??;
 
-    /*let user_registr_orm2 = user_registr_orm.clone();
-    // If such an entry exists, then add a new user.
-    let create_user = user_models::CreateUser::new(
-        &user_registr.nickname, &user_registr.email, &user_registr.password, None
-    );
-    let _create_user_dto = user_models::CreateUserDto {
-        nickname: user_registr.nickname,
-        email: user_registr.email,
-        password: user_registr.password,
-    };
-
-    let profile_user = web::block(move || {
-        // Create a new entity (user).
-        let res_profile_user = user_orm.create_user2(create_user).map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
-        });
-        res_profile_user
+    let _ = web::block(move || {
+        // Delete the processed record in the "user_registration" table.
+        let _ = user_registr_orm.delete_user_registr(user_registr_id);
     })
     .await
     .map_err(|e| {
         log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
-    })??;*/
-
-    // ProfileUser
-    /*let _ = web::block(move || {
-        let profile: Profile = Profile::new(user.id, None, None, None);
-        // Create a new entity (profile).
-        let res_profile = profile_orm.create_profile(profile).map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
-        });
-        let session = Session { user_id: user.id, num_token: None };
-        // Create a new entity (session).
-        let session_res = session_orm.create_session(session).map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
-        });
-        user_registr_orm2.delete_user_registr(user_registr_id).ok();
-
-        session_res // (res_profile, session_res)
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
-    })?;*/
+        // An error during this operation has no effect.
+    });
 
     let profile_user_dto = ProfileUserDto::from(profile_user);
 
