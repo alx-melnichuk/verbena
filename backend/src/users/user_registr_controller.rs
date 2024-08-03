@@ -139,7 +139,7 @@ pub async fn registration(
         let existing_user = user_orm
             .find_user_by_nickname_or_email(Some(&nickname), Some(&email))
             .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
         existing_user
@@ -168,7 +168,7 @@ pub async fn registration(
         let existing_user_registr = user_registr_orm2
             .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
             .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
         existing_user_registr
@@ -206,7 +206,7 @@ pub async fn registration(
         let user_registr = user_registr_orm
             .create_user_registr(create_user_registr_dto)
             .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
         user_registr
@@ -312,7 +312,7 @@ pub async fn confirm_registration(
         let user_registr = user_registr_orm2
             .find_user_registr_by_id(user_registr_id)
             .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
         user_registr
@@ -342,7 +342,7 @@ pub async fn confirm_registration(
         // Create a new entity (profile,user).
         let res_profile_user = profile_orm.create_profile_user(create_profile)
         .map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
 
@@ -422,7 +422,7 @@ pub async fn recovery(
         let existing_user = user_orm
             .find_user_by_nickname_or_email(None, Some(&email))
             .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
         existing_user
@@ -452,7 +452,7 @@ pub async fn recovery(
         let existing_user_recovery = user_recovery_orm2
             .find_user_recovery_by_user_id(user_id)
             .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
         existing_user_recovery
@@ -482,7 +482,7 @@ pub async fn recovery(
             let user_recovery = user_recovery_orm2
                 .modify_user_recovery(user_recovery_id, create_user_recovery_dto)
                 .map_err(|e| {
-                    log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                    log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                     AppError::database507(&e) // 507
                 });
                 user_recovery
@@ -499,7 +499,7 @@ pub async fn recovery(
             let user_recovery = user_recovery_orm2
                 .create_user_recovery(create_user_recovery_dto)
                 .map_err(|e| {
-                    log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                    log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                     AppError::database507(&e) // 507
                 });
                 user_recovery
@@ -644,7 +644,7 @@ pub async fn confirm_recovery(
         let user_recovery = user_recovery_orm2
             .find_user_recovery_by_id(user_recovery_id)
             .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
         user_recovery
@@ -673,7 +673,7 @@ pub async fn confirm_recovery(
     let opt_user = web::block(move || {
         let user = user_orm2.find_user_by_id(user_id)
         .map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         user
@@ -702,7 +702,7 @@ pub async fn confirm_recovery(
     let opt_user = web::block(move || {
         let user = user_orm2.modify_user(user.id, modify_user_dto)
         .map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         user
@@ -769,7 +769,7 @@ pub async fn clear_for_expired(
     let count_inactive_registr_res = 
         web::block(move || user_registr_orm.delete_inactive_final_date(None)
         .map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         })
         ).await
@@ -784,7 +784,7 @@ pub async fn clear_for_expired(
     let count_inactive_recover_res = 
         web::block(move || user_recovery_orm.delete_inactive_final_date(None)
         .map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         })
         ).await

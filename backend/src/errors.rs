@@ -151,11 +151,11 @@ impl AppError {
     }
     /// Error while blocking process. (status=506)
     pub fn blocking506(message: &str) -> AppError {
-        AppError::new(err::CD_BLOCKING, &format!("{}: {}", err::MSG_BLOCKING, message)).set_status(506)
+        AppError::new(err::CD_BLOCKING, &format!("{}; {}", err::MSG_BLOCKING, message)).set_status(506)
     }
     /// Error when querying the database. (status=507)
     pub fn database507(message: &str) -> Self {
-        AppError::new(err::CD_DATABASE, &format!("{}: {}", err::MSG_DATABASE, message)).set_status(507)
+        AppError::new(err::CD_DATABASE, &format!("{}; {}", err::MSG_DATABASE, message)).set_status(507)
     }
     // Error: Not expanded. (status=510)
     pub fn not_extended510(message: &str) -> AppError {

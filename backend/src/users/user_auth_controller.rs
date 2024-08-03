@@ -100,7 +100,7 @@ pub async fn login(
         let existing_user = user_orm
             .find_user_by_nickname_or_email(Some(&nickname), Some(&email))
             .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
         existing_user
@@ -149,7 +149,7 @@ pub async fn login(
     let opt_session = web::block(move || {
         // Modify the entity (session) with new data. Result <Option<Session>>.
         let res_session = session_orm.modify_session(user.id, Some(num_token)).map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         res_session
@@ -226,7 +226,7 @@ pub async fn logout(
     let opt_session = web::block(move || {
         // Modify the entity (session) with new data. Result <Option<Session>>.
         let res_session = session_orm.modify_session(profile_user.user_id, None).map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         res_session
@@ -309,7 +309,7 @@ pub async fn update_token(
     let opt_session = web::block(move || {
         // Find a session for a given user.
         let existing_session = session_orm.find_session_by_id(user_id).map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         existing_session
@@ -357,8 +357,9 @@ pub async fn update_token(
 
     let opt_session = web::block(move || {
         // Find a session for a given user.
-        let existing_session = session_orm1.modify_session(user_id, Some(num_token)).map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+        let existing_session = session_orm1.modify_session(user_id, Some(num_token))
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         existing_session

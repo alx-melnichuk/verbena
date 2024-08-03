@@ -110,7 +110,7 @@ pub async fn uniqueness_check(
         let existing_user = user_orm
             .find_user_by_nickname_or_email(opt_nickname2.as_deref(), opt_email2.as_deref())
             .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             })
             .ok()?;
@@ -133,7 +133,7 @@ pub async fn uniqueness_check(
             let existing_user_registr = user_registr_orm
                 .find_user_registr_by_nickname_or_email(opt_nickname2.as_deref(), opt_email2.as_deref())
                 .map_err(|e| {
-                    log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                    log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                     AppError::database507(&e) // 507
                 })
                 .ok()?;
@@ -199,7 +199,7 @@ pub async fn get_user_by_id(
         // Find user by id.
         let existing_user =
             user_orm.find_user_by_id(id).map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             }).ok()?;
 
@@ -267,7 +267,7 @@ pub async fn delete_user(
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user = user_orm.delete_user(id)
         .map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         res_user
@@ -394,7 +394,7 @@ pub async fn put_user_new_password(
         let existing_user = user_orm2
             .find_user_by_nickname_or_email(Some(&nickname), Some(&email))
             .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
         existing_user
@@ -430,7 +430,7 @@ pub async fn put_user_new_password(
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user =
             user_orm.modify_user(id, modify_user).map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
         res_user
@@ -485,7 +485,7 @@ pub async fn delete_user_current(
         // Modify the entity (user) with new data. Result <user_models::User>.
         let res_user = user_orm.delete_user(id)
         .map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
 

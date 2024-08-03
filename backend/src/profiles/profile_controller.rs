@@ -83,7 +83,7 @@ pub async fn get_profile_current(
         // Find profile by user id.
         let profile_user =
             profile_orm.get_profile_by_user_id(user_id).map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             }).ok()?;
 

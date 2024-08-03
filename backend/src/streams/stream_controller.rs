@@ -299,7 +299,7 @@ pub async fn post_stream(
     let res_data = web::block(move || {
         // Add a new entity (stream).
         let res_data = stream_orm.create_stream(create_stream, &tags).map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
         res_data
@@ -577,7 +577,7 @@ pub async fn put_stream(
             // Get the logo file name for an entity (stream) by ID.
             let res_get_stream_logo = stream_orm.get_stream_logo_by_id(id)
                 .map_err(|e| {
-                    log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                    log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                     AppError::database507(&e)        
                 });
 
@@ -589,7 +589,7 @@ pub async fn put_stream(
         // Modify an entity (stream).
         let res_stream = stream_orm.modify_stream(id, opt_user_id, modify_stream, tags)
             .map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             });
 
@@ -669,7 +669,7 @@ pub async fn delete_stream(
     let res_data = web::block(move || {
         // Add a new entity (stream).
         let res_data = stream_orm.delete_stream(id, opt_user_id).map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         res_data

@@ -97,7 +97,7 @@ pub async fn get_stream_by_id(
         // Find 'stream' by id.
         let res_data =
             stream_orm.find_stream_by_id(id, opt_user_id).map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
         res_data
@@ -222,7 +222,7 @@ pub async fn get_streams(
         // A query to obtain a list of "streams" based on the specified search parameters.
         let res_data =
             stream_orm.find_streams(search_stream).map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             });
         res_data
@@ -344,7 +344,7 @@ pub async fn get_streams_events(
         // Find for an entity (stream event) by SearchStreamEvent.
         let res_data =
             stream_orm.find_stream_events(search_event).map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             });
         res_data
@@ -470,7 +470,7 @@ pub async fn get_streams_period(
         // Find for an entity (stream period) by SearchStreamEvent.
         let res_data =
             stream_orm.find_streams_period(search_period).map_err(|e| {
-                log::error!("{}:{}: {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)    
             });
         res_data
