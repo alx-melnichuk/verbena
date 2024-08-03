@@ -306,7 +306,7 @@ pub async fn post_stream(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })?;
 
@@ -597,7 +597,7 @@ pub async fn put_stream(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })?;
 
@@ -676,7 +676,7 @@ pub async fn delete_stream(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })?;
 

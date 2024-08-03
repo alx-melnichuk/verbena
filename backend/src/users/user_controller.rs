@@ -118,7 +118,7 @@ pub async fn uniqueness_check(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })?;
 
@@ -141,7 +141,7 @@ pub async fn uniqueness_check(
         })
         .await
         .map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
             AppError::blocking506(&e.to_string()) // 506
         })?;
 
@@ -207,7 +207,7 @@ pub async fn get_user_by_id(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) //506
     })?;
 
@@ -274,7 +274,7 @@ pub async fn delete_user(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
@@ -401,7 +401,7 @@ pub async fn put_user_new_password(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
@@ -437,7 +437,7 @@ pub async fn put_user_new_password(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
@@ -493,7 +493,7 @@ pub async fn delete_user_current(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) //506
     })??;
 

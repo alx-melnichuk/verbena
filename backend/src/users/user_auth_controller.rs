@@ -107,7 +107,7 @@ pub async fn login(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
@@ -156,7 +156,7 @@ pub async fn login(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
@@ -233,7 +233,7 @@ pub async fn logout(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
@@ -316,7 +316,7 @@ pub async fn update_token(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
@@ -365,7 +365,7 @@ pub async fn update_token(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 

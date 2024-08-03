@@ -91,7 +91,7 @@ pub async fn get_profile_current(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) //506
     })?;
 

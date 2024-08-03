@@ -104,7 +104,7 @@ pub async fn get_stream_by_id(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })?;
 
@@ -229,7 +229,7 @@ pub async fn get_streams(
         })
         .await
         .map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
             AppError::blocking506(&e.to_string())
         })?;
         
@@ -351,7 +351,7 @@ pub async fn get_streams_events(
         })
         .await
         .map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
             AppError::blocking506(&e.to_string())
         })?;
 
@@ -477,7 +477,7 @@ pub async fn get_streams_period(
         })
         .await
         .map_err(|e| {
-            log::error!("{}:{}: {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
             AppError::blocking506(&e.to_string())
         })?;
 
