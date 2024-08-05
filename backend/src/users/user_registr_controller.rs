@@ -641,7 +641,7 @@ pub async fn confirm_recovery(
     // Find a record with the specified ID in the “user_recovery" table.
     let opt_user_recovery = web::block(move || {
         let user_recovery = user_recovery_orm2
-            .find_user_recovery_by_id(user_recovery_id)
+            .get_user_recovery_by_id(user_recovery_id)
             .map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507

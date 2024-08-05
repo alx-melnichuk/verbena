@@ -3,8 +3,8 @@ use super::user_models::{CreateUserRecoveryDto, UserRecovery};
 pub const DURATION_IN_DAYS: u16 = 90;
 
 pub trait UserRecoveryOrm {
-    /// Find for an entity (user_recovery) by id.
-    fn find_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String>;
+    /// Get an entity (user_recovery) by ID.
+    fn get_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String>;
     /// Find for an entity (user_recovery) by user_id.
     fn find_user_recovery_by_user_id(&self, user_id: i32) -> Result<Option<UserRecovery>, String>;
     /// Add a new entity (user_recovery).
@@ -72,8 +72,8 @@ pub mod impls {
     }
 
     impl UserRecoveryOrm for UserRecoveryOrmApp {
-        /// Find for an entity (user_recovery) by id.
-        fn find_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String> {
+        /// Get an entity (user_recovery) by ID.
+        fn get_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to find user by id and return it.
@@ -219,8 +219,8 @@ pub mod tests {
     }
 
     impl UserRecoveryOrm for UserRecoveryOrmApp {
-        /// Find for an entity (user_recovery) by id.
-        fn find_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String> {
+        /// Get an entity (user_recovery) by ID.
+        fn get_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String> {
             let result = self
                 .user_recovery_vec
                 .iter()
