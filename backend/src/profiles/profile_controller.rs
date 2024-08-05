@@ -8,7 +8,7 @@ use crate::{
     errors::AppError,
     extractors::authentication::{Authenticated, RequireAuth},
     profiles::{
-        profile_models::{ProfileUser, ProfileUserDto, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF},
+        profile_models::{Profile, ProfileDto, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF},
         profile_orm::ProfileOrm,
     },
     settings::err,
@@ -46,13 +46,13 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
         (status = 200, description = "Profile information about the current user.", body = ProfileUserDto,
             examples(
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
-                value = json!(ProfileUserDto::from(
-                    ProfileUser::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
+                value = json!(ProfileDto::from(
+                    Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
                         Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF)))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
-                value = json!(ProfileUserDto::from(
-                    ProfileUser::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
+                value = json!(ProfileDto::from(
+                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
             )))),
         ),
         (status = 204, description = "The current user was not found."),
@@ -93,7 +93,7 @@ pub async fn get_profile_current(
     })?;
 
     if let Some(profile_user) = opt_profile_user {
-        let profile_user_dto = ProfileUserDto::from(profile_user);
+        let profile_user_dto = ProfileDto::from(profile_user);
         Ok(HttpResponse::Ok().json(profile_user_dto)) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
@@ -137,8 +137,8 @@ mod tests {
         let user_orm = UserOrmApp::create(&vec![user]);
         user_orm.user_vec.get(0).unwrap().clone()
     }
-    fn create_profile(user: User) -> ProfileUser {
-        ProfileUser::new(
+    fn create_profile(user: User) -> Profile {
+        Profile::new(
             user.id,
             &user.nickname,
             &user.email,
@@ -153,7 +153,7 @@ mod tests {
         (http::header::AUTHORIZATION, header_value)
     }
     #[rustfmt::skip]
-    fn get_cfg_data() -> (config_jwt::ConfigJwt, (Vec<User>, Vec<ProfileUser>, Vec<Session>), String) {
+    fn get_cfg_data() -> (config_jwt::ConfigJwt, (Vec<User>, Vec<Profile>, Vec<Session>), String) {
         let user1: User = user_with_id(create_user(true));
         let num_token = 1234;
         let session1 = SessionOrmApp::new_session(user1.id, Some(num_token));
@@ -171,8 +171,8 @@ mod tests {
     }
 
     fn configure_profile(
-        config_jwt: config_jwt::ConfigJwt,                   // configuration
-        data_c: (Vec<User>, Vec<ProfileUser>, Vec<Session>), // cortege of data vectors
+        config_jwt: config_jwt::ConfigJwt,               // configuration
+        data_c: (Vec<User>, Vec<Profile>, Vec<Session>), // cortege of data vectors
     ) -> impl FnOnce(&mut web::ServiceConfig) {
         move |config: &mut web::ServiceConfig| {
             let data_config_jwt = web::Data::new(config_jwt);
@@ -195,7 +195,7 @@ mod tests {
         let user1 = data_c.0.get(0).unwrap().clone();
         let user1_dto = UserDto::from(user1);
         let profile1 = data_c.1.get(0).unwrap().clone();
-        let profile1_dto = ProfileUserDto::from(profile1);
+        let profile1_dto = ProfileDto::from(profile1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_current).configure(configure_profile(cfg_c, data_c))).await;
@@ -209,9 +209,9 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
 
-        let profile_dto_res: ProfileUserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json = serde_json::json!(profile1_dto).to_string();
-        let profile_dto_ser: ProfileUserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        let profile_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(profile_dto_res, profile_dto_ser);
         assert_eq!(profile_dto_res.nickname, user1_dto.nickname);

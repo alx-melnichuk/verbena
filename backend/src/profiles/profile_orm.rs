@@ -1,14 +1,14 @@
-use crate::profiles::profile_models::ProfileUser;
+use crate::profiles::profile_models::Profile;
 use crate::users::user_models::UserRole;
 
-use super::profile_models::CreateProfileUser;
+use super::profile_models::CreateProfile;
 
 pub trait ProfileOrm {
     /// Get an entity (profile + user) by ID.
-    fn get_profile_user_by_id(&self, user_id: i32) -> Result<Option<ProfileUser>, String>;
+    fn get_profile_user_by_id(&self, user_id: i32) -> Result<Option<Profile>, String>;
 
     /// Add a new entry (profile, user).
-    fn create_profile_user(&self, create_profile: CreateProfileUser) -> Result<ProfileUser, String>;
+    fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String>;
 
     // /// Modify an entity (user).
     // fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String>;
@@ -63,7 +63,7 @@ pub mod impls {
 
     impl ProfileOrm for ProfileOrmApp {
         /// Get an entity (profile + user) by ID.
-        fn get_profile_user_by_id(&self, user_id: i32) -> Result<Option<ProfileUser>, String> {
+        fn get_profile_user_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -71,14 +71,14 @@ pub mod impls {
 
             // Run query using Diesel to find user by id (and user_id) and return it.
             let opt_profile_user = query
-                .get_result::<ProfileUser>(&mut conn)
+                .get_result::<Profile>(&mut conn)
                 .optional()
                 .map_err(|e| format!("get_profile_by_user_id: {}", e.to_string()))?;
 
             Ok(opt_profile_user)
         }
         /// Add a new entry (profile, user).
-        fn create_profile_user(&self, create_profile: CreateProfileUser) -> Result<ProfileUser, String> {
+        fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String> {
             let nickname = create_profile.nickname.to_lowercase(); // #?
             let email = create_profile.email.to_lowercase();
             let password = create_profile.password.clone();
@@ -95,7 +95,7 @@ pub mod impls {
 
             // Run a query with Diesel to create a new user and return it.
             let profile_user = query
-                .get_result::<ProfileUser>(&mut conn)
+                .get_result::<Profile>(&mut conn)
                 .map_err(|e| format!("create_profile_user: {}", e.to_string()))?;
 
             Ok(profile_user)
@@ -111,7 +111,7 @@ pub mod tests {
 
     #[derive(Debug, Clone)]
     pub struct ProfileOrmApp {
-        pub profile_user_vec: Vec<ProfileUser>,
+        pub profile_user_vec: Vec<Profile>,
     }
 
     impl ProfileOrmApp {
@@ -123,10 +123,10 @@ pub mod tests {
         }
         /// Create a new instance with the specified profile list.
         #[cfg(test)]
-        pub fn create(profile_user_list: &[ProfileUser]) -> Self {
-            let mut profile_user_vec: Vec<ProfileUser> = Vec::new();
+        pub fn create(profile_user_list: &[Profile]) -> Self {
+            let mut profile_user_vec: Vec<Profile> = Vec::new();
             for profile_user in profile_user_list.iter() {
-                let mut profile_user2 = ProfileUser::new(
+                let mut profile_user2 = Profile::new(
                     profile_user.user_id,
                     &profile_user.nickname.to_lowercase(),
                     &profile_user.email.to_lowercase(),
@@ -145,7 +145,7 @@ pub mod tests {
 
     impl ProfileOrm for ProfileOrmApp {
         /// Get an entity (profile + user) by ID.
-        fn get_profile_user_by_id(&self, user_id: i32) -> Result<Option<ProfileUser>, String> {
+        fn get_profile_user_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
             let result = self
                 .profile_user_vec
                 .iter()
@@ -154,7 +154,7 @@ pub mod tests {
             Ok(result)
         }
         /// Add a new entry (profile, user).
-        fn create_profile_user(&self, create_profile: CreateProfileUser) -> Result<ProfileUser, String> {
+        fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String> {
             /*let user_id = create_profile.user_id;
             // Check the availability of the profile by user_id.
             let opt_profile_user = self.get_profile_by_user_id(user_id)?;
@@ -163,7 +163,7 @@ pub mod tests {
             }
             */
             let user_id = USER_ID;
-            let profile_user = ProfileUser::new(
+            let profile_user = Profile::new(
                 user_id,
                 &create_profile.nickname.to_lowercase(),
                 &create_profile.email.to_lowercase(),

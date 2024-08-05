@@ -12,7 +12,7 @@ use crate::errors::AppError;
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
-use crate::profiles::{profile_models::ProfileUser, profile_orm::ProfileOrm};
+use crate::profiles::{profile_models::Profile, profile_orm::ProfileOrm};
 #[cfg(not(feature = "mockdata"))]
 use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(feature = "mockdata")]
@@ -27,14 +27,14 @@ pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
 // 500 Internal Server Error - Authentication: The entity "user" was not received from the request.
 pub const MSG_USER_NOT_RECEIVED_FROM_REQUEST: &str = "user_not_received_from_request";
 
-pub struct Authenticated(ProfileUser);
+pub struct Authenticated(Profile);
 
 impl FromRequest for Authenticated {
     type Error = actix_web::Error;
     type Future = Ready<Result<Self, Self::Error>>;
 
     fn from_request(req: &actix_web::HttpRequest, _payload: &mut dev::Payload) -> Self::Future {
-        let value = req.extensions().get::<ProfileUser>().cloned();
+        let value = req.extensions().get::<Profile>().cloned();
         let result = match value {
             Some(user) => Ok(Authenticated(user)),
             #[rustfmt::skip]
@@ -45,7 +45,7 @@ impl FromRequest for Authenticated {
 }
 
 impl std::ops::Deref for Authenticated {
-    type Target = ProfileUser;
+    type Target = Profile;
     /// Implement the deref method to access the inner ProfileUser value of Authenticated.
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -238,7 +238,7 @@ where
             if allowed_roles.contains(&profile_user.role) {
                 // Insert user information into request extensions
                 req.extensions_mut().insert::<User>(profile_user.clone().to_user());
-                req.extensions_mut().insert::<ProfileUser>(profile_user);
+                req.extensions_mut().insert::<Profile>(profile_user);
                 // Call the wrapped service to handle the request
                 let res = srv.call(req).await?;
                 Ok(res)
@@ -276,10 +276,10 @@ mod tests {
         HttpResponse::Ok().into()
     }
 
-    fn create_profile() -> ProfileUser {
+    fn create_profile() -> Profile {
         let mut user = UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwrN1T1");
         user.role = UserRole::User;
-        ProfileUser::new(
+        Profile::new(
             user.id,
             &user.nickname,
             &user.email,
@@ -297,7 +297,7 @@ mod tests {
         (http::header::AUTHORIZATION, header_value)
     }
     #[rustfmt::skip]
-    fn get_cfg_data() -> (config_jwt::ConfigJwt, (Vec<ProfileUser>, Vec<Session>), String) {
+    fn get_cfg_data() -> (config_jwt::ConfigJwt, (Vec<Profile>, Vec<Session>), String) {
         let profile1 = create_profile();
         let num_token = 1234;
         let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token));
@@ -312,8 +312,8 @@ mod tests {
         (config_jwt, data_c, token)
     }
     fn configure_auth(
-        config_jwt: config_jwt::ConfigJwt,        // configuration
-        data_c: (Vec<ProfileUser>, Vec<Session>), // cortege of data vectors
+        config_jwt: config_jwt::ConfigJwt,    // configuration
+        data_c: (Vec<Profile>, Vec<Session>), // cortege of data vectors
     ) -> impl FnOnce(&mut web::ServiceConfig) {
         move |config: &mut web::ServiceConfig| {
             let data_config_jwt = web::Data::new(config_jwt);

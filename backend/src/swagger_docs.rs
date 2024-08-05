@@ -40,7 +40,7 @@ use crate::{
         schemas(
             errors::AppError,
             // profile_controller
-            profile_models::ProfileUserDto,
+            profile_models::ProfileDto,
             // user model
             user_models::UserRole,
             // user_controller, user_auth_controller, user_registr_controller

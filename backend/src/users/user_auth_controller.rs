@@ -401,7 +401,7 @@ mod tests {
 
     use crate::extractors::authentication::BEARER;
     use crate::profiles::{
-        profile_models::ProfileUser,
+        profile_models::Profile,
         profile_orm::tests::ProfileOrmApp,
     };
     use crate::sessions::{config_jwt, session_models::Session, tokens::encode_token};

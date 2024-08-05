@@ -516,7 +516,7 @@ mod tests {
     use crate::errors::AppError;
     use crate::extractors::authentication::BEARER;
     use crate::profiles::{
-        profile_models::{ProfileUser, ProfileUserDto},
+        profile_models::{Profile, ProfileDto},
         profile_orm::tests::ProfileOrmApp,
     };
     use crate::sessions::{

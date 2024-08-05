@@ -12,7 +12,7 @@ use crate::utils::serial_datetime;
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = schema::profiles)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Profile {
+pub struct ProfileTbl {
     pub user_id: i32,
     // Link to user avatar, optional
     pub avatar: Option<String>, // min_len=2 max_len=255 Nullable
@@ -28,10 +28,10 @@ pub const PROFILE_DESCRIPT_DEF: &str = "";
 pub const PROFILE_THEME_LIGHT_DEF: &str = "light";
 pub const PROFILE_THEME_DARK: &str = "dark";
 
-impl Profile {
-    pub fn new(user_id: i32, avatar: Option<&str>, descript: Option<&str>, theme: Option<&str>) -> Profile {
+impl ProfileTbl {
+    pub fn new(user_id: i32, avatar: Option<&str>, descript: Option<&str>, theme: Option<&str>) -> ProfileTbl {
         let now = Utc::now();
-        Profile {
+        ProfileTbl {
             user_id,
             avatar: avatar.map(|v| v.to_string()),
             descript: descript.unwrap_or(PROFILE_DESCRIPT_DEF).to_string(),
@@ -46,7 +46,7 @@ impl Profile {
 #[diesel(table_name = schema::profiles)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(rename_all = "camelCase")]
-pub struct ProfileUser {
+pub struct Profile {
     #[diesel(sql_type = diesel::sql_types::Integer)]
     #[diesel(column_name = "user_id")]
     pub user_id: i32,
@@ -66,7 +66,7 @@ pub struct ProfileUser {
     pub updated_at: DateTime<Utc>,
 }
 
-impl ProfileUser {
+impl Profile {
     pub fn new(
         user_id: i32,
         nickname: &str,
@@ -75,9 +75,9 @@ impl ProfileUser {
         avatar: Option<&str>,
         descript: Option<&str>,
         theme: Option<&str>,
-    ) -> ProfileUser {
+    ) -> Profile {
         let now = Utc::now();
-        ProfileUser {
+        Profile {
             user_id,
             nickname: nickname.to_string(),
             email: email.to_string(),
@@ -104,7 +104,7 @@ impl ProfileUser {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct ProfileUserDto {
+pub struct ProfileDto {
     pub id: i32,
     pub nickname: String,
     pub email: String,
@@ -121,9 +121,9 @@ pub struct ProfileUserDto {
     pub updated_at: DateTime<Utc>,
 }
 
-impl ProfileUserDto {
-    pub fn from(profile_user: ProfileUser) -> ProfileUserDto {
-        ProfileUserDto {
+impl ProfileDto {
+    pub fn from(profile_user: Profile) -> ProfileDto {
+        ProfileDto {
             id: profile_user.user_id,
             nickname: profile_user.nickname,
             email: profile_user.email,
@@ -138,7 +138,7 @@ impl ProfileUserDto {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct CreateProfileUser {
+pub struct CreateProfile {
     pub nickname: String,
     pub email: String,
     pub password: String,
@@ -148,9 +148,9 @@ pub struct CreateProfileUser {
     pub theme: Option<String>,    // min_len=2 max_len=32 default "light"
 }
 
-impl CreateProfileUser {
-    pub fn new(nickname: &str, email: &str, password: &str, role: Option<UserRole>) -> CreateProfileUser {
-        CreateProfileUser {
+impl CreateProfile {
+    pub fn new(nickname: &str, email: &str, password: &str, role: Option<UserRole>) -> CreateProfile {
+        CreateProfile {
             nickname: nickname.to_string(),
             email: email.to_string(),
             password: password.to_string(),

@@ -2,12 +2,12 @@ use actix_web::{get, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
 use utoipa;
 
-use crate::{hash_tools, profiles::profile_models::ProfileUserDto};
+use crate::{hash_tools, profiles::profile_models::ProfileDto};
 #[cfg(not(feature = "mockdata"))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
-use crate::profiles::{profile_models::CreateProfileUser, profile_orm::ProfileOrm};
+use crate::profiles::{profile_models::CreateProfile, profile_orm::ProfileOrm};
 #[cfg(not(feature = "mockdata"))]
 use crate::send_email::mailer::impls::MailerApp;
 #[cfg(feature = "mockdata")]
@@ -335,7 +335,7 @@ pub async fn confirm_registration(
 
     // If such an entry exists, then add a new user.
     let create_profile = 
-        CreateProfileUser::new(&user_registr.nickname, &user_registr.email, &user_registr.password, None);
+        CreateProfile::new(&user_registr.nickname, &user_registr.email, &user_registr.password, None);
 
     let profile_user = web::block(move || {
         // Create a new entity (profile,user).
@@ -363,7 +363,7 @@ pub async fn confirm_registration(
         // An error during this operation has no effect.
     });
 
-    let profile_user_dto = ProfileUserDto::from(profile_user);
+    let profile_user_dto = ProfileDto::from(profile_user);
 
     Ok(HttpResponse::Created().json(profile_user_dto)) // 201
 }
@@ -813,7 +813,7 @@ mod tests {
     use serde_json::json;
 
     use crate::errors::AppError;
-    use crate::profiles::profile_models::ProfileUser;
+    use crate::profiles::profile_models::Profile;
     use crate::extractors::authentication::BEARER;
     use crate::send_email::config_smtp;
     use crate::sessions::{config_jwt, tokens::decode_token, session_models::Session,};
