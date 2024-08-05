@@ -137,6 +137,8 @@ impl ProfileDto {
     }
 }
 
+// ** CreateProfile **
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateProfile {
     pub nickname: String,
@@ -160,4 +162,15 @@ impl CreateProfile {
             theme: None,
         }
     }
+}
+
+// * UniquenessProfileDto *
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct UniquenessProfileDto {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nickname: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
 }

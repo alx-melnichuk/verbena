@@ -13,11 +13,11 @@ use crate::{
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        profile_controller::uniqueness_check,
         profile_controller::get_profile_current,
         user_auth_controller::login,
         user_auth_controller::logout,
         user_auth_controller::update_token,
-        user_controller::uniqueness_check,
         user_controller::get_user_by_id,
         user_controller::delete_user,
         user_controller::get_user_current,
@@ -40,6 +40,7 @@ use crate::{
         schemas(
             errors::AppError,
             // profile_controller
+            profile_models::UniquenessProfileDto,
             profile_models::ProfileDto,
             // user model
             user_models::UserRole,
@@ -51,7 +52,6 @@ use crate::{
             user_models::TokenUserDto, // ::update_token
             // user_controller
             user_models::NewPasswordUserDto,
-            user_models::UniquenessUserDto,
             // user_registr_controller
             user_models::RegistrUserDto, user_models::RegistrUserResponseDto, // ::registration
             user_models::RecoveryUserDto, user_models::RecoveryUserResponseDto, // ::recovery

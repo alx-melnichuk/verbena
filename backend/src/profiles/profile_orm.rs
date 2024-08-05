@@ -6,7 +6,12 @@ use super::profile_models::CreateProfile;
 pub trait ProfileOrm {
     /// Get an entity (profile + user) by ID.
     fn get_profile_user_by_id(&self, user_id: i32) -> Result<Option<Profile>, String>;
-
+    /// Find for an entity (profile) by nickname or email.
+    fn find_profile_by_nickname_or_email(
+        &self,
+        nickname: Option<&str>,
+        email: Option<&str>,
+    ) -> Result<Option<Profile>, String>;
     /// Add a new entry (profile, user).
     fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String>;
 
@@ -41,7 +46,7 @@ pub mod impls {
     use diesel::{self, prelude::*, sql_types};
 
     use crate::dbase;
-    use crate::schema::sql_types::UserRole as SqlUserRole;
+    use crate::schema;
 
     use super::*;
 
@@ -70,12 +75,42 @@ pub mod impls {
             let query = diesel::sql_query("select * from get_profile_user($1);").bind::<sql_types::Integer, _>(user_id);
 
             // Run query using Diesel to find user by id (and user_id) and return it.
-            let opt_profile_user = query
+            let opt_profile = query
                 .get_result::<Profile>(&mut conn)
                 .optional()
                 .map_err(|e| format!("get_profile_by_user_id: {}", e.to_string()))?;
 
-            Ok(opt_profile_user)
+            Ok(opt_profile)
+        }
+        /// Find for an entity (profile) by nickname or email.
+        fn find_profile_by_nickname_or_email(
+            &self,
+            nickname: Option<&str>,
+            email: Option<&str>,
+        ) -> Result<Option<Profile>, String> {
+            let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase(); // #?
+            let nickname2_len = nickname2.len();
+            let email2 = email.unwrap_or(&"".to_string()).to_lowercase();
+            let email2_len = email2.len();
+
+            if nickname2_len == 0 && email2_len == 0 {
+                return Ok(None);
+            }
+
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let query = diesel::sql_query("select * from find_profile_user_by_nickname_or_email($1, $2);")
+                .bind::<sql_types::Text, _>(nickname2)
+                .bind::<sql_types::Text, _>(email2);
+
+            // Run query using Diesel to find user by id (and user_id) and return it.
+            let opt_profile = query
+                .get_result::<Profile>(&mut conn)
+                .optional()
+                .map_err(|e| format!("find_profile_user_by_nickname_or_email: {}", e.to_string()))?;
+
+            Ok(opt_profile)
         }
         /// Add a new entry (profile, user).
         fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String> {
@@ -91,7 +126,7 @@ pub mod impls {
                 .bind::<sql_types::Text, _>(nickname.to_string())
                 .bind::<sql_types::Text, _>(email.to_string())
                 .bind::<sql_types::Text, _>(password.to_string())
-                .bind::<SqlUserRole, _>(role);
+                .bind::<schema::sql_types::UserRole, _>(role);
 
             // Run a query with Diesel to create a new user and return it.
             let profile_user = query
@@ -111,20 +146,20 @@ pub mod tests {
 
     #[derive(Debug, Clone)]
     pub struct ProfileOrmApp {
-        pub profile_user_vec: Vec<Profile>,
+        pub profile_vec: Vec<Profile>,
     }
 
     impl ProfileOrmApp {
         /// Create a new instance.
         pub fn new() -> Self {
             ProfileOrmApp {
-                profile_user_vec: Vec::new(),
+                profile_vec: Vec::new(),
             }
         }
         /// Create a new instance with the specified profile list.
         #[cfg(test)]
         pub fn create(profile_user_list: &[Profile]) -> Self {
-            let mut profile_user_vec: Vec<Profile> = Vec::new();
+            let mut profile_vec: Vec<Profile> = Vec::new();
             for profile_user in profile_user_list.iter() {
                 let mut profile_user2 = Profile::new(
                     profile_user.user_id,
@@ -137,9 +172,9 @@ pub mod tests {
                 );
                 profile_user2.created_at = profile_user.created_at;
                 profile_user2.updated_at = profile_user.updated_at;
-                profile_user_vec.push(profile_user2);
+                profile_vec.push(profile_user2);
             }
-            ProfileOrmApp { profile_user_vec }
+            ProfileOrmApp { profile_vec }
         }
     }
 
@@ -147,31 +182,56 @@ pub mod tests {
         /// Get an entity (profile + user) by ID.
         fn get_profile_user_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
             let result = self
-                .profile_user_vec
+                .profile_vec
                 .iter()
                 .find(|profile_user| profile_user.user_id == user_id)
                 .map(|profile_user| profile_user.clone());
             Ok(result)
         }
+        /// Find for an entity (profile) by nickname or email.
+        fn find_profile_by_nickname_or_email(
+            &self,
+            nickname: Option<&str>,
+            email: Option<&str>,
+        ) -> Result<Option<Profile>, String> {
+            let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase();
+            let nickname2_len = nickname2.len();
+            let email2 = email.unwrap_or(&"".to_string()).to_lowercase();
+            let email2_len = email2.len();
+
+            if nickname2_len == 0 && email2_len == 0 {
+                return Ok(None);
+            }
+
+            let result = self
+                .profile_vec
+                .iter()
+                .find(|profile| {
+                    (nickname2_len > 0 && profile.nickname == nickname2) || (email2_len > 0 && profile.email == email2)
+                })
+                .map(|user| user.clone());
+
+            Ok(result)
+        }
+
         /// Add a new entry (profile, user).
         fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String> {
-            /*
-            let nickname = create_user_dto.nickname.to_lowercase();
-            let email = create_user_dto.email.to_lowercase();
+            let nickname = create_profile.nickname.to_lowercase();
+            let email = create_profile.email.to_lowercase();
 
             // Check the availability of the profile by nickname and email.
-            let opt_profile = self.find_user_by_nickname_or_email(Some(&nickname), Some(&email))?;
+            let opt_profile = self.find_profile_by_nickname_or_email(Some(&nickname), Some(&email))?;
             if opt_profile.is_some() {
                 return Err("Profile already exists".to_string());
             }
-            */
-            let idx: i32 = self.profile_user_vec.len().try_into().unwrap();
+
+            let idx: i32 = self.profile_vec.len().try_into().unwrap();
             let user_id: i32 = USER_ID + idx;
 
             let profile_user = Profile::new(
                 user_id,
-                &create_profile.nickname.to_lowercase(),
-                &create_profile.email.to_lowercase(),
+                &nickname,
+                &email,
                 create_profile.role.unwrap_or(UserRole::User),
                 create_profile.avatar.as_deref(),
                 create_profile.descript.as_deref(),
