@@ -5,12 +5,9 @@ use super::stream_models::{
 };
 
 pub trait StreamOrm {
-    /// Find for an entity (stream) by id.
-    fn find_stream_by_id(
-        &self,
-        id: i32,
-        opt_user_id: Option<i32>,
-    ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
+    /// Get an entity (stream) by ID.
+    #[rustfmt::skip]
+    fn get_stream_by_id(&self, id: i32, opt_user_id: Option<i32>) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
     /// Find for an entity (stream) by SearchStreamInfo.
     fn find_streams(&self, search_stream: SearchStream) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String>;
     /// Find for an entity (stream event) by SearchStreamEvent.
@@ -129,12 +126,9 @@ pub mod impls {
     }
 
     impl StreamOrm for StreamOrmApp {
-        /// Find for an entity (stream) by id.
-        fn find_stream_by_id(
-            &self,
-            id: i32,
-            opt_user_id: Option<i32>,
-        ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
+        /// Get an entity (stream) by ID.
+        #[rustfmt::skip]
+        fn get_stream_by_id(&self, id: i32, opt_user_id: Option<i32>) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -599,9 +593,9 @@ pub mod tests {
     }
 
     impl StreamOrm for StreamOrmApp {
-        /// Find for an entity (stream) by id.
+        /// Get an entity (stream) by ID.
         #[rustfmt::skip]
-        fn find_stream_by_id(&self, id: i32, opt_user_id: Option<i32>) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
+        fn get_stream_by_id(&self, id: i32, opt_user_id: Option<i32>) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             let opt_stream_info = self
                 .stream_info_vec
                 .iter()
