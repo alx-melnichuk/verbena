@@ -41,41 +41,6 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
-/// uniqueness_check
-///
-/// Checking the uniqueness of the user's "nickname" or "email".
-///
-/// One could call with following curl.
-/// ```text
-/// curl -i -X GET http://localhost:8080/api/users/uniqueness?nickname=demo1
-/// ```
-/// Or you could call with the next curl.
-/// ```text
-/// curl -i -X GET http://localhost:8080/api/users/uniqueness?email=demo1@gmail.us
-/// ```
-///
-/// If the value is already in use, then "{\"uniqueness\":false}" is returned with status 200.
-/// If the value is not yet used, then "{\"uniqueness\":true}" is returned with status 200.
-///
-#[utoipa::path(
-    responses(
-        (status = 200, description = "The result of checking whether nickname (email) is already in use.", body = JSON, examples(
-            ("already_use" = (summary = "already in use", 
-                description = "If the nickname (email) is already in use.",
-                value = json!({ "uniqueness": false }))),
-            ("not_use" = (summary = "not yet in use", 
-                description = "If the nickname (email) is not yet used.",
-                value = json!({ "uniqueness": true })))
-        )),
-        (status = 406, description = "None of the parameters are specified.", body = AppError,
-            example = json!(AppError::not_acceptable406(MSG_PARAMETERS_NOT_SPECIFIED)
-                .add_param(Borrowed("invalidParams"), &serde_json::json!({ "nickname": "null", "email": "null" })))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
-    ),
-)]
 #[get("/api/users/uniqueness")]
 pub async fn uniqueness_check(
     user_orm: web::Data<UserOrmApp>,
