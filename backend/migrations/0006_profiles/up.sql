@@ -19,7 +19,7 @@ SELECT diesel_manage_updated_at('profiles');
 INSERT INTO profiles (user_id, created_at, updated_at) 
 (SELECT id, created_at, updated_at FROM users);
 
-/* Stored function to retrieve data from the "profiles" and "users" tables. */
+/* Stored function for retrieving data from the "profiles" and "users" tables by user ID. */
 CREATE OR REPLACE FUNCTION get_profile_user(
   IN _id INTEGER,
   OUT user_id INTEGER,
@@ -48,7 +48,54 @@ AS $$
   WHERE u.id = _id AND u.id = p.user_id;
 $$;
 
-/* Create a stored procedure to add a new user. */
+/* Stored function for retrieving data from the "profiles" and "users" tables by nickname or email. */
+CREATE OR REPLACE FUNCTION find_profile_user_by_nickname_or_email(
+  IN _nickname VARCHAR,
+  IN _email VARCHAR,
+  OUT user_id INTEGER,
+  OUT nickname VARCHAR,
+  OUT email VARCHAR,
+  OUT "role" user_role,
+  OUT avatar VARCHAR,
+  OUT descript TEXT,
+  OUT theme VARCHAR,
+  OUT created_at TIMESTAMP WITH TIME ZONE,
+  OUT updated_at TIMESTAMP WITH TIME ZONE
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+DECLARE 
+  rec1 RECORD;
+BEGIN
+  IF LENGTH(_nickname)=0 AND LENGTH(_email)=0 THEN
+    RETURN;
+  END IF;
+
+  SELECT
+    "users".id AS user_id, 
+    "users".nickname,
+    "users".email,
+    "users"."role",
+    "profiles".avatar,
+    "profiles".descript,
+    "profiles".theme,
+    "users".created_at,
+    CASE WHEN "users".updated_at > "profiles".updated_at
+      THEN "users".updated_at ELSE "profiles".updated_at END as updated_at
+    INTO rec1
+  FROM 
+    ("users" INNER JOIN "profiles" ON ("profiles"."user_id" = "users"."id"))
+  WHERE 
+    ("users".nickname = _nickname OR "users".email = _email)
+  LIMIT 1;
+
+  RETURN QUERY SELECT
+    rec1.user_id, rec1.nickname, rec1.email, rec1."role", rec1.avatar, rec1.descript, rec1.theme,
+    rec1.created_at, rec1.updated_at;
+END;
+$$;
+
+
+/* Create a stored procedure to add a new user, their profile, and their session. */
 CREATE OR REPLACE FUNCTION create_profile_user(
   IN _nickname VARCHAR,
   IN _email VARCHAR,
