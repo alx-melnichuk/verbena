@@ -198,7 +198,7 @@ pub async fn get_user_by_id(
     let result_user = web::block(move || {
         // Find user by id.
         let existing_user =
-            user_orm.find_user_by_id(id).map_err(|e| {
+            user_orm.get_user_by_id(id).map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             }).ok()?;

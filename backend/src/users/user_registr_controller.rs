@@ -670,7 +670,7 @@ pub async fn confirm_recovery(
     let user_orm2 = user_orm.clone();
     // Find an entry in "user" with the specified ID.
     let opt_user = web::block(move || {
-        let user = user_orm2.find_user_by_id(user_id)
+        let user = user_orm2.get_user_by_id(user_id)
         .map_err(|e| {
             log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
