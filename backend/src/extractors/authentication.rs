@@ -19,7 +19,7 @@ use crate::sessions::session_orm::impls::SessionOrmApp;
 use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::{config_jwt, session_orm::SessionOrm, tokens::decode_token};
 use crate::settings::err;
-use crate::users::user_models::{User, UserRole};
+use crate::users::user_models::UserRole;
 
 pub const BEARER: &str = "Bearer ";
 // 401 Unauthorized - According to "user_id" in the token, the user was not found.
@@ -236,8 +236,7 @@ where
             }
             // Check if user's role matches the required role
             if allowed_roles.contains(&profile_user.role) {
-                // Insert user information into request extensions
-                req.extensions_mut().insert::<User>(profile_user.clone().to_user());
+                // Insert user profile information into request extensions.
                 req.extensions_mut().insert::<Profile>(profile_user);
                 // Call the wrapped service to handle the request
                 let res = srv.call(req).await?;

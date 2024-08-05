@@ -311,8 +311,8 @@ pub async fn delete_user(
 pub async fn get_user_current( // TODO replace on "get_profile_current"
     authenticated: Authenticated,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let profile_user = authenticated.deref();
-    let user_dto = user_models::UserDto::from(profile_user.clone().to_user());
+    let profile = authenticated.deref();
+    let user_dto = user_models::UserDto::from(profile.clone().to_user());
 
     Ok(HttpResponse::Ok().json(user_dto)) // 200
 }
@@ -366,8 +366,8 @@ pub async fn put_user_new_password(
     json_body: web::Json<NewPasswordUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // 1.308634s
-    let profile_user = authenticated.deref();
-    let id = profile_user.user_id;
+    let profile = authenticated.deref();
+    let id = profile.user_id;
 
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
@@ -386,8 +386,8 @@ pub async fn put_user_new_password(
     })?;
 
     // Get the user's current password.
-    let nickname = profile_user.nickname.clone();
-    let email = profile_user.nickname.clone();
+    let nickname = profile.nickname.clone();
+    let email = profile.nickname.clone();
     let user_orm2 = user_orm.clone();
     let user2 = web::block(move || {
         // Find user by nickname or email.
@@ -478,8 +478,8 @@ pub async fn delete_user_current(
     authenticated: Authenticated,
     user_orm: web::Data<UserOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let profile_user = authenticated.deref();
-    let id = profile_user.user_id;
+    let profile = authenticated.deref();
+    let id = profile.user_id;
 
     let result_user = web::block(move || {
         // Modify the entity (user) with new data. Result <user_models::User>.

@@ -73,18 +73,18 @@ pub async fn get_profile_current(
     authenticated: Authenticated,
     profile_orm: web::Data<ProfileOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let profile_user0 = authenticated.deref();
-    let user_id = profile_user0.user_id;
+    let profile0 = authenticated.deref();
+    let user_id = profile0.user_id;
 
-    let opt_profile_user = web::block(move || {
+    let opt_profile = web::block(move || {
         // Find profile by user id.
-        let profile_user =
+        let profile =
             profile_orm.get_profile_user_by_id(user_id).map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             }).ok()?;
 
-        profile_user
+        profile
     })
     .await
     .map_err(|e| {
@@ -92,7 +92,7 @@ pub async fn get_profile_current(
         AppError::blocking506(&e.to_string()) //506
     })?;
 
-    if let Some(profile_user) = opt_profile_user {
+    if let Some(profile_user) = opt_profile {
         let profile_user_dto = ProfileDto::from(profile_user);
         Ok(HttpResponse::Ok().json(profile_user_dto)) // 200
     } else {
