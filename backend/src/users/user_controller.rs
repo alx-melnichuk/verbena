@@ -516,7 +516,7 @@ mod tests {
     use crate::errors::AppError;
     use crate::extractors::authentication::BEARER;
     use crate::profiles::{
-        profile_models::{ProfileUser, ProfileUserDto, PROFILE_DESCRIPT_DEF, PROFILE_THEME_LIGHT_DEF},
+        profile_models::{ProfileUser, ProfileUserDto},
         profile_orm::tests::ProfileOrmApp,
     };
     use crate::sessions::{
@@ -549,8 +549,8 @@ mod tests {
             &user.email,
             user.role.clone(),
             None,
-            PROFILE_DESCRIPT_DEF,
-            PROFILE_THEME_LIGHT_DEF,
+            None,
+            None,
         )
     }
     fn create_user_registr() -> UserRegistr {

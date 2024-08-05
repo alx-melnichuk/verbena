@@ -149,8 +149,8 @@ pub mod tests {
                     &profile_user.email.to_lowercase(),
                     profile_user.role.clone(),
                     profile_user.avatar.as_deref(),
-                    &profile_user.descript,
-                    &profile_user.theme,
+                    Some(profile_user.descript.as_str()),
+                    Some(profile_user.theme.as_str()),
                 );
                 profile_user2.created_at = profile_user.created_at;
                 profile_user2.updated_at = profile_user.updated_at;
@@ -210,8 +210,8 @@ pub mod tests {
                 &create_profile.email.to_lowercase(),
                 create_profile.role.unwrap_or(UserRole::User),
                 create_profile.avatar.as_deref(),
-                &create_profile.descript,
-                &create_profile.theme,
+                create_profile.descript.as_deref(),
+                create_profile.theme.as_deref(),
             );
             Ok(profile_user)
         }

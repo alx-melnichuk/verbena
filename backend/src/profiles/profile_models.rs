@@ -73,8 +73,8 @@ impl ProfileUser {
         email: &str,
         role: UserRole,
         avatar: Option<&str>,
-        descript: &str,
-        theme: &str,
+        descript: Option<&str>,
+        theme: Option<&str>,
     ) -> ProfileUser {
         let now = Utc::now();
         ProfileUser {
@@ -83,8 +83,8 @@ impl ProfileUser {
             email: email.to_string(),
             role,
             avatar: avatar.map(|v| v.to_string()),
-            descript: descript.to_string(),
-            theme: theme.to_string(),
+            descript: descript.unwrap_or(PROFILE_DESCRIPT_DEF).to_string(),
+            theme: theme.unwrap_or(PROFILE_THEME_LIGHT_DEF).to_string(),
             created_at: now.clone(),
             updated_at: now.clone(),
         }

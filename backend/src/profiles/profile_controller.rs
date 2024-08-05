@@ -8,9 +8,7 @@ use crate::{
     errors::AppError,
     extractors::authentication::{Authenticated, RequireAuth},
     profiles::{
-        profile_models::{
-            ProfileUser, ProfileUserDto, PROFILE_DESCRIPT_DEF, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF,
-        },
+        profile_models::{ProfileUser, ProfileUserDto, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF},
         profile_orm::ProfileOrm,
     },
     settings::err,
@@ -50,12 +48,11 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(ProfileUserDto::from(
                     ProfileUser::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                        "Description Emma_Johnson", PROFILE_THEME_LIGHT_DEF))
+                        Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF)))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
                 value = json!(ProfileUserDto::from(
-                    ProfileUser::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, PROFILE_DESCRIPT_DEF,
-                        PROFILE_THEME_DARK))
+                    ProfileUser::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
             )))),
         ),
         (status = 204, description = "The current user was not found."),
@@ -147,8 +144,8 @@ mod tests {
             &user.email,
             user.role.clone(),
             None,
-            PROFILE_DESCRIPT_DEF,
-            PROFILE_THEME_LIGHT_DEF,
+            Some(PROFILE_DESCRIPT_DEF),
+            Some(PROFILE_THEME_LIGHT_DEF),
         )
     }
     fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
