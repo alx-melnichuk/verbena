@@ -3,8 +3,6 @@ use crate::sessions::session_models::Session;
 pub trait SessionOrm {
     /// Find for an entity (session) by id.
     fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String>;
-    /// Add a new entity (session).
-    fn create_session(&self, session: Session) -> Result<Session, String>;
     /// Modify the entity (session).
     fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String>;
     // There is no need to delete the entity (session), since it is deleted cascade when deleting an entry in the users table.
@@ -68,19 +66,6 @@ pub mod impls {
 
             Ok(opt_session)
         }
-        /// Add a new session entry.
-        fn create_session(&self, session: Session) -> Result<Session, String> {
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to add a new session entry.
-            let result: Session = diesel::insert_into(schema::sessions::table)
-                .values(session)
-                .returning(Session::as_returning())
-                .get_result(&mut conn)
-                .map_err(|e| format!("create_session: {}", e.to_string()))?;
-
-            Ok(result)
-        }
         /// Perform a full or partial change to a session record.
         fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
             // Get a connection from the P2D2 pool.
@@ -141,18 +126,6 @@ pub mod tests {
                 .map(|session| session.clone());
 
             Ok(opt_session)
-        }
-        /// Add a new entity (session).
-        fn create_session(&self, session: Session) -> Result<Session, String> {
-            let id = session.user_id;
-            // Check the availability of the user ID.
-            let user_opt = self.get_session_by_id(id)?;
-            if user_opt.is_some() {
-                return Err("Session already exists".to_string());
-            }
-            let session_saved = Self::new_session(session.user_id, session.num_token);
-
-            Ok(session_saved)
         }
         /// Modify the entity (session).
         fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
