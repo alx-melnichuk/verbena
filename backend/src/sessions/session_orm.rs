@@ -1,7 +1,7 @@
 use crate::sessions::session_models::Session;
 
 pub trait SessionOrm {
-    /// Find for an entity (session) by id.
+    /// Get an entity (session) by ID.
     fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String>;
     /// Modify the entity (session).
     fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String>;
@@ -53,7 +53,7 @@ pub mod impls {
     }
 
     impl SessionOrm for SessionOrmApp {
-        /// Find for an entity (session) by id.
+        /// Get an entity (session) by ID.
         fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
@@ -117,7 +117,7 @@ pub mod tests {
     }
 
     impl SessionOrm for SessionOrmApp {
-        /// Find for an entity (session) by id.
+        /// Get an entity (session) by ID.
         fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
             let opt_session: Option<Session> = self
                 .session_vec
