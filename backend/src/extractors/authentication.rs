@@ -193,7 +193,7 @@ where
             let timer1 = std::time::Instant::now();
             let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap();
             // Find a session for a given user.
-            let opt_session = session_orm.find_session_by_id(user_id).map_err(|e| {
+            let opt_session = session_orm.get_session_by_id(user_id).map_err(|e| {
                 log::error!("{}: {}", err::CD_DATABASE, e.to_string());
                 let error = AppError::database507(&e.to_string());
                 return error::ErrorInsufficientStorage(error); // 507
@@ -257,7 +257,6 @@ mod tests {
     use actix_web::{cookie::Cookie, dev, get, http, test, web, App, HttpResponse};
 
     use crate::{
-        profiles::profile_models::{PROFILE_DESCRIPT_DEF, PROFILE_THEME_LIGHT_DEF},
         sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token},
         users::{user_models::UserRole, user_orm::tests::UserOrmApp},
     };
@@ -286,8 +285,8 @@ mod tests {
             &user.email,
             user.role.clone(),
             None,
-            PROFILE_DESCRIPT_DEF,
-            PROFILE_THEME_LIGHT_DEF,
+            None,
+            None,
         )
     }
     fn cfg_jwt() -> config_jwt::ConfigJwt {

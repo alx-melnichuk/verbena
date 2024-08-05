@@ -308,7 +308,7 @@ pub async fn update_token(
 
     let opt_session = web::block(move || {
         // Find a session for a given user.
-        let existing_session = session_orm.find_session_by_id(user_id).map_err(|e| {
+        let existing_session = session_orm.get_session_by_id(user_id).map_err(|e| {
             log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
@@ -401,7 +401,7 @@ mod tests {
 
     use crate::extractors::authentication::BEARER;
     use crate::profiles::{
-        profile_models::{ProfileUser, PROFILE_DESCRIPT_DEF, PROFILE_THEME_LIGHT_DEF},
+        profile_models::ProfileUser,
         profile_orm::tests::ProfileOrmApp,
     };
     use crate::sessions::{config_jwt, session_models::Session, tokens::encode_token};
@@ -431,8 +431,8 @@ mod tests {
             &user.email,
             user.role.clone(),
             None,
-            PROFILE_DESCRIPT_DEF,
-            PROFILE_THEME_LIGHT_DEF,
+            None,
+            None,
         )
     }
     fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {

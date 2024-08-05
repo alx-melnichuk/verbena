@@ -2,7 +2,7 @@ use crate::sessions::session_models::Session;
 
 pub trait SessionOrm {
     /// Find for an entity (session) by id.
-    fn find_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String>;
+    fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String>;
     /// Add a new entity (session).
     fn create_session(&self, session: Session) -> Result<Session, String>;
     /// Modify the entity (session).
@@ -56,7 +56,7 @@ pub mod impls {
 
     impl SessionOrm for SessionOrmApp {
         /// Find for an entity (session) by id.
-        fn find_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
+        fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to find user by id and return it.
@@ -64,7 +64,7 @@ pub mod impls {
                 .filter(schema::sessions::dsl::user_id.eq(user_id))
                 .first::<Session>(&mut conn)
                 .optional()
-                .map_err(|e| format!("find_session_by_id: {}", e.to_string()))?;
+                .map_err(|e| format!("get_session_by_id: {}", e.to_string()))?;
 
             Ok(opt_session)
         }
@@ -133,7 +133,7 @@ pub mod tests {
 
     impl SessionOrm for SessionOrmApp {
         /// Find for an entity (session) by id.
-        fn find_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
+        fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
             let opt_session: Option<Session> = self
                 .session_vec
                 .iter()
@@ -146,7 +146,7 @@ pub mod tests {
         fn create_session(&self, session: Session) -> Result<Session, String> {
             let id = session.user_id;
             // Check the availability of the user ID.
-            let user_opt = self.find_session_by_id(id)?;
+            let user_opt = self.get_session_by_id(id)?;
             if user_opt.is_some() {
                 return Err("Session already exists".to_string());
             }
@@ -156,7 +156,7 @@ pub mod tests {
         }
         /// Modify the entity (session).
         fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
-            let opt_session: Option<Session> = self.find_session_by_id(user_id)?;
+            let opt_session: Option<Session> = self.get_session_by_id(user_id)?;
             let mut res_session = match opt_session {
                 Some(v) => v,
                 None => {

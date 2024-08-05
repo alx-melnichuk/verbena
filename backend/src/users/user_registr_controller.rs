@@ -19,7 +19,6 @@ use crate::sessions::session_orm::impls::SessionOrmApp;
 use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::{
     config_jwt,
-    session_models::Session,
     session_orm::SessionOrm,
     tokens::{decode_token, encode_token, generate_num_token},
 };
@@ -814,10 +813,10 @@ mod tests {
     use serde_json::json;
 
     use crate::errors::AppError;
-    use crate::profiles::profile_models::{ProfileUser, PROFILE_DESCRIPT_DEF, PROFILE_THEME_LIGHT_DEF};
+    use crate::profiles::profile_models::ProfileUser;
     use crate::extractors::authentication::BEARER;
     use crate::send_email::config_smtp;
-    use crate::sessions::{config_jwt, tokens::decode_token};
+    use crate::sessions::{config_jwt, tokens::decode_token, session_models::Session,};
     use crate::settings::{config_app, err};
     use crate::users::{
         user_models::{
@@ -849,8 +848,8 @@ mod tests {
             &user.email,
             user.role.clone(),
             None,
-            PROFILE_DESCRIPT_DEF,
-            PROFILE_THEME_LIGHT_DEF,
+            None,
+            None,
         )
     }
     fn create_user_registr() -> UserRegistr {
