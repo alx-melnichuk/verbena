@@ -1,14 +1,11 @@
-use crate::profiles::profile_models::{Profile, ProfileUser};
+use crate::profiles::profile_models::ProfileUser;
 use crate::users::user_models::UserRole;
 
 use super::profile_models::CreateProfileUser;
 
 pub trait ProfileOrm {
-    /// Find for an entity (profile + user) by user_id.
-    fn get_profile_by_user_id(&self, user_id: i32) -> Result<Option<ProfileUser>, String>;
-
-    /// Add a new entry (profile).
-    fn create_profile(&self, profile: Profile) -> Result<Profile, String>;
+    /// Get an entity (profile + user) by ID.
+    fn get_profile_user_by_id(&self, user_id: i32) -> Result<Option<ProfileUser>, String>;
 
     /// Add a new entry (profile, user).
     fn create_profile_user(&self, create_profile: CreateProfileUser) -> Result<ProfileUser, String>;
@@ -43,7 +40,8 @@ pub mod impls {
 
     use diesel::{self, prelude::*, sql_types};
 
-    use crate::{dbase, schema};
+    use crate::dbase;
+    use crate::schema::sql_types::UserRole as SqlUserRole;
 
     use super::*;
 
@@ -64,8 +62,8 @@ pub mod impls {
     }
 
     impl ProfileOrm for ProfileOrmApp {
-        /// Find for an entity (profile + user) by user_id.
-        fn get_profile_by_user_id(&self, user_id: i32) -> Result<Option<ProfileUser>, String> {
+        /// Get an entity (profile + user) by ID.
+        fn get_profile_user_by_id(&self, user_id: i32) -> Result<Option<ProfileUser>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -79,23 +77,8 @@ pub mod impls {
 
             Ok(opt_profile_user)
         }
-        /// Add a new entry (profile).
-        fn create_profile(&self, profile: Profile) -> Result<Profile, String> {
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to add a new entry (profile).
-            let result: Profile = diesel::insert_into(schema::profiles::table)
-                .values(profile)
-                .returning(Profile::as_returning())
-                .get_result(&mut conn)
-                .map_err(|e| format!("create_profile: {}", e.to_string()))?;
-
-            Ok(result)
-        }
         /// Add a new entry (profile, user).
         fn create_profile_user(&self, create_profile: CreateProfileUser) -> Result<ProfileUser, String> {
-            use crate::schema::sql_types::UserRole as SqlUserRole;
-
             let nickname = create_profile.nickname.to_lowercase(); // #?
             let email = create_profile.email.to_lowercase();
             let password = create_profile.password.clone();
@@ -122,7 +105,7 @@ pub mod impls {
 
 #[cfg(feature = "mockdata")]
 pub mod tests {
-    use chrono::{Duration, Utc};
+    use crate::users::user_orm::tests::USER_ID;
 
     use super::*;
 
@@ -158,25 +141,11 @@ pub mod tests {
             }
             ProfileOrmApp { profile_user_vec }
         }
-        /// Create a new entity instance.
-        pub fn new_profile(user_id: i32, avatar: Option<&str>, descript: &str, theme: &str) -> Profile {
-            let now = Utc::now();
-            let cr_dt = now + Duration::minutes(-10);
-
-            Profile {
-                user_id,
-                avatar: avatar.map(|v| v.to_string()),
-                descript: descript.to_string(),
-                theme: theme.to_string(),
-                created_at: cr_dt.clone(),
-                updated_at: cr_dt.clone(),
-            }
-        }
     }
 
     impl ProfileOrm for ProfileOrmApp {
-        /// Find for an entity (profile + user) by user_id.
-        fn get_profile_by_user_id(&self, user_id: i32) -> Result<Option<ProfileUser>, String> {
+        /// Get an entity (profile + user) by ID.
+        fn get_profile_user_by_id(&self, user_id: i32) -> Result<Option<ProfileUser>, String> {
             let result = self
                 .profile_user_vec
                 .iter()
@@ -184,28 +153,18 @@ pub mod tests {
                 .map(|profile_user| profile_user.clone());
             Ok(result)
         }
-        /// Add a new entry (profile).
-        fn create_profile(&self, profile: Profile) -> Result<Profile, String> {
-            let user_id = profile.user_id;
+        /// Add a new entry (profile, user).
+        fn create_profile_user(&self, create_profile: CreateProfileUser) -> Result<ProfileUser, String> {
+            /*let user_id = create_profile.user_id;
             // Check the availability of the profile by user_id.
             let opt_profile_user = self.get_profile_by_user_id(user_id)?;
             if opt_profile_user.is_some() {
                 return Err("Profile already exists".to_string());
             }
-
-            let result = Self::new_profile(
-                user_id,
-                profile.avatar.as_ref().map(String::as_ref),
-                &profile.descript,
-                &profile.theme,
-            );
-
-            Ok(result)
-        }
-        /// Add a new entry (profile, user).
-        fn create_profile_user(&self, create_profile: CreateProfileUser) -> Result<ProfileUser, String> {
+            */
+            let user_id = USER_ID;
             let profile_user = ProfileUser::new(
-                1234,
+                user_id,
                 &create_profile.nickname.to_lowercase(),
                 &create_profile.email.to_lowercase(),
                 create_profile.role.unwrap_or(UserRole::User),

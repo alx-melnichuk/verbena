@@ -79,7 +79,7 @@ pub async fn get_profile_current(
     let opt_profile_user = web::block(move || {
         // Find profile by user id.
         let profile_user =
-            profile_orm.get_profile_by_user_id(user_id).map_err(|e| {
+            profile_orm.get_profile_user_by_id(user_id).map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             }).ok()?;
