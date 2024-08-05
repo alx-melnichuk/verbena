@@ -138,23 +138,6 @@ pub mod impls {
             };
             Ok(result)
         }
-        // Add a new entity (user).
-        /*fn create_user(&self, create_user_dto: CreateUserDto) -> Result<User, String> {
-            let mut create_user_dto2 = create_user_dto.clone();
-            create_user_dto2.nickname = create_user_dto2.nickname.to_lowercase(); // #?
-            create_user_dto2.email = create_user_dto2.email.to_lowercase();
-
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to add a new user entry.
-            let user: User = diesel::insert_into(schema::users::table)
-                .values(create_user_dto2)
-                .returning(User::as_returning())
-                .get_result(&mut conn)
-                .map_err(|e| format!("create_user: {}", e.to_string()))?;
-
-            Ok(user)
-        }*/
         /// Modify an entity (user).
         fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String> {
             let mut modify_user_dto2: ModifyUserDto = modify_user_dto.clone();
@@ -279,24 +262,6 @@ pub mod tests {
 
             Ok(result)
         }
-        // Add a new entity (user).
-        /*fn create_user(&self, create_user_dto: CreateUserDto) -> Result<User, String> {
-            let nickname = create_user_dto.nickname.to_lowercase();
-            let email = create_user_dto.email.to_lowercase();
-
-            let user1_opt = self.find_user_by_nickname_or_email(Some(&nickname), Some(&email))?;
-            if user1_opt.is_some() {
-                return Err("Session already exists".to_string());
-            }
-            let password = create_user_dto.password.clone();
-
-            let idx: i32 = self.user_vec.len().try_into().unwrap();
-            let new_id: i32 = USER_ID + idx;
-
-            let user_saved: User = UserOrmApp::new_user(new_id, &nickname, &email, &password);
-
-            Ok(user_saved)
-        }*/
         /// Modify an entity (user).
         fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String> {
             let user_opt = self.user_vec.iter().find(|user| user.id == id);
