@@ -337,15 +337,15 @@ pub async fn confirm_registration(
     let create_profile = 
         CreateProfile::new(&user_registr.nickname, &user_registr.email, &user_registr.password, None);
 
-    let profile_user = web::block(move || {
+    let profile = web::block(move || {
         // Create a new entity (profile,user).
-        let res_profile_user = profile_orm.create_profile_user(create_profile)
+        let res_profile = profile_orm.create_profile_user(create_profile)
         .map_err(|e| {
             log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
 
-        res_profile_user
+        res_profile
     })
     .await
     .map_err(|e| {
@@ -363,9 +363,9 @@ pub async fn confirm_registration(
         // An error during this operation has no effect.
     });
 
-    let profile_user_dto = ProfileDto::from(profile_user);
+    let profile_dto = ProfileDto::from(profile);
 
-    Ok(HttpResponse::Created().json(profile_user_dto)) // 201
+    Ok(HttpResponse::Created().json(profile_dto)) // 201
 }
 
 /// recovery
@@ -1529,12 +1529,12 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(user_dto_res.id, last_user_id + 1);
-        assert_eq!(user_dto_res.nickname, nickname);
-        assert_eq!(user_dto_res.email, email);
-        assert_eq!(user_dto_res.password, "");
-        assert_eq!(user_dto_res.role, UserRole::User);
+        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(profile_dto_res.id, last_user_id + 1);
+        assert_eq!(profile_dto_res.nickname, nickname);
+        assert_eq!(profile_dto_res.email, email);
+        assert_eq!(profile_dto_res.role, UserRole::User);
     }
 
     // ** recovery **

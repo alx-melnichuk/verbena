@@ -155,14 +155,19 @@ pub mod tests {
         }
         /// Add a new entry (profile, user).
         fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String> {
-            /*let user_id = create_profile.user_id;
-            // Check the availability of the profile by user_id.
-            let opt_profile_user = self.get_profile_by_user_id(user_id)?;
-            if opt_profile_user.is_some() {
+            /*
+            let nickname = create_user_dto.nickname.to_lowercase();
+            let email = create_user_dto.email.to_lowercase();
+
+            // Check the availability of the profile by nickname and email.
+            let opt_profile = self.find_user_by_nickname_or_email(Some(&nickname), Some(&email))?;
+            if opt_profile.is_some() {
                 return Err("Profile already exists".to_string());
             }
             */
-            let user_id = USER_ID;
+            let idx: i32 = self.profile_user_vec.len().try_into().unwrap();
+            let user_id: i32 = USER_ID + idx;
+
             let profile_user = Profile::new(
                 user_id,
                 &create_profile.nickname.to_lowercase(),
