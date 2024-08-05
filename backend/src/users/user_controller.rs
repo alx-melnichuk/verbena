@@ -542,8 +542,8 @@ mod tests {
         let user_orm = UserOrmApp::create(&vec![user]);
         user_orm.user_vec.get(0).unwrap().clone()
     }
-    fn create_profile(user: User) -> ProfileUser {
-        ProfileUser::new(
+    fn create_profile(user: User) -> Profile {
+        Profile::new(
             user.id,
             &user.nickname,
             &user.email,
@@ -572,7 +572,7 @@ mod tests {
     #[rustfmt::skip]
     fn get_cfg_data(is_registr: bool) -> (
         config_jwt::ConfigJwt, 
-        (Vec<User>, Vec<ProfileUser>, Vec<Session>, Vec<UserRegistr>),
+        (Vec<User>, Vec<Profile>, Vec<Session>, Vec<UserRegistr>),
         String
     ) {
         let user1: User = user_with_id(create_user(true));
@@ -595,8 +595,8 @@ mod tests {
         (config_jwt, data_c, token)
     }
     fn configure_user(
-        config_jwt: config_jwt::ConfigJwt,                                     // configuration
-        data_c: (Vec<User>, Vec<ProfileUser>, Vec<Session>, Vec<UserRegistr>), // cortege of data vectors
+        config_jwt: config_jwt::ConfigJwt,                                 // configuration
+        data_c: (Vec<User>, Vec<Profile>, Vec<Session>, Vec<UserRegistr>), // cortege of data vectors
     ) -> impl FnOnce(&mut web::ServiceConfig) {
         move |config: &mut web::ServiceConfig| {
             let data_config_jwt = web::Data::new(config_jwt);
@@ -968,7 +968,7 @@ mod tests {
         let user1 = data_c.0.get(0).unwrap().clone();
         let user1_dto = UserDto::from(user1);
         let profile1 = data_c.1.get(0).unwrap().clone();
-        let profile1_dto = ProfileUserDto::from(profile1);
+        let profile1_dto = ProfileDto::from(profile1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_user_current).configure(configure_user(cfg_c, data_c))).await;
@@ -985,7 +985,7 @@ mod tests {
         let json = serde_json::json!(user1_dto).to_string();
         let user1b_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         let json2 = serde_json::json!(profile1_dto).to_string();
-        let profile1_dto_ser: ProfileUserDto = serde_json::from_slice(json2.as_bytes()).expect(MSG_FAILED_DESER);
+        let profile1_dto_ser: ProfileDto = serde_json::from_slice(json2.as_bytes()).expect(MSG_FAILED_DESER);
 
         // assert_eq!(user_dto_res, user1b_dto_ser); // TODO
         assert_eq!(user_dto_res.id, user1b_dto_ser.id);

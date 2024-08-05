@@ -267,11 +267,11 @@ pub async fn registration(
 /// curl -i -X PUT http://localhost:8080/api/registration/registr_token1234
 /// ```
 ///
-/// Return the new user's profile. (`ProfileUserDto`) with status 201.
+/// Return the new user's profile. (`ProfileDto`) with status 201.
 ///
 #[utoipa::path(
     responses(
-        (status = 201, description = "New user profile.", body = ProfileUserDto),
+        (status = 201, description = "New user profile.", body = ProfileDto),
         (status = 401, description = "The token is invalid or expired.", body = AppError,
             example = json!(AppError::unauthorized401(&format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidToken")))),
         (status = 404, description = "An entry for registering a new user was not found.", body = AppError,
@@ -841,16 +841,8 @@ mod tests {
         let user_orm = UserOrmApp::create(&vec![user]);
         user_orm.user_vec.get(0).unwrap().clone()
     }
-    fn create_profile(user: User) -> ProfileUser {
-        ProfileUser::new(
-            user.id,
-            &user.nickname,
-            &user.email,
-            user.role.clone(),
-            None,
-            None,
-            None,
-        )
+    fn create_profile(user: User) -> Profile {
+        Profile::new(user.id, &user.nickname, &user.email, user.role.clone(), None, None, None)
     }
     fn create_user_registr() -> UserRegistr {
         let now = Utc::now();
@@ -883,7 +875,7 @@ mod tests {
     #[rustfmt::skip]
     fn get_cfg_data(is_registr: bool, opt_recovery_duration: Option<i64>) -> (
         (config_app::ConfigApp, config_jwt::ConfigJwt), 
-        (Vec<User>, Vec<ProfileUser>, Vec<Session>, Vec<UserRegistr>, Vec<UserRecovery>),
+        (Vec<User>, Vec<Profile>, Vec<Session>, Vec<UserRegistr>, Vec<UserRecovery>),
         String) {
         let user1: User = user_with_id(create_user());
         let num_token = 1234;
@@ -917,7 +909,7 @@ mod tests {
     }
     fn configure_user(
         cfg_c: (config_app::ConfigApp, config_jwt::ConfigJwt), // cortege of configurations
-        data_c: (Vec<User>, Vec<ProfileUser>, Vec<Session>, Vec<UserRegistr>, Vec<UserRecovery>), // cortege of data vectors
+        data_c: (Vec<User>, Vec<Profile>, Vec<Session>, Vec<UserRegistr>, Vec<UserRecovery>), // cortege of data vectors
     ) -> impl FnOnce(&mut web::ServiceConfig) {
         move |config: &mut web::ServiceConfig| {
             let data_config_app = web::Data::new(cfg_c.0);

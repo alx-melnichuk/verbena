@@ -46,7 +46,7 @@ impl FromRequest for Authenticated {
 
 impl std::ops::Deref for Authenticated {
     type Target = Profile;
-    /// Implement the deref method to access the inner ProfileUser value of Authenticated.
+    /// Implement the deref method to access the inner "Profile" value of Authenticated.
     fn deref(&self) -> &Self::Target {
         &self.0
     }

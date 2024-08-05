@@ -28,14 +28,14 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 }
 
 /// get_profile_current
-/// Get information about the current user's profile (`ProfileUserDto`).
+/// Get information about the current user's profile (`ProfileDto`).
 ///
 /// One could call with following curl.
 /// ```text
 /// curl -i -X GET http://localhost:8080/api/profiles_current
 /// ```
 ///
-/// Return the current user (`ProfileUserDto`) with status 200 or 204 (no content) if the user is not found.
+/// Return the current user (`ProfileDto`) with status 200 or 204 (no content) if the user is not found.
 ///
 /// The "theme" parameter takes values:
 /// - "light" light theme;
@@ -43,7 +43,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// 
 #[utoipa::path(
     responses(
-        (status = 200, description = "Profile information about the current user.", body = ProfileUserDto,
+        (status = 200, description = "Profile information about the current user.", body = ProfileDto,
             examples(
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(ProfileDto::from(

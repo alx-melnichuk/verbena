@@ -424,23 +424,15 @@ mod tests {
         let user_orm = UserOrmApp::create(&vec![user]);
         user_orm.user_vec.get(0).unwrap().clone()
     }
-    fn create_profile(user: User) -> ProfileUser {
-        ProfileUser::new(
-            user.id,
-            &user.nickname,
-            &user.email,
-            user.role.clone(),
-            None,
-            None,
-            None,
-        )
+    fn create_profile(user: User) -> Profile {
+        Profile::new(user.id, &user.nickname, &user.email, user.role.clone(), None, None, None)
     }
     fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
     }
     #[rustfmt::skip]
-    fn get_cfg_data() -> (config_jwt::ConfigJwt, (Vec<User>, Vec<ProfileUser>, Vec<Session>), String) {
+    fn get_cfg_data() -> (config_jwt::ConfigJwt, (Vec<User>, Vec<Profile>, Vec<Session>), String) {
         let user1: User = user_with_id(create_user(
             "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1"));
         let num_token = 1234;
@@ -458,7 +450,7 @@ mod tests {
     }
     fn configure_user(
         config_jwt: config_jwt::ConfigJwt, // configuration
-        data_c: (Vec<User>, Vec<ProfileUser>, Vec<Session>), // cortege of data vectors
+        data_c: (Vec<User>, Vec<Profile>, Vec<Session>), // cortege of data vectors
     ) -> impl FnOnce(&mut web::ServiceConfig) {
         move |config: &mut web::ServiceConfig| {
             let data_config_jwt = web::Data::new(config_jwt);
