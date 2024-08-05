@@ -93,8 +93,8 @@ pub async fn get_profile_current(
     })?;
 
     if let Some(profile_user) = opt_profile {
-        let profile_user_dto = ProfileDto::from(profile_user);
-        Ok(HttpResponse::Ok().json(profile_user_dto)) // 200
+        let profile_dto = ProfileDto::from(profile_user);
+        Ok(HttpResponse::Ok().json(profile_dto)) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
     }
