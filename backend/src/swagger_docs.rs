@@ -15,10 +15,10 @@ use crate::{
     paths(
         profile_controller::uniqueness_check,
         profile_controller::get_profile_current,
+        profile_controller::get_profile_by_id,
         user_auth_controller::login,
         user_auth_controller::logout,
         user_auth_controller::update_token,
-        user_controller::get_user_by_id,
         user_controller::delete_user,
         user_controller::get_user_current,
         user_controller::put_user_new_password,
