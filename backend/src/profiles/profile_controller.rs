@@ -92,7 +92,7 @@ pub async fn get_profile_by_id(
         log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
         AppError::range_not_satisfiable416(&message) // 416
     })?;
-    eprintln!("id: {}", id);
+
     let opt_profile = web::block(move || {
         // Find profile by user id.
         let profile =
