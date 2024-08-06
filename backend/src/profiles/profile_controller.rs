@@ -76,13 +76,12 @@ pub async fn uniqueness_check(
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     query_params: web::Query<UniquenessProfileDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    eprintln!("step01");
     // Get search parameters.
     let uniqueness_user_dto: UniquenessProfileDto = query_params.clone().into_inner();
 
     let nickname = uniqueness_user_dto.nickname.unwrap_or("".to_string());
     let email = uniqueness_user_dto.email.unwrap_or("".to_string());
-    eprintln!("step02");
+
     let is_nickname = nickname.len() > 0;
     let is_email = email.len() > 0;
     if !is_nickname && !is_email {
@@ -92,14 +91,14 @@ pub async fn uniqueness_check(
         return Err(AppError::not_acceptable406(MSG_PARAMETERS_NOT_SPECIFIED) // 406
             .add_param(Borrowed("invalidParams"), &json));
     }
-    eprintln!("step03");
+
     #[rustfmt::skip]
     let opt_nickname = if nickname.len() > 0 { Some(nickname) } else { None };
     let opt_email = if email.len() > 0 { Some(email) } else { None };
 
     let opt_nickname2 = opt_nickname.clone();
     let opt_email2 = opt_email.clone();
-    eprintln!("step04");
+
     // Find in the "profile" table an entry by nickname or email.
     let opt_profile = web::block(move || {
         let existing_profile = profile_orm
@@ -122,7 +121,7 @@ pub async fn uniqueness_check(
     if opt_profile.is_none() {
         let opt_nickname2 = opt_nickname.clone();
         let opt_email2 = opt_email.clone();
-        eprintln!("step05");
+
         // Find in the "user_registr" table an entry with an active date, by nickname or email.
         let opt_user_registr = web::block(move || {
             let existing_user_registr = user_registr_orm
@@ -142,7 +141,7 @@ pub async fn uniqueness_check(
 
         uniqueness = opt_user_registr.is_none();
     }
-    eprintln!("step06 uniqueness: {}", uniqueness);
+
     Ok(HttpResponse::Ok().json(json!({ "uniqueness": uniqueness }))) // 200
 }
 
