@@ -1,34 +1,27 @@
-use std::{borrow::Cow::Borrowed, ops::Deref};
+use std::ops::Deref;
 
 use actix_web::{delete, get, put, web, HttpResponse};
 use log;
-use serde_json::json;
 use utoipa;
 
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::hash_tools;
 use crate::settings::err;
-use crate::users::{
-    user_models::{self, ModifyUserDto, NewPasswordUserDto, UniquenessUserDto},
-    user_orm::UserOrm,
-    user_registr_orm::UserRegistrOrm,
-};
 #[cfg(not(feature = "mockdata"))]
-use crate::users::{user_orm::impls::UserOrmApp, user_registr_orm::impls::UserRegistrOrmApp};
+use crate::users::user_orm::impls::UserOrmApp;
 #[cfg(feature = "mockdata")]
-use crate::users::{user_orm::tests::UserOrmApp, user_registr_orm::tests::UserRegistrOrmApp};
+use crate::users::user_orm::tests::UserOrmApp;
+use crate::users::{
+    user_models::{self, ModifyUserDto, NewPasswordUserDto},
+    user_orm::UserOrm,
+};
 use crate::utils::parser;
 use crate::validators::{msg_validation, Validator};
 
-// None of the parameters are specified.
-const MSG_PARAMETERS_NOT_SPECIFIED: &str = "parameters_not_specified";
-
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
-        config // GET /api/users/uniqueness
-            .service(uniqueness_check)
-            // GET /api/users/{id}
+        config // GET /api/users/{id}
             .service(get_user_by_id)
             // DELETE /api/users/{id}
             .service(delete_user)
@@ -39,81 +32,6 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             // DELETE /api/users_current
             .service(delete_user_current);
     }
-}
-
-#[get("/api/users/uniqueness")]
-pub async fn uniqueness_check(
-    user_orm: web::Data<UserOrmApp>,
-    user_registr_orm: web::Data<UserRegistrOrmApp>,
-    query_params: web::Query<UniquenessUserDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
-    // Get search parameters.
-    let uniqueness_user_dto: UniquenessUserDto = query_params.clone().into_inner();
-
-    let nickname = uniqueness_user_dto.nickname.unwrap_or("".to_string());
-    let email = uniqueness_user_dto.email.unwrap_or("".to_string());
-
-    let is_nickname = nickname.len() > 0;
-    let is_email = email.len() > 0;
-    if !is_nickname && !is_email {
-        let json = serde_json::json!({ "nickname": "null", "email": "null" });
-        #[rustfmt::skip]
-        log::error!("{}: {}: {}", err::CD_NOT_ACCEPTABLE, MSG_PARAMETERS_NOT_SPECIFIED, json.to_string());
-        return Err(AppError::not_acceptable406(MSG_PARAMETERS_NOT_SPECIFIED) // 406
-            .add_param(Borrowed("invalidParams"), &json));
-    }
-
-    #[rustfmt::skip]
-    let opt_nickname = if nickname.len() > 0 { Some(nickname) } else { None };
-    let opt_email = if email.len() > 0 { Some(email) } else { None };
-
-    let opt_nickname2 = opt_nickname.clone();
-    let opt_email2 = opt_email.clone();
-
-    // Find in the "user" table an entry by nickname or email.
-    let opt_user = web::block(move || {
-        let existing_user = user_orm
-            .find_user_by_nickname_or_email(opt_nickname2.as_deref(), opt_email2.as_deref())
-            .map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e) // 507
-            })
-            .ok()?;
-        existing_user
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
-    })?;
-
-    let mut uniqueness = false;
-    // If such an entry exists, then exit.
-    if opt_user.is_none() {
-        let opt_nickname2 = opt_nickname.clone();
-        let opt_email2 = opt_email.clone();
-
-        // Find in the "user_registr" table an entry with an active date, by nickname or email.
-        let opt_user_registr = web::block(move || {
-            let existing_user_registr = user_registr_orm
-                .find_user_registr_by_nickname_or_email(opt_nickname2.as_deref(), opt_email2.as_deref())
-                .map_err(|e| {
-                    log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                    AppError::database507(&e) // 507
-                })
-                .ok()?;
-            existing_user_registr
-        })
-        .await
-        .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-            AppError::blocking506(&e.to_string()) // 506
-        })?;
-
-        uniqueness = opt_user_registr.is_none();
-    }
-
-    Ok(HttpResponse::Ok().json(json!({ "uniqueness": uniqueness }))) // 200
 }
 
 /// get_user_by_id
@@ -477,6 +395,7 @@ mod tests {
         test, web, App,
     };
     use chrono::{DateTime, Duration, Utc};
+    use serde_json::json;
 
     use crate::errors::AppError;
     use crate::extractors::authentication::BEARER;
@@ -488,6 +407,7 @@ mod tests {
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
     };
     use crate::users::user_models::{User, UserDto, UserModelsTest, UserRegistr, UserRole};
+    use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
 
     use super::*;
 
@@ -585,179 +505,6 @@ mod tests {
             assert_eq!(app_err.code, code);
             assert_eq!(app_err.message, msg.to_string());
         }
-    }
-
-    // ** uniqueness_check **
-    #[actix_web::test]
-    async fn test_uniqueness_check_non_params() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(uniqueness_check).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri("/api/users/uniqueness")
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::NOT_ACCEPTABLE); // 406
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
-        assert_eq!(app_err.message, MSG_PARAMETERS_NOT_SPECIFIED);
-    }
-    #[actix_web::test]
-    async fn test_uniqueness_check_nickname_empty() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(uniqueness_check).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri("/api/users/uniqueness?nickname=")
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::NOT_ACCEPTABLE); // 406
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
-        assert_eq!(app_err.message, MSG_PARAMETERS_NOT_SPECIFIED);
-    }
-    #[actix_web::test]
-    async fn test_uniqueness_check_email_empty() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(uniqueness_check).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri("/api/users/uniqueness?email=")
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::NOT_ACCEPTABLE); // 406
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
-        assert_eq!(app_err.message, MSG_PARAMETERS_NOT_SPECIFIED);
-    }
-    #[actix_web::test]
-    async fn test_uniqueness_check_non_existent_nickname() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false);
-        let nickname = format!("a{}", data_c.0.get(0).unwrap().nickname.clone());
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(uniqueness_check).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/users/uniqueness?nickname={}", nickname))
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let nickname_res = std::str::from_utf8(&body).unwrap();
-        assert_eq!(nickname_res, "{\"uniqueness\":true}");
-    }
-    #[actix_web::test]
-    async fn test_uniqueness_check_non_existent_email() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false);
-        let email = format!("a{}", data_c.0.get(0).unwrap().email.clone());
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(uniqueness_check).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/users/uniqueness?email={}", email))
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let nickname_res = std::str::from_utf8(&body).unwrap();
-        assert_eq!(nickname_res, "{\"uniqueness\":true}");
-    }
-    #[actix_web::test]
-    async fn test_uniqueness_check_existent_nickname() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false);
-        let nickname = data_c.0.get(0).unwrap().nickname.clone();
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(uniqueness_check).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/users/uniqueness?nickname={}", nickname))
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let nickname_res = std::str::from_utf8(&body).unwrap();
-        assert_eq!(nickname_res, "{\"uniqueness\":false}");
-    }
-    #[actix_web::test]
-    async fn test_uniqueness_check_existent_email() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false);
-        let email = data_c.0.get(0).unwrap().email.clone();
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(uniqueness_check).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/users/uniqueness?email={}", email))
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let nickname_res = std::str::from_utf8(&body).unwrap();
-        assert_eq!(nickname_res, "{\"uniqueness\":false}");
-    }
-    #[actix_web::test]
-    async fn test_uniqueness_check_existent_registr_nickname() {
-        let (cfg_c, data_c, _token) = get_cfg_data(true);
-        let nickname = data_c.3.get(0).unwrap().nickname.clone();
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(uniqueness_check).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/users/uniqueness?nickname={}", nickname))
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let nickname_res = std::str::from_utf8(&body).unwrap();
-        assert_eq!(nickname_res, "{\"uniqueness\":false}");
-    }
-    #[actix_web::test]
-    async fn test_uniqueness_check_existent_registr_email99() {
-        let (cfg_c, data_c, _token) = get_cfg_data(true);
-        let email = data_c.3.get(0).unwrap().email.clone();
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(uniqueness_check).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/users/uniqueness?email={}", email))
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let nickname_res = std::str::from_utf8(&body).unwrap();
-        assert_eq!(nickname_res, "{\"uniqueness\":false}");
     }
 
     // ** get_user_by_id **
