@@ -17,8 +17,10 @@ import { FieldNicknameComponent } from 'src/app/components/field-nickname/field-
 import { FieldPasswordComponent } from 'src/app/components/field-password/field-password.component';
 import { UniquenessCheckComponent } from 'src/app/components/uniqueness-check/uniqueness-check.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
-import { UserService } from 'src/app/lib-user/user.service';
 import { UserDto, UserDtoUtil, UpdateProfileFileDto, UpdatePasswordDto } from 'src/app/lib-user/user-api.interface';
+
+import { ProfileService } from '../profile.service';
+import { UniquenessDto } from '../profile-api.interface';
 
 export const PPI_DEBOUNCE_DELAY = 900;
 
@@ -93,7 +95,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     private changeDetector: ChangeDetectorRef,
     private translate: TranslateService,
     private dialogService: DialogService,
-    private userService: UserService
+    private profileService: ProfileService,
   ) {
   }
 
@@ -136,14 +138,14 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     if (!nickname || this.origUserDto.nickname.toLowerCase() == nickname.toLowerCase()) {
       return Promise.resolve(true);
     }
-    return this.userService.uniqueness(nickname, '').then((response) => response == null);
+    return this.profileService.uniqueness(nickname, '').then((response) => response == null || (response as UniquenessDto).uniqueness);
   }
 
   public checkUniquenessEmail = (email: string | null | undefined): Promise<boolean> => {
     if (!email || this.origUserDto.email.toLowerCase() == email.toLowerCase()) {
       return Promise.resolve(true);
     }
-    return this.userService.uniqueness('', email).then((response) => response == null);
+    return this.profileService.uniqueness('', email).then((response) => response == null || (response as UniquenessDto).uniqueness);
   }
 
   public addAvatarFile(file: File): void {

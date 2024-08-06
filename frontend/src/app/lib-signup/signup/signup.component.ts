@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostListener, Input, OnChanges, Output,
   SimpleChanges, ViewEncapsulation
@@ -16,7 +17,8 @@ import { FieldPasswordComponent } from 'src/app/components/field-password/field-
 import { ROUTE_LOGIN } from 'src/app/common/routes';
 import { StrParams } from 'src/app/common/str-params';
 import { UniquenessCheckComponent } from 'src/app/components/uniqueness-check/uniqueness-check.component';
-import { UserService } from 'src/app/lib-user/user.service';
+import { ProfileService } from 'src/app/lib-profile/profile.service';
+import { UniquenessDto } from 'src/app/lib-profile/profile-api.interface';
 
 export const SG_DEBOUNCE_DELAY = 900;
 
@@ -50,7 +52,7 @@ export class SignupComponent implements OnChanges {
 
   constructor(
     private changeDetector: ChangeDetectorRef,
-    private userService: UserService,
+    private profileService: ProfileService,
   ) {
   }
 
@@ -76,14 +78,14 @@ export class SignupComponent implements OnChanges {
     if (!nickname) {
       return Promise.resolve(true);
     }
-    return this.userService.uniqueness(nickname || '', '').then((response) => response == null);
+    return this.profileService.uniqueness(nickname, '').then((response) => response == null || (response as UniquenessDto).uniqueness);
   }
 
   public checkUniquenessEmail = (email: string | null | undefined): Promise<boolean> => {
     if (!email) {
       return Promise.resolve(true);
     }
-    return this.userService.uniqueness('', email || '').then((response) => response == null);
+    return this.profileService.uniqueness('', email).then((response) => response == null || (response as UniquenessDto).uniqueness);
   }
 
   public doSignup(): void {
