@@ -158,23 +158,36 @@ pub mod tests {
         }
         /// Create a new instance with the specified profile list.
         #[cfg(test)]
-        pub fn create(profile_user_list: &[Profile]) -> Self {
+        pub fn create(profile_list: &[Profile]) -> Self {
             let mut profile_vec: Vec<Profile> = Vec::new();
-            for profile_user in profile_user_list.iter() {
-                let mut profile_user2 = Profile::new(
-                    profile_user.user_id,
-                    &profile_user.nickname.to_lowercase(),
-                    &profile_user.email.to_lowercase(),
-                    profile_user.role.clone(),
-                    profile_user.avatar.as_deref(),
-                    Some(profile_user.descript.as_str()),
-                    Some(profile_user.theme.as_str()),
+            for (idx, profile) in profile_list.iter().enumerate() {
+                let delta: i32 = idx.try_into().unwrap();
+                let mut profile2 = Profile::new(
+                    USER_ID + delta,
+                    &profile.nickname.to_lowercase(),
+                    &profile.email.to_lowercase(),
+                    profile.role.clone(),
+                    profile.avatar.as_deref(),
+                    Some(profile.descript.as_str()),
+                    Some(profile.theme.as_str()),
                 );
-                profile_user2.created_at = profile_user.created_at;
-                profile_user2.updated_at = profile_user.updated_at;
-                profile_vec.push(profile_user2);
+                profile2.created_at = profile.created_at;
+                profile2.updated_at = profile.updated_at;
+                profile_vec.push(profile2);
             }
             ProfileOrmApp { profile_vec }
+        }
+        /// Create a new entity instance.
+        pub fn new_profile(user_id: i32, nickname: &str, email: &str, role: UserRole) -> Profile {
+            Profile::new(
+                user_id,
+                &nickname.to_lowercase(),
+                &email.to_lowercase(),
+                role.clone(),
+                None,
+                None,
+                None,
+            )
         }
     }
 
