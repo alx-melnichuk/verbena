@@ -1,8 +1,6 @@
 use crate::users::user_models::{ModifyUserDto, User};
 
 pub trait UserOrm {
-    /// Get an entity (user) by ID.
-    fn get_user_by_id(&self, id: i32) -> Result<Option<User>, String>;
     /// Find for an entity (user) by nickname or email.
     fn find_user_by_nickname_or_email(
         &self,
@@ -60,19 +58,6 @@ pub mod impls {
     }
 
     impl UserOrm for UserOrmApp {
-        /// Get an entity (user) by ID.
-        fn get_user_by_id(&self, id: i32) -> Result<Option<User>, String> {
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to find user by id and return it.
-            let user_opt = schema::users::table
-                .filter(schema::users::dsl::id.eq(id))
-                .first::<User>(&mut conn)
-                .optional()
-                .map_err(|e| format!("find_user_by_id: {}", e.to_string()))?;
-
-            Ok(user_opt)
-        }
         /// Find for an entity (user) by nickname or email.
         fn find_user_by_nickname_or_email(
             &self,
@@ -232,11 +217,6 @@ pub mod tests {
     }
 
     impl UserOrm for UserOrmApp {
-        /// Get an entity (user) by ID.
-        fn get_user_by_id(&self, id: i32) -> Result<Option<User>, String> {
-            let result = self.user_vec.iter().find(|user| user.id == id).map(|user| user.clone());
-            Ok(result)
-        }
         /// Find for an entity (user) by nickname or email.
         fn find_user_by_nickname_or_email(
             &self,
