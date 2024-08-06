@@ -110,10 +110,6 @@ export class UserService {
     return Promise.resolve(userDto);
   }
 
-  public uniqueness(nickname: string, email: string): Promise<unknown | HttpErrorResponse | undefined> {
-    return this.userApiService.uniqueness(nickname, email);
-  }
-
   public modifyProfile(
     id: number, modifyProfileDto: ModifyProfileDto, file?: File | null
   ): Promise<UserProfileDto | HttpErrorResponse | undefined> {
