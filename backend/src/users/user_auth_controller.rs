@@ -43,7 +43,9 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// One could call with following curl.
 /// ```text
-/// curl -i -X POST http://localhost:8080/api/login -d '{"nickname": "user", "password": "password"}'
+/// curl -i -X POST http://localhost:8080/api/login \
+/// -d '{"nickname": "user", "password": "password"}' \
+/// -H 'Content-Type: application/json'
 /// ```
 ///
 /// Return the current user (`UserDto`) and the open session token (`UserTokensDto`) with a status of 200.
@@ -260,7 +262,9 @@ pub async fn logout(
 ///
 /// One could call with following curl.
 /// ```text
-/// curl -i -X POST http://localhost:8080/api/token -d '{"token": "refresh_token"}'
+/// curl -i -X POST http://localhost:8080/api/token \
+/// -d '{"token": "refresh_token"}' \
+/// -H 'Content-Type: application/json'
 /// ```
 ///
 /// Return the new session token (`UserTokensDto`) with a status of 200.

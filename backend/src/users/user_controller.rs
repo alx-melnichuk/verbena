@@ -175,7 +175,9 @@ pub async fn get_user_current( // TODO replace on "get_profile_current"
 ///
 /// One could call with following curl.
 /// ```text
-/// curl -i -X PUT http://localhost:8080/api/users_new_password  -d {"password": "Pass_123", "new_password": "Pass#3*0"}
+/// curl -i -X PUT http://localhost:8080/api/users_new_password  \
+/// -d {"password": "Pass_123", "new_password": "Pass#3*0"} \
+/// -H 'Content-Type: application/json'
 /// ```
 ///
 /// Return the current user (`UserDto`) with status 200 or 204 (no content) if the user is not found.

@@ -164,12 +164,12 @@ impl CreateStreamForm {
 /// Could be called with all fields with the next curl.
 /// ```text
 /// curl -i -X POST http://localhost:8080/api/streams -F "title=title2" -F "descript=descript2" \
-///   -F "starttime=2020-01-20T20:10:57.000Z" -F "tags=['tag1','tag2']"
+/// -F "starttime=2020-01-20T20:10:57.000Z" -F "tags=['tag1','tag2']"
 /// ```
 /// Additionally, you can specify the name of the image file.
 /// ```text
 /// curl -i -X POST http://localhost:8080/api/streams -F "title=title2" -F "descript=descript2" \
-///   -F "starttime=2020-01-20T20:10:57.000Z" -F "tags=['tag1','tag2']" -F "logofile=@image.jpg"
+/// -F "starttime=2020-01-20T20:10:57.000Z" -F "tags=['tag1','tag2']" -F "logofile=@image.jpg"
 /// ```
 ///  
 /// Return a new stream (`StreamInfoDto`) with status 201.
