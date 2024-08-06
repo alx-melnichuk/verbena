@@ -70,7 +70,9 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// One could call with following curl.
 /// ```text
-/// curl -i -X POST http://localhost:8080/api/registration -d '{"nickname": "user", "email": "user@email", "password": "password"}'
+/// curl -i -X POST http://localhost:8080/api/registration \
+/// -d '{"nickname": "user", "email": "user@email", "password": "password"}' \
+/// -H 'Content-Type: application/json'
 /// ```
 ///
 /// Return new user registration parameters (`RegistrUserResponseDto`) with status 201.
@@ -264,7 +266,7 @@ pub async fn registration(
 ///
 /// One could call with following curl.
 /// ```text
-/// curl -i -X PUT http://localhost:8080/api/registration/registr_token1234
+/// curl -i -X PUT http://localhost:8080/api/registration/registr_token1234 
 /// ```
 ///
 /// Return the new user's profile. (`ProfileDto`) with status 201.
@@ -374,7 +376,9 @@ pub async fn confirm_registration(
 /// 
 /// One could call with following curl.
 /// ```text
-/// curl -i -X POST http://localhost:8080/api/recovery -d '{"email": "user@email"}'
+/// curl -i -X POST http://localhost:8080/api/recovery \
+/// -d '{"email": "user@email"}' \
+/// -H 'Content-Type: application/json'
 /// ```
 /// Return new user registration parameters (`RecoveryUserResponseDto`) with status 201.
 /// 
@@ -567,7 +571,9 @@ pub async fn recovery(
 ///
 /// One could call with following curl.
 /// ```text
-/// curl -i -X PUT http://localhost:8080/api/recovery/recovery_token1234 -d '{ password: "new_password"}'
+/// curl -i -X PUT http://localhost:8080/api/recovery/recovery_token1234 \
+/// -d '{ "password": "new_password"}' \
+/// -H 'Content-Type: application/json'
 /// ```
 ///
 /// Returns data about the user whose password was recovered (`UserDto`), with status 200.
@@ -603,6 +609,7 @@ pub async fn confirm_recovery(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     user_recovery_orm: web::Data<UserRecoveryOrmApp>,
     user_orm: web::Data<UserOrmApp>,
+    profile_orm: web::Data<ProfileOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
     json_body: web::Json<RecoveryDataDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -667,24 +674,25 @@ pub async fn confirm_recovery(
     let user_id = user_recovery.user_id;
 
     // If there is "user_recovery" with this ID, then move on to the next step.
-    let user_orm2 = user_orm.clone();
-    // Find an entry in "user" with the specified ID.
-    let opt_user = web::block(move || {
-        let user = user_orm2.get_user_by_id(user_id)
-        .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e) // 507
-        });
-        user
+    let opt_profile = web::block(move || {
+        // Find profile by user id.
+        let res_profile = profile_orm.get_profile_user_by_id(user_id)
+            .map_err(|e| {
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e) // 507
+            });
+
+        res_profile
     })
     .await
     .map_err(|e| {
         log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
+        AppError::blocking506(&e.to_string()) //506
     })??;
 
+
     // If no such entry exists, then exit with code 404.
-    let user = opt_user.ok_or_else(|| {
+    let profile = opt_profile.ok_or_else(|| {
         let message = format!("{}: user_id: {}", MSG_USER_NOT_FOUND, user_id);
         log::error!("{}: {}", err::CD_NOT_FOUND, &message);
         AppError::not_found404(&message) // 404
@@ -699,7 +707,7 @@ pub async fn confirm_recovery(
     };
     // Update the password hash for the entry in the "user" table.
     let opt_user = web::block(move || {
-        let user = user_orm2.modify_user(user.id, modify_user_dto)
+        let user = user_orm2.modify_user(profile.user_id, modify_user_dto)
         .map_err(|e| {
             log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
