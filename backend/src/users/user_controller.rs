@@ -21,8 +21,7 @@ use crate::validators::{msg_validation, Validator};
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
-        config // GET /api/users/{id}
-            .service(get_user_by_id)
+        config
             // DELETE /api/users/{id}
             .service(delete_user)
             // GET /api/users_current
@@ -34,36 +33,6 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
-/// get_user_by_id
-///
-/// Search for a user by his ID.
-///
-/// One could call with following curl.
-/// ```text
-/// curl -i -X GET http://localhost:8080/api/users/1
-/// ```
-///
-/// Return the found specified user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
-/// 
-#[utoipa::path(
-    responses(
-        (status = 200, description = "A user with the specified ID was found.", body = UserDto),
-        (status = 204, description = "The user with the specified ID was not found."),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
-        (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/users/2a`", 
-            body = AppError, example = json!(AppError::range_not_satisfiable416(
-                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
-    ),
-    params(("id", description = "Unique user ID.")),
-    security(("bearer_auth" = [])),
-)]
 #[rustfmt::skip]
 #[get("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
 pub async fn get_user_by_id(
@@ -505,91 +474,6 @@ mod tests {
             assert_eq!(app_err.code, code);
             assert_eq!(app_err.message, msg.to_string());
         }
-    }
-
-    // ** get_user_by_id **
-    #[actix_web::test]
-    async fn test_get_user_by_id_invalid_id() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let mut user_vec = data_c.0;
-        let user1 = user_vec.get_mut(0).unwrap();
-        user1.role = UserRole::Admin;
-        let user_id_bad = format!("{}a", user1.id);
-        let profile1 = create_profile(user1.clone());
-        let data_c = (user_vec, vec![profile1], data_c.2, vec![]);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_user_by_id).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/users/{}", user_id_bad))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::RANGE_NOT_SATISFIABLE); // 416
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
-        #[rustfmt::skip]
-        let msg = format!("{}: `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
-        assert_eq!(app_err.message, msg);
-    }
-    #[actix_web::test]
-    async fn test_get_user_by_id_valid_id() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let mut user1 = data_c.0.get(0).unwrap().clone();
-        user1.role = UserRole::Admin;
-        let user_orm = UserOrmApp::create(&vec![
-            user1.clone(),
-            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
-        ]);
-        let user_vec = user_orm.user_vec.clone();
-        let user2 = user_vec.get(1).unwrap().clone();
-        let user2_dto = UserDto::from(user2.clone());
-        let profile1 = create_profile(user1.clone());
-        let profile2 = create_profile(user2.clone());
-        let data_c = (user_vec, vec![profile1, profile2], data_c.2, data_c.3);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_user_by_id).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/users/{}", &user2.id))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(user2_dto).to_string();
-        let user2b_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-        assert_eq!(user_dto_res, user2b_dto_ser);
-        assert_eq!(user_dto_res.password, "");
-    }
-    #[actix_web::test]
-    async fn test_get_user_by_id_non_existent_id() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let mut user1 = data_c.0.get(0).unwrap().clone();
-        user1.role = UserRole::Admin;
-        let user_orm = UserOrmApp::create(&vec![
-            user1.clone(),
-            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
-        ]);
-        let user_vec = user_orm.user_vec.clone();
-        let user2 = user_vec.get(1).unwrap().clone();
-        let profile1 = create_profile(user1.clone());
-        let profile2 = create_profile(user2.clone());
-        let data_c = (user_vec, vec![profile1, profile2], data_c.2, data_c.3);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_user_by_id).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/users/{}", (user2.id + 1)))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
 
     // ** delete_user **
