@@ -33,44 +33,6 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
-#[rustfmt::skip]
-#[get("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
-pub async fn get_user_by_id(
-    user_orm: web::Data<UserOrmApp>,
-    request: actix_web::HttpRequest,
-) -> actix_web::Result<HttpResponse, AppError> {
-    let id_str = request.match_info().query("id").to_string();
-
-    let id = parser::parse_i32(&id_str).map_err(|e| {
-        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
-        AppError::range_not_satisfiable416(&message) // 416
-    })?;
-
-    let result_user = web::block(move || {
-        // Find user by id.
-        let existing_user =
-            user_orm.get_user_by_id(id).map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e) // 507
-            }).ok()?;
-
-        existing_user
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) //506
-    })?;
-
-    if let Some(user) = result_user {
-        let user_dto = user_models::UserDto::from(user);
-        Ok(HttpResponse::Ok().json(user_dto)) // 200
-    } else {
-        Ok(HttpResponse::NoContent().finish()) // 204
-    }
-}
-
 /// delete_user
 ///
 /// Delete the specified user.
