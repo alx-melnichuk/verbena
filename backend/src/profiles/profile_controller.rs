@@ -228,6 +228,7 @@ pub async fn uniqueness_check(
 }
 
 /// get_profile_current
+/// 
 /// Get information about the current user's profile (`ProfileDto`).
 ///
 /// One could call with following curl.
@@ -235,7 +236,7 @@ pub async fn uniqueness_check(
 /// curl -i -X GET http://localhost:8080/api/profiles_current
 /// ```
 ///
-/// Return the current user (`ProfileDto`) with status 200 or 204 (no content) if the user is not found.
+/// Return the current user's profile ("ProfileDto") with status 200.
 ///
 /// The "theme" parameter takes values:
 /// - "light" light theme;
@@ -255,15 +256,10 @@ pub async fn uniqueness_check(
                     Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
             )))),
         ),
-        (status = 204, description = "The current user was not found."),
         (status = 401, description = "An authorization token is required.", body = AppError,
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
     ),
     security(("bearer_auth" = []))
 )]
@@ -271,33 +267,10 @@ pub async fn uniqueness_check(
 #[get("/api/profiles_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_profile_current(
     authenticated: Authenticated,
-    profile_orm: web::Data<ProfileOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
-    let profile0 = authenticated.deref();
-    let user_id = profile0.user_id;
-
-    let opt_profile = web::block(move || {
-        // Find profile by user id.
-        let profile =
-            profile_orm.get_profile_user_by_id(user_id).map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e) // 507
-            }).ok()?;
-
-        profile
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) //506
-    })?;
-
-    if let Some(profile_user) = opt_profile {
-        let profile_dto = ProfileDto::from(profile_user);
-        Ok(HttpResponse::Ok().json(profile_dto)) // 200
-    } else {
-        Ok(HttpResponse::NoContent().finish()) // 204
-    }
+    let profile = authenticated.deref();
+    let profile_dto = ProfileDto::from(profile.clone());
+    Ok(HttpResponse::Ok().json(profile_dto)) // 200
 }
 
 #[cfg(all(test, feature = "mockdata"))]
