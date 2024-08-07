@@ -18,8 +18,8 @@ pub trait ProfileOrm {
     // /// Modify an entity (user).
     // fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String>;
 
-    // /// Delete an entity (user).
-    // fn delete_user(&self, id: i32) -> Result<Option<User>, String>;
+    /// Delete an entity (profile).
+    fn delete_profile(&self, user_id: i32) -> Result<Option<Profile>, String>;
 }
 
 pub mod cfg {
@@ -135,6 +135,22 @@ pub mod impls {
 
             Ok(profile_user)
         }
+        /// Delete an entity (profile).
+        fn delete_profile(&self, user_id: i32) -> Result<Option<Profile>, String> {
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let query = diesel::sql_query("select * from delete_profile_user_by_user_id($1);")
+                .bind::<sql_types::Integer, _>(user_id);
+
+            // Run query using Diesel to find user by id (and user_id) and return it.
+            let opt_profile = query
+                .get_result::<Profile>(&mut conn)
+                .optional()
+                .map_err(|e| format!("delete_profile_user_by_user_id: {}", e.to_string()))?;
+
+            Ok(opt_profile)
+        }
     }
 }
 
@@ -226,7 +242,6 @@ pub mod tests {
 
             Ok(result)
         }
-
         /// Add a new entry (profile, user).
         fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String> {
             let nickname = create_profile.nickname.to_lowercase();
@@ -251,6 +266,12 @@ pub mod tests {
                 create_profile.theme.as_deref(),
             );
             Ok(profile_user)
+        }
+        /// Delete an entity (profile).
+        fn delete_profile(&self, user_id: i32) -> Result<Option<Profile>, String> {
+            let opt_profile = self.profile_vec.iter().find(|profile| profile.user_id == user_id);
+
+            Ok(opt_profile.map(|u| u.clone()))
         }
     }
 }
