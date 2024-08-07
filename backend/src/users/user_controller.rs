@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use actix_web::{delete, get, put, web, HttpResponse};
+use actix_web::{get, put, web, HttpResponse};
 use log;
 use utoipa;
 
@@ -24,9 +24,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             // GET /api/users_current
             .service(get_user_current)
             // PUT /api/users_new_password
-            .service(put_user_new_password)
-            // DELETE /api/users_current
-            .service(delete_user_current);
+            .service(put_user_new_password);
     }
 }
 
@@ -165,38 +163,6 @@ pub async fn put_user_new_password(
     .map_err(|e| {
         log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
-    })??;
-
-    if let Some(user) = result_user {
-        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user))) // 200
-    } else {
-        Ok(HttpResponse::NoContent().finish()) // 204
-    }
-}
-
-#[rustfmt::skip]
-#[delete("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn delete_user_current(
-    authenticated: Authenticated,
-    user_orm: web::Data<UserOrmApp>,
-) -> actix_web::Result<HttpResponse, AppError> {
-    let profile = authenticated.deref();
-    let id = profile.user_id;
-
-    let result_user = web::block(move || {
-        // Modify the entity (user) with new data. Result <user_models::User>.
-        let res_user = user_orm.delete_user(id)
-        .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e) // 507
-        });
-
-        res_user
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) //506
     })??;
 
     if let Some(user) = result_user {
