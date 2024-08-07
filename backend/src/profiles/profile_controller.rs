@@ -29,91 +29,12 @@ const MSG_PARAMETERS_NOT_SPECIFIED: &str = "parameters_not_specified";
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
         config
+            // GET /api/profiles/uniqueness
+            .service(uniqueness_check)
             // GET /api/profiles/{id}
             .service(get_profile_by_id)
-            // GET /api/users/uniqueness
-            .service(uniqueness_check)
             // GET /api/profiles_current
             .service(get_profile_current);
-    }
-}
-
-/// get_profile_by_id
-///
-/// Search for a user profile by its ID.
-///
-/// One could call with following curl.
-/// ```text
-/// curl -i -X GET http://localhost:8080/api/profiles/1
-/// ```
-///
-/// Return the found specified user (`ProfileDto`) with status 200 or 204 (no content) if the user is not found.
-/// 
-#[utoipa::path(
-    responses(
-        (status = 200, description = "A user with the specified ID was found.", body = ProfileDto,
-            examples(
-            ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
-                value = json!(ProfileDto::from(
-                    Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                        Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF)))
-            ))),
-            ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
-                value = json!(ProfileDto::from(
-                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
-            )))),
-        ),
-        (status = 204, description = "The user with the specified ID was not found."),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
-        (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/users/2a`", 
-            body = AppError, example = json!(AppError::range_not_satisfiable416(
-                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
-    ),
-    params(("id", description = "Unique user ID.")),
-    security(("bearer_auth" = [])),
-)]
-#[rustfmt::skip]
-#[get("/api/profiles/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
-pub async fn get_profile_by_id(
-    profile_orm: web::Data<ProfileOrmApp>,
-    request: actix_web::HttpRequest,
-) -> actix_web::Result<HttpResponse, AppError> {
-    let id_str = request.match_info().query("id").to_string();
-
-    let id = parser::parse_i32(&id_str).map_err(|e| {
-        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
-        AppError::range_not_satisfiable416(&message) // 416
-    })?;
-
-    let opt_profile = web::block(move || {
-        // Find profile by user id.
-        let profile =
-            profile_orm.get_profile_user_by_id(id).map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e) // 507
-            }).ok()?;
-
-        profile
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) //506
-    })?;
-
-    if let Some(profile_user) = opt_profile {
-        let profile_dto = ProfileDto::from(profile_user);
-        Ok(HttpResponse::Ok().json(profile_dto)) // 200
-    } else {
-        Ok(HttpResponse::NoContent().finish()) // 204
     }
 }
 
@@ -225,6 +146,85 @@ pub async fn uniqueness_check(
     }
 
     Ok(HttpResponse::Ok().json(json!({ "uniqueness": uniqueness }))) // 200
+}
+
+/// get_profile_by_id
+///
+/// Search for a user profile by its ID.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/profiles/1
+/// ```
+///
+/// Return the found specified user (`ProfileDto`) with status 200 or 204 (no content) if the user is not found.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "A user with the specified ID was found.", body = ProfileDto,
+            examples(
+            ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
+                value = json!(ProfileDto::from(
+                    Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
+                        Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF)))
+            ))),
+            ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
+                value = json!(ProfileDto::from(
+                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
+            )))),
+        ),
+        (status = 204, description = "The user with the specified ID was not found."),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
+        (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/users/2a`", 
+            body = AppError, example = json!(AppError::range_not_satisfiable416(
+                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    params(("id", description = "Unique user ID.")),
+    security(("bearer_auth" = [])),
+)]
+#[rustfmt::skip]
+#[get("/api/profiles/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())" )]
+pub async fn get_profile_by_id(
+    profile_orm: web::Data<ProfileOrmApp>,
+    request: actix_web::HttpRequest,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let id_str = request.match_info().query("id").to_string();
+
+    let id = parser::parse_i32(&id_str).map_err(|e| {
+        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        AppError::range_not_satisfiable416(&message) // 416
+    })?;
+
+    let opt_profile = web::block(move || {
+        // Find profile by user id.
+        let profile =
+            profile_orm.get_profile_user_by_id(id).map_err(|e| {
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e) // 507
+            }).ok()?;
+
+        profile
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string()) //506
+    })?;
+
+    if let Some(profile_user) = opt_profile {
+        let profile_dto = ProfileDto::from(profile_user);
+        Ok(HttpResponse::Ok().json(profile_dto)) // 200
+    } else {
+        Ok(HttpResponse::NoContent().finish()) // 204
+    }
 }
 
 /// get_profile_current
@@ -366,79 +366,6 @@ mod tests {
                 .app_data(web::Data::clone(&data_profile_orm))
                 .app_data(web::Data::clone(&data_user_registr_orm));
         }
-    }
-
-    // ** get_profile_by_id **
-    #[actix_web::test]
-    async fn test_get_profile_by_id_invalid_id() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
-        let user_id = data_c.1.get(0).unwrap().user_id;
-        let user_id_bad = format!("{}a", user_id);
-        #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(get_profile_by_id).configure(configure_profile(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-            let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", user_id_bad))
-                .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::RANGE_NOT_SATISFIABLE); // 416
-
-        #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
-        #[rustfmt::skip]
-            let msg = format!("{}: `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
-        assert_eq!(app_err.message, msg);
-    }
-    #[actix_web::test]
-    async fn test_get_profile_by_id_valid_id() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
-        let profile1 = data_c.1.get(0).unwrap().clone();
-        let profile2 = ProfileOrmApp::new_profile(2, "Logan_Lewis", "Logan_Lewis@gmail.com", UserRole::User);
-
-        let profile_vec = ProfileOrmApp::create(&vec![profile1, profile2]).profile_vec;
-        let profile2_dto = ProfileDto::from(profile_vec.get(1).unwrap().clone());
-        let profile2_id = profile2_dto.id;
-
-        let data_c = (vec![], profile_vec, data_c.2, data_c.3);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_profile_by_id).configure(configure_profile(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", &profile2_id))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(profile2_dto).to_string();
-        let profile2b_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-        assert_eq!(profile_dto_res, profile2b_dto_ser);
-    }
-    #[actix_web::test]
-    async fn test_get_profile_by_id_non_existent_id() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
-        let profile1 = data_c.1.get(0).unwrap().clone();
-        let profile2 = ProfileOrmApp::new_profile(2, "Logan_Lewis", "Logan_Lewis@gmail.com", UserRole::User);
-
-        let profile_vec = ProfileOrmApp::create(&vec![profile1, profile2]).profile_vec;
-        let profile2_dto = ProfileDto::from(profile_vec.get(1).unwrap().clone());
-        let profile2_id = profile2_dto.id;
-
-        let data_c = (vec![], profile_vec, data_c.2, data_c.3);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_profile_by_id).configure(configure_profile(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", profile2_id + 1))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
 
     // ** uniqueness_check **
@@ -612,6 +539,79 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let nickname_res = std::str::from_utf8(&body).unwrap();
         assert_eq!(nickname_res, "{\"uniqueness\":false}");
+    }
+
+    // ** get_profile_by_id **
+    #[actix_web::test]
+    async fn test_get_profile_by_id_invalid_id() {
+        let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
+        let user_id = data_c.1.get(0).unwrap().user_id;
+        let user_id_bad = format!("{}a", user_id);
+        #[rustfmt::skip]
+            let app = test::init_service(
+                App::new().service(get_profile_by_id).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+            let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", user_id_bad))
+                .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::RANGE_NOT_SATISFIABLE); // 416
+
+        #[rustfmt::skip]
+            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
+        #[rustfmt::skip]
+            let msg = format!("{}: `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
+        assert_eq!(app_err.message, msg);
+    }
+    #[actix_web::test]
+    async fn test_get_profile_by_id_valid_id() {
+        let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
+        let profile1 = data_c.1.get(0).unwrap().clone();
+        let profile2 = ProfileOrmApp::new_profile(2, "Logan_Lewis", "Logan_Lewis@gmail.com", UserRole::User);
+
+        let profile_vec = ProfileOrmApp::create(&vec![profile1, profile2]).profile_vec;
+        let profile2_dto = ProfileDto::from(profile_vec.get(1).unwrap().clone());
+        let profile2_id = profile2_dto.id;
+
+        let data_c = (vec![], profile_vec, data_c.2, data_c.3);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_profile_by_id).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", &profile2_id))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(profile2_dto).to_string();
+        let profile2b_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(profile_dto_res, profile2b_dto_ser);
+    }
+    #[actix_web::test]
+    async fn test_get_profile_by_id_non_existent_id() {
+        let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
+        let profile1 = data_c.1.get(0).unwrap().clone();
+        let profile2 = ProfileOrmApp::new_profile(2, "Logan_Lewis", "Logan_Lewis@gmail.com", UserRole::User);
+
+        let profile_vec = ProfileOrmApp::create(&vec![profile1, profile2]).profile_vec;
+        let profile2_dto = ProfileDto::from(profile_vec.get(1).unwrap().clone());
+        let profile2_id = profile2_dto.id;
+
+        let data_c = (vec![], profile_vec, data_c.2, data_c.3);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_profile_by_id).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", profile2_id + 1))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
     }
 
     // ** get_profile_current **
