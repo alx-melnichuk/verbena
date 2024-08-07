@@ -36,7 +36,9 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             // GET /api/profiles_current
             .service(get_profile_current)
             // DELETE /api/profiles/{id}
-            .service(delete_profile);
+            .service(delete_profile)
+            // DELETE /api/profiles_current
+            .service(delete_profile_current);
     }
 }
 
@@ -343,6 +345,72 @@ pub async fn delete_profile(
     .map_err(|e| {
         log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
+    })??;
+
+    if let Some(profile) = opt_profile {
+        Ok(HttpResponse::Ok().json(ProfileDto::from(profile))) // 200
+    } else {
+        Ok(HttpResponse::NoContent().finish()) // 204
+    }
+}
+
+/// delete_profile_current
+///
+/// Delete the current user's profile.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X DELETE http://localhost:8080/api/profiles_current
+/// ```
+///
+/// Return the deleted current user's profile (`ProfileDto`) with status 200 or 204 (no content) if the current user's profile is not found.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "The current user's profile has been successfully deleted.", body = ProfileDto,
+            examples(
+            ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
+                value = json!(ProfileDto::from(
+                    Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
+                        Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF)))
+            ))),
+            ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
+                value = json!(ProfileDto::from(
+                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
+            )))),
+        ),
+        (status = 204, description = "The current user's profile was not found."),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
+#[rustfmt::skip]
+#[delete("/api/profiles_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn delete_profile_current(
+    authenticated: Authenticated,
+    profile_orm: web::Data<ProfileOrmApp>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let profile = authenticated.deref();
+    let id = profile.user_id;
+
+    let opt_profile = web::block(move || {
+        // Delete an entity (profile).
+        let res_profile = profile_orm.delete_profile(id)
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e) // 507
+        });
+        res_profile
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string()) //506
     })??;
 
     if let Some(profile) = opt_profile {
@@ -784,5 +852,29 @@ mod tests {
         let json = serde_json::json!(profile2_dto).to_string();
         let profile2b_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(profile_dto_res, profile2b_dto_ser);
+    }
+
+    // ** delete_profile_current **
+    #[actix_web::test]
+    async fn test_delete_profile_current_valid_token() {
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let profile1 = data_c.1.get(0).unwrap().clone();
+        let profile1_dto = ProfileDto::from(profile1);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_profile_current).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/profiles_current")
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json = serde_json::json!(profile1_dto).to_string();
+        let profile1_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(profile_dto_res, profile1_dto_ser);
     }
 }
