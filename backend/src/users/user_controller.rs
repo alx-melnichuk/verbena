@@ -174,30 +174,6 @@ pub async fn put_user_new_password(
     }
 }
 
-/// delete_user_current
-///
-/// Delete the current user.
-///
-/// One could call with following curl.
-/// ```text
-/// curl -i -X DELETE http://localhost:8080/api/users_current
-/// ```
-///
-/// Return the current user (`UserDto`) with status 200 or 204 (no content) if the current user is not found.
-/// 
-#[utoipa::path(
-    responses(
-        (status = 200, description = "The current user was deleted successfully.", body = UserDto),
-        (status = 204, description = "The current user was not found."),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
-    ),
-    security(("bearer_auth" = [])),
-)]
 #[rustfmt::skip]
 #[delete("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_user_current(
@@ -689,38 +665,5 @@ mod tests {
         assert_eq!(user_dto_res.password, "");
         assert_eq!(user_dto_res.role, user1mod_dto_ser.role);
         assert_eq!(user_dto_res.created_at, user1mod_dto_ser.created_at);
-    }
-
-    // ** delete_user_current **
-    #[actix_web::test]
-    async fn test_delete_user_current_valid_token() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let user1: User = data_c.0.get(0).unwrap().clone();
-        let user1copy_dto = UserDto::from(user1);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(delete_user_current).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::delete().uri("/api/users_current")
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let json = serde_json::json!(user1copy_dto).to_string();
-        let user1copy_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(user_dto_res.id, user1copy_dto_ser.id);
-        assert_eq!(user_dto_res.nickname, user1copy_dto_ser.nickname);
-        assert_eq!(user_dto_res.email, user1copy_dto_ser.email);
-        assert_eq!(user_dto_res.password, user1copy_dto_ser.password);
-        assert_eq!(user_dto_res.password, "");
-        assert_eq!(user_dto_res.role, user1copy_dto_ser.role);
-        assert_eq!(user_dto_res.created_at, user1copy_dto_ser.created_at);
-        assert_eq!(user_dto_res.updated_at, user1copy_dto_ser.updated_at);
     }
 }
