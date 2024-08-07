@@ -164,7 +164,7 @@ impl CreateProfile {
     }
 }
 
-// * UniquenessProfileDto *
+// ** UniquenessProfileDto **
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
