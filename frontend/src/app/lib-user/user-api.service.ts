@@ -6,7 +6,6 @@ import {
   CreateUserDto, LoginUserDto, LoginUserResponseDto, ModifyProfileDto, RecoveryUserDto, TokenUserDto, UpdatePasswordDto, UserDto, UserDtoUtil, UserProfileDto, UserTokensDto
 } from './user-api.interface';
 import { HttpObservableUtil } from 'src/app/utils/http-observable.util';
-import { HttpParamsUtil } from '../utils/http-params.util';
 
 @Injectable({
   providedIn: 'root',
@@ -30,7 +29,7 @@ export class UserApiService {
   }
   // TODO del;
   public currentUser(): Promise<UserDto | HttpErrorResponse | undefined> {
-    const url = Uri.appUri('appApi://users_current');
+    const url = Uri.appUri('appApi://profiles_current');
     return HttpObservableUtil.toPromise<UserDto>(this.http.get<UserDto | HttpErrorResponse>(url))
     .then((response: UserDto | HttpErrorResponse | undefined) => {
       return UserDtoUtil.new(response as UserDto)
@@ -82,10 +81,5 @@ export class UserApiService {
     }
     const url = Uri.appUri("appApi://users_new_password");
     return this.http.put<UserDto | HttpErrorResponse>(url, updatePasswordDto).toPromise();
-  }
-  // TODO del;
-  public delete_user_current(): Promise<UserDto | HttpErrorResponse | undefined> {
-    const url = Uri.appUri("appApi://users_current");
-    return this.http.delete<UserDto | HttpErrorResponse>(url).toPromise();
   }
 }

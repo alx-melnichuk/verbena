@@ -3,8 +3,8 @@ import { Injectable } from '@angular/core';
 import { UserApiService } from './user-api.service';
 import { LoginUserResponseDto, ModifyProfileDto, UpdatePasswordDto, UserDto, UserProfileDto, UserTokensDto } from './user-api.interface';
 
-export const ACCESS_TOKEN = 'accessToken';
-export const REFRESH_TOKEN = 'refreshToken';
+export const ACCESS_TOKEN = 'accessToken_old';
+export const REFRESH_TOKEN = 'refreshToken_old';
 
 @Injectable({
   providedIn: 'root',
@@ -118,10 +118,6 @@ export class UserService {
   
   public new_password(updatePasswordDto: UpdatePasswordDto): Promise<UserDto | HttpErrorResponse | undefined> {
     return this.userApiService.new_password(updatePasswordDto);
-  }
-  // TODO del;
-  public delete_user_current(): Promise<UserDto | HttpErrorResponse | undefined> {
-    return this.userApiService.delete_user_current();
   }
 
   // ** Private Api **
