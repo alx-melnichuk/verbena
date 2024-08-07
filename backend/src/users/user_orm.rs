@@ -9,8 +9,6 @@ pub trait UserOrm {
     ) -> Result<Option<User>, String>;
     /// Modify an entity (user).
     fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String>;
-    /// Delete an entity (user).
-    fn delete_user(&self, id: i32) -> Result<Option<User>, String>;
 }
 
 pub mod cfg {
@@ -145,19 +143,6 @@ pub mod impls {
 
             Ok(result)
         }
-        /// Delete an entity (user).
-        fn delete_user(&self, id: i32) -> Result<Option<User>, String> {
-            // Get a connection from the P2D2 pool.
-            let mut conn = self.get_conn()?;
-            // Run query using Diesel to delete a entry (user).
-            let result = diesel::delete(schema::users::dsl::users.find(id))
-                .returning(User::as_returning())
-                .get_result(&mut conn)
-                .optional()
-                .map_err(|e| format!("delete_user: {}", e.to_string()))?;
-
-            Ok(result)
-        }
     }
 }
 
@@ -263,12 +248,6 @@ pub mod tests {
             user_saved.updated_at = Utc::now();
 
             Ok(Some(user_saved))
-        }
-        /// Delete an entity (user).
-        fn delete_user(&self, id: i32) -> Result<Option<User>, String> {
-            let user_opt = self.user_vec.iter().find(|user| user.id == id);
-
-            Ok(user_opt.map(|u| u.clone()))
         }
     }
 }
