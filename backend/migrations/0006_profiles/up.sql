@@ -88,6 +88,10 @@ BEGIN
     ("users".nickname = _nickname OR "users".email = _email)
   LIMIT 1;
 
+  IF rec1.user_id IS NULL THEN
+    RETURN;
+  END IF;
+
   RETURN QUERY SELECT
     rec1.user_id, rec1.nickname, rec1.email, rec1."role", rec1.avatar, rec1.descript, rec1.theme,
     rec1.created_at, rec1.updated_at;
@@ -136,5 +140,50 @@ BEGIN
     rec2.user_id, rec1.nickname, rec1.email, rec1."role", rec2.avatar, rec2.descript, rec2.theme,
     rec1.created_at,
     CASE WHEN rec1.updated_at > rec2.updated_at THEN rec1.updated_at ELSE rec2.updated_at END as updated_at;
+END;
+$$;
+
+/* Create a stored procedure to delete a user, their profile, and their session. */
+CREATE OR REPLACE FUNCTION delete_profile_user_by_user_id(
+  IN _id INTEGER,
+  OUT user_id INTEGER,
+  OUT nickname VARCHAR,
+  OUT email VARCHAR,
+  OUT "role" user_role,
+  OUT avatar VARCHAR,
+  OUT descript TEXT,
+  OUT theme VARCHAR,
+  OUT created_at TIMESTAMP WITH TIME ZONE,
+  OUT updated_at TIMESTAMP WITH TIME ZONE
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+DECLARE 
+  rec1 RECORD;
+BEGIN
+  -- delete the user, his profile and session.
+  DELETE FROM "users"
+  USING "profiles"
+  WHERE 
+   ("profiles"."user_id" = "users"."id") AND ("users"."id" = _id)
+  RETURNING 
+    "users".id AS user_id, 
+    "users".nickname,
+    "users".email,
+    "users"."role",
+    "profiles".avatar,
+    "profiles".descript,
+    "profiles".theme,
+    "users".created_at,
+    CASE WHEN "users".updated_at > "profiles".updated_at
+    THEN "users".updated_at ELSE "profiles".updated_at END as updated_at
+  INTO rec1;
+
+  IF rec1.user_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY SELECT
+    rec1.user_id, rec1.nickname, rec1.email, rec1."role", rec1.avatar, rec1.descript, rec1.theme,
+    rec1.created_at, rec1.updated_at;
 END;
 $$;

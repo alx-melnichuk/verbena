@@ -1,3 +1,6 @@
+/* Remove stored procedure to delete a user, their profile, and their session. */
+DROP FUNCTION IF EXISTS delete_profile_user_by_user_id;
+
 /* Remove stored procedure to add a new user. */
 DROP FUNCTION IF EXISTS create_profile_user;
 
