@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use actix_web::{get, put, web, HttpResponse};
+use actix_web::{put, web, HttpResponse};
 use log;
 use utoipa;
 
@@ -21,22 +21,9 @@ use crate::validators::{msg_validation, Validator};
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
         config
-            // GET /api/users_current
-            .service(get_user_current)
             // PUT /api/users_new_password
             .service(put_user_new_password);
     }
-}
-
-#[rustfmt::skip]
-#[get("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn get_user_current( // TODO replace on "get_profile_current"
-    authenticated: Authenticated,
-) -> actix_web::Result<HttpResponse, AppError> {
-    let profile = authenticated.deref();
-    let user_dto = user_models::UserDto::from(profile.clone().to_user());
-
-    Ok(HttpResponse::Ok().json(user_dto)) // 200
 }
 
 /// put_user_new_password
