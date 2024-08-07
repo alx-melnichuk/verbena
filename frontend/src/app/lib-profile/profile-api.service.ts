@@ -6,7 +6,7 @@ import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
 import { HttpObservableUtil } from '../utils/http-observable.util';
 
-import { UniquenessDto } from './profile-api.interface';
+import { ProfileDto, ProfileDtoUtil, UniquenessDto } from './profile-api.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -25,6 +25,14 @@ export class ProfileApiService {
     const url = Uri.appUri("appApi://profiles/uniqueness");
     return HttpObservableUtil.toPromise<UniquenessDto>(this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }))
     //return this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }).toPromise();
+  }
+
+  public currentProfile(): Promise<ProfileDto | HttpErrorResponse | undefined> {
+    const url = Uri.appUri('appApi://profiles_current');
+    return HttpObservableUtil.toPromise<ProfileDto>(this.http.get<ProfileDto | HttpErrorResponse>(url))
+    .then((response: ProfileDto | HttpErrorResponse | undefined) => {
+      return ProfileDtoUtil.new(response as ProfileDto)
+    });
   }
 
 }
