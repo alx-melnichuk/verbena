@@ -110,7 +110,7 @@ pub async fn registration(
     config_app: web::Data<config_app::ConfigApp>,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     mailer: web::Data<MailerApp>,
-    user_orm: web::Data<UserOrmApp>,
+    profile_orm: web::Data<ProfileOrmApp>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     json_body: web::Json<RegistrUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -136,14 +136,14 @@ pub async fn registration(
     let email = registr_user_dto.email.clone();
 
     // Find in the "user" table an entry by nickname or email.
-    let opt_user = web::block(move || {
-        let existing_user = user_orm
-            .find_user_by_nickname_or_email(Some(&nickname), Some(&email))
+    let opt_profile = web::block(move || {
+        let existing_profile = profile_orm
+            .find_profile_by_nickname_or_email(Some(&nickname), Some(&email))
             .map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
-        existing_user
+        existing_profile
     })
     .await
     .map_err(|e| {
@@ -154,9 +154,9 @@ pub async fn registration(
     let nickname = registr_user_dto.nickname.clone();
 
     // If such an entry exists, then exit with code 409.
-    if let Some(user) = opt_user {
+    if let Some(profile) = opt_profile {
         #[rustfmt::skip]
-        let message = if user.nickname == nickname { MSG_NICKNAME_ALREADY_USE } else { MSG_EMAIL_ALREADY_USE };
+        let message = if profile.nickname == nickname { MSG_NICKNAME_ALREADY_USE } else { MSG_EMAIL_ALREADY_USE };
         log::error!("{}: {}", err::CD_CONFLICT, &message);
         return Err(AppError::conflict409(&message)); // 409
     }
@@ -405,7 +405,7 @@ pub async fn recovery(
     config_app: web::Data<config_app::ConfigApp>,
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     mailer: web::Data<MailerApp>,
-    user_orm: web::Data<UserOrmApp>,
+    profile_orm: web::Data<ProfileOrmApp>,
     user_recovery_orm: web::Data<UserRecoveryOrmApp>,
     json_body: web::Json<RecoveryUserDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
@@ -421,14 +421,14 @@ pub async fn recovery(
     let email = recovery_user_dto.email.clone();
 
     // Find in the "user" table an entry by email.
-    let opt_user = web::block(move || {
-        let existing_user = user_orm
-            .find_user_by_nickname_or_email(None, Some(&email))
+    let opt_profile = web::block(move || {
+        let existing_profile = profile_orm
+            .find_profile_by_nickname_or_email(None, Some(&email))
             .map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
-        existing_user
+        existing_profile
     })
     .await
     .map_err(|e| {
@@ -437,7 +437,7 @@ pub async fn recovery(
     })??;
 
     // If such an entry does not exist, then exit with code 404.
-    let user = match opt_user {
+    let profile = match opt_profile {
         Some(v) => v,
         None => {
             let message = format!("{}: email: {}", MSG_USER_NOT_FOUND, recovery_user_dto.email.clone());
@@ -445,7 +445,7 @@ pub async fn recovery(
             return Err(AppError::not_found404(&message)); // 404
         }
     };
-    let user_id = user.id;
+    let user_id = profile.user_id;
     let user_recovery_orm2 = user_recovery_orm.clone();
 
     // If there is a user with this ID, then move on to the next stage.
@@ -536,8 +536,8 @@ pub async fn recovery(
     // Prepare a letter confirming this recovery.
     let domain = &config_app.app_domain;
     let subject = format!("Account recovery on {}", &config_app.app_name);
-    let nickname = user.nickname.clone();
-    let receiver = user.email.clone();
+    let nickname = profile.nickname.clone();
+    let receiver = profile.email.clone();
     let target = recovery_token.clone();
     let recovery_duration = app_recovery_duration.clone() / 60; // Convert from seconds to minutes.
     // Send an email to this user.
@@ -558,7 +558,7 @@ pub async fn recovery(
 
     let recovery_user_response_dto = RecoveryUserResponseDto {
         id: user_recovery_id,
-        email: user.email.clone(),
+        email: profile.email.clone(),
         recovery_token: recovery_token.clone(),
     };
 
