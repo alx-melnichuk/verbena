@@ -16,86 +16,17 @@ use crate::users::{
     user_models::{self, ModifyUserDto, NewPasswordUserDto},
     user_orm::UserOrm,
 };
-use crate::utils::parser;
 use crate::validators::{msg_validation, Validator};
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
         config
-            // DELETE /api/users/{id}
-            .service(delete_user)
             // GET /api/users_current
             .service(get_user_current)
             // PUT /api/users_new_password
             .service(put_user_new_password)
             // DELETE /api/users_current
             .service(delete_user_current);
-    }
-}
-
-/// delete_user
-///
-/// Delete the specified user.
-///
-/// One could call with following curl.
-/// ```text
-/// curl -i -X DELETE http://localhost:8080/api/users/1
-/// ```
-///
-/// Return the deleted user (`UserDto`) with status 200 or 204 (no content) if the user is not found.
-///
-#[utoipa::path(
-    responses(
-        (status = 200, description = "The specified user was deleted successfully.", body = UserDto),
-        (status = 204, description = "The specified user was not found."),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
-        (status = 416, description = "Error parsing input parameter. `curl -i -X DELETE http://localhost:8080/api/users/2a`",
-            body = AppError, example = json!(AppError::range_not_satisfiable416(
-                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
-    ),
-    params(("id", description = "Unique user ID.")),
-    security(("bearer_auth" = [])),
-)]
-#[rustfmt::skip]
-#[delete("/api/users/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
-pub async fn delete_user(
-    user_orm: web::Data<UserOrmApp>,
-    request: actix_web::HttpRequest,
-) -> actix_web::Result<HttpResponse, AppError> {
-    let id_str = request.match_info().query("id").to_string();
-
-    let id = parser::parse_i32(&id_str).map_err(|e| {
-        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
-        AppError::range_not_satisfiable416(&message) // 416
-    })?;
-
-    let result_user = web::block(move || {
-        // Modify the entity (user) with new data. Result <user_models::User>.
-        let res_user = user_orm.delete_user(id)
-        .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e) // 507
-        });
-        res_user
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
-    })??;
-
-    if let Some(user) = result_user {
-        Ok(HttpResponse::Ok().json(user_models::UserDto::from(user))) // 200
-    } else {
-        Ok(HttpResponse::NoContent().finish()) // 204
     }
 }
 
@@ -312,7 +243,7 @@ mod tests {
     use crate::errors::AppError;
     use crate::extractors::authentication::BEARER;
     use crate::profiles::{
-        profile_models::{Profile, ProfileDto},
+        profile_models::Profile,
         profile_orm::tests::ProfileOrmApp,
     };
     use crate::sessions::{
@@ -418,124 +349,6 @@ mod tests {
             assert_eq!(app_err.message, msg.to_string());
         }
     }
-
-    // ** delete_user **
-    #[actix_web::test]
-    async fn test_delete_user_invalid_id() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let mut user_vec = data_c.0;
-        let user1 = user_vec.get_mut(0).unwrap();
-        user1.role = UserRole::Admin;
-        let user_id_bad = format!("{}a", user1.id);
-        let profile1 = create_profile(user1.clone());
-        let data_c = (user_vec, vec![profile1], data_c.2, data_c.3);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(delete_user).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::delete().uri(&format!("/api/users/{}", user_id_bad))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::RANGE_NOT_SATISFIABLE); // 416
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
-        #[rustfmt::skip]
-        let msg = format!("{}: `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, user_id_bad);
-        assert_eq!(app_err.message, msg);
-    }
-    #[actix_web::test]
-    async fn test_delete_user_user_not_exist() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let mut user_vec = data_c.0;
-        let user1 = user_vec.get_mut(0).unwrap();
-        user1.role = UserRole::Admin;
-        let user_id = user1.id;
-        let profile1 = create_profile(user1.clone());
-        let data_c = (user_vec, vec![profile1], data_c.2, data_c.3);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(delete_user).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::delete().uri(&format!("/api/users/{}", user_id + 1))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
-    }
-    #[actix_web::test]
-    async fn test_delete_user_user_exists() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let mut user_vec = data_c.0;
-        let user1 = user_vec.get_mut(0).unwrap();
-        user1.role = UserRole::Admin;
-        let user1copy_dto = UserDto::from(user1.clone());
-        let profile1 = create_profile(user1.clone());
-        let data_c = (user_vec, vec![profile1], data_c.2, data_c.3);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(delete_user).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::delete().uri(&format!("/api/users/{}", user1copy_dto.id))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(user1copy_dto).to_string();
-        let user1copy_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-
-        assert_eq!(user_dto_res.id, user1copy_dto_ser.id);
-        assert_eq!(user_dto_res.nickname, user1copy_dto_ser.nickname);
-        assert_eq!(user_dto_res.email, user1copy_dto_ser.email);
-        assert_eq!(user_dto_res.password, user1copy_dto_ser.password);
-        assert_eq!(user_dto_res.password, "");
-        assert_eq!(user_dto_res.role, user1copy_dto_ser.role);
-        assert_eq!(user_dto_res.created_at, user1copy_dto_ser.created_at);
-        assert_eq!(user_dto_res.updated_at, user1copy_dto_ser.updated_at);
-    }
-
-    // ** get_user_current **
-    /*#[actix_web::test]
-    async fn test_get_user_current_valid_token() {
-        let (cfg_c, data_c, token) = get_cfg_data(false);
-        let user1 = data_c.0.get(0).unwrap().clone();
-        let user1_dto = UserDto::from(user1);
-        let profile1 = data_c.1.get(0).unwrap().clone();
-        let profile1_dto = ProfileDto::from(profile1);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(get_user_current).configure(configure_user(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::get().uri("/api/users_current")
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let user_dto_res: UserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(user1_dto).to_string();
-        let user1b_dto_ser: UserDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-        let json2 = serde_json::json!(profile1_dto).to_string();
-        let profile1_dto_ser: ProfileDto = serde_json::from_slice(json2.as_bytes()).expect(MSG_FAILED_DESER);
-
-        // assert_eq!(user_dto_res, user1b_dto_ser); // TODO
-        assert_eq!(user_dto_res.id, user1b_dto_ser.id);
-        assert_eq!(user_dto_res.nickname, user1b_dto_ser.nickname);
-        assert_eq!(user_dto_res.email, user1b_dto_ser.email);
-        assert_eq!(user_dto_res.password, user1b_dto_ser.password);
-        assert_eq!(user_dto_res.password, "");
-        assert_eq!(user_dto_res.role, user1b_dto_ser.role);
-        assert_eq!(user_dto_res.created_at, profile1_dto_ser.created_at);
-        assert_eq!(user_dto_res.updated_at, profile1_dto_ser.updated_at);
-    }*/
 
     // ** put_user_new_password **
     #[actix_web::test]
