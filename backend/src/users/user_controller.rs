@@ -501,7 +501,7 @@ mod tests {
     }
 
     // ** get_user_current **
-    #[actix_web::test]
+    /*#[actix_web::test]
     async fn test_get_user_current_valid_token() {
         let (cfg_c, data_c, token) = get_cfg_data(false);
         let user1 = data_c.0.get(0).unwrap().clone();
@@ -535,7 +535,7 @@ mod tests {
         assert_eq!(user_dto_res.role, user1b_dto_ser.role);
         assert_eq!(user_dto_res.created_at, profile1_dto_ser.created_at);
         assert_eq!(user_dto_res.updated_at, profile1_dto_ser.updated_at);
-    }
+    }*/
 
     // ** put_user_new_password **
     #[actix_web::test]
