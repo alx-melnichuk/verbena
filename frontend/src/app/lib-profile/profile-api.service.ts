@@ -23,7 +23,7 @@ export class ProfileApiService {
     const params: HttpParams = HttpParamsUtil.create(search);
 
     const url = Uri.appUri("appApi://profiles/uniqueness");
-    return HttpObservableUtil.toPromise<UniquenessDto>(this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }))
+    return HttpObservableUtil.toPromise<UniquenessDto>(this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }));
     //return this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }).toPromise();
   }
 
@@ -35,4 +35,8 @@ export class ProfileApiService {
     });
   }
 
+  public delete_profile_current(): Promise<ProfileDto | HttpErrorResponse | undefined> {
+    const url = Uri.appUri("appApi://profiles_current");
+    return HttpObservableUtil.toPromise<ProfileDto>(this.http.delete<ProfileDto | HttpErrorResponse>(url));
+  }
 }

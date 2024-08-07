@@ -9,9 +9,11 @@ import { TranslateService } from '@ngx-translate/core';
 import { SpinnerComponent } from '../components/spinner/spinner.component';
 import { ROUTE_LOGIN } from '../common/routes';
 import { DialogService } from '../lib-dialog/dialog.service';
+import { PanelProfileInfoComponent } from '../lib-profile/panel-profile-info/panel-profile-info.component';
+import { ProfileDto } from '../lib-profile/profile-api.interface';
+import { ProfileService } from '../lib-profile/profile.service';
 import { UserService } from '../lib-user/user.service';
 import { ModifyProfileDto, UpdatePasswordDto, UpdateProfileFileDto, UserDto } from '../lib-user/user-api.interface';
-import { PanelProfileInfoComponent } from '../lib-profile/panel-profile-info/panel-profile-info.component';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
 @Component({
@@ -38,6 +40,7 @@ export class PgProfileComponent {
     private translate: TranslateService,
     private dialogService: DialogService,
     private userService: UserService,
+    private profileService: ProfileService,
   ) {
     this.userDto = this.route.snapshot.data['userDto'];
   }
@@ -104,8 +107,8 @@ export class PgProfileComponent {
 
   public doDeleteAccount(): void {
     this.isLoadData = true;
-    this.userService.delete_user_current()
-    .then((response: UserDto | HttpErrorResponse | undefined) => {
+    this.profileService.delete_profile_current()
+    .then((response: ProfileDto | HttpErrorResponse | undefined) => {
         if (!response) {
           this.errMsgsAccount = [this.translate.instant('profile.error_delete_account', { nickname: this.userDto.nickname })];
         } else {
@@ -114,8 +117,8 @@ export class PgProfileComponent {
           this.dialogService.openConfirmation(message, title, null, 'buttons.ok')
           .finally(() => {
             // Closing the session.
-            this.userService.setUserDto(null);
-            this.userService.setUserTokensDto(null);
+            this.profileService.setProfileDto(null);
+            this.profileService.setProfileTokensDto(null);
             this.router.navigate([ROUTE_LOGIN]);
           })
         }

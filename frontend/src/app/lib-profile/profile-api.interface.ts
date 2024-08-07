@@ -48,4 +48,11 @@ export class ProfileDtoUtil {
   }
 }
 
+// ** Profile Tokens **
+
+export interface ProfileTokensDto {
+    accessToken: string;
+    refreshToken: string;
+  }
+  
 // ** **

@@ -36,7 +36,7 @@ export class UserService {
   public setUserDto(userInfo: UserDto | null = null): void {
     this.userInfo = userInfo;
   }
- 
+  // TODO del;
   public setUserTokensDto(userTokensDto: UserTokensDto | null = null): void {
     this.userTokensDto = this.setUserTokensDtoToLocalStorage(userTokensDto);
   }
@@ -119,13 +119,13 @@ export class UserService {
   public new_password(updatePasswordDto: UpdatePasswordDto): Promise<UserDto | HttpErrorResponse | undefined> {
     return this.userApiService.new_password(updatePasswordDto);
   }
-
+  // TODO del;
   public delete_user_current(): Promise<UserDto | HttpErrorResponse | undefined> {
     return this.userApiService.delete_user_current();
   }
 
   // ** Private Api **
-
+  // TODO del;
   private updateItemInLocalStorage(name: string, value: string | null): void {
     if (!!name) {
       if (!!value) {
@@ -135,6 +135,7 @@ export class UserService {
       }
     }
   }
+  // TODO del;
   private setUserTokensDtoToLocalStorage(userTokensDto: UserTokensDto | null): UserTokensDto | null {
     const accessToken = userTokensDto?.accessToken || null;
     this.updateItemInLocalStorage(ACCESS_TOKEN, accessToken);
@@ -142,7 +143,7 @@ export class UserService {
     this.updateItemInLocalStorage(REFRESH_TOKEN, refreshToken);
     return !!userTokensDto ? { ...userTokensDto } : null;
   }
-
+  // TODO del;
   private getUserTokensDtoFromLocalStorage(): UserTokensDto | null {
     let result: UserTokensDto | null = null;
     const accessToken = localStorage.getItem(ACCESS_TOKEN);
