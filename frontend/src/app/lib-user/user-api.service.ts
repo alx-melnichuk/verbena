@@ -28,7 +28,7 @@ export class UserApiService {
     const url = Uri.appUri('appApi://recovery');
     return this.http.post<null | HttpErrorResponse>(url, recoveryUserDto).toPromise();
   }
-
+  // TODO del;
   public currentUser(): Promise<UserDto | HttpErrorResponse | undefined> {
     const url = Uri.appUri('appApi://users_current');
     return HttpObservableUtil.toPromise<UserDto>(this.http.get<UserDto | HttpErrorResponse>(url))

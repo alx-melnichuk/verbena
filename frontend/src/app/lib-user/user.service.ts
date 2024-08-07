@@ -32,7 +32,7 @@ export class UserService {
   public getRefreshToken(): string | null {
     return this.userTokensDto?.refreshToken || null;
   }
-
+  // TODO del;
   public setUserDto(userInfo: UserDto | null = null): void {
     this.userInfo = userInfo;
   }
@@ -103,7 +103,7 @@ export class UserService {
     }
     return this.userApiService.recovery({ email });
   }
-
+  // TODO del;
   public async getCurrentUser(): Promise<UserDto | HttpErrorResponse | undefined> {
     const userDto: UserDto = (await this.userApiService.currentUser()) as UserDto;
     this.userInfo = { ...userDto } as UserDto;
