@@ -99,27 +99,6 @@ pub async fn delete_user(
     }
 }
 
-/// get_user_current
-///
-/// Get information about the current user (`UserDto`).
-///
-/// One could call with following curl.
-/// ```text
-/// curl -i -X GET http://localhost:8080/api/users_current
-/// ```
-///
-/// Return the current user (`UserDto`) with status 200.
-///
-#[utoipa::path(
-    responses(
-        (status = 200, description = "Data about the current user.", body = UserDto),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
-    ),
-    security(("bearer_auth" = []))
-)]
 #[rustfmt::skip]
 #[get("/api/users_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_user_current( // TODO replace on "get_profile_current"

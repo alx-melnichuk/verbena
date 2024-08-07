@@ -20,7 +20,6 @@ use crate::{
         user_auth_controller::logout,
         user_auth_controller::update_token,
         user_controller::delete_user,
-        user_controller::get_user_current,
         user_controller::put_user_new_password,
         user_controller::delete_user_current,
         user_registr_controller::registration,
