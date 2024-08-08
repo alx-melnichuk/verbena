@@ -145,8 +145,8 @@ where
     }
     /// The future type representing the asynchronous response.
     fn call(&self, req: dev::ServiceRequest) -> Self::Future {
-        const IS_PRINT: bool = false;
-        let timer0 = std::time::Instant::now();
+        // const IS_PRINT: bool = false;
+        // let timer0 = std::time::Instant::now();
         // Attempt to extract token from cookie or authorization header
         let token = req.cookie("token").map(|c| c.value().to_string()).or_else(|| {
             let header_token = req
@@ -190,7 +190,7 @@ where
 
         // Handle user extraction and request processing
         async move {
-            let timer1 = std::time::Instant::now();
+            // let timer1 = std::time::Instant::now();
             let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap();
             // Find a session for a given user.
             let opt_session = session_orm.get_session_by_id(user_id).map_err(|e| {
@@ -198,11 +198,11 @@ where
                 let error = AppError::database507(&e.to_string());
                 return error::ErrorInsufficientStorage(error); // 507
             })?;
-            let timer1s = format!("{:.2?}", timer1.elapsed());
+            // let timer1s = format!("{:.2?}", timer1.elapsed());
             let session = opt_session.ok_or_else(|| {
                 // There is no session for this user.
                 let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, user_id);
-                log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
+                log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406+
                 error::ErrorNotAcceptable(AppError::not_acceptable406(&message))
             })?;
             // Each session contains an additional numeric value.
@@ -211,33 +211,32 @@ where
             if session_num_token != num_token {
                 // If they do not match, then this is an error.
                 let message = format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
-                log::error!("{}: {}", err::CD_UNAUTHORIZED, &message); // 401
+                log::error!("{}: {}", err::CD_UNAUTHORIZED, &message); // 401+
                 return Err(error::ErrorUnauthorized(AppError::unauthorized401(&message)));
             }
 
             let profile_orm = req.app_data::<web::Data<ProfileOrmApp>>().unwrap();
-            let timer2 = std::time::Instant::now();
+            // let timer2 = std::time::Instant::now();
             let result = profile_orm.get_profile_user_by_id(user_id, false).map_err(|e| {
                 log::error!("{}: {}", err::CD_DATABASE, e.to_string());
                 let error = AppError::database507(&e.to_string());
                 error::ErrorInsufficientStorage(error) // 507
             })?;
-            let timer2s = format!("{:.2?}", timer2.elapsed());
+            // let timer2s = format!("{:.2?}", timer2.elapsed());
 
-            let profile_user = result.ok_or_else(|| {
+            let profile = result.ok_or_else(|| {
                 let message = format!("{}: user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id);
                 log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
-                error::ErrorUnauthorized(AppError::unauthorized401(&message)) // 401
+                error::ErrorUnauthorized(AppError::unauthorized401(&message)) // 401+
             })?;
 
-            let timer0s = format!("{:.2?}", timer0.elapsed());
-            if IS_PRINT {
-                eprintln!("## timer0: {}, timer1: {}, timer2: {}", timer0s, timer1s, timer2s);
-            }
+            // let timer0s = format!("{:.2?}", timer0.elapsed());
+            // eprintln!("## timer0: {}, timer1: {}, timer2: {}", timer0s, timer1s, timer2s);
+
             // Check if user's role matches the required role
-            if allowed_roles.contains(&profile_user.role) {
+            if allowed_roles.contains(&profile.role) {
                 // Insert user profile information into request extensions.
-                req.extensions_mut().insert::<Profile>(profile_user);
+                req.extensions_mut().insert::<Profile>(profile);
                 // Call the wrapped service to handle the request
                 let res = srv.call(req).await?;
                 Ok(res)
@@ -257,11 +256,13 @@ mod tests {
 
     use crate::{
         sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token},
-        users::{user_models::UserRole, user_orm::tests::UserOrmApp},
+        users::user_models::UserRole,
     };
 
     use super::*;
 
+    const ADMIN: u8 = 0;
+    const USER: u8 = 1;
     const MSG_ERROR_WAS_EXPECTED: &str = "Service call succeeded, but an error was expected.";
     const MSG_FAILED_TO_DESER: &str = "Failed to deserialize JSON string";
 
@@ -275,18 +276,15 @@ mod tests {
         HttpResponse::Ok().into()
     }
 
-    fn create_profile() -> Profile {
-        let mut user = UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwrN1T1");
-        user.role = UserRole::User;
-        Profile::new(
-            user.id,
-            &user.nickname,
-            &user.email,
-            user.role.clone(),
-            None,
-            None,
-            None,
-        )
+    fn create_profile(role: u8) -> Profile {
+        let nickname = "Oliver_Taylor".to_string();
+        let role = if role == ADMIN { UserRole::Admin } else { UserRole::User };
+        let profile = ProfileOrmApp::new_profile(1, &nickname, &format!("{}@gmail.com", &nickname), role);
+        profile
+    }
+    fn profile_with_id(profile: Profile) -> Profile {
+        let profile_orm = ProfileOrmApp::create(&vec![profile]);
+        profile_orm.profile_vec.get(0).unwrap().clone()
     }
     fn cfg_jwt() -> config_jwt::ConfigJwt {
         config_jwt::get_test_config()
@@ -296,8 +294,9 @@ mod tests {
         (http::header::AUTHORIZATION, header_value)
     }
     #[rustfmt::skip]
-    fn get_cfg_data() -> (config_jwt::ConfigJwt, (Vec<Profile>, Vec<Session>), String) {
-        let profile1 = create_profile();
+    fn get_cfg_data(role: u8) -> (config_jwt::ConfigJwt, (Vec<Profile>, Vec<Session>), String) {
+        // Create profile values.
+        let profile1: Profile = profile_with_id(create_profile(role));
         let num_token = 1234;
         let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token));
 
@@ -328,7 +327,7 @@ mod tests {
 
     #[test]
     async fn test_authentication_middelware_valid_token() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth).configure(configure_auth(cfg_c, data_c))).await;
@@ -342,7 +341,7 @@ mod tests {
 
     #[test]
     async fn test_authentication_middelware_valid_token_with_cookie() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth).configure(configure_auth(cfg_c, data_c))).await;
@@ -356,10 +355,7 @@ mod tests {
 
     #[test]
     async fn test_authentication_middleware_access_admin_only_endpoint_success() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        let mut profile = data_c.0.get(0).unwrap().clone();
-        profile.role = UserRole::Admin;
-        let data_c = (vec![profile], data_c.1);
+        let (cfg_c, data_c, token) = get_cfg_data(ADMIN);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_require_only_admin).configure(configure_auth(cfg_c, data_c))).await;
@@ -412,9 +408,9 @@ mod tests {
     }
     #[test]
     async fn test_authentication_middelware_expired_token() {
-        let (cfg_c, data_c, _token) = get_cfg_data();
-        let num_token = data_c.1.get(0).unwrap().num_token.unwrap_or(0);
-        let user_id = data_c.0.get(0).unwrap().user_id;
+        let (cfg_c, data_c, _token) = get_cfg_data(USER);
+        let num_token = data_c.1.get(0).unwrap().num_token.unwrap_or(0); // session_vec
+        let user_id = data_c.0.get(0).unwrap().user_id; // profile_vec
         let jwt_secret: &[u8] = cfg_c.jwt_secret.as_bytes();
         let token = encode_token(user_id, num_token, &jwt_secret, -cfg_c.jwt_access).unwrap();
         #[rustfmt::skip]
@@ -435,12 +431,45 @@ mod tests {
         assert_eq!(app_err.message, format!("{}: ExpiredSignature", err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
     #[test]
+    async fn test_authentication_middelware_valid_token_session_non_exist() {
+        let (cfg_c, data_c, token) = get_cfg_data(USER);
+
+        let num_token = data_c.1.get(0).unwrap().num_token.unwrap_or(0); // session_vec
+        let user_id = data_c.0.get(0).unwrap().user_id; // profile_vec
+        let session1 = SessionOrmApp::new_session(user_id + 1, Some(num_token));
+
+        let data_c = (data_c.0, vec![session1]);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(handler_with_auth).configure(configure_auth(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().insert_header(header_auth(&token))
+            .to_request();
+        let result = test::try_call_service(&app, req).await.err();
+        let err = result.expect(MSG_ERROR_WAS_EXPECTED);
+
+        let actual_status = err.as_response_error().status_code();
+        assert_eq!(actual_status, http::StatusCode::NOT_ACCEPTABLE); // 406
+
+        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
+        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        #[rustfmt::skip]
+        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, user_id));
+    }
+    #[test]
     async fn test_authentication_middelware_valid_token_non_existent_user() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        let mut profile = data_c.0.get(0).unwrap().clone();
-        let user_id = profile.user_id;
-        profile.user_id = profile.user_id + 1;
-        let data_c = (vec![profile], data_c.1);
+        let (cfg_c, data_c, _token) = get_cfg_data(USER);
+
+        let num_token2 = data_c.1.get(0).unwrap().num_token.unwrap_or(0) + 1; // session_vec
+        let user_id_bad = data_c.0.get(0).unwrap().user_id + 1; // profile_vec
+        let session1 = SessionOrmApp::new_session(user_id_bad, Some(num_token2));
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(user_id_bad, num_token2, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let data_c = (data_c.0, vec![session1]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth).configure(configure_auth(cfg_c, data_c))).await;
@@ -456,13 +485,13 @@ mod tests {
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id));
+        assert_eq!(app_err.message, format!("{}: user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id_bad));
     }
     #[test]
     async fn test_authentication_middelware_valid_token_non_existent_num() {
-        let (cfg_c, data_c, _token) = get_cfg_data();
-        let num_token = data_c.1.get(0).unwrap().num_token.unwrap_or(0);
-        let user_id = data_c.0.get(0).unwrap().user_id;
+        let (cfg_c, data_c, _token) = get_cfg_data(USER);
+        let num_token = data_c.1.get(0).unwrap().num_token.unwrap_or(0); // session_vec
+        let user_id = data_c.0.get(0).unwrap().user_id; // profile_vec
         let jwt_secret: &[u8] = cfg_c.jwt_secret.as_bytes();
         let token = encode_token(user_id, num_token + 1, &jwt_secret, cfg_c.jwt_access).unwrap();
         #[rustfmt::skip]
@@ -484,7 +513,7 @@ mod tests {
     }
     #[test]
     async fn test_authentication_middleware_access_admin_only_endpoint_fail() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(USER);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_require_only_admin).configure(configure_auth(cfg_c, data_c))).await;
