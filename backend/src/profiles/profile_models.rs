@@ -56,6 +56,9 @@ pub struct Profile {
     #[diesel(sql_type = diesel::sql_types::Text)]
     #[diesel(column_name = "email")]
     pub email: String,
+    #[diesel(sql_type = diesel::sql_types::Text)]
+    #[diesel(column_name = "password")]
+    pub password: String,
     #[diesel(sql_type = crate::schema::sql_types::UserRole)]
     #[diesel(column_name = "role")]
     pub role: UserRole,
@@ -81,6 +84,7 @@ impl Profile {
             user_id,
             nickname: nickname.to_string(),
             email: email.to_string(),
+            password: "".to_string(),
             role,
             avatar: avatar.map(|v| v.to_string()),
             descript: descript.unwrap_or(PROFILE_DESCRIPT_DEF).to_string(),
