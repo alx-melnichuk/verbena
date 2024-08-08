@@ -217,7 +217,7 @@ where
 
             let profile_orm = req.app_data::<web::Data<ProfileOrmApp>>().unwrap();
             let timer2 = std::time::Instant::now();
-            let result = profile_orm.get_profile_user_by_id(user_id).map_err(|e| {
+            let result = profile_orm.get_profile_user_by_id(user_id, false).map_err(|e| {
                 log::error!("{}: {}", err::CD_DATABASE, e.to_string());
                 let error = AppError::database507(&e.to_string());
                 error::ErrorInsufficientStorage(error) // 507

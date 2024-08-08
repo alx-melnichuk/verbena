@@ -138,7 +138,7 @@ pub async fn registration(
     // Find in the "user" table an entry by nickname or email.
     let opt_profile = web::block(move || {
         let existing_profile = profile_orm
-            .find_profile_by_nickname_or_email(Some(&nickname), Some(&email))
+            .find_profile_by_nickname_or_email(Some(&nickname), Some(&email), false)
             .map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
@@ -423,7 +423,7 @@ pub async fn recovery(
     // Find in the "user" table an entry by email.
     let opt_profile = web::block(move || {
         let existing_profile = profile_orm
-            .find_profile_by_nickname_or_email(None, Some(&email))
+            .find_profile_by_nickname_or_email(None, Some(&email), false)
             .map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
@@ -676,7 +676,7 @@ pub async fn confirm_recovery(
     // If there is "user_recovery" with this ID, then move on to the next step.
     let opt_profile = web::block(move || {
         // Find profile by user id.
-        let res_profile = profile_orm.get_profile_user_by_id(user_id)
+        let res_profile = profile_orm.get_profile_user_by_id(user_id, false)
             .map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507

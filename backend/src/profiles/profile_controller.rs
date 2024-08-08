@@ -109,7 +109,7 @@ pub async fn uniqueness_check(
     // Find in the "profile" table an entry by nickname or email.
     let opt_profile = web::block(move || {
         let existing_profile = profile_orm
-            .find_profile_by_nickname_or_email(opt_nickname2.as_deref(), opt_email2.as_deref())
+            .find_profile_by_nickname_or_email(opt_nickname2.as_deref(), opt_email2.as_deref(), false)
             .map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
@@ -210,7 +210,7 @@ pub async fn get_profile_by_id(
     let opt_profile = web::block(move || {
         // Find profile by user id.
         let profile =
-            profile_orm.get_profile_user_by_id(id).map_err(|e| {
+            profile_orm.get_profile_user_by_id(id, false).map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             }).ok()?;

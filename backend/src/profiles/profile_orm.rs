@@ -5,12 +5,13 @@ use super::profile_models::CreateProfile;
 
 pub trait ProfileOrm {
     /// Get an entity (profile + user) by ID.
-    fn get_profile_user_by_id(&self, user_id: i32) -> Result<Option<Profile>, String>;
+    fn get_profile_user_by_id(&self, user_id: i32, is_password: bool) -> Result<Option<Profile>, String>;
     /// Find for an entity (profile) by nickname or email.
     fn find_profile_by_nickname_or_email(
         &self,
         nickname: Option<&str>,
         email: Option<&str>,
+        is_password: bool,
     ) -> Result<Option<Profile>, String>;
     /// Add a new entry (profile, user).
     fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String>;
@@ -68,17 +69,20 @@ pub mod impls {
 
     impl ProfileOrm for ProfileOrmApp {
         /// Get an entity (profile + user) by ID.
-        fn get_profile_user_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
+        fn get_profile_user_by_id(&self, user_id: i32, is_password: bool) -> Result<Option<Profile>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select * from get_profile_user($1);").bind::<sql_types::Integer, _>(user_id);
+            let query =
+                diesel::sql_query("select * from find_profile_user_by_id_or_nickname_email($1, NULL, NULL, $2);")
+                    .bind::<sql_types::Integer, _>(user_id)
+                    .bind::<sql_types::Bool, _>(is_password);
 
             // Run query using Diesel to find user by id (and user_id) and return it.
             let opt_profile = query
                 .get_result::<Profile>(&mut conn)
                 .optional()
-                .map_err(|e| format!("get_profile_by_user_id: {}", e.to_string()))?;
+                .map_err(|e| format!("find_profile_user_by_id_or_nickname_email: {}", e.to_string()))?;
 
             Ok(opt_profile)
         }
@@ -87,6 +91,7 @@ pub mod impls {
             &self,
             nickname: Option<&str>,
             email: Option<&str>,
+            is_password: bool,
         ) -> Result<Option<Profile>, String> {
             let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase(); // #?
             let nickname2_len = nickname2.len();
@@ -100,15 +105,16 @@ pub mod impls {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select * from find_profile_user_by_nickname_or_email($1, $2);")
+            let query = diesel::sql_query("select * from find_profile_user_by_id_or_nickname_email(NULL, $1, $2, $3);")
                 .bind::<sql_types::Text, _>(nickname2)
-                .bind::<sql_types::Text, _>(email2);
+                .bind::<sql_types::Text, _>(email2)
+                .bind::<sql_types::Bool, _>(is_password);
 
             // Run query using Diesel to find user by id (and user_id) and return it.
             let opt_profile = query
                 .get_result::<Profile>(&mut conn)
                 .optional()
-                .map_err(|e| format!("find_profile_user_by_nickname_or_email: {}", e.to_string()))?;
+                .map_err(|e| format!("find_profile_user_by_id_or_nickname_email: {}", e.to_string()))?;
 
             Ok(opt_profile)
         }
@@ -209,12 +215,22 @@ pub mod tests {
 
     impl ProfileOrm for ProfileOrmApp {
         /// Get an entity (profile + user) by ID.
-        fn get_profile_user_by_id(&self, user_id: i32) -> Result<Option<Profile>, String> {
-            let result = self
+        fn get_profile_user_by_id(&self, user_id: i32, is_password: bool) -> Result<Option<Profile>, String> {
+            let opt_profile = self
                 .profile_vec
                 .iter()
                 .find(|profile_user| profile_user.user_id == user_id)
                 .map(|profile_user| profile_user.clone());
+
+            let result = match opt_profile {
+                Some(mut profile) if !is_password => {
+                    profile.password = "".to_string();
+                    Some(profile)
+                }
+                Some(v) => Some(v),
+                None => None,
+            };
+
             Ok(result)
         }
         /// Find for an entity (profile) by nickname or email.
@@ -222,6 +238,7 @@ pub mod tests {
             &self,
             nickname: Option<&str>,
             email: Option<&str>,
+            is_password: bool,
         ) -> Result<Option<Profile>, String> {
             let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase();
             let nickname2_len = nickname2.len();
@@ -232,13 +249,22 @@ pub mod tests {
                 return Ok(None);
             }
 
-            let result = self
+            let opt_profile = self
                 .profile_vec
                 .iter()
                 .find(|profile| {
                     (nickname2_len > 0 && profile.nickname == nickname2) || (email2_len > 0 && profile.email == email2)
                 })
                 .map(|user| user.clone());
+
+            let result = match opt_profile {
+                Some(mut profile) if !is_password => {
+                    profile.password = "".to_string();
+                    Some(profile)
+                }
+                Some(v) => Some(v),
+                None => None,
+            };
 
             Ok(result)
         }
@@ -248,7 +274,7 @@ pub mod tests {
             let email = create_profile.email.to_lowercase();
 
             // Check the availability of the profile by nickname and email.
-            let opt_profile = self.find_profile_by_nickname_or_email(Some(&nickname), Some(&email))?;
+            let opt_profile = self.find_profile_by_nickname_or_email(Some(&nickname), Some(&email), false)?;
             if opt_profile.is_some() {
                 return Err("Profile already exists".to_string());
             }
