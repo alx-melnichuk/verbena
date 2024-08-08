@@ -19,42 +19,16 @@ SELECT diesel_manage_updated_at('profiles');
 INSERT INTO profiles (user_id, created_at, updated_at) 
 (SELECT id, created_at, updated_at FROM users);
 
-/* Stored function for retrieving data from the "profiles" and "users" tables by user ID. */
-CREATE OR REPLACE FUNCTION get_profile_user(
+/* Stored function for retrieving data from the "profiles", "password" and "users" tables by nickname or email. */
+CREATE OR REPLACE FUNCTION find_profile_user_by_id_or_nickname_email(
   IN _id INTEGER,
-  OUT user_id INTEGER,
-  OUT nickname VARCHAR,
-  OUT email VARCHAR,
-  OUT "role" user_role,
-  OUT avatar VARCHAR,
-  OUT descript TEXT,
-  OUT theme VARCHAR,
-  OUT created_at TIMESTAMP WITH TIME ZONE,
-  OUT updated_at TIMESTAMP WITH TIME ZONE
-) RETURNS SETOF record LANGUAGE sql
-AS $$
-  SELECT
-    u.id AS user_id, 
-    u.nickname,
-    u.email,
-    u."role",
-    p.avatar,
-    p.descript,
-    p.theme,
-    u.created_at,
-    CASE WHEN u.updated_at > p.updated_at
-      THEN u.updated_at ELSE p.updated_at END as updated_at
-  FROM users u, profiles p
-  WHERE u.id = _id AND u.id = p.user_id;
-$$;
-
-/* Stored function for retrieving data from the "profiles" and "users" tables by nickname or email. */
-CREATE OR REPLACE FUNCTION find_profile_user_by_nickname_or_email(
   IN _nickname VARCHAR,
   IN _email VARCHAR,
+  IN _is_password BOOLEAN, 
   OUT user_id INTEGER,
   OUT nickname VARCHAR,
   OUT email VARCHAR,
+  OUT "password" VARCHAR,
   OUT "role" user_role,
   OUT avatar VARCHAR,
   OUT descript TEXT,
@@ -64,40 +38,42 @@ CREATE OR REPLACE FUNCTION find_profile_user_by_nickname_or_email(
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE 
-  rec1 RECORD;
+  sql_text TEXT;
 BEGIN
-  IF LENGTH(_nickname)=0 AND LENGTH(_email)=0 THEN
-    RETURN;
+  sql_text := 
+   'SELECT
+      "users".id AS user_id, 
+      "users".nickname,
+      "users".email,
+    ' || 
+    CASE WHEN _is_password THEN '"users"."password",'
+       ELSE ' ''''::VARCHAR AS "password",'
+    END ||
+    ' "users"."role",
+      "profiles".avatar,
+      "profiles".descript,
+      "profiles".theme,
+      "users".created_at,
+      CASE WHEN "users".updated_at > "profiles".updated_at
+        THEN "users".updated_at ELSE "profiles".updated_at END as updated_at
+    FROM 
+      ("users" INNER JOIN "profiles" ON ("profiles"."user_id" = "users"."id"))
+    ';
+
+  IF _id IS NOT NULL THEN
+    -- Add search condition by ID.
+    sql_text := sql_text || ' WHERE ("users".id = ' || _id || ')';
+  ELSE
+    IF LENGTH(_nickname)=0 AND LENGTH(_email)=0 THEN
+      RETURN;
+    END IF;
+    -- Add a search condition by nickname or email.
+    sql_text := sql_text || ' WHERE ("users".nickname = ''' || _nickname || ''' OR "users".email = ''' || _email || ''')';
   END IF;
 
-  SELECT
-    "users".id AS user_id, 
-    "users".nickname,
-    "users".email,
-    "users"."role",
-    "profiles".avatar,
-    "profiles".descript,
-    "profiles".theme,
-    "users".created_at,
-    CASE WHEN "users".updated_at > "profiles".updated_at
-      THEN "users".updated_at ELSE "profiles".updated_at END as updated_at
-    INTO rec1
-  FROM 
-    ("users" INNER JOIN "profiles" ON ("profiles"."user_id" = "users"."id"))
-  WHERE 
-    ("users".nickname = _nickname OR "users".email = _email)
-  LIMIT 1;
-
-  IF rec1.user_id IS NULL THEN
-    RETURN;
-  END IF;
-
-  RETURN QUERY SELECT
-    rec1.user_id, rec1.nickname, rec1.email, rec1."role", rec1.avatar, rec1.descript, rec1.theme,
-    rec1.created_at, rec1.updated_at;
+  RETURN QUERY EXECUTE sql_text || ' LIMIT 1';
 END;
 $$;
-
 
 /* Create a stored procedure to add a new user, their profile, and their session. */
 CREATE OR REPLACE FUNCTION create_profile_user(
