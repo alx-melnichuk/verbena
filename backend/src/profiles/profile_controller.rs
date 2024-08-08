@@ -478,7 +478,6 @@ mod tests {
     ) {
         // Create profile values.
         let profile1: Profile = profile_with_id(create_profile(role));
-        // let user1: User = user_with_id(create_user(true, is_admin));
         let num_token = 1234;
         let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token));
 
