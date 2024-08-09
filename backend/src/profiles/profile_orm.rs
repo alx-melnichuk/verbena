@@ -193,6 +193,7 @@ pub mod tests {
                     Some(profile.descript.as_str()),
                     Some(profile.theme.as_str()),
                 );
+                profile2.password = profile.password.clone();
                 profile2.created_at = profile.created_at;
                 profile2.updated_at = profile.updated_at;
                 profile_vec.push(profile2);

@@ -5,7 +5,7 @@ use utoipa::{
 
 use crate::{
     errors, 
-    profiles::{profile_controller, profile_models}, 
+    profiles::{profile_auth_controller, profile_controller, profile_models}, 
     streams::{stream_controller, stream_get_controller, stream_models}, 
     users::{user_auth_controller, user_controller, user_models, user_registr_controller}
 };
@@ -18,7 +18,7 @@ use crate::{
         profile_controller::get_profile_by_id,
         profile_controller::delete_profile,
         profile_controller::delete_profile_current,
-        user_auth_controller::login,
+        profile_auth_controller::login,
         user_auth_controller::logout,
         user_auth_controller::update_token,
         user_controller::put_user_new_password,
@@ -41,12 +41,14 @@ use crate::{
             // profile_controller
             profile_models::UniquenessProfileDto,
             profile_models::ProfileDto,
+            // profile_auth_controller
+            profile_models::LoginProfileDto, profile_models::LoginProfileResponseDto, // ::login
+            profile_models::ProfileTokensDto, // ::login, ::update_token
             // user model
             user_models::UserRole,
             // user_controller, user_auth_controller, user_registr_controller
             user_models::UserDto,
             // user_auth_controller
-            user_models::LoginUserDto, user_models::LoginUserResponseDto, // ::login
             user_models::UserTokensDto, // ::login, ::update_token
             user_models::TokenUserDto, // ::update_token
             // user_controller

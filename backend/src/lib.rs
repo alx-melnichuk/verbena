@@ -11,7 +11,7 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 
-use profiles::{profile_controller, profile_orm::cfg::get_profile_orm_app};
+use profiles::{profile_auth_controller, profile_controller, profile_orm::cfg::get_profile_orm_app};
 use send_email::{config_smtp, mailer};
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
 use streams::{config_strm, stream_controller, stream_get_controller, stream_orm::cfg::get_stream_orm_app};
@@ -56,7 +56,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
 
         // used: user_registr_controller, static_controller
         let config_app = Data::new(config_app0);
-        // used: user_auth_controller, user_registr_controller
+        // used: profile_auth_controller, user_registr_controller
         let config_jwt = Data::new(config_jwt::ConfigJwt::init_by_env());
         // Used "actix-multipart" to upload files. TempFileConfig.from_req()
         let temp_file_config = Data::new(temp_file_config0);
@@ -67,13 +67,13 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let config_smtp = config_smtp::ConfigSmtp::init_by_env();
         // used: user_registr_controller
         let mailer = Data::new(mailer::cfg::get_mailer_app(config_smtp));
-        // used: user_controller, user_auth_controller, user_registr_controller
+        // used: user_controller, profile_auth_controller, user_registr_controller
         let user_orm = Data::new(get_user_orm_app(pool.clone()));
         // used: user_registr_controller
         let user_registr_orm = Data::new(get_user_registr_orm_app(pool.clone()));
         // used: user_registr_controller
         let user_recovery_orm = Data::new(get_user_recovery_orm_app(pool.clone()));
-        // used: user_auth_controller, user_registr_controller
+        // used: profile_auth_controller, user_registr_controller
         let session_orm = Data::new(get_session_orm_app(pool.clone()));
         // used: stream_get_controller, stream_controller
         let stream_orm = Data::new(get_stream_orm_app(pool.clone()));
@@ -103,6 +103,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             // Add configuration of internal services.
             .configure(user_registr_controller::configure())
             .configure(user_auth_controller::configure())
+            .configure(profile_auth_controller::configure())
             .configure(user_controller::configure())
             .configure(stream_get_controller::configure())
             .configure(stream_controller::configure())
