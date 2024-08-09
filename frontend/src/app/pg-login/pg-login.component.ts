@@ -9,6 +9,7 @@ import { LoginComponent } from '../lib-login/login/login.component';
 import { ProfileService } from '../lib-profile/profile.service';
 import { UserService } from '../lib-user/user.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
+import { UserDtoUtil, UserTokensDtoUtil } from '../lib-user/user-api.interface';
 
 @Component({
   selector: 'app-pg-login',
@@ -48,9 +49,14 @@ export class PgLoginComponent {
     this.isDisabledSubmit = true;
     this.errMsgList = [];
     try {
-      await this.userService.login(nickname, password);
-      await this.userService.getCurrentUser(); // TODO del;
-      await this.profileService.getCurrentProfile();
+    //   await this.userService.login(nickname, password); // TODO del;
+      await this.profileService.login(nickname, password);
+    //   await this.userService.getCurrentUser(); // TODO del;
+    //   await this.profileService.getCurrentProfile();
+      const userDto = UserDtoUtil.new({... this.profileService.profileDto});
+      this.userService.setUserDto(userDto);
+      const userTokensDto = UserTokensDtoUtil.new({... this.profileService.profileTokensDto});
+      this.userService.setUserTokensDto(userTokensDto);
       this.router.navigateByUrl(REDIRECT_AFTER_LOGIN);
     } catch (error) {
       if (error instanceof HttpErrorResponse) {

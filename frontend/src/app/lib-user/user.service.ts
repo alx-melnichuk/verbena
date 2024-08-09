@@ -40,7 +40,7 @@ export class UserService {
   public setUserTokensDto(userTokensDto: UserTokensDto | null = null): void {
     this.userTokensDto = this.setUserTokensDtoToLocalStorage(userTokensDto);
   }
-
+  // TODO del;
   public login(nickname: string, password: string): Promise<LoginUserResponseDto | HttpErrorResponse | undefined> {
     if (!nickname || !password) {
       return Promise.reject();

@@ -12,7 +12,7 @@ import { HttpObservableUtil } from 'src/app/utils/http-observable.util';
 })
 export class UserApiService {
   constructor(private http: HttpClient) {}
-
+  // TODO del;
   public login(loginUserDto: LoginUserDto): Promise<LoginUserResponseDto | HttpErrorResponse | undefined> {
     const url = Uri.appUri('appApi://login');
     return this.http.post<LoginUserResponseDto | HttpErrorResponse>(url, loginUserDto).toPromise();

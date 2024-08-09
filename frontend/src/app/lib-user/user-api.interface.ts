@@ -73,7 +73,16 @@ export interface UserTokensDto {
   accessToken: string;
   refreshToken: string;
 }
- 
+
+export class UserTokensDtoUtil {
+  public static new(value: any): UserTokensDto {
+    return {
+      accessToken: value['accessToken'],
+      refreshToken: value['refreshToken'],
+    };
+  }
+    
+}
 // ** Refresh Token **
 
 export interface TokenUserDto {
