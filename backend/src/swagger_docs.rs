@@ -19,7 +19,7 @@ use crate::{
         profile_controller::delete_profile,
         profile_controller::delete_profile_current,
         profile_auth_controller::login,
-        user_auth_controller::logout,
+        profile_auth_controller::logout,
         user_auth_controller::update_token,
         user_controller::put_user_new_password,
         user_registr_controller::registration,

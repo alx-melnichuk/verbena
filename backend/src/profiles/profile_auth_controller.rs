@@ -1,6 +1,9 @@
+use std::ops::Deref;
+
 use actix_web::{cookie::time::Duration as ActixWebDuration, cookie::Cookie, post, web, HttpResponse};
 use utoipa;
 
+use crate::extractors::authentication::{RequireAuth, Authenticated};
 use crate::errors::AppError;
 use crate::hash_tools;
 #[cfg(not(feature = "mockdata"))]
@@ -22,9 +25,11 @@ use crate::validators::{msg_validation, Validator};
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
-        // POST /api/login
         config
-            .service(login);
+            // POST /api/login
+            .service(login)
+            // POST /api/logout
+            .service(logout);
     }
 }
 
@@ -181,6 +186,74 @@ pub async fn login(
     Ok(HttpResponse::Ok().cookie(cookie).json(login_profile_response_dto)) // 200
 }
 
+
+/// logout
+///
+/// Exit from the authorized state.
+///
+/// Close the session for the current user.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X POST http://localhost:8080/api/logout
+/// ```
+///
+/// Return the response with status 200.
+///
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Session is closed."),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
+        (status = 406, description = "Error closing session.", body = AppError,
+            example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, 1)))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[post("/api/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn logout(
+    authenticated: Authenticated,
+    session_orm: web::Data<SessionOrmApp>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    // Get user ID.
+    let profile_user = authenticated.deref().clone();
+
+    // Clear "num_token" value.
+    let opt_session = web::block(move || {
+        // Modify the entity (session) with new data. Result <Option<Session>>.
+        let res_session = session_orm.modify_session(profile_user.user_id, None).map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e) // 507
+        });
+        res_session
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string()) // 506
+    })??;
+
+    if opt_session.is_none() {
+        let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, profile_user.user_id);
+        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
+        return Err(AppError::not_acceptable406(&message)); // 406
+    }
+
+    // If a cookie has expired, the browser will delete the existing cookie.
+    let cookie = Cookie::build("token", "")
+        .path("/")
+        .max_age(ActixWebDuration::new(-1, 0))
+        .http_only(true)
+        .finish();
+    Ok(HttpResponse::Ok().cookie(cookie).body(()))
+}
+
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{
@@ -191,10 +264,9 @@ mod tests {
     use profile_models::{ProfileDto, ProfileTest};
     use serde_json::json;
 
-    use crate::{
-        sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token},
-        users::user_models::UserRole,
-    };
+    use crate::{extractors::authentication::BEARER, hash_tools};
+    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
+    use crate::users::user_models::UserRole;
 
     use super::*;
 
@@ -214,6 +286,10 @@ mod tests {
         let mut profile = ProfileOrmApp::new_profile(1, nickname, email, UserRole::User);
         profile.password = hash_tools::encode_hash(password).unwrap(); // hashed
         profile
+    }
+    fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
+        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (http::header::AUTHORIZATION, header_value)
     }
 
     fn get_cfg_data() -> (config_jwt::ConfigJwt, (Vec<Profile>, Vec<Session>), String) {
@@ -732,6 +808,36 @@ mod tests {
         let json = serde_json::json!(profile1_dto).to_string();
         let profile1_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(profile_dto_res, profile1_dto_ser);
+    }
+
+    // ** logout **
+    #[actix_web::test]
+    async fn test_logout_valid_token() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(logout).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/logout")
+            .insert_header(header_auth(&token))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let token_cookie_opt = resp.response().cookies().find(|cookie| cookie.name() == "token");
+        assert!(token_cookie_opt.is_some());
+        let token = token_cookie_opt.unwrap();
+        let token_value = token.value().to_string();
+        assert!(token_value.len() == 0);
+        let max_age = token.max_age();
+        assert!(max_age.is_some());
+        let max_age_value = max_age.unwrap();
+        assert_eq!(max_age_value, ActixWebDuration::new(0, 0));
+        assert_eq!(true, token.http_only().unwrap());
+
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let body_str = String::from_utf8_lossy(&body);
+        assert_eq!(body_str, "");
     }
 
 }
