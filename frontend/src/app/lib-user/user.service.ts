@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { UserApiService } from './user-api.service';
-import { LoginUserResponseDto, ModifyProfileDto, UpdatePasswordDto, UserDto, UserProfileDto, UserTokensDto } from './user-api.interface';
+import { ModifyProfileDto, UpdatePasswordDto, UserDto, UserProfileDto, UserTokensDto } from './user-api.interface';
 
 export const ACCESS_TOKEN = 'accessToken_old';
 export const REFRESH_TOKEN = 'refreshToken_old';
@@ -40,20 +40,6 @@ export class UserService {
   public setUserTokensDto(userTokensDto: UserTokensDto | null = null): void {
     this.userTokensDto = this.setUserTokensDtoToLocalStorage(userTokensDto);
   }
-  // TODO del;
-  public login(nickname: string, password: string): Promise<LoginUserResponseDto | HttpErrorResponse | undefined> {
-    if (!nickname || !password) {
-      return Promise.reject();
-    }
-
-    this.userTokensDto = this.setUserTokensDtoToLocalStorage(null);
-    return this.userApiService.login({ nickname, password }).then((response: LoginUserResponseDto | HttpErrorResponse | undefined) => {
-      let userResponseDto: LoginUserResponseDto = response as LoginUserResponseDto;
-      this.userInfo = { ...userResponseDto.userDto } as UserDto;
-      this.userTokensDto = this.setUserTokensDtoToLocalStorage(userResponseDto.userTokensDto);
-      return userResponseDto;
-    });
-  }
   
   public isCheckRefreshToken(method: string, url: string): boolean {
     return this.userApiService.isCheckRefreshToken(method, url);
@@ -74,19 +60,6 @@ export class UserService {
         this.userTokensDto = this.setUserTokensDtoToLocalStorage(null);
         // Return error.
         throw error;
-      });
-  }
-
-  public logout(): Promise<void | HttpErrorResponse> {
-    if (!this.userTokensDto?.accessToken) {
-      return Promise.reject();
-    }
-    return this.userApiService.logout()
-      .finally(() => {
-        // Reset authorization settings even if an error occurs.
-        this.userInfo = null;
-        this.userTokensDto = this.setUserTokensDtoToLocalStorage(null);
-        return;
       });
   }
 

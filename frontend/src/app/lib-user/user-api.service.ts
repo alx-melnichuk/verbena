@@ -12,11 +12,6 @@ import { HttpObservableUtil } from 'src/app/utils/http-observable.util';
 })
 export class UserApiService {
   constructor(private http: HttpClient) {}
-  // TODO del;
-  public login(loginUserDto: LoginUserDto): Promise<LoginUserResponseDto | HttpErrorResponse | undefined> {
-    const url = Uri.appUri('appApi://login');
-    return this.http.post<LoginUserResponseDto | HttpErrorResponse>(url, loginUserDto).toPromise();
-  }
 
   public registration(createUserDto: CreateUserDto): Promise<null | HttpErrorResponse | undefined> {
     const url = Uri.appUri('appApi://registration');
@@ -43,11 +38,6 @@ export class UserApiService {
   public refreshToken(tokenUserDto: TokenUserDto): Promise<UserTokensDto | HttpErrorResponse | undefined> {
     const url = Uri.appUri('appApi://token');
     return this.http.post<UserTokensDto | HttpErrorResponse>(url, tokenUserDto).toPromise();
-  }
-
-  public logout(): Promise<void | HttpErrorResponse | undefined> {
-    const url = Uri.appUri('appApi://logout');
-    return this.http.post<void | HttpErrorResponse>(url, null).toPromise();
   }
   
   public modifyProfile(
