@@ -42,6 +42,7 @@ app-stream-list {
     font-weight: 500;
     font-size: calc(1em + 1px);
     flex: 0 0 3.5em;
+    margin-left: 1em;
     &>span {
       font-size: 18px;
       font-style: normal;
@@ -57,12 +58,21 @@ app-stream-list {
     position: relative;
   }
 
+  .sl-brd {
+    border: 1px solid var(--app-pn-stream-low);
+    border-radius: 1em;
+  }
+
   // ** "My Calendar" **
   .sl-my-calendar {
     &>.sl-calendar { flex: 0 0 auto; }
     &>.sl-events { flex-grow: 1; overflow-y: hidden; }
   }
 
+  .sl-calendar {
+    display: flex;
+    flex-direction: column;
+  }
   .sl-events {
     display: flex;
     flex-direction: column;

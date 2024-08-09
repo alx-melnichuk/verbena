@@ -1,10 +1,10 @@
 <div class="sl-my-calendar sl-flex-col">
 
-  <div class="sl-title">
-    {{ 'stream_list.my_calendar' | translate }}
-  </div>
-
-  <div class="sl-calendar sl-relative">
+  <div class="sl-calendar sl-relative sl-brd">
+    <div class="sl-title">
+      {{ 'stream_list.my_calendar' | translate }}
+    </div>
+    
     <app-spinner isFillParent *ngIf="streamCalendarService.calendarLoading">
     </app-spinner>
     <app-panel-stream-calendar
@@ -17,7 +17,7 @@
     </app-panel-stream-calendar>
   </div>
 
-  <div class="sl-events sl-relative">
+  <div class="sl-events sl-relative sl-brd">
     <div [ngClass]="{ 'sl-heavier': streamCalendarService.isShowEvents(streamCalendarService.calendarMonth) }"
       class="sl-event-label">
       <span>
@@ -40,7 +40,7 @@
 
 <div class="sl-my-streams sl-flex-col">
 
-  <div class="sl-stream-box sl-relative">
+  <div class="sl-stream-box sl-relative sl-brd">
     <div class="sl-title">
       {{ 'stream_list.my_future_streams' | translate }}
     </div>
@@ -61,7 +61,7 @@
     </app-panel-stream-info>
   </div>
 
-  <div class="sl-stream-box sl-relative">
+  <div class="sl-stream-box sl-relative sl-brd">
     <div class="sl-title">
       {{ 'stream_list.my_past_streams' | translate }}
     </div>
