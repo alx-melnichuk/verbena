@@ -6,7 +6,6 @@ import { first } from 'rxjs/operators';
 import { ROUTE_LOGIN } from './routes';
 
 import { ProfileService } from '../lib-profile/profile.service';
-import { UserService } from '../lib-user/user.service';
 import { AuthorizationUtil } from '../utils/authorization.util';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
@@ -20,7 +19,6 @@ export class InitializationService {
     private router: Router,
     private dateAdapter: DateAdapter<any>,
     private translate: TranslateService,
-    private userService: UserService,
     private profileService: ProfileService,
   ) {
     console.log(`#2-InitializationService();`); // #
@@ -54,10 +52,9 @@ export class InitializationService {
     const isAuthorizationDenied = AuthorizationUtil.isAuthorizationDenied(window.location.pathname);
     const isNotAuthorizationDenied = !isAuthorizationDenied;
 
-    const isExistAccessToken = this.userService.hasAccessTokenInLocalStorage();
+    const isExistAccessToken = this.profileService.hasAccessTokenInLocalStorage();
     if (isAuthorizationRequired || (isNotAuthorizationDenied && isExistAccessToken)) {
       try {
-        await this.userService.getCurrentUser(); // TODO del;
         await this.profileService.getCurrentProfile();
       } catch {
         this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });

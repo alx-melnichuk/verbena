@@ -17,10 +17,6 @@ export class UserService {
     this.userTokensDto = this.getUserTokensDtoFromLocalStorage();
   }
 
-  public hasAccessTokenInLocalStorage(): boolean {
-    return !!localStorage.getItem(ACCESS_TOKEN);
-  }
-
   public isExistRefreshToken(): boolean {
     return !!this.userTokensDto?.refreshToken;
   }
@@ -75,12 +71,6 @@ export class UserService {
       return Promise.reject();
     }
     return this.userApiService.recovery({ email });
-  }
-  // TODO del;
-  public async getCurrentUser(): Promise<UserDto | HttpErrorResponse | undefined> {
-    const userDto: UserDto = (await this.userApiService.currentUser()) as UserDto;
-    this.userInfo = { ...userDto } as UserDto;
-    return Promise.resolve(userDto);
   }
 
   public modifyProfile(

@@ -22,14 +22,6 @@ export class UserApiService {
     const url = Uri.appUri('appApi://recovery');
     return this.http.post<null | HttpErrorResponse>(url, recoveryUserDto).toPromise();
   }
-  // TODO del;
-  public currentUser(): Promise<UserDto | HttpErrorResponse | undefined> {
-    const url = Uri.appUri('appApi://profiles_current');
-    return HttpObservableUtil.toPromise<UserDto>(this.http.get<UserDto | HttpErrorResponse>(url))
-    .then((response: UserDto | HttpErrorResponse | undefined) => {
-      return UserDtoUtil.new(response as UserDto)
-    });
-  }
 
   public isCheckRefreshToken(method: string, url: string): boolean {
     return method === 'POST' && url === Uri.appUri('appApi://token');
