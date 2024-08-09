@@ -49,10 +49,7 @@ export class PgLoginComponent {
     this.isDisabledSubmit = true;
     this.errMsgList = [];
     try {
-    //   await this.userService.login(nickname, password); // TODO del;
       await this.profileService.login(nickname, password);
-    //   await this.userService.getCurrentUser(); // TODO del;
-    //   await this.profileService.getCurrentProfile();
       const userDto = UserDtoUtil.new({... this.profileService.profileDto});
       this.userService.setUserDto(userDto);
       const userTokensDto = UserTokensDtoUtil.new({... this.profileService.profileTokensDto});
