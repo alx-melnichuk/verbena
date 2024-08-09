@@ -9,6 +9,7 @@ import { LIST_PUBLIC_METHODS } from './public-methods';
 import { ROUTE_LOGIN } from './routes';
 
 import { UserService } from '../lib-user/user.service';
+import { ProfileService } from '../lib-profile/profile.service';
 
 const CN_BEARER = 'Bearer ';
 
@@ -24,6 +25,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
 
   constructor(
     private router: Router,
+    private profileService: ProfileService,
     private userService: UserService
   ) {
     console.log(`#3-AuthorizationInterceptor();`); // #-
@@ -36,16 +38,16 @@ export class AuthorizationInterceptor implements HttpInterceptor {
       // tap((evt) => console .log('evt=', evt)),
       catchError((error: HttpErrorResponse) => {
         // If an error occurs when updating the token, then redirect to the login page.
-        if (this.refreshTokenInProgress && this.userService.isCheckRefreshToken(request.method, request.url)) {
+        if (this.refreshTokenInProgress && this.profileService.isCheckRefreshToken(request.method, request.url)) {
             // Clear the authorization token value.
-            this.userService.setUserDto();
-            this.userService.setUserTokensDto();
+            this.profileService.setProfileDto();
+            this.profileService.setProfileTokensDto();
             // And you need to go to the "login" tab.
             this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
             return throwError(() => error);
         }
         // 401 Unauthorized, 403 Forbidden
-        if ([401, 403].includes(error?.status) && this.userService.isExistRefreshToken()) {
+        if ([401, 403].includes(error?.status) && this.profileService.isExistRefreshToken()) {
           // the errors will most likely occur because we have an expired token that we need to refresh.
           if (!this.refreshTokenInProgress) {
             this.refreshTokenInProgress = true;
@@ -70,7 +72,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
   // ** Private **
 
   private addAuthenticationToken(request: HttpRequest<any>): HttpRequest<any> {
-    const accessToken = this.userService.getAccessToken();
+    const accessToken = this.profileService.getAccessToken();
     // If the call is to an external domain, then the token is not added.
     let isNotIncludes = !request.url.includes(Uri.appUri('appApi://'));
     let publicMethod = this.listPublicMethods[request.url];

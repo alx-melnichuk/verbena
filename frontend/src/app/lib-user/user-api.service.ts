@@ -23,10 +23,6 @@ export class UserApiService {
     return this.http.post<null | HttpErrorResponse>(url, recoveryUserDto).toPromise();
   }
 
-  public isCheckRefreshToken(method: string, url: string): boolean {
-    return method === 'POST' && url === Uri.appUri('appApi://token');
-  }
-
   public refreshToken(tokenUserDto: TokenUserDto): Promise<UserTokensDto | HttpErrorResponse | undefined> {
     const url = Uri.appUri('appApi://token');
     return this.http.post<UserTokensDto | HttpErrorResponse>(url, tokenUserDto).toPromise();

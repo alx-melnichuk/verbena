@@ -28,6 +28,14 @@ export class ProfileService {
     return !!localStorage.getItem(ACCESS_TOKEN);
   }
 
+  public getAccessToken(): string | null {
+    return this.profileTokensDto?.accessToken || null;
+  }
+  public isExistRefreshToken(): boolean {
+    return !!this.profileTokensDto?.refreshToken;
+  }
+
+
   public login(nickname: string, password: string): Promise<LoginProfileResponseDto | HttpErrorResponse | undefined> {
     if (!nickname || !password) {
       return Promise.reject();
@@ -55,6 +63,10 @@ export class ProfileService {
         this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(null);
         return;
       });
+  }
+
+  public isCheckRefreshToken(method: string, url: string): boolean {
+    return this.profileApiService.isCheckRefreshToken(method, url);
   }
 
   public uniqueness(nickname: string, email: string): Promise<UniquenessDto | HttpErrorResponse | undefined> {

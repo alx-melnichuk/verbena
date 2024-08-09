@@ -17,30 +17,10 @@ export class UserService {
     this.userTokensDto = this.getUserTokensDtoFromLocalStorage();
   }
 
-  public isExistRefreshToken(): boolean {
-    return !!this.userTokensDto?.refreshToken;
-  }
-
-  public getAccessToken(): string | null {
-    return this.userTokensDto?.accessToken || null;
-  }
-
   public getRefreshToken(): string | null {
     return this.userTokensDto?.refreshToken || null;
   }
-  // TODO del;
-  public setUserDto(userInfo: UserDto | null = null): void {
-    this.userInfo = userInfo;
-  }
-  // TODO del;
-  public setUserTokensDto(userTokensDto: UserTokensDto | null = null): void {
-    this.userTokensDto = this.setUserTokensDtoToLocalStorage(userTokensDto);
-  }
   
-  public isCheckRefreshToken(method: string, url: string): boolean {
-    return this.userApiService.isCheckRefreshToken(method, url);
-  }
-
   public refreshToken(): Promise<UserTokensDto | HttpErrorResponse> {
     if (!this.userTokensDto?.refreshToken) {
       return Promise.reject();

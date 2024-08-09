@@ -15,18 +15,6 @@ export class ProfileApiService {
 
   constructor(private http: HttpClient) {}
 
-  public uniqueness(nickname: string, email: string): Promise<UniquenessDto | HttpErrorResponse | undefined> {
-    if (!nickname && !email) {
-      return Promise.resolve(undefined);
-    }
-    const search = { nickname: (!nickname ? null : nickname), email: (!email ? null : email) };
-    const params: HttpParams = HttpParamsUtil.create(search);
-
-    const url = Uri.appUri("appApi://profiles/uniqueness");
-    return HttpObservableUtil.toPromise<UniquenessDto>(this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }));
-    //return this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }).toPromise();
-  }
-
   public currentProfile(): Promise<ProfileDto | HttpErrorResponse | undefined> {
     const url = Uri.appUri('appApi://profiles_current');
     return HttpObservableUtil.toPromise<ProfileDto>(this.http.get<ProfileDto | HttpErrorResponse>(url))
@@ -45,6 +33,23 @@ export class ProfileApiService {
     const url = Uri.appUri('appApi://logout');
     return HttpObservableUtil.toPromise<void>(this.http.post<void | HttpErrorResponse>(url, null));
   }
+
+  public isCheckRefreshToken(method: string, url: string): boolean {
+    return method === 'POST' && url === Uri.appUri('appApi://token');
+  }
+
+  public uniqueness(nickname: string, email: string): Promise<UniquenessDto | HttpErrorResponse | undefined> {
+    if (!nickname && !email) {
+      return Promise.resolve(undefined);
+    }
+    const search = { nickname: (!nickname ? null : nickname), email: (!email ? null : email) };
+    const params: HttpParams = HttpParamsUtil.create(search);
+
+    const url = Uri.appUri("appApi://profiles/uniqueness");
+    return HttpObservableUtil.toPromise<UniquenessDto>(this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }));
+    //return this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }).toPromise();
+  }
+
 
   public delete_profile_current(): Promise<ProfileDto | HttpErrorResponse | undefined> {
     const url = Uri.appUri("appApi://profiles_current");
