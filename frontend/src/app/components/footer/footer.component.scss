@@ -6,10 +6,10 @@ app-footer {
   height: 100%;
   line-height: 1;
   padding-left: 0.8em;
-  &:not(.ft-user-info) {
+  &:not(.ft-is-profile) {
     ---ft-bg: var(--app-site-unauth);
   }
-  &.ft-user-info {
+  &.ft-is-profile {
     ---ft-bg: var(--app-site-auth);
   }
   background-color: var(---ft-bg);

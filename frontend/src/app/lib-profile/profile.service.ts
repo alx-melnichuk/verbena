@@ -24,6 +24,10 @@ export class ProfileService {
     this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(profileTokensDto);
   }
 
+  public hasAccessTokenInLocalStorage(): boolean {
+    return !!localStorage.getItem(ACCESS_TOKEN);
+  }
+
   public login(nickname: string, password: string): Promise<LoginProfileResponseDto | HttpErrorResponse | undefined> {
     if (!nickname || !password) {
       return Promise.reject();
@@ -38,6 +42,19 @@ export class ProfileService {
       console.log(`login() this.profileDto: `, this.profileDto);
       return profileResponseDto;
     });
+  }
+
+  public logout(): Promise<void | HttpErrorResponse> {
+    if (!this.profileTokensDto?.accessToken) {
+      return Promise.reject();
+    }
+    return this.profileApiService.logout()
+      .finally(() => {
+        // Reset authorization settings even if an error occurs.
+        this.profileDto = null;
+        this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(null);
+        return;
+      });
   }
 
   public uniqueness(nickname: string, email: string): Promise<UniquenessDto | HttpErrorResponse | undefined> {

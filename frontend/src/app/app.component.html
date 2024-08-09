@@ -1,6 +1,6 @@
 <header>
   <app-header
-    [userInfo]="userService.userInfo"
+    [profileDto]="profileService.profileDto"
     [currentRoute]="currentRoute"
     (logout)="doLogout()">
   </app-header>
@@ -9,5 +9,5 @@
   <router-outlet></router-outlet>
 </main>
 <footer>
-  <app-footer [userInfo]="userService.userInfo"></app-footer>
+  <app-footer [profileDto]="profileService.profileDto"></app-footer>
 </footer>

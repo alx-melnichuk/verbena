@@ -10,7 +10,7 @@ import { MainMenuComponent } from '../main-menu/main-menu.component';
 import { InitializationService } from 'src/app/common/initialization.service';
 import { MainMenu, MainMenuUtil } from 'src/app/common/main-menu';
 import { ROUTE_LOGIN } from 'src/app/common/routes';
-import { UserDto } from 'src/app/lib-user/user-api.interface';
+import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 
 
 @Component({
@@ -24,7 +24,7 @@ import { UserDto } from 'src/app/lib-user/user-api.interface';
 })
 export class HeaderComponent implements OnChanges {
   @Input()
-  public userInfo: UserDto | null = null;
+  public profileDto: ProfileDto | null = null;
   @Input()
   public currentRoute: string | null = null;
   @Output()
@@ -33,17 +33,17 @@ export class HeaderComponent implements OnChanges {
   public menuList: MainMenu[] = [];
   public linkLogin = ROUTE_LOGIN;
 
-  @HostBinding('class.hd-user-info')
-  get isUserInfo(): boolean {
-    return !!this.userInfo;
+  @HostBinding('class.hd-is-profile')
+  get isProfileDto(): boolean {
+    return !!this.profileDto;
   }
 
   constructor(public renderer: Renderer2, public initializationService: InitializationService) {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!!changes['userInfo'] || !!changes['currentRoute']) {
-      this.menuList = MainMenuUtil.getList(this.currentRoute || '', this.userInfo != null);
+    if (!!changes['profileDto'] || !!changes['currentRoute']) {
+      this.menuList = MainMenuUtil.getList(this.currentRoute || '', this.profileDto != null);
     }
   }
 

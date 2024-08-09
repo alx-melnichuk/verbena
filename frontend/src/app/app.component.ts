@@ -7,7 +7,7 @@ import { FooterComponent } from './components/footer/footer.component';
 import { HeaderComponent } from './components/header/header.component';
 import { AUTHORIZATION_DENIED, ROUTE_LOGIN } from './common/routes';
 import { InitializationService } from './common/initialization.service';
-import { ACCESS_TOKEN, UserService } from './lib-user/user.service';
+import { ACCESS_TOKEN, ProfileService } from './lib-profile/profile.service';
 
 @Component({
   selector: 'app-root',
@@ -25,11 +25,11 @@ export class AppComponent {
   @HostListener('window:storage', ['$event'])
   public windowStorage(event: StorageEvent): void {
     // Check for the presence of an authorization token.
-    if (event.key == ACCESS_TOKEN && !this.userService.hasAccessTokenInLocalStorage()) {
+    if (event.key == ACCESS_TOKEN && !this.profileService.hasAccessTokenInLocalStorage()) {
       // If there is no authorization token in the storage, then the current session is closed.
       // Clear the authorization token value.
-      this.userService.setUserDto();
-      this.userService.setUserTokensDto();
+      this.profileService.setProfileDto();
+      this.profileService.setProfileTokensDto();
       // And you need to go to the "login" tab.
       this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
     }
@@ -43,7 +43,7 @@ export class AppComponent {
   
   constructor(
     public translate: TranslateService,
-    public userService: UserService,
+    public profileService: ProfileService,
     public renderer: Renderer2,
     private router: Router,
     private initializationService: InitializationService,
@@ -54,7 +54,7 @@ export class AppComponent {
   // ** Public API **
 
   public async doLogout(): Promise<void> {
-    await this.userService.logout();
+    await this.profileService.logout();
     let currentRoute = window.location.pathname;
     const idx = AUTHORIZATION_DENIED.findIndex((item) => currentRoute.startsWith(item));
     currentRoute = (idx > -1 ? currentRoute : ROUTE_LOGIN);

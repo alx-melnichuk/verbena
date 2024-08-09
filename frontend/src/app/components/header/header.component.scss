@@ -5,12 +5,12 @@ app-header {
   justify-content: space-between;
   height: 100%;
   
-  &:not(.hd-user-info) {
+  &:not(.hd-is-profile) {
     ---hd-bg-h: var(--app-site-unauth-h);
     ---hd-bg-s: var(--app-site-unauth-s);
     ---hd-bg-l: var(--app-site-unauth-l);
   }
-  &.hd-user-info {
+  &.hd-is-profile {
     ---hd-bg-h: var(--app-site-auth-h);
     ---hd-bg-s: var(--app-site-auth-s);
     ---hd-bg-l: var(--app-site-auth-l);
@@ -80,7 +80,7 @@ app-header {
 
   }
   // "box-user"
-  .hd-user-info {
+  .hd-profile {
     display: flex;
     align-items: center;
   }

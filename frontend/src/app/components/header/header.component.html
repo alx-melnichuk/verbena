@@ -23,7 +23,7 @@
 <div class="hd-box-user">
   <!-- <span>box-user</span> -->
 
-  <ng-container *ngIf="!!userInfo">
+  <ng-container *ngIf="!!profileDto">
     <app-main-menu
       [isShowMyStreams]="true"
       [isShowCreateStream]="true"
@@ -31,8 +31,8 @@
       [isShowLogout]="true"
       (setDarkTheme)="setDarkTheme($event)"
       (logout)="doLogout()">
-      <div class="hd-user-info">
-        <span>{{ userInfo.nickname }}</span>
+      <div class="hd-profile">
+        <span>{{ profileDto.nickname }}</span>
         <!-- <app-avatar class="hd-user-image"
         [avatar]="sessionDTO.avatar"
         [nickname]="sessionDTO.nickname">

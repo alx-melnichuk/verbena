@@ -41,6 +41,11 @@ export class ProfileApiService {
       this.http.post<LoginProfileResponseDto | HttpErrorResponse>(url, loginProfileDto));
   }
 
+  public logout(): Promise<void | HttpErrorResponse | undefined> {
+    const url = Uri.appUri('appApi://logout');
+    return HttpObservableUtil.toPromise<void>(this.http.post<void | HttpErrorResponse>(url, null));
+  }
+
   public delete_profile_current(): Promise<ProfileDto | HttpErrorResponse | undefined> {
     const url = Uri.appUri("appApi://profiles_current");
     return HttpObservableUtil.toPromise<ProfileDto>(this.http.delete<ProfileDto | HttpErrorResponse>(url));
