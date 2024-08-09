@@ -6,7 +6,7 @@ import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
 import { HttpObservableUtil } from '../utils/http-observable.util';
 
-import { ProfileDto, ProfileDtoUtil, UniquenessDto } from './profile-api.interface';
+import { LoginProfileDto, LoginProfileResponseDto, ProfileDto, ProfileDtoUtil, UniquenessDto } from './profile-api.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -33,6 +33,12 @@ export class ProfileApiService {
     .then((response: ProfileDto | HttpErrorResponse | undefined) => {
       return ProfileDtoUtil.new(response as ProfileDto)
     });
+  }
+
+  public login(loginProfileDto: LoginProfileDto): Promise<LoginProfileResponseDto | HttpErrorResponse | undefined> {
+    const url = Uri.appUri('appApi://login');
+    return HttpObservableUtil.toPromise<LoginProfileResponseDto>(
+      this.http.post<LoginProfileResponseDto | HttpErrorResponse>(url, loginProfileDto));
   }
 
   public delete_profile_current(): Promise<ProfileDto | HttpErrorResponse | undefined> {

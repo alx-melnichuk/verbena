@@ -1,4 +1,19 @@
+// ** Login Profile **
 
+export interface LoginProfileDto {
+    // nickname: MIN=3,MAX=64,"^[a-zA-Z]+[\\w]+$"
+    // email: MIN=5,MAX=255,"email_type"
+    nickname: string; 
+    // Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d\W_]{6,64}$/)
+    // password: MIN=6,MAX=64,"[a-z]+","[A-Z]+","[\\d]+" 
+    password: string;
+  }
+    
+  export interface LoginProfileResponseDto {
+    profileDto: ProfileDto;
+    profileTokensDto: ProfileTokensDto;
+  }
+  
 // ** UniquenessDto **
 
 export interface UniquenessDto {
@@ -51,8 +66,8 @@ export class ProfileDtoUtil {
 // ** Profile Tokens **
 
 export interface ProfileTokensDto {
-    accessToken: string;
-    refreshToken: string;
-  }
+  accessToken: string;
+  refreshToken: string;
+}
   
 // ** **

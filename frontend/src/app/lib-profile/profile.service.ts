@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { ProfileDto, ProfileTokensDto, UniquenessDto } from './profile-api.interface';
+import { LoginProfileResponseDto, ProfileDto, ProfileTokensDto, UniquenessDto } from './profile-api.interface';
 import { ProfileApiService } from './profile-api.service';
 
 export const ACCESS_TOKEN = 'accessToken';
@@ -22,6 +22,22 @@ export class ProfileService {
   }
   public setProfileTokensDto(profileTokensDto: ProfileTokensDto | null = null): void {
     this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(profileTokensDto);
+  }
+
+  public login(nickname: string, password: string): Promise<LoginProfileResponseDto | HttpErrorResponse | undefined> {
+    if (!nickname || !password) {
+      return Promise.reject();
+    }
+
+    this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(null);
+    return this.profileApiService.login({ nickname, password })
+    .then((response: LoginProfileResponseDto | HttpErrorResponse | undefined) => {
+      let profileResponseDto: LoginProfileResponseDto = response as LoginProfileResponseDto;
+      this.profileDto = { ...profileResponseDto.profileDto } as ProfileDto;
+      this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(profileResponseDto.profileTokensDto);
+      console.log(`login() this.profileDto: `, this.profileDto);
+      return profileResponseDto;
+    });
   }
 
   public uniqueness(nickname: string, email: string): Promise<UniquenessDto | HttpErrorResponse | undefined> {
