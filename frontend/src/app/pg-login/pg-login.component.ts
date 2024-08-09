@@ -7,9 +7,7 @@ import { StrParams } from '../common/str-params';
 import { REDIRECT_AFTER_LOGIN } from '../common/routes';
 import { LoginComponent } from '../lib-login/login/login.component';
 import { ProfileService } from '../lib-profile/profile.service';
-import { UserService } from '../lib-user/user.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
-import { UserDtoUtil, UserTokensDtoUtil } from '../lib-user/user-api.interface';
 
 @Component({
   selector: 'app-pg-login',
@@ -28,7 +26,6 @@ export class PgLoginComponent {
   constructor(
     private changeDetector: ChangeDetectorRef,
     private router: Router,
-    private userService: UserService,
     private profileService: ProfileService,
   ) {
   }
@@ -50,10 +47,6 @@ export class PgLoginComponent {
     this.errMsgList = [];
     try {
       await this.profileService.login(nickname, password);
-      const userDto = UserDtoUtil.new({... this.profileService.profileDto});
-      this.userService.setUserDto(userDto);
-      const userTokensDto = UserTokensDtoUtil.new({... this.profileService.profileTokensDto});
-      this.userService.setUserTokensDto(userTokensDto);
       this.router.navigateByUrl(REDIRECT_AFTER_LOGIN);
     } catch (error) {
       if (error instanceof HttpErrorResponse) {
