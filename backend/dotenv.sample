@@ -11,10 +11,10 @@ L_COMM=info,actix_web=info,actix_server=info
 L_MAIN=verbena_backend=debug
 #L_DBASE=verbena_backend::dbase=info
 L_USER=users::user_controller=debug
-L_USER_AUTH=users::user_auth_controller=debug
+L_PROFILE_AUTH=profiles::profile_auth_controller=debug
 L_AUTH=extractors::authentication=debug
 
-RUST_LOG=${L_COMM},${L_MAIN},${L_DBASE},${L_USER},${L_USER_AUTH},${L_AUTH}
+RUST_LOG=${L_COMM},${L_MAIN},${L_DBASE},${L_USER},${L_PROFILE_AUTH},${L_AUTH}
 
 # -----------------------------------------------------------------------------
 # Application properties
