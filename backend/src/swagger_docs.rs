@@ -47,10 +47,8 @@ use crate::{
             profile_models::TokenDto, // ::update_token
             // user model
             user_models::UserRole,
-            // user_controller, user_auth_controller, user_registr_controller
+            // user_controller, user_registr_controller
             user_models::UserDto,
-            // user_auth_controller
-            user_models::UserTokensDto, // ::login, ::update_token
             // user_controller
             user_models::NewPasswordUserDto,
             // user_registr_controller
@@ -73,7 +71,6 @@ use crate::{
         )
     ),
     tags(
-        (name = "user_auth_controller", description = "User session management endpoints."),
         (name = "user_controller", description = "User information management endpoints."),
         (name = "user_registr_controller", description = "User registration management endpoints."),
         (name = "stream_controller", description = "Stream information management endpoints."),

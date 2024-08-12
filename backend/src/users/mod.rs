@@ -1,4 +1,3 @@
-pub mod user_auth_controller;
 pub mod user_controller;
 pub mod user_err;
 pub mod user_models;

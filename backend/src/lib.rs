@@ -17,9 +17,8 @@ use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
 use streams::{config_strm, stream_controller, stream_get_controller, stream_orm::cfg::get_stream_orm_app};
 use tools::evn_data::{check_params_env, update_params_env};
 use users::{
-    user_auth_controller, user_controller, user_orm::cfg::get_user_orm_app,
-    user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_controller,
-    user_registr_orm::cfg::get_user_registr_orm_app,
+    user_controller, user_orm::cfg::get_user_orm_app, user_recovery_orm::cfg::get_user_recovery_orm_app,
+    user_registr_controller, user_registr_orm::cfg::get_user_registr_orm_app,
 };
 use utils::parser;
 use utoipa::OpenApi;
@@ -102,7 +101,6 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))
             // Add configuration of internal services.
             .configure(user_registr_controller::configure())
-            .configure(user_auth_controller::configure())
             .configure(profile_auth_controller::configure())
             .configure(user_controller::configure())
             .configure(stream_get_controller::configure())
