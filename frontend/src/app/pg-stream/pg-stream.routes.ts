@@ -6,7 +6,7 @@ import { P_STREAM_ID, E_STREAM_EDIT, E_STREAM_CREATE, E_STREAM_LIST } from '../c
 
 import { PgStreamComponent } from './pg-stream.component';
 import { pgStreamResolver } from './pg-stream.resolver';
-import { pgUserResolver } from './pg-user.resolver';
+import { pgProfileResolver } from './pg-profile.resolver';
 
 export const PG_STREAM_ROUTES: Routes = [
   {
@@ -16,7 +16,7 @@ export const PG_STREAM_ROUTES: Routes = [
       {
         path: E_STREAM_LIST, // 'ind/stream/list'
         component: StreamListComponent,
-        resolve: { userDto: pgUserResolver }
+        resolve: { userDto: pgProfileResolver }
       },
       {
         path: E_STREAM_EDIT + '/:' + P_STREAM_ID, // 'ind/stream/edit/:streamId'
