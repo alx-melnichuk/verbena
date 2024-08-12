@@ -3,6 +3,12 @@
 @use '../../../styles-dimensions.scss' as dimensions;
 
 app-about {
+  ---ab-bg-h: var(--app-site-unauth-h);
+  ---ab-bg-s: var(--app-site-unauth-s);
+  ---ab-bg-l: var(--app-site-unauth-l);
+  ---ab-brd-cl: hsl(var(---ab-bg-h), var(---ab-bg-s), var(---ab-bg-l));
+  ---ab-shd-cl: hsl(var(---ab-bg-h), var(---ab-bg-s), calc(var(---ab-bg-l) - 13%));
+  
   @media screen and (width <= dimensions.$mobile-480) {
     ---ab-pd: 0.5em;
     ---ab-wd: 100%;
@@ -32,8 +38,10 @@ app-about {
 
   .ab-panel {
     border-radius: var(---ab-pd);
-    border: 1px solid var(--app-site-border-cl);
+    // border: 1px solid var(--app-site-border-cl);
+    border: 2px solid var(---ab-shd-cl);
     box-sizing: border-box;
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px;
     display: flex;
     flex-direction: column;
     height: 100%;

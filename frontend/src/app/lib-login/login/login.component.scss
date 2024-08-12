@@ -5,6 +5,12 @@
 app-login {
   [mr-tp-05] { margin-top: 0.5em; }
 
+  ---lg-bg-h: var(--app-site-unauth-h);
+  ---lg-bg-s: var(--app-site-unauth-s);
+  ---lg-bg-l: var(--app-site-unauth-l);
+  ---lg-brd-cl: hsl(var(---lg-bg-h), var(---lg-bg-s), var(---lg-bg-l));
+  ---lg-shd-cl: hsl(var(---lg-bg-h), var(---lg-bg-s), calc(var(---lg-bg-l) - 13%));
+
   align-items: center;
   display: flex;
   flex-direction: column;
@@ -34,8 +40,10 @@ app-login {
     }
   
     border-radius: var(---lg-pd);
-    border: 1px solid var(--app-site-border-cl);
+    // border: 1px solid var(--app-site-border-cl);
+    border: 2px solid var(---lg-shd-cl);
     box-sizing: border-box;
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px;
     margin-bottom: 7em;
     padding: var(---lg-pd);
     width: var(---lg-wd);

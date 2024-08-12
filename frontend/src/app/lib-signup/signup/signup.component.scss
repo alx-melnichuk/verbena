@@ -3,14 +3,20 @@
 @use '../../../styles-dimensions.scss' as dimensions;
 
 app-signup {
+  [mr-bt-05] { margin-bottom: 0.5em; }
+  [mr-tp-05] { margin-top: 0.5em; }
+  
+  ---sg-bg-h: var(--app-site-unauth-h);
+  ---sg-bg-s: var(--app-site-unauth-s);
+  ---sg-bg-l: var(--app-site-unauth-l);
+  ---sg-brd-cl: hsl(var(---sg-bg-h), var(---sg-bg-s), var(---sg-bg-l));
+  ---sg-shd-cl: hsl(var(---sg-bg-h), var(---sg-bg-s), calc(var(---sg-bg-l) - 13%));
+  
   align-items: center;
   display: flex;
   flex-direction: column;
   justify-content: center;
   height: 100%;
-
-  [mr-bt-05] { margin-bottom: 0.5em; }
-  [mr-tp-05] { margin-top: 0.5em; }
 
   .mat-mdc-form-field-subscript-wrapper {
     --mdc-typography-caption-line-height: 1.2;
@@ -46,8 +52,10 @@ app-signup {
     }
     
     border-radius: var(---sg-pd);
-    border: 1px solid var(--app-site-border-cl);
+    // border: 1px solid var(--app-site-border-cl);
+    border: 2px solid var(---sg-shd-cl);
     box-sizing: border-box;
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px;
     margin-bottom: 7em;
     padding: var(---sg-pd);
     width: var(---sg-wd);
