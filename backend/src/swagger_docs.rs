@@ -7,7 +7,7 @@ use crate::{
     errors, 
     profiles::{profile_auth_controller, profile_controller, profile_models}, 
     streams::{stream_controller, stream_get_controller, stream_models}, 
-    users::{user_auth_controller, user_controller, user_models, user_registr_controller}
+    users::{user_controller, user_models, user_registr_controller}
 };
 
 #[derive(OpenApi)]
@@ -20,7 +20,7 @@ use crate::{
         profile_controller::delete_profile_current,
         profile_auth_controller::login,
         profile_auth_controller::logout,
-        user_auth_controller::update_token,
+        profile_auth_controller::update_token,
         user_controller::put_user_new_password,
         user_registr_controller::registration,
         user_registr_controller::confirm_registration,
@@ -44,13 +44,13 @@ use crate::{
             // profile_auth_controller
             profile_models::LoginProfileDto, profile_models::LoginProfileResponseDto, // ::login
             profile_models::ProfileTokensDto, // ::login, ::update_token
+            profile_models::TokenDto, // ::update_token
             // user model
             user_models::UserRole,
             // user_controller, user_auth_controller, user_registr_controller
             user_models::UserDto,
             // user_auth_controller
             user_models::UserTokensDto, // ::login, ::update_token
-            user_models::TokenUserDto, // ::update_token
             // user_controller
             user_models::NewPasswordUserDto,
             // user_registr_controller

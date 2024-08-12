@@ -11,7 +11,7 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
-    profile_models::{self, Profile, LoginProfileDto},
+    profile_models::{self, Profile, LoginProfileDto, TokenDto},
     profile_err as p_err,
     profile_orm::ProfileOrm,
 };
@@ -23,13 +23,17 @@ use crate::sessions::{config_jwt, session_orm::SessionOrm, tokens};
 use crate::settings::err;
 use crate::validators::{msg_validation, Validator};
 
+pub const TOKEN_NAME: &str = "token";
+
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
         config
             // POST /api/login
             .service(login)
             // POST /api/logout
-            .service(logout);
+            .service(logout)
+            // POST /api/token
+            .service(update_token);
     }
 }
 
@@ -64,8 +68,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             "Validation error. `curl -i -X POST http://localhost:8080/api/login -d '{ \"nickname\": \"us\", \"password\": \"pas\" }'`",
             example = json!(AppError::validations(
                 (LoginProfileDto { nickname: "us".to_string(), password: "pas".to_string() }).validate().err().unwrap()) )),
-        ( status = 406, description = "Error opening session.", body = AppError,
-            example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, 1)))),
+        ( status = 406, description = "Error session not found.", body = AppError,
+            example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, 1)))),
         (status = 409, description = "Error when comparing password hashes.", body = AppError,
             example = json!(AppError::conflict409(&format!("{}: {}", err::MSG_INVALID_HASH, "Parameter is empty.")))),
         ( status = 422, description = "Token encoding error.", body = AppError,
@@ -162,7 +166,7 @@ pub async fn login(
     })??;
 
     if opt_session.is_none() {
-        let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, profile.user_id);
+        let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, profile.user_id);
         log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
         return Err(AppError::not_acceptable406(&message)); // 406
     }
@@ -177,7 +181,7 @@ pub async fn login(
         profile_tokens_dto,
     };
 
-    let cookie = Cookie::build("token", access_token.to_owned())
+    let cookie = Cookie::build(TOKEN_NAME, access_token.to_owned())
         .path("/")
         .max_age(ActixWebDuration::new(config_jwt.jwt_access, 0))
         .http_only(true)
@@ -207,8 +211,8 @@ pub async fn login(
             example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
-        (status = 406, description = "Error closing session.", body = AppError,
-            example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, 1)))),
+        (status = 406, description = "Error session not found.", body = AppError,
+            example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, 1)))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -240,19 +244,160 @@ pub async fn logout(
     })??;
 
     if opt_session.is_none() {
-        let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, profile_user.user_id);
+        let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, profile_user.user_id);
         log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
         return Err(AppError::not_acceptable406(&message)); // 406
     }
 
     // If a cookie has expired, the browser will delete the existing cookie.
-    let cookie = Cookie::build("token", "")
+    let cookie = Cookie::build(TOKEN_NAME, "")
         .path("/")
         .max_age(ActixWebDuration::new(-1, 0))
         .http_only(true)
         .finish();
     Ok(HttpResponse::Ok().cookie(cookie).body(()))
 }
+
+/// update_token
+///
+/// Update the value of the authorization token.
+///
+/// When a token has expired, it can be refreshed using "refresh_token".
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X POST http://localhost:8080/api/token \
+/// -d '{"token": "refresh_token"}' \
+/// -H 'Content-Type: application/json'
+/// ```
+///
+/// Return the new session token (`ProfileTokensDto`) with a status of 200.
+///
+#[utoipa::path(
+    responses(
+        (status = 200, description = "The new session token.", body = ProfileTokensDto),
+        (status = 401, description = "Authorization required.", body = AppError, examples(
+            ("Token" = (summary = "Token is invalid or expired",
+                description = "The token is invalid or expired.",
+                value = json!(AppError::unauthorized401(&format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidToken"))))),
+            ("Token_number" = (summary = "Token number is incorrect", 
+                description = "The specified token number is incorrect.",
+                value = json!(AppError::unauthorized401(&format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, 1)))))
+        )),
+        (status = 406, description = "Error session not found.", body = AppError,
+            example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, 1)))),
+        (status = 422, description = "Token encoding error.", body = AppError,
+            example = json!(AppError::unprocessable422(&format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+)]
+#[post("/api/token")]
+pub async fn update_token(
+    config_jwt: web::Data<config_jwt::ConfigJwt>,
+    session_orm: web::Data<SessionOrmApp>,
+    json_token_user_dto: web::Json<TokenDto>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    // Get token from json.
+    let token_user_dto: TokenDto = json_token_user_dto.into_inner();
+    let token = token_user_dto.token;
+    let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+    // Get user ID.
+    let (user_id, num_token) = tokens::decode_token(&token, jwt_secret).map_err(|e| {
+        let message = format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
+        log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
+        AppError::unauthorized401(&message) // 401
+    })?;
+
+    let session_orm1 = session_orm.clone();
+
+    let opt_session = web::block(move || {
+        // Find a session for a given user.
+        let existing_session = session_orm1.get_session_by_id(user_id).map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e) // 507
+        });
+        existing_session
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string()) // 506
+    })??;
+
+    let session = opt_session.ok_or_else(|| {
+        // There is no session for this user.
+        let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id);
+        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
+        AppError::not_acceptable406(&message) // 406
+    })?;
+
+    // Each session contains an additional numeric value.
+    let session_num_token = session.num_token.unwrap_or(0);
+    // Compare an additional numeric value from the session and from the token.
+    if session_num_token != num_token {
+        // If they do not match, then this is an error.
+        let message = format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
+        log::error!("{}: {}", err::CD_UNAUTHORIZED, &message); // 401
+        return Err(AppError::unauthorized401(&message));
+    }
+
+    let num_token = tokens::generate_num_token();
+    let config_jwt = config_jwt.get_ref().clone();
+    let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+    // Pack two parameters (user.id, num_token) into a access_token.
+    let access_token = tokens::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
+        let message = format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
+        AppError::unprocessable422(&message) // 422
+    })?;
+
+    // Pack two parameters (user.id, num_token) into a access_token.
+    let refresh_token = tokens::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
+        let message = format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
+        AppError::unprocessable422(&message) // 422
+    })?;
+
+    let opt_session = web::block(move || {
+        // Find a session for a given user.
+        let existing_session = session_orm.modify_session(user_id, Some(num_token))
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e) // 507
+        });
+        existing_session
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string()) // 506
+    })??;
+
+    if opt_session.is_none() {
+        // There is no session for this user.
+        let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id);
+        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
+        return Err(AppError::not_acceptable406(&message));
+    }
+
+    let profile_tokens_dto = profile_models::ProfileTokensDto {
+        access_token: access_token.to_owned(),
+        refresh_token,
+    };
+
+    let cookie = Cookie::build(TOKEN_NAME, access_token.to_owned())
+        .path("/")
+        .max_age(ActixWebDuration::new(config_jwt.jwt_access, 0))
+        .http_only(true)
+        .finish();
+    Ok(HttpResponse::Ok().cookie(cookie).json(profile_tokens_dto)) // 200
+}
+
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
@@ -758,7 +903,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, profile1_id));
+        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, profile1_id));
     }
     #[actix_web::test]
     async fn test_login_valid_credentials() {
@@ -838,6 +983,187 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
         assert_eq!(body_str, "");
+    }
+
+    // ** update_token **
+    #[actix_web::test]
+    async fn test_update_token_no_data() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(update_token).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/token")
+            .insert_header(header_auth(&token))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let body_str = String::from_utf8_lossy(&body);
+        let expected_message = "Content type error";
+        assert!(body_str.contains(expected_message));
+    }
+    #[actix_web::test]
+    async fn test_update_token_empty_json_object() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(update_token).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/token")
+            .insert_header(header_auth(&token))
+            .set_json(json!({}))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let body_str = String::from_utf8_lossy(&body);
+        let expected_message = "Json deserialize error: missing field";
+        assert!(body_str.contains(expected_message));
+    }
+    #[actix_web::test]
+    async fn test_update_token_invalid_dto_token_empty() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(update_token).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/token")
+            .insert_header(header_auth(&token))
+            .set_json(TokenDto { token: "".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        #[rustfmt::skip]
+        assert_eq!(app_err.message, format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidSubject"));
+    }
+    #[actix_web::test]
+    async fn test_update_token_invalid_dto_token_invalid() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(update_token).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/token")
+            .insert_header(header_auth(&token))
+            .set_json(TokenDto { token: "invalid_token".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        assert!(app_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
+    }
+    #[actix_web::test]
+    async fn test_update_token_unacceptable_token_id() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let jwt_secret = cfg_c.jwt_secret.as_bytes();
+        let profile_id_bad = profile1_id + 1;
+        let num_token = data_c.1.get(0).unwrap().num_token.unwrap();
+        let token_bad = encode_token(profile_id_bad, num_token, &jwt_secret, cfg_c.jwt_access).unwrap();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(update_token).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/token")
+            .insert_header(header_auth(&token))
+            .set_json(TokenDto { token: token_bad })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::NOT_ACCEPTABLE); // 406
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        #[rustfmt::skip]
+        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, profile_id_bad));
+    }
+    #[actix_web::test]
+    async fn test_update_token_unacceptable_token_num() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let jwt_secret = cfg_c.jwt_secret.as_bytes();
+        let num_token = data_c.1.get(0).unwrap().num_token.unwrap();
+        let token_bad = encode_token(profile1_id, num_token + 1, &jwt_secret, cfg_c.jwt_access).unwrap();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(update_token).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/token")
+            .insert_header(header_auth(&token))
+            .set_json(TokenDto { token: token_bad })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        #[rustfmt::skip]
+        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, profile1_id));
+    }
+    #[actix_web::test]
+    async fn test_update_token_valid_dto_token() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let jwt_access = cfg_c.jwt_access;
+        let jwt_secret = cfg_c.jwt_secret.as_bytes();
+        let num_token = data_c.1.get(0).unwrap().num_token.unwrap();
+        let token_refresh = encode_token(profile1_id, num_token, &jwt_secret, cfg_c.jwt_refresh).unwrap();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(update_token).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::post().uri("/api/token")
+            .insert_header(header_auth(&token))
+            .set_json(TokenDto { token: token_refresh })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        let opt_token_cookie = resp.response().cookies().find(|cookie| cookie.name() == TOKEN_NAME);
+        assert!(opt_token_cookie.is_some());
+
+        let token = opt_token_cookie.unwrap();
+        let token_value = token.value().to_string();
+        assert!(token_value.len() > 0);
+        let max_age = token.max_age();
+        assert!(max_age.is_some());
+        let max_age_value = max_age.unwrap();
+        assert_eq!(max_age_value, ActixWebDuration::new(jwt_access, 0));
+        assert_eq!(true, token.http_only().unwrap());
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let profile_token_resp: profile_models::ProfileTokensDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let access_token: String = profile_token_resp.access_token;
+        assert!(!access_token.is_empty());
+        let refresh_token: String = profile_token_resp.refresh_token;
+        assert!(refresh_token.len() > 0);
+
+        assert_eq!(token_value, access_token);
     }
 
 }

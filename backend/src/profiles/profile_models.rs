@@ -305,6 +305,13 @@ pub struct ProfileTokensDto {
     pub refresh_token: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenDto {
+    // refreshToken
+    pub token: String,
+}
+
 // **  **
 
 #[cfg(all(test, feature = "mockdata"))]
