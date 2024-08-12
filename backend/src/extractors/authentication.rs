@@ -8,9 +8,9 @@ use futures_util::{
 use log;
 
 use crate::errors::AppError;
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{profile_models::Profile, profile_orm::ProfileOrm};
 #[cfg(not(feature = "mockdata"))]

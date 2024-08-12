@@ -3,9 +3,9 @@ use chrono::{Duration, Utc};
 use utoipa;
 
 use crate::{hash_tools, profiles::profile_models::ProfileDto};
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{profile_models::CreateProfile, profile_orm::ProfileOrm};
 #[cfg(not(feature = "mockdata"))]

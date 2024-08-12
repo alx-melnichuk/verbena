@@ -6,9 +6,9 @@ use utoipa;
 use crate::extractors::authentication::{RequireAuth, Authenticated};
 use crate::errors::AppError;
 use crate::hash_tools;
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
     profile_models::{self, Profile, LoginProfileDto, TokenDto},
@@ -120,7 +120,7 @@ pub async fn login(
         log::error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_WRONG_NICKNAME_EMAIL);
         AppError::unauthorized401(err::MSG_WRONG_NICKNAME_EMAIL) // 401 (A)
     })?;
-    eprintln!("profile.password: {}", profile.password.to_string());
+
     let profile_password = profile.password.to_string();
     let password_matches = hash_tools::compare_hash(&password, &profile_password).map_err(|e| {
         let message = format!("{}; {}", err::MSG_INVALID_HASH, &e);

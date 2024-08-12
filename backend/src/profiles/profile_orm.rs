@@ -26,22 +26,22 @@ pub trait ProfileOrm {
 pub mod cfg {
     use crate::dbase::DbPool;
 
-    #[cfg(not(feature = "mockdata"))]
+    #[cfg(not(all(test, feature = "mockdata")))]
     use super::impls::ProfileOrmApp;
-    #[cfg(not(feature = "mockdata"))]
+    #[cfg(not(all(test, feature = "mockdata")))]
     pub fn get_profile_orm_app(pool: DbPool) -> ProfileOrmApp {
         ProfileOrmApp::new(pool)
     }
 
-    #[cfg(feature = "mockdata")]
+    #[cfg(all(test, feature = "mockdata"))]
     use super::tests::ProfileOrmApp;
-    #[cfg(feature = "mockdata")]
+    #[cfg(all(test, feature = "mockdata"))]
     pub fn get_profile_orm_app(_: DbPool) -> ProfileOrmApp {
         ProfileOrmApp::new()
     }
 }
 
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 pub mod impls {
 
     use diesel::{self, prelude::*, sql_types};
@@ -160,7 +160,7 @@ pub mod impls {
     }
 }
 
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
     use crate::users::user_orm::tests::USER_ID;
 

@@ -7,9 +7,9 @@ use utoipa;
 
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
     profile_models::{Profile, ProfileDto, UniquenessProfileDto, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF},
@@ -423,19 +423,22 @@ pub async fn delete_profile_current(
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{
-        body, dev, http,
-        http::header::{HeaderValue, CONTENT_TYPE},
+        body, dev,
+        http::{
+            self,
+            header::{HeaderValue, CONTENT_TYPE},
+        },
         test, web, App,
     };
     use chrono::{DateTime, Duration, Utc};
 
-    use crate::{
-        extractors::authentication::BEARER,
-        sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token},
-        users::{
-            user_models::{User, UserRegistr, UserRole},
-            user_orm::tests::UserOrmApp,
-        },
+    use crate::extractors::authentication::BEARER;
+    use crate::sessions::{
+        config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
+    };
+    use crate::users::{
+        user_models::{User, UserRegistr, UserRole},
+        user_orm::tests::UserOrmApp,
     };
 
     use super::*;
