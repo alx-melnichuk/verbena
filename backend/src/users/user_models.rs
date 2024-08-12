@@ -339,7 +339,7 @@ pub struct RecoveryDataResponseDto {
 
 // ** Section: "UserToken" // TODO del **
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UserTokensDto {
     pub access_token: String,

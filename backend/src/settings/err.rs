@@ -2,20 +2,20 @@
 // 201 Created - A new entry has been created.
 // 204 No Content - Data not found.
 
-// 401 Unauthorized (user_auth_controller, user_registr_controller)
+// 401 Unauthorized (profile_auth_controller, user_registr_controller)
 pub const CD_UNAUTHORIZED: &str = "Unauthorized"; /*+*/
-// 401 Unauthorized - Authorization token is missing. (authentication, user_auth_controller, user_controller)
+// 401 Unauthorized - Authorization token is missing. (authentication, profile_auth_controller, user_controller)
 pub const MSG_MISSING_TOKEN: &str = "token_missing"; /*+*/
-// 401 Unauthorized - Error when decoding token or expired token (authentication, user_auth_controller, user_registr_controller)
+// 401 Unauthorized - Error when decoding token or expired token (authentication, profile_auth_controller, user_registr_controller)
 pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token"; /*+*/
-// 401 Unauthorized - User's "num" does not match "num" from token. (authentication, user_auth_controller)
+// 401 Unauthorized - User's "num" does not match "num" from token. (authentication, profile_auth_controller)
 pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num"; /*+*/
 // 401 Unauthorized
 pub const MSG_WRONG_NICKNAME_EMAIL: &str = "nickname_or_email_incorrect";
 // 401 Unauthorized
 pub const MSG_PASSWORD_INCORRECT: &str = "password_incorrect";
 
-// 403 Forbidden - (authentication, user_auth_controller)
+// 403 Forbidden - (authentication, profile_auth_controller)
 pub const CD_FORBIDDEN: &str = "Forbidden";
 // 403 Forbidden - Access denied - insufficient rights (authentication)
 pub const MSG_ACCESS_DENIED: &str = "access_denied";
@@ -23,12 +23,12 @@ pub const MSG_ACCESS_DENIED: &str = "access_denied";
 // 404 Not Found (user_registr_controller)
 pub const CD_NOT_FOUND: &str = "NotFound";
 
-// 406 Not Acceptable (user_auth_controller)
+// 406 Not Acceptable (profile_auth_controller)
 pub const CD_NOT_ACCEPTABLE: &str = "NotAcceptable"; /*+*/
-// 406 Not Acceptable - There is no session for this user. (authentication, user_auth_controller)
+// 406 Not Acceptable - There is no session for this user. (authentication, profile_auth_controller)
 pub const MSG_SESSION_NOT_FOUND: &str = "session_not_found"; /*+*/
 
-// 409 Conflict (user_auth_controller, user_registr_controller)
+// 409 Conflict (profile_auth_controller, user_registr_controller)
 pub const CD_CONFLICT: &str = "Conflict"; /*+*/
 // 409 Conflict - Error checking hash value.
 pub const MSG_INVALID_HASH: &str = "invalid_hash";
@@ -44,10 +44,10 @@ pub const CD_RANGE_NOT_SATISFIABLE: &str = "RangeNotSatisfiable";
 // 416 Requested Range Not Satisfiable - The specified type could not be converted.
 pub const MSG_PARSING_TYPE_NOT_SUPPORTED: &str = "parsing_type_not_supported";
 
-// 417 Expectation Failed (user_auth_controller, user_registr_controller)
+// 417 Expectation Failed (profile_auth_controller, user_registr_controller)
 pub const CD_VALIDATION: &str = "Validation"; /*+*/
 
-// 422 Unprocessable Entity (user_auth_controller, user_registr_controller)
+// 422 Unprocessable Entity (profile_auth_controller, user_registr_controller)
 pub const CD_UNPROCESSABLE_ENTITY: &str = "UnprocessableEntity";
 
 // 500 Internal Server Error (user_registr_controller)
