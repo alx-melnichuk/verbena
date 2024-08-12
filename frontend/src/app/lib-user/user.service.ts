@@ -14,7 +14,6 @@ export class UserService {
   public userTokensDto: UserTokensDto | null = null;
   
   constructor(private userApiService: UserApiService) {
-    this.userTokensDto = this.getUserTokensDtoFromLocalStorage();
   }
 
   public getRefreshToken(): string | null {
@@ -45,33 +44,4 @@ export class UserService {
     return this.userApiService.new_password(updatePasswordDto);
   }
 
-  // ** Private Api **
-  // TODO del;
-  private updateItemInLocalStorage(name: string, value: string | null): void {
-    if (!!name) {
-      if (!!value) {
-        localStorage.setItem(name, value);
-      } else {
-        localStorage.removeItem(name);
-      }
-    }
-  }
-  // TODO del;
-  private setUserTokensDtoToLocalStorage(userTokensDto: UserTokensDto | null): UserTokensDto | null {
-    const accessToken = userTokensDto?.accessToken || null;
-    this.updateItemInLocalStorage(ACCESS_TOKEN, accessToken);
-    const refreshToken = userTokensDto?.refreshToken || null;
-    this.updateItemInLocalStorage(REFRESH_TOKEN, refreshToken);
-    return !!userTokensDto ? { ...userTokensDto } : null;
-  }
-  // TODO del;
-  private getUserTokensDtoFromLocalStorage(): UserTokensDto | null {
-    let result: UserTokensDto | null = null;
-    const accessToken = localStorage.getItem(ACCESS_TOKEN);
-    const refreshToken = localStorage.getItem(REFRESH_TOKEN);
-    if (!!accessToken && !!refreshToken) {
-      result = { accessToken, refreshToken };
-    }
-    return result;
-  }
 }
