@@ -201,7 +201,7 @@ where
             // let timer1s = format!("{:.2?}", timer1.elapsed());
             let session = opt_session.ok_or_else(|| {
                 // There is no session for this user.
-                let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, user_id);
+                let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id);
                 log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406+
                 error::ErrorNotAcceptable(AppError::not_acceptable406(&message))
             })?;
@@ -454,7 +454,7 @@ mod tests {
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
         assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_SESSION_NOT_EXIST, user_id));
+        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id));
     }
     #[test]
     async fn test_authentication_middelware_valid_token_non_existent_user() {

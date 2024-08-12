@@ -26,7 +26,7 @@ pub const CD_NOT_FOUND: &str = "NotFound";
 // 406 Not Acceptable (user_auth_controller)
 pub const CD_NOT_ACCEPTABLE: &str = "NotAcceptable"; /*+*/
 // 406 Not Acceptable - There is no session for this user. (authentication, user_auth_controller)
-pub const MSG_SESSION_NOT_EXIST: &str = "session_not_exist"; /*+*/
+pub const MSG_SESSION_NOT_FOUND: &str = "session_not_found"; /*+*/
 
 // 409 Conflict (user_auth_controller, user_registr_controller)
 pub const CD_CONFLICT: &str = "Conflict"; /*+*/
