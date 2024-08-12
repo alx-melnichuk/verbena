@@ -6,7 +6,7 @@ import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
 import { HttpObservableUtil } from '../utils/http-observable.util';
 
-import { LoginProfileDto, LoginProfileResponseDto, ProfileDto, ProfileDtoUtil, UniquenessDto } from './profile-api.interface';
+import { LoginProfileDto, LoginProfileResponseDto, ProfileDto, ProfileDtoUtil, ProfileTokensDto, TokenDto, UniquenessDto } from './profile-api.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -36,6 +36,11 @@ export class ProfileApiService {
 
   public isCheckRefreshToken(method: string, url: string): boolean {
     return method === 'POST' && url === Uri.appUri('appApi://token');
+  }
+
+  public refreshToken(tokenDto: TokenDto): Promise<ProfileTokensDto | HttpErrorResponse | undefined> {
+    const url = Uri.appUri('appApi://token');
+    return HttpObservableUtil.toPromise<ProfileTokensDto>(this.http.post<ProfileTokensDto | HttpErrorResponse>(url, tokenDto));
   }
 
   public uniqueness(nickname: string, email: string): Promise<UniquenessDto | HttpErrorResponse | undefined> {

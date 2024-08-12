@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { LoginProfileResponseDto, ProfileDto, ProfileTokensDto, UniquenessDto } from './profile-api.interface';
+import { LoginProfileResponseDto, ProfileDto, ProfileTokensDto, TokenUpdate, UniquenessDto } from './profile-api.interface';
 import { ProfileApiService } from './profile-api.service';
 
 export const ACCESS_TOKEN = 'accessToken';
@@ -10,7 +10,7 @@ export const REFRESH_TOKEN = 'refreshToken';
 @Injectable({
   providedIn: 'root'
 })
-export class ProfileService {
+export class ProfileService implements TokenUpdate {
   public profileDto: ProfileDto | null = null;
   public profileTokensDto: ProfileTokensDto | null = null;
 
@@ -27,14 +27,6 @@ export class ProfileService {
   public hasAccessTokenInLocalStorage(): boolean {
     return !!localStorage.getItem(ACCESS_TOKEN);
   }
-
-  public getAccessToken(): string | null {
-    return this.profileTokensDto?.accessToken || null;
-  }
-  public isExistRefreshToken(): boolean {
-    return !!this.profileTokensDto?.refreshToken;
-  }
-
 
   public login(nickname: string, password: string): Promise<LoginProfileResponseDto | HttpErrorResponse | undefined> {
     if (!nickname || !password) {
@@ -64,11 +56,34 @@ export class ProfileService {
         return;
       });
   }
-
+  // ** interface TokenUpdate **
   public isCheckRefreshToken(method: string, url: string): boolean {
     return this.profileApiService.isCheckRefreshToken(method, url);
   }
-
+  public isExistRefreshToken(): boolean {
+    return !!this.profileTokensDto?.refreshToken;
+  }
+  public getAccessToken(): string | null {
+    return this.profileTokensDto?.accessToken || null;
+  }
+  public refreshToken(): Promise<ProfileTokensDto | HttpErrorResponse> {
+    if (!this.profileTokensDto?.refreshToken) {
+      return Promise.reject();
+    }
+    return this.profileApiService
+      .refreshToken({ token: this.profileTokensDto.refreshToken })
+      .then((response: HttpErrorResponse | ProfileTokensDto | undefined) => {
+        this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(response as ProfileTokensDto);
+        return response as ProfileTokensDto;
+      })
+      .catch((error) => {
+        // Remove "Token" values in LocalStorage.
+        this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(null);
+        // Return error.
+        throw error;
+      });
+  }
+  // ** **
   public uniqueness(nickname: string, email: string): Promise<UniquenessDto | HttpErrorResponse | undefined> {
     return this.profileApiService.uniqueness(nickname || '', email || '');
   }

@@ -1,5 +1,7 @@
 // ** Login Profile **
 
+import { HttpErrorResponse } from "@angular/common/http";
+
 export interface LoginProfileDto {
     // nickname: MIN=3,MAX=64,"^[a-zA-Z]+[\\w]+$"
     // email: MIN=5,MAX=255,"email_type"
@@ -69,5 +71,20 @@ export interface ProfileTokensDto {
   accessToken: string;
   refreshToken: string;
 }
-  
+
+// ** Refresh Token **
+
+export interface TokenDto {
+  // refreshToken
+  token: string;
+}
+
+// ** interface TokenUpdate **
+
+export interface TokenUpdate {
+  isCheckRefreshToken(method: string, url: string): boolean;
+  isExistRefreshToken(): boolean;
+  getAccessToken(): string | null;
+  refreshToken(): Promise<ProfileTokensDto | HttpErrorResponse>;
+}
 // ** **

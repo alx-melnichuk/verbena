@@ -8,8 +8,8 @@ import { Uri } from './uri';
 import { LIST_PUBLIC_METHODS } from './public-methods';
 import { ROUTE_LOGIN } from './routes';
 
-import { UserService } from '../lib-user/user.service';
 import { ProfileService } from '../lib-profile/profile.service';
+import { TokenUpdate } from '../lib-profile/profile-api.interface';
 
 const CN_BEARER = 'Bearer ';
 
@@ -22,13 +22,14 @@ export class AuthorizationInterceptor implements HttpInterceptor {
   private refreshTokenSubject: Subject<boolean> = new Subject();
   // List of public methods that do not require authorization.
   private listPublicMethods: { [key: string]: string } = LIST_PUBLIC_METHODS;
+  private tokenUpdateSrv: TokenUpdate;
 
   constructor(
     private router: Router,
     private profileService: ProfileService,
-    private userService: UserService
   ) {
     console.log(`#3-AuthorizationInterceptor();`); // #-
+    this.tokenUpdateSrv = this.profileService;
   }
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
@@ -38,7 +39,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
       // tap((evt) => console .log('evt=', evt)),
       catchError((error: HttpErrorResponse) => {
         // If an error occurs when updating the token, then redirect to the login page.
-        if (this.refreshTokenInProgress && this.profileService.isCheckRefreshToken(request.method, request.url)) {
+        if (this.refreshTokenInProgress && this.tokenUpdateSrv.isCheckRefreshToken(request.method, request.url)) {
             // Clear the authorization token value.
             this.profileService.setProfileDto();
             this.profileService.setProfileTokensDto();
@@ -47,7 +48,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
             return throwError(() => error);
         }
         // 401 Unauthorized, 403 Forbidden
-        if ([401, 403].includes(error?.status) && this.profileService.isExistRefreshToken()) {
+        if ([401, 403].includes(error?.status) && this.tokenUpdateSrv.isExistRefreshToken()) {
           // the errors will most likely occur because we have an expired token that we need to refresh.
           if (!this.refreshTokenInProgress) {
             this.refreshTokenInProgress = true;
@@ -72,7 +73,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
   // ** Private **
 
   private addAuthenticationToken(request: HttpRequest<any>): HttpRequest<any> {
-    const accessToken = this.profileService.getAccessToken();
+    const accessToken = this.tokenUpdateSrv.getAccessToken();
     // If the call is to an external domain, then the token is not added.
     let isNotIncludes = !request.url.includes(Uri.appUri('appApi://'));
     let publicMethod = this.listPublicMethods[request.url];
@@ -83,8 +84,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
   }
 
   private refreshAccessToken(): Promise<void> {
-    return this.userService
-      .refreshToken()
+    return this.tokenUpdateSrv.refreshToken()
       .then(() => Promise.resolve())
       .catch((error) => Promise.reject(error));
   }

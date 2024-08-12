@@ -21,24 +21,6 @@ export class UserService {
     return this.userTokensDto?.refreshToken || null;
   }
   
-  public refreshToken(): Promise<UserTokensDto | HttpErrorResponse> {
-    if (!this.userTokensDto?.refreshToken) {
-      return Promise.reject();
-    }
-    return this.userApiService
-      .refreshToken({ token: this.userTokensDto.refreshToken })
-      .then((response: HttpErrorResponse | UserTokensDto | undefined) => {
-        this.userTokensDto = this.setUserTokensDtoToLocalStorage(response as UserTokensDto);
-        return response as UserTokensDto;
-      })
-      .catch((error) => {
-        // Remove "Token" values in LocalStorage.
-        this.userTokensDto = this.setUserTokensDtoToLocalStorage(null);
-        // Return error.
-        throw error;
-      });
-  }
-
   public registration(nickname: string, email: string, password: string): Promise<null | HttpErrorResponse | undefined> {
     if (!nickname || !email || !password) {
       return Promise.reject();

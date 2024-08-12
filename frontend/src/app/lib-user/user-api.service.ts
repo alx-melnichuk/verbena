@@ -3,9 +3,8 @@ import { Injectable } from '@angular/core';
 
 import { Uri } from 'src/app/common/uri';
 import {
-  CreateUserDto, LoginUserDto, LoginUserResponseDto, ModifyProfileDto, RecoveryUserDto, TokenUserDto, UpdatePasswordDto, UserDto, UserDtoUtil, UserProfileDto, UserTokensDto
+  CreateUserDto, ModifyProfileDto, RecoveryUserDto, UpdatePasswordDto, UserDto, UserProfileDto
 } from './user-api.interface';
-import { HttpObservableUtil } from 'src/app/utils/http-observable.util';
 
 @Injectable({
   providedIn: 'root',
@@ -23,11 +22,6 @@ export class UserApiService {
     return this.http.post<null | HttpErrorResponse>(url, recoveryUserDto).toPromise();
   }
 
-  public refreshToken(tokenUserDto: TokenUserDto): Promise<UserTokensDto | HttpErrorResponse | undefined> {
-    const url = Uri.appUri('appApi://token');
-    return this.http.post<UserTokensDto | HttpErrorResponse>(url, tokenUserDto).toPromise();
-  }
-  
   public modifyProfile(
     id: number, modifyProfileDto: ModifyProfileDto, file?: File | null
   ): Promise<UserProfileDto | HttpErrorResponse | undefined> {
