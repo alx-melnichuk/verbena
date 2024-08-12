@@ -4,16 +4,16 @@ import { Observable } from 'rxjs';
 
 import { ROUTE_LOGIN } from './routes';
 
-import { UserService } from '../lib-user/user.service';
+import { ProfileService } from '../lib-profile/profile.service';
 
 export const authenticationGuard: CanActivateFn = (
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
 ): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree => {
   let router: Router = inject(Router);
-  let userService: UserService = inject(UserService);
+  let profileService: ProfileService = inject(ProfileService);
 
   const urlTreeLogin = router.parseUrl(ROUTE_LOGIN);
-  const userInfo = userService.userInfo;
-  return Promise.resolve(!!userInfo ? true : urlTreeLogin);
+  const profileDto = profileService.profileDto;
+  return Promise.resolve(!!profileDto ? true : urlTreeLogin);
 };
