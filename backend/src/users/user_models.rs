@@ -73,6 +73,7 @@ impl From<User> for UserDto {
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset)]
 #[diesel(table_name = schema::users)]
 pub struct ModifyUserDto {
+    // TODO del;
     pub nickname: Option<String>,
     pub email: Option<String>,
     pub password: Option<String>,
@@ -165,6 +166,7 @@ impl Validator for CreateUserDto {
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct UniquenessUserDto {
+    // TODO del;
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nickname: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -227,6 +229,7 @@ pub struct UserRegistrDto {
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
 #[diesel(table_name = schema::user_registration)]
 pub struct CreateUserRegistrDto {
+    // TODO del;
     pub nickname: String,
     pub email: String,
     pub password: String,
@@ -235,6 +238,7 @@ pub struct CreateUserRegistrDto {
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct RegistrUserDto {
+    // TODO del;
     pub nickname: String,
     pub email: String,
     pub password: String,
@@ -256,6 +260,7 @@ impl Validator for RegistrUserDto {
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RegistrUserResponseDto {
+    // TODO del;
     pub nickname: String,
     pub email: String,
     pub registr_token: String,
@@ -285,12 +290,14 @@ pub struct UserRecoveryDto {
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
 #[diesel(table_name = schema::user_recovery)]
 pub struct CreateUserRecoveryDto {
+    // TODO del;
     pub user_id: i32,
     pub final_date: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct RecoveryUserDto {
+    // TODO del;
     pub email: String,
 }
 
@@ -308,6 +315,7 @@ impl Validator for RecoveryUserDto {
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RecoveryUserResponseDto {
+    // TODO del;
     pub id: i32,
     pub email: String,
     pub recovery_token: String,
@@ -315,6 +323,7 @@ pub struct RecoveryUserResponseDto {
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct RecoveryDataDto {
+    // TODO del;
     pub password: String,
 }
 
@@ -332,6 +341,7 @@ impl Validator for RecoveryDataDto {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RecoveryDataResponseDto {
+    // TODO del;
     pub nickname: String,
     pub email: String,
     pub registr_token: String,
