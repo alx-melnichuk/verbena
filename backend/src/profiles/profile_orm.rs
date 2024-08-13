@@ -1,7 +1,5 @@
-use crate::profiles::profile_models::Profile;
+use crate::profiles::profile_models::{CreateProfile, ModifyProfile, Profile};
 use crate::users::user_models::UserRole;
-
-use super::profile_models::CreateProfile;
 
 pub trait ProfileOrm {
     /// Get an entity (profile + user) by ID.
@@ -16,8 +14,8 @@ pub trait ProfileOrm {
     /// Add a new entry (profile, user).
     fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String>;
 
-    // /// Modify an entity (user).
-    // fn modify_user(&self, id: i32, modify_user_dto: ModifyUserDto) -> Result<Option<User>, String>;
+    /// Modify an entity (profile, user).
+    fn modify_profile(&self, user_id: i32, modify_profile: ModifyProfile) -> Result<Option<Profile>, String>;
 
     /// Delete an entity (profile).
     fn delete_profile(&self, user_id: i32) -> Result<Option<Profile>, String>;
@@ -73,16 +71,15 @@ pub mod impls {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query =
-                diesel::sql_query("select * from find_profile_user_by_id_or_nickname_email($1, NULL, NULL, $2);")
-                    .bind::<sql_types::Integer, _>(user_id)
-                    .bind::<sql_types::Bool, _>(is_password);
+            let query = diesel::sql_query("select * from find_profile_user($1, NULL, NULL, $2);")
+                .bind::<sql_types::Integer, _>(user_id)
+                .bind::<sql_types::Bool, _>(is_password);
 
             // Run query using Diesel to find user by id (and user_id) and return it.
             let opt_profile = query
                 .get_result::<Profile>(&mut conn)
                 .optional()
-                .map_err(|e| format!("find_profile_user_by_id_or_nickname_email: {}", e.to_string()))?;
+                .map_err(|e| format!("find_profile_user: {}", e.to_string()))?;
 
             Ok(opt_profile)
         }
@@ -105,7 +102,7 @@ pub mod impls {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select * from find_profile_user_by_id_or_nickname_email(NULL, $1, $2, $3);")
+            let query = diesel::sql_query("select * from find_profile_user(NULL, $1, $2, $3);")
                 .bind::<sql_types::Text, _>(nickname2)
                 .bind::<sql_types::Text, _>(email2)
                 .bind::<sql_types::Bool, _>(is_password);
@@ -114,7 +111,7 @@ pub mod impls {
             let opt_profile = query
                 .get_result::<Profile>(&mut conn)
                 .optional()
-                .map_err(|e| format!("find_profile_user_by_id_or_nickname_email: {}", e.to_string()))?;
+                .map_err(|e| format!("find_profile_user: {}", e.to_string()))?;
 
             Ok(opt_profile)
         }
@@ -141,19 +138,51 @@ pub mod impls {
 
             Ok(profile_user)
         }
+        /// Modify an entity (profile, user).
+        fn modify_profile(&self, user_id: i32, modify_profile: ModifyProfile) -> Result<Option<Profile>, String> {
+            //
+            let nickname = modify_profile.nickname;
+            let email = modify_profile.email;
+            let password = modify_profile.password;
+            let role = modify_profile.role;
+            // let avatar = modify_profile.avatar;
+            let descript = modify_profile.descript;
+            let theme = modify_profile.theme;
+
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let query = diesel::sql_query("select * from modify_profile_user($1,$2,$3,$4,$5,null,$7,$8);")
+                .bind::<sql_types::Integer, _>(user_id) // $1
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(nickname) // $2
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(email) // $3
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(password) // $4
+                .bind::<sql_types::Nullable<schema::sql_types::UserRole>, _>(role) // $5
+                // .bind::<sql_types::Nullable<sql_types::Text>, _>(avatar) // $6
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(descript) // $7
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(theme); // $8
+
+            // Run a query with Diesel to create a new user and return it.
+            let profile_user = query
+                .get_result::<Profile>(&mut conn)
+                .optional()
+                .map_err(|e| format!("modify_profile_user: {}", e.to_string()))?;
+
+            Ok(profile_user)
+        }
         /// Delete an entity (profile).
         fn delete_profile(&self, user_id: i32) -> Result<Option<Profile>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select * from delete_profile_user_by_user_id($1);")
-                .bind::<sql_types::Integer, _>(user_id);
+            let query =
+                diesel::sql_query("select * from delete_profile_user($1);").bind::<sql_types::Integer, _>(user_id);
 
             // Run query using Diesel to find user by id (and user_id) and return it.
             let opt_profile = query
                 .get_result::<Profile>(&mut conn)
                 .optional()
-                .map_err(|e| format!("delete_profile_user_by_user_id: {}", e.to_string()))?;
+                .map_err(|e| format!("delete_profile_user: {}", e.to_string()))?;
 
             Ok(opt_profile)
         }
@@ -162,9 +191,12 @@ pub mod impls {
 
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
-    use crate::users::user_orm::tests::USER_ID;
+
+    use chrono::Utc;
 
     use super::*;
+
+    pub const PROFILE_USER_ID: i32 = 1100;
 
     #[derive(Debug, Clone)]
     pub struct ProfileOrmApp {
@@ -185,7 +217,7 @@ pub mod tests {
             for (idx, profile) in profile_list.iter().enumerate() {
                 let delta: i32 = idx.try_into().unwrap();
                 let mut profile2 = Profile::new(
-                    USER_ID + delta,
+                    PROFILE_USER_ID + delta,
                     &profile.nickname.to_lowercase(),
                     &profile.email.to_lowercase(),
                     profile.role.clone(),
@@ -281,7 +313,7 @@ pub mod tests {
             }
 
             let idx: i32 = self.profile_vec.len().try_into().unwrap();
-            let user_id: i32 = USER_ID + idx;
+            let user_id: i32 = PROFILE_USER_ID + idx;
 
             let profile_user = Profile::new(
                 user_id,
@@ -293,6 +325,28 @@ pub mod tests {
                 create_profile.theme.as_deref(),
             );
             Ok(profile_user)
+        }
+        /// Modify an entity (profile, user).
+        fn modify_profile(&self, user_id: i32, modify_profile: ModifyProfile) -> Result<Option<Profile>, String> {
+            let opt_profile = self.profile_vec.iter().find(|profile| (*profile).user_id == user_id);
+            let opt_profile3: Option<Profile> = if let Some(profile) = opt_profile {
+                let profile2 = Profile {
+                    user_id: profile.user_id,
+                    nickname: modify_profile.nickname.unwrap_or(profile.nickname.clone()),
+                    email: modify_profile.email.unwrap_or(profile.email.clone()),
+                    password: modify_profile.password.unwrap_or(profile.password.clone()),
+                    role: modify_profile.role.unwrap_or(profile.role.clone()),
+                    avatar: modify_profile.avatar.unwrap_or(profile.avatar.clone()),
+                    descript: modify_profile.descript.unwrap_or(profile.descript.clone()),
+                    theme: modify_profile.theme.unwrap_or(profile.theme.clone()),
+                    created_at: profile.created_at,
+                    updated_at: Utc::now(),
+                };
+                Some(profile2)
+            } else {
+                None
+            };
+            Ok(opt_profile3)
         }
         /// Delete an entity (profile).
         fn delete_profile(&self, user_id: i32) -> Result<Option<Profile>, String> {

@@ -5,7 +5,7 @@ use utoipa::{
 
 use crate::{
     errors, 
-    profiles::{profile_auth_controller, profile_controller, profile_models}, 
+    profiles::{profile_auth_controller, profile_controller, profile_models, profile_registr_controller}, 
     streams::{stream_controller, stream_get_controller, stream_models}, 
     users::{user_controller, user_models, user_registr_controller}
 };
@@ -22,10 +22,10 @@ use crate::{
         profile_auth_controller::logout,
         profile_auth_controller::update_token,
         user_controller::put_user_new_password,
-        user_registr_controller::registration,
-        user_registr_controller::confirm_registration,
-        user_registr_controller::recovery,
-        user_registr_controller::confirm_recovery,
+        profile_registr_controller::registration,
+        profile_registr_controller::confirm_registration,
+        profile_registr_controller::recovery,
+        profile_registr_controller::confirm_recovery,
         user_registr_controller::clear_for_expired,
         stream_controller::post_stream,
         stream_controller::put_stream,
@@ -51,10 +51,14 @@ use crate::{
             user_models::UserDto,
             // user_controller
             user_models::NewPasswordUserDto,
+            // profile_registr_controller
+            profile_models::RegistrProfileDto, profile_models::RegistrProfileResponseDto, // ::registration
+            // profile_models::ProfileDto, // ::confirm_registration
+            profile_models::RecoveryProfileDto, profile_models::RecoveryProfileResponseDto, // ::recovery
+            profile_models::RecoveryDataDto, // profile_models::ProfileDto // ::confirm_recovery
             // user_registr_controller
-            user_models::RegistrUserDto, user_models::RegistrUserResponseDto, // ::registration
-            user_models::RecoveryUserDto, user_models::RecoveryUserResponseDto, // ::recovery
-            user_models::RecoveryDataDto, // ::confirm_recovery
+            // user_models::RecoveryUserDto, user_models::RecoveryUserResponseDto, // ::recovery
+            // user_models::RecoveryDataDto, // ::confirm_recovery
             user_models::ClearForExpiredResponseDto, // ::clear_for_expired
             // stream_controller, stream_get_controller
             stream_models::StreamInfoDto,
@@ -71,6 +75,9 @@ use crate::{
         )
     ),
     tags(
+        (name = "profile_controller", description = "User profile information management endpoints."),
+        (name = "profile_auth_controller", description = "User authorization management endpoints."),
+        (name = "profile_registr_controller", description = "User registration management endpoints."),
         (name = "user_controller", description = "User information management endpoints."),
         (name = "user_registr_controller", description = "User registration management endpoints."),
         (name = "stream_controller", description = "Stream information management endpoints."),

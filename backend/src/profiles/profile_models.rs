@@ -234,10 +234,10 @@ impl ProfileDto {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateProfile {
-    pub nickname: String,
-    pub email: String,
-    pub password: String,
-    pub role: Option<UserRole>,
+    pub nickname: String,         // min_len=3 max_len=64
+    pub email: String,            // min_len=5 max_len=254
+    pub password: String,         // min_len=6 max_len=64
+    pub role: Option<UserRole>,   // default "user"
     pub avatar: Option<String>,   // min_len=2 max_len=255 Nullable
     pub descript: Option<String>, // type: Text default ""
     pub theme: Option<String>,    // min_len=2 max_len=32 default "light"
@@ -256,6 +256,38 @@ impl CreateProfile {
         }
     }
 }
+
+// ** ModifyProfile **
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ModifyProfile {
+    pub nickname: Option<String>,       // min_len=3 max_len=64
+    pub email: Option<String>,          // min_len=5 max_len=254
+    pub password: Option<String>,       // min_len=6 max_len=64
+    pub role: Option<UserRole>,         // default "user"
+    pub avatar: Option<Option<String>>, // min_len=2 max_len=255 Nullable
+    pub descript: Option<String>,       // type: Text default ""
+    pub theme: Option<String>,          // min_len=2 max_len=32 default "light"
+}
+
+/*#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ModifyProfileDto {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nickname: Option<String>, // min_len=3 max_len=64
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>, // min_len=5 max_len=254
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>, // min_len=6 max_len=64
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<UserRole>, // default "user"
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub avatar: Option<Option<String>>, // min_len=2 max_len=255 Nullable
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub descript: Option<String>, // type: Text default ""
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub theme: Option<String>, // min_len=2 max_len=32 default "light"
+}*/
 
 // ** UniquenessProfileDto **
 
@@ -310,6 +342,102 @@ pub struct ProfileTokensDto {
 pub struct TokenDto {
     // refreshToken
     pub token: String,
+}
+
+// ** Section: "User registration" **
+
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
+#[diesel(table_name = schema::user_registration)]
+pub struct CreateProfileRegistrDto {
+    pub nickname: String,
+    pub email: String,
+    pub password: String,
+    pub final_date: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+pub struct RegistrProfileDto {
+    pub nickname: String,
+    pub email: String,
+    pub password: String,
+}
+
+impl Validator for RegistrProfileDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        errors.push(validate_nickname(&self.nickname).err());
+        errors.push(validate_email(&self.email).err());
+        errors.push(validate_password(&self.password).err());
+
+        self.filter_errors(errors)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct RegistrProfileResponseDto {
+    pub nickname: String,
+    pub email: String,
+    pub registr_token: String,
+}
+
+// ** Section: "RecoveryProfile" **
+
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
+#[diesel(table_name = schema::user_recovery)]
+pub struct CreateProfileRecoveryDto {
+    pub user_id: i32,
+    pub final_date: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+pub struct RecoveryProfileDto {
+    pub email: String,
+}
+
+impl Validator for RecoveryProfileDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        errors.push(validate_email(&self.email).err());
+
+        self.filter_errors(errors)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct RecoveryProfileResponseDto {
+    pub id: i32,
+    pub email: String,
+    pub recovery_token: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+pub struct RecoveryDataDto {
+    pub password: String,
+}
+
+impl Validator for RecoveryDataDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        errors.push(validate_password(&self.password).err());
+
+        self.filter_errors(errors)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct RecoveryDataResponseDto {
+    pub nickname: String,
+    pub email: String,
+    pub registr_token: String,
 }
 
 // **  **
