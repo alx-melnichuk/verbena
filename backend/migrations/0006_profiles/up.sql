@@ -20,7 +20,7 @@ INSERT INTO profiles (user_id, created_at, updated_at)
 (SELECT id, created_at, updated_at FROM users);
 
 /* Stored function for retrieving data from the "profiles", "password" and "users" tables by nickname or email. */
-CREATE OR REPLACE FUNCTION find_profile_user_by_id_or_nickname_email(
+CREATE OR REPLACE FUNCTION find_profile_user(
   IN _id INTEGER,
   IN _nickname VARCHAR,
   IN _email VARCHAR,
@@ -75,7 +75,7 @@ BEGIN
 END;
 $$;
 
-/* Create a stored procedure to add a new user, their profile, and their session. */
+/* Create a stored function to add a new user, their profile, and their session. */
 CREATE OR REPLACE FUNCTION create_profile_user(
   IN _nickname VARCHAR,
   IN _email VARCHAR,
@@ -119,8 +119,115 @@ BEGIN
 END;
 $$;
 
-/* Create a stored procedure to delete a user, their profile, and their session. */
-CREATE OR REPLACE FUNCTION delete_profile_user_by_user_id(
+/* Create a stored function to modify a user and their profile. */
+CREATE OR REPLACE FUNCTION modify_profile_user(
+  INOUT user_id INTEGER,
+  INOUT nickname VARCHAR,
+  INOUT email VARCHAR,
+  INOUT "password" VARCHAR,
+  INOUT "role" user_role,
+  INOUT avatar VARCHAR,
+  INOUT descript TEXT,
+  INOUT theme VARCHAR,
+  OUT created_at TIMESTAMP WITH TIME ZONE,
+  OUT updated_at TIMESTAMP WITH TIME ZONE
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+DECLARE 
+  sql1 TEXT;
+  fields VARCHAR[];
+  rec1 RECORD;
+  rec2 RECORD;
+BEGIN
+  IF user_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  SELECT
+    CAST(NULL AS INTEGER) AS user_id, CAST(NULL AS VARCHAR) AS nickname  , 
+    CAST(NULL AS VARCHAR) AS email  , CAST(NULL AS VARCHAR) AS "password", CAST(NULL AS user_role) AS "role",
+    CAST(NULL AS VARCHAR) AS avatar , CAST(NULL AS TEXT) AS descript     , CAST(NULL AS VARCHAR) AS theme,
+    CAST(NULL AS TIMESTAMP WITH TIME ZONE) AS created_at, CAST(NULL AS TIMESTAMP WITH TIME ZONE) AS updated_at
+  INTO rec1;
+
+  SELECT
+    CAST(NULL AS INTEGER) AS user_id, CAST(NULL AS VARCHAR) AS nickname  , 
+    CAST(NULL AS VARCHAR) AS email  , CAST(NULL AS VARCHAR) AS "password", CAST(NULL AS user_role) AS "role",
+    CAST(NULL AS VARCHAR) AS avatar , CAST(NULL AS TEXT) AS descript     , CAST(NULL AS VARCHAR) AS theme,
+    CAST(NULL AS TIMESTAMP WITH TIME ZONE) AS created_at, CAST(NULL AS TIMESTAMP WITH TIME ZONE) AS updated_at
+  INTO rec2;
+
+  sql1 := '';
+  fields := ARRAY[]::VARCHAR[];
+  IF nickname IS NOT NULL AND LENGTH(nickname) > 0 THEN
+    fields := ARRAY_APPEND(fields, 'nickname = ''' || nickname || '''');
+  END IF;
+  IF email IS NOT NULL AND LENGTH(email) > 0 THEN
+    fields := ARRAY_APPEND(fields, 'email = ''' || email || '''');
+  END IF;
+  IF "password" IS NOT NULL AND LENGTH("password") > 0 THEN
+    fields := ARRAY_APPEND(fields, '"password" = ''' || "password" || '''');
+  END IF;
+  IF "role" IS NOT NULL AND LENGTH("role"::VARCHAR) > 0 THEN
+    fields := ARRAY_APPEND(fields, '"role" = ''' || "role" || '''');
+  END IF;
+
+  IF ARRAY_LENGTH(fields, 1) > 0 THEN
+    sql1 := 'UPDATE users SET '
+      || ARRAY_TO_STRING(fields, ',')
+      || ' FROM profiles'  
+      || ' WHERE users.id = profiles.user_id AND id = ' || user_id
+      || ' RETURNING '
+      || ' users.id AS user_id, users.nickname, users.email, users."password", users."role",'
+      || ' profiles.avatar, profiles.descript, profiles.theme,'
+      || ' users.created_at, users.updated_at'; 
+    EXECUTE sql1 INTO rec1;
+  END IF;
+
+  sql1 := '';
+  fields := ARRAY[]::VARCHAR[];
+  IF avatar IS NOT NULL AND LENGTH(avatar) > 0 THEN
+    fields := ARRAY_APPEND(fields, 'avatar = ''' || avatar || '''');
+  END IF;
+  IF descript IS NOT NULL AND LENGTH(descript) > 0 THEN
+    fields := ARRAY_APPEND(fields, 'descript = ''' || descript || '''');
+  END IF;
+  IF theme IS NOT NULL AND LENGTH(theme) > 0 THEN
+    fields := ARRAY_APPEND(fields, 'theme = ''' || theme || '''');
+  END IF;
+
+  IF ARRAY_LENGTH(fields, 1) > 0 THEN
+    sql1 := 'UPDATE profiles SET '
+      || ARRAY_TO_STRING(fields, ',')
+      || ' FROM users'  
+      || ' WHERE users.id = profiles.user_id AND profiles.user_id = ' || user_id
+      || ' RETURNING '
+      || ' users.id AS user_id, users.nickname, users.email, users."password", users."role",'
+      || ' profiles.avatar, profiles.descript, profiles.theme,'
+      || ' users.created_at, profiles.updated_at'; 
+    EXECUTE sql1 INTO rec2;
+  END IF;
+
+  IF rec1.user_id IS NULL AND rec2.user_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY SELECT
+    COALESCE(rec1.user_id   , rec2.user_id   ) AS user_id,
+    COALESCE(rec1.nickname  , rec2.nickname  ) AS nickname,
+    COALESCE(rec1.email     , rec2.email     ) AS email,
+    COALESCE(rec1."password", rec2."password") AS "password",
+    COALESCE(rec1."role"    , rec2."role"    ) AS "role",
+    COALESCE(rec2.avatar    , rec1.avatar    ) AS avatar,
+    COALESCE(rec2.descript  , rec1.descript  ) AS descript,
+    COALESCE(rec2.theme     , rec1.theme     ) AS theme,
+    COALESCE(rec1.created_at, rec2.created_at) AS created_at,
+    COALESCE(rec2.updated_at, rec1.updated_at) AS updated_at;
+END;
+$$;
+
+/* Create a stored function to delete a user, their profile, and their session. */
+CREATE OR REPLACE FUNCTION delete_profile_user(
   IN _id INTEGER,
   OUT user_id INTEGER,
   OUT nickname VARCHAR,
