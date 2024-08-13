@@ -1,4 +1,6 @@
-use super::user_models::{CreateUserRegistrDto, UserRegistr};
+use crate::profiles::profile_models::CreateProfileRegistrDto;
+
+use super::user_models::UserRegistr;
 
 pub const DURATION_IN_DAYS: u16 = 90;
 
@@ -12,7 +14,7 @@ pub trait UserRegistrOrm {
         email: Option<&str>,
     ) -> Result<Option<UserRegistr>, String>;
     /// Add a new entity (user_registration).
-    fn create_user_registr(&self, create_user_registr_dto: CreateUserRegistrDto) -> Result<UserRegistr, String>;
+    fn create_user_registr(&self, create_user_registr_dto: CreateProfileRegistrDto) -> Result<UserRegistr, String>;
     /// Delete an entity (user_registration).
     fn delete_user_registr(&self, id: i32) -> Result<usize, String>;
     /// Delete all entities (user_registration) with an inactive "final_date".
@@ -46,12 +48,9 @@ pub mod impls {
 
     use crate::dbase;
     use crate::schema;
-    use crate::users::{
-        user_models::{CreateUserRegistrDto, UserRegistr},
-        user_registr_orm::DURATION_IN_DAYS,
-    };
+    use crate::users::{user_models::UserRegistr, user_registr_orm::DURATION_IN_DAYS};
 
-    use super::UserRegistrOrm;
+    use super::*;
 
     pub const CONN_POOL: &str = "ConnectionPool";
 
@@ -145,7 +144,7 @@ pub mod impls {
         }
 
         /// Add a new entity (user_registration).
-        fn create_user_registr(&self, create_user_registr_dto: CreateUserRegistrDto) -> Result<UserRegistr, String> {
+        fn create_user_registr(&self, create_user_registr_dto: CreateProfileRegistrDto) -> Result<UserRegistr, String> {
             let mut create_user_registr_dto2 = create_user_registr_dto.clone();
             create_user_registr_dto2.nickname = create_user_registr_dto2.nickname.to_lowercase();
             create_user_registr_dto2.email = create_user_registr_dto2.email.to_lowercase();
@@ -200,9 +199,9 @@ pub mod impls {
 pub mod tests {
     use chrono::{DateTime, Duration, Utc};
 
-    use crate::users::user_models::{CreateUserRegistrDto, UserRegistr};
+    use crate::users::user_models::UserRegistr;
 
-    use super::{UserRegistrOrm, DURATION_IN_DAYS};
+    use super::*;
 
     pub const USER_REGISTR_ID: i32 = 1200;
 
@@ -292,11 +291,14 @@ pub mod tests {
             Ok(result)
         }
         /// Add a new entity (user_registration).
-        fn create_user_registr(&self, create_user_registr_dto: CreateUserRegistrDto) -> Result<UserRegistr, String> {
-            let nickname = create_user_registr_dto.nickname.clone();
-            let email = create_user_registr_dto.email.clone();
-            let password = create_user_registr_dto.password.clone();
-            let final_date = create_user_registr_dto.final_date.clone();
+        fn create_user_registr(
+            &self,
+            create_profile_registr_dto: CreateProfileRegistrDto,
+        ) -> Result<UserRegistr, String> {
+            let nickname = create_profile_registr_dto.nickname.clone();
+            let email = create_profile_registr_dto.email.clone();
+            let password = create_profile_registr_dto.password.clone();
+            let final_date = create_profile_registr_dto.final_date.clone();
 
             let opt_res_user1: Option<UserRegistr> =
                 self.find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))?;
@@ -306,8 +308,8 @@ pub mod tests {
 
             let idx: i32 = self.user_registr_vec.len().try_into().unwrap();
             let new_id: i32 = USER_REGISTR_ID + idx;
-            let nickname = create_user_registr_dto.nickname.clone();
-            let email = create_user_registr_dto.email.clone();
+            let nickname = create_profile_registr_dto.nickname.clone();
+            let email = create_profile_registr_dto.email.clone();
 
             let user_registr_saved: UserRegistr =
                 UserRegistrOrmApp::new_user_registr(new_id, &nickname, &email, &password, final_date);
