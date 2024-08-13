@@ -8,9 +8,9 @@ use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::hash_tools;
 use crate::settings::err;
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::users::user_orm::impls::UserOrmApp;
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 use crate::users::user_orm::tests::UserOrmApp;
 use crate::users::{
     user_models::{self, ModifyUserDto, NewPasswordUserDto},
