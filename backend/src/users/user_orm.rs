@@ -14,22 +14,22 @@ pub trait UserOrm {
 pub mod cfg {
     use crate::dbase::DbPool;
 
-    #[cfg(not(feature = "mockdata"))]
+    #[cfg(not(all(test, feature = "mockdata")))]
     use super::impls::UserOrmApp;
-    #[cfg(not(feature = "mockdata"))]
+    #[cfg(not(all(test, feature = "mockdata")))]
     pub fn get_user_orm_app(pool: DbPool) -> UserOrmApp {
         UserOrmApp::new(pool)
     }
 
-    #[cfg(feature = "mockdata")]
+    #[cfg(all(test, feature = "mockdata"))]
     use super::tests::UserOrmApp;
-    #[cfg(feature = "mockdata")]
+    #[cfg(all(test, feature = "mockdata"))]
     pub fn get_user_orm_app(_: DbPool) -> UserOrmApp {
         UserOrmApp::new()
     }
 }
 
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 pub mod impls {
 
     use diesel::{self, prelude::*};
@@ -146,7 +146,7 @@ pub mod impls {
     }
 }
 
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
     use chrono::{Duration, Utc};
 
