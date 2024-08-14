@@ -7,7 +7,7 @@ use crate::{
     errors, 
     profiles::{profile_auth_controller, profile_controller, profile_models, profile_registr_controller}, 
     streams::{stream_controller, stream_get_controller, stream_models}, 
-    users::{user_controller, user_models}
+    users::user_models
 };
 
 #[derive(OpenApi)]
