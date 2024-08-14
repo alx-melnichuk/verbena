@@ -294,10 +294,13 @@ impl Validator for NewPasswordProfileDto {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
         errors.push(validate_password(&self.password).err());
-
         errors.push(validate_new_password(&self.new_password).err());
 
-        errors.push(validate_inequality(&self.new_password, &self.password).err());
+        // Determine whether there are errors.
+        let is_exist_error = errors.iter().any(|err| err.is_some());
+        if !is_exist_error {
+            errors.push(validate_inequality(&self.new_password, &self.password).err());
+        }
 
         self.filter_errors(errors)
     }

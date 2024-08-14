@@ -321,7 +321,7 @@ pub async fn get_profile_current(
         (status = 409, description = "Error when comparing password hashes.", body = AppError,
             example = json!(AppError::conflict409(&format!("{}: {}", err::MSG_INVALID_HASH, "Parameter is empty.")))),
         (status = 417, body = [AppError],
-            description = "Validation error. `curl -i -X PUT http://localhost:8080/api/users_new_password \
+            description = "Validation error. `curl -i -X PUT http://localhost:8080/api/profiles_new_password \
             -d '{\"password\": \"pas\" \"new_password\": \"word\"}'`",
             example = json!(AppError::validations(
                 (NewPasswordProfileDto {password: "pas".to_string(), new_password: "word".to_string()}).validate().err().unwrap()) )),
@@ -361,10 +361,31 @@ pub async fn put_profile_new_password(
         AppError::internal_err500(&message) // 500
     })?;
 
+    let profile_orm2 = profile_orm.clone();
+    let opt_profile2 = web::block(move || {
+        // Find user by nickname or email.
+        let existing_profile = profile_orm2.get_profile_user_by_id(user_id, true)
+            .map_err(|e| {
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e) // 507
+            });
+        existing_profile
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string()) // 506
+    })??;
+
+    let profile_pwd = opt_profile2.ok_or_else(|| {
+        log::error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_WRONG_NICKNAME_EMAIL);
+        AppError::unauthorized401(err::MSG_WRONG_NICKNAME_EMAIL) // 401
+    })?;
+
     // Get the value of the old password.
     let old_password = new_password_user.password.clone();
     // Get a hash of the old password.
-    let profile_hashed_old_password = profile.password.to_string();
+    let profile_hashed_old_password = profile_pwd.password.to_string();
     // Check whether the hash for the specified password value matches the old password hash.
     let password_matches = hash_tools::compare_hash(&old_password, &profile_hashed_old_password).map_err(|e| {
         let message = format!("{}; {}", err::MSG_INVALID_HASH, &e);
@@ -554,23 +575,18 @@ pub async fn delete_profile_current(
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{
-        body, dev,
-        http::{
-            self,
-            header::{HeaderValue, CONTENT_TYPE},
-        },
+        body, dev, http,
+        http::header::{HeaderValue, CONTENT_TYPE},
         test, web, App,
     };
     use chrono::{DateTime, Duration, Utc};
 
     use crate::extractors::authentication::BEARER;
+    use crate::profiles::profile_models::ProfileTest;
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
     };
-    use crate::users::{
-        user_models::{User, UserRegistr, UserRole},
-        user_orm::tests::UserOrmApp,
-    };
+    use crate::users::user_models::{UserRegistr, UserRole};
 
     use super::*;
 
@@ -582,6 +598,11 @@ mod tests {
         let nickname = "Oliver_Taylor".to_string();
         let role = if role == ADMIN { UserRole::Admin } else { UserRole::User };
         let profile = ProfileOrmApp::new_profile(1, &nickname, &format!("{}@gmail.com", &nickname), role);
+        profile
+    }
+    fn create_profile_pwd(role: u8, password: &str) -> Profile {
+        let mut profile = create_profile(role);
+        profile.password = hash_tools::encode_hash(password.to_string()).unwrap(); // hashed
         profile
     }
     fn profile_with_id(profile: Profile) -> Profile {
@@ -605,11 +626,7 @@ mod tests {
         (http::header::AUTHORIZATION, header_value)
     }
     #[rustfmt::skip]
-    fn get_cfg_data(is_registr: bool, role: u8) -> (
-        config_jwt::ConfigJwt, 
-        (Vec<User>, Vec<Profile>, Vec<Session>, Vec<UserRegistr>),
-        String
-    ) {
+    fn get_cfg_data(is_registr: bool, role: u8) -> (config_jwt::ConfigJwt, (Vec<Profile>, Vec<Session>, Vec<UserRegistr>), String) {
         // Create profile values.
         let profile1: Profile = profile_with_id(create_profile(role));
         let num_token = 1234;
@@ -624,27 +641,34 @@ mod tests {
             vec![user_registr_with_id(create_user_registr())]
         } else { vec![] };
 
-        let data_c = (vec![/*user1*/], vec![profile1], vec![session1], user_registr_vec);
+        let data_c = (vec![profile1], vec![session1], user_registr_vec);
 
         (config_jwt, data_c, token)
     }
     fn configure_profile(
-        config_jwt: config_jwt::ConfigJwt,                                 // configuration
-        data_c: (Vec<User>, Vec<Profile>, Vec<Session>, Vec<UserRegistr>), // cortege of data vectors
+        config_jwt: config_jwt::ConfigJwt,                      // configuration
+        data_c: (Vec<Profile>, Vec<Session>, Vec<UserRegistr>), // cortege of data vectors
     ) -> impl FnOnce(&mut web::ServiceConfig) {
         move |config: &mut web::ServiceConfig| {
             let data_config_jwt = web::Data::new(config_jwt);
-            let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
-            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.1));
-            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.2));
-            let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.3));
+
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
+            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
+            let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.2));
 
             config
                 .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_user_orm))
                 .app_data(web::Data::clone(&data_profile_orm))
                 .app_data(web::Data::clone(&data_session_orm))
                 .app_data(web::Data::clone(&data_user_registr_orm));
+        }
+    }
+    fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {
+        assert_eq!(app_err_vec.len(), msgs.len());
+        for (idx, msg) in msgs.iter().enumerate() {
+            let app_err = app_err_vec.get(idx).unwrap();
+            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.message, msg.to_string());
         }
     }
 
@@ -709,7 +733,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_non_existent_nickname() {
         let (cfg_c, data_c, _token) = get_cfg_data(false, USER);
-        let nickname = format!("a{}", data_c.1.get(0).unwrap().nickname.clone());
+        let nickname = format!("a{}", data_c.0.get(0).unwrap().nickname.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check).configure(configure_profile(cfg_c, data_c))).await;
@@ -728,7 +752,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_non_existent_email() {
         let (cfg_c, data_c, _token) = get_cfg_data(false, USER);
-        let email = format!("a{}", data_c.1.get(0).unwrap().email.clone());
+        let email = format!("a{}", data_c.0.get(0).unwrap().email.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check).configure(configure_profile(cfg_c, data_c))).await;
@@ -747,7 +771,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_existent_nickname() {
         let (cfg_c, data_c, _token) = get_cfg_data(false, USER);
-        let nickname = data_c.1.get(0).unwrap().nickname.clone();
+        let nickname = data_c.0.get(0).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check).configure(configure_profile(cfg_c, data_c))).await;
@@ -766,7 +790,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_existent_email() {
         let (cfg_c, data_c, _token) = get_cfg_data(false, USER);
-        let email = data_c.1.get(0).unwrap().email.clone();
+        let email = data_c.0.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check).configure(configure_profile(cfg_c, data_c))).await;
@@ -785,7 +809,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_existent_registr_nickname() {
         let (cfg_c, data_c, _token) = get_cfg_data(true, USER);
-        let nickname = data_c.3.get(0).unwrap().nickname.clone();
+        let nickname = data_c.2.get(0).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check).configure(configure_profile(cfg_c, data_c))).await;
@@ -804,7 +828,7 @@ mod tests {
     #[actix_web::test]
     async fn test_uniqueness_check_existent_registr_email99() {
         let (cfg_c, data_c, _token) = get_cfg_data(true, USER);
-        let email = data_c.3.get(0).unwrap().email.clone();
+        let email = data_c.2.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check).configure(configure_profile(cfg_c, data_c))).await;
@@ -825,7 +849,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_by_id_invalid_id() {
         let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
-        let user_id = data_c.1.get(0).unwrap().user_id;
+        let user_id = data_c.0.get(0).unwrap().user_id;
         let user_id_bad = format!("{}a", user_id);
         #[rustfmt::skip]
             let app = test::init_service(
@@ -848,14 +872,14 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_by_id_valid_id() {
         let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
-        let profile1 = data_c.1.get(0).unwrap().clone();
+        let profile1 = data_c.0.get(0).unwrap().clone();
         let profile2 = ProfileOrmApp::new_profile(2, "Logan_Lewis", "Logan_Lewis@gmail.com", UserRole::User);
 
         let profile_vec = ProfileOrmApp::create(&vec![profile1, profile2]).profile_vec;
         let profile2_dto = ProfileDto::from(profile_vec.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
 
-        let data_c = (vec![], profile_vec, data_c.2, data_c.3);
+        let data_c = (profile_vec, data_c.1, data_c.2);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_by_id).configure(configure_profile(cfg_c, data_c))).await;
@@ -876,14 +900,14 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_by_id_non_existent_id() {
         let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
-        let profile1 = data_c.1.get(0).unwrap().clone();
+        let profile1 = data_c.0.get(0).unwrap().clone();
         let profile2 = ProfileOrmApp::new_profile(2, "Logan_Lewis", "Logan_Lewis@gmail.com", UserRole::User);
 
         let profile_vec = ProfileOrmApp::create(&vec![profile1, profile2]).profile_vec;
         let profile2_dto = ProfileDto::from(profile_vec.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
 
-        let data_c = (vec![], profile_vec, data_c.2, data_c.3);
+        let data_c = (profile_vec, data_c.1, data_c.2);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_by_id).configure(configure_profile(cfg_c, data_c))).await;
@@ -898,7 +922,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_profile_current_valid_token() {
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-        let profile1 = data_c.1.get(0).unwrap().clone();
+        let profile1 = data_c.0.get(0).unwrap().clone();
         let profile1_dto = ProfileDto::from(profile1);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -920,11 +944,377 @@ mod tests {
         assert_eq!(profile_dto_res, profile_dto_ser);
     }
 
+    // ** put_profile_new_password **
+    #[actix_web::test]
+    async fn test_put_profile_new_password_no_data() {
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles_new_password")
+            .insert_header(header_auth(&token))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let body_str = String::from_utf8_lossy(&body);
+        let expected_message = "Content type error";
+        assert!(body_str.contains(expected_message));
+    }
+    #[actix_web::test]
+    async fn test_put_profile_new_password_empty_json_object() {
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles_new_password")
+            .insert_header(header_auth(&token))
+            .set_json(json!({}))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::BAD_REQUEST); // 400
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let body_str = String::from_utf8_lossy(&body);
+        let expected_message = "Json deserialize error: missing field";
+        assert!(body_str.contains(expected_message));
+    }
+    #[actix_web::test]
+    async fn test_put_profile_new_password_invalid_dto_password_empty() {
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles_new_password")
+            .insert_header(header_auth(&token))
+            .set_json(NewPasswordProfileDto {
+                password: "".to_string(), new_password: "passwdJ3S9".to_string()
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_PASSWORD_REQUIRED]);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_new_password_invalid_dto_password_min() {
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles_new_password")
+            .insert_header(header_auth(&token))
+            .set_json(NewPasswordProfileDto {
+                password: ProfileTest::password_min(), new_password: "passwdJ3S9".to_string()
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_PASSWORD_MIN_LENGTH]);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_new_password_invalid_dto_password_max() {
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles_new_password")
+            .insert_header(header_auth(&token))
+            .set_json(NewPasswordProfileDto {
+                password: ProfileTest::password_max(), new_password: "passwdJ3S9".to_string()
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_PASSWORD_MAX_LENGTH]);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_new_password_invalid_dto_password_wrong() {
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles_new_password")
+            .insert_header(header_auth(&token))
+            .set_json(NewPasswordProfileDto {
+                password: ProfileTest::password_wrong(), new_password: "passwdJ3S9".to_string()
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_PASSWORD_REGEX]);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_new_password_invalid_dto_new_password_empty() {
+        let old_password = "passwdP1C1".to_string();
+        let mut profile1: Profile = create_profile_pwd(USER, &old_password);
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        profile1.user_id = data_c.0.get(0).unwrap().user_id;
+        let data_c = (vec![profile1], data_c.1, data_c.2);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles_new_password")
+            .insert_header(header_auth(&token))
+            .set_json(NewPasswordProfileDto {
+                password: old_password, new_password: "".to_string()
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_NEW_PASSWORD_REQUIRED]);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_new_password_invalid_dto_new_password_min() {
+        let old_password = "passwdP1C1".to_string();
+        let mut profile1: Profile = create_profile_pwd(USER, &old_password);
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        profile1.user_id = data_c.0.get(0).unwrap().user_id;
+        let data_c = (vec![profile1], data_c.1, data_c.2);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles_new_password")
+            .insert_header(header_auth(&token))
+            .set_json(NewPasswordProfileDto {
+                password: old_password, new_password: ProfileTest::password_min()
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_NEW_PASSWORD_MIN_LENGTH]);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_new_password_invalid_dto_new_password_max() {
+        let old_password = "passwdP1C1".to_string();
+        let mut profile1: Profile = create_profile_pwd(USER, &old_password);
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        profile1.user_id = data_c.0.get(0).unwrap().user_id;
+        let data_c = (vec![profile1], data_c.1, data_c.2);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles_new_password")
+            .insert_header(header_auth(&token))
+            .set_json(NewPasswordProfileDto {
+                password: old_password, new_password: ProfileTest::password_max()
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_NEW_PASSWORD_MAX_LENGTH]);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_new_password_invalid_dto_new_password_wrong() {
+        let old_password = "passwdP1C1".to_string();
+        let mut profile1: Profile = create_profile_pwd(USER, &old_password);
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        profile1.user_id = data_c.0.get(0).unwrap().user_id;
+        let data_c = (vec![profile1], data_c.1, data_c.2);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles_new_password")
+            .insert_header(header_auth(&token))
+            .set_json(NewPasswordProfileDto {
+                password: old_password, new_password: ProfileTest::password_wrong()
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_NEW_PASSWORD_REGEX]);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_new_password_invalid_dto_new_password_equal_old_value() {
+        let old_password = "passwdP1C1".to_string();
+        let mut profile1: Profile = create_profile_pwd(USER, &old_password);
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        profile1.user_id = data_c.0.get(0).unwrap().user_id;
+        let data_c = (vec![profile1], data_c.1, data_c.2);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles_new_password")
+            .insert_header(header_auth(&token))
+            .set_json(NewPasswordProfileDto {
+                password: old_password.clone(), new_password: old_password
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_NEW_PASSWORD_EQUAL_OLD_VALUE]);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_new_password_invalid_hash_password() {
+        let old_password = "passwdP1C1".to_string();
+        let mut profile1: Profile = create_profile(USER);
+        profile1.password = "invali_hash_password".to_string();
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        profile1.user_id = data_c.0.get(0).unwrap().user_id;
+
+        let data_c = (vec![profile1], data_c.1, data_c.2);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles_new_password")
+            .insert_header(header_auth(&token))
+            .set_json(NewPasswordProfileDto {
+                password: old_password.to_string(), new_password: "passwdJ3S9".to_string()
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_CONFLICT);
+        assert!(app_err.message.starts_with(err::MSG_INVALID_HASH));
+    }
+    #[actix_web::test]
+    async fn test_put_profile_new_password_invalid_password() {
+        let old_password = "passwdP1C1".to_string();
+        let mut profile1: Profile = create_profile_pwd(USER, &old_password);
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        profile1.user_id = data_c.0.get(0).unwrap().user_id;
+        let data_c = (vec![profile1], data_c.1, data_c.2);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles_new_password")
+            .insert_header(header_auth(&token))
+            .set_json(NewPasswordProfileDto {
+                password: format!("{}a", old_password), new_password: "passwdJ3S9".to_string()
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        assert_eq!(app_err.message, err::MSG_PASSWORD_INCORRECT);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_new_password_valid_data() {
+        let old_password = "passwdP1C1".to_string();
+        let mut profile1: Profile = create_profile_pwd(USER, &old_password);
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        profile1.user_id = data_c.0.get(0).unwrap().user_id;
+        let profile1_dto = ProfileDto::from(profile1.clone());
+        let data_c = (vec![profile1], data_c.1, data_c.2);
+
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles_new_password")
+            .insert_header(header_auth(&token))
+            .set_json(NewPasswordProfileDto {
+                password: old_password.to_string(), new_password: "passwdJ3S9".to_string()
+            })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+
+        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json = serde_json::json!(profile1_dto).to_string();
+        let profile_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(profile_dto_res.id, profile_dto_ser.id);
+        assert_eq!(profile_dto_res.nickname, profile_dto_ser.nickname);
+        assert_eq!(profile_dto_res.email, profile_dto_ser.email);
+        assert_eq!(profile_dto_res.role, profile_dto_ser.role);
+        assert_eq!(profile_dto_res.avatar, profile_dto_ser.avatar);
+        assert_eq!(profile_dto_res.descript, profile_dto_ser.descript);
+        assert_eq!(profile_dto_res.theme, profile_dto_ser.theme);
+        assert_eq!(profile_dto_res.created_at, profile_dto_ser.created_at);
+    }
+
     // ** delete_profile **
     #[actix_web::test]
     async fn test_delete_profile_profile_invalid_id() {
         let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
-        let profile1 = data_c.1.get(0).unwrap().clone();
+        let profile1 = data_c.0.get(0).unwrap().clone();
         let profile_id_bad = format!("{}a", profile1.user_id);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -947,7 +1337,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_profile_profile_not_exist() {
         let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
-        let profile1 = data_c.1.get(0).unwrap().clone();
+        let profile1 = data_c.0.get(0).unwrap().clone();
         let profile_id = profile1.user_id;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -961,14 +1351,14 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_profile_profile_exists() {
         let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
-        let profile1 = data_c.1.get(0).unwrap().clone();
+        let profile1 = data_c.0.get(0).unwrap().clone();
         let profile2 = ProfileOrmApp::new_profile(2, "Logan_Lewis", "Logan_Lewis@gmail.com", UserRole::User);
 
         let profile_vec = ProfileOrmApp::create(&vec![profile1, profile2]).profile_vec;
         let profile2_dto = ProfileDto::from(profile_vec.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
 
-        let data_c = (vec![], profile_vec, data_c.2, data_c.3);
+        let data_c = (profile_vec, data_c.1, data_c.2);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile).configure(configure_profile(cfg_c, data_c))).await;
@@ -991,7 +1381,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_profile_current_valid_token() {
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-        let profile1 = data_c.1.get(0).unwrap().clone();
+        let profile1 = data_c.0.get(0).unwrap().clone();
         let profile1_dto = ProfileDto::from(profile1);
         #[rustfmt::skip]
         let app = test::init_service(
