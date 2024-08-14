@@ -486,7 +486,7 @@ pub async fn recovery(
     // Waiting time for password recovery confirmation (in seconds).
     let final_date_utc = Utc::now() + Duration::seconds(app_recovery_duration.into());
 
-    let create_profile_recovery_dto = profile_models::CreateProfileRecoveryDto {
+    let create_profile_recovery = profile_models::CreateProfileRecovery {
         user_id: user_id,
         final_date: final_date_utc,
     };
@@ -498,7 +498,7 @@ pub async fn recovery(
         user_recovery_id = user_recovery.id;
         let _ = web::block(move || {
             let user_recovery = user_recovery_orm2
-                .modify_user_recovery(user_recovery_id, create_profile_recovery_dto)
+                .modify_user_recovery(user_recovery_id, create_profile_recovery)
                 .map_err(|e| {
                     log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                     AppError::database507(&e) // 507
@@ -515,7 +515,7 @@ pub async fn recovery(
         // Create a new entity (user_recovery).
         let user_recovery = web::block(move || {
             let user_recovery = user_recovery_orm2
-                .create_user_recovery(create_profile_recovery_dto)
+                .create_user_recovery(create_profile_recovery)
                 .map_err(|e| {
                     log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                     AppError::database507(&e) // 507

@@ -377,12 +377,13 @@ pub struct RegistrProfileResponseDto {
 
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
 #[diesel(table_name = schema::user_recovery)]
-pub struct CreateProfileRecoveryDto {
+pub struct CreateProfileRecovery {
     pub user_id: i32,
     pub final_date: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct RecoveryProfileDto {
     pub email: String,
 }
@@ -407,6 +408,7 @@ pub struct RecoveryProfileResponseDto {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct RecoveryDataDto {
     pub password: String,
 }
