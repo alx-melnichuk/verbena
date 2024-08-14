@@ -135,94 +135,72 @@ CREATE OR REPLACE FUNCTION modify_profile_user(
 AS $$
 DECLARE 
   sql1 TEXT;
-  fields VARCHAR[];
-  rec1 RECORD;
-  rec2 RECORD;
+  s2 VARCHAR;
+  update_users VARCHAR[];
+  update_profiles VARCHAR[];
 BEGIN
   IF user_id IS NULL THEN
     RETURN;
   END IF;
 
-  SELECT
-    CAST(NULL AS INTEGER) AS user_id, CAST(NULL AS VARCHAR) AS nickname  , 
-    CAST(NULL AS VARCHAR) AS email  , CAST(NULL AS VARCHAR) AS "password", CAST(NULL AS user_role) AS "role",
-    CAST(NULL AS VARCHAR) AS avatar , CAST(NULL AS TEXT) AS descript     , CAST(NULL AS VARCHAR) AS theme,
-    CAST(NULL AS TIMESTAMP WITH TIME ZONE) AS created_at, CAST(NULL AS TIMESTAMP WITH TIME ZONE) AS updated_at
-  INTO rec1;
-
-  SELECT
-    CAST(NULL AS INTEGER) AS user_id, CAST(NULL AS VARCHAR) AS nickname  , 
-    CAST(NULL AS VARCHAR) AS email  , CAST(NULL AS VARCHAR) AS "password", CAST(NULL AS user_role) AS "role",
-    CAST(NULL AS VARCHAR) AS avatar , CAST(NULL AS TEXT) AS descript     , CAST(NULL AS VARCHAR) AS theme,
-    CAST(NULL AS TIMESTAMP WITH TIME ZONE) AS created_at, CAST(NULL AS TIMESTAMP WITH TIME ZONE) AS updated_at
-  INTO rec2;
-
-  sql1 := '';
-  fields := ARRAY[]::VARCHAR[];
+  update_users := ARRAY[]::VARCHAR[];
   IF nickname IS NOT NULL AND LENGTH(nickname) > 0 THEN
-    fields := ARRAY_APPEND(fields, 'nickname = ''' || nickname || '''');
+    update_users := ARRAY_APPEND(update_users, 'nickname = ''' || nickname || '''');
   END IF;
   IF email IS NOT NULL AND LENGTH(email) > 0 THEN
-    fields := ARRAY_APPEND(fields, 'email = ''' || email || '''');
+    update_users := ARRAY_APPEND(update_users, 'email = ''' || email || '''');
   END IF;
   IF "password" IS NOT NULL AND LENGTH("password") > 0 THEN
-    fields := ARRAY_APPEND(fields, '"password" = ''' || "password" || '''');
+    update_users := ARRAY_APPEND(update_users, '"password" = ''' || "password" || '''');
   END IF;
   IF "role" IS NOT NULL AND LENGTH("role"::VARCHAR) > 0 THEN
-    fields := ARRAY_APPEND(fields, '"role" = ''' || "role" || '''');
+    update_users := ARRAY_APPEND(update_users, '"role" = ''' || "role" || '''');
   END IF;
 
-  IF ARRAY_LENGTH(fields, 1) > 0 THEN
+  update_profiles := ARRAY[]::VARCHAR[];
+  IF avatar IS NOT NULL THEN
+    s2 := CASE WHEN LENGTH(avatar) > 0 THEN '''' || avatar || '''' ELSE ' NULL' END;
+    update_profiles := ARRAY_APPEND(update_profiles, 'avatar = ' || s2);
+  END IF;
+  IF descript IS NOT NULL AND LENGTH(descript) > 0 THEN
+    update_profiles := ARRAY_APPEND(update_profiles, 'descript = ''' || descript || '''');
+  END IF;
+  IF theme IS NOT NULL AND LENGTH(theme) > 0 THEN
+    update_profiles := ARRAY_APPEND(update_profiles, 'theme = ''' || theme || '''');
+  END IF;
+
+  IF ARRAY_LENGTH(update_users, 1) > 0 THEN
     sql1 := 'UPDATE users SET '
-      || ARRAY_TO_STRING(fields, ',')
+      || ARRAY_TO_STRING(update_users, ',')
       || ' FROM profiles'  
       || ' WHERE users.id = profiles.user_id AND id = ' || user_id
       || ' RETURNING '
       || ' users.id AS user_id, users.nickname, users.email, users."password", users."role",'
       || ' profiles.avatar, profiles.descript, profiles.theme,'
       || ' users.created_at, users.updated_at'; 
-    EXECUTE sql1 INTO rec1;
+    EXECUTE sql1 INTO
+      user_id, nickname, email, "password", "role", avatar, descript, theme, created_at, updated_at;
   END IF;
 
-  sql1 := '';
-  fields := ARRAY[]::VARCHAR[];
-  IF avatar IS NOT NULL AND LENGTH(avatar) > 0 THEN
-    fields := ARRAY_APPEND(fields, 'avatar = ''' || avatar || '''');
-  END IF;
-  IF descript IS NOT NULL AND LENGTH(descript) > 0 THEN
-    fields := ARRAY_APPEND(fields, 'descript = ''' || descript || '''');
-  END IF;
-  IF theme IS NOT NULL AND LENGTH(theme) > 0 THEN
-    fields := ARRAY_APPEND(fields, 'theme = ''' || theme || '''');
-  END IF;
-
-  IF ARRAY_LENGTH(fields, 1) > 0 THEN
+  IF ARRAY_LENGTH(update_profiles, 1) > 0 THEN
     sql1 := 'UPDATE profiles SET '
-      || ARRAY_TO_STRING(fields, ',')
+      || ARRAY_TO_STRING(update_profiles, ',')
       || ' FROM users'  
       || ' WHERE users.id = profiles.user_id AND profiles.user_id = ' || user_id
       || ' RETURNING '
       || ' users.id AS user_id, users.nickname, users.email, users."password", users."role",'
       || ' profiles.avatar, profiles.descript, profiles.theme,'
       || ' users.created_at, profiles.updated_at'; 
-    EXECUTE sql1 INTO rec2;
+    EXECUTE sql1 INTO
+      user_id, nickname, email, "password", "role", avatar, descript, theme, created_at, updated_at;
   END IF;
 
-  IF rec1.user_id IS NULL AND rec2.user_id IS NULL THEN
+  IF user_id IS NULL THEN
     RETURN;
   END IF;
 
   RETURN QUERY SELECT
-    COALESCE(rec1.user_id   , rec2.user_id   ) AS user_id,
-    COALESCE(rec1.nickname  , rec2.nickname  ) AS nickname,
-    COALESCE(rec1.email     , rec2.email     ) AS email,
-    COALESCE(rec1."password", rec2."password") AS "password",
-    COALESCE(rec1."role"    , rec2."role"    ) AS "role",
-    COALESCE(rec2.avatar    , rec1.avatar    ) AS avatar,
-    COALESCE(rec2.descript  , rec1.descript  ) AS descript,
-    COALESCE(rec2.theme     , rec1.theme     ) AS theme,
-    COALESCE(rec1.created_at, rec2.created_at) AS created_at,
-    COALESCE(rec2.updated_at, rec1.updated_at) AS updated_at;
+    user_id, nickname, email, "password", "role", avatar, descript, theme, created_at, updated_at;
 END;
 $$;
 

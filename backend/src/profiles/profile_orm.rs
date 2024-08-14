@@ -145,20 +145,26 @@ pub mod impls {
             let email = modify_profile.email;
             let password = modify_profile.password;
             let role = modify_profile.role;
-            // let avatar = modify_profile.avatar;
+            let avatar = match modify_profile.avatar {
+                Some(value1) => match value1 {
+                    Some(value2) => Some(value2),
+                    None => Some("".to_string()),
+                },
+                None => None,
+            };
             let descript = modify_profile.descript;
             let theme = modify_profile.theme;
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select * from modify_profile_user($1,$2,$3,$4,$5,null,$7,$8);")
+            let query = diesel::sql_query("select * from modify_profile_user($1,$2,$3,$4,$5,$6,$7,$8);")
                 .bind::<sql_types::Integer, _>(user_id) // $1
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(nickname) // $2
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(email) // $3
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(password) // $4
                 .bind::<sql_types::Nullable<schema::sql_types::UserRole>, _>(role) // $5
-                // .bind::<sql_types::Nullable<sql_types::Text>, _>(avatar) // $6
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(avatar) // $6
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(descript) // $7
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(theme); // $8
 
