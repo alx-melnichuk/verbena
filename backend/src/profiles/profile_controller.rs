@@ -1,18 +1,22 @@
 use std::{borrow::Cow::Borrowed, ops::Deref};
 
-use actix_web::{delete, get, web, HttpResponse};
+use actix_web::{delete, get, put, web, HttpResponse};
 use log;
 use serde_json::json;
 use utoipa;
 
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
+use crate::hash_tools;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
-    profile_models::{Profile, ProfileDto, UniquenessProfileDto, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF},
+    profile_models::{
+        self, NewPasswordProfileDto, Profile, ProfileDto, UniquenessProfileDto, PROFILE_THEME_DARK,
+        PROFILE_THEME_LIGHT_DEF,
+    },
     profile_orm::ProfileOrm,
 };
 use crate::settings::err;
@@ -22,6 +26,7 @@ use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
 use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
 use crate::users::{user_models::UserRole, user_registr_orm::UserRegistrOrm};
 use crate::utils::parser;
+use crate::validators::{msg_validation, Validator};
 
 // None of the parameters are specified.
 const MSG_PARAMETERS_NOT_SPECIFIED: &str = "parameters_not_specified";
@@ -35,6 +40,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             .service(get_profile_by_id)
             // GET /api/profiles_current
             .service(get_profile_current)
+            // PUT /api/profiles_new_password
+            .service(put_profile_new_password)
             // DELETE /api/profiles/{id}
             .service(delete_profile)
             // DELETE /api/profiles_current
@@ -277,6 +284,128 @@ pub async fn get_profile_current(
     let profile = authenticated.deref();
     let profile_dto = ProfileDto::from(profile.clone());
     Ok(HttpResponse::Ok().json(profile_dto)) // 200
+}
+
+/// put_profile_new_password
+///
+/// Update the password of the current user (`ProfileDto`).
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X PUT http://localhost:8080/api/profiles_new_password  \
+/// -d {"password": "Pass_123", "new_password": "Pass#3*0"} \
+/// -H 'Content-Type: application/json'
+/// ```
+///
+/// Return the current user (`ProfileDto`) with status 200 or 204 (no content) if the user is not found.
+///
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Data about the current user.", body = ProfileDto,
+            examples(
+            ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
+                value = json!(ProfileDto::from(
+                    Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
+                        Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF)))
+            ))),
+            ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
+                value = json!(ProfileDto::from(
+                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
+            )))),
+        ),
+        (status = 204, description = "The current user was not found."),
+        (status = 401, description = "The nickname or password is incorrect or the token is missing.", body = AppError, 
+            example = json!(AppError::unauthorized401(err::MSG_PASSWORD_INCORRECT))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
+        (status = 409, description = "Error when comparing password hashes.", body = AppError,
+            example = json!(AppError::conflict409(&format!("{}: {}", err::MSG_INVALID_HASH, "Parameter is empty.")))),
+        (status = 417, body = [AppError],
+            description = "Validation error. `curl -i -X PUT http://localhost:8080/api/users_new_password \
+            -d '{\"password\": \"pas\" \"new_password\": \"word\"}'`",
+            example = json!(AppError::validations(
+                (NewPasswordProfileDto {password: "pas".to_string(), new_password: "word".to_string()}).validate().err().unwrap()) )),
+        (status = 500, description = "Error while calculating the password hash.", body = AppError, 
+            example = json!(AppError::internal_err500(&format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty.")))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[rustfmt::skip]
+#[put("/api/profiles_new_password", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn put_profile_new_password(
+    authenticated: Authenticated,
+    profile_orm: web::Data<ProfileOrmApp>,
+    json_body: web::Json<NewPasswordProfileDto>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    // 1.308634s
+    let profile = authenticated.deref();
+    let user_id = profile.user_id;
+
+    // Checking the validity of the data model.
+    let validation_res = json_body.validate();
+    if let Err(validation_errors) = validation_res {
+        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
+        return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
+    }
+
+    let new_password_user: NewPasswordProfileDto = json_body.into_inner();
+    let new_password = new_password_user.new_password.clone();
+    // Get a hash of the new password.
+    let new_password_hashed = hash_tools::encode_hash(&new_password).map_err(|e| {
+        let message = format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, e.to_string());
+        log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
+        AppError::internal_err500(&message) // 500
+    })?;
+
+    // Get the value of the old password.
+    let old_password = new_password_user.password.clone();
+    // Get a hash of the old password.
+    let profile_hashed_old_password = profile.password.to_string();
+    // Check whether the hash for the specified password value matches the old password hash.
+    let password_matches = hash_tools::compare_hash(&old_password, &profile_hashed_old_password).map_err(|e| {
+        let message = format!("{}; {}", err::MSG_INVALID_HASH, &e);
+        log::error!("{}: {}", err::CD_CONFLICT, &message);
+        AppError::conflict409(&message) // 409
+    })?;
+    // If the hash for the specified password does not match the old password hash, then return an error.
+    if !password_matches {
+        log::error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_PASSWORD_INCORRECT);
+        return Err(AppError::unauthorized401(err::MSG_PASSWORD_INCORRECT)); // 401
+    }
+
+    // Set a new user password.
+
+    // Create a model to update the "password" field in the user profile.
+    let modify_profile = profile_models::ModifyProfile{
+        nickname: None, email: None, password: Some(new_password_hashed), role: None, avatar: None, descript: None, theme: None,
+    };
+    // Update the password hash for the user profile.
+    let opt_profile = web::block(move || {
+        let opt_profile1 = profile_orm.modify_profile(user_id, modify_profile)
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e) // 507
+        });
+        opt_profile1
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string()) // 506
+    })??;
+
+    // If the user profile was updated successfully, return the user profile.
+    if let Some(profile) = opt_profile {
+        let profile_dto = ProfileDto::from(profile);
+        Ok(HttpResponse::Ok().json(profile_dto)) // 200
+    } else {
+        // Otherwise, return empty content.
+        Ok(HttpResponse::NoContent().finish()) // 204
+    }
 }
 
 /// delete_profile

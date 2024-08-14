@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use crate::schema;
-use crate::users::user_models::{User, UserRole};
+use crate::users::user_models::UserRole;
 use crate::utils::serial_datetime;
 use crate::validators::{ValidationChecks, ValidationError, Validator};
 
@@ -96,7 +96,9 @@ pub fn validate_inequality(value1: &str, value2: &str) -> Result<(), ValidationE
     Ok(())
 }
 
-// ** Section: database "profiles" **
+// * * * * Section: "database". * * * *
+
+// ** Table: "profiles" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = schema::profiles)]
@@ -130,6 +132,10 @@ impl ProfileTbl {
         }
     }
 }
+
+// * * * * Section: models for "ProfileOrm". * * * *
+
+// ** Model: "Profile". Used to return user profile data. **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
 #[diesel(table_name = schema::profiles)]
@@ -182,18 +188,51 @@ impl Profile {
             updated_at: now.clone(),
         }
     }
-    pub fn to_user(&self) -> User {
-        User {
-            id: self.user_id,
-            nickname: self.nickname.to_string(),
-            email: self.email.to_string(),
-            password: "".to_string(),
-            created_at: self.created_at.clone(),
-            updated_at: self.updated_at.clone(),
-            role: self.role.clone(),
+}
+
+// ** Model: "CreateProfile". Used: ProfileOrm::create_profile_user() **
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CreateProfile {
+    pub nickname: String,         // min_len=3 max_len=64
+    pub email: String,            // min_len=5 max_len=254
+    pub password: String,         // min_len=6 max_len=64
+    pub role: Option<UserRole>,   // default "user"
+    pub avatar: Option<String>,   // min_len=2 max_len=255 Nullable
+    pub descript: Option<String>, // type: Text default ""
+    pub theme: Option<String>,    // min_len=2 max_len=32 default "light"
+}
+
+impl CreateProfile {
+    pub fn new(nickname: &str, email: &str, password: &str, role: Option<UserRole>) -> CreateProfile {
+        CreateProfile {
+            nickname: nickname.to_string(),
+            email: email.to_string(),
+            password: password.to_string(),
+            role: role.clone(),
+            avatar: None,
+            descript: None,
+            theme: None,
         }
     }
 }
+
+// ** Model: "ModifyProfile". Used: ProfileOrm::modify_profile() **
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ModifyProfile {
+    pub nickname: Option<String>,       // min_len=3 max_len=64
+    pub email: Option<String>,          // min_len=5 max_len=254
+    pub password: Option<String>,       // min_len=6 max_len=64
+    pub role: Option<UserRole>,         // default "user"
+    pub avatar: Option<Option<String>>, // min_len=2 max_len=255 Nullable
+    pub descript: Option<String>,       // type: Text default ""
+    pub theme: Option<String>,          // min_len=2 max_len=32 default "light"
+}
+
+// * * * * Section: models for the "profile_controller". * * * *
+
+// ** Model Dto: "ProfileDto". Used: in "profile_controller::get_profile_by_id()" and many other methods. **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -230,56 +269,7 @@ impl ProfileDto {
     }
 }
 
-// ** CreateProfile **
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct CreateProfile {
-    pub nickname: String,         // min_len=3 max_len=64
-    pub email: String,            // min_len=5 max_len=254
-    pub password: String,         // min_len=6 max_len=64
-    pub role: Option<UserRole>,   // default "user"
-    pub avatar: Option<String>,   // min_len=2 max_len=255 Nullable
-    pub descript: Option<String>, // type: Text default ""
-    pub theme: Option<String>,    // min_len=2 max_len=32 default "light"
-}
-
-impl CreateProfile {
-    pub fn new(nickname: &str, email: &str, password: &str, role: Option<UserRole>) -> CreateProfile {
-        CreateProfile {
-            nickname: nickname.to_string(),
-            email: email.to_string(),
-            password: password.to_string(),
-            role: role.clone(),
-            avatar: None,
-            descript: None,
-            theme: None,
-        }
-    }
-}
-
-// ** ModifyProfile **
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ModifyProfile {
-    pub nickname: Option<String>,       // min_len=3 max_len=64
-    pub email: Option<String>,          // min_len=5 max_len=254
-    pub password: Option<String>,       // min_len=6 max_len=64
-    pub role: Option<UserRole>,         // default "user"
-    pub avatar: Option<Option<String>>, // min_len=2 max_len=255 Nullable
-    pub descript: Option<String>,       // type: Text default ""
-    pub theme: Option<String>,          // min_len=2 max_len=32 default "light"
-}
-
-// ** ClearForExpiredResponseDto **
-
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct ClearForExpiredResponseDto {
-    pub count_inactive_registr: usize,
-    pub count_inactive_recover: usize,
-}
-
-// ** UniquenessProfileDto **
+// ** Model Dto: "UniquenessProfileDto". Used: in "profile_controller::uniqueness_check()". **
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -290,7 +280,32 @@ pub struct UniquenessProfileDto {
     pub email: Option<String>,
 }
 
-// ** Section: "LoginProfile" **
+// ** Model Dto: "NewPasswordProfileDto". Used: in "profile_controller::put_profiles_new_password()" **
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+pub struct NewPasswordProfileDto {
+    pub password: String,
+    pub new_password: String,
+}
+
+impl Validator for NewPasswordProfileDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        errors.push(validate_password(&self.password).err());
+
+        errors.push(validate_new_password(&self.new_password).err());
+
+        errors.push(validate_inequality(&self.new_password, &self.password).err());
+
+        self.filter_errors(errors)
+    }
+}
+
+// * * * * Section: models for the "profile_auth_controller". * * * *
+
+// ** Model Dto: "LoginProfileDto". Used: in "profile_auth_controller::login()". **
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -311,6 +326,8 @@ impl Validator for LoginProfileDto {
     }
 }
 
+// ** Model Dto: "LoginProfileResponseDto". Used: in "profile_auth_controller::login()". **
+
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginProfileResponseDto {
@@ -318,14 +335,7 @@ pub struct LoginProfileResponseDto {
     pub profile_tokens_dto: ProfileTokensDto,
 }
 
-// ** Section: "ProfileToken" **
-
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct ProfileTokensDto {
-    pub access_token: String,
-    pub refresh_token: String,
-}
+// ** Model Dto: "TokenDto". Used: in "profile_auth_controller::update_token(). **
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -334,16 +344,18 @@ pub struct TokenDto {
     pub token: String,
 }
 
-// ** Section: "User registration" **
+// ** Model Dto: "ProfileTokensDto". Used: in "profile_auth_controller::update_token(). **
 
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
-#[diesel(table_name = schema::user_registration)]
-pub struct CreateProfileRegistrDto {
-    pub nickname: String,
-    pub email: String,
-    pub password: String,
-    pub final_date: DateTime<Utc>,
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileTokensDto {
+    pub access_token: String,
+    pub refresh_token: String,
 }
+
+// * * * * Section: models for the "profile_registr_controller". * * * *
+
+// ** Model Dto: "RegistrProfileDto". Used: in "profile_registr_controller::registration(). **
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct RegistrProfileDto {
@@ -365,6 +377,8 @@ impl Validator for RegistrProfileDto {
     }
 }
 
+// ** Model Dto: "RegistrProfileResponseDto". Used: in "profile_registr_controller::registration(). **
+
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RegistrProfileResponseDto {
@@ -373,14 +387,7 @@ pub struct RegistrProfileResponseDto {
     pub registr_token: String,
 }
 
-// ** Section: "RecoveryProfile" **
-
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
-#[diesel(table_name = schema::user_recovery)]
-pub struct CreateProfileRecovery {
-    pub user_id: i32,
-    pub final_date: DateTime<Utc>,
-}
+// ** Model Dto: "RecoveryProfileDto". Used: in "profile_registr_controller::recovery(). **
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -399,6 +406,8 @@ impl Validator for RecoveryProfileDto {
     }
 }
 
+// ** Model Dto: "RecoveryProfileResponseDto". Used: in "profile_registr_controller::recovery(). **
+
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RecoveryProfileResponseDto {
@@ -406,6 +415,8 @@ pub struct RecoveryProfileResponseDto {
     pub email: String,
     pub recovery_token: String,
 }
+
+// ** Model Dto: "RecoveryDataDto". Used: in "profile_registr_controller::confirm_recovery(). **
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -424,15 +435,16 @@ impl Validator for RecoveryDataDto {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+// ** Model Dto: "ClearForExpiredResponseDto". Used: in "profile_registr_controller::clear_for_expired(). **
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct RecoveryDataResponseDto {
-    pub nickname: String,
-    pub email: String,
-    pub registr_token: String,
+pub struct ClearForExpiredResponseDto {
+    pub count_inactive_registr: usize,
+    pub count_inactive_recover: usize,
 }
 
-// **  **
+// * * * *   * * * *
 
 #[cfg(all(test, feature = "mockdata"))]
 pub struct ProfileTest {}

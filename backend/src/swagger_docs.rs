@@ -16,12 +16,12 @@ use crate::{
         profile_controller::uniqueness_check,
         profile_controller::get_profile_current,
         profile_controller::get_profile_by_id,
+        profile_controller::put_profile_new_password,
         profile_controller::delete_profile,
         profile_controller::delete_profile_current,
         profile_auth_controller::login,
         profile_auth_controller::logout,
         profile_auth_controller::update_token,        
-        user_controller::put_user_new_password,
         profile_registr_controller::registration,
         profile_registr_controller::confirm_registration,
         profile_registr_controller::recovery,
@@ -38,19 +38,18 @@ use crate::{
     components(
         schemas(
             errors::AppError,
+            // user model
+            user_models::UserRole,
             // profile_controller
             profile_models::UniquenessProfileDto,
             profile_models::ProfileDto,
+            profile_models::NewPasswordProfileDto, // ::put_profile_new_password,
             // profile_auth_controller
             profile_models::LoginProfileDto, profile_models::LoginProfileResponseDto, // ::login
             profile_models::ProfileTokensDto, // ::login, ::update_token
             profile_models::TokenDto, // ::update_token
-            // user model
-            user_models::UserRole,
             // user_controller
             user_models::UserDto,
-            // user_controller
-            user_models::NewPasswordUserDto,
             // profile_registr_controller
             profile_models::RegistrProfileDto, profile_models::RegistrProfileResponseDto, // ::registration
             // profile_models::ProfileDto, // ::confirm_registration
