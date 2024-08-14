@@ -169,7 +169,7 @@ pub mod impls {
 pub mod tests {
     use chrono::{DateTime, Duration, Utc};
 
-    use crate::{profiles::profile_models::CreateUserRecovery, users::user_models::UserRecovery};
+    use crate::users::user_models::{CreateUserRecovery, UserRecovery};
 
     use super::{UserRecoveryOrm, DURATION_IN_DAYS};
 
