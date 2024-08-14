@@ -29,7 +29,7 @@ use crate::users::user_recovery_orm::tests::UserRecoveryOrmApp;
 use crate::hash_tools;
 use crate::users::{
     user_err as u_err,
-    user_models::UserRole,
+    user_models::{self,UserRole},
     user_recovery_orm::UserRecoveryOrm,
     user_registr_orm::UserRegistrOrm,
 };
@@ -212,7 +212,7 @@ pub async fn registration(
     // Waiting time for registration confirmation (in seconds).
     let final_date_utc = Utc::now() + Duration::seconds(app_registr_duration.into());
 
-    let create_profile_registr_dto = profile_models::CreateProfileRegistrDto {
+    let create_profile_registr_dto = user_models::CreateUserRegistr {
         nickname: registr_profile_dto.nickname.clone(),
         email: registr_profile_dto.email.clone(),
         password: password_hashed,
@@ -486,7 +486,7 @@ pub async fn recovery(
     // Waiting time for password recovery confirmation (in seconds).
     let final_date_utc = Utc::now() + Duration::seconds(app_recovery_duration.into());
 
-    let create_profile_recovery = profile_models::CreateProfileRecovery {
+    let create_user_recovery = user_models::CreateUserRecovery {
         user_id: user_id,
         final_date: final_date_utc,
     };
@@ -498,7 +498,7 @@ pub async fn recovery(
         user_recovery_id = user_recovery.id;
         let _ = web::block(move || {
             let user_recovery = user_recovery_orm2
-                .modify_user_recovery(user_recovery_id, create_profile_recovery)
+                .modify_user_recovery(user_recovery_id, create_user_recovery)
                 .map_err(|e| {
                     log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                     AppError::database507(&e) // 507
@@ -515,7 +515,7 @@ pub async fn recovery(
         // Create a new entity (user_recovery).
         let user_recovery = web::block(move || {
             let user_recovery = user_recovery_orm2
-                .create_user_recovery(create_profile_recovery)
+                .create_user_recovery(create_user_recovery)
                 .map_err(|e| {
                     log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                     AppError::database507(&e) // 507
@@ -721,14 +721,7 @@ pub async fn confirm_recovery(
     })?;
     // Create a model to update the "password" field in the user profile.
     let modify_profile = profile_models::ModifyProfile{
-        nickname: None,
-        email: None,
-        password: Some(password_hashed),
-        role: None,
-        avatar: None,
-        descript: None,
-        theme: None,
-    
+        nickname: None, email: None, password: Some(password_hashed), role: None, avatar: None, descript: None, theme: None,
     };
     // Update the password hash for the user profile.
     let opt_profile = web::block(move || {

@@ -100,6 +100,7 @@ impl Validator for ModifyUserDto {
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct NewPasswordUserDto {
+    // TODO del;
     pub password: String,
     pub new_password: String,
 }
@@ -119,13 +120,22 @@ impl Validator for NewPasswordUserDto {
     }
 }
 
-// ** Section: "UserRegistr" **
+// * * * * Section: models for "UserRegistrOrm". * * * *
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
 #[diesel(table_name = schema::user_registration)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct UserRegistr {
     pub id: i32,
+    pub nickname: String,
+    pub email: String,
+    pub password: String,
+    pub final_date: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
+#[diesel(table_name = schema::user_registration)]
+pub struct CreateUserRegistr {
     pub nickname: String,
     pub email: String,
     pub password: String,
@@ -139,6 +149,13 @@ pub struct UserRegistr {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct UserRecovery {
     pub id: i32,
+    pub user_id: i32,
+    pub final_date: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
+#[diesel(table_name = schema::user_recovery)]
+pub struct CreateUserRecovery {
     pub user_id: i32,
     pub final_date: DateTime<Utc>,
 }

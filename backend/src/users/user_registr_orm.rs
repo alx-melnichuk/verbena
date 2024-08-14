@@ -1,6 +1,4 @@
-use crate::profiles::profile_models::CreateProfileRegistrDto;
-
-use super::user_models::UserRegistr;
+use crate::users::user_models::{CreateUserRegistr, UserRegistr};
 
 pub const DURATION_IN_DAYS: u16 = 90;
 
@@ -14,7 +12,7 @@ pub trait UserRegistrOrm {
         email: Option<&str>,
     ) -> Result<Option<UserRegistr>, String>;
     /// Add a new entity (user_registration).
-    fn create_user_registr(&self, create_user_registr_dto: CreateProfileRegistrDto) -> Result<UserRegistr, String>;
+    fn create_user_registr(&self, create_user_registr_dto: CreateUserRegistr) -> Result<UserRegistr, String>;
     /// Delete an entity (user_registration).
     fn delete_user_registr(&self, id: i32) -> Result<usize, String>;
     /// Delete all entities (user_registration) with an inactive "final_date".
@@ -48,7 +46,7 @@ pub mod impls {
 
     use crate::dbase;
     use crate::schema;
-    use crate::users::{user_models::UserRegistr, user_registr_orm::DURATION_IN_DAYS};
+    use crate::users::user_registr_orm::DURATION_IN_DAYS;
 
     use super::*;
 
@@ -144,7 +142,7 @@ pub mod impls {
         }
 
         /// Add a new entity (user_registration).
-        fn create_user_registr(&self, create_user_registr_dto: CreateProfileRegistrDto) -> Result<UserRegistr, String> {
+        fn create_user_registr(&self, create_user_registr_dto: CreateUserRegistr) -> Result<UserRegistr, String> {
             let mut create_user_registr_dto2 = create_user_registr_dto.clone();
             create_user_registr_dto2.nickname = create_user_registr_dto2.nickname.to_lowercase();
             create_user_registr_dto2.email = create_user_registr_dto2.email.to_lowercase();
@@ -198,8 +196,6 @@ pub mod impls {
 #[cfg(feature = "mockdata")]
 pub mod tests {
     use chrono::{DateTime, Duration, Utc};
-
-    use crate::users::user_models::UserRegistr;
 
     use super::*;
 
@@ -291,10 +287,7 @@ pub mod tests {
             Ok(result)
         }
         /// Add a new entity (user_registration).
-        fn create_user_registr(
-            &self,
-            create_profile_registr_dto: CreateProfileRegistrDto,
-        ) -> Result<UserRegistr, String> {
+        fn create_user_registr(&self, create_profile_registr_dto: CreateUserRegistr) -> Result<UserRegistr, String> {
             let nickname = create_profile_registr_dto.nickname.clone();
             let email = create_profile_registr_dto.email.clone();
             let password = create_profile_registr_dto.password.clone();
