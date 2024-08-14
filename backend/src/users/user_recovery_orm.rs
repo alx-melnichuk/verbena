@@ -1,4 +1,4 @@
-use crate::profiles::profile_models::CreateProfileRecoveryDto;
+use crate::profiles::profile_models::CreateProfileRecovery;
 
 use super::user_models::UserRecovery;
 
@@ -10,12 +10,12 @@ pub trait UserRecoveryOrm {
     /// Find for an entity (user_recovery) by user_id.
     fn find_user_recovery_by_user_id(&self, user_id: i32) -> Result<Option<UserRecovery>, String>;
     /// Add a new entity (user_recovery).
-    fn create_user_recovery(&self, create_user_recovery_dto: CreateProfileRecoveryDto) -> Result<UserRecovery, String>;
+    fn create_user_recovery(&self, create_user_recovery: CreateProfileRecovery) -> Result<UserRecovery, String>;
     /// Modify an entity (user_recovery).
     fn modify_user_recovery(
         &self,
         id: i32,
-        modify_user_recovery_dto: CreateProfileRecoveryDto,
+        modify_user_recovery: CreateProfileRecovery,
     ) -> Result<Option<UserRecovery>, String>;
     /// Delete an entity (user_recovery).
     fn delete_user_recovery(&self, id: i32) -> Result<usize, String>;
@@ -49,7 +49,7 @@ pub mod impls {
     use schema::user_recovery::dsl;
 
     use crate::dbase;
-    use crate::profiles::profile_models::CreateProfileRecoveryDto;
+    use crate::profiles::profile_models::CreateProfileRecovery;
     use crate::schema;
     use crate::users::{user_models::UserRecovery, user_recovery_orm::DURATION_IN_DAYS};
 
@@ -102,15 +102,12 @@ pub mod impls {
         }
 
         /// Add a new entity (user_recovery).
-        fn create_user_recovery(
-            &self,
-            create_user_recovery_dto: CreateProfileRecoveryDto,
-        ) -> Result<UserRecovery, String> {
+        fn create_user_recovery(&self, create_user_recovery: CreateProfileRecovery) -> Result<UserRecovery, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to add a new user entry.
             let user_recovery: UserRecovery = diesel::insert_into(schema::user_recovery::table)
-                .values(create_user_recovery_dto)
+                .values(create_user_recovery)
                 .returning(UserRecovery::as_returning())
                 .get_result(&mut conn)
                 .map_err(|e| format!("create_user_recovery: {}", e.to_string()))?;
@@ -122,13 +119,13 @@ pub mod impls {
         fn modify_user_recovery(
             &self,
             id: i32,
-            create_user_recovery_dto: CreateProfileRecoveryDto,
+            create_user_recovery: CreateProfileRecovery,
         ) -> Result<Option<UserRecovery>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to full or partially modify the user entry.
             let result = diesel::update(dsl::user_recovery.find(id))
-                .set(&create_user_recovery_dto)
+                .set(&create_user_recovery)
                 .returning(UserRecovery::as_returning())
                 .get_result(&mut conn)
                 .optional()
@@ -175,7 +172,7 @@ pub mod impls {
 pub mod tests {
     use chrono::{DateTime, Duration, Utc};
 
-    use crate::{profiles::profile_models::CreateProfileRecoveryDto, users::user_models::UserRecovery};
+    use crate::{profiles::profile_models::CreateProfileRecovery, users::user_models::UserRecovery};
 
     use super::{UserRecoveryOrm, DURATION_IN_DAYS};
 
@@ -242,12 +239,9 @@ pub mod tests {
         }
 
         /// Add a new entity (user_recovery).
-        fn create_user_recovery(
-            &self,
-            create_user_recovery_dto: CreateProfileRecoveryDto,
-        ) -> Result<UserRecovery, String> {
-            let user_id = create_user_recovery_dto.user_id;
-            let final_date = create_user_recovery_dto.final_date.clone();
+        fn create_user_recovery(&self, create_user_recovery: CreateProfileRecovery) -> Result<UserRecovery, String> {
+            let user_id = create_user_recovery.user_id;
+            let final_date = create_user_recovery.final_date.clone();
 
             let opt_res_user1: Option<UserRecovery> = self.find_user_recovery_by_user_id(user_id)?;
             if opt_res_user1.is_some() {
@@ -266,7 +260,7 @@ pub mod tests {
         fn modify_user_recovery(
             &self,
             id: i32,
-            create_profile_recovery_dto: CreateProfileRecoveryDto,
+            modify_profile_recovery: CreateProfileRecovery,
         ) -> Result<Option<UserRecovery>, String> {
             let user_recovery_opt = self.user_recovery_vec.iter().find(|user_recovery| user_recovery.id == id);
             if user_recovery_opt.is_none() {
@@ -275,8 +269,8 @@ pub mod tests {
 
             let user_recovery_saved: UserRecovery = UserRecoveryOrmApp::new_user_recovery(
                 id,
-                create_profile_recovery_dto.user_id,
-                create_profile_recovery_dto.final_date.clone(),
+                modify_profile_recovery.user_id,
+                modify_profile_recovery.final_date.clone(),
             );
 
             Ok(Some(user_recovery_saved))
