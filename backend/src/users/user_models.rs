@@ -73,7 +73,6 @@ impl From<User> for UserDto {
 #[derive(Debug, Serialize, Deserialize, Clone, AsChangeset)]
 #[diesel(table_name = schema::users)]
 pub struct ModifyUserDto {
-    // TODO del;
     pub nickname: Option<String>,
     pub email: Option<String>,
     pub password: Option<String>,
@@ -120,87 +119,6 @@ impl Validator for NewPasswordUserDto {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
-#[diesel(table_name = schema::users)]
-pub struct CreateUser {
-    pub nickname: String,       // min_len=3 max_len=64
-    pub email: String,          // min_len=5 max_len=254
-    pub password: String,       // min_len=6 max_len=64
-    pub role: Option<UserRole>, // default "user"
-}
-
-impl CreateUser {
-    pub fn new(nickname: &str, email: &str, password: &str, role: Option<UserRole>) -> CreateUser {
-        CreateUser {
-            nickname: nickname.to_string(),
-            email: email.to_string(),
-            password: password.to_string(),
-            role: role.clone(),
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
-#[diesel(table_name = schema::users)]
-pub struct CreateUserDto {
-    pub nickname: String, // min_len=3 max_len=64
-    pub email: String,    // min_len=5 max_len=254
-    pub password: String, // min_len=6 max_len=64
-}
-
-impl Validator for CreateUserDto {
-    // Check the model against the required conditions.
-    fn validate(&self) -> Result<(), Vec<ValidationError>> {
-        let mut errors: Vec<Option<ValidationError>> = vec![];
-
-        errors.push(profile_models::validate_nickname(&self.nickname).err());
-        errors.push(profile_models::validate_email(&self.email).err());
-        errors.push(profile_models::validate_password(&self.password).err());
-
-        self.filter_errors(errors)
-    }
-}
-
-// * UniquenessUserDto *
-
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct UniquenessUserDto {
-    // TODO del;
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub nickname: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
-}
-
-// ** Section: "LoginUser" **
-
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, ToSchema)]
-#[diesel(table_name = schema::users)]
-pub struct LoginUserDto {
-    pub nickname: String,
-    pub password: String,
-}
-
-impl Validator for LoginUserDto {
-    // Check the model against the required conditions.
-    fn validate(&self) -> Result<(), Vec<ValidationError>> {
-        let mut errors: Vec<Option<ValidationError>> = vec![];
-
-        errors.push(profile_models::validate_nickname_or_email(&self.nickname).err());
-        errors.push(profile_models::validate_password(&self.password).err());
-
-        self.filter_errors(errors)
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct LoginUserResponseDto {
-    pub user_dto: UserDto,
-    pub user_tokens_dto: UserTokensDto,
-}
-
 // ** Section: "UserRegistr" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
@@ -214,58 +132,6 @@ pub struct UserRegistr {
     pub final_date: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Selectable, Insertable, AsChangeset)]
-#[diesel(table_name = schema::user_registration)]
-#[serde(rename_all = "camelCase")]
-pub struct UserRegistrDto {
-    pub id: i32,
-    pub nickname: String,
-    pub email: String,
-    pub password: String,
-    #[serde(with = "serial_datetime")]
-    pub final_date: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
-#[diesel(table_name = schema::user_registration)]
-pub struct CreateUserRegistrDto {
-    // TODO del;
-    pub nickname: String,
-    pub email: String,
-    pub password: String,
-    pub final_date: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-pub struct RegistrUserDto {
-    // TODO del;
-    pub nickname: String,
-    pub email: String,
-    pub password: String,
-}
-
-impl Validator for RegistrUserDto {
-    // Check the model against the required conditions.
-    fn validate(&self) -> Result<(), Vec<ValidationError>> {
-        let mut errors: Vec<Option<ValidationError>> = vec![];
-
-        errors.push(profile_models::validate_nickname(&self.nickname).err());
-        errors.push(profile_models::validate_email(&self.email).err());
-        errors.push(profile_models::validate_password(&self.password).err());
-
-        self.filter_errors(errors)
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct RegistrUserResponseDto {
-    // TODO del;
-    pub nickname: String,
-    pub email: String,
-    pub registr_token: String,
-}
-
 // ** Section: "UserRecovery" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
@@ -275,98 +141,6 @@ pub struct UserRecovery {
     pub id: i32,
     pub user_id: i32,
     pub final_date: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Selectable, Insertable, AsChangeset)]
-#[diesel(table_name = schema::user_recovery)]
-#[serde(rename_all = "camelCase")]
-pub struct UserRecoveryDto {
-    pub id: i32,
-    pub user_id: i32,
-    #[serde(with = "serial_datetime")]
-    pub final_date: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
-#[diesel(table_name = schema::user_recovery)]
-pub struct CreateUserRecoveryDto {
-    // TODO del;
-    pub user_id: i32,
-    pub final_date: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-pub struct RecoveryUserDto {
-    // TODO del;
-    pub email: String,
-}
-
-impl Validator for RecoveryUserDto {
-    // Check the model against the required conditions.
-    fn validate(&self) -> Result<(), Vec<ValidationError>> {
-        let mut errors: Vec<Option<ValidationError>> = vec![];
-
-        errors.push(profile_models::validate_email(&self.email).err());
-
-        self.filter_errors(errors)
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct RecoveryUserResponseDto {
-    // TODO del;
-    pub id: i32,
-    pub email: String,
-    pub recovery_token: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-pub struct RecoveryDataDto {
-    // TODO del;
-    pub password: String,
-}
-
-impl Validator for RecoveryDataDto {
-    // Check the model against the required conditions.
-    fn validate(&self) -> Result<(), Vec<ValidationError>> {
-        let mut errors: Vec<Option<ValidationError>> = vec![];
-
-        errors.push(profile_models::validate_password(&self.password).err());
-
-        self.filter_errors(errors)
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct RecoveryDataResponseDto {
-    // TODO del;
-    pub nickname: String,
-    pub email: String,
-    pub registr_token: String,
-}
-
-// ** Section: "UserToken" // TODO del **
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UserTokensDto {
-    pub access_token: String,
-    pub refresh_token: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-pub struct TokenUserDto {
-    // refreshToken
-    pub token: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct ClearForExpiredResponseDto {
-    pub count_inactive_registr: usize,
-    pub count_inactive_recover: usize,
 }
 
 #[cfg(all(test, feature = "mockdata"))]
