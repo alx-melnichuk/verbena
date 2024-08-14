@@ -163,6 +163,8 @@ pub async fn uniqueness_check(
 ///
 /// Return the found specified user (`ProfileDto`) with status 200 or 204 (no content) if the user is not found.
 /// 
+/// The "admin" role is required.
+/// 
 #[utoipa::path(
     responses(
         (status = 200, description = "A user with the specified ID was found.", body = ProfileDto,
