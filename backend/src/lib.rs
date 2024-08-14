@@ -19,7 +19,7 @@ use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
 use streams::{config_strm, stream_controller, stream_get_controller, stream_orm::cfg::get_stream_orm_app};
 use tools::evn_data::{check_params_env, update_params_env};
 use users::{
-    user_controller, user_orm::cfg::get_user_orm_app, user_recovery_orm::cfg::get_user_recovery_orm_app,
+    user_orm::cfg::get_user_orm_app, user_recovery_orm::cfg::get_user_recovery_orm_app,
     user_registr_orm::cfg::get_user_registr_orm_app,
 };
 use utils::parser;
@@ -68,7 +68,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let config_smtp = config_smtp::ConfigSmtp::init_by_env();
         // used: profile_registr_controller
         let mailer = Data::new(mailer::cfg::get_mailer_app(config_smtp));
-        // used: user_controller
+        // used:
         let user_orm = Data::new(get_user_orm_app(pool.clone()));
         // used: profile_registr_controller
         let user_registr_orm = Data::new(get_user_registr_orm_app(pool.clone()));
@@ -104,7 +104,6 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             // Add configuration of internal services.
             .configure(profile_registr_controller::configure())
             .configure(profile_auth_controller::configure())
-            .configure(user_controller::configure())
             .configure(stream_get_controller::configure())
             .configure(stream_controller::configure())
             .configure(profile_controller::configure())
