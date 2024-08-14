@@ -7,7 +7,7 @@ use crate::{
     errors, 
     profiles::{profile_auth_controller, profile_controller, profile_models, profile_registr_controller}, 
     streams::{stream_controller, stream_get_controller, stream_models}, 
-    users::{user_controller, user_models, user_registr_controller}
+    users::{user_controller, user_models}
 };
 
 #[derive(OpenApi)]
@@ -20,13 +20,13 @@ use crate::{
         profile_controller::delete_profile_current,
         profile_auth_controller::login,
         profile_auth_controller::logout,
-        profile_auth_controller::update_token,
+        profile_auth_controller::update_token,        
         user_controller::put_user_new_password,
         profile_registr_controller::registration,
         profile_registr_controller::confirm_registration,
         profile_registr_controller::recovery,
         profile_registr_controller::confirm_recovery,
-        user_registr_controller::clear_for_expired,
+        profile_registr_controller::clear_for_expired,
         stream_controller::post_stream,
         stream_controller::put_stream,
         stream_controller::delete_stream,
@@ -47,7 +47,7 @@ use crate::{
             profile_models::TokenDto, // ::update_token
             // user model
             user_models::UserRole,
-            // user_controller, user_registr_controller
+            // user_controller
             user_models::UserDto,
             // user_controller
             user_models::NewPasswordUserDto,
@@ -56,10 +56,7 @@ use crate::{
             // profile_models::ProfileDto, // ::confirm_registration
             profile_models::RecoveryProfileDto, profile_models::RecoveryProfileResponseDto, // ::recovery
             profile_models::RecoveryDataDto, // profile_models::ProfileDto // ::confirm_recovery
-            // user_registr_controller
-            // user_models::RecoveryUserDto, user_models::RecoveryUserResponseDto, // ::recovery
-            // user_models::RecoveryDataDto, // ::confirm_recovery
-            user_models::ClearForExpiredResponseDto, // ::clear_for_expired
+            profile_models::ClearForExpiredResponseDto, // ::clear_for_expired
             // stream_controller, stream_get_controller
             stream_models::StreamInfoDto,
             // stream_controller
@@ -79,7 +76,6 @@ use crate::{
         (name = "profile_auth_controller", description = "User authorization management endpoints."),
         (name = "profile_registr_controller", description = "User registration management endpoints."),
         (name = "user_controller", description = "User information management endpoints."),
-        (name = "user_registr_controller", description = "User registration management endpoints."),
         (name = "stream_controller", description = "Stream information management endpoints."),
         (name = "stream_get_controller", description = "Stream search information management endpoints."),
     ),

@@ -1,10 +1,4 @@
-use actix_web::{
-    //get,
-    post,
-    put,
-    web,
-    HttpResponse,
-};
+use actix_web::{get, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
 use utoipa;
 
@@ -14,7 +8,7 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
     profile_models::{
-        self, Profile, ProfileDto, RegistrProfileDto, RegistrProfileResponseDto, PROFILE_THEME_LIGHT_DEF, RecoveryProfileResponseDto, RecoveryProfileDto, RecoveryDataDto, PROFILE_THEME_DARK,
+        self, Profile, ProfileDto, RegistrProfileDto, RegistrProfileResponseDto, PROFILE_THEME_LIGHT_DEF, RecoveryProfileResponseDto, RecoveryProfileDto, RecoveryDataDto, PROFILE_THEME_DARK, ClearForExpiredResponseDto,
     },
     profile_orm::ProfileOrm,
 };
@@ -23,13 +17,8 @@ use crate::send_email::mailer::impls::MailerApp;
 #[cfg(feature = "mockdata")]
 use crate::send_email::mailer::tests::MailerApp;
 use crate::send_email::mailer::Mailer;
-#[cfg(not(feature = "mockdata"))]
-use crate::sessions::session_orm::impls::SessionOrmApp;
-#[cfg(feature = "mockdata")]
-use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::{
     config_jwt,
-    session_orm::SessionOrm,
     tokens::{decode_token, encode_token, generate_num_token},
 };
 use crate::settings::{config_app, err};
@@ -41,34 +30,16 @@ use crate::hash_tools;
 use crate::users::{
     user_err as u_err,
     user_models::UserRole,
-    // user_models::{
-    // self, //ClearForExpiredResponseDto, 
-    // RecoveryDataDto, 
-    // RecoveryUserDto, 
-    // RecoveryUserResponseDto,
-    // RegistrUserDto,
-    // RegistrUserResponseDto,
-    // UserDto,
-    // },
-    // user_orm::UserOrm,
     user_recovery_orm::UserRecoveryOrm,
     user_registr_orm::UserRegistrOrm,
 };
 #[cfg(not(feature = "mockdata"))]
-use crate::users::{
-    //user_orm::impls::UserOrmApp,
-    user_registr_orm::impls::UserRegistrOrmApp,
-};
+use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
 #[cfg(feature = "mockdata")]
-use crate::users::{
-    // user_orm::tests::UserOrmApp,
-    user_registr_orm::tests::UserRegistrOrmApp,
-};
+use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
 use crate::validators::{msg_validation, Validator};
-use crate::{
-    errors::AppError,
-    //extractors::authentication::RequireAuth
-};
+use crate::errors::AppError;
+use crate::extractors::authentication::RequireAuth;
 
 pub const MSG_EMAIL_ALREADY_USE: &str = "email_already_use";
 pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";
@@ -81,9 +52,15 @@ pub const MSG_RECOVERY_NOT_FOUND: &str = "recovery_not_found";
 // 404 Not Found - User not found.
 pub const MSG_USER_NOT_FOUND: &str = "user_not_found";
 
-const TOKEN_REGISTR: &str = "BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT_allv-RMwbJsI67Aufl3gCD7pkSNU4zJWr2eROQ-6xGjDwibujOTTf6xZXV29k3E8ODzFqbkk2Pty4WpuSI6YG-d6XDi4s4yczfWgfYM65kKjrD3FxGSa15zBXOR2yxrEXeziVyV2bbnDu1-Uex0_Pqg0zkHvu_k--L2D0xP4o_m5WeBV539-1YTNeExQ0A9_Pv8=";
+const TOKEN_REGISTR: &str = concat!(
+    "BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT_allv-RMwbJsI67Aufl3gCD7pkSNU4zJWr2eROQ-6xGjDwibujOTTf6xZXV29k3E8ODzFqbkk2Pty4W",
+    "puSI6YG-d6XDi4s4yczfWgfYM65kKjrD3FxGSa15zBXOR2yxrEXeziVyV2bbnDu1-Uex0_Pqg0zkHvu_k--L2D0xP4o_m5WeBV539-1YTNeExQ0A9_Pv8=",
+);
 
-const TOKEN_RECOVERY: &str = "BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT_allv-RMwbJsI67Aufl3gCD7pyis6TI9VxbRkc_jx3yORspBCqVJ8yuNNRcZox0sr9XLWlbIYKLR7yvH16LMFEmE1fuP7fu4hdc4XRk7j9XTd2pOxry-jHiPMJ-ijWKhZrXORmac2KFLMf6dUO2qWh7LcmpD73WWfqoAqMPUnAUDreY_xwkZ3wofSUXHsloucUbk=";
+const TOKEN_RECOVERY: &str = concat!(
+    "BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT_allv-RMwbJsI67Aufl3gCD7pyis6TI9VxbRkc_jx3yORspBCqVJ8yuNNRcZox0sr9XLWlbIYKLR7yv",
+    "H16LMFEmE1fuP7fu4hdc4XRk7j9XTd2pOxry-jHiPMJ-ijWKhZrXORmac2KFLMf6dUO2qWh7LcmpD73WWfqoAqMPUnAUDreY_xwkZ3wofSUXHsloucUbk=",
+);
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -95,7 +72,9 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             // POST /api/recovery
             .service(recovery)
             // PUT /api/recovery/{recovery_token}
-            .service(confirm_recovery);
+            .service(confirm_recovery)
+            // GET /api/clear_for_expired
+            .service(clear_for_expired);
     }
 }
 
@@ -155,8 +134,7 @@ pub async fn registration(
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::to_response(&AppError::validations(validation_errors)));
-        // 417
+        return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
     }
 
     let mut registr_profile_dto: RegistrProfileDto = json_body.into_inner();
@@ -303,9 +281,8 @@ pub async fn registration(
 #[utoipa::path(
     responses(
         (status = 201, description = "New user profile.", body = ProfileDto,
-            example = json!(
-                ProfileDto::from(
-                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_LIGHT_DEF)))
+            example = json!(ProfileDto::from(
+                Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_LIGHT_DEF)))
             )
         ),
         (status = 401, description = "The token is invalid or expired.", body = AppError,
@@ -600,7 +577,7 @@ pub async fn recovery(
         recovery_token: recovery_token.clone(),
     };
 
-    Ok(HttpResponse::Created().json(recovery_profile_response_dto))
+    Ok(HttpResponse::Created().json(recovery_profile_response_dto)) // 201
 }
 
 /// confirm_recovery
@@ -658,15 +635,13 @@ pub async fn confirm_recovery(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     user_recovery_orm: web::Data<UserRecoveryOrmApp>,
     profile_orm: web::Data<ProfileOrmApp>,
-    session_orm: web::Data<SessionOrmApp>,
     json_body: web::Json<RecoveryDataDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
         log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::to_response(&AppError::validations(validation_errors)));
-        // 417
+        return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
     }
 
     let recovery_data_dto: RecoveryDataDto = json_body.into_inner();
@@ -744,29 +719,7 @@ pub async fn confirm_recovery(
         log::error!("{}: {}", err::CD_NOT_FOUND, &message);
         AppError::not_found404(&message) // 404
     })?;
-    /*
-    let user_orm2 = user_orm.clone();
-    let modify_user_dto = user_models::ModifyUserDto {
-        nickname: None,
-        email: None,
-        password: Some(password_hashed),
-        role: None,
-    };
-    // Update the password hash for the entry in the "user" table.
-    let opt_user = web::block(move || {
-        let user = user_orm2.modify_user(profile.user_id, modify_user_dto).map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e) // 507
-        });
-        user
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
-    })??;
-    */
-    
+    // Create a model to update the "password" field in the user profile.
     let modify_profile = profile_models::ModifyProfile{
         nickname: None,
         email: None,
@@ -777,7 +730,7 @@ pub async fn confirm_recovery(
         theme: None,
     
     };
-    // Update the password hash for the entry in the "user" table.
+    // Update the password hash for the user profile.
     let opt_profile = web::block(move || {
         let opt_profile1 = profile_orm.modify_profile(profile.user_id, modify_profile)
         .map_err(|e| {
@@ -792,26 +745,18 @@ pub async fn confirm_recovery(
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
-    let user_recovery_orm2 = user_recovery_orm.clone();
-    let _ = web::block(move || {
-        // Delete entries in the “user_recovery" table.
-        let user_recovery_res = user_recovery_orm2.delete_user_recovery(user_recovery_id);
-
-        // Clear the user session in the "session" table.
-        let session_res = session_orm.modify_session(user_id, None);
-
-        (user_recovery_res, session_res)
-    })
-    .await;
-
-    /*let user = opt_user.ok_or_else(|| {
-        let message = format!("{}: user_id: {}", MSG_USER_NOT_FOUND, user_id);
-        log::error!("{}: {}", err::CD_NOT_FOUND, &message);
-        AppError::not_found404(&message) // 404
-    })?;
-    let user_dto = UserDto::from(user);*/
-
+    // If the user profile is updated successfully,
+    // then delete the password recovery entry (table "user_recovery").
     if let Some(profile) = opt_profile {
+        let user_recovery_orm2 = user_recovery_orm.clone();
+        let _ = web::block(move || {
+            // Delete entries in the “user_recovery" table.
+            let user_recovery_res = user_recovery_orm2.delete_user_recovery(user_recovery_id);
+
+            user_recovery_res
+        })
+        .await;    
+
         let profile_dto = ProfileDto::from(profile);
         Ok(HttpResponse::Ok().json(profile_dto)) // 200
     } else {
@@ -820,6 +765,81 @@ pub async fn confirm_recovery(
         Err(AppError::not_found404(&message)) // 404
     }
 }
+
+/// clear_for_expire
+///
+/// Clean up expired user registration and password recovery requests.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/clear_for_expired
+/// ```
+///
+/// Returns the number of expired records deleted (`ClearForExpiredResponseDto`) with status 200.
+///
+/// The "admin" role is required.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "The number of deleted user registration and expired password recovery records.",
+            body = ClearForExpiredResponseDto, 
+            example = json!(ClearForExpiredResponseDto { count_inactive_registr: 10, count_inactive_recover: 12 })
+        ),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
+#[rustfmt::skip]
+#[get("/api/clear_for_expired", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
+pub async fn clear_for_expired(
+    user_registr_orm: web::Data<UserRegistrOrmApp>,
+    user_recovery_orm: web::Data<UserRecoveryOrmApp>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    // Delete entries in the "user_registr" table, that are already expired.
+    let count_inactive_registr_res = 
+        web::block(move || user_registr_orm.delete_inactive_final_date(None)
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e) // 507
+        })
+        ).await
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            AppError::blocking506(&e.to_string()) // 506
+        })?;
+
+    let count_inactive_registr = count_inactive_registr_res.unwrap_or(0);
+
+    // Delete entries in the "user_recovery" table, that are already expired.
+    let count_inactive_recover_res = 
+        web::block(move || user_recovery_orm.delete_inactive_final_date(None)
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e) // 507
+        })
+        ).await
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            AppError::blocking506(&e.to_string()) // 506
+        })?;
+
+    let count_inactive_recover = count_inactive_recover_res.unwrap_or(0);
+
+    let clear_for_expired_response_dto = ClearForExpiredResponseDto {
+        count_inactive_registr,
+        count_inactive_recover,
+    };
+    
+    Ok(HttpResponse::Ok().json(clear_for_expired_response_dto)) // 200
+}
+
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
@@ -832,7 +852,7 @@ mod tests {
     use serde_json::json;
 
     use crate::errors::AppError;
-    // use crate::extractors::authentication::BEARER;
+    use crate::extractors::authentication::BEARER;
     use crate::profiles::profile_models::{self, Profile, ProfileTest};
     use crate::send_email::config_smtp;
     use crate::sessions::{
@@ -840,15 +860,7 @@ mod tests {
     };
     use crate::settings::{config_app, err};
     use crate::users::{
-        user_models::{
-            // RecoveryDataDto, RecoveryUserDto, RecoveryUserResponseDto, RegistrUserDto,
-            User,
-            // UserDto, UserModelsTest,
-            UserRecovery,
-            UserRegistr,
-            UserRole,
-        },
-        // user_orm::tests::UserOrmApp,
+        user_models::{UserRecovery, UserRegistr, UserRole},
         user_recovery_orm::tests::UserRecoveryOrmApp,
         user_registr_orm::tests::UserRegistrOrmApp,
     };
@@ -885,11 +897,14 @@ mod tests {
         let user_recovery_orm = UserRecoveryOrmApp::create(&vec![user_recovery]);
         user_recovery_orm.user_recovery_vec.get(0).unwrap().clone()
     }
+    fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
+        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (http::header::AUTHORIZATION, header_value)
+    }
     #[rustfmt::skip]
     fn get_cfg_data(is_registr: bool, opt_recovery_duration: Option<i64>) -> (
         (config_app::ConfigApp, config_jwt::ConfigJwt), 
-        // (Vec<User>, Vec<Profile>, Vec<Session>, Vec<UserRegistr>),
-        (Vec<User>, Vec<Profile>, Vec<Session>, Vec<UserRegistr>, Vec<UserRecovery>),
+        (Vec<Profile>, Vec<Session>, Vec<UserRegistr>, Vec<UserRecovery>),
         String
     ) {
         // Create profile values.
@@ -910,22 +925,18 @@ mod tests {
         let user_recovery_vec:Vec<UserRecovery> = if let Some(recovery_duration) = opt_recovery_duration {
             let final_date_utc = Utc::now() + Duration::seconds(recovery_duration);
             let user_recovery = UserRecoveryOrmApp::new_user_recovery(1, user_id, final_date_utc);
-            // let user_recovery_orm = UserRecoveryOrmApp::create(&vec![user_recovery]);
-            // let user_recovery1 = user_recovery_orm.user_recovery_vec.get(0).unwrap().clone();
-            // vec![user_recovery1]
             UserRecoveryOrmApp::create(&vec![user_recovery]).user_recovery_vec
         } else { vec![] };
 
         let config_app = config_app::get_test_config();
         let cfg_c = (config_app, config_jwt);
-        let data_c = (vec![/*user1*/], vec![profile1], vec![session1], user_registr_vec,  user_recovery_vec);
+        let data_c = (vec![profile1], vec![session1], user_registr_vec,  user_recovery_vec);
 
         (cfg_c, data_c, token)
     }
     fn configure_reg(
         cfg_c: (config_app::ConfigApp, config_jwt::ConfigJwt), // cortege of configurations
         data_c: (
-            Vec<User>,
             Vec<Profile>,
             Vec<Session>,
             Vec<UserRegistr>,
@@ -937,17 +948,15 @@ mod tests {
             let data_config_jwt = web::Data::new(cfg_c.1);
             let data_mailer = web::Data::new(MailerApp::new(config_smtp::get_test_config()));
 
-            // let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
-            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.1));
-            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.2));
-            let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.3));
-            let data_user_recovery_orm = web::Data::new(UserRecoveryOrmApp::create(&data_c.4));
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
+            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
+            let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.2));
+            let data_user_recovery_orm = web::Data::new(UserRecoveryOrmApp::create(&data_c.3));
 
             config
                 .app_data(web::Data::clone(&data_config_app))
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_mailer))
-                // .app_data(web::Data::clone(&data_user_orm))
                 .app_data(web::Data::clone(&data_profile_orm))
                 .app_data(web::Data::clone(&data_session_orm))
                 .app_data(web::Data::clone(&data_user_registr_orm))
@@ -1288,8 +1297,8 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_users() {
         let (cfg_c, data_c, _token) = get_cfg_data(false, None);
-        let nickname1 = data_c.1.get(0).unwrap().nickname.clone();
-        let email1 = data_c.1.get(0).unwrap().email.clone();
+        let nickname1 = data_c.0.get(0).unwrap().nickname.clone();
+        let email1 = data_c.0.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
@@ -1312,8 +1321,8 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_users() {
         let (cfg_c, data_c, _token) = get_cfg_data(false, None);
-        let nickname1 = data_c.1.get(0).unwrap().nickname.clone();
-        let email1 = data_c.1.get(0).unwrap().email.clone();
+        let nickname1 = data_c.0.get(0).unwrap().nickname.clone();
+        let email1 = data_c.0.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
@@ -1336,8 +1345,8 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_registr() {
         let (cfg_c, data_c, _token) = get_cfg_data(true, None);
-        let nickname1 = data_c.3.get(0).unwrap().nickname.clone();
-        let email1 = data_c.3.get(0).unwrap().email.clone();
+        let nickname1 = data_c.2.get(0).unwrap().nickname.clone();
+        let email1 = data_c.2.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
@@ -1360,8 +1369,8 @@ mod tests {
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_registr() {
         let (cfg_c, data_c, _token) = get_cfg_data(true, None);
-        let nickname1 = data_c.3.get(0).unwrap().nickname.clone();
-        let email1 = data_c.3.get(0).unwrap().email.clone();
+        let nickname1 = data_c.2.get(0).unwrap().nickname.clone();
+        let email1 = data_c.2.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
@@ -1462,10 +1471,10 @@ mod tests {
     #[actix_web::test]
     async fn test_confirm_registration_final_date_has_expired() {
         let (cfg_c, data_c, _token) = get_cfg_data(true, None);
-        let user_reg1 = data_c.3.get(0).unwrap().clone();
+        let user_reg1 = data_c.2.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
-        let num_token = data_c.2.get(0).unwrap().clone().num_token.unwrap();
+        let num_token = data_c.1.get(0).unwrap().clone().num_token.unwrap();
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
@@ -1487,18 +1496,16 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
-        assert_eq!(
-            app_err.message,
-            format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "ExpiredSignature")
-        );
+        #[rustfmt::skip]
+        assert_eq!(app_err.message, format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "ExpiredSignature"));
     }
     #[actix_web::test]
     async fn test_confirm_registration_no_exists_in_user_regist() {
         let (cfg_c, data_c, _token) = get_cfg_data(true, None);
-        let user_reg1 = data_c.3.get(0).unwrap().clone();
+        let user_reg1 = data_c.2.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
-        let num_token = data_c.2.get(0).unwrap().clone().num_token.unwrap();
+        let num_token = data_c.1.get(0).unwrap().clone().num_token.unwrap();
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
@@ -1527,12 +1534,12 @@ mod tests {
     #[actix_web::test]
     async fn test_confirm_registration_exists_in_user_regist() {
         let (cfg_c, data_c, _token) = get_cfg_data(true, None);
-        let last_user_id = data_c.1.last().unwrap().user_id;
-        let user_reg1 = data_c.3.get(0).unwrap().clone();
+        let last_user_id = data_c.0.last().unwrap().user_id;
+        let user_reg1 = data_c.2.get(0).unwrap().clone();
         let nickname = user_reg1.nickname.to_string();
         let email = user_reg1.email.to_string();
 
-        let num_token = data_c.2.get(0).unwrap().clone().num_token.unwrap();
+        let num_token = data_c.1.get(0).unwrap().clone().num_token.unwrap();
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
@@ -1681,7 +1688,7 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_if_user_with_email_not_exist() {
         let (cfg_c, data_c, _token) = get_cfg_data(false, None);
-        let email = format!("A{}", data_c.1.get(0).unwrap().email.clone());
+        let email = format!("A{}", data_c.0.get(0).unwrap().email.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(recovery).configure(configure_reg(cfg_c, data_c))).await;
@@ -1702,8 +1709,8 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_if_user_recovery_not_exist() {
         let (cfg_c, data_c, _token) = get_cfg_data(false, None);
-        let user1_id = data_c.1.get(0).unwrap().user_id;
-        let user1_email = data_c.1.get(0).unwrap().email.clone();
+        let user1_id = data_c.0.get(0).unwrap().user_id;
+        let user1_email = data_c.0.get(0).unwrap().email.clone();
         let final_date_utc = Utc::now() + Duration::seconds(600);
         let user_recovery1 = create_user_recovery_with_id(create_user_recovery(0, user1_id, final_date_utc));
         let user_recovery1_id = user_recovery1.id;
@@ -1735,8 +1742,8 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_if_user_recovery_already_exists() {
         let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
-        let user1_email = data_c.1.get(0).unwrap().email.clone();
-        let user_recovery1 = data_c.4.get(0).unwrap().clone();
+        let user1_email = data_c.0.get(0).unwrap().email.clone();
+        let user_recovery1 = data_c.3.get(0).unwrap().clone();
         let user_recovery1_id = user_recovery1.id;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -1766,7 +1773,7 @@ mod tests {
     #[actix_web::test]
     async fn test_recovery_err_jsonwebtoken_encode() {
         let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
-        let user1_email = data_c.1.get(0).unwrap().email.clone();
+        let user1_email = data_c.0.get(0).unwrap().email.clone();
         let mut config_jwt = cfg_c.1;
         config_jwt.jwt_secret = "".to_string();
         let cfg_c = (cfg_c.0, config_jwt);
@@ -1788,4 +1795,267 @@ mod tests {
         assert!(app_err.message.starts_with(u_err::MSG_JSON_WEB_TOKEN_ENCODE));
     }
 
+    // ** confirm_recovery **
+    #[actix_web::test]
+    async fn test_confirm_recovery_invalid_dto_password_empty() {
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
+            .set_json(RecoveryDataDto { password: "".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_PASSWORD_REQUIRED]);
+    }
+    #[actix_web::test]
+    async fn test_confirm_recovery_invalid_dto_password_min() {
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
+            .set_json(RecoveryDataDto { password: ProfileTest::password_min() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_PASSWORD_MIN_LENGTH]);
+    }
+    #[actix_web::test]
+    async fn test_confirm_recovery_invalid_dto_password_max() {
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
+            .set_json(RecoveryDataDto { password: ProfileTest::password_max() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_PASSWORD_MAX_LENGTH]);
+    }
+    #[actix_web::test]
+    async fn test_confirm_recovery_invalid_dto_password_wrong() {
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
+            .set_json(RecoveryDataDto { password: ProfileTest::password_wrong() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_PASSWORD_REGEX]);
+    }
+    #[actix_web::test]
+    async fn test_confirm_recovery_invalid_recovery_token() {
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "invalid_recovery_token"))
+            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        assert!(app_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
+    }
+    #[actix_web::test]
+    async fn test_confirm_recovery_final_date_has_expired() {
+        let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
+        let user_recovery1 = data_c.3.get(0).unwrap().clone();
+
+        let num_token = data_c.1.get(0).unwrap().clone().num_token.unwrap();
+        let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
+        let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
+        let recovery_token = encode_token(user_recovery1.id, num_token, jwt_secret, -recovery_duration).unwrap();
+
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
+            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::UNAUTHORIZED); // 401
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        assert_eq!(
+            app_err.message,
+            format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "ExpiredSignature")
+        );
+    }
+    #[actix_web::test]
+    async fn test_confirm_recovery_no_exists_in_user_recovery() {
+        let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
+        let user_recovery1 = data_c.3.get(0).unwrap().clone();
+        let user_recovery_id = user_recovery1.id + 1;
+        let num_token = data_c.1.get(0).unwrap().clone().num_token.unwrap();
+        let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
+        let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
+        let recovery_token = encode_token(user_recovery_id, num_token, jwt_secret, recovery_duration).unwrap();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
+            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_NOT_FOUND);
+        #[rustfmt::skip]
+        assert_eq!(app_err.message, format!("{}: user_recovery_id: {}", MSG_RECOVERY_NOT_FOUND, user_recovery_id));
+    }
+    #[actix_web::test]
+    async fn test_confirm_recovery_no_exists_in_user() {
+        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let user_id = data_c.0.get(0).unwrap().user_id + 1;
+
+        let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
+        let final_date_utc = Utc::now() + Duration::seconds(recovery_duration);
+        let user_recovery1 = create_user_recovery_with_id(create_user_recovery(0, user_id, final_date_utc));
+        let num_token = 1234;
+        let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
+        let recovery_token = encode_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
+
+        let data_c = (data_c.0, data_c.1, data_c.2, vec![user_recovery1]);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
+            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_NOT_FOUND);
+        assert_eq!(app_err.message, format!("{}: user_id: {}", MSG_USER_NOT_FOUND, user_id));
+    }
+    #[actix_web::test]
+    async fn test_confirm_recovery_success() {
+        let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
+        let profile1_dto = ProfileDto::from(data_c.0.get(0).unwrap().clone());
+        let user_recovery1 = data_c.3.get(0).unwrap().clone();
+        let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
+
+        let num_token = 1234;
+        let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
+        let recovery_token = encode_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
+            .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let json = serde_json::json!(profile1_dto).to_string();
+        let profile1_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(profile_dto_res.id, profile1_dto_ser.id);
+        assert_eq!(profile_dto_res.nickname, profile1_dto_ser.nickname);
+        assert_eq!(profile_dto_res.email, profile1_dto_ser.email);
+        assert_eq!(profile_dto_res.role, profile1_dto_ser.role);
+        assert_eq!(profile_dto_res.avatar, profile1_dto_ser.avatar);
+        assert_eq!(profile_dto_res.descript, profile1_dto_ser.descript);
+        assert_eq!(profile_dto_res.theme, profile1_dto_ser.theme);
+        assert_eq!(profile_dto_res.created_at, profile1_dto_ser.created_at);
+    }
+
+    // ** clear_for_expired **
+    #[actix_web::test]
+    async fn test_clear_for_expired_user_recovery() {
+        let (cfg_c, data_c, token) = get_cfg_data(true, Some(600));
+
+        let mut profile1 = data_c.0.get(0).unwrap().clone();
+        profile1.role = UserRole::Admin;
+
+        let registr_duration: i64 = cfg_c.0.app_registr_duration.try_into().unwrap();
+        let final_date_registr = Utc::now() - Duration::seconds(registr_duration);
+        let mut user_registr1 = data_c.2.get(0).unwrap().clone();
+        user_registr1.final_date = final_date_registr;
+
+        let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
+        let final_date_recovery = Utc::now() - Duration::seconds(recovery_duration);
+        let mut user_recovery1 = data_c.3.get(0).unwrap().clone();
+        user_recovery1.final_date = final_date_recovery;
+        #[rustfmt::skip]
+        let data_c = (vec![profile1], data_c.1, vec![user_registr1], vec![user_recovery1]);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(clear_for_expired).configure(configure_reg(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri(&"/api/clear_for_expired")
+            .insert_header(header_auth(&token))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let response_dto: ClearForExpiredResponseDto =
+            serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(response_dto.count_inactive_registr, 1);
+        assert_eq!(response_dto.count_inactive_recover, 1);
+    }
 }

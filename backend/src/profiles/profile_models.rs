@@ -270,24 +270,14 @@ pub struct ModifyProfile {
     pub theme: Option<String>,          // min_len=2 max_len=32 default "light"
 }
 
-/*#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+// ** ClearForExpiredResponseDto **
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct ModifyProfileDto {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub nickname: Option<String>, // min_len=3 max_len=64
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>, // min_len=5 max_len=254
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub password: Option<String>, // min_len=6 max_len=64
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub role: Option<UserRole>, // default "user"
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub avatar: Option<Option<String>>, // min_len=2 max_len=255 Nullable
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub descript: Option<String>, // type: Text default ""
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub theme: Option<String>, // min_len=2 max_len=32 default "light"
-}*/
+pub struct ClearForExpiredResponseDto {
+    pub count_inactive_registr: usize,
+    pub count_inactive_recover: usize,
+}
 
 // ** UniquenessProfileDto **
 
