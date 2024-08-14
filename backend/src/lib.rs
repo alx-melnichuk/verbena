@@ -20,7 +20,7 @@ use streams::{config_strm, stream_controller, stream_get_controller, stream_orm:
 use tools::evn_data::{check_params_env, update_params_env};
 use users::{
     user_controller, user_orm::cfg::get_user_orm_app, user_recovery_orm::cfg::get_user_recovery_orm_app,
-    user_registr_controller, user_registr_orm::cfg::get_user_registr_orm_app,
+    user_registr_orm::cfg::get_user_registr_orm_app,
 };
 use utils::parser;
 use utoipa::OpenApi;
@@ -55,9 +55,9 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let config_app0 = settings::config_app::ConfigApp::init_by_env();
         let temp_file_config0 = TempFileConfig::default().clone().directory(config_app0.app_dir_tmp.clone());
 
-        // used: user_registr_controller, static_controller
+        // used: profile_registr_controller, static_controller
         let config_app = Data::new(config_app0);
-        // used: profile_auth_controller, user_registr_controller
+        // used: profile_auth_controller, profile_registr_controller
         let config_jwt = Data::new(config_jwt::ConfigJwt::init_by_env());
         // Used "actix-multipart" to upload files. TempFileConfig.from_req()
         let temp_file_config = Data::new(temp_file_config0);
@@ -66,15 +66,15 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
 
         // Adding various entities.
         let config_smtp = config_smtp::ConfigSmtp::init_by_env();
-        // used: user_registr_controller, profile_registr_controller
+        // used: profile_registr_controller
         let mailer = Data::new(mailer::cfg::get_mailer_app(config_smtp));
         // used: user_controller
         let user_orm = Data::new(get_user_orm_app(pool.clone()));
-        // used: user_registr_controller, profile_registr_controller
+        // used: profile_registr_controller
         let user_registr_orm = Data::new(get_user_registr_orm_app(pool.clone()));
-        // used: user_registr_controller
+        // used: profile_registr_controller
         let user_recovery_orm = Data::new(get_user_recovery_orm_app(pool.clone()));
-        // used: profile_auth_controller, user_registr_controller
+        // used: profile_auth_controller, profile_registr_controller
         let session_orm = Data::new(get_session_orm_app(pool.clone()));
         // used: stream_get_controller, stream_controller
         let stream_orm = Data::new(get_stream_orm_app(pool.clone()));
@@ -102,7 +102,6 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             // Add documentation service "SwaggerUi".
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))
             // Add configuration of internal services.
-            .configure(user_registr_controller::configure())
             .configure(profile_registr_controller::configure())
             .configure(profile_auth_controller::configure())
             .configure(user_controller::configure())
