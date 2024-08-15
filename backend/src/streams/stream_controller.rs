@@ -774,7 +774,6 @@ mod tests {
     fn get_cfg_data() -> ((config_jwt::ConfigJwt, config_strm::ConfigStrm), (Vec<Profile>, Vec<Session>, Vec<StreamInfoDto>), String) {
         // Create profile values.
         let profile1: Profile = profile_with_id(create_profile());
-        // let user1: User = user_with_id(create_user());
         let num_token = 1234;
         let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token));
 
