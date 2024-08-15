@@ -56,6 +56,24 @@ fn remove_file_and_log(file_name: &str, msg: &str) {
         }
     }
 }
+fn new_stream_dto(title: &str, descript: &str, starttime: &str, tag_list: &str) -> CreateStreamInfoDto {
+    #[rustfmt::skip]
+    let descript = if descript.len() > 0 { Some(descript.to_string()) } else { None };
+    // let starttime1 = if starttime.len() > 0 { Some(DateTime::parse_from_rfc3339(starttime).unwrap().with_timezone(&Utc)) } else {None};
+
+    let start = if starttime.len() > 0 { Some(starttime) } else { None };
+    let starttime = start.map(|val| DateTime::parse_from_rfc3339(val).unwrap().with_timezone(&Utc));
+
+    let tags: Vec<String> = tag_list.split(',').map(|val| val.to_string()).collect();
+
+    CreateStreamInfoDto {
+        title: title.to_string(),
+        descript,
+        starttime,
+        source: None,
+        tags,
+    }
+}
 // Convert the file to another mime type.
 #[rustfmt::skip]
 fn convert_logo_file(path_logo_file: &str, config_strm: config_strm::ConfigStrm, name: &str) -> Result<Option<String>, String> {
@@ -176,7 +194,8 @@ impl CreateStreamForm {
 /// 
 #[utoipa::path(
     responses(
-        (status = 201, description = "Create a new stream.", body = StreamInfoDto),
+        (status = 201, description = "Create a new stream.", body = StreamInfoDto,
+            example = json!(new_stream_dto("Stream title", "Description of the stream.", "2020-01-20T20:10:57.000Z", "tag1,tag2")) ),
         (status = 406, description = "Error deserializing field \"tags\". `curl -X POST http://localhost:8080/api/streams
             -F 'title=title' -F 'tags=[\"tag\"'`",
             body = AppError, example = json!(AppError::not_acceptable406(
@@ -191,14 +210,8 @@ impl CreateStreamForm {
                 &serde_json::json!({ "actualFileType": "image/svg+xml", "validFileType": "image/jpeg,image/png" })))),
         (status = 417, description = "Validation error. `curl -X POST http://localhost:8080/api/streams
             -F 'title=t' -F 'descript=d' -F 'starttime=2020-01-20T20:10:57.000Z' -F 'tags=[]'`", body = [AppError],
-            example = json!(AppError::validations(
-                (CreateStreamInfoDto {
-                    title: "u".to_string(),
-                    descript: Some("d".to_string()),
-                    starttime: Some(DateTime::parse_from_rfc3339("2020-01-20T20:10:57.000Z").unwrap().with_timezone(&Utc)),
-                    source: None,
-                    tags: vec!()
-                }).validate().err().unwrap()) )),
+            example = json!(AppError::validations((new_stream_dto("u", "d", "2020-01-20T20:10:57.000Z", "")).validate().err().unwrap()))
+        ),
         (status = 500, description = "Error loading file.", body = AppError, example = json!(
             AppError::internal_err500(&format!("{}; {} - {}", MSG_ERROR_UPLOAD_FILE, "/tmp/demo.jpg", "File not found.")))),
         (status = 506, description = "Blocking error.", body = AppError, 
@@ -705,7 +718,7 @@ pub async fn delete_stream(
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use std::{fs, io::Write, path};
+    use std::{fs, io::Write};
 
     use actix_multipart_test::MultiPartFormDataBuilder;
     use actix_web::{
@@ -719,8 +732,8 @@ mod tests {
     };
     use chrono::{DateTime, Duration, SecondsFormat, Utc};
 
-    use crate::cdis::coding;
     use crate::extractors::authentication::BEARER;
+    use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp};
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
     };
@@ -729,10 +742,7 @@ mod tests {
         stream_models::{Stream, StreamInfoDto, StreamModelsTest},
         stream_orm::tests::STREAM_ID,
     };
-    use crate::users::{
-        user_models::{User, UserRole},
-        user_orm::tests::UserOrmApp,
-    };
+    use crate::users::user_models::UserRole;
 
     use super::*;
 
@@ -741,66 +751,67 @@ mod tests {
     const MSG_MULTIPART_STREAM_INCOMPLETE: &str = "Multipart stream is incomplete";
     const MSG_CONTENT_TYPE_ERROR: &str = "Could not find Content-Type header";
 
-    fn create_user() -> User {
-        let mut user = UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1");
-        user.role = UserRole::User;
-        user
+    fn create_profile() -> Profile {
+        let nickname = "Oliver_Taylor".to_string();
+        let role = UserRole::User;
+        let profile = ProfileOrmApp::new_profile(1, &nickname, &format!("{}@gmail.com", &nickname), role);
+        profile
     }
-    fn user_with_id(user: User) -> User {
-        let user_orm = UserOrmApp::create(&vec![user]);
-        user_orm.user_vec.get(0).unwrap().clone()
+    fn profile_with_id(profile: Profile) -> Profile {
+        let profile_orm = ProfileOrmApp::create(&vec![profile]);
+        profile_orm.profile_vec.get(0).unwrap().clone()
     }
     fn create_stream(idx: i32, user_id: i32, title: &str, tags: &str, starttime: DateTime<Utc>) -> StreamInfoDto {
         let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
         let stream = Stream::new(STREAM_ID + idx, user_id, title, starttime);
         StreamInfoDto::convert(stream, user_id, &tags1)
     }
-
     fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
     }
-
-    fn configure_stream(
-        cfg_c: (config_jwt::ConfigJwt, config_strm::ConfigStrm),
-        data_c: (Vec<User>, Vec<Session>, Vec<StreamInfoDto>),
-    ) -> impl FnOnce(&mut web::ServiceConfig) {
-        move |config: &mut web::ServiceConfig| {
-            let data_config_jwt = web::Data::new(cfg_c.0);
-            let data_config_strm = web::Data::new(cfg_c.1);
-            let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
-            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
-            let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.2));
-
-            config
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_config_strm))
-                .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_session_orm))
-                .app_data(web::Data::clone(&data_stream_orm));
-        }
-    }
     #[rustfmt::skip]
-    fn get_cfg_data() -> ((config_jwt::ConfigJwt, config_strm::ConfigStrm), (Vec<User>, Vec<Session>, Vec<StreamInfoDto>), String) {
-        let user1: User = user_with_id(create_user());
+    fn get_cfg_data() -> ((config_jwt::ConfigJwt, config_strm::ConfigStrm), (Vec<Profile>, Vec<Session>, Vec<StreamInfoDto>), String) {
+        // Create profile values.
+        let profile1: Profile = profile_with_id(create_profile());
+        // let user1: User = user_with_id(create_user());
         let num_token = 1234;
-        let session1 = SessionOrmApp::new_session(user1.id, Some(num_token));
+        let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token));
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         // The "stream" value will be required for the "put_stream" method.
-        let stream = create_stream(0, user1.id, "title0", "tag01,tag02", Utc::now());
+        let stream = create_stream(0, profile1.user_id, "title0", "tag01,tag02", Utc::now());
 
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
 
         let config_strm = config_strm::get_test_config();
         let cfg_c = (config_jwt, config_strm);
-        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
+        let data_c = (vec![profile1], vec![session1], vec![stream_dto]);
         (cfg_c, data_c, token)
+    }
+    fn configure_stream(
+        cfg_c: (config_jwt::ConfigJwt, config_strm::ConfigStrm),
+        data_c: (Vec<Profile>, Vec<Session>, Vec<StreamInfoDto>),
+    ) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_config_jwt = web::Data::new(cfg_c.0);
+            let data_config_strm = web::Data::new(cfg_c.1);
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
+            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
+            let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.2));
+
+            config
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_config_strm))
+                .app_data(web::Data::clone(&data_profile_orm))
+                .app_data(web::Data::clone(&data_session_orm))
+                .app_data(web::Data::clone(&data_stream_orm));
+        }
     }
     fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
@@ -853,7 +864,7 @@ mod tests {
             0xBB, 0xCB, 0x7B, 0x5B, 0xAC, 0x17, 0x37, 0xF7,  0xDE, 0xCA, 0xD9, 0xFD, 0xB7, 0x58, 0x92, 0x44,
             0x85, 0x10, 0x12, 0xCB, 0xBA, 0x5D, 0x22, 0x84,  0x54, 0x6B, 0x03, 0xA0, 0x2A, 0xBF, 0x0F, 0x68,
             0x15, 0x03, 0x14, 0x6F, 0x7E, 0x3F, 0xD1, 0x53,  0x5E, 0xC3, 0xC0, 0x78, 0x5C, 0x43, 0xDE, 0xC8,
-            0x09, 0xFC, 0x22, 0xB8, 0x69, 0x88, 0xAE, 0x67,  0xA8 
+            0x09, 0xFC, 0x22, 0xB8, 0x69, 0x88, 0xAE, 0x67,  0xA8
         ];
 
         // if path::Path::new(&path_file).exists() {
@@ -1317,7 +1328,7 @@ mod tests {
             .with_text("tags", &tags_s)
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1 = data_c.0.get(0).unwrap().clone();
+        let profile1 = data_c.0.get(0).unwrap().clone();
         let stream1 = data_c.2.get(0).unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -1335,7 +1346,7 @@ mod tests {
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(stream_dto_res.id, stream1.id + 1);
-        assert_eq!(stream_dto_res.user_id, user1.id);
+        assert_eq!(stream_dto_res.user_id, profile1.user_id);
         assert_eq!(stream_dto_res.title, title_s);
         assert_eq!(stream_dto_res.descript, descript_s);
         assert!(stream_dto_res.logo.is_none());
@@ -1361,7 +1372,7 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1 = data_c.0.get(0).unwrap().clone();
+        let profile1 = data_c.0.get(0).unwrap().clone();
         let stream1 = data_c.2.get(0).unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -1380,7 +1391,7 @@ mod tests {
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         assert_eq!(stream_dto_res.id, stream1.id + 1);
-        assert_eq!(stream_dto_res.user_id, user1.id);
+        assert_eq!(stream_dto_res.user_id, profile1.user_id);
         assert_eq!(stream_dto_res.title, title_s);
         assert_eq!(stream_dto_res.tags, tags);
 
@@ -1402,7 +1413,7 @@ mod tests {
         let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string();
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string();
-        assert_eq!(file_stem_part1, user1.id.to_string());
+        assert_eq!(file_stem_part1, profile1.user_id.to_string());
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
         let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
@@ -1425,7 +1436,7 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1 = data_c.0.get(0).unwrap().clone();
+        let profile1 = data_c.0.get(0).unwrap().clone();
         let stream1 = data_c.2.get(0).unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -1443,7 +1454,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(stream_dto_res.id, stream1.id + 1);
-        assert_eq!(stream_dto_res.user_id, user1.id);
+        assert_eq!(stream_dto_res.user_id, profile1.user_id);
         assert_eq!(stream_dto_res.title, title_s);
         assert_eq!(stream_dto_res.descript, "");
         assert_eq!(stream_dto_res.logo, None);
@@ -1466,7 +1477,7 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1 = data_c.0.get(0).unwrap().clone();
+        let profile1 = data_c.0.get(0).unwrap().clone();
 
         let mut config_strm = config_strm::get_test_config();
         let file_ext = "jpeg".to_string();
@@ -1510,7 +1521,7 @@ mod tests {
         let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string();
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string();
-        assert_eq!(file_stem_part1, user1.id.to_string());
+        assert_eq!(file_stem_part1, profile1.user_id.to_string());
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
         let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
@@ -1989,16 +2000,17 @@ mod tests {
             .build();
 
         let (cfg_c, data_c, token) = get_cfg_data();
-        let mut user_vec = data_c.0;
+        let mut profile_vec = data_c.0;
         #[rustfmt::skip]
-        user_vec.push(UserOrmApp::new_user(2, "Liam_Smith", "Liam_Smith@gmail.com", "passwdL2S2"));
-        let user_orm = UserOrmApp::create(&user_vec);
-        let user2 = user_orm.user_vec.get(1).unwrap().clone();
-        let stream2 = create_stream(1, user2.id, "title2", "tag01,tag02", Utc::now());
+        profile_vec.push(ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User));
+        let profile2 = ProfileOrmApp::create(&profile_vec).profile_vec.get(1).unwrap().clone();
+
+        let stream2 = create_stream(1, profile2.user_id, "title2", "tag01,tag02", Utc::now());
         let mut stream_vec = data_c.2;
         let stream2_id = stream2.id;
         stream_vec.push(stream2);
-        let data_c = (user_vec, data_c.1, stream_vec);
+
+        let data_c = (profile_vec, data_c.1, stream_vec);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
@@ -2019,17 +2031,17 @@ mod tests {
             .build();
 
         let (cfg_c, data_c, token) = get_cfg_data();
-        let mut user_vec = data_c.0;
-        let user1 = user_vec.get_mut(0).unwrap();
-        user1.role = UserRole::Admin;
+        let mut profile_vec = data_c.0;
+        let profile1 = profile_vec.get_mut(0).unwrap();
+        profile1.role = UserRole::Admin;
         #[rustfmt::skip]
-        user_vec.push(UserOrmApp::new_user(2, "Liam_Smith", "Liam_Smith@gmail.com", "passwdL2S2"));
-        let user_orm = UserOrmApp::create(&user_vec);
-        let user2 = user_orm.user_vec.get(1).unwrap().clone();
-        let stream2 = create_stream(1, user2.id, "title2", "tag01,tag02", Utc::now());
+        profile_vec.push(ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User));
+        let profile2 = ProfileOrmApp::create(&profile_vec).profile_vec.get(1).unwrap().clone();
+
+        let stream2 = create_stream(1, profile2.user_id, "title2", "tag01,tag02", Utc::now());
         let mut stream_vec = data_c.2;
         stream_vec.push(stream2.clone());
-        let data_c = (user_vec, data_c.1, stream_vec);
+        let data_c = (profile_vec, data_c.1, stream_vec);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
@@ -2117,8 +2129,8 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1_id = data_c.0.get(0).unwrap().id;
-        let stream = create_stream(0, user1_id, "title1", "tag11,tag12", Utc::now());
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let stream = create_stream(0, profile1_id, "title1", "tag11,tag12", Utc::now());
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
 
         let data_c = (data_c.0, data_c.1, stream_orm.stream_info_vec.clone());
@@ -2157,7 +2169,7 @@ mod tests {
         let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
-        assert_eq!(file_stem_part1, user1_id.to_string());
+        assert_eq!(file_stem_part1, profile1_id.to_string());
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
         let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
@@ -2184,8 +2196,8 @@ mod tests {
         let strm_logo_files_dir = config_strm.strm_logo_files_dir.clone();
         let cfg_c = (cfg_c.0, config_strm);
 
-        let user1_id = data_c.0.get(0).unwrap().id;
-        let stream = create_stream(0, user1_id, "title1", "tag11,tag12", Utc::now());
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let stream = create_stream(0, profile1_id, "title1", "tag11,tag12", Utc::now());
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let data_c = (data_c.0, data_c.1, stream_orm.stream_info_vec.clone());
 
@@ -2224,7 +2236,7 @@ mod tests {
         let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
-        assert_eq!(file_stem_part1, user1_id.to_string());
+        assert_eq!(file_stem_part1, profile1_id.to_string());
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
         let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
@@ -2251,8 +2263,8 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
 
-        let user1_id = data_c.0.get(0).unwrap().id;
-        let mut stream = create_stream(0, user1_id, "title1", "tag11,tag12", Utc::now());
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let mut stream = create_stream(0, profile1_id, "title1", "tag11,tag12", Utc::now());
         stream.logo = Some(path_name0_logo);
         let stream_id = stream.id;
         let stream_orm = StreamOrmApp::create(&[stream]);
@@ -2293,7 +2305,7 @@ mod tests {
         let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
-        assert_eq!(file_stem_part1, user1_id.to_string());
+        assert_eq!(file_stem_part1, profile1_id.to_string());
 
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
@@ -2317,8 +2329,8 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
 
-        let user1_id = data_c.0.get(0).unwrap().id;
-        let mut stream = create_stream(0, user1_id, "title1", "tag11,tag12", Utc::now());
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let mut stream = create_stream(0, profile1_id, "title1", "tag11,tag12", Utc::now());
         stream.logo = Some(path_name0_logo.clone());
         let stream_id = stream.id;
         let stream_orm = StreamOrmApp::create(&[stream]);
@@ -2367,8 +2379,8 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
 
-        let user1_id = data_c.0.get(0).unwrap().id;
-        let mut stream = create_stream(0, user1_id, "title1", "tag11,tag12", Utc::now());
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let mut stream = create_stream(0, profile1_id, "title1", "tag11,tag12", Utc::now());
         stream.logo = Some(path_name0_logo);
         let stream_id = stream.id;
         let stream_orm = StreamOrmApp::create(&[stream]);
@@ -2405,8 +2417,8 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
 
-        let user1_id = data_c.0.get(0).unwrap().id;
-        let stream = create_stream(0, user1_id, "title1", "tag11,tag12", Utc::now());
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let stream = create_stream(0, profile1_id, "title1", "tag11,tag12", Utc::now());
         let stream_id = stream.id;
         let stream_orm = StreamOrmApp::create(&[stream]);
         let data_c = (data_c.0, data_c.1, stream_orm.stream_info_vec.clone());
