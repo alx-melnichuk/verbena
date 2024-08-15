@@ -500,86 +500,82 @@ mod tests {
     use chrono::{DateTime, Datelike, Duration, Local, TimeZone, Utc};
 
     use crate::extractors::authentication::BEARER;
+
+    use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp};
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
     };
     use crate::streams::{
         config_strm,
-        stream_models::{Stream, StreamEventDto, StreamEventPageDto},
-        stream_orm::tests::STREAM_ID,
+        stream_models::{Stream, StreamEventDto, StreamEventPageDto, StreamInfoDto},
+        stream_orm::tests::{StreamOrmApp, STREAM_ID},
     };
-    use crate::users::{
-        user_models::{User, UserRole},
-        user_orm::tests::UserOrmApp,
-    };
+    use crate::users::user_models::UserRole;
 
     use super::*;
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
     const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
 
-    fn create_user() -> User {
-        let mut user = UserOrmApp::new_user(1, "Oliver_Taylor", "Oliver_Taylor@gmail.com", "passwdT1R1");
-        user.role = UserRole::User;
-        user
+    fn create_profile() -> Profile {
+        let nickname = "Oliver_Taylor".to_string();
+        let role = UserRole::User;
+        let profile = ProfileOrmApp::new_profile(1, &nickname, &format!("{}@gmail.com", &nickname), role);
+        profile
     }
-    fn user_with_id(user: User) -> User {
-        let user_orm = UserOrmApp::create(&vec![user]);
-        user_orm.user_vec.get(0).unwrap().clone()
-    }
-    fn create_session(user_id: i32, num_token: Option<i32>) -> Session {
-        SessionOrmApp::new_session(user_id, num_token)
+    fn profile_with_id(profile: Profile) -> Profile {
+        let profile_orm = ProfileOrmApp::create(&vec![profile]);
+        profile_orm.profile_vec.get(0).unwrap().clone()
     }
     fn create_stream(idx: i32, user_id: i32, title: &str, tags: &str, starttime: DateTime<Utc>) -> StreamInfoDto {
         let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
         let stream = Stream::new(STREAM_ID + idx, user_id, title, starttime);
         StreamInfoDto::convert(stream, user_id, &tags1)
     }
-
     fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
     }
-
-    fn configure_stream(
-        cfg_c: (config_jwt::ConfigJwt, config_strm::ConfigStrm),
-        data_c: (Vec<User>, Vec<Session>, Vec<StreamInfoDto>),
-    ) -> impl FnOnce(&mut web::ServiceConfig) {
-        move |config: &mut web::ServiceConfig| {
-            let data_config_jwt = web::Data::new(cfg_c.0);
-            let data_config_strm = web::Data::new(cfg_c.1);
-            let data_user_orm = web::Data::new(UserOrmApp::create(&data_c.0));
-            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
-            let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.2));
-
-            config
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_config_strm))
-                .app_data(web::Data::clone(&data_user_orm))
-                .app_data(web::Data::clone(&data_session_orm))
-                .app_data(web::Data::clone(&data_stream_orm));
-        }
-    }
     #[rustfmt::skip]
-    fn get_cfg_data() -> ((config_jwt::ConfigJwt, config_strm::ConfigStrm), (Vec<User>, Vec<Session>, Vec<StreamInfoDto>), String) {
-        let user1: User = user_with_id(create_user());
+    fn get_cfg_data() -> ((config_jwt::ConfigJwt, config_strm::ConfigStrm), (Vec<Profile>, Vec<Session>, Vec<StreamInfoDto>), String) {
+        // Create profile values.
+        let profile1: Profile = profile_with_id(create_profile());
         let num_token = 1234;
-        let session1 = create_session(user1.id, Some(num_token));
+        let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token));
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
-        let token = encode_token(user1.id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         // The "stream" value will be required for the "put_stream" method.
-        let stream = create_stream(0, user1.id, "title0", "tag01,tag02", Utc::now());
+        let stream = create_stream(0, profile1.user_id, "title0", "tag01,tag02", Utc::now());
 
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
         let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
 
         let config_strm = config_strm::get_test_config();
         let cfg_c = (config_jwt, config_strm);
-        let data_c = (vec![user1], vec![session1], vec![stream_dto]);
+        let data_c = (vec![profile1], vec![session1], vec![stream_dto]);
         (cfg_c, data_c, token)
+    }
+    fn configure_stream(
+        cfg_c: (config_jwt::ConfigJwt, config_strm::ConfigStrm),
+        data_c: (Vec<Profile>, Vec<Session>, Vec<StreamInfoDto>),
+    ) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_config_jwt = web::Data::new(cfg_c.0);
+            let data_config_strm = web::Data::new(cfg_c.1);
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
+            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
+            let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.2));
+
+            config
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_config_strm))
+                .app_data(web::Data::clone(&data_profile_orm))
+                .app_data(web::Data::clone(&data_session_orm))
+                .app_data(web::Data::clone(&data_stream_orm));
+        }
     }
 
     // ** get_stream_by_id **
@@ -645,21 +641,22 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_by_id_another_user() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user_orm = UserOrmApp::create(&vec![
-            data_c.0.get(0).unwrap().clone(),
-            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
-        ]);
-        let user_vec = user_orm.user_vec.clone();
-        let user2_id = user_orm.user_vec.get(1).unwrap().id;
 
-        let stream_orm = StreamOrmApp::create(&[
+        let profile_vec = ProfileOrmApp::create(&vec![
+            data_c.0.get(0).unwrap().clone(),
+            ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
+        ])
+        .profile_vec;
+        let profile2_id = profile_vec.get(1).unwrap().user_id;
+
+        let stream_vec = StreamOrmApp::create(&[
             data_c.2.get(0).unwrap().clone(),
-            create_stream(2, user2_id, "title_2", "tag0,tag2", Utc::now()),
-        ]);
-        let stream_vec = stream_orm.stream_info_vec.clone();
+            create_stream(2, profile2_id, "title_2", "tag0,tag2", Utc::now()),
+        ])
+        .stream_info_vec;
         let stream2 = stream_vec.get(1).unwrap().clone();
 
-        let data_c = (user_vec, data_c.1, stream_vec);
+        let data_c = (profile_vec, data_c.1, stream_vec);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id).configure(configure_stream(cfg_c, data_c))).await;
@@ -672,23 +669,24 @@ mod tests {
     #[actix_web::test]
     async fn test_get_stream_by_id_another_user_by_admin() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let mut user1 = data_c.0.get(0).unwrap().clone();
-        user1.role = UserRole::Admin;
-        let user_orm = UserOrmApp::create(&vec![
-            user1,
-            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
-        ]);
-        let user_vec = user_orm.user_vec.clone();
-        let user2_id = user_orm.user_vec.get(1).unwrap().id;
 
-        let stream_orm = StreamOrmApp::create(&[
+        let mut profile1 = data_c.0.get(0).unwrap().clone();
+        profile1.role = UserRole::Admin;
+        let profile_vec = ProfileOrmApp::create(&vec![
+            profile1,
+            ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
+        ])
+        .profile_vec;
+        let profile2_id = profile_vec.get(1).unwrap().user_id;
+
+        let stream_vec = StreamOrmApp::create(&[
             data_c.2.get(0).unwrap().clone(),
-            create_stream(2, user2_id, "title_2", "tag0,tag2", Utc::now()),
-        ]);
-        let stream_vec = stream_orm.stream_info_vec.clone();
+            create_stream(2, profile2_id, "title_2", "tag0,tag2", Utc::now()),
+        ])
+        .stream_info_vec;
         let stream2 = stream_vec.get(1).unwrap().clone();
 
-        let data_c = (user_vec, data_c.1, stream_vec);
+        let data_c = (profile_vec, data_c.1, stream_vec);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id).configure(configure_stream(cfg_c, data_c))).await;
@@ -715,12 +713,13 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1 = data_c.0.get(0).unwrap().clone();
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
         let stream_orm = StreamOrmApp::create(&[
-            create_stream(0, user1.id, "demo11", "tag11,tag12", Utc::now()),
-            create_stream(1, user1.id, "demo12", "tag14,tag15", Utc::now()),
-            create_stream(2, user1.id + 1, "demo21", "tag21,tag22", Utc::now()),
-            create_stream(3, user1.id + 1, "demo22", "tag24,tag25", Utc::now()),
+            create_stream(0, profile1_id, "demo11", "tag11,tag12", Utc::now()),
+            create_stream(1, profile1_id, "demo12", "tag14,tag15", Utc::now()),
+            create_stream(2, profile1_id + 1, "demo21", "tag21,tag22", Utc::now()),
+            create_stream(3, profile1_id + 1, "demo22", "tag24,tag25", Utc::now()),
+            create_stream(4, profile1_id + 1, "demo32", "tag36,tag37", Utc::now()),
         ]);
         let stream_vec = stream_orm.stream_info_vec.clone();
         let stream1b_vec = &stream_vec[0..2];
@@ -733,7 +732,7 @@ mod tests {
             App::new().service(get_streams).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams?userId={}&page={}&limit={}", user1.id, page, limit))
+            .uri(&format!("/api/streams?userId={}&page={}&limit={}", profile1_id, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
@@ -754,12 +753,13 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_page_limit_without_user_id() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1 = data_c.0.get(0).unwrap().clone();
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
         let stream_orm = StreamOrmApp::create(&[
-            create_stream(0, user1.id, "demo11", "tag11,tag12", Utc::now()),
-            create_stream(1, user1.id, "demo12", "tag14,tag15", Utc::now()),
-            create_stream(2, user1.id + 1, "demo21", "tag21,tag22", Utc::now()),
-            create_stream(3, user1.id + 1, "demo22", "tag24,tag25", Utc::now()),
+            create_stream(0, profile1_id, "demo11", "tag11,tag12", Utc::now()),
+            create_stream(1, profile1_id, "demo12", "tag14,tag15", Utc::now()),
+            create_stream(2, profile1_id + 1, "demo21", "tag21,tag22", Utc::now()),
+            create_stream(3, profile1_id + 1, "demo22", "tag24,tag25", Utc::now()),
+            create_stream(4, profile1_id + 1, "demo32", "tag36,tag37", Utc::now()),
         ]);
         let stream_vec = stream_orm.stream_info_vec.clone();
         let stream1b_vec = &stream_vec[0..2];
@@ -795,14 +795,14 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id_page2() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1 = data_c.0.get(0).unwrap().clone();
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
         let stream_orm = StreamOrmApp::create(&[
-            create_stream(0, user1.id, "demo11", "tag11,tag12", Utc::now()),
-            create_stream(1, user1.id, "demo12", "tag14,tag15", Utc::now()),
-            create_stream(2, user1.id + 1, "demo21", "tag21,tag22", Utc::now()),
-            create_stream(3, user1.id + 1, "demo22", "tag24,tag25", Utc::now()),
-            create_stream(4, user1.id, "demo31", "tag31,tag32", Utc::now()),
-            create_stream(5, user1.id, "demo32", "tag34,tag35", Utc::now()),
+            create_stream(0, profile1_id, "demo11", "tag11,tag12", Utc::now()),
+            create_stream(1, profile1_id, "demo12", "tag14,tag15", Utc::now()),
+            create_stream(2, profile1_id + 1, "demo21", "tag21,tag22", Utc::now()),
+            create_stream(3, profile1_id + 1, "demo22", "tag24,tag25", Utc::now()),
+            create_stream(4, profile1_id, "demo31", "tag31,tag32", Utc::now()),
+            create_stream(5, profile1_id, "demo32", "tag34,tag35", Utc::now()),
         ]);
         let stream_vec = stream_orm.stream_info_vec.clone();
         let stream1b_vec = &stream_vec[4..6];
@@ -814,7 +814,7 @@ mod tests {
             App::new().service(get_streams).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams?userId={}&page={}&limit={}", user1.id, page, limit))
+            .uri(&format!("/api/streams?userId={}&page={}&limit={}", profile1_id, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
@@ -838,27 +838,28 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_another_user_id_with_role_user() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1 = data_c.0.get(0).unwrap().clone();
-        let user1_id = user1.id;
-        let user_orm = UserOrmApp::create(&vec![
-            user1,
-            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
-        ]);
-        let user_vec = user_orm.user_vec.clone();
-        let user2_id = user_orm.user_vec.get(1).unwrap().id;
+
+        let profile1 = data_c.0.get(0).unwrap().clone();
+        let profile1_id = profile1.user_id;
+        let profile_vec = ProfileOrmApp::create(&vec![
+            profile1,
+            ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
+        ])
+        .profile_vec;
+        let profile2_id = profile_vec.get(1).unwrap().user_id;
 
         let stream_orm = StreamOrmApp::create(&[
-            create_stream(0, user2_id, "demo11", "tag11,tag12", Utc::now()),
-            create_stream(1, user2_id, "demo12", "tag14,tag15", Utc::now()),
+            create_stream(0, profile2_id, "demo11", "tag11,tag12", Utc::now()),
+            create_stream(1, profile2_id, "demo12", "tag14,tag15", Utc::now()),
         ]);
         let stream_vec = stream_orm.stream_info_vec.clone();
-        let data_c = (user_vec, data_c.1, stream_vec);
+        let data_c = (profile_vec, data_c.1, stream_vec);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams?userId={}&page=1&limit=2", user2_id))
+            .uri(&format!("/api/streams?userId={}&page=1&limit=2", profile2_id))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
@@ -868,7 +869,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
-        let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
+        let text = format!("curr_user_id: {}, user_id: {}", profile1_id, profile2_id);
         #[rustfmt::skip]
         let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS, &text);
         assert_eq!(app_err.message, message);
@@ -876,18 +877,19 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_another_user_id_with_role_admin() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let mut user1 = data_c.0.get(0).unwrap().clone();
-        user1.role = UserRole::Admin;
-        let user_orm = UserOrmApp::create(&vec![
-            user1,
-            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
-        ]);
-        let user_vec = user_orm.user_vec.clone();
-        let user2_id = user_orm.user_vec.get(1).unwrap().id;
+
+        let mut profile1 = data_c.0.get(0).unwrap().clone();
+        profile1.role = UserRole::Admin;
+        let profile_vec = ProfileOrmApp::create(&vec![
+            profile1,
+            ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
+        ])
+        .profile_vec;
+        let profile2_id = profile_vec.get(1).unwrap().user_id;
 
         let stream_orm = StreamOrmApp::create(&[
-            create_stream(0, user2_id, "demo11", "tag11,tag12", Utc::now()),
-            create_stream(1, user2_id, "demo12", "tag14,tag15", Utc::now()),
+            create_stream(0, profile2_id, "demo11", "tag11,tag12", Utc::now()),
+            create_stream(1, profile2_id, "demo12", "tag14,tag15", Utc::now()),
         ]);
         let mut stream1 = stream_orm.stream_info_vec.get(0).unwrap().clone();
         stream1.is_my_stream = false;
@@ -895,7 +897,7 @@ mod tests {
         stream2.is_my_stream = false;
         let stream_vec = vec![stream1, stream2];
 
-        let data_c = (user_vec, data_c.1, stream_orm.stream_info_vec);
+        let data_c = (profile_vec, data_c.1, stream_orm.stream_info_vec);
         let limit = 2;
         let page = 1;
         #[rustfmt::skip]
@@ -903,7 +905,7 @@ mod tests {
             App::new().service(get_streams).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams?userId={}&page={}&limit={}", user2_id, page, limit))
+            .uri(&format!("/api/streams?userId={}&page={}&limit={}", profile2_id, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
@@ -924,15 +926,15 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_live() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1_id = data_c.0.get(0).unwrap().id;
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
         let live = true;
-        let mut stream1 = create_stream(0, user1_id, "demo11", "tag11,tag12", Utc::now());
+        let mut stream1 = create_stream(0, profile1_id, "demo11", "tag11,tag12", Utc::now());
         stream1.live = !live;
-        let mut stream2 = create_stream(1, user1_id, "demo12", "tag14,tag15", Utc::now());
+        let mut stream2 = create_stream(1, profile1_id, "demo12", "tag14,tag15", Utc::now());
         stream2.live = !live;
-        let mut stream3 = create_stream(2, user1_id, "demo21", "tag21,tag22", Utc::now());
+        let mut stream3 = create_stream(2, profile1_id, "demo21", "tag21,tag22", Utc::now());
         stream3.live = live;
-        let mut stream4 = create_stream(3, user1_id, "demo22", "tag24,tag25", Utc::now());
+        let mut stream4 = create_stream(3, profile1_id, "demo22", "tag24,tag25", Utc::now());
         stream4.live = live;
 
         let stream_orm = StreamOrmApp::create(&[stream1, stream2, stream3, stream4]);
@@ -970,14 +972,14 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_is_future() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1_id = data_c.0.get(0).unwrap().id;
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
         let tomorrow = Utc::now() + Duration::days(1);
         let yesterday = Utc::now() - Duration::days(1);
         let mut streams: Vec<StreamInfoDto> = Vec::new();
-        streams.push(create_stream(0, user1_id, "demo11", "tag11,tag12", yesterday));
-        streams.push(create_stream(1, user1_id, "demo12", "tag14,tag15", yesterday));
-        streams.push(create_stream(2, user1_id, "demo21", "tag21,tag22", Utc::now()));
-        streams.push(create_stream(3, user1_id, "demo22", "tag24,tag25", tomorrow));
+        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", yesterday));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", yesterday));
+        streams.push(create_stream(2, profile1_id, "demo21", "tag21,tag22", Utc::now()));
+        streams.push(create_stream(3, profile1_id, "demo22", "tag24,tag25", tomorrow));
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
         let stream_vec = &(stream_orm_vec.clone())[2..4];
@@ -1012,14 +1014,14 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_is_not_future() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1_id = data_c.0.get(0).unwrap().id;
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
         let tomorrow = Utc::now() + Duration::days(1);
         let yesterday = Utc::now() - Duration::days(1);
         let mut streams: Vec<StreamInfoDto> = Vec::new();
-        streams.push(create_stream(0, user1_id, "demo11", "tag11,tag12", Utc::now()));
-        streams.push(create_stream(1, user1_id, "demo12", "tag14,tag15", tomorrow));
-        streams.push(create_stream(2, user1_id, "demo21", "tag21,tag22", yesterday));
-        streams.push(create_stream(3, user1_id, "demo22", "tag24,tag25", yesterday));
+        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", Utc::now()));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", tomorrow));
+        streams.push(create_stream(2, profile1_id, "demo21", "tag21,tag22", yesterday));
+        streams.push(create_stream(3, profile1_id, "demo22", "tag24,tag25", yesterday));
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
         let stream_vec = &(stream_orm_vec.clone())[2..4];
@@ -1054,16 +1056,16 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id_and_order_starttime_asc() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1_id = data_c.0.get(0).unwrap().id;
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
         let mut streams: Vec<StreamInfoDto> = Vec::new();
         #[rustfmt::skip]
-        streams.push(create_stream(0, user1_id, "demo11", "tag11,tag12", Utc::now() + Duration::days(2)));
+        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", Utc::now() + Duration::days(2)));
         #[rustfmt::skip]
-        streams.push(create_stream(1, user1_id, "demo12", "tag14,tag15", Utc::now() + Duration::days(1)));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", Utc::now() + Duration::days(1)));
         #[rustfmt::skip]
-        streams.push(create_stream(2, user1_id, "demo21", "tag21,tag22", Utc::now() - Duration::days(1)));
+        streams.push(create_stream(2, profile1_id, "demo21", "tag21,tag22", Utc::now() - Duration::days(1)));
         #[rustfmt::skip]
-        streams.push(create_stream(3, user1_id, "demo22", "tag24,tag25", Utc::now() - Duration::days(2)));
+        streams.push(create_stream(3, profile1_id, "demo22", "tag24,tag25", Utc::now() - Duration::days(2)));
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
         let stream_vec = vec![
@@ -1106,16 +1108,16 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id_and_order_starttime_desc() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1_id = data_c.0.get(0).unwrap().id;
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
         let mut streams: Vec<StreamInfoDto> = Vec::new();
         #[rustfmt::skip]
-        streams.push(create_stream(0, user1_id, "demo11", "tag11,tag12", Utc::now() - Duration::days(2)));
+        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", Utc::now() - Duration::days(2)));
         #[rustfmt::skip]
-        streams.push(create_stream(1, user1_id, "demo12", "tag14,tag15", Utc::now() - Duration::days(1)));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", Utc::now() - Duration::days(1)));
         #[rustfmt::skip]
-        streams.push(create_stream(2, user1_id, "demo21", "tag21,tag22", Utc::now() + Duration::days(1)));
+        streams.push(create_stream(2, profile1_id, "demo21", "tag21,tag22", Utc::now() + Duration::days(1)));
         #[rustfmt::skip]
-        streams.push(create_stream(3, user1_id, "demo22", "tag24,tag25", Utc::now() + Duration::days(2)));
+        streams.push(create_stream(3, profile1_id, "demo22", "tag24,tag25", Utc::now() + Duration::days(2)));
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
         let stream_vec = vec![
@@ -1164,7 +1166,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_events_search_by_user_id() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1_id = data_c.0.get(0).unwrap().id;
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
 
         let dt = Local::now();
         let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
@@ -1172,11 +1174,12 @@ mod tests {
 
         let mut streams: Vec<StreamInfoDto> = Vec::new();
         #[rustfmt::skip]
-        streams.push(create_stream(0, user1_id, "demo11", "tag11,tag12", to_utc(today - Duration::seconds(1))));
-        streams.push(create_stream(1, user1_id, "demo12", "tag14,tag15", to_utc(today)));
-        streams.push(create_stream(2, user1_id, "demo21", "tag21,tag22", to_utc(today + day)));
+        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", to_utc(today - Duration::seconds(1))));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", to_utc(today)));
         #[rustfmt::skip]
-        streams.push(create_stream(3, user1_id, "demo22", "tag24,tag25", to_utc(today + Duration::hours(24))));
+        streams.push(create_stream(2, profile1_id, "demo21", "tag21,tag22", to_utc(today + day)));
+        #[rustfmt::skip]
+        streams.push(create_stream(3, profile1_id, "demo22", "tag24,tag25", to_utc(today + Duration::hours(24))));
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
         let stream_vec = vec![
@@ -1194,7 +1197,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/streams_events?userId={}&starttime={}&page={}&limit={}",
-                user1_id, starttime, page, limit))
+                profile1_id, starttime, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
@@ -1217,14 +1220,15 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_events_search_by_without_user_id() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1 = data_c.0.get(0).unwrap().clone();
-        let user_orm = UserOrmApp::create(&vec![
-            user1,
-            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
-        ]);
-        let user_vec = user_orm.user_vec.clone();
-        let user1_id = user_orm.user_vec.get(0).unwrap().id;
-        let user2_id = user_orm.user_vec.get(1).unwrap().id;
+
+        let profile1 = data_c.0.get(0).unwrap().clone();
+        let profile1_id = profile1.user_id;
+        let profile_vec = ProfileOrmApp::create(&vec![
+            profile1,
+            ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
+        ])
+        .profile_vec;
+        let profile2_id = profile_vec.get(1).unwrap().user_id;
 
         let dt = Local::now();
         let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
@@ -1232,12 +1236,13 @@ mod tests {
 
         let mut streams: Vec<StreamInfoDto> = Vec::new();
         #[rustfmt::skip]
-        streams.push(create_stream(0, user1_id, "demo11", "tag11,tag12", to_utc(today - Duration::seconds(1))));
-        streams.push(create_stream(1, user1_id, "demo12", "tag14,tag15", to_utc(today)));
-        streams.push(create_stream(2, user2_id, "demo21", "tag21,tag22", to_utc(today + day)));
+        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", to_utc(today - Duration::seconds(1))));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", to_utc(today)));
         #[rustfmt::skip]
-        streams.push(create_stream(3, user2_id, "demo22", "tag24,tag25", to_utc(today + Duration::hours(24))));
-        streams.push(create_stream(4, user1_id, "demo31", "tag31,tag32", to_utc(today)));
+        streams.push(create_stream(2, profile2_id, "demo21", "tag21,tag22", to_utc(today + day)));
+        #[rustfmt::skip]
+        streams.push(create_stream(3, profile2_id, "demo22", "tag24,tag25", to_utc(today + Duration::hours(24))));
+        streams.push(create_stream(4, profile1_id, "demo31", "tag31,tag32", to_utc(today)));
 
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
@@ -1246,7 +1251,7 @@ mod tests {
             stream_orm_vec.get(4).unwrap().clone(),
         ];
 
-        let data_c = (user_vec, data_c.1, stream_orm_vec);
+        let data_c = (profile_vec, data_c.1, stream_orm_vec);
         let starttime = to_utc(today).to_rfc3339_opts(Millis, true);
         let limit = 2;
         let page = 1;
@@ -1278,25 +1283,26 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_events_search_by_page2() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1 = data_c.0.get(0).unwrap().clone();
-        let user_orm = UserOrmApp::create(&vec![
-            user1,
-            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
-        ]);
-        let user_vec = user_orm.user_vec.clone();
-        let user1_id = user_orm.user_vec.get(0).unwrap().id;
-        let user2_id = user_orm.user_vec.get(1).unwrap().id;
+
+        let profile1 = data_c.0.get(0).unwrap().clone();
+        let profile1_id = profile1.user_id;
+        let profile_vec = ProfileOrmApp::create(&vec![
+            profile1,
+            ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
+        ])
+        .profile_vec;
+        let profile2_id = profile_vec.get(1).unwrap().user_id;
 
         let dt = Local::now();
         let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
 
         let mut streams: Vec<StreamInfoDto> = Vec::new();
-        streams.push(create_stream(0, user1_id, "demo11", "tag11,tag12", to_utc(today)));
-        streams.push(create_stream(1, user1_id, "demo12", "tag14,tag15", to_utc(today)));
-        streams.push(create_stream(2, user2_id, "demo21", "tag21,tag22", to_utc(today)));
-        streams.push(create_stream(3, user2_id, "demo22", "tag24,tag25", to_utc(today)));
-        streams.push(create_stream(4, user1_id, "demo31", "tag31,tag32", to_utc(today)));
-        streams.push(create_stream(5, user1_id, "demo32", "tag34,tag35", to_utc(today)));
+        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", to_utc(today)));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", to_utc(today)));
+        streams.push(create_stream(2, profile2_id, "demo21", "tag21,tag22", to_utc(today)));
+        streams.push(create_stream(3, profile2_id, "demo22", "tag24,tag25", to_utc(today)));
+        streams.push(create_stream(4, profile1_id, "demo31", "tag31,tag32", to_utc(today)));
+        streams.push(create_stream(5, profile1_id, "demo32", "tag34,tag35", to_utc(today)));
 
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
@@ -1305,7 +1311,7 @@ mod tests {
             stream_orm_vec.get(5).unwrap().clone(),
         ];
 
-        let data_c = (user_vec, data_c.1, stream_orm_vec);
+        let data_c = (profile_vec, data_c.1, stream_orm_vec);
         let starttime = to_utc(today).to_rfc3339_opts(Millis, true);
         let limit = 2;
         let page = 2;
@@ -1336,7 +1342,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_events_search_by_bad_starttime() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1_id = data_c.0.get(0).unwrap().id;
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
 
         let dt = Local::now();
         let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
@@ -1344,10 +1350,10 @@ mod tests {
         let today_increm1 = to_utc(today + Duration::days(2));
 
         let mut streams: Vec<StreamInfoDto> = Vec::new();
-        streams.push(create_stream(0, user1_id, "demo11", "tag11,tag12", today_decrem1));
-        streams.push(create_stream(1, user1_id, "demo12", "tag14,tag15", today_decrem1));
-        streams.push(create_stream(2, user1_id, "demo21", "tag21,tag22", today_increm1));
-        streams.push(create_stream(3, user1_id, "demo22", "tag24,tag25", today_increm1));
+        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", today_decrem1));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", today_decrem1));
+        streams.push(create_stream(2, profile1_id, "demo21", "tag21,tag22", today_increm1));
+        streams.push(create_stream(3, profile1_id, "demo22", "tag24,tag25", today_increm1));
 
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
@@ -1380,28 +1386,29 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_events_search_by_another_user_id_with_role_user() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1 = data_c.0.get(0).unwrap().clone();
-        let user_orm = UserOrmApp::create(&vec![
-            user1,
-            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
-        ]);
-        let user_vec = user_orm.user_vec.clone();
-        let user1_id = user_orm.user_vec.get(0).unwrap().id;
-        let user2_id = user_orm.user_vec.get(1).unwrap().id;
+
+        let profile1 = data_c.0.get(0).unwrap().clone();
+        let profile1_id = profile1.user_id;
+        let profile_vec = ProfileOrmApp::create(&vec![
+            profile1,
+            ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
+        ])
+        .profile_vec;
+        let profile2_id = profile_vec.get(1).unwrap().user_id;
 
         let dt = Local::now();
         let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
 
         let mut streams: Vec<StreamInfoDto> = Vec::new();
-        streams.push(create_stream(0, user1_id, "demo11", "tag11,tag12", to_utc(today)));
-        streams.push(create_stream(1, user1_id, "demo12", "tag14,tag15", to_utc(today)));
-        streams.push(create_stream(2, user2_id, "demo21", "tag21,tag22", to_utc(today)));
-        streams.push(create_stream(3, user2_id, "demo22", "tag24,tag25", to_utc(today)));
+        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", to_utc(today)));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", to_utc(today)));
+        streams.push(create_stream(2, profile2_id, "demo21", "tag21,tag22", to_utc(today)));
+        streams.push(create_stream(3, profile2_id, "demo22", "tag24,tag25", to_utc(today)));
 
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
 
-        let data_c = (user_vec, data_c.1, stream_orm_vec);
+        let data_c = (profile_vec, data_c.1, stream_orm_vec);
         let starttime = to_utc(today).to_rfc3339_opts(Millis, true);
         let limit = 2;
         let page = 1;
@@ -1410,7 +1417,7 @@ mod tests {
             App::new().service(get_streams_events).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_events?userId={}&starttime={}&page={}&limit={}", user2_id, starttime, page, limit))
+            .uri(&format!("/api/streams_events?userId={}&starttime={}&page={}&limit={}", profile2_id, starttime, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
@@ -1420,7 +1427,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
-        let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
+        let text = format!("curr_user_id: {}, user_id: {}", profile1_id, profile2_id);
         #[rustfmt::skip]
         let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
         assert_eq!(app_err.message, message);
@@ -1428,24 +1435,25 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_events_search_by_another_user_id_with_role_admin() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let mut user1 = data_c.0.get(0).unwrap().clone();
-        user1.role = UserRole::Admin;
-        let user_orm = UserOrmApp::create(&vec![
-            user1,
-            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
-        ]);
-        let user_vec = user_orm.user_vec.clone();
-        let user1_id = user_orm.user_vec.get(0).unwrap().id;
-        let user2_id = user_orm.user_vec.get(1).unwrap().id;
+
+        let mut profile1 = data_c.0.get(0).unwrap().clone();
+        profile1.role = UserRole::Admin;
+        let profile1_id = profile1.user_id;
+        let profile_vec = ProfileOrmApp::create(&vec![
+            profile1,
+            ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
+        ])
+        .profile_vec;
+        let profile2_id = profile_vec.get(1).unwrap().user_id;
 
         let dt = Local::now();
         let today = Local.with_ymd_and_hms(dt.year(), dt.month(), dt.day(), 0, 0, 0).unwrap();
 
         let mut streams: Vec<StreamInfoDto> = Vec::new();
-        streams.push(create_stream(0, user1_id, "demo11", "tag11,tag12", to_utc(today)));
-        streams.push(create_stream(1, user1_id, "demo12", "tag14,tag15", to_utc(today)));
-        streams.push(create_stream(2, user2_id, "demo21", "tag21,tag22", to_utc(today)));
-        streams.push(create_stream(3, user2_id, "demo22", "tag24,tag25", to_utc(today)));
+        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", to_utc(today)));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", to_utc(today)));
+        streams.push(create_stream(2, profile2_id, "demo21", "tag21,tag22", to_utc(today)));
+        streams.push(create_stream(3, profile2_id, "demo22", "tag24,tag25", to_utc(today)));
 
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
@@ -1454,7 +1462,7 @@ mod tests {
             stream_orm_vec.get(3).unwrap().clone(),
         ];
 
-        let data_c = (user_vec, data_c.1, stream_orm_vec);
+        let data_c = (profile_vec, data_c.1, stream_orm_vec);
         let starttime = to_utc(today).to_rfc3339_opts(Millis, true);
         let limit = 2;
         let page = 1;
@@ -1463,7 +1471,7 @@ mod tests {
             App::new().service(get_streams_events).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_events?userId={}&starttime={}&page={}&limit={}", user2_id, starttime, page, limit))
+            .uri(&format!("/api/streams_events?userId={}&starttime={}&page={}&limit={}", profile2_id, starttime, page, limit))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
@@ -1489,7 +1497,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_period_by_finish_less_start() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1_id = data_c.0.get(0).unwrap().id;
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
         let dt = Local::now();
         let start = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
         let finish = start - Duration::seconds(1);
@@ -1500,7 +1508,7 @@ mod tests {
             App::new().service(get_streams_period).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user1_id, start_s, finish_s))
+            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", profile1_id, start_s, finish_s))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::NOT_ACCEPTABLE); // 406
@@ -1517,7 +1525,7 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_period_by_finish_more_on_2_month() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1_id = data_c.0.get(0).unwrap().id;
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
         let dt = Local::now();
         let start = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
         let finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
@@ -1530,7 +1538,7 @@ mod tests {
             App::new().service(get_streams_period).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user1_id, start_s, finish_s))
+            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", profile1_id, start_s, finish_s))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::PAYLOAD_TOO_LARGE); // 413
@@ -1572,15 +1580,15 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_period_by_user_id() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1_id = data_c.0.get(0).unwrap().id;
-        let (stream_vec, start, finish, res_vec) = get_streams2(user1_id);
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let (stream_vec, start, finish, res_vec) = get_streams2(profile1_id);
         let data_c = (data_c.0, data_c.1, stream_vec);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_period).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user1_id, start, finish))
+            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", profile1_id, start, finish))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
@@ -1597,8 +1605,8 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_period_by_without_user_id() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1_id = data_c.0.get(0).unwrap().id;
-        let (stream_vec, start, finish, res_vec) = get_streams2(user1_id);
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let (stream_vec, start, finish, res_vec) = get_streams2(profile1_id);
         let data_c = (data_c.0, data_c.1, stream_vec);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -1622,23 +1630,24 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_period_by_another_user_id_with_role_user() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let user1 = data_c.0.get(0).unwrap().clone();
-        let user_orm = UserOrmApp::create(&vec![
-            user1,
-            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
-        ]);
-        let user_vec = user_orm.user_vec.clone();
-        let user1_id = user_orm.user_vec.get(0).unwrap().id;
-        let user2_id = user_orm.user_vec.get(1).unwrap().id;
 
-        let (stream_vec, start, finish, _res_vec) = get_streams2(user2_id);
-        let data_c = (user_vec, data_c.1, stream_vec);
+        let profile1 = data_c.0.get(0).unwrap().clone();
+        let profile1_id = profile1.user_id;
+        let profile_vec = ProfileOrmApp::create(&vec![
+            profile1,
+            ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
+        ])
+        .profile_vec;
+        let profile2_id = profile_vec.get(1).unwrap().user_id;
+
+        let (stream_vec, start, finish, _res_vec) = get_streams2(profile2_id);
+        let data_c = (profile_vec, data_c.1, stream_vec);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_period).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user2_id, start, finish))
+            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", profile2_id, start, finish))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::FORBIDDEN); // 403
@@ -1648,7 +1657,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_FORBIDDEN);
-        let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
+        let text = format!("curr_user_id: {}, user_id: {}", profile1_id, profile2_id);
         #[rustfmt::skip]
         let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
         assert_eq!(app_err.message, message);
@@ -1656,23 +1665,24 @@ mod tests {
     #[actix_web::test]
     async fn test_get_streams_period_by_another_user_id_with_role_admin_99() {
         let (cfg_c, data_c, token) = get_cfg_data();
-        let mut user1 = data_c.0.get(0).unwrap().clone();
-        user1.role = UserRole::Admin;
-        let user_orm = UserOrmApp::create(&vec![
-            user1,
-            UserOrmApp::new_user(2, "Logan_Lewis", "Logan_Lewis@gmail.com", "passwdL2S2"),
-        ]);
-        let user_vec = user_orm.user_vec.clone();
-        let user2_id = user_orm.user_vec.get(1).unwrap().id;
 
-        let (stream_vec, start, finish, res_vec) = get_streams2(user2_id);
-        let data_c = (user_vec, data_c.1, stream_vec);
+        let mut profile1 = data_c.0.get(0).unwrap().clone();
+        profile1.role = UserRole::Admin;
+        let profile_vec = ProfileOrmApp::create(&vec![
+            profile1,
+            ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
+        ])
+        .profile_vec;
+        let profile2_id = profile_vec.get(1).unwrap().user_id;
+
+        let (stream_vec, start, finish, res_vec) = get_streams2(profile2_id);
+        let data_c = (profile_vec, data_c.1, stream_vec);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_period).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user2_id, start, finish))
+            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", profile2_id, start, finish))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK); // 200
