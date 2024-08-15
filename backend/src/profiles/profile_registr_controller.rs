@@ -10,6 +10,7 @@ use crate::profiles::{
     profile_models::{
         self, Profile, ProfileDto, RegistrProfileDto, RegistrProfileResponseDto, PROFILE_THEME_LIGHT_DEF, RecoveryProfileResponseDto, RecoveryProfileDto, RecoveryDataDto, PROFILE_THEME_DARK, ClearForExpiredResponseDto,
     },
+    profile_err as p_err,
     profile_orm::ProfileOrm,
 };
 #[cfg(not(feature = "mockdata"))]
@@ -28,7 +29,6 @@ use crate::users::user_recovery_orm::impls::UserRecoveryOrmApp;
 use crate::users::user_recovery_orm::tests::UserRecoveryOrmApp;
 use crate::hash_tools;
 use crate::users::{
-    user_err as u_err,
     user_models::{self,UserRole},
     user_recovery_orm::UserRecoveryOrm,
     user_registr_orm::UserRegistrOrm,
@@ -110,7 +110,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
                 (RegistrProfileDto { nickname: "us".to_string(), email: "us_email".to_string(), password: "pas".to_string() })
                     .validate().err().unwrap()) )),
         (status = 422, description = "Token encoding error.", body = AppError,
-            example = json!(AppError::unprocessable422(&format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
+            example = json!(AppError::unprocessable422(&format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
         (status = 500, description = "Error while calculating the password hash.", body = AppError, 
             example = json!(AppError::internal_err500(&format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty.")))),
         (status = 506, description = "Blocking error.", body = AppError, 
@@ -238,7 +238,7 @@ pub async fn registration(
 
     // Pack two parameters (user_registr.id, num_token) into a registr_token.
     let registr_token = encode_token(user_registr.id, num_token, jwt_secret, app_registr_duration).map_err(|e| {
-        let message = format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, e.to_string());
+        let message = format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, e.to_string());
         log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
         AppError::unprocessable422(&message) // 422
     })?;
@@ -406,7 +406,7 @@ pub async fn confirm_registration(
             description = "Validation error. `curl -i -X POST http://localhost:8080/api/recovery -d '{\"email\": \"us_email\" }'`",
             example = json!(AppError::validations((RecoveryProfileDto { email: "us_email".to_string() }).validate().err().unwrap()))),
         (status = 422, description = "Token encoding error.", body = AppError,
-            example = json!(AppError::unprocessable422(&format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
+            example = json!(AppError::unprocessable422(&format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -543,7 +543,7 @@ pub async fn recovery(
         app_recovery_duration,
     )
     .map_err(|e| {
-        let message = format!("{}: {}", u_err::MSG_JSON_WEB_TOKEN_ENCODE, e.to_string());
+        let message = format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, e.to_string());
         log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
         AppError::unprocessable422(&message) // 422
     })?;
@@ -1407,7 +1407,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNPROCESSABLE_ENTITY);
-        assert!(app_err.message.starts_with(u_err::MSG_JSON_WEB_TOKEN_ENCODE));
+        assert!(app_err.message.starts_with(p_err::MSG_JSON_WEB_TOKEN_ENCODE));
     }
     #[actix_web::test]
     async fn test_registration_new_user() {
@@ -1785,7 +1785,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNPROCESSABLE_ENTITY);
-        assert!(app_err.message.starts_with(u_err::MSG_JSON_WEB_TOKEN_ENCODE));
+        assert!(app_err.message.starts_with(p_err::MSG_JSON_WEB_TOKEN_ENCODE));
     }
 
     // ** confirm_recovery **
