@@ -18,10 +18,7 @@ use send_email::{config_smtp, mailer};
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
 use streams::{config_strm, stream_controller, stream_get_controller, stream_orm::cfg::get_stream_orm_app};
 use tools::evn_data::{check_params_env, update_params_env};
-use users::{
-    user_orm::cfg::get_user_orm_app, user_recovery_orm::cfg::get_user_recovery_orm_app,
-    user_registr_orm::cfg::get_user_registr_orm_app,
-};
+use users::{user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_orm::cfg::get_user_registr_orm_app};
 use utils::parser;
 use utoipa::OpenApi;
 
@@ -68,8 +65,6 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let config_smtp = config_smtp::ConfigSmtp::init_by_env();
         // used: profile_registr_controller
         let mailer = Data::new(mailer::cfg::get_mailer_app(config_smtp));
-        // used:
-        let user_orm = Data::new(get_user_orm_app(pool.clone()));
         // used: profile_registr_controller
         let user_registr_orm = Data::new(get_user_registr_orm_app(pool.clone()));
         // used: profile_registr_controller
@@ -90,7 +85,6 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             .app_data(Data::clone(&temp_file_config))
             .app_data(Data::clone(&config_strm))
             .app_data(Data::clone(&mailer))
-            .app_data(Data::clone(&user_orm))
             .app_data(Data::clone(&user_registr_orm))
             .app_data(Data::clone(&session_orm))
             .app_data(Data::clone(&user_recovery_orm))
