@@ -217,7 +217,6 @@ pub mod tests {
             }
         }
         /// Create a new instance with the specified profile list.
-        #[cfg(test)]
         pub fn create(profile_list: &[Profile]) -> Self {
             let mut profile_vec: Vec<Profile> = Vec::new();
             for (idx, profile) in profile_list.iter().enumerate() {
