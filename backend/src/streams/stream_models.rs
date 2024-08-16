@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt;
 
 use chrono::{DateTime, Duration, Utc};
 use diesel::prelude::*;
@@ -92,6 +93,7 @@ pub fn validate_tag(tags: &[String]) -> Result<(), ValidationError> {
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, diesel_derive_enum::DbEnum, ToSchema)]
 #[ExistingTypePath = "crate::schema::sql_types::StreamState"]
 #[DbValueStyle = "snake_case"] // BazQuxx => "baz_quxx"
+#[serde(rename_all = "lowercase")]
 pub enum StreamState {
     Waiting,   // (default)
     Preparing, // (is live)
@@ -100,16 +102,13 @@ pub enum StreamState {
     Disabled,
 }
 
-impl StreamState {
-    pub fn to_str(&self) -> &str {
-        match self {
-            StreamState::Waiting => "waiting",
-            StreamState::Preparing => "preparing",
-            StreamState::Started => "started",
-            StreamState::Paused => "paused",
-            StreamState::Disabled => "disabled",
-        }
+impl fmt::Display for StreamState {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", serde_json::to_string(&self).unwrap().replace("\"", ""))
     }
+}
+
+impl StreamState {
     pub fn is_live(stream_state: StreamState) -> bool {
         stream_state == StreamState::Preparing
             || stream_state == StreamState::Started
@@ -126,7 +125,7 @@ pub struct Stream {
     pub id: i32,
     pub user_id: i32,
     pub title: String,                  // min_len=2 max_len=255
-    pub descript: String,               // type: Text default ""
+    pub descript: String,               // min_len=2,max_len=2048 default ""
     pub logo: Option<String>,           // min_len=2 max_len=255 Nullable
     pub starttime: DateTime<Utc>,       //
     pub live: bool,                     // default false
@@ -274,7 +273,7 @@ impl StreamInfoDto {
 pub struct CreateStream {
     pub user_id: i32,
     pub title: String,                  // min_len=2 max_len=255
-    pub descript: Option<String>,       // type: Text default ""
+    pub descript: Option<String>,       // min_len=2,max_len=2048 default ""
     pub logo: Option<String>,           // min_len=2 max_len=255 Nullable
     pub starttime: DateTime<Utc>,       //
     pub state: Option<StreamState>,     // default Waiting
@@ -346,7 +345,7 @@ impl Validator for CreateStreamInfoDto {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ModifyStream {
     pub title: Option<String>,                  // min_len=2 max_len=255
-    pub descript: Option<String>,               // type: Text default ""
+    pub descript: Option<String>,               // min_len=2,max_len=2048 default ""
     pub logo: Option<Option<String>>,           // min_len=2 max_len=255 Nullable
     pub starttime: Option<DateTime<Utc>>,       //
     pub state: Option<StreamState>,             // default Waiting
@@ -373,11 +372,12 @@ impl ModifyStream {
         let is_descript = self.descript.is_none();
         let is_logo = self.logo.is_none();
         let is_starttime = self.starttime.is_none();
+        let is_state = self.state.is_none();
         let is_started = self.started.is_none();
         let is_stopped = self.stopped.is_none();
         let is_source = self.source.is_none();
 
-        is_title && is_descript && is_logo && is_starttime && is_started && is_stopped && is_source
+        is_title && is_descript && is_logo && is_starttime && is_state && is_started && is_stopped && is_source
     }
 }
 
@@ -469,8 +469,8 @@ pub enum OrderColumn {
     Title,
 }
 
-impl std::fmt::Display for OrderColumn {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for OrderColumn {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", serde_json::to_string(&self).unwrap().replace("\"", ""))
     }
 }
@@ -482,8 +482,8 @@ pub enum OrderDirection {
     Desc,
 }
 
-impl std::fmt::Display for OrderDirection {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for OrderDirection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", serde_json::to_string(&self).unwrap().replace("\"", ""))
     }
 }
