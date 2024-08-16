@@ -43,6 +43,19 @@ pub const MSG_NEW_PASSWORD_MIN_LENGTH: &str = "new_password:min_length";
 pub const MSG_NEW_PASSWORD_MAX_LENGTH: &str = "new_password:max_length";
 pub const MSG_NEW_PASSWORD_REGEX: &str = "new_password:regex";
 pub const MSG_NEW_PASSWORD_EQUAL_OLD_VALUE: &str = "new_password:equal_to_old_value";
+
+pub const DESCRIPT_MIN: u8 = 2;
+pub const MSG_DESCRIPT_MIN_LENGTH: &str = "descript:min_length";
+pub const DESCRIPT_MAX: u16 = 2048; // 2*1024
+pub const MSG_DESCRIPT_MAX_LENGTH: &str = "descript:max_length";
+
+pub const THEME_MIN: u8 = 2;
+pub const MSG_THEME_MIN_LENGTH: &str = "theme:min_length";
+pub const THEME_MAX: u8 = 32;
+pub const MSG_THEME_MAX_LENGTH: &str = "theme:max_length";
+
+pub const MSG_USER_ROLE_INVALID_VALUE: &str = "user_role:invalid_value";
+
 // MIN=3,MAX=64,"^[a-zA-Z]+[\\w]+$"
 pub fn validate_nickname(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_NICKNAME_REQUIRED)?;
@@ -51,7 +64,7 @@ pub fn validate_nickname(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::regexp(value, NICKNAME_REGEX, MSG_NICKNAME_REGEX)?; // /^[a-zA-Z]+[\w]+$/
     Ok(())
 }
-// MIN=5,MAX=255,"email:email_type"
+// MIN=5,MAX=254,"email:email_type"
 pub fn validate_email(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_EMAIL_REQUIRED)?;
     ValidationChecks::min_length(value, EMAIL_MIN.into(), MSG_EMAIL_MIN_LENGTH)?;
@@ -95,7 +108,26 @@ pub fn validate_inequality(value1: &str, value2: &str) -> Result<(), ValidationE
     }
     Ok(())
 }
+// MIN=2,MAX=2048
+pub fn validate_descript(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::min_length(value, DESCRIPT_MIN.into(), MSG_DESCRIPT_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, DESCRIPT_MAX.into(), MSG_DESCRIPT_MAX_LENGTH)?;
+    Ok(())
+}
+// MIN=2,MAX=32
+pub fn validate_theme(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::min_length(value, THEME_MIN.into(), MSG_THEME_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, THEME_MAX.into(), MSG_THEME_MAX_LENGTH)?;
+    Ok(())
+}
+pub fn validate_role(value: &str) -> Result<(), ValidationError> {
+    #[rustfmt::skip]
+    let valid_values1 = vec![UserRole::Admin.to_string(), UserRole::User.to_string(), UserRole::Moderator.to_string()];
+    let valid_values2: Vec<&str> = valid_values1.iter().map(|val| val.as_str()).collect();
+    ValidationChecks::valid_value(value, valid_values2, MSG_USER_ROLE_INVALID_VALUE)?;
 
+    Ok(())
+}
 // * * * * Section: "database". * * * *
 
 // ** Table: "profiles" **
@@ -199,7 +231,7 @@ pub struct CreateProfile {
     pub password: String,         // min_len=6 max_len=64
     pub role: Option<UserRole>,   // default "user"
     pub avatar: Option<String>,   // min_len=2 max_len=255 Nullable
-    pub descript: Option<String>, // type: Text default ""
+    pub descript: Option<String>, // min_len=2,max_len=2048 default ""
     pub theme: Option<String>,    // min_len=2 max_len=32 default "light"
 }
 
@@ -221,13 +253,27 @@ impl CreateProfile {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ModifyProfile {
-    pub nickname: Option<String>,       // min_len=3 max_len=64
-    pub email: Option<String>,          // min_len=5 max_len=254
-    pub password: Option<String>,       // min_len=6 max_len=64
+    pub nickname: Option<String>,       // min_len=3,max_len=64
+    pub email: Option<String>,          // min_len=5,max_len=254,"email:email_type"
+    pub password: Option<String>,       // min_len=6,max_len=64
     pub role: Option<UserRole>,         // default "user"
-    pub avatar: Option<Option<String>>, // min_len=2 max_len=255 Nullable
-    pub descript: Option<String>,       // type: Text default ""
-    pub theme: Option<String>,          // min_len=2 max_len=32 default "light"
+    pub avatar: Option<Option<String>>, // min_len=2,max_len=255 Nullable
+    pub descript: Option<String>,       // min_len=2,max_len=2048 default ""
+    pub theme: Option<String>,          // min_len=2,max_len=32 default "light"
+}
+
+impl ModifyProfile {
+    pub fn is_empty(&self) -> bool {
+        let is_nickname = self.nickname.is_none();
+        let is_email = self.email.is_none();
+        let is_password = self.password.is_none();
+        let is_role = self.role.is_none();
+        let is_avatar = self.avatar.is_none();
+        let is_descript = self.descript.is_none();
+        let is_theme = self.theme.is_none();
+
+        is_nickname && is_email && is_password && is_role && is_avatar && is_descript && is_theme
+    }
 }
 
 // * * * * Section: models for the "profile_controller". * * * *
@@ -280,7 +326,69 @@ pub struct UniquenessProfileDto {
     pub email: Option<String>,
 }
 
-// ** Model Dto: "NewPasswordProfileDto". Used: in "profile_controller::put_profiles_new_password()" **
+// ** Model Dto: "ModifyProfileDto". Used: in "profile_controller::put_profile()" **
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ModifyProfileDto {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nickname: Option<String>, // min_len=3,max_len=64
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>, // min_len=5,max_len=254,"email:email_type"
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>, // min_len=6,max_len=64
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub descript: Option<String>, // min_len=2,max_len=2048 default ""
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub theme: Option<String>, // min_len=2,max_len=32 default "light"
+}
+
+impl Validator for ModifyProfileDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+        if let Some(value) = &self.nickname {
+            errors.push(validate_nickname(&value).err());
+        }
+        if let Some(value) = &self.email {
+            errors.push(validate_email(&value).err());
+        }
+        if let Some(value) = &self.password {
+            errors.push(validate_password(&value).err());
+        }
+        if let Some(value) = &self.role {
+            errors.push(validate_role(&value).err());
+        }
+        if let Some(value) = &self.descript {
+            // The field is optional and we check if there is a value.
+            if value.len() > 0 {
+                errors.push(validate_descript(&value).err());
+            }
+        }
+        if let Some(value) = &self.theme {
+            errors.push(validate_theme(&value).err());
+        }
+
+        self.filter_errors(errors)
+    }
+}
+
+impl From<ModifyProfile> for ModifyProfileDto {
+    fn from(value: ModifyProfile) -> Self {
+        ModifyProfileDto {
+            nickname: value.nickname.clone(),
+            email: value.email.clone(),
+            password: value.password.clone(),
+            role: value.role.map(|v| v.to_string()),
+            descript: value.descript.clone(),
+            theme: value.theme.clone(),
+        }
+    }
+}
+
+// ** Model Dto: "NewPasswordProfileDto". Used: in "profile_controller::put_profile_new_password()" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct NewPasswordProfileDto {
@@ -492,5 +600,17 @@ impl ProfileTest {
     }
     pub fn password_wrong() -> String {
         (0..(PASSWORD_MIN)).map(|_| 'a').collect()
+    }
+    pub fn descript_min() -> String {
+        (0..(DESCRIPT_MIN - 1)).map(|_| 'a').collect()
+    }
+    pub fn descript_max() -> String {
+        (0..(DESCRIPT_MAX + 1)).map(|_| 'a').collect()
+    }
+    pub fn theme_min() -> String {
+        (0..(THEME_MIN - 1)).map(|_| 'a').collect()
+    }
+    pub fn theme_max() -> String {
+        (0..(THEME_MAX + 1)).map(|_| 'a').collect()
     }
 }
