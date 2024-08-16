@@ -20,8 +20,8 @@ backend/static
 # SSL certificate and key files.
 backend/*.pem
 
-# Stream Logo directory
-backend/logo/
+# Directory of all images (stream logos, etc.).
+backend/imgs/
 
 # temporary upload directory
 backend/tmp/
