@@ -61,7 +61,9 @@
     "tag:max_length" : "The tag must have no more {{ maxlength.requiredLength }} characters ({{ maxlength.actualValue }}).",
     "time:required": "The time field is required.",
     "time:min": "The time must be more {{ min.requiredMin }}.",
-    "time:max": "The time must be less {{ max.requiredMax }}."
+    "time:max": "The time must be less {{ max.requiredMax }}.",
+    "theme:min_length" : "The theme must have at least {{ minlength.requiredLength }} characters.",
+    "theme:max_length" : "The theme must have no more {{ maxlength.requiredLength }} characters."
   },
   "Forbidden": {
     "status": 403,
