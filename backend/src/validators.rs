@@ -152,4 +152,16 @@ impl ValidationChecks {
         }
         Ok(())
     }
+    // Check for a list of valid values.
+    pub fn valid_value(value: &str, valid_values: Vec<&str>, msg: &'static str) -> Result<(), ValidationError> {
+        let res = valid_values.iter().position(|&val| val == value);
+        if res.is_none() {
+            let mut err = ValidationError::new(msg);
+            let json = serde_json::json!({ "actualValue": value });
+            err.add_param(borrow::Cow::Borrowed("invalid"), &json);
+            return Err(err);
+        } else {
+            Ok(())
+        }
+    }
 }
