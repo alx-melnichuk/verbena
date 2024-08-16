@@ -355,18 +355,6 @@ pub struct ModifyStream {
 }
 
 impl ModifyStream {
-    pub fn convert(modify_stream_info: ModifyStreamInfoDto) -> Self {
-        ModifyStream {
-            title: modify_stream_info.title.clone(),
-            descript: modify_stream_info.descript.clone(),
-            logo: None,
-            starttime: modify_stream_info.starttime.clone(),
-            state: None,
-            started: None,
-            stopped: None,
-            source: modify_stream_info.source.clone(),
-        }
-    }
     pub fn is_empty(&self) -> bool {
         let is_title = self.title.is_none();
         let is_descript = self.descript.is_none();
@@ -423,6 +411,21 @@ impl Validator for ModifyStreamInfoDto {
         }
 
         self.filter_errors(errors)
+    }
+}
+
+impl Into<ModifyStream> for ModifyStreamInfoDto {
+    fn into(self) -> ModifyStream {
+        ModifyStream {
+            title: self.title.clone(),
+            descript: self.descript.clone(),
+            logo: None,
+            starttime: self.starttime.clone(),
+            state: None,
+            started: None,
+            stopped: None,
+            source: self.source.clone(),
+        }
     }
 }
 

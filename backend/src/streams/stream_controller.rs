@@ -17,7 +17,7 @@ use crate::streams::stream_orm::impls::StreamOrmApp;
 use crate::streams::stream_orm::tests::StreamOrmApp;
 use crate::streams::{
     config_strm,
-    stream_models::{self, CreateStreamInfoDto, ModifyStreamInfoDto, StreamInfoDto},
+    stream_models::{self, CreateStreamInfoDto, ModifyStream, ModifyStreamInfoDto, StreamInfoDto},
     stream_orm::StreamOrm,
 };
 use crate::users::user_models::UserRole;
@@ -580,7 +580,7 @@ pub async fn put_stream(
     }
 
     let tags = modify_stream_info_dto.tags.clone();
-    let mut modify_stream = stream_models::ModifyStream::convert(modify_stream_info_dto);
+    let mut modify_stream: ModifyStream = modify_stream_info_dto.into();
     modify_stream.logo = logo;
 
     let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
