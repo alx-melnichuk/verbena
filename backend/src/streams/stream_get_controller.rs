@@ -357,7 +357,7 @@ pub async fn get_streams_events(
 
     let (count, streams) = match res_data { Ok(v) => v, Err(e) => return Err(e) };
 
-    let list = streams.into_iter().map(|v| stream_models::StreamEventDto::convert(v)).collect();
+    let list = streams.into_iter().map(|v| stream_models::StreamEventDto::from(v)).collect();
 
     let pages: u32 = count / limit + if (count % limit) > 0 { 1 } else { 0 };
 

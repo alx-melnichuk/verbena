@@ -630,9 +630,8 @@ pub struct StreamEventDto {
     pub starttime: DateTime<Utc>,
 }
 
-impl StreamEventDto {
-    #[allow(dead_code)]
-    pub fn convert(stream: Stream) -> Self {
+impl From<Stream> for StreamEventDto {
+    fn from(stream: Stream) -> Self {
         StreamEventDto {
             id: stream.id,
             user_id: stream.user_id,
@@ -663,7 +662,7 @@ impl StreamEventPageDto {
         let mut idx = 1;
         while idx <= amount {
             let stream = Stream::new(idx, user_id, &format!("title_{}", idx), Utc::now());
-            let stream_event_dto = StreamEventDto::convert(stream);
+            let stream_event_dto = StreamEventDto::from(stream);
             result.push(stream_event_dto);
             idx += 1;
         }
