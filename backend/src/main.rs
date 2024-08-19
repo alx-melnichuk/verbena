@@ -33,7 +33,8 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     // Check the correctness of "STRM_LOGO_VALID_TYPES"
-    config_strm::ConfigStrm::init_strm_valid_types_by_env()?;
+    let logo_valid_types = config_strm::ConfigStrm::get_logo_valid_types();
+    config_strm::ConfigStrm::get_logo_valid_types_by_str(&logo_valid_types)?;
 
     let config_app = config_app::ConfigApp::init_by_env();
 

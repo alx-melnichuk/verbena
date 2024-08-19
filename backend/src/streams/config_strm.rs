@@ -14,6 +14,8 @@ pub struct ConfigStrm {
     pub strm_logo_max_size: usize,
     // List of valid input mime types for logo files (comma delimited).
     pub strm_logo_valid_types: Vec<String>,
+    // Logo files will be converted to this MIME type.
+    // Valid values: jpeg,gif,png,bmp
     pub strm_logo_ext: Option<String>,
     // Maximum width for a logo file.
     pub strm_logo_max_width: u32,
@@ -29,9 +31,12 @@ impl ConfigStrm {
 
         let logo_max_size = std::env::var("STRM_LOGO_MAX_SIZE").expect("STRM_LOGO_MAX_SIZE must be set");
 
-        let logo_valid_types: Vec<String> = Self::init_strm_valid_types_by_env().unwrap();
+        let valid_types = Self::get_logo_valid_types();
+        let logo_valid_types: Vec<String> = Self::get_logo_valid_types_by_str(&valid_types).unwrap();
 
-        let strm_logo_ext = Self::init_logo_ext();
+        let logo_ext = std::env::var("STRM_LOGO_EXT").unwrap_or("".to_string());
+        #[rustfmt::skip]
+        let strm_logo_ext = if Self::logo_ext_validate(&logo_ext) { Some(logo_ext) } else { None };
 
         let max_width_def = STRM_LOGO_MAX_WIDTH_DEF.to_string();
         #[rustfmt::skip]
@@ -59,13 +64,20 @@ impl ConfigStrm {
             IMAGE_PNG.essence_str().to_string(),
         ]
     }
-    pub fn init_strm_valid_types_by_env() -> Result<Vec<String>, io::Error> {
+    pub fn get_types(image_types: Vec<String>) -> Vec<String> {
+        let text = format!("{}/", IMAGE);
+        let types: Vec<String> = image_types.iter().map(|v| v.replace(&text, "")).collect();
+        types
+    }
+    pub fn get_logo_valid_types() -> String {
+        std::env::var("STRM_LOGO_VALID_TYPES").expect("STRM_LOGO_VALID_TYPES must be set")
+    }
+    pub fn get_logo_valid_types_by_str(logo_valid_types: &str) -> Result<Vec<String>, io::Error> {
         let image_types: Vec<String> = Self::get_image_types();
 
-        let strm_valid_types_str = std::env::var("STRM_LOGO_VALID_TYPES").expect("STRM_LOGO_VALID_TYPES must be set");
         let mut errors: Vec<String> = Vec::new();
         let mut result: Vec<String> = Vec::new();
-        for strm_type in strm_valid_types_str.split(",").into_iter() {
+        for strm_type in logo_valid_types.split(",").into_iter() {
             let value = strm_type.to_lowercase();
             if image_types.contains(&value) {
                 result.push(value);
@@ -79,20 +91,9 @@ impl ConfigStrm {
         }
         Ok(result)
     }
-    pub fn init_logo_ext() -> Option<String> {
-        let logo_ext = std::env::var("STRM_LOGO_EXT").unwrap_or("".to_string());
+    fn logo_ext_validate(value: &str) -> bool {
         let type_list: Vec<String> = Self::get_types(Self::get_image_types());
-        let is_logo_ext = logo_ext.len() > 0 && type_list.contains(&logo_ext);
-        if is_logo_ext {
-            Some(logo_ext)
-        } else {
-            None
-        }
-    }
-    pub fn get_types(image_types: Vec<String>) -> Vec<String> {
-        let text = format!("{}/", IMAGE);
-        let types: Vec<String> = image_types.iter().map(|v| v.replace(&text, "")).collect();
-        types
+        value.len() > 0 && type_list.contains(&value.to_string())
     }
 }
 
