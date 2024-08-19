@@ -2,6 +2,7 @@ use std::{io, path::PathBuf};
 
 use mime::{self, IMAGE, IMAGE_BMP, IMAGE_GIF, IMAGE_JPEG, IMAGE_PNG};
 
+const STRM_LOGO_MAX_SIZE_DEF: u32 = 0;
 const STRM_LOGO_MAX_WIDTH_DEF: u32 = 0;
 const STRM_LOGO_MAX_HEIGHT_DEF: u32 = 0;
 
@@ -9,7 +10,7 @@ const STRM_LOGO_MAX_HEIGHT_DEF: u32 = 0;
 #[derive(Debug, Clone)]
 pub struct ConfigStrm {
     // Directory for storing logo files.
-    pub strm_logo_files_dir: String, // slp_dir
+    pub strm_logo_files_dir: String,
     // Maximum size for logo files.
     pub strm_logo_max_size: usize,
     // List of valid input mime types for logo files (comma delimited).
@@ -29,7 +30,12 @@ impl ConfigStrm {
         let path_dir: PathBuf = PathBuf::from(logo_files_dir).iter().collect();
         let strm_logo_files_dir = path_dir.to_str().unwrap().to_string();
 
-        let logo_max_size = std::env::var("STRM_LOGO_MAX_SIZE").expect("STRM_LOGO_MAX_SIZE must be set");
+        let max_size_def = STRM_LOGO_MAX_SIZE_DEF.to_string();
+        let logo_max_size = std::env::var("STRM_LOGO_MAX_SIZE")
+            .unwrap_or(max_size_def)
+            .trim()
+            .parse()
+            .unwrap();
 
         let valid_types = Self::get_logo_valid_types();
         let logo_valid_types: Vec<String> = Self::get_logo_valid_types_by_str(&valid_types).unwrap();
@@ -48,7 +54,7 @@ impl ConfigStrm {
 
         ConfigStrm {
             strm_logo_files_dir,
-            strm_logo_max_size: logo_max_size.parse::<usize>().unwrap(),
+            strm_logo_max_size: logo_max_size,
             strm_logo_valid_types: logo_valid_types,
             strm_logo_ext,
             strm_logo_max_width: logo_max_width,
