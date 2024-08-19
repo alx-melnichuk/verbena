@@ -3,10 +3,8 @@ use dotenv;
 use env_logger;
 use log;
 
-use verbena::{
-    check_env, configure_server, create_cors, settings::config_app, streams::config_strm, update_env,
-    utils::ssl_acceptor,
-};
+use verbena::{check_env, check_presence_required_directories, configure_server, create_cors};
+use verbena::{profiles::config_prfl, settings::config_app, streams::config_strm, update_env, utils::ssl_acceptor};
 
 // ** Funcion Main **
 #[actix_web::main]
@@ -32,9 +30,8 @@ async fn main() -> std::io::Result<()> {
 
     env_logger::init();
 
-    // Check the correctness of "STRM_LOGO_VALID_TYPES"
-    let logo_valid_types = config_strm::ConfigStrm::get_logo_valid_types();
-    config_strm::ConfigStrm::get_logo_valid_types_by_str(&logo_valid_types)?;
+    // Checking the presence of required directories
+    check_presence_required_directories()?;
 
     let config_app = config_app::ConfigApp::init_by_env();
 
@@ -49,6 +46,10 @@ async fn main() -> std::io::Result<()> {
     log::info!("creating a directory for upload the logo");
     let config_strm = config_strm::ConfigStrm::init_by_env();
     std::fs::create_dir_all(&config_strm.strm_logo_files_dir)?;
+
+    log::info!("creating a directory for upload the avatar");
+    let config_prfl = config_prfl::ConfigPrfl::init_by_env();
+    std::fs::create_dir_all(&config_prfl.prfl_avatar_files_dir)?;
 
     let version = env!("CARGO_PKG_VERSION");
     log::info!("Starting server v.{} {}", version, &app_domain);

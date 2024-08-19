@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, io};
 
 use actix_cors::Cors;
 use actix_multipart::form::tempfile::TempFileConfig;
@@ -12,7 +12,8 @@ use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 
 use profiles::{
-    profile_auth_controller, profile_controller, profile_orm::cfg::get_profile_orm_app, profile_registr_controller,
+    config_prfl, profile_auth_controller, profile_controller, profile_orm::cfg::get_profile_orm_app,
+    profile_registr_controller,
 };
 use send_email::{config_smtp, mailer};
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
@@ -28,7 +29,7 @@ pub(crate) mod errors;
 pub(crate) mod extractors;
 pub mod file_upload;
 pub(crate) mod hash_tools;
-pub(crate) mod profiles;
+pub mod profiles;
 pub(crate) mod schema;
 pub(crate) mod send_email;
 pub(crate) mod sessions;
@@ -60,11 +61,16 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let temp_file_config = Data::new(temp_file_config0);
         // used: stream_get_controller, stream_controller
         let config_strm = Data::new(config_strm::ConfigStrm::init_by_env());
+        //
+        let config_smtp0 = config_smtp::ConfigSmtp::init_by_env();
+        // used: stream_controller
+        let config_smtp = Data::new(config_smtp0.clone());
+        // used: Profile_controller
+        let config_prfl = Data::new(config_prfl::ConfigPrfl::init_by_env());
 
         // Adding various entities.
-        let config_smtp = config_smtp::ConfigSmtp::init_by_env();
         // used: profile_registr_controller
-        let mailer = Data::new(mailer::cfg::get_mailer_app(config_smtp));
+        let mailer = Data::new(mailer::cfg::get_mailer_app(config_smtp0));
         // used: profile_registr_controller
         let user_registr_orm = Data::new(get_user_registr_orm_app(pool.clone()));
         // used: profile_registr_controller
@@ -84,6 +90,8 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             .app_data(Data::clone(&config_jwt))
             .app_data(Data::clone(&temp_file_config))
             .app_data(Data::clone(&config_strm))
+            .app_data(Data::clone(&config_smtp))
+            .app_data(Data::clone(&config_prfl))
             .app_data(Data::clone(&mailer))
             .app_data(Data::clone(&user_registr_orm))
             .app_data(Data::clone(&session_orm))
@@ -173,4 +181,16 @@ pub fn update_env() -> Result<usize, String> {
     } else {
         Ok(0)
     }
+}
+// Checking the presence of required directories
+pub fn check_presence_required_directories() -> Result<(), io::Error> {
+    // Check the correctness of "STRM_LOGO_VALID_TYPES"
+    let logo_valid_types = config_strm::ConfigStrm::get_logo_valid_types();
+    config_strm::ConfigStrm::get_logo_valid_types_by_str(&logo_valid_types)?;
+
+    // Check the correctness of "PRFL_AVATAR_VALID_TYPES"
+    let avatar_valid_types = config_prfl::ConfigPrfl::get_avatar_valid_types();
+    config_prfl::ConfigPrfl::get_avatar_valid_types_by_str(&avatar_valid_types)?;
+
+    Ok(())
 }

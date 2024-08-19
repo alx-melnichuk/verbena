@@ -93,7 +93,7 @@ USR_SHOW_LEAD_TIME=true
 # -----------------------------------------------------------------------------
 # Directory for storing logo files.
 STRM_LOGO_FILES_DIR=./imgs/logo
-# Maximum size for logo files. (5MB=5242880) If the value is 0, then there is no limit.
+# Maximum size for logo files. (5MB=5242880) If the value is 0, then there is no limit. (default 0)
 STRM_LOGO_MAX_SIZE=5242880
 # List of valid input mime types for logo files (comma delimited).
 # Valid values: image/jpeg,image/gif,image/png,image/bmp
@@ -102,6 +102,24 @@ STRM_LOGO_VALID_TYPES=image/jpeg,image/gif,image/png,image/bmp
 # Valid values: jpeg,gif,png,bmp
 STRM_LOGO_EXT=jpeg
 # Maximum width for a logo file. (default 0)
-# STRM_LOGO_MAX_WIDTH=0
+STRM_LOGO_MAX_WIDTH=1024
 # Maximum height for a logo file. (default 0)
-# STRM_LOGO_MAX_HEIGHT=0
+STRM_LOGO_MAX_HEIGHT=1024
+
+# -----------------------------------------------------------------------------
+# Profile Controller Settings
+# -----------------------------------------------------------------------------
+# Directory for storing avatar files.
+PRFL_AVATAR_FILES_DIR=./imgs/avatar
+# Maximum size for avatar files. (5MB=5242880) If the value is 0, then there is no limit. (default 0)
+PRFL_AVATAR_MAX_SIZE=5242880
+# List of valid input mime types for avatar files (comma delimited).
+# Valid values: image/jpeg,image/gif,image/png,image/bmp
+PRFL_AVATAR_VALID_TYPES=image/jpeg,image/gif,image/png,image/bmp
+# Logo files will be converted to this MIME type.
+# Valid values: jpeg,gif,png,bmp
+PRFL_AVATAR_EXT=jpeg
+# Maximum width for a avatar file. (default 0)
+PRFL_AVATAR_MAX_WIDTH=128
+# Maximum height for a avatar file. (default 0)
+PRFL_AVATAR_MAX_HEIGHT=128
