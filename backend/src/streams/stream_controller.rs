@@ -21,7 +21,7 @@ use crate::streams::{
     stream_orm::StreamOrm,
 };
 use crate::users::user_models::UserRole;
-use crate::utils::parser;
+use crate::utils::{parser, path_file};
 use crate::validators::{msg_validation, Validator};
 
 pub const ALIAS_LOGO_FILES: &str = "logo";
@@ -569,10 +569,10 @@ pub async fn put_stream(
                 path_new_logo_file = path_file;
 
                 if config_strm.strm_logo_ext.is_some() || config_strm.strm_logo_max_width > 0 || config_strm.strm_logo_max_height > 0 {
-                    let path = path::PathBuf::from(&path_new_logo_file);
-                    let file_source_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap().to_string();
+                    // Get file extension from full file path.
+                    let file_source_ext = path_file::get_file_ext(&path_new_logo_file).unwrap_or("".to_string());
+                    // Determine the resulting file extension.
                     let strm_logo_ext = config_strm.strm_logo_ext.clone().unwrap_or(file_source_ext);
-                    
                     // Convert the file to another mime type.
                     let path_file = dynamic_image::convert_file(
                         &path_new_logo_file,
