@@ -70,19 +70,19 @@ impl UploadFile {
     }
     #[rustfmt::skip]
     pub fn upload(&self, temp_file: TempFile, only_file_name: &str) -> Result<Option<String>, ErrUpload> {
+        let mut curr_file_name: String = only_file_name.to_string();
 
         if temp_file.size == 0 {
             // Delete the old version of the file.
             return Ok(None);
         }
         // Check the name of the new file that it is not empty.
-        if only_file_name.len() == 0 {
-            return Err(ErrUpload::FileNameNotDefined);
+        if curr_file_name.len() == 0 {
+            curr_file_name = temp_file.file_name.unwrap_or("file_name".to_string());
         }
 
         // Check file size for maximum value.
         if self.config_file.max_size > 0 && temp_file.size > self.config_file.max_size {
-            // return Err(AppError::content_large413(MSG_INVALID_FILE_SIZE) // 413
             #[rustfmt::skip]
             return Err(ErrUpload::InvalidFileSize { actual_size: temp_file.size, max_size: self.config_file.max_size });
         }
@@ -92,14 +92,13 @@ impl UploadFile {
         let file_mime_type = match file_content_type { Some(v) => v.to_string(), None => "".to_string() };
         let valid_file_types: Vec<String> = self.config_file.valid_types.clone();
         if !valid_file_types.contains(&file_mime_type) {
-            // return Err(AppError::unsupported_type415(MSG_INVALID_FILE_TYPE) // 415
             #[rustfmt::skip]
             return Err(ErrUpload::InvalidFileType { actual_type: file_mime_type, valid_types: valid_file_types.join(",") });
         }
 
         // Get a new file extension.
         let file_ext = file_mime_type.replace(&format!("{}/", IMAGE), "");
-        let new_file_name_and_ext = format!("{}.{}", only_file_name, &file_ext);
+        let new_file_name_and_ext = format!("{}.{}", curr_file_name, &file_ext);
         // Add 'file path' + 'file name'.'file extension'.
         let path: path::PathBuf = [&self.config_file.file_dir, &new_file_name_and_ext].iter().collect();
         // Get the full name for a new file.
@@ -109,7 +108,6 @@ impl UploadFile {
         // If a file exists at the target path, persist will atomically replace it.
         let res_upload = temp_file.file.persist(&full_path_file);
         if let Err(err) = res_upload {
-            // return Err(AppError::internal_err500(&message)) // 500
             return Err(ErrUpload::ErrorSavingFile { path_file: full_path_file, error: err.error });
         }
         Ok(Some(full_path_file))
