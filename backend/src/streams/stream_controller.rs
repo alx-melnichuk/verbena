@@ -9,7 +9,7 @@ use utoipa;
 use crate::cdis::coding;
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
-use crate::file_upload::upload;
+use crate::loading::{dynamic_image, upload_file};
 use crate::settings::err;
 #[cfg(not(feature = "mockdata"))]
 use crate::streams::stream_orm::impls::StreamOrmApp;
@@ -25,6 +25,7 @@ use crate::utils::parser;
 use crate::validators::{msg_validation, Validator};
 
 pub const ALIAS_LOGO_FILES: &str = "logo";
+pub const ALIAS_LOGO_FILES_DIR: &str = "/logo";
 // 406 Not acceptable - Error deserializing field tag.
 pub const MSG_INVALID_FIELD_TAG: &str = "invalid_field_tag";
 // 413 Content too large - File size exceeds max.
@@ -87,7 +88,7 @@ fn convert_logo_file(path_logo_file: &str, config_strm: config_strm::ConfigStrm,
         || config_strm.strm_logo_max_height > 0
     {
         // Convert the file to another mime type.
-        let path_file = upload::convert_file(
+        let path_file = dynamic_image::convert_file(
             &path_logo_file,
             &strm_logo_ext,
             config_strm.strm_logo_max_width,
@@ -305,7 +306,7 @@ pub async fn post_stream(
     let mut create_stream = stream_models::CreateStream::convert(create_stream_info_dto.clone(), curr_user_id);
     let tags = create_stream_info_dto.tags.clone();
     if path_new_logo_file.len() > 0 {
-        let alias_logo_file = path_new_logo_file.replace(&logo_files_dir, &format!("/{}", ALIAS_LOGO_FILES));
+        let alias_logo_file = path_new_logo_file.replace(&logo_files_dir, ALIAS_LOGO_FILES_DIR);
         create_stream.logo = Some(alias_logo_file);
     }
 
@@ -526,7 +527,75 @@ pub async fn put_stream(
     let logo_files_dir = config_strm.strm_logo_files_dir.clone();
     let mut path_new_logo_file = "".to_string();
 
-    while let Some(temp_file) = logofile {
+    if let Some(temp_file) = logofile {
+        // Create a configuration (ConfigFile) for UploadFile.
+        let config_file = upload_file::ConfigFile::from(config_strm.clone());
+        // Create UploadFile.
+        let upload_file = upload_file::UploadFile::new(config_file);
+        // Get the name of the new file.
+        let only_file_name = format!("{}_{}", curr_user_id, coding::encode(Utc::now(), 1));
+        // Download a temporary file.
+        let res_upload = upload_file.upload(temp_file, &only_file_name);
+        match res_upload {
+            Err(err_upload) => {
+                let app_err = match err_upload {
+                    upload_file::ErrUpload::InvalidFileSize { actual_size, max_size } => {
+                        let json = serde_json::json!({ "actualFileSize": actual_size, "maxFileSize": max_size });
+                        log::error!("{}: {} - {}", err::CD_CONTENT_TOO_LARGE, MSG_INVALID_FILE_SIZE, json.to_string());
+                        AppError::content_large413(MSG_INVALID_FILE_SIZE).add_param(Borrowed("invalidFileSize"), &json) // 413
+                    },
+                    upload_file::ErrUpload::InvalidFileType { actual_type, valid_types } => {
+                        let json = serde_json::json!({ "actualFileType": &actual_type, "validFileType": &valid_types });
+                        log::error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, MSG_INVALID_FILE_TYPE, json.to_string());
+                        AppError::unsupported_type415(MSG_INVALID_FILE_TYPE).add_param(Borrowed("invalidFileType"), &json) // 415
+                    },
+                    upload_file::ErrUpload::FileNameNotDefined => todo!(),
+                    upload_file::ErrUpload::ErrorSavingFile { path_file, error } => {
+                        let message = format!("{}; {} - {}", MSG_ERROR_UPLOAD_FILE, &path_file, error.to_string());
+                        log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
+                        AppError::internal_err500(&message) // 500        
+                    },
+                };
+                return Err(app_err);
+            },
+            Ok(None) => {
+                // Delete the old version of the logo file.
+                is_delete_logo = true;
+                logo = Some(None); // Set the "logo" field to `NULL`.
+            },
+            Ok(Some(path_file)) => {
+                // Delete the old version of the logo file.
+                is_delete_logo = true;
+                path_new_logo_file = path_file;
+
+                if config_strm.strm_logo_ext.is_some() || config_strm.strm_logo_max_width > 0 || config_strm.strm_logo_max_height > 0 {
+                    let path = path::PathBuf::from(&path_new_logo_file);
+                    let file_source_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap().to_string();
+                    let strm_logo_ext = config_strm.strm_logo_ext.clone().unwrap_or(file_source_ext);
+                    
+                    // Convert the file to another mime type.
+                    let path_file = dynamic_image::convert_file(
+                        &path_new_logo_file,
+                        &strm_logo_ext,
+                        config_strm.strm_logo_max_width,
+                        config_strm.strm_logo_max_height,
+                    ).map_err(|e| {
+                        let message = format!("{}; {}", MSG_ERROR_CONVERT_FILE, e);
+                        log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
+                        AppError::not_extended510(&message) //510
+                    })?;
+                    if !path_file.eq(&path_new_logo_file) {
+                        remove_file_and_log(&path_new_logo_file, "put_stream()");
+                    }
+                    path_new_logo_file = path_file;
+                }
+
+                let alias_logo_file = path_new_logo_file.replace(&logo_files_dir, ALIAS_LOGO_FILES_DIR);
+                logo = Some(Some(alias_logo_file));
+            },
+        }
+    }
+    /*while let Some(temp_file) = logofile {
         // Delete the old version of the logo file.
         is_delete_logo = true;
         if temp_file.size == 0 {
@@ -577,12 +646,11 @@ pub async fn put_stream(
         logo = Some(Some(alias_logo_file));
 
         break;
-    }
+    }*/
 
     let tags = modify_stream_info_dto.tags.clone();
     let mut modify_stream: ModifyStream = modify_stream_info_dto.into();
     modify_stream.logo = logo;
-
     let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
     let res_data = web::block(move || {
         let mut old_logo_file = "".to_string();
@@ -593,10 +661,9 @@ pub async fn put_stream(
                     log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                     AppError::database507(&e)        
                 });
-
+            
             if let Ok(Some(old_logo)) = res_get_stream_logo {
-                let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
-                old_logo_file = old_logo.replace(&alias_logo, &logo_files_dir);
+                old_logo_file = old_logo.replace(ALIAS_LOGO_FILES_DIR, &logo_files_dir);
             }
         }
         // Modify an entity (stream).
@@ -702,8 +769,7 @@ pub async fn delete_stream(
             // If there is a “logo” file, then delete this file.
             let config_strm = config_strm.get_ref().clone();
             let logo_files_dir = config_strm.strm_logo_files_dir.clone();
-            let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
-            let logo_name_full_path = logo_file.replace(&alias_logo, &logo_files_dir);
+            let logo_name_full_path = logo_file.replace(ALIAS_LOGO_FILES_DIR, &logo_files_dir);
             remove_file_and_log(&logo_name_full_path, &"delete_stream()");
         }
     
@@ -1398,13 +1464,12 @@ mod tests {
         let strm_logo_files_dir = config_strm.strm_logo_files_dir;
 
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
-        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
-        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &strm_logo_files_dir, 1);
+        let logo_name_full_path = stream_dto_res_logo.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
         let is_exists_logo_new = path::Path::new(&logo_name_full_path).exists();
         let _ = fs::remove_file(&logo_name_full_path);
 
         assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(&format!("/{}", ALIAS_LOGO_FILES)));
+        assert!(stream_dto_res_logo.starts_with(ALIAS_LOGO_FILES_DIR));
         assert!(is_exists_logo_new);
 
         let path_logo = path::PathBuf::from(stream_dto_res_logo);
@@ -1503,8 +1568,7 @@ mod tests {
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
-        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
-        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &strm_logo_files_dir, 1);
+        let logo_name_full_path = stream_dto_res_logo.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
         let path = path::Path::new(&logo_name_full_path);
         let receiver_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap();
         let is_exists_logo_new = path.exists();
@@ -1512,7 +1576,7 @@ mod tests {
 
         assert_eq!(file_ext, receiver_ext);
         assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(&format!("/{}", ALIAS_LOGO_FILES)));
+        assert!(stream_dto_res_logo.starts_with(ALIAS_LOGO_FILES_DIR));
         assert!(is_exists_logo_new);
 
         let path_logo = path::PathBuf::from(stream_dto_res_logo);
@@ -2154,13 +2218,12 @@ mod tests {
 
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
 
-        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
-        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &strm_logo_files_dir, 1);
+        let logo_name_full_path = stream_dto_res_logo.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
         let is_exists_logo_new = path::Path::new(&logo_name_full_path).exists();
         let _ = fs::remove_file(&logo_name_full_path);
 
         assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(&format!("/{}", ALIAS_LOGO_FILES)));
+        assert!(stream_dto_res_logo.starts_with(ALIAS_LOGO_FILES_DIR));
         assert!(is_exists_logo_new);
 
         let path_logo = path::PathBuf::from(stream_dto_res_logo);
@@ -2218,8 +2281,7 @@ mod tests {
 
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
 
-        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
-        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &strm_logo_files_dir, 1);
+        let logo_name_full_path = stream_dto_res_logo.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
         let path = path::Path::new(&logo_name_full_path);
         let receiver_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap();
         let is_exists_logo_new = path.exists();
@@ -2227,7 +2289,7 @@ mod tests {
 
         assert_eq!(file_ext, receiver_ext);
         assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(&format!("/{}", ALIAS_LOGO_FILES)));
+        assert!(stream_dto_res_logo.starts_with(ALIAS_LOGO_FILES_DIR));
         assert!(is_exists_logo_new);
 
         let path_logo = path::PathBuf::from(stream_dto_res_logo);
@@ -2250,7 +2312,7 @@ mod tests {
         let name0_file = "put_circle5x5_b_old.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_logo = format!("/{}/{}", ALIAS_LOGO_FILES, name0_file);
+        let path_name0_logo = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
         let name1_file = "put_circle5x5_b_new.png";
         let path_name1_file = format!("./{}", name1_file);
@@ -2289,14 +2351,13 @@ mod tests {
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
-        let alias_logo = format!("/{}", ALIAS_LOGO_FILES);
-        let logo_name_full_path = stream_dto_res_logo.replacen(&alias_logo, &strm_logo_files_dir, 1);
+        let logo_name_full_path = stream_dto_res_logo.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
 
         let is_exists_logo_new = path::Path::new(&logo_name_full_path).exists();
         let _ = fs::remove_file(&logo_name_full_path);
 
         assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(&format!("/{}", ALIAS_LOGO_FILES)));
+        assert!(stream_dto_res_logo.starts_with(ALIAS_LOGO_FILES_DIR));
         assert!(is_exists_logo_new);
 
         let path_logo = path::PathBuf::from(stream_dto_res_logo);
@@ -2320,7 +2381,7 @@ mod tests {
         let name0_file = "put_circle5x5_c_old.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         save_file_png(&path_name0_file, 1).unwrap();
-        let path_name0_logo = format!("/{}/{}", ALIAS_LOGO_FILES, name0_file);
+        let path_name0_logo = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
@@ -2355,7 +2416,7 @@ mod tests {
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
 
         assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(&format!("/{}", ALIAS_LOGO_FILES)));
+        assert!(stream_dto_res_logo.starts_with(ALIAS_LOGO_FILES_DIR));
         assert_eq!(&path_name0_logo, &stream_dto_res_logo);
     }
     #[actix_web::test]
@@ -2366,7 +2427,7 @@ mod tests {
         let name0_file = "put_circle5x5_d_old.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_logo = format!("/{}/{}", ALIAS_LOGO_FILES, name0_file);
+        let path_name0_logo = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
         let name1_file = "put_circle5x5_d_new.png";
         let path_name1_file = format!("./{}", name1_file);
@@ -2503,7 +2564,7 @@ mod tests {
         let name0_file = "delete_circle5x5_b_old.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_logo = format!("/{}/{}", ALIAS_LOGO_FILES, name0_file);
+        let path_name0_logo = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
         let (cfg_c, mut data_c, token) = get_cfg_data();
         let stream = data_c.2.get_mut(0).unwrap();
