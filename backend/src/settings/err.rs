@@ -35,9 +35,13 @@ pub const MSG_INVALID_HASH: &str = "invalid_hash";
 
 // 413 Content too large // The request object exceeds the limits defined by the server.
 pub const CD_CONTENT_TOO_LARGE: &str = "ContentTooLarge"; /*+*/
+// 413 Content too large - File size exceeds max.
+pub const MSG_INVALID_FILE_SIZE: &str = "invalid_file_size";
 
 // 415 Unsupported Media Type (stream_controller)
 pub const CD_UNSUPPORTED_TYPE: &str = "UnsupportedType"; /*+*/
+// 415 Unsupported Media Type - Uploading Image Files. Mime file type is not valid.
+pub const MSG_INVALID_FILE_TYPE: &str = "invalid_file_type";
 
 // 416 Requested Range Not Satisfiable
 pub const CD_RANGE_NOT_SATISFIABLE: &str = "RangeNotSatisfiable";
@@ -54,6 +58,8 @@ pub const CD_UNPROCESSABLE_ENTITY: &str = "UnprocessableEntity";
 pub const CD_INTERNAL_ERROR: &str = "InternalServerError";
 // 500 Internal Server Error - Error creating password hash. (user_registr_controller, user_registr_controller)
 pub const MSG_ERROR_HASHING_PASSWORD: &str = "error_hashing_password";
+// 500 Internal Server Error - Error uploading file
+pub const MSG_ERROR_UPLOAD_FILE: &str = "error_upload_file";
 
 // 506 Variant Also Negotiates /*+*/
 pub const CD_BLOCKING: &str = "Blocking"; /*+*/
