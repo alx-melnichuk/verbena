@@ -2,27 +2,30 @@ use std::path;
 
 // Get the file path from the full file path.
 pub fn get_file_path(full_file_name: &str) -> Option<String> {
-    let path = path::PathBuf::from(full_file_name);
-    path.parent().map(|s| s.to_str().unwrap().to_string())
+    path::PathBuf::from(full_file_name)
+        .parent()
+        .map(|s| s.to_str().unwrap().to_string())
 }
 
 // Get the file name (with extension) from the full path to the file.
 pub fn get_file_name(full_file_name: &str) -> Option<String> {
-    let path = path::PathBuf::from(full_file_name);
-    path.file_name().map(|s| s.to_str().unwrap().to_string())
+    path::PathBuf::from(full_file_name)
+        .file_name()
+        .map(|s| s.to_str().unwrap().to_string())
 }
 
 // Get the filename (without extension) from the full path to the file.
 pub fn get_file_stem(full_file_name: &str) -> Option<String> {
-    let path = path::PathBuf::from(full_file_name);
-    path.file_stem().map(|s| s.to_str().unwrap().to_string())
+    path::PathBuf::from(full_file_name)
+        .file_stem()
+        .map(|s| s.to_str().unwrap().to_string())
 }
 
 // Get file extension from full file path.
 pub fn get_file_ext(full_file_name: &str) -> Option<String> {
-    let path = path::PathBuf::from(full_file_name);
-
-    path.extension().map(|s| s.to_str().unwrap().to_string())
+    path::PathBuf::from(full_file_name)
+        .extension()
+        .map(|s| s.to_str().unwrap().to_string())
 }
 
 #[cfg(test)]
