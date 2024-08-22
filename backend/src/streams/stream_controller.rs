@@ -4,12 +4,13 @@ use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, post, put, web, HttpResponse};
 use chrono::{DateTime, Utc};
 use mime::IMAGE;
+use serde_json::{self, json};
 use utoipa;
 
 use crate::cdis::coding;
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
-use crate::loading::{dynamic_image, upload_file};
+use crate::loading::dynamic_image;
 use crate::settings::err;
 #[cfg(not(feature = "mockdata"))]
 use crate::streams::stream_orm::impls::StreamOrmApp;
@@ -21,7 +22,7 @@ use crate::streams::{
     stream_orm::StreamOrm,
 };
 use crate::users::user_models::UserRole;
-use crate::utils::{parser, path_file};
+use crate::utils::parser;
 use crate::validators::{msg_validation, Validator};
 
 pub const ALIAS_LOGO_FILES: &str = "logo";
@@ -50,6 +51,9 @@ fn remove_file_and_log(file_name: &str, msg: &str) {
             log::error!("{} remove_file({}): error: {:?}", msg, file_name, err);
         }
     }
+}
+fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
+    format!("{}_{}", user_id, coding::encode(date_time, 1))
 }
 fn new_stream_dto(title: &str, descript: &str, starttime: &str, tag_list: &str) -> CreateStreamInfoDto {
     #[rustfmt::skip]
@@ -198,11 +202,11 @@ impl CreateStreamForm {
         (status = 413, description = "Invalid image file size. `curl -i -X POST http://localhost:8080/api/streams
             -F 'title=title2'  -F 'tags=[\"tag1\"]' -F 'logofile=@image.jpg'`", body = AppError,
             example = json!(AppError::content_large413(err::MSG_INVALID_FILE_SIZE).add_param(Borrowed("invalidFileSize"),
-                &serde_json::json!({ "actualFileSize": 186, "maxFileSize": 160 })))),
+                &json!({ "actualFileSize": 186, "maxFileSize": 160 })))),
         (status = 415, description = "Uploading a file with an invalid type `svg`. `curl -i -X POST http://localhost:8080/api/streams
             -F 'title=title3'  -F 'tags=[\"tag3\"]' -F 'logofile=@image.svg'`", body = AppError,
             example = json!(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE).add_param(Borrowed("invalidFileType"),
-                &serde_json::json!({ "actualFileType": "image/svg+xml", "validFileType": "image/jpeg,image/png" })))),
+                &json!({ "actualFileType": "image/svg+xml", "validFileType": "image/jpeg,image/png" })))),
         (status = 417, description = "Validation error. `curl -X POST http://localhost:8080/api/streams
             -F 'title=t' -F 'descript=d' -F 'starttime=2020-01-20T20:10:57.000Z' -F 'tags=[]'`", body = [AppError],
             example = json!(AppError::validations((new_stream_dto("u", "d", "2020-01-20T20:10:57.000Z", "")).validate().err().unwrap()))
@@ -251,54 +255,59 @@ pub async fn post_stream(
     let mut path_new_logo_file = "".to_string();
 
     while let Some(temp_file) = logofile {
+        // If the size of the new file is zero, then we are not adding any file.
         if temp_file.size == 0 {
             break;
         }
         // Check file size for maximum value.
         if config_strm.strm_logo_max_size > 0 && temp_file.size > config_strm.strm_logo_max_size {
-            let json = serde_json::json!({ "actualFileSize": temp_file.size, "maxFileSize": config_strm.strm_logo_max_size });
-            log::error!("{}: {} - {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
+            let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": config_strm.strm_logo_max_size });
+            log::error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
             return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Borrowed("invalidFileSize"), &json));
         }
+        // Checking the mime type file for valid mime types.
         #[rustfmt::skip]
         let file_mime_type = match temp_file.content_type { Some(v) => v.to_string(), None => "".to_string() };
-        let valid_file_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
-        // Checking the file for valid mime types.
-        if !valid_file_types.contains(&file_mime_type) {
-            let json = serde_json::json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_types.join(",") });
+        let valid_file_mime_types = config_strm.strm_logo_valid_types.clone();
+        if !valid_file_mime_types.contains(&file_mime_type) {
+            let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
             log::error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
             return Err(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE) // 415
                 .add_param(Borrowed("invalidFileType"), &json));
         }
-        // Get the name of the new file.
-        let path_file = get_new_path_file(curr_user_id, Utc::now(), &file_mime_type, &logo_files_dir);
+        // Get the file stem and extension for the new file.
+        #[rustfmt::skip]
+        let name = format!("{}.{}", get_file_name(curr_user_id, Utc::now()), file_mime_type.replace(&format!("{}/", IMAGE), ""));
+        // Add 'file path' + 'file name'.'file extension'.
+        let path: path::PathBuf = [&logo_files_dir, &name].iter().collect();
+        let full_path_file = path.to_str().unwrap().to_string();
         // Persist the temporary file at the target path.
         // If a file exists at the target path, persist will atomically replace it.
-        let res_upload = temp_file.file.persist(&path_file);
+        let res_upload = temp_file.file.persist(&full_path_file);
         if let Err(err) = res_upload {
-            let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &path_file, err.to_string());
+            let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &full_path_file, err.to_string());
             log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
             return Err(AppError::internal_err500(&message)) // 500
         }
-        path_new_logo_file = path_file;
+        path_new_logo_file = full_path_file;
 
         // Convert the file to another mime type.
         let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "post_stream()")
             .map_err(|e| {
                 let message = format!("{}; {}", MSG_ERROR_CONVERT_FILE, e);
                 log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
-                AppError::not_extended510(&message) //510
+                AppError::not_extended510(&message) // 510
             })?;
         if let Some(new_path_file) = res_convert_logo_file {
             path_new_logo_file = new_path_file;
         }
-
+        
         break;
     }
-
-    let mut create_stream = stream_models::CreateStream::convert(create_stream_info_dto.clone(), curr_user_id);
     let tags = create_stream_info_dto.tags.clone();
+    let mut create_stream = stream_models::CreateStream::convert(create_stream_info_dto.clone(), curr_user_id);
+    
     if path_new_logo_file.len() > 0 {
         let alias_logo_file = path_new_logo_file.replace(&logo_files_dir, ALIAS_LOGO_FILES_DIR);
         create_stream.logo = Some(alias_logo_file);
@@ -327,15 +336,6 @@ pub async fn post_stream(
     let stream_info_dto = list[0].clone();
 
     Ok(HttpResponse::Created().json(stream_info_dto)) // 201
-}
-
-fn get_new_path_file(user_id: i32, date_time: DateTime<Utc>, file_mime_type: &str, file_dir: &str) -> String {
-    let only_file_name = format!("{}_{}", user_id, coding::encode(date_time, 1));
-    // Get file name and file extension.
-    let file_ext = file_mime_type.replace(&format!("{}/", IMAGE), "");
-    // Add 'file path' + 'file name'.'file extension'.
-    let path: path::PathBuf = [file_dir, &format!("{}.{}", only_file_name, file_ext)].iter().collect();
-    path.to_str().unwrap().to_string()
 }
 
 #[derive(Debug, MultipartForm)]
@@ -445,11 +445,11 @@ impl ModifyStreamForm {
         (status = 413, description = "Invalid image file size. `curl -i -X PUT http://localhost:8080/api/streams/1
             -F 'title=title2'  -F 'tags=[\"tag1\"]' -F 'logofile=@image.jpg'`", body = AppError,
             example = json!(AppError::content_large413(err::MSG_INVALID_FILE_SIZE).add_param(Borrowed("invalidFileSize"),
-                &serde_json::json!({ "actualFileSize": 186, "maxFileSize": 160 })))),
+                &json!({ "actualFileSize": 186, "maxFileSize": 160 })))),
         (status = 415, description = "Uploading a file with an invalid type `svg`. `curl -i -X PUT http://localhost:8080/api/streams/1
             -F 'title=title3'  -F 'tags=[\"tag3\"]' -F 'logofile=@image.svg'`", body = AppError,
             example = json!(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE).add_param(Borrowed("invalidFileType"),
-                &serde_json::json!({ "actualFileType": "image/svg+xml", "validFileType": "image/jpeg,image/png" })))),
+                &json!({ "actualFileType": "image/svg+xml", "validFileType": "image/jpeg,image/png" })))),
         (status = 416, description = "Error parsing input parameter. `curl -i -X PUT http://localhost:8080/api/streams/2a
                 -F 'title=title3'  -F 'tags=[\"tag3\"]'`", body = AppError,
             example = json!(AppError::range_not_satisfiable416(
@@ -515,128 +515,75 @@ pub async fn put_stream(
         return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
     }
     let mut logo: Option<Option<String>> = None;
-    let mut is_delete_logo = false;
 
     let config_strm = config_strm.get_ref().clone();
     let logo_files_dir = config_strm.strm_logo_files_dir.clone();
     let mut path_new_logo_file = "".to_string();
-
-    if let Some(temp_file) = logofile {
-        // Get the name of the new file.
-        let file_stem = format!("{}_{}", curr_user_id, coding::encode(Utc::now(), 1));
-        // Create UploadFile.
-        let upload_file = upload_file::UploadFile::new(
-            Some(config_strm.strm_logo_max_size),
-            config_strm.strm_logo_valid_types.clone(),
-            config_strm.strm_logo_files_dir.clone(),
-        );
-        
-        // Download a temporary file.
-        let res_upload = upload_file.upload(temp_file, &file_stem);
-
-        // Handling when there were errors during loading.
-        if let Err(err_upload) = res_upload {
-            let app_err = AppError::from(err_upload.clone());
-            #[rustfmt::skip]
-            let param = if app_err.params.len() > 0 { app_err.params.iter().next().unwrap().1.to_string() } else { "".to_string() };
-            log::error!("{}: {}; {}", &app_err.code, &app_err.message, &param);
-            return Err(app_err);
-        }
-        let opt_upload = res_upload.unwrap();
-        is_delete_logo = true;
-
-        // Handle when the download is successful.
-        if let Some(path_file) = opt_upload {
-            path_new_logo_file = path_file;
-
-            if config_strm.strm_logo_ext.is_some() || config_strm.strm_logo_max_width > 0 || config_strm.strm_logo_max_height > 0 {
-                // Get file extension from full file path.
-                let file_source_ext = path_file::get_file_ext(&path_new_logo_file).unwrap_or("".to_string());
-                // Determine the resulting file extension.
-                let strm_logo_ext = config_strm.strm_logo_ext.clone().unwrap_or(file_source_ext);
-                // Convert the file to another mime type.
-                let path_file = dynamic_image::convert_file(
-                    &path_new_logo_file,
-                    &strm_logo_ext,
-                    config_strm.strm_logo_max_width,
-                    config_strm.strm_logo_max_height,
-                ).map_err(|e| {
-                    let message = format!("{}; {}", MSG_ERROR_CONVERT_FILE, e);
-                    log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
-                    AppError::not_extended510(&message) //510
-                })?;
-                if !path_file.eq(&path_new_logo_file) {
-                    remove_file_and_log(&path_new_logo_file, "put_stream()");
-                }
-                path_new_logo_file = path_file;
-            }
-
-            let alias_logo_file = path_new_logo_file.replace(&logo_files_dir, ALIAS_LOGO_FILES_DIR);
-            logo = Some(Some(alias_logo_file));
-        } else {
-            logo = Some(None); // Set the "logo" field to `NULL`.
-        }
-    }
-    /*while let Some(temp_file) = logofile {
+    
+    while let Some(temp_file) = logofile {
         // Delete the old version of the logo file.
-        is_delete_logo = true;
         if temp_file.size == 0 {
             logo = Some(None); // Set the "logo" field to `NULL`.
             break;
         }
         // Check file size for maximum value.
         if config_strm.strm_logo_max_size > 0 && temp_file.size > config_strm.strm_logo_max_size {
-            let json = serde_json::json!({ "actualFileSize": temp_file.size, "maxFileSize": config_strm.strm_logo_max_size });
-            log::error!("{}: {} - {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
+            let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": config_strm.strm_logo_max_size });
+            log::error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
             return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Borrowed("invalidFileSize"), &json));
         }
+        
+        // Checking the mime type file for valid mime types.
         #[rustfmt::skip]
         let file_mime_type = match temp_file.content_type { Some(v) => v.to_string(), None => "".to_string() };
-        let valid_file_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
-        // Checking the file for valid mime types.
-        if !valid_file_types.contains(&file_mime_type) {
-            let json = serde_json::json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_types.join(",") });
-            log::error!("{}: {} - {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
+        let valid_file_mime_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
+        if !valid_file_mime_types.contains(&file_mime_type) {
+            let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
+            log::error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
             return Err(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE) // 415
                 .add_param(Borrowed("invalidFileType"), &json));
         }
-        // Get the name of the new file.
-        let path_file = get_new_path_file(curr_user_id, Utc::now(), &file_mime_type, &logo_files_dir);
+        
+        // Get the file stem and extension for the new file.
+        #[rustfmt::skip]
+        let name = format!("{}.{}", get_file_name(curr_user_id, Utc::now()), file_mime_type.replace(&format!("{}/", IMAGE), ""));
+        // Add 'file path' + 'file name'.'file extension'.
+        let path: path::PathBuf = [&logo_files_dir, &name].iter().collect();
+        let full_path_file = path.to_str().unwrap().to_string();
         // Persist the temporary file at the target path.
-        // If a file exists at the target path, persist will atomically replace it.
-        let res_upload = temp_file.file.persist(&path_file);
+        // Note: if a file exists at the target path, persist will atomically replace it.
+        let res_upload = temp_file.file.persist(&full_path_file);
         if let Err(err) = res_upload {
-            let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &path_file, err.to_string());
+            let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &full_path_file, err.to_string());
             log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
             return Err(AppError::internal_err500(&message)) // 500
         }
-        path_new_logo_file = path_file;
-
+        path_new_logo_file = full_path_file;        
+        
         // Convert the file to another mime type.
         let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "put_stream()")
             .map_err(|e| {
                 let message = format!("{}; {}", MSG_ERROR_CONVERT_FILE, e);
                 log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
-                AppError::not_extended510(&message) //510
+                AppError::not_extended510(&message) // 510
             })?;
         if let Some(new_path_file) = res_convert_logo_file {
             path_new_logo_file = new_path_file;
         }
 
-        let alias_logo_file = path_new_logo_file.replace(&logo_files_dir, &format!("/{}", ALIAS_LOGO_FILES));
+        let alias_logo_file = path_new_logo_file.replace(&logo_files_dir, ALIAS_LOGO_FILES_DIR);
         logo = Some(Some(alias_logo_file));
 
         break;
-    }*/
-
+    }
     let tags = modify_stream_info_dto.tags.clone();
     let mut modify_stream: ModifyStream = modify_stream_info_dto.into();
     modify_stream.logo = logo;
     let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
     let res_data = web::block(move || {
         let mut old_logo_file = "".to_string();
-        if is_delete_logo {
+        if modify_stream.logo.is_some() {
             // Get the logo file name for an entity (stream) by ID.
             let res_get_stream_logo = stream_orm.get_stream_logo_by_id(id)
                 .map_err(|e| {
@@ -1321,7 +1268,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_CONTENT_TOO_LARGE);
         assert_eq!(app_err.message, err::MSG_INVALID_FILE_SIZE);
-        let json = serde_json::json!({ "actualFileSize": 186, "maxFileSize": 160 });
+        let json = json!({ "actualFileSize": 186, "maxFileSize": 160 });
         assert_eq!(*app_err.params.get("invalidFileSize").unwrap(), json);
     }
     #[actix_web::test]
@@ -1354,7 +1301,7 @@ mod tests {
         assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
         assert_eq!(app_err.message, err::MSG_INVALID_FILE_TYPE);
         #[rustfmt::skip]
-        let json = serde_json::json!({ "actualFileType": "image/bmp", "validFileType": "image/jpeg,image/png" });
+        let json = json!({ "actualFileType": "image/bmp", "validFileType": "image/jpeg,image/png" });
         assert_eq!(*app_err.params.get("invalidFileType").unwrap(), json);
     }
     #[actix_web::test]
@@ -1982,7 +1929,7 @@ mod tests {
         assert_eq!(app_err.code, err::CD_CONTENT_TOO_LARGE);
         assert_eq!(app_err.message, err::MSG_INVALID_FILE_SIZE);
         #[rustfmt::skip]
-        let json = serde_json::json!({ "actualFileSize": size, "maxFileSize": strm_logo_max_size });
+        let json = json!({ "actualFileSize": size, "maxFileSize": strm_logo_max_size });
         assert_eq!(*app_err.params.get("invalidFileSize").unwrap(), json);
     }
     #[actix_web::test]
@@ -2014,7 +1961,7 @@ mod tests {
         assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
         assert_eq!(app_err.message, err::MSG_INVALID_FILE_TYPE);
         #[rustfmt::skip]
-        let json = serde_json::json!({ "actualFileType": "image/bmp", "validFileType": &valid_file_types.join(",") });
+        let json = json!({ "actualFileType": "image/bmp", "validFileType": &valid_file_types.join(",") });
         assert_eq!(*app_err.params.get("invalidFileType").unwrap(), json);
     }
     #[actix_web::test]
@@ -2534,7 +2481,7 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::OK); // 200
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json_stream = serde_json::json!(stream).to_string();
+        let json_stream = json!(stream).to_string();
         let stream_dto_org: StreamInfoDto = serde_json::from_slice(json_stream.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(stream_dto_res, stream_dto_org);
     }
@@ -2568,7 +2515,7 @@ mod tests {
 
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json_stream = serde_json::json!(stream2).to_string();
+        let json_stream = json!(stream2).to_string();
         let stream_dto_org: StreamInfoDto = serde_json::from_slice(json_stream.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(stream_dto_res, stream_dto_org);
     }
