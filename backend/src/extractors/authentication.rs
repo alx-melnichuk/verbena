@@ -36,7 +36,7 @@ impl FromRequest for Authenticated {
     fn from_request(req: &actix_web::HttpRequest, _payload: &mut dev::Payload) -> Self::Future {
         let value = req.extensions().get::<Profile>().cloned();
         let result = match value {
-            Some(user) => Ok(Authenticated(user)),
+            Some(profile) => Ok(Authenticated(profile)),
             #[rustfmt::skip]
             None => Err(error::ErrorInternalServerError(AppError::internal_err500(MSG_USER_NOT_RECEIVED_FROM_REQUEST))),
         };
@@ -63,11 +63,9 @@ impl RequireAuth {
             allowed_roles: Rc::new(allowed_roles),
         }
     }
-
     pub fn all_roles() -> Vec<UserRole> {
         vec![UserRole::User, UserRole::Moderator, UserRole::Admin]
     }
-
     pub fn admin_role() -> Vec<UserRole> {
         vec![UserRole::Admin]
     }
@@ -102,11 +100,6 @@ where
     }
 }
 
-pub struct AuthMiddleware<S> {
-    service: Rc<S>,
-    allowed_roles: Rc<Vec<UserRole>>,
-}
-
 fn jwt_from_header(header_token: &str) -> Result<String, String> {
     const NO_AUTH_HEADER: &str = "No authentication header";
     // eprintln!("jwt_from_header({})", header_token);
@@ -124,6 +117,11 @@ fn jwt_from_header(header_token: &str) -> Result<String, String> {
     Ok(auth_header.trim_start_matches(BEARER).to_owned())
 }
 
+pub struct AuthMiddleware<S> {
+    service: Rc<S>,
+    allowed_roles: Rc<Vec<UserRole>>,
+}
+
 impl<S> dev::Service<dev::ServiceRequest> for AuthMiddleware<S>
 where
     S: dev::Service<
@@ -139,10 +137,12 @@ where
     /// The future type representing the asynchronous response.
     type Future = LocalBoxFuture<'static, Result<Self::Response, actix_web::Error>>;
 
-    /// Returns `Ready` when the service is able to process requests.
-    fn poll_ready(&self, ctx: &mut core::task::Context<'_>) -> std::task::Poll<Result<(), Self::Error>> {
-        self.service.poll_ready(ctx)
-    }
+    // Returns `Ready` when the service is able to process requests.
+    dev::forward_ready!(service);
+    // fn poll_ready(&self, ctx: &mut core::task::Context<'_>) -> std::task::Poll<Result<(), Self::Error>> {
+    //     self.service.poll_ready(ctx)
+    // }
+
     /// The future type representing the asynchronous response.
     fn call(&self, req: dev::ServiceRequest) -> Self::Future {
         // const IS_PRINT: bool = false;
