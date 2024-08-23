@@ -377,11 +377,11 @@ impl ModifyStreamForm {
 }
 
 /// put_stream
-/// 
+///
 /// Update the stream with new data.
-/// 
+///
 /// Multipart/form-data is used to transfer data.
-/// 
+///
 /// Request structure:
 /// ```text
 /// {
@@ -399,11 +399,11 @@ impl ModifyStreamForm {
 /// "source" - source value ("obs" by default) of the stream;
 /// "tags" - serialized array of string values of stream tags("['tag1','tag2']");
 /// "logofile" - attached stream image file (jpeg,gif,png,bmp);
-/// 
+///
 /// ```
 /// The "starttime" field indicates the date of the future stream.
 /// And cannot contain a past period (date and time).
-/// 
+///
 /// It is recommended to enter the date and time in ISO 8601 format.
 /// ```text
 /// var d1 = new Date();
@@ -433,7 +433,7 @@ impl ModifyStreamForm {
 /// ```
 ///  
 /// Return the stream with updated data (`StreamInfoDto`) with status 200 or 204 (no content) if the stream is not found.
-/// 
+///
 #[utoipa::path(
     responses(
         (status = 200, description = "Update the stream with new data.", body = StreamInfoDto),
@@ -475,7 +475,7 @@ impl ModifyStreamForm {
                 &format!("{}; {}", MSG_ERROR_CONVERT_FILE, "Invalid source file image type \"svg\"")))),
     ),
     security(("bearer_auth" = [])),
-)]    
+)]
 // PUT /api/streams/{id}
 #[rustfmt::skip]
 #[put("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
@@ -489,7 +489,7 @@ pub async fn put_stream(
     // Get current user details.
     let profile = authenticated.deref();
     let curr_user_id = profile.user_id;
-    
+
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
@@ -497,17 +497,17 @@ pub async fn put_stream(
         log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
         AppError::range_not_satisfiable416(&message) // 416
     })?;
-    
+
     // Get data from MultipartForm.
     let (modify_stream_info_dto, logofile) = ModifyStreamForm::convert(modify_stream_form)
-        .map_err(|e| {
-            let message = format!("{}; {}", MSG_INVALID_FIELD_TAG, e);
-            log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
-            AppError::not_acceptable406(&message)
-        })?;
+    .map_err(|e| {
+        let message = format!("{}; {}", MSG_INVALID_FIELD_TAG, e);
+        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
+        AppError::not_acceptable406(&message)
+    })?;
 
     // If there is not a single field in the MultipartForm, it gives an error 400 "Multipart stream is incomplete".
-    
+
     // Checking the validity of the data model.
     let validation_res = modify_stream_info_dto.validate();
     if let Err(validation_errors) = validation_res {
@@ -519,7 +519,7 @@ pub async fn put_stream(
     let config_strm = config_strm.get_ref().clone();
     let logo_files_dir = config_strm.strm_logo_files_dir.clone();
     let mut path_new_logo_file = "".to_string();
-    
+
     while let Some(temp_file) = logofile {
         // Delete the old version of the logo file.
         if temp_file.size == 0 {
@@ -533,7 +533,7 @@ pub async fn put_stream(
             return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Borrowed("invalidFileSize"), &json));
         }
-        
+
         // Checking the mime type file for valid mime types.
         #[rustfmt::skip]
         let file_mime_type = match temp_file.content_type { Some(v) => v.to_string(), None => "".to_string() };
@@ -544,7 +544,7 @@ pub async fn put_stream(
             return Err(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE) // 415
                 .add_param(Borrowed("invalidFileType"), &json));
         }
-        
+
         // Get the file stem and extension for the new file.
         #[rustfmt::skip]
         let name = format!("{}.{}", get_file_name(curr_user_id, Utc::now()), file_mime_type.replace(&format!("{}/", IMAGE), ""));
@@ -557,10 +557,10 @@ pub async fn put_stream(
         if let Err(err) = res_upload {
             let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &full_path_file, err.to_string());
             log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
-            return Err(AppError::internal_err500(&message)) // 500
+            return Err(AppError::internal_err500(&message)); // 500
         }
-        path_new_logo_file = full_path_file;        
-        
+        path_new_logo_file = full_path_file;
+
         // Convert the file to another mime type.
         let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "put_stream()")
             .map_err(|e| {
@@ -586,21 +586,21 @@ pub async fn put_stream(
         if modify_stream.logo.is_some() {
             // Get the logo file name for an entity (stream) by ID.
             let res_get_stream_logo = stream_orm.get_stream_logo_by_id(id)
-                .map_err(|e| {
-                    log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                    AppError::database507(&e)        
-                });
-            
+            .map_err(|e| {
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            });
+
             if let Ok(Some(old_logo)) = res_get_stream_logo {
                 old_logo_file = old_logo.replace(ALIAS_LOGO_FILES_DIR, &logo_files_dir);
             }
         }
         // Modify an entity (stream).
         let res_stream = stream_orm.modify_stream(id, opt_user_id, modify_stream, tags)
-            .map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
-            });
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        });
 
         (old_logo_file, res_stream)
     })
@@ -613,7 +613,7 @@ pub async fn put_stream(
     let (path_old_logo_file, res_stream) = res_data;
 
     let mut opt_stream_info_dto: Option<StreamInfoDto> = None;
-    if let Ok(Some((stream, stream_tags)))= res_stream {
+    if let Ok(Some((stream, stream_tags))) = res_stream {
         // Merge a "stream" and a corresponding list of "tags".
         let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
         opt_stream_info_dto = Some(list[0].clone());
