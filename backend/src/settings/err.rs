@@ -73,3 +73,5 @@ pub const MSG_DATABASE: &str = "database_query_error"; /*+*/
 
 // 510 Not Extended (user_registr_controller)
 pub const CD_NOT_EXTENDED: &str = "NotExtended"; /*+*/
+// 510 Not Extended - Error while converting file.
+pub const MSG_ERROR_CONVERT_FILE: &str = "error_convert_file";

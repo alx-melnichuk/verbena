@@ -1,8 +1,9 @@
-use std::{borrow::Cow::Borrowed, ffi::OsStr, ops::Deref, path};
+use std::{borrow::Cow::Borrowed, ops::Deref, path};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, post, put, web, HttpResponse};
 use chrono::{DateTime, Utc};
+use log;
 use mime::IMAGE;
 use serde_json::{self, json};
 use utoipa;
@@ -25,12 +26,9 @@ use crate::users::user_models::UserRole;
 use crate::utils::parser;
 use crate::validators::{msg_validation, Validator};
 
-pub const ALIAS_LOGO_FILES: &str = "logo";
 pub const ALIAS_LOGO_FILES_DIR: &str = "/logo";
 // 406 Not acceptable - Error deserializing field tag.
 pub const MSG_INVALID_FIELD_TAG: &str = "invalid_field_tag";
-// 510 Not Extended - Error while converting file.
-pub const MSG_ERROR_CONVERT_FILE: &str = "error_convert_file";
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -77,7 +75,7 @@ fn new_stream_dto(title: &str, descript: &str, starttime: &str, tag_list: &str) 
 #[rustfmt::skip]
 fn convert_logo_file(path_logo_file: &str, config_strm: config_strm::ConfigStrm, name: &str) -> Result<Option<String>, String> {
     let path: path::PathBuf = path::PathBuf::from(&path_logo_file);
-    let file_source_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap().to_string();
+    let file_source_ext = path.extension().map(|s| s.to_str().unwrap().to_string()).unwrap();
     let strm_logo_ext = config_strm.strm_logo_ext.clone().unwrap_or(file_source_ext);
     // If you need to save in the specified format (strm_logo_ext.is_some()) or convert
     // to the specified size (strm_logo_max_width > 0 || strm_logo_max_height > 0), then do the following.
@@ -219,7 +217,7 @@ impl CreateStreamForm {
             example = json!(AppError::database507("Error while querying the database."))),
         (status = 510, description = "Error while converting file.", body = AppError,
             example = json!(AppError::not_extended510(
-                &format!("{}; {}", MSG_ERROR_CONVERT_FILE, "Invalid source file image type \"svg\"")))),
+                &format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, "Invalid source file image type \"svg\"")))),
     ),
     security(("bearer_auth" = [])),
 )]
@@ -236,7 +234,7 @@ pub async fn post_stream(
     let curr_user_id = profile.user_id;
 
     // Get data from MultipartForm.
-    let (create_stream_info_dto, logofile) = CreateStreamForm::convert(create_stream_form)
+    let (create_stream_info_dto, logo_file) = CreateStreamForm::convert(create_stream_form)
         .map_err(|e| {
             let message = format!("{}; {}", MSG_INVALID_FIELD_TAG, e);
             log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
@@ -254,14 +252,15 @@ pub async fn post_stream(
     let logo_files_dir = config_strm.strm_logo_files_dir.clone();
     let mut path_new_logo_file = "".to_string();
 
-    while let Some(temp_file) = logofile {
+    while let Some(temp_file) = logo_file {
         // If the size of the new file is zero, then we are not adding any file.
         if temp_file.size == 0 {
             break;
         }
         // Check file size for maximum value.
-        if config_strm.strm_logo_max_size > 0 && temp_file.size > config_strm.strm_logo_max_size {
-            let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": config_strm.strm_logo_max_size });
+        let logo_max_size = usize::try_from(config_strm.strm_logo_max_size).unwrap();
+        if logo_max_size > 0 && temp_file.size > logo_max_size {
+            let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": logo_max_size });
             log::error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
             return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Borrowed("invalidFileSize"), &json));
@@ -295,7 +294,7 @@ pub async fn post_stream(
         // Convert the file to another mime type.
         let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "post_stream()")
             .map_err(|e| {
-                let message = format!("{}; {}", MSG_ERROR_CONVERT_FILE, e);
+                let message = format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, e);
                 log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
                 AppError::not_extended510(&message) // 510
             })?;
@@ -472,7 +471,7 @@ impl ModifyStreamForm {
             example = json!(AppError::database507("Error while querying the database."))),
         (status = 510, description = "Error while converting file.", body = AppError,
             example = json!(AppError::not_extended510(
-                &format!("{}; {}", MSG_ERROR_CONVERT_FILE, "Invalid source file image type \"svg\"")))),
+                &format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, "Invalid source file image type \"svg\"")))),
     ),
     security(("bearer_auth" = [])),
 )]
@@ -499,7 +498,7 @@ pub async fn put_stream(
     })?;
 
     // Get data from MultipartForm.
-    let (modify_stream_info_dto, logofile) = ModifyStreamForm::convert(modify_stream_form)
+    let (modify_stream_info_dto, logo_file) = ModifyStreamForm::convert(modify_stream_form)
     .map_err(|e| {
         let message = format!("{}; {}", MSG_INVALID_FIELD_TAG, e);
         log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
@@ -520,15 +519,16 @@ pub async fn put_stream(
     let logo_files_dir = config_strm.strm_logo_files_dir.clone();
     let mut path_new_logo_file = "".to_string();
 
-    while let Some(temp_file) = logofile {
+    while let Some(temp_file) = logo_file {
         // Delete the old version of the logo file.
         if temp_file.size == 0 {
             logo = Some(None); // Set the "logo" field to `NULL`.
             break;
         }
+        let logo_max_size = usize::try_from(config_strm.strm_logo_max_size).unwrap();
         // Check file size for maximum value.
-        if config_strm.strm_logo_max_size > 0 && temp_file.size > config_strm.strm_logo_max_size {
-            let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": config_strm.strm_logo_max_size });
+        if logo_max_size > 0 && temp_file.size > logo_max_size {
+            let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": logo_max_size });
             log::error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
             return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Borrowed("invalidFileSize"), &json));
@@ -564,7 +564,7 @@ pub async fn put_stream(
         // Convert the file to another mime type.
         let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "put_stream()")
             .map_err(|e| {
-                let message = format!("{}; {}", MSG_ERROR_CONVERT_FILE, e);
+                let message = format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, e);
                 log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
                 AppError::not_extended510(&message) // 510
             })?;
@@ -581,6 +581,7 @@ pub async fn put_stream(
     let mut modify_stream: ModifyStream = modify_stream_info_dto.into();
     modify_stream.logo = logo;
     let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
+
     let res_data = web::block(move || {
         let mut old_logo_file = "".to_string();
         if modify_stream.logo.is_some() {
@@ -1499,7 +1500,7 @@ mod tests {
         let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
         let logo_name_full_path = stream_dto_res_logo.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
         let path = path::Path::new(&logo_name_full_path);
-        let receiver_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap();
+        let receiver_ext = path.extension().map(|s| s.to_str().unwrap().to_string()).unwrap();
         let is_exists_logo_new = path.exists();
         let _ = fs::remove_file(&logo_name_full_path);
 
@@ -1530,7 +1531,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/streams/1")).insert_header(header_auth(&token))
+        let req = test::TestRequest::put().uri(&format!("/api/streams/1"))
+            .insert_header(header_auth(&token))
             .to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -2212,7 +2214,7 @@ mod tests {
 
         let logo_name_full_path = stream_dto_res_logo.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
         let path = path::Path::new(&logo_name_full_path);
-        let receiver_ext = path.extension().unwrap_or(OsStr::new("")).to_str().unwrap();
+        let receiver_ext = path.extension().map(|s| s.to_str().unwrap().to_string()).unwrap();
         let is_exists_logo_new = path.exists();
         let _ = fs::remove_file(&logo_name_full_path);
 

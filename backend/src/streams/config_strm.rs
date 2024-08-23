@@ -12,7 +12,7 @@ pub struct ConfigStrm {
     // Directory for storing logo files.
     pub strm_logo_files_dir: String,
     // Maximum size for logo files.
-    pub strm_logo_max_size: usize,
+    pub strm_logo_max_size: u32,
     // List of valid input mime types for logo files (comma delimited).
     pub strm_logo_valid_types: Vec<String>,
     // Logo files will be converted to this MIME type.
@@ -107,7 +107,7 @@ impl ConfigStrm {
 pub fn get_test_config() -> ConfigStrm {
     ConfigStrm {
         strm_logo_files_dir: "./tmp".to_string(),
-        strm_logo_max_size: 0,
+        strm_logo_max_size: STRM_LOGO_MAX_SIZE_DEF,
         strm_logo_valid_types: vec![
             IMAGE_JPEG.essence_str().to_string(),
             IMAGE_PNG.essence_str().to_string(),

@@ -9,8 +9,8 @@ use crate::{
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
-        let logo = stream_controller::ALIAS_LOGO_FILES;
-        let alias_logo = format!("/{}/{}", logo, "{name_logo:.*}");
+        let logo = stream_controller::ALIAS_LOGO_FILES_DIR;
+        let alias_logo = format!("{}/{}", logo, "{name_logo:.*}");
 
         config
             .service(Files::new("/static", "static").show_files_listing())
