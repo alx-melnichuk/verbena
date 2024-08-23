@@ -3,8 +3,8 @@ use std::{io, path::PathBuf};
 use mime::{self, IMAGE, IMAGE_BMP, IMAGE_GIF, IMAGE_JPEG, IMAGE_PNG};
 
 const PRFL_AVATAR_MAX_SIZE_DEF: u32 = 0;
-const PRFL_AVATAR_MAX_WIDTH_DEF: u32 = 128;
-const PRFL_AVATAR_MAX_HEIGHT_DEF: u32 = 128;
+const PRFL_AVATAR_MAX_WIDTH_DEF: u32 = 0;
+const PRFL_AVATAR_MAX_HEIGHT_DEF: u32 = 0;
 
 // Profile Properties
 #[derive(Debug, Clone)]
@@ -12,7 +12,7 @@ pub struct ConfigPrfl {
     // Directory for storing avatar files.
     pub prfl_avatar_files_dir: String,
     // Maximum size for avatar files.
-    pub prfl_avatar_max_size: usize,
+    pub prfl_avatar_max_size: u32,
     // List of valid input mime types for avatar files (comma delimited).
     pub prfl_avatar_valid_types: Vec<String>,
     // Avatar files will be converted to this MIME type.
@@ -102,5 +102,20 @@ impl ConfigPrfl {
     fn avatar_ext_validate(value: &str) -> bool {
         let type_list: Vec<String> = Self::get_types(Self::get_image_types());
         value.len() > 0 && type_list.contains(&value.to_string())
+    }
+}
+
+#[cfg(all(test, feature = "mockdata"))]
+pub fn get_test_config() -> ConfigPrfl {
+    ConfigPrfl {
+        prfl_avatar_files_dir: "./tmp".to_string(),
+        prfl_avatar_max_size: PRFL_AVATAR_MAX_SIZE_DEF,
+        prfl_avatar_valid_types: vec![
+            IMAGE_JPEG.essence_str().to_string(),
+            IMAGE_PNG.essence_str().to_string(),
+        ],
+        prfl_avatar_ext: None,
+        prfl_avatar_max_width: PRFL_AVATAR_MAX_WIDTH_DEF,
+        prfl_avatar_max_height: PRFL_AVATAR_MAX_HEIGHT_DEF,
     }
 }

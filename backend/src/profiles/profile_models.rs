@@ -300,17 +300,17 @@ pub struct ProfileDto {
 }
 
 impl ProfileDto {
-    pub fn from(profile_user: Profile) -> ProfileDto {
+    pub fn from(profile: Profile) -> ProfileDto {
         ProfileDto {
-            id: profile_user.user_id,
-            nickname: profile_user.nickname,
-            email: profile_user.email,
-            role: profile_user.role.clone(),
-            avatar: profile_user.avatar.clone(),
-            descript: profile_user.descript.clone(),
-            theme: profile_user.theme.clone(),
-            created_at: profile_user.created_at.clone(),
-            updated_at: profile_user.updated_at.clone(),
+            id: profile.user_id,
+            nickname: profile.nickname,
+            email: profile.email,
+            role: profile.role.clone(),
+            avatar: profile.avatar.clone(),
+            descript: profile.descript.clone(),
+            theme: profile.theme.clone(),
+            created_at: profile.created_at.clone(),
+            updated_at: profile.updated_at.clone(),
         }
     }
 }
@@ -375,15 +375,21 @@ impl Validator for ModifyProfileDto {
     }
 }
 
-impl From<ModifyProfile> for ModifyProfileDto {
-    fn from(value: ModifyProfile) -> Self {
-        ModifyProfileDto {
-            nickname: value.nickname.clone(),
-            email: value.email.clone(),
-            password: value.password.clone(),
-            role: value.role.map(|v| v.to_string()),
-            descript: value.descript.clone(),
-            theme: value.theme.clone(),
+impl Into<ModifyProfile> for ModifyProfileDto {
+    fn into(self) -> ModifyProfile {
+        let role = if let Some(role1) = self.role {
+            UserRole::try_from(role1.as_str()).ok()
+        } else {
+            None
+        };
+        ModifyProfile {
+            nickname: self.nickname.clone(),
+            email: self.email.clone(),
+            password: self.password.clone(),
+            role: role,
+            avatar: None,
+            descript: self.descript.clone(),
+            theme: self.theme.clone(),
         }
     }
 }
