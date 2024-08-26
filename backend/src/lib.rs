@@ -12,8 +12,8 @@ use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 
 use profiles::{
-    config_prfl, profile_auth_controller, profile_controller, profile_orm::cfg::get_profile_orm_app,
-    profile_registr_controller,
+    config_prfl, profile_auth_controller, profile_controller, profile_get_controller,
+    profile_orm::cfg::get_profile_orm_app, profile_registr_controller,
 };
 use send_email::{config_smtp, mailer};
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
@@ -79,7 +79,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let session_orm = Data::new(get_session_orm_app(pool.clone()));
         // used: stream_get_controller, stream_controller
         let stream_orm = Data::new(get_stream_orm_app(pool.clone()));
-        // used: profile_controller
+        // used: profile_controller, profile_get_controller
         let profile_orm = Data::new(get_profile_orm_app(pool.clone()));
 
         // Make instance variable of ApiDoc so all worker threads gets the same instance.
@@ -108,6 +108,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             .configure(profile_auth_controller::configure())
             .configure(stream_get_controller::configure())
             .configure(stream_controller::configure())
+            .configure(profile_get_controller::configure())
             .configure(profile_controller::configure())
             .configure(static_controller::configure());
     }
