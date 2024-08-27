@@ -899,7 +899,7 @@ mod tests {
         assert!(body_str.contains(MSG_CONTENT_TYPE_ERROR));
     }
     #[actix_web::test]
-    async fn test_post_stream_epmty_form() {
+    async fn test_post_stream_empty_form() {
         let form_builder = MultiPartFormDataBuilder::new();
         let (header, body) = form_builder.build();
 
@@ -1239,9 +1239,9 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_stream_invalid_file_size() {
-        let name1_file = "post_circuit5x5.png";
+        let name1_file = "test_post_stream_invalid_file_size.png";
         let path_name1_file = format!("./{}", &name1_file);
-        save_file_png(&path_name1_file, 2).unwrap();
+        let (size, _name) = save_file_png(&path_name1_file, 2).unwrap();
         let tags: Vec<String> = StreamModelsTest::tag_names_enough();
 
         let (header, body) = MultiPartFormDataBuilder::new()
@@ -1250,14 +1250,16 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
+        let strm_logo_max_size = 160;
         let mut config_strm = config_strm::get_test_config();
-        config_strm.strm_logo_max_size = 160;
+        config_strm.strm_logo_max_size = strm_logo_max_size;
         let cfg_c = (cfg_c.0, config_strm);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1269,7 +1271,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_CONTENT_TOO_LARGE);
         assert_eq!(app_err.message, err::MSG_INVALID_FILE_SIZE);
-        let json = json!({ "actualFileSize": 186, "maxFileSize": 160 });
+        let json = json!({ "actualFileSize": size, "maxFileSize": strm_logo_max_size });
         assert_eq!(*app_err.params.get("invalidFileSize").unwrap(), json);
     }
     #[actix_web::test]
@@ -1289,7 +1291,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1329,7 +1332,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1544,7 +1548,7 @@ mod tests {
         assert!(body_str.contains(MSG_CONTENT_TYPE_ERROR));
     }
     #[actix_web::test]
-    async fn test_put_stream_epmty_form() {
+    async fn test_put_stream_empty_form() {
         let (header, body) = MultiPartFormDataBuilder::new().build();
 
         let (cfg_c, data_c, token) = get_cfg_data();
@@ -1552,7 +1556,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/streams/1")).insert_header(header_auth(&token))
+        let req = test::TestRequest::put().uri(&format!("/api/streams/1"))
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1918,7 +1923,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri("/api/streams/1").insert_header(header_auth(&token))
+        let req = test::TestRequest::put().uri("/api/streams/1")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
