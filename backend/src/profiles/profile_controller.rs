@@ -1,5 +1,4 @@
-use std::path;
-use std::{borrow::Cow::Borrowed, ops::Deref};
+use std::{borrow::Cow, ops::Deref, path};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, put, web, HttpResponse};
@@ -29,7 +28,7 @@ use crate::profiles::{
 use crate::settings::err;
 use crate::users::user_models::UserRole;
 use crate::utils::parser;
-use crate::validators::{msg_validation, Validator};
+use crate::validators::{self, msg_validation, Validator};
 
 pub const ALIAS_AVATAR_FILES_DIR: &str = "/avatar";
 
@@ -102,7 +101,6 @@ impl ModifyProfileForm {
             ModifyProfileDto {
                 nickname: modify_profile_form.nickname.map(|v| v.into_inner()),
                 email: modify_profile_form.email.map(|v| v.into_inner()),
-                password: None,
                 role: modify_profile_form.role.map(|v| v.into_inner()),
                 descript: modify_profile_form.descript.map(|v| v.into_inner()),
                 theme: modify_profile_form.theme.map(|v| v.into_inner()),
@@ -127,17 +125,23 @@ pub async fn put_profile(
     let opt_curr_avatar = profile.avatar.clone();
 
     // Get data from MultipartForm.
-    let (mut modify_profile_dto, avatar_file) = ModifyProfileForm::convert(modify_profile_form);
-    modify_profile_dto.password = None;
+    let (modify_profile_dto, avatar_file) = ModifyProfileForm::convert(modify_profile_form);
     
     // If there is not a single field in the MultipartForm, it gives an error 400 "Multipart stream is incomplete".
 
     // Checking the validity of the data model.
     let validation_res = modify_profile_dto.validate();
+    
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
+        if validation_errors.len() > 0 {
+            let err = validation_errors.last().unwrap();
+            if !err.params.contains_key(validators::NM_NO_FIELDS_TO_UPDATE) || avatar_file.is_none() {
+                log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
+                return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
+            }
+        }
     }
+
     let mut avatar: Option<Option<String>> = None;
 
     let config_prfl = config_prfl.get_ref().clone();
@@ -157,7 +161,7 @@ pub async fn put_profile(
             let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": avatar_max_size });
             log::error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
             return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
-                .add_param(Borrowed("invalidFileSize"), &json));
+                .add_param(Cow::Borrowed("invalidFileSize"), &json));
         }
         
         // Checking the mime type file for valid mime types.
@@ -168,7 +172,7 @@ pub async fn put_profile(
             let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
             log::error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
             return Err(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE) // 415
-                .add_param(Borrowed("invalidFileType"), &json));
+                .add_param(Cow::Borrowed("invalidFileType"), &json));
         }
 
         // Get the file stem and extension for the new file.
@@ -241,8 +245,8 @@ pub async fn put_profile(
     } else {
         remove_file_and_log(&path_new_avatar_file, &"put_profile()");
     }
-    if let Some(stream_info_dto) = opt_profile_dto {
-        Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
+    if let Some(profile_dto) = opt_profile_dto {
+        Ok(HttpResponse::Ok().json(profile_dto)) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
     }
@@ -536,16 +540,18 @@ pub async fn delete_profile_current(
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
+    use std::{fs, io::Write};
+
+    use actix_multipart_test::MultiPartFormDataBuilder;
     use actix_web::{
         body, dev,
         http::{
-            self,
-            header::{HeaderValue, CONTENT_TYPE},
+            header::{self, HeaderValue, CONTENT_TYPE},
             StatusCode,
         },
         test, web, App,
     };
-    use chrono::{DateTime, Duration, Utc};
+    use chrono::{DateTime, Duration, SecondsFormat, Utc};
 
     use crate::extractors::authentication::BEARER;
     use crate::profiles::{
@@ -563,6 +569,8 @@ mod tests {
     const ADMIN: u8 = 0;
     const USER: u8 = 1;
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
+    // //const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
+    const MSG_MULTIPART_STREAM_INCOMPLETE: &str = "Multipart stream is incomplete";
     const MSG_CONTENT_TYPE_ERROR: &str = "Could not find Content-Type header";
 
     fn create_profile(role: u8) -> Profile {
@@ -592,9 +600,9 @@ mod tests {
         let user_reg_orm = UserRegistrOrmApp::create(&vec![user_registr]);
         user_reg_orm.user_registr_vec.get(0).unwrap().clone()
     }
-    fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
-        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
-        (http::header::AUTHORIZATION, header_value)
+    fn header_auth(token: &str) -> (header::HeaderName, header::HeaderValue) {
+        let header_value = header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (header::AUTHORIZATION, header_value)
     }
     #[rustfmt::skip]
     fn get_cfg_data(is_registr: bool, role: u8) -> ((config_jwt::ConfigJwt, config_prfl::ConfigPrfl), (Vec<Profile>, Vec<Session>, Vec<UserRegistr>), String) {
@@ -646,6 +654,66 @@ mod tests {
             assert_eq!(app_err.message, msg.to_string());
         }
     }
+    /*fn save_empty_file(path_file: &str) -> Result<String, String> {
+        let _ = fs::File::create(path_file).map_err(|e| e.to_string())?;
+        Ok(path_file.to_string())
+    }*/
+    fn save_file_png(path_file: &str, code: u8) -> Result<(u64, String), String> {
+        let header: Vec<u8> = vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+        let footer: Vec<u8> = vec![0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82];
+        #[rustfmt::skip]
+        let buf1: Vec<u8> = vec![                            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x04,  0x08, 0x06, 0x00, 0x00, 0x00, 0xA9, 0xF1, 0x9E,
+            0x7E, 0x00, 0x00, 0x00, 0x01, 0x73, 0x52, 0x47,  0x42, 0x00, 0xAE, 0xCE, 0x1C, 0xE9, 0x00, 0x00,
+            0x00, 0x4F, 0x49, 0x44, 0x41, 0x54, 0x18, 0x57,  0x01, 0x44, 0x00, 0xBB, 0xFF, 0x01, 0xF3, 0xF5,
+            0xF5, 0xFF, 0x3A, 0x98, 0x35, 0x00, 0xF2, 0xFE,  0xFD, 0x00, 0xD7, 0x6A, 0xCC, 0x00, 0x01, 0x05,
+            0x7E, 0x09, 0xFF, 0xFD, 0x75, 0xFC, 0x00, 0x02,  0xFF, 0x02, 0x00, 0xFF, 0x95, 0xFD, 0x00, 0x01,
+            0x09, 0x7B, 0x0A, 0xFF, 0xF7, 0x7B, 0xF8, 0x00,  0x00, 0x01, 0xFF, 0x00, 0x04, 0x8E, 0x03, 0x00,
+            0x01, 0xF6, 0xF5, 0xF4, 0xFF, 0x13, 0x89, 0x18,  0x00, 0x02, 0x03, 0xFF, 0x00, 0xED, 0x77, 0xED,
+            0x00, 0x78, 0x18, 0x1E, 0xE2, 0xBA, 0x4A, 0xF4,  0x76
+        ];
+        #[rustfmt::skip]
+        let buf2: Vec<u8> = vec![                            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x05,  0x08, 0x06, 0x00, 0x00, 0x00, 0x8D, 0x6F, 0x26,
+            0xE5, 0x00, 0x00, 0x00, 0x01, 0x73, 0x52, 0x47,  0x42, 0x00, 0xAE, 0xCE, 0x1C, 0xE9, 0x00, 0x00,
+            0x00, 0x74, 0x49, 0x44, 0x41, 0x54, 0x18, 0x57,  0x01, 0x69, 0x00, 0x96, 0xFF, 0x01, 0xF3, 0xF4,
+            0xF4, 0xFF, 0xFA, 0xFD, 0xF9, 0x00, 0x5A, 0xAB,  0x5A, 0x00, 0x9E, 0x54, 0x9E, 0x00, 0x10, 0x06,
+            0x0E, 0x00, 0x01, 0xEB, 0xF1, 0xE5, 0xFF, 0x17,  0x02, 0x20, 0x00, 0x5B, 0xFF, 0x5F, 0x00, 0x29,
+            0xFF, 0x19, 0x00, 0x4D, 0xF7, 0x56, 0x00, 0x01,  0x15, 0x7F, 0x15, 0xFF, 0xEB, 0x77, 0xEC, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x06, 0xFD, 0x05, 0x00,  0xFE, 0x94, 0x01, 0x00, 0x01, 0xE5, 0xF0, 0xE4,
+            0xFF, 0x1E, 0x05, 0x1C, 0x00, 0xFD, 0x02, 0x01,  0x00, 0x05, 0xFD, 0x01, 0x00, 0xC3, 0xEE, 0xC3,
+            0x00, 0x01, 0xF6, 0xF4, 0xF2, 0xFF, 0xF4, 0xFC,  0xF4, 0x00, 0x35, 0x9C, 0x3F, 0x00, 0xC1, 0x63,
+            0xBA, 0x00, 0x18, 0x09, 0x19, 0x00, 0x50, 0xDE,  0x2B, 0x56, 0xC3, 0xBD, 0xEC, 0xAA,
+        ];
+        #[rustfmt::skip]
+        let buf3: Vec<u8> = vec![                            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0x00, 0x17, 0x00, 0x00, 0x00, 0x13,  0x08, 0x06, 0x00, 0x00, 0x00, 0x7B, 0xBB, 0x96,
+            0xB6, 0x00, 0x00, 0x00, 0x04, 0x73, 0x42, 0x49,  0x54, 0x08, 0x08, 0x08, 0x08, 0x7C, 0x08, 0x64,
+            0x88, 0x00, 0x00, 0x00, 0x6C, 0x49, 0x44, 0x41,  0x54, 0x38, 0x8D, 0xED, 0x94, 0x4B, 0x0A, 0x80,
+            0x30, 0x0C, 0x05, 0x5F, 0xC5, 0x83, 0x28, 0x78,  0x3D, 0xDB, 0xDE, 0xA4, 0x1F, 0x0F, 0x3C, 0xAE,
+            0x15, 0x6B, 0xAB, 0xD0, 0x5D, 0x07, 0x02, 0x81,  0x90, 0x49, 0xC8, 0x22, 0x06, 0x40, 0x9D, 0x98,
+            0x7A, 0x89, 0x87, 0x7C, 0xC8, 0xBF, 0x31, 0x97,  0x0A, 0x31, 0x66, 0xA5, 0x7C, 0xBC, 0x36, 0x3B,
+            0xBB, 0xCB, 0x7B, 0x5B, 0xAC, 0x17, 0x37, 0xF7,  0xDE, 0xCA, 0xD9, 0xFD, 0xB7, 0x58, 0x92, 0x44,
+            0x85, 0x10, 0x12, 0xCB, 0xBA, 0x5D, 0x22, 0x84,  0x54, 0x6B, 0x03, 0xA0, 0x2A, 0xBF, 0x0F, 0x68,
+            0x15, 0x03, 0x14, 0x6F, 0x7E, 0x3F, 0xD1, 0x53,  0x5E, 0xC3, 0xC0, 0x78, 0x5C, 0x43, 0xDE, 0xC8,
+            0x09, 0xFC, 0x22, 0xB8, 0x69, 0x88, 0xAE, 0x67,  0xA8
+        ];
+
+        // if path::Path::new(&path_file).exists() {
+        //     let _ = fs::remove_file(&path_file);
+        // }
+
+        let mut file = fs::File::create(path_file).map_err(|e| e.to_string())?;
+        file.write_all(header.as_ref()).map_err(|e| e.to_string())?;
+        #[rustfmt::skip]
+        let buf: Vec<u8> = match code { 3 => buf3, 2 => buf2, _ => buf1 };
+        file.write_all(buf.as_ref()).map_err(|e| e.to_string())?;
+        file.write_all(footer.as_ref()).map_err(|e| e.to_string())?;
+
+        let size = file.metadata().unwrap().len();
+
+        Ok((size, path_file.to_string()))
+    }
 
     // ** put_profile **
     #[actix_web::test]
@@ -660,15 +728,453 @@ mod tests {
             .to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        // assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        eprintln!("\n###### body: {:?}\n", &body);
-
         let body_str = String::from_utf8_lossy(&body);
         assert!(body_str.contains(MSG_CONTENT_TYPE_ERROR));
     }
+    #[actix_web::test]
+    async fn test_put_profile_empty_form() {
+        let (header, body) = MultiPartFormDataBuilder::new().build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/profiles"))
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let body_str = String::from_utf8_lossy(&body);
+        assert!(body_str.contains(MSG_MULTIPART_STREAM_INCOMPLETE));
+    }
+    #[actix_web::test]
+    async fn test_put_profile_form_with_invalid_name() {
+        let name1_file = "test_put_profile_form_with_invalid_name.png";
+        let path_name1_file = format!("./{}", &name1_file);
+        save_file_png(&path_name1_file, 2).unwrap();
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_file(path_name1_file.clone(), "avatarfile1", "image/png", name1_file)
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/profiles"))
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        let _ = fs::remove_file(&path_name1_file);
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[err::MSG_NO_FIELDS_TO_UPDATE]);
+    }
+    #[actix_web::test]
+    #[ignore]
+    async fn test_put_profile_nickname_min() {
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("nickname", ProfileTest::nickname_min())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_NICKNAME_MIN_LENGTH]);
+    }
+    #[actix_web::test]
+    #[ignore]
+    async fn test_put_profile_nickname_max() {
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("nickname", ProfileTest::nickname_max())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_NICKNAME_MAX_LENGTH]);
+    }
+    #[actix_web::test]
+    #[ignore]
+    async fn test_put_profile_nickname_wrong() {
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("nickname", ProfileTest::nickname_wrong())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_NICKNAME_REGEX]);
+    }
+    #[actix_web::test]
+    #[ignore]
+    async fn test_put_profile_email_min() {
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("email", ProfileTest::email_min())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_EMAIL_MIN_LENGTH]);
+    }
+    #[actix_web::test]
+    #[ignore]
+    async fn test_put_profile_email_max() {
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("email", ProfileTest::email_max())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_EMAIL_MAX_LENGTH]);
+    }
+    #[actix_web::test]
+    #[ignore]
+    async fn test_put_profile_email_wrong() {
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("email", ProfileTest::email_wrong())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_EMAIL_EMAIL_TYPE]);
+    }
+    #[actix_web::test]
+    #[ignore]
+    async fn test_put_profile_role_wrong() {
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("role", ProfileTest::role_wrong())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_USER_ROLE_INVALID_VALUE]);
+    }
+    #[actix_web::test]
+    #[ignore]
+    async fn test_put_profile_descript_min() {
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("descript", ProfileTest::descript_min())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_DESCRIPT_MIN_LENGTH]);
+    }
+    #[actix_web::test]
+    #[ignore]
+    async fn test_put_profile_descript_max() {
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("descript", ProfileTest::descript_max())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_DESCRIPT_MAX_LENGTH]);
+    }
+    #[actix_web::test]
+    #[ignore]
+    async fn test_put_profile_theme_min() {
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("theme", ProfileTest::theme_min())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_THEME_MIN_LENGTH]);
+    }
+    #[actix_web::test]
+    #[ignore]
+    async fn test_put_profile_theme_max() {
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("theme", ProfileTest::theme_max())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_THEME_MAX_LENGTH]);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_invalid_file_size() {
+        let name1_file = "test_put_profile_invalid_file_size.png";
+        let path_name1_file = format!("./{}", &name1_file);
+        let (size, _name) = save_file_png(&path_name1_file, 2).unwrap();
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let mut config_prfl = config_prfl::get_test_config();
+        let prfl_avatar_max_size = 160;
+        config_prfl.prfl_avatar_max_size = prfl_avatar_max_size;
+        let cfg_c = (cfg_c.0, config_prfl);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        let _ = fs::remove_file(path_name1_file);
+        assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE); // 413
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_CONTENT_TOO_LARGE);
+        assert_eq!(app_err.message, err::MSG_INVALID_FILE_SIZE);
+        #[rustfmt::skip]
+        let json = json!({ "actualFileSize": size, "maxFileSize": prfl_avatar_max_size });
+        assert_eq!(*app_err.params.get("invalidFileSize").unwrap(), json);
+    }
+    #[actix_web::test]
+    async fn test_post_profile_invalid_file_type() {
+        let name1_file = "test_post_profile_invalid_file_type.png";
+        let path_name1_file = format!("./{}", &name1_file);
+        save_file_png(&path_name1_file, 1).unwrap();
+
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_file(path_name1_file.clone(), "avatarfile", "image/bmp", name1_file)
+            .build();
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        let _ = fs::remove_file(&path_name1_file);
+        assert_eq!(resp.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
+        assert_eq!(app_err.message, err::MSG_INVALID_FILE_TYPE);
+        #[rustfmt::skip]
+        let json = json!({ "actualFileType": "image/bmp", "validFileType": "image/jpeg,image/png" });
+        assert_eq!(*app_err.params.get("invalidFileType").unwrap(), json);
+    }
+    #[actix_web::test]
+    async fn test_post_profile_valid_data_without_file() {
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+
+        let profile = data_c.0.get(0).unwrap().clone();
+        let nickname_s = format!("{}_a", profile.nickname.clone());
+        let email_s = format!("{}_a", profile.email.clone());
+        let user_role = UserRole::Admin;
+        let descript_s = format!("{}_a", profile.descript.clone());
+        let theme_s = format!("{}_a", profile.theme.clone());
+
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("nickname", &nickname_s)
+            .with_text("email", &email_s)
+            .with_text("role", &user_role.to_string())
+            .with_text("descript", &descript_s)
+            .with_text("theme", &theme_s)
+            .build();
+
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        assert_eq!(profile_dto_res.id, profile.user_id);
+        assert_eq!(profile_dto_res.nickname, nickname_s);
+        assert_eq!(profile_dto_res.email, email_s);
+        assert_eq!(profile_dto_res.role, user_role);
+        assert_eq!(profile_dto_res.descript, descript_s);
+        assert_eq!(profile_dto_res.theme, theme_s);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
+        let res_created_at = profile_dto_res.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        let old_created_at = profile.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        assert_eq!(res_created_at, old_created_at);
+        let res_updated_at = profile_dto_res.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        let old_updated_at = profile.updated_at.to_rfc3339_opts(SecondsFormat::Secs, true);
+        assert_eq!(res_updated_at, old_updated_at);
+    }
+
     // ** put_profile_new_password **
     #[actix_web::test]
     #[ignore]
