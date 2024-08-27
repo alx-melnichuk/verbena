@@ -6,6 +6,8 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
 
+pub const NM_NO_FIELDS_TO_UPDATE: &str = "noFieldsToUpdate";
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ValidationError {
     pub message: Cow<'static, str>,
@@ -163,5 +165,17 @@ impl ValidationChecks {
         } else {
             Ok(())
         }
+    }
+    /// Checking for at least one required field.
+    #[rustfmt::skip]
+    pub fn no_fields_to_update(list_is_some: &[bool], valid_names: &'static str, msg: &'static str) -> Result<(), ValidationError> {
+        let field_value_exists = list_is_some.iter().any(|&val| val == true);
+        if !field_value_exists {
+            let mut err = ValidationError::new(msg);
+            let json = serde_json::json!({ "validNames": valid_names });
+            err.add_param(Cow::Borrowed(NM_NO_FIELDS_TO_UPDATE), &json);
+            return Err(err);
+        }
+        Ok(())
     }
 }
