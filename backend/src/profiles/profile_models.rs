@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use crate::schema;
+use crate::settings::err;
 use crate::users::user_models::UserRole;
 use crate::utils::serial_datetime;
 use crate::validators::{ValidationChecks, ValidationError, Validator};
@@ -121,13 +122,13 @@ pub fn validate_theme(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 pub fn validate_role(value: &str) -> Result<(), ValidationError> {
-    #[rustfmt::skip]
-    let valid_values1 = vec![UserRole::Admin.to_string(), UserRole::User.to_string(), UserRole::Moderator.to_string()];
-    let valid_values2: Vec<&str> = valid_values1.iter().map(|val| val.as_str()).collect();
-    ValidationChecks::valid_value(value, valid_values2, MSG_USER_ROLE_INVALID_VALUE)?;
-
+    let res_user_role = UserRole::try_from(value);
+    if res_user_role.is_err() {
+        ValidationChecks::valid_value(value, vec![], MSG_USER_ROLE_INVALID_VALUE)?;
+    }
     Ok(())
 }
+
 // * * * * Section: "database". * * * *
 
 // ** Table: "profiles" **
@@ -336,8 +337,6 @@ pub struct ModifyProfileDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>, // min_len=5,max_len=254,"email:email_type"
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub password: Option<String>, // min_len=6,max_len=64
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub descript: Option<String>, // min_len=2,max_len=2048 default ""
@@ -349,14 +348,12 @@ impl Validator for ModifyProfileDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
+
         if let Some(value) = &self.nickname {
             errors.push(validate_nickname(&value).err());
         }
         if let Some(value) = &self.email {
             errors.push(validate_email(&value).err());
-        }
-        if let Some(value) = &self.password {
-            errors.push(validate_password(&value).err());
         }
         if let Some(value) = &self.role {
             errors.push(validate_role(&value).err());
@@ -370,6 +367,18 @@ impl Validator for ModifyProfileDto {
         if let Some(value) = &self.theme {
             errors.push(validate_theme(&value).err());
         }
+
+        let list_is_some = vec![
+            self.nickname.is_some(),
+            self.email.is_some(),
+            self.role.is_some(),
+            self.descript.is_some(),
+            self.theme.is_some(),
+        ];
+        let valid_names = "nickname, email, role, descript, theme";
+        errors.push(
+            ValidationChecks::no_fields_to_update(&list_is_some, valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err(),
+        );
 
         self.filter_errors(errors)
     }
@@ -385,7 +394,7 @@ impl Into<ModifyProfile> for ModifyProfileDto {
         ModifyProfile {
             nickname: self.nickname.clone(),
             email: self.email.clone(),
-            password: self.password.clone(),
+            password: None,
             role: role,
             avatar: None,
             descript: self.descript.clone(),
@@ -606,6 +615,10 @@ impl ProfileTest {
     }
     pub fn password_wrong() -> String {
         (0..(PASSWORD_MIN)).map(|_| 'a').collect()
+    }
+    pub fn role_wrong() -> String {
+        let role = UserRole::all_values().get(0).unwrap().to_string();
+        role[0..(role.len() - 1)].to_string()
     }
     pub fn descript_min() -> String {
         (0..(DESCRIPT_MIN - 1)).map(|_| 'a').collect()
