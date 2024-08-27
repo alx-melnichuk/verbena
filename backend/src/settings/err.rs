@@ -50,6 +50,7 @@ pub const MSG_PARSING_TYPE_NOT_SUPPORTED: &str = "parsing_type_not_supported";
 
 // 417 Expectation Failed (profile_auth_controller, user_registr_controller)
 pub const CD_VALIDATION: &str = "Validation"; /*+*/
+pub const MSG_NO_FIELDS_TO_UPDATE: &str = "no_fields_to_update";
 
 // 422 Unprocessable Entity (profile_auth_controller, user_registr_controller)
 pub const CD_UNPROCESSABLE_ENTITY: &str = "UnprocessableEntity";
