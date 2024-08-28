@@ -77,8 +77,8 @@ fn convert_logo_file(path_logo_file: &str, config_strm: config_strm::ConfigStrm,
     let path: path::PathBuf = path::PathBuf::from(&path_logo_file);
     let file_source_ext = path.extension().map(|s| s.to_str().unwrap().to_string()).unwrap();
     let strm_logo_ext = config_strm.strm_logo_ext.clone().unwrap_or(file_source_ext);
-    // If you need to save in the specified format (strm_logo_ext.is_some()) or convert
-    // to the specified size (strm_logo_max_width > 0 || strm_logo_max_height > 0), then do the following.
+    // If you need to save in the specified format (img_ext.is_some()) or convert
+    // to the specified size (img_max_width > 0 || img_max_height > 0), then do the following.
     if config_strm.strm_logo_ext.is_some()
         || config_strm.strm_logo_max_width > 0
         || config_strm.strm_logo_max_height > 0
@@ -1356,8 +1356,8 @@ mod tests {
         assert_eq!(stream_dto_res.is_my_stream, true);
     }
     #[actix_web::test]
-    async fn test_post_stream_valid_data_with_logo_file_new() {
-        let name1_file = "post_circle5x5.png";
+    async fn test_post_stream_with_new_file() {
+        let name1_file = "test_post_stream_with_new_file.png";
         let path_name1_file = format!("./{}", &name1_file);
         save_file_png(&path_name1_file, 1).unwrap();
 
@@ -1568,6 +1568,9 @@ mod tests {
         let body_str = String::from_utf8_lossy(&body);
         assert!(body_str.contains(MSG_MULTIPART_STREAM_INCOMPLETE));
     }
+
+    // TODO fn test_put_stream_form_with_invalid_name()
+
     #[actix_web::test]
     async fn test_put_stream_invalid_id() {
         let stream_id_bad = "100a".to_string();
@@ -1594,7 +1597,6 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(app_err.message, format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &error));
     }
-
     #[actix_web::test]
     async fn test_put_stream_title_min() {
         let (header, body) = MultiPartFormDataBuilder::new()
@@ -1906,7 +1908,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_stream_invalid_file_size() {
-        let name1_file = "put_circuit5x5.png";
+        let name1_file = "test_put_stream_invalid_file_size.png";
         let path_name1_file = format!("./{}", &name1_file);
         let (size, _name) = save_file_png(&path_name1_file, 2).unwrap();
         #[rustfmt::skip]
@@ -1942,7 +1944,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_stream_invalid_file_type() {
-        let name1_file = "put_ellipse5x5.png";
+        let name1_file = "test_put_stream_invalid_file_type.png";
         let path_name1_file = format!("./{}", &name1_file);
         save_file_png(&path_name1_file, 1).unwrap();
         #[rustfmt::skip]
@@ -2052,6 +2054,8 @@ mod tests {
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(stream_dto_res.user_id, stream2.user_id);
@@ -2093,6 +2097,8 @@ mod tests {
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
@@ -2119,8 +2125,8 @@ mod tests {
         assert_eq!(res_updated_at, old_updated_at);
     }
     #[actix_web::test]
-    async fn test_put_stream_valid_data_with_a_logo_old_0_new_1() {
-        let name1_file = "put_circle5x5_a_new.png";
+    async fn test_put_stream_a_with_old0_new1() {
+        let name1_file = "test_put_stream_a_with_old0_new1.png";
         let path_name1_file = format!("./{}", name1_file);
         save_file_png(&path_name1_file, 1).unwrap();
 
@@ -2130,6 +2136,7 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
         let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let strm_logo_files_dir = cfg_c.1.strm_logo_files_dir.clone();
         let stream = create_stream(0, profile1_id, "title1", "tag11,tag12", Utc::now());
         let stream_orm = StreamOrmApp::create(&[stream.clone()]);
 
@@ -2145,26 +2152,22 @@ mod tests {
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(&path_name1_file);
-
         assert_eq!(resp.status(), StatusCode::OK); // 200
-        let config_strm = config_strm::get_test_config();
-        let strm_logo_files_dir = config_strm.strm_logo_files_dir;
-
+        let now = Utc::now();
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let stream_dto_res_img = stream_dto_res.logo.unwrap_or("".to_string());
+        let img_name_full_path = stream_dto_res_img.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
+        let is_exists_img_new = path::Path::new(&img_name_full_path).exists();
+        let _ = fs::remove_file(&img_name_full_path);
+        assert!(stream_dto_res_img.len() > 0);
+        assert!(stream_dto_res_img.starts_with(ALIAS_LOGO_FILES_DIR));
+        assert!(is_exists_img_new);
 
-        let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
-
-        let logo_name_full_path = stream_dto_res_logo.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
-        let is_exists_logo_new = path::Path::new(&logo_name_full_path).exists();
-        let _ = fs::remove_file(&logo_name_full_path);
-
-        assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(ALIAS_LOGO_FILES_DIR));
-        assert!(is_exists_logo_new);
-
-        let path_logo = path::PathBuf::from(stream_dto_res_logo);
-        let file_stem = path_logo.file_stem().unwrap().to_str().unwrap().to_string(); // file_stem: "1100_3226061294TF"
+        let path_img = path::PathBuf::from(stream_dto_res_img);
+        let file_stem = path_img.file_stem().unwrap().to_str().unwrap().to_string(); // file_stem: "1100_3226061294TF"
         let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
@@ -2172,12 +2175,12 @@ mod tests {
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
         let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
-        let now_s = Utc::now().format(date_format).to_string(); // : 2024-02-06 09:55:41
+        let now_s = now.format(date_format).to_string(); // : 2024-02-06 09:55:41
         assert_eq!(now_s, date_time2_s);
     }
     #[actix_web::test]
-    async fn test_put_stream_valid_data_with_a_logo_old_0_new_1_convert_file_new() {
-        let name1_file = "put_triangle_23x19.png";
+    async fn test_put_stream_b_with_old0_new1_convert() {
+        let name1_file = "test_put_stream_b_with_old0_new1_convert.png";
         let path_name1_file = format!("./{}", name1_file);
         save_file_png(&path_name1_file, 3).unwrap();
 
@@ -2211,26 +2214,25 @@ mod tests {
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(&path_name1_file);
-
         assert_eq!(resp.status(), StatusCode::OK); // 200
+        let now = Utc::now();
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
-
-        let logo_name_full_path = stream_dto_res_logo.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
-        let path = path::Path::new(&logo_name_full_path);
+        let stream_dto_res_img = stream_dto_res.logo.unwrap_or("".to_string());
+        let img_name_full_path = stream_dto_res_img.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
+        let path = path::Path::new(&img_name_full_path);
         let receiver_ext = path.extension().map(|s| s.to_str().unwrap().to_string()).unwrap();
-        let is_exists_logo_new = path.exists();
-        let _ = fs::remove_file(&logo_name_full_path);
-
+        let is_exists_img_new = path.exists();
+        let _ = fs::remove_file(&img_name_full_path);
         assert_eq!(file_ext, receiver_ext);
-        assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(ALIAS_LOGO_FILES_DIR));
-        assert!(is_exists_logo_new);
+        assert!(stream_dto_res_img.len() > 0);
+        assert!(stream_dto_res_img.starts_with(ALIAS_LOGO_FILES_DIR));
+        assert!(is_exists_img_new);
 
-        let path_logo = path::PathBuf::from(stream_dto_res_logo);
-        let file_stem = path_logo.file_stem().unwrap().to_str().unwrap().to_string(); // file_stem: "1100_3226061294TF"
+        let path_img = path::PathBuf::from(stream_dto_res_img);
+        let file_stem = path_img.file_stem().unwrap().to_str().unwrap().to_string(); // file_stem: "1100_3226061294TF"
         let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
@@ -2238,20 +2240,19 @@ mod tests {
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
         let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
-        let now_s = Utc::now().format(date_format).to_string(); // : 2024-02-06 09:55:41
+        let now_s = now.format(date_format).to_string(); // : 2024-02-06 09:55:41
         assert_eq!(now_s, date_time2_s);
     }
     #[actix_web::test]
-    async fn test_put_stream_valid_data_with_b_logo_old_1_new_1() {
-        let config_strm = config_strm::get_test_config();
-        let strm_logo_files_dir = config_strm.strm_logo_files_dir;
+    async fn test_put_stream_c_with_old1_new1() {
+        let strm_logo_files_dir = config_strm::get_test_config().strm_logo_files_dir;
 
-        let name0_file = "put_circle5x5_b_old.png";
+        let name0_file = "test_put_stream_c_with_old1_new1.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_logo = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
+        let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
-        let name1_file = "put_circle5x5_b_new.png";
+        let name1_file = "test_put_stream_c_with_old1_new1_new.png";
         let path_name1_file = format!("./{}", name1_file);
         save_file_png(&path_name1_file, 1).unwrap();
 
@@ -2263,11 +2264,9 @@ mod tests {
 
         let profile1_id = data_c.0.get(0).unwrap().user_id;
         let mut stream = create_stream(0, profile1_id, "title1", "tag11,tag12", Utc::now());
-        stream.logo = Some(path_name0_logo);
+        stream.logo = Some(path_name0_alias);
         let stream_id = stream.id;
-        let stream_orm = StreamOrmApp::create(&[stream]);
-        let data_c = (data_c.0, data_c.1, stream_orm.stream_info_vec.clone());
-
+        let data_c = (data_c.0, data_c.1, vec![stream]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
@@ -2277,28 +2276,26 @@ mod tests {
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-
-        let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
+        let is_exists_img_old = path::Path::new(&path_name0_file).exists();
         let _ = fs::remove_file(&path_name0_file);
         let _ = fs::remove_file(&path_name1_file);
-
         assert_eq!(resp.status(), StatusCode::OK); // 200
-        assert!(!is_exists_logo_old);
+        assert!(!is_exists_img_old);
+        let now = Utc::now();
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let stream_dto_res_img = stream_dto_res.logo.unwrap_or("".to_string());
+        let img_name_full_path = stream_dto_res_img.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
+        let is_exists_img_new = path::Path::new(&img_name_full_path).exists();
+        let _ = fs::remove_file(&img_name_full_path);
+        assert!(stream_dto_res_img.len() > 0);
+        assert!(stream_dto_res_img.starts_with(ALIAS_LOGO_FILES_DIR));
+        assert!(is_exists_img_new);
 
-        let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
-        let logo_name_full_path = stream_dto_res_logo.replacen(ALIAS_LOGO_FILES_DIR, &strm_logo_files_dir, 1);
-
-        let is_exists_logo_new = path::Path::new(&logo_name_full_path).exists();
-        let _ = fs::remove_file(&logo_name_full_path);
-
-        assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(ALIAS_LOGO_FILES_DIR));
-        assert!(is_exists_logo_new);
-
-        let path_logo = path::PathBuf::from(stream_dto_res_logo);
-        let file_stem = path_logo.file_stem().unwrap().to_str().unwrap().to_string(); // file_stem: "1100_3226061294TF"
+        let path_img = path::PathBuf::from(stream_dto_res_img);
+        let file_stem = path_img.file_stem().unwrap().to_str().unwrap().to_string(); // file_stem: "1100_3226061294TF"
         let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
@@ -2307,18 +2304,17 @@ mod tests {
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
         let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
-        let now_s = Utc::now().format(date_format).to_string(); // : 2024-02-06 09:55:41
+        let now_s = now.format(date_format).to_string(); // : 2024-02-06 09:55:41
         assert_eq!(now_s, date_time2_s);
     }
     #[actix_web::test]
-    async fn test_put_stream_valid_data_with_c_logo_old_1_new_0() {
-        let config_strm = config_strm::get_test_config();
-        let strm_logo_files_dir = config_strm.strm_logo_files_dir;
+    async fn test_put_stream_d_with_old1_new0() {
+        let strm_logo_files_dir = config_strm::get_test_config().strm_logo_files_dir;
 
-        let name0_file = "put_circle5x5_c_old.png";
+        let name0_file = "test_put_stream_d_with_old1_new0.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         save_file_png(&path_name0_file, 1).unwrap();
-        let path_name0_logo = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
+        let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
@@ -2328,10 +2324,9 @@ mod tests {
 
         let profile1_id = data_c.0.get(0).unwrap().user_id;
         let mut stream = create_stream(0, profile1_id, "title1", "tag11,tag12", Utc::now());
-        stream.logo = Some(path_name0_logo.clone());
+        stream.logo = Some(path_name0_alias.clone());
         let stream_id = stream.id;
-        let stream_orm = StreamOrmApp::create(&[stream]);
-        let data_c = (data_c.0, data_c.1, stream_orm.stream_info_vec.clone());
+        let data_c = (data_c.0, data_c.1, vec![stream]);
 
         #[rustfmt::skip]
         let app = test::init_service(
@@ -2342,31 +2337,29 @@ mod tests {
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
+        let is_exists_img_old = path::Path::new(&path_name0_file).exists();
         let _ = fs::remove_file(path_name0_file.clone());
         assert_eq!(resp.status(), StatusCode::OK); // 200
-        assert!(is_exists_logo_old);
-
+        assert!(is_exists_img_old);
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
-        let stream_dto_res_logo = stream_dto_res.logo.unwrap_or("".to_string());
-
-        assert!(stream_dto_res_logo.len() > 0);
-        assert!(stream_dto_res_logo.starts_with(ALIAS_LOGO_FILES_DIR));
-        assert_eq!(&path_name0_logo, &stream_dto_res_logo);
+        let stream_dto_res_img = stream_dto_res.logo.unwrap_or("".to_string());
+        assert!(stream_dto_res_img.len() > 0);
+        assert!(stream_dto_res_img.starts_with(ALIAS_LOGO_FILES_DIR));
+        assert_eq!(&path_name0_alias, &stream_dto_res_img);
     }
     #[actix_web::test]
-    async fn test_put_stream_valid_data_with_d_logo_old_1_new_size0() {
-        let config_strm = config_strm::get_test_config();
-        let strm_logo_files_dir = config_strm.strm_logo_files_dir;
+    async fn test_put_stream_e_with_old1_new_size0() {
+        let strm_logo_files_dir = config_strm::get_test_config().strm_logo_files_dir;
 
-        let name0_file = "put_circle5x5_d_old.png";
+        let name0_file = "test_put_stream_e_with_old1_new_size0.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_logo = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
+        let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
-        let name1_file = "put_circle5x5_d_new.png";
+        let name1_file = "test_put_stream_e_with_old1_new_size0_new.png";
         let path_name1_file = format!("./{}", name1_file);
         save_empty_file(&path_name1_file).unwrap();
 
@@ -2378,7 +2371,7 @@ mod tests {
 
         let profile1_id = data_c.0.get(0).unwrap().user_id;
         let mut stream = create_stream(0, profile1_id, "title1", "tag11,tag12", Utc::now());
-        stream.logo = Some(path_name0_logo);
+        stream.logo = Some(path_name0_alias);
         let stream_id = stream.id;
         let stream_orm = StreamOrmApp::create(&[stream]);
         let data_c = (data_c.0, data_c.1, stream_orm.stream_info_vec.clone());
@@ -2392,19 +2385,20 @@ mod tests {
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
+        let is_exists_img_old = path::Path::new(&path_name0_file).exists();
         let _ = fs::remove_file(&path_name0_file);
         let _ = fs::remove_file(&path_name1_file);
         assert_eq!(resp.status(), StatusCode::OK); // 200
-        assert!(!is_exists_logo_old);
-
+        assert!(!is_exists_img_old);
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert!(stream_dto_res.logo.is_none());
     }
     #[actix_web::test]
-    async fn test_put_stream_valid_data_with_e_logo_old_0_new_size0() {
-        let name1_file = "put_circle5x5_e_new.png";
+    async fn test_put_stream_f_with_old0_new_size0() {
+        let name1_file = "test_put_stream_f_with_old0_new_size0.png";
         let path_name1_file = format!("./{}", name1_file);
         save_empty_file(&path_name1_file).unwrap();
 
@@ -2427,14 +2421,13 @@ mod tests {
         let req = test::TestRequest::put().uri(&format!("/api/streams/{}", stream_id))
             .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
-
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(&path_name1_file);
-
         assert_eq!(resp.status(), StatusCode::OK); // 200
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-
         assert!(stream_dto_res.logo.is_none());
     }
 
