@@ -1278,7 +1278,7 @@ mod tests {
         save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_alias = format!("{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
 
-        let name1_file = "test_put_profile_c_with_old_1_new_1_new.png";
+        let name1_file = "test_put_profile_c_with_old1_new1_new.png";
         let path_name1_file = format!("./{}", name1_file);
         save_file_png(&path_name1_file, 1).unwrap();
 
@@ -1414,8 +1414,8 @@ mod tests {
         assert!(profile_dto_res.avatar.is_none());
     }
     #[actix_web::test]
-    async fn test_put_profile_f_with_old_0_new_size0() {
-        let name1_file = "test_put_profile_f_with_old_0_new_size0.png";
+    async fn test_put_profile_f_with_old0_new_size0() {
+        let name1_file = "test_put_profile_f_with_old0_new_size0.png";
         let path_name1_file = format!("./{}", name1_file);
         save_empty_file(&path_name1_file).unwrap();
 
