@@ -723,7 +723,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/profiles"))
+        let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
             .to_request();
 
@@ -744,7 +744,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/profiles"))
+        let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
@@ -771,7 +771,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/profiles"))
+        let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
