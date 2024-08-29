@@ -28,7 +28,7 @@ use crate::profiles::{
 use crate::settings::err;
 use crate::users::user_models::UserRole;
 use crate::utils::parser;
-use crate::validators::{self, msg_validation, Validator};
+use crate::validators::{self, msg_validation, ValidationChecks, Validator};
 
 pub const ALIAS_AVATAR_FILES_DIR: &str = "/avatar";
 
@@ -133,12 +133,19 @@ pub async fn put_profile(
     let validation_res = modify_profile_dto.validate();
     
     if let Err(validation_errors) = validation_res {
-        if validation_errors.len() > 0 {
-            let err = validation_errors.last().unwrap();
-            if !err.params.contains_key(validators::NM_NO_FIELDS_TO_UPDATE) || avatar_file.is_none() {
-                log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-                return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
+        let mut is_no_fields_to_update = false;
+        let errors = validation_errors.iter().map(|err| {
+            if !is_no_fields_to_update && err.params.contains_key(validators::NM_NO_FIELDS_TO_UPDATE) {
+                is_no_fields_to_update = true;
+                let valid_names = [ModifyProfileDto::valid_names(), vec!["avatarfile"]].concat().join(",");
+                ValidationChecks::no_fields_to_update(&[false], &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err().unwrap()
+            } else {
+                err.clone()
             }
+        }).collect();
+        if !is_no_fields_to_update || avatar_file.is_none() {
+            log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&errors));
+            return Ok(AppError::to_response(&AppError::validations(errors))); // 417
         }
     }
 
@@ -540,7 +547,7 @@ pub async fn delete_profile_current(
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use std::{fs, io::Write};
+    use std::{borrow::Cow::Borrowed, fs, io::Write};
 
     use actix_multipart_test::MultiPartFormDataBuilder;
     use actix_web::{
@@ -782,8 +789,14 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.message, err::MSG_NO_FIELDS_TO_UPDATE);
+        let key = Borrowed(validators::NM_NO_FIELDS_TO_UPDATE);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[err::MSG_NO_FIELDS_TO_UPDATE]);
+        let names1 = app_err.params.get(&key).unwrap().get("validNames").unwrap().as_str().unwrap();
+        let names2 = [ModifyProfileDto::valid_names(), vec!["avatarfile"]].concat().join(",");
+        assert_eq!(names1, &names2);
     }
     #[actix_web::test]
     async fn test_put_profile_nickname_min() {
