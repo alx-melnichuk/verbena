@@ -24,7 +24,7 @@ use crate::streams::{
 };
 use crate::users::user_models::UserRole;
 use crate::utils::parser;
-use crate::validators::{self, msg_validation, Validator};
+use crate::validators::{self, msg_validation, ValidationChecks, Validator};
 
 pub const ALIAS_LOGO_FILES_DIR: &str = "/logo";
 // 406 Not acceptable - Error deserializing field tag.
@@ -511,12 +511,19 @@ pub async fn put_stream(
     let validation_res = modify_stream_info_dto.validate();
     
     if let Err(validation_errors) = validation_res {
-        if validation_errors.len() > 0 {
-            let err = validation_errors.last().unwrap();
-            if !err.params.contains_key(validators::NM_NO_FIELDS_TO_UPDATE) || logo_file.is_none() {
-                log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-                return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
+        let mut is_no_fields_to_update = false;
+        let errors = validation_errors.iter().map(|err| {
+            if !is_no_fields_to_update && err.params.contains_key(validators::NM_NO_FIELDS_TO_UPDATE) {
+                is_no_fields_to_update = true;
+                let valid_names = [ModifyStreamInfoDto::valid_names(), vec!["logofile"]].concat().join(",");
+                ValidationChecks::no_fields_to_update(&[false], &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err().unwrap()
+            } else {
+                err.clone()
             }
+        }).collect();
+        if !is_no_fields_to_update || logo_file.is_none() {
+            log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&errors));
+            return Ok(AppError::to_response(&AppError::validations(errors))); // 417
         }
     }
 
@@ -1600,10 +1607,15 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        eprintln!("\n###### body: {:?}\n", &body);
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err_vec.len(), 1);
+        let app_err = app_err_vec.get(0).unwrap();
+        assert_eq!(app_err.message, err::MSG_NO_FIELDS_TO_UPDATE);
+        let key = Borrowed(validators::NM_NO_FIELDS_TO_UPDATE);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[err::MSG_NO_FIELDS_TO_UPDATE]);
+        let names1 = app_err.params.get(&key).unwrap().get("validNames").unwrap().as_str().unwrap();
+        let names2 = [ModifyStreamInfoDto::valid_names(), vec!["logofile"]].concat().join(",");
+        assert_eq!(names1, &names2);
     }
     #[actix_web::test]
     async fn test_put_stream_invalid_id() {
