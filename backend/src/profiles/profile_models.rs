@@ -263,20 +263,6 @@ pub struct ModifyProfile {
     pub theme: Option<String>,          // min_len=2,max_len=32 default "light"
 }
 
-impl ModifyProfile {
-    pub fn is_empty(&self) -> bool {
-        let is_nickname = self.nickname.is_none();
-        let is_email = self.email.is_none();
-        let is_password = self.password.is_none();
-        let is_role = self.role.is_none();
-        let is_avatar = self.avatar.is_none();
-        let is_descript = self.descript.is_none();
-        let is_theme = self.theme.is_none();
-
-        is_nickname && is_email && is_password && is_role && is_avatar && is_descript && is_theme
-    }
-}
-
 // * * * * Section: models for the "profile_controller". * * * *
 
 // ** Model Dto: "ProfileDto". Used: in "profile_controller::get_profile_by_id()" and many other methods. **
@@ -344,6 +330,12 @@ pub struct ModifyProfileDto {
     pub theme: Option<String>, // min_len=2,max_len=32 default "light"
 }
 
+impl ModifyProfileDto {
+    pub fn valid_names<'a>() -> Vec<&'a str> {
+        vec!["nickname", "email", "role", "descript", "theme"]
+    }
+}
+
 impl Validator for ModifyProfileDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
@@ -375,9 +367,9 @@ impl Validator for ModifyProfileDto {
             self.descript.is_some(),
             self.theme.is_some(),
         ];
-        let valid_names = "nickname, email, role, descript, theme";
+        let valid_names = ModifyProfileDto::valid_names().join(",");
         errors.push(
-            ValidationChecks::no_fields_to_update(&list_is_some, valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err(),
+            ValidationChecks::no_fields_to_update(&list_is_some, &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err(),
         );
 
         self.filter_errors(errors)
