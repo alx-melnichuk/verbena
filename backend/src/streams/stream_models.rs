@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use std::fmt;
+use std::{collections::HashMap, fmt};
 
 use chrono::{DateTime, Duration, Utc};
 use diesel::prelude::*;
@@ -8,6 +7,7 @@ use serde_json;
 use utoipa::ToSchema;
 
 use crate::schema;
+use crate::settings::err;
 use crate::utils::{serial_datetime, serial_datetime_option};
 use crate::validators::{ValidationChecks, ValidationError, Validator};
 
@@ -383,6 +383,12 @@ pub struct ModifyStreamInfoDto {
     pub tags: Option<Vec<String>>,
 }
 
+impl ModifyStreamInfoDto {
+    pub fn valid_names<'a>() -> Vec<&'a str> {
+        vec!["title", "descript", "starttime", "source", "tags"]
+    }
+}
+
 impl Validator for ModifyStreamInfoDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
@@ -409,6 +415,18 @@ impl Validator for ModifyStreamInfoDto {
         if let Some(value) = &self.tags {
             errors.push(validate_tag(value).err());
         }
+
+        let list_is_some = vec![
+            self.title.is_some(),
+            self.descript.is_some(),
+            self.starttime.is_some(),
+            self.source.is_some(),
+            self.tags.is_some(),
+        ];
+        let valid_names = ModifyStreamInfoDto::valid_names().join(",");
+        errors.push(
+            ValidationChecks::no_fields_to_update(&list_is_some, &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err(),
+        );
 
         self.filter_errors(errors)
     }

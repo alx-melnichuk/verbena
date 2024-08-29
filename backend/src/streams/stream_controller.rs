@@ -24,7 +24,7 @@ use crate::streams::{
 };
 use crate::users::user_models::UserRole;
 use crate::utils::parser;
-use crate::validators::{msg_validation, Validator};
+use crate::validators::{self, msg_validation, Validator};
 
 pub const ALIAS_LOGO_FILES_DIR: &str = "/logo";
 // 406 Not acceptable - Error deserializing field tag.
@@ -509,10 +509,17 @@ pub async fn put_stream(
 
     // Checking the validity of the data model.
     let validation_res = modify_stream_info_dto.validate();
+    
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
+        if validation_errors.len() > 0 {
+            let err = validation_errors.last().unwrap();
+            if !err.params.contains_key(validators::NM_NO_FIELDS_TO_UPDATE) || logo_file.is_none() {
+                log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
+                return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
+            }
+        }
     }
+
     let mut logo: Option<Option<String>> = None;
 
     let config_strm = config_strm.get_ref().clone();
@@ -1568,9 +1575,36 @@ mod tests {
         let body_str = String::from_utf8_lossy(&body);
         assert!(body_str.contains(MSG_MULTIPART_STREAM_INCOMPLETE));
     }
+    #[actix_web::test]
+    async fn test_put_stream_form_with_invalid_name() {
+        let name1_file = "test_put_stream_form_with_invalid_name.png";
+        let path_name1_file = format!("./{}", &name1_file);
+        save_file_png(&path_name1_file, 2).unwrap();
+        #[rustfmt::skip]
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_file(path_name1_file.clone(), "logofile1", "image/png", name1_file)
+            .build();
 
-    // TODO fn test_put_stream_form_with_invalid_name()
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/streams/1")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        let _ = fs::remove_file(&path_name1_file);
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        eprintln!("\n###### body: {:?}\n", &body);
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[err::MSG_NO_FIELDS_TO_UPDATE]);
+    }
     #[actix_web::test]
     async fn test_put_stream_invalid_id() {
         let stream_id_bad = "100a".to_string();
