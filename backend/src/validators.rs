@@ -59,7 +59,7 @@ pub struct ValidationChecks {}
 
 impl ValidationChecks {
     /// Checking if a string is complete.
-    pub fn required(value: &str, msg: &'static str) -> Result<(), ValidationError> {
+    pub fn required<'a>(value: &'a str, msg: &'a str) -> Result<(), ValidationError> {
         let len: usize = value.len();
         if len == 0 {
             let mut err = ValidationError::new(msg);
@@ -70,7 +70,7 @@ impl ValidationChecks {
         Ok(())
     }
     /// Checking the length of a string with a minimum value.
-    pub fn min_length(value: &str, min: usize, msg: &'static str) -> Result<(), ValidationError> {
+    pub fn min_length<'a>(value: &'a str, min: usize, msg: &'a str) -> Result<(), ValidationError> {
         let len: usize = value.len();
         if len < min {
             let mut err = ValidationError::new(msg);
@@ -81,7 +81,7 @@ impl ValidationChecks {
         Ok(())
     }
     /// Checking the length of a string with a maximum value.
-    pub fn max_length(value: &str, max: usize, msg: &'static str) -> Result<(), ValidationError> {
+    pub fn max_length<'a>(value: &'a str, max: usize, msg: &'a str) -> Result<(), ValidationError> {
         let len: usize = value.len();
         if max < len {
             let mut err = ValidationError::new(msg);
@@ -93,7 +93,7 @@ impl ValidationChecks {
     }
     /// Checking the amount of elements of a array with a minimum value.
     #[rustfmt::skip]
-    pub fn min_amount(amount: usize, min: usize, msg: &'static str) -> Result<(), ValidationError> {
+    pub fn min_amount<'a>(amount: usize, min: usize, msg: &'a str) -> Result<(), ValidationError> {
         if amount < min {
             let mut err = ValidationError::new(msg);
             let json =
@@ -105,7 +105,7 @@ impl ValidationChecks {
     }
     /// Checking the amount of elements of a array with a maximum value.
     #[rustfmt::skip]
-    pub fn max_amount(amount: usize, max: usize, msg: &'static str) -> Result<(), ValidationError> {
+    pub fn max_amount<'a>(amount: usize, max: usize, msg: &'a str) -> Result<(), ValidationError> {
         if max < amount {
             let mut err = ValidationError::new(msg);
             let json =
@@ -116,7 +116,7 @@ impl ValidationChecks {
         Ok(())
     }
     /// Checking whether a string matches a regular expression.
-    pub fn regexp(value: &str, reg_exp: &str, msg: &'static str) -> Result<(), ValidationError> {
+    pub fn regexp<'a>(value: &'a str, reg_exp: &'a str, msg: &'a str) -> Result<(), ValidationError> {
         let regex = Regex::new(reg_exp).unwrap();
         let result = regex.captures(value);
         if result.is_none() {
@@ -128,7 +128,7 @@ impl ValidationChecks {
         Ok(())
     }
     /// Checking whether the string matches the email structure.
-    pub fn email(value: &str, msg: &'static str) -> Result<(), ValidationError> {
+    pub fn email<'a>(value: &'a str, msg: &'a str) -> Result<(), ValidationError> {
         let is_valid = email_address::EmailAddress::is_valid(value);
         if !is_valid {
             let mut err = ValidationError::new(msg);
@@ -139,10 +139,10 @@ impl ValidationChecks {
         Ok(())
     }
     /// Check date against minimum valid date.
-    pub fn min_valid_date(
+    pub fn min_valid_date<'a>(
         value: &DateTime<Utc>,
         min_date_time: &DateTime<Utc>,
-        msg: &'static str,
+        msg: &'a str,
     ) -> Result<(), ValidationError> {
         if *value < *min_date_time {
             let mut err = ValidationError::new(msg);
@@ -155,7 +155,7 @@ impl ValidationChecks {
         Ok(())
     }
     // Check for a list of valid values.
-    pub fn valid_value(value: &str, valid_values: Vec<&str>, msg: &'static str) -> Result<(), ValidationError> {
+    pub fn valid_value<'a>(value: &'a str, valid_values: Vec<&'a str>, msg: &'a str) -> Result<(), ValidationError> {
         let res = valid_values.iter().position(|&val| val == value);
         if res.is_none() {
             let mut err = ValidationError::new(msg);
@@ -168,7 +168,7 @@ impl ValidationChecks {
     }
     /// Checking for at least one required field.
     #[rustfmt::skip]
-    pub fn no_fields_to_update(list_is_some: &[bool], valid_names: &'static str, msg: &'static str) -> Result<(), ValidationError> {
+    pub fn no_fields_to_update<'a>(list_is_some: &[bool], valid_names: &'a str, msg: &'a str) -> Result<(), ValidationError> {
         let field_value_exists = list_is_some.iter().any(|&val| val == true);
         if !field_value_exists {
             let mut err = ValidationError::new(msg);
