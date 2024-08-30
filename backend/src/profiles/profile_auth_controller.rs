@@ -5,15 +5,14 @@ use utoipa;
 
 use crate::extractors::authentication::{RequireAuth, Authenticated};
 use crate::errors::AppError;
-use crate::hash_tools;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
-    profile_models::{self, Profile, LoginProfileDto, TokenDto},
+    profile_models::{self, LoginProfileDto, TokenDto},
     profile_err as p_err,
-    profile_orm::ProfileOrm,
+    profile_checks,
 };
 #[cfg(not(feature = "mockdata"))]
 use crate::sessions::session_orm::impls::SessionOrmApp;
@@ -98,54 +97,29 @@ pub async fn login(
     let nickname = login_profile_dto.nickname.clone();
     let email = login_profile_dto.nickname.clone();
     let password = login_profile_dto.password.clone();
-
-    let profile = web::block(move || {
-        let is_password = true;
-        // Find user's profile by nickname or email.
-        let existing_profile = profile_orm
-            .find_profile_by_nickname_or_email(Some(&nickname), Some(&email), is_password)
-            .map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e) // 507
-            });
-        existing_profile
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
-    })??;
-
-    let profile: Profile = profile.ok_or_else(|| {
-        log::error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_WRONG_NICKNAME_EMAIL);
-        AppError::unauthorized401(err::MSG_WRONG_NICKNAME_EMAIL) // 401 (A)
-    })?;
-
-    let profile_password = profile.password.to_string();
-    let password_matches = hash_tools::compare_hash(&password, &profile_password).map_err(|e| {
-        let message = format!("{}; {}", err::MSG_INVALID_HASH, &e);
-        log::error!("{}: {}", err::CD_CONFLICT, &message);
-        AppError::conflict409(&message) // 409
-    })?;
-
-    if !password_matches {
-        log::error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_PASSWORD_INCORRECT);
-        return Err(AppError::unauthorized401(err::MSG_PASSWORD_INCORRECT)); // 401 (B)
-    }
-
+    
+    let profile_orm2 = profile_orm.clone().into_inner().as_ref().clone();
+    // Check the password value with the available hash.
+    // AppError::database507(&e) // 507
+    // AppError::blocking506(&e.to_string()) // 506
+    // AppError::unauthorized401(err::MSG_WRONG_NICKNAME_EMAIL) // 401 (A)
+    // AppError::conflict409(&format!("{}; {}", err::MSG_INVALID_HASH, &e)) // 409
+    // AppError::unauthorized401(err::MSG_PASSWORD_INCORRECT) // 401 (B)
+    let profile_pwd = profile_checks::find_profile_by_nickname_or_email_and_check_password(&nickname, &email, &password, profile_orm2).await?;
+    
     let num_token = tokens::generate_num_token();
     let config_jwt = config_jwt.get_ref().clone();
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Packing two parameters (user_id, num_token) into access_token.
-    let access_token = tokens::encode_token(profile.user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
+    let access_token = tokens::encode_token(profile_pwd.user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
         let message = format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
         AppError::unprocessable422(&message) // 422
     })?;
 
     // Packing two parameters (user_id, num_token) into refresh_token.
-    let refresh_token = tokens::encode_token(profile.user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
+    let refresh_token = tokens::encode_token(profile_pwd.user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
         let message = format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
         AppError::unprocessable422(&message)
@@ -153,7 +127,7 @@ pub async fn login(
 
     let opt_session = web::block(move || {
         // Modify the entity (session) with new data. Result <Option<Session>>.
-        let res_session = session_orm.modify_session(profile.user_id, Some(num_token)).map_err(|e| {
+        let res_session = session_orm.modify_session(profile_pwd.user_id, Some(num_token)).map_err(|e| {
             log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
@@ -166,7 +140,7 @@ pub async fn login(
     })??;
 
     if opt_session.is_none() {
-        let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, profile.user_id);
+        let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, profile_pwd.user_id);
         log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
         return Err(AppError::not_acceptable406(&message)); // 406
     }
@@ -177,7 +151,7 @@ pub async fn login(
     };
 
     let login_profile_response_dto = profile_models::LoginProfileResponseDto {
-        profile_dto: profile_models::ProfileDto::from(profile),
+        profile_dto: profile_models::ProfileDto::from(profile_pwd),
         profile_tokens_dto,
     };
 
@@ -406,7 +380,7 @@ mod tests {
         http::header::{HeaderValue, CONTENT_TYPE},
         test, web, App,
     };
-    use profile_models::{ProfileDto, ProfileTest};
+    use profile_models::{Profile, ProfileDto, ProfileTest};
     use serde_json::json;
 
     use crate::{extractors::authentication::BEARER, hash_tools};
