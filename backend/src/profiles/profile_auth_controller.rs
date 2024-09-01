@@ -5,6 +5,7 @@ use utoipa;
 
 use crate::extractors::authentication::{RequireAuth, Authenticated};
 use crate::errors::AppError;
+use crate::hash_tools;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -12,7 +13,7 @@ use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
     profile_models::{self, LoginProfileDto, TokenDto},
     profile_err as p_err,
-    profile_checks,
+    profile_orm::ProfileOrm,
 };
 #[cfg(not(feature = "mockdata"))]
 use crate::sessions::session_orm::impls::SessionOrmApp;
@@ -98,15 +99,40 @@ pub async fn login(
     let email = login_profile_dto.nickname.clone();
     let password = login_profile_dto.password.clone();
     
-    let profile_orm2 = profile_orm.clone().into_inner().as_ref().clone();
-    // Check the password value with the available hash.
-    // AppError::database507(&e) // 507
-    // AppError::blocking506(&e.to_string()) // 506
-    // AppError::unauthorized401(err::MSG_WRONG_NICKNAME_EMAIL) // 401 (A)
-    // AppError::conflict409(&format!("{}; {}", err::MSG_INVALID_HASH, &e)) // 409
-    // AppError::unauthorized401(err::MSG_PASSWORD_INCORRECT) // 401 (B)
-    let profile_pwd = profile_checks::find_profile_by_nickname_or_email_and_check_password(&nickname, &email, &password, profile_orm2).await?;
-    
+    let opt_profile_pwd = web::block(move || {
+        let is_password = true;
+        // Find user's profile by nickname or email.
+        let existing_profile = profile_orm
+            .find_profile_by_nickname_or_email(Some(&nickname), Some(&email), is_password)
+            .map_err(|e| {
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e) // 507
+            });
+        existing_profile
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string()) // 506
+    })??;
+
+    let profile_pwd = opt_profile_pwd.ok_or_else(|| {
+        log::error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_WRONG_NICKNAME_EMAIL);
+        AppError::unauthorized401(err::MSG_WRONG_NICKNAME_EMAIL) // 401 (A)
+    })?;
+
+    let profile_password = profile_pwd.password.to_string();
+    let password_matches = hash_tools::compare_hash(&password, &profile_password).map_err(|e| {
+        let message = format!("{}; {}", err::MSG_INVALID_HASH, &e);
+        log::error!("{}: {}", err::CD_CONFLICT, &message);
+        AppError::conflict409(&message) // 409
+    })?;
+
+    if !password_matches {
+        log::error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_PASSWORD_INCORRECT);
+        return Err(AppError::unauthorized401(err::MSG_PASSWORD_INCORRECT)); // 401 (B)
+    }
+
     let num_token = tokens::generate_num_token();
     let config_jwt = config_jwt.get_ref().clone();
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
