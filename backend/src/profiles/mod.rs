@@ -1,6 +1,5 @@
 pub mod config_prfl;
 pub mod profile_auth_controller;
-pub mod profile_checks;
 pub mod profile_controller;
 pub mod profile_err;
 pub mod profile_get_controller;
