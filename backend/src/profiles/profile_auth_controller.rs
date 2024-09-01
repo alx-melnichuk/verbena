@@ -100,10 +100,9 @@ pub async fn login(
     let password = login_profile_dto.password.clone();
     
     let opt_profile_pwd = web::block(move || {
-        let is_password = true;
         // Find user's profile by nickname or email.
         let existing_profile = profile_orm
-            .find_profile_by_nickname_or_email(Some(&nickname), Some(&email), is_password)
+            .find_profile_by_nickname_or_email(Some(&nickname), Some(&email), true)
             .map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
