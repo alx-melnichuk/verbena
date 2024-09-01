@@ -201,7 +201,7 @@ where
             // let timer1s = format!("{:.2?}", timer1.elapsed());
             let session = opt_session.ok_or_else(|| {
                 // There is no session for this user.
-                let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id);
+                let message = format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id);
                 log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406+
                 error::ErrorNotAcceptable(AppError::not_acceptable406(&message))
             })?;
@@ -210,7 +210,7 @@ where
             // Compare an additional numeric value from the session and from the token.
             if session_num_token != num_token {
                 // If they do not match, then this is an error.
-                let message = format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
+                let message = format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
                 log::error!("{}: {}", err::CD_UNAUTHORIZED, &message); // 401+
                 return Err(error::ErrorUnauthorized(AppError::unauthorized401(&message)));
             }
@@ -225,7 +225,7 @@ where
             // let timer2s = format!("{:.2?}", timer2.elapsed());
 
             let profile = result.ok_or_else(|| {
-                let message = format!("{}: user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id);
+                let message = format!("{}; user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id);
                 log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
                 error::ErrorUnauthorized(AppError::unauthorized401(&message)) // 401+
             })?;
