@@ -384,22 +384,16 @@ impl ModifyStreamForm {
 /// Request structure:
 /// ```text
 /// {
-///   title?: String,            // optional
-///   descript?: String,         // optional
-///   starttime?: DateTime<Utc>, // optional
-///   source?: String,           // optional
-///   tags?: String,             // optional
-///   logofile?: TempFile,       // optional
+///   title?: String,            // optional - stream title;
+///   descript?: String,         // optional - description of the stream;
+///   starttime?: DateTime<Utc>, // optional - date and time of the start of the stream;
+///   source?: String,           // optional - source value ("obs" by default) of the stream;
+///   tags?: String,             // optional - serialized array of string values of stream tags("['tag1','tag2']");
+///   logofile?: TempFile,       // optional - attached stream image file (jpeg,gif,png,bmp);
 /// }
-/// Where:
-/// "title" - stream title;
-/// "descript" - description of the stream;
-/// "starttime" - date and time (in Utc-format "2020-01-20T20:10:57.000Z") of the start of the stream;
-/// "source" - source value ("obs" by default) of the stream;
-/// "tags" - serialized array of string values of stream tags("['tag1','tag2']");
-/// "logofile" - attached stream image file (jpeg,gif,png,bmp);
-///
 /// ```
+/// The "starttime" field is specified in the Utc format: "2020-01-20T20:10:57.000Z".
+/// 
 /// The "starttime" field indicates the date of the future stream.
 /// And cannot contain a past period (date and time).
 ///
@@ -418,16 +412,16 @@ impl ModifyStreamForm {
 /// ```
 /// One could call with following curl.
 /// ```text
-/// curl -i -X PUT http://localhost:8080/api/streams -F "title=title1" -F "tags=['tag1','tag2']"
+/// curl -i -X PUT http://localhost:8080/api/streams/1 -F "title=title1" -F "tags=['tag1','tag2']"
 /// ```
 /// Could be called with all fields with the next curl.
 /// ```text
-/// curl -i -X PUT http://localhost:8080/api/streams -F "title=title2" -F "descript=descript2" \
+/// curl -i -X PUT http://localhost:8080/api/streams/1 -F "title=title2" -F "descript=descript2" \
 ///   -F "starttime=2020-01-20T20:10:57.000Z" -F "tags=['tag1','tag2']"
 /// ```
 /// Additionally, you can specify the name of the image file.
 /// ```text
-/// curl -i -X PUT http://localhost:8080/api/streams -F "title=title2" -F "descript=descript2" \
+/// curl -i -X PUT http://localhost:8080/api/streams/1 -F "title=title2" -F "descript=descript2" \
 ///   -F "starttime=2020-01-20T20:10:57.000Z" -F "tags=['tag1','tag2']" -F "logofile=@image.jpg"
 /// ```
 ///  
