@@ -26,7 +26,11 @@ use crate::profiles::{
     profile_orm::ProfileOrm,
 };
 use crate::settings::err;
-use crate::users::user_models::UserRole;
+#[cfg(not(feature = "mockdata"))]
+use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
+#[cfg(feature = "mockdata")]
+use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
+use crate::users::{user_models::UserRole, user_registr_orm::UserRegistrOrm};
 use crate::utils::parser;
 use crate::validators::{self, msg_validation, ValidationChecks, Validator};
 
@@ -192,6 +196,7 @@ pub async fn put_profile(
     authenticated: Authenticated,
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
     profile_orm: web::Data<ProfileOrmApp>,
+    user_registr_orm: web::Data<UserRegistrOrmApp>,
     MultipartForm(modify_profile_form): MultipartForm<ModifyProfileForm>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get the current user's profile.
@@ -221,6 +226,60 @@ pub async fn put_profile(
         if !is_no_fields_to_update || avatar_file.is_none() {
             log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&errors));
             return Ok(AppError::to_response(&AppError::validations(errors))); // 417
+        }
+    }
+
+    let opt_nickname = modify_profile_dto.nickname.clone();
+    let opt_email = modify_profile_dto.email.clone();
+    if opt_nickname.is_some() || opt_email.is_some() {
+
+        let profile_orm2 = profile_orm.clone();
+        // Find in the "profile" table an entry by nickname or email.
+        let opt_profile = web::block(move || {
+            let existing_profile = profile_orm2
+                .find_profile_by_nickname_or_email(opt_nickname.clone().as_deref(), opt_email.clone().as_deref(), false)
+                .map_err(|e| {
+                    log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                    AppError::database507(&e) // 507
+                })
+                .ok()?;
+            existing_profile
+        })
+        .await
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            AppError::blocking506(&e.to_string()) // 506
+        })?;
+
+        let mut uniqueness = false;
+        // If such an entry exists, then exit.
+        if opt_profile.is_none() {
+            let opt_nickname2 = modify_profile_dto.nickname.clone();
+            let opt_email2 = modify_profile_dto.email.clone();
+        
+            // Find in the "user_registr" table an entry with an active date, by nickname or email.
+            let opt_user_registr = web::block(move || {
+                let existing_user_registr = user_registr_orm
+                    .find_user_registr_by_nickname_or_email(opt_nickname2.as_deref(), opt_email2.as_deref())
+                    .map_err(|e| {
+                        log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                        AppError::database507(&e) // 507
+                    })
+                    .ok()?;
+                existing_user_registr
+            })
+            .await
+            .map_err(|e| {
+                log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+                AppError::blocking506(&e.to_string()) // 506
+            })?;
+
+            uniqueness = opt_user_registr.is_none();
+        }
+
+        if !uniqueness {
+            // Since the specified "nickname" or "email" is not unique, return an error.
+
         }
     }
 
