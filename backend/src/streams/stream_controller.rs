@@ -509,7 +509,6 @@ pub async fn put_stream(
 
     // Checking the validity of the data model.
     let validation_res = modify_stream_info_dto.validate();
-    
     if let Err(validation_errors) = validation_res {
         let mut is_no_fields_to_update = false;
         let errors = validation_errors.iter().map(|err| {
@@ -901,7 +900,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -922,7 +922,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -945,7 +946,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -969,7 +971,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -992,7 +995,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1016,7 +1020,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1041,7 +1046,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1067,7 +1073,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1092,7 +1099,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1117,7 +1125,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1167,7 +1176,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1192,7 +1202,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1216,7 +1227,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1238,7 +1250,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1391,7 +1404,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1454,7 +1468,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1503,7 +1518,8 @@ mod tests {
         let app = test::init_service(
             App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1583,8 +1599,8 @@ mod tests {
         assert!(body_str.contains(MSG_MULTIPART_STREAM_INCOMPLETE));
     }
     #[actix_web::test]
-    async fn test_put_stream_form_with_invalid_name() {
-        let name1_file = "test_put_stream_form_with_invalid_name.png";
+    async fn test_put_stream_invalid_name() {
+        let name1_file = "test_put_stream_invalid_name.png";
         let path_name1_file = format!("./{}", &name1_file);
         save_file_png(&path_name1_file, 2).unwrap();
         #[rustfmt::skip]
