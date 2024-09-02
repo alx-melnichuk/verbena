@@ -446,11 +446,12 @@ pub async fn put_profile_new_password(
 #[rustfmt::skip]
 #[delete("/api/profiles/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn delete_profile(
+    config_prfl: web::Data<config_prfl::ConfigPrfl>,
     profile_orm: web::Data<ProfileOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    // Get data from request.
     let id_str = request.match_info().query("id").to_string();
-
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
         log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
@@ -473,6 +474,16 @@ pub async fn delete_profile(
     })??;
 
     if let Some(profile) = opt_profile {
+        // Get the path to the "avatar" file.
+        let path_file_img: String = profile.avatar.clone().unwrap_or("".to_string());
+        if path_file_img.starts_with(ALIAS_AVATAR_FILES_DIR) {
+            // If there is a "avatar" file, then delete this file.
+            let config_prfl = config_prfl.get_ref().clone();
+            let avatar_files_dir = config_prfl.prfl_avatar_files_dir.clone();
+            let avatar_name_full_path = path_file_img.replace(ALIAS_AVATAR_FILES_DIR, &avatar_files_dir);
+            remove_file_and_log(&avatar_name_full_path, &"delete_profile()");
+        }
+        
         Ok(HttpResponse::Ok().json(ProfileDto::from(profile))) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
@@ -1822,7 +1833,7 @@ mod tests {
 
     // ** delete_profile **
     #[actix_web::test]
-    async fn test_delete_profile_profile_invalid_id() {
+    async fn test_delete_profile_invalid_id() {
         let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
         let profile1 = data_c.0.get(0).unwrap().clone();
         let profile_id_bad = format!("{}a", profile1.user_id);
@@ -1845,7 +1856,7 @@ mod tests {
         assert_eq!(app_err.message, msg);
     }
     #[actix_web::test]
-    async fn test_delete_profile_profile_not_exist() {
+    async fn test_delete_profile_non_existent_id() {
         let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
         let profile1 = data_c.0.get(0).unwrap().clone();
         let profile_id = profile1.user_id;
@@ -1859,7 +1870,7 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
     #[actix_web::test]
-    async fn test_delete_profile_profile_exists() {
+    async fn test_delete_profile_existent_id() {
         let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
         let profile1 = data_c.0.get(0).unwrap().clone();
         let profile2 = ProfileOrmApp::new_profile(2, "Logan_Lewis", "Logan_Lewis@gmail.com", UserRole::User);
@@ -1885,6 +1896,78 @@ mod tests {
         let json = serde_json::json!(profile2_dto).to_string();
         let profile2b_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(profile_dto_res, profile2b_dto_ser);
+    }
+    #[actix_web::test]
+    async fn test_delete_profile_with_img() {
+        let config_prfl = config_prfl::get_test_config();
+        let prfl_avatar_files_dir = config_prfl.prfl_avatar_files_dir;
+
+        let name0_file = "test_delete_profile_with_img.png";
+        let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
+        save_file_png(&(path_name0_file.clone()), 1).unwrap();
+        let path_name0_alias = format!("{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
+
+        let (cfg_c, mut data_c, token) = get_cfg_data(false, ADMIN);
+        let profile1 = data_c.0.get_mut(0).unwrap();
+        profile1.avatar = Some(path_name0_alias);
+        let profile1_id = profile1.user_id;
+        let profile_dto = ProfileDto::from(profile1.clone());
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+
+        let is_exists_img_old = path::Path::new(&path_name0_file).exists();
+        let _ = fs::remove_file(&path_name0_file);
+
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert!(!is_exists_img_old);
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json = json!(profile_dto).to_string();
+        let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(profile_dto_res, profile_dto_org);
+    }
+    #[actix_web::test]
+    async fn test_delete_profile_with_img_not_alias() {
+        let config_prfl = config_prfl::get_test_config();
+        let prfl_avatar_files_dir = config_prfl.prfl_avatar_files_dir;
+
+        let name0_file = "test_delete_profile_with_img_not_alias.png";
+        let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
+        save_file_png(&(path_name0_file.clone()), 1).unwrap();
+        let path_name0_alias = format!("/1{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
+
+        let (cfg_c, mut data_c, token) = get_cfg_data(false, ADMIN);
+        let profile1 = data_c.0.get_mut(0).unwrap();
+        profile1.avatar = Some(path_name0_alias);
+        let profile1_id = profile1.user_id;
+        let profile_dto = ProfileDto::from(profile1.clone());
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+
+        let is_exists_img_old = path::Path::new(&path_name0_file).exists();
+        let _ = fs::remove_file(&path_name0_file);
+
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert!(is_exists_img_old);
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json = json!(profile_dto).to_string();
+        let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(profile_dto_res, profile_dto_org);
     }
 
     // ** delete_profile_current **
