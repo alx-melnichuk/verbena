@@ -690,7 +690,7 @@ pub async fn delete_stream(
     })?;
 
     let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
-    let res_data = web::block(move || {
+    let res_stream = web::block(move || {
         // Add a new entity (stream).
         let res_data = stream_orm.delete_stream(id, opt_user_id).map_err(|e| {
             log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
@@ -704,16 +704,16 @@ pub async fn delete_stream(
         AppError::blocking506(&e.to_string()) // 506
     })?;
 
-    let opt_stream = res_data?;
+    let opt_stream = res_stream?;
 
     if let Some((stream, stream_tags)) = opt_stream {
         // Get the path to the "logo" file.
-        let logo_file: String = stream.logo.clone().unwrap_or("".to_string());
-        if logo_file.len() > 0 {
-            // If there is a “logo” file, then delete this file.
+        let path_file_img: String = stream.logo.clone().unwrap_or("".to_string());
+        if path_file_img.starts_with(ALIAS_LOGO_FILES_DIR) {
+            // If there is a "logo" file, then delete this file.
             let config_strm = config_strm.get_ref().clone();
             let logo_files_dir = config_strm.strm_logo_files_dir.clone();
-            let logo_name_full_path = logo_file.replace(ALIAS_LOGO_FILES_DIR, &logo_files_dir);
+            let logo_name_full_path = path_file_img.replace(ALIAS_LOGO_FILES_DIR, &logo_files_dir);
             remove_file_and_log(&logo_name_full_path, &"delete_stream()");
         }
     
@@ -2526,6 +2526,8 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         assert_eq!(resp.status(), StatusCode::OK); // 200
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json_stream = json!(stream).to_string();
@@ -2533,18 +2535,18 @@ mod tests {
         assert_eq!(stream_dto_res, stream_dto_org);
     }
     #[actix_web::test]
-    async fn test_delete_stream_existent_id_with_logo_99() {
+    async fn test_delete_stream_with_img() {
         let config_strm = config_strm::get_test_config();
         let strm_logo_files_dir = config_strm.strm_logo_files_dir;
 
-        let name0_file = "delete_circle5x5_b_old.png";
+        let name0_file = "test_delete_stream_with_img.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
         save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_logo = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
+        let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
         let (cfg_c, mut data_c, token) = get_cfg_data();
         let stream = data_c.2.get_mut(0).unwrap();
-        stream.logo = Some(path_name0_logo);
+        stream.logo = Some(path_name0_alias);
         let stream2 = stream.clone();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -2554,12 +2556,49 @@ mod tests {
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
-        let is_exists_logo_old = path::Path::new(&path_name0_file).exists();
+        let is_exists_img_old = path::Path::new(&path_name0_file).exists();
         let _ = fs::remove_file(&path_name0_file);
 
         assert_eq!(resp.status(), StatusCode::OK); // 200
-        assert!(!is_exists_logo_old);
+        assert!(!is_exists_img_old);
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let json_stream = json!(stream2).to_string();
+        let stream_dto_org: StreamInfoDto = serde_json::from_slice(json_stream.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(stream_dto_res, stream_dto_org);
+    }
+    #[actix_web::test]
+    async fn test_delete_stream_with_img_not_alias() {
+        let config_strm = config_strm::get_test_config();
+        let strm_logo_files_dir = config_strm.strm_logo_files_dir;
 
+        let name0_file = "test_delete_stream_with_img_not_alias.png";
+        let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
+        save_file_png(&(path_name0_file.clone()), 1).unwrap();
+        let path_name0_logo = format!("/1{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
+
+        let (cfg_c, mut data_c, token) = get_cfg_data();
+        let stream = data_c.2.get_mut(0).unwrap();
+        stream.logo = Some(path_name0_logo);
+        let stream2 = stream.clone();
+
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_stream).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream2.id))
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+
+        let is_exists_img_old = path::Path::new(&path_name0_file).exists();
+        let _ = fs::remove_file(&path_name0_file);
+
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+        assert!(is_exists_img_old);
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json_stream = json!(stream2).to_string();
