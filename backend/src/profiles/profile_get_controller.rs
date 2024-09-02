@@ -12,16 +12,16 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
-    // config_prfl,
+    profile_checks,
     profile_models::{Profile, ProfileDto, UniquenessProfileDto, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF},
     profile_orm::ProfileOrm,
 };
 use crate::settings::err;
+use crate::users::user_models::UserRole;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
-use crate::users::{user_models::UserRole, user_registr_orm::UserRegistrOrm};
 use crate::utils::parser;
 
 // None of the parameters are specified.
@@ -83,7 +83,10 @@ pub async fn uniqueness_check(
     // Get search parameters.
     let uniqueness_user_dto: UniquenessProfileDto = query_params.clone().into_inner();
 
-    let nickname = uniqueness_user_dto.nickname.unwrap_or("".to_string());
+    let opt_nickname = uniqueness_user_dto.nickname.clone();
+    let opt_email = uniqueness_user_dto.email.clone();
+
+    /*let nickname = uniqueness_user_dto.nickname.unwrap_or("".to_string());
     let email = uniqueness_user_dto.email.unwrap_or("".to_string());
 
     let is_nickname = nickname.len() > 0;
@@ -94,9 +97,9 @@ pub async fn uniqueness_check(
         log::error!("{}: {}: {}", err::CD_NOT_ACCEPTABLE, MSG_PARAMETERS_NOT_SPECIFIED, json.to_string());
         return Err(AppError::not_acceptable406(MSG_PARAMETERS_NOT_SPECIFIED) // 406
             .add_param(Borrowed("invalidParams"), &json));
-    }
+    }*/
 
-    #[rustfmt::skip]
+    /*#[rustfmt::skip]
     let opt_nickname = if nickname.len() > 0 { Some(nickname) } else { None };
     let opt_email = if email.len() > 0 { Some(email) } else { None };
 
@@ -118,9 +121,9 @@ pub async fn uniqueness_check(
     .map_err(|e| {
         log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
-    })?;
+    })?;*/
 
-    let mut uniqueness = false;
+    /*let mut uniqueness = false;
     // If such an entry exists, then exit.
     if opt_profile.is_none() {
         let opt_nickname2 = opt_nickname.clone();
@@ -145,6 +148,21 @@ pub async fn uniqueness_check(
 
         uniqueness = opt_user_registr.is_none();
     }
+    */
+
+    let profile_orm2 = profile_orm.get_ref().clone();
+    let user_registr_orm2 = user_registr_orm.get_ref().clone();
+
+    let res_search =
+        profile_checks::find_profile_for_nickname_or_email(opt_nickname, opt_email, profile_orm2, user_registr_orm2)
+            .await
+            .map_err(|err| {
+                // #get param
+                eprintln!("## app_error: {:#?}", &err);
+                log::error!("{}:{};", &err.code, &err.message);
+                err
+            })?;
+    let uniqueness = res_search.is_none();
 
     Ok(HttpResponse::Ok().json(json!({ "uniqueness": uniqueness }))) // 200
 }
