@@ -110,6 +110,81 @@ impl ModifyProfileForm {
     }
 }
 
+/// put_profiles
+///
+/// Update the current user profile with new data.
+///
+/// Multipart/form-data is used to transfer data.
+///
+/// Request structure:
+/// ```text
+/// {
+///   nickname?: String,     // optional - user nickname;
+///   email?: String,        // optional - user email;
+///   role?: String,         // optional - user role;
+///   descript?: String,     // optional - user description;
+///   theme?: String,        // optional - user color theme ("light", "dark");
+///   avatarfile?: TempFile, // optional - attached user image file (jpeg,gif,png,bmp);
+/// }
+/// ```
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X PUT http://localhost:8080/api/profiles -F "descript=Descript"
+/// ```
+/// Could be called with all fields with the next curl.
+/// ```text
+/// curl -i -X PUT http://localhost:8080/api/profiles -F "nickname=user2000" -F "email=user2000@gmail.ua" \
+///   -F "role=user" -F "descript=Descript"  -F "theme=dark"
+/// ```
+/// Additionally, you can specify the name of the image file.
+/// ```text
+/// curl -i -X PUT http://localhost:8080/api/profiles -F "descript=descript2" -F "avatarfile=@image.jpg"
+/// ```
+///  
+/// Return the profile with updated data (`ProfileDto`) with status 200 or 204 (no content) if the profile is not found.
+///
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Update the current user profile with new data.", body = ProfileDto,
+        examples(
+            ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
+                value = json!(ProfileDto::from(
+                    Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
+                        Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF)))
+            ))),
+            ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
+                value = json!(ProfileDto::from(
+                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
+            )))),    
+        ),
+        (status = 204, description = "The current user's profile was not found."),
+        (status = 413, description = "Invalid image file size. `curl -i -X PUT http://localhost:8080/api/profiles
+            -F 'avatarfile=@image.jpg'`", body = AppError,
+            example = json!(AppError::content_large413(err::MSG_INVALID_FILE_SIZE).add_param(Cow::Borrowed("invalidFileSize"),
+                &json!({ "actualFileSize": 186, "maxFileSize": 160 })))),
+        (status = 415, description = "Uploading a file with an invalid type `svg`. `curl -i -X PUT http://localhost:8080/api/profiles
+            -F 'avatarfile=@image.svg'`", body = AppError,
+            example = json!(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE).add_param(Cow::Borrowed("invalidFileType"),
+                &json!({ "actualFileType": "image/svg+xml", "validFileType": "image/jpeg,image/png" })))),
+        (status = 417, description = "Validation error. `curl -X PUT http://localhost:8080/api/profiles
+            -F 'descript=Description' -F 'theme=light' -F 'avatarfile=@image.png'`", body = [AppError],
+            example = json!(AppError::validations(
+                (ModifyProfileDto { nickname: None, email: None, role: None,
+                    descript: Some("d".to_string()), theme: Some("light".to_string()) }).validate().err().unwrap()
+            ) )),
+        (status = 500, description = "Error loading file.", body = AppError, example = json!(
+            AppError::internal_err500(&format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, "/tmp/demo.jpg", "File not found.")))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+        (status = 510, description = "Error while converting file.", body = AppError,
+            example = json!(AppError::not_extended510(
+                &format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, "Invalid source file image type \"svg\"")))),
+    ),
+    security(("bearer_auth" = [])),
+)]
 // PUT /api/profiles
 #[rustfmt::skip]
 #[put("/api/profiles", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
