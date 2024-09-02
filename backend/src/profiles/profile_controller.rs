@@ -1835,8 +1835,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_profile_invalid_id() {
         let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
-        let profile1 = data_c.0.get(0).unwrap().clone();
-        let profile_id_bad = format!("{}a", profile1.user_id);
+        let profile_id_bad = format!("{}a", data_c.0.get(0).unwrap().user_id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile).configure(configure_profile(cfg_c, data_c))).await;
@@ -1858,8 +1857,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_profile_non_existent_id() {
         let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
-        let profile1 = data_c.0.get(0).unwrap().clone();
-        let profile_id = profile1.user_id;
+        let profile_id = data_c.0.get(0).unwrap().user_id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile).configure(configure_profile(cfg_c, data_c))).await;
@@ -1873,18 +1871,13 @@ mod tests {
     async fn test_delete_profile_existent_id() {
         let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
         let profile1 = data_c.0.get(0).unwrap().clone();
-        let profile2 = ProfileOrmApp::new_profile(2, "Logan_Lewis", "Logan_Lewis@gmail.com", UserRole::User);
-
-        let profile_vec = ProfileOrmApp::create(&vec![profile1, profile2]).profile_vec;
-        let profile2_dto = ProfileDto::from(profile_vec.get(1).unwrap().clone());
-        let profile2_id = profile2_dto.id;
-
-        let data_c = (profile_vec, data_c.1, data_c.2);
+        let profile1_id = profile1.user_id;
+        let profile1_dto = ProfileDto::from(profile1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile2_id))
+        let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -1893,9 +1886,9 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(profile2_dto).to_string();
-        let profile2b_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-        assert_eq!(profile_dto_res, profile2b_dto_ser);
+        let json = serde_json::json!(profile1_dto).to_string();
+        let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(profile_dto_res, profile_dto_org);
     }
     #[actix_web::test]
     async fn test_delete_profile_with_img() {
