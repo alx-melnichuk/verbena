@@ -2489,9 +2489,11 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_id_bad))
             .insert_header(header_auth(&token)).to_request();
-
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
@@ -2509,7 +2511,6 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_id + 1))
             .insert_header(header_auth(&token)).to_request();
-
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
