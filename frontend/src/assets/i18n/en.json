@@ -91,7 +91,7 @@
     "finish_date_less_start_date" : "The finish date \"{{ invalidPeriod.streamPeriodFinish }}\" is less than the start date \"{{ invalidPeriod.streamPeriodStart }}\".",
     "invalid_field_tag" : "Error deserializing field tag.",
     "session_not_exist" : "There is no session for this user.",
-    "parameters_not_specified": "Parameters not specified"
+    "params_not_specified": "Parameters not specified"
   },
   "Conflict": {
     "status": 409,

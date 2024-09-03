@@ -86,7 +86,10 @@ pub async fn uniqueness_check(
     let opt_nickname = uniqueness_user_dto.nickname.clone();
     let opt_email = uniqueness_user_dto.email.clone();
 
-    /*let nickname = uniqueness_user_dto.nickname.unwrap_or("".to_string());
+    /*let opt_nickname = uniqueness_user_dto.nickname.clone();
+    let opt_email = uniqueness_user_dto.email.clone();
+
+    let nickname = uniqueness_user_dto.nickname.unwrap_or("".to_string());
     let email = uniqueness_user_dto.email.unwrap_or("".to_string());
 
     let is_nickname = nickname.len() > 0;
@@ -150,18 +153,17 @@ pub async fn uniqueness_check(
     }
     */
 
-    let profile_orm2 = profile_orm.get_ref().clone();
-    let user_registr_orm2 = user_registr_orm.get_ref().clone();
+    let profile_orm = profile_orm.get_ref().clone();
+    let registr_orm = user_registr_orm.get_ref().clone();
 
-    let res_search =
-        profile_checks::find_profile_for_nickname_or_email(opt_nickname, opt_email, profile_orm2, user_registr_orm2)
-            .await
-            .map_err(|err| {
-                // #get param
-                eprintln!("## app_error: {:#?}", &err);
-                log::error!("{}:{};", &err.code, &err.message);
-                err
-            })?;
+    let res_search = profile_checks::uniqueness_nickname_or_email(opt_nickname, opt_email, profile_orm, registr_orm)
+        .await
+        .map_err(|err| {
+            #[rustfmt::skip]
+            let prm1 = match err.params.first_key_value() { Some((_, v)) => v.to_string(), None => "".to_string() };
+            log::error!("{}:{}; {}", &err.code, &err.message, &prm1);
+            err
+        })?;
     let uniqueness = res_search.is_none();
 
     Ok(HttpResponse::Ok().json(json!({ "uniqueness": uniqueness }))) // 200
