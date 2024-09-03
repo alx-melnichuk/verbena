@@ -34,6 +34,10 @@ pub const MSG_PARAMS_NOT_SPECIFIED: &str = "params_not_specified";
 pub const CD_CONFLICT: &str = "Conflict"; /*+*/
 // 409 Conflict - Error checking hash value.
 pub const MSG_INVALID_HASH: &str = "invalid_hash";
+// 409 Conflict - The specified "email" is already registered.
+pub const MSG_EMAIL_ALREADY_USE: &str = "email_already_use";
+// 409 Conflict - The specified "nickname" is already registered.
+pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";
 
 // 413 Content too large // The request object exceeds the limits defined by the server.
 pub const CD_CONTENT_TOO_LARGE: &str = "ContentTooLarge"; /*+*/
@@ -52,6 +56,7 @@ pub const MSG_PARSING_TYPE_NOT_SUPPORTED: &str = "parsing_type_not_supported";
 
 // 417 Expectation Failed (profile_auth_controller, user_registr_controller)
 pub const CD_VALIDATION: &str = "Validation"; /*+*/
+// 417 Expectation Failed - No fields specified for update.
 pub const MSG_NO_FIELDS_TO_UPDATE: &str = "no_fields_to_update";
 
 // 422 Unprocessable Entity (profile_auth_controller, user_registr_controller)
