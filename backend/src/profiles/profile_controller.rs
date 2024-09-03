@@ -18,7 +18,7 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
-    config_prfl,
+    config_prfl, profile_checks,
     profile_models::{
         ModifyProfile, ModifyProfileDto, NewPasswordProfileDto, Profile, ProfileDto, PROFILE_THEME_DARK,
         PROFILE_THEME_LIGHT_DEF,
@@ -26,11 +26,11 @@ use crate::profiles::{
     profile_orm::ProfileOrm,
 };
 use crate::settings::err;
+use crate::users::user_models::UserRole;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
-use crate::users::{user_models::UserRole, user_registr_orm::UserRegistrOrm};
 use crate::utils::parser;
 use crate::validators::{self, msg_validation, ValidationChecks, Validator};
 
@@ -163,6 +163,14 @@ impl ModifyProfileForm {
             )))),    
         ),
         (status = 204, description = "The current user's profile was not found."),
+        (status = 409, description = "Error: nickname (email) is already in use.", body = AppError, examples(
+            ("Nickname" = (summary = "Nickname already used",
+                description = "The nickname value has already been used.",
+                value = json!(AppError::conflict409(err::MSG_NICKNAME_ALREADY_USE)))),
+            ("Email" = (summary = "Email already used", 
+                description = "The email value has already been used.",
+                value = json!(AppError::conflict409(err::MSG_EMAIL_ALREADY_USE))))
+        )),
         (status = 413, description = "Invalid image file size. `curl -i -X PUT http://localhost:8080/api/profiles
             -F 'avatarfile=@image.jpg'`", body = AppError,
             example = json!(AppError::content_large413(err::MSG_INVALID_FILE_SIZE).add_param(Cow::Borrowed("invalidFileSize"),
@@ -232,54 +240,24 @@ pub async fn put_profile(
     let opt_nickname = modify_profile_dto.nickname.clone();
     let opt_email = modify_profile_dto.email.clone();
     if opt_nickname.is_some() || opt_email.is_some() {
+        let profile_orm2 = profile_orm.get_ref().clone();
+        let registr_orm2 = user_registr_orm.get_ref().clone();
 
-        let profile_orm2 = profile_orm.clone();
-        // Find in the "profile" table an entry by nickname or email.
-        let opt_profile = web::block(move || {
-            let existing_profile = profile_orm2
-                .find_profile_by_nickname_or_email(opt_nickname.clone().as_deref(), opt_email.clone().as_deref(), false)
-                .map_err(|e| {
-                    log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                    AppError::database507(&e) // 507
-                })
-                .ok()?;
-            existing_profile
-        })
-        .await
-        .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-            AppError::blocking506(&e.to_string()) // 506
-        })?;
-
-        let mut uniqueness = false;
-        // If such an entry exists, then exit.
-        if opt_profile.is_none() {
-            let opt_nickname2 = modify_profile_dto.nickname.clone();
-            let opt_email2 = modify_profile_dto.email.clone();
-        
-            // Find in the "user_registr" table an entry with an active date, by nickname or email.
-            let opt_user_registr = web::block(move || {
-                let existing_user_registr = user_registr_orm
-                    .find_user_registr_by_nickname_or_email(opt_nickname2.as_deref(), opt_email2.as_deref())
-                    .map_err(|e| {
-                        log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                        AppError::database507(&e) // 507
-                    })
-                    .ok()?;
-                existing_user_registr
-            })
+        let res_search = profile_checks::uniqueness_nickname_or_email(opt_nickname, opt_email, profile_orm2, registr_orm2)
             .await
-            .map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-                AppError::blocking506(&e.to_string()) // 506
+            .map_err(|err| {
+                #[rustfmt::skip]
+                let prm1 = match err.params.first_key_value() { Some((_, v)) => v.to_string(), None => "".to_string() };
+                log::error!("{}:{}; {}", &err.code, &err.message, &prm1);
+                err
             })?;
 
-            uniqueness = opt_user_registr.is_none();
-        }
-
-        if !uniqueness {
-            // Since the specified "nickname" or "email" is not unique, return an error.
-
+        // Since the specified "nickname" or "email" is not unique, return an error.
+        if let Some((is_nickname, _)) = res_search {
+            #[rustfmt::skip]
+            let message = if is_nickname { err::MSG_NICKNAME_ALREADY_USE } else { err::MSG_EMAIL_ALREADY_USE };
+            log::error!("{}: {}", err::CD_CONFLICT, &message);
+            return Err(AppError::conflict409(&message)); // 409
         }
     }
 
@@ -1217,6 +1195,94 @@ mod tests {
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
         check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_THEME_MAX_LENGTH]);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_if_nickname_exists_in_users() {
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let nickname1 = data_c.0.get(0).unwrap().nickname.clone();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", nickname1).build();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::CONFLICT); // 409
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_CONFLICT);
+        assert_eq!(app_err.message, err::MSG_NICKNAME_ALREADY_USE);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_if_email_exists_in_users() {
+        let (cfg_c, data_c, token) = get_cfg_data(true, USER);
+        let email1 = data_c.0.get(0).unwrap().email.clone();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", email1).build();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::CONFLICT); // 409
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_CONFLICT);
+        assert_eq!(app_err.message, err::MSG_EMAIL_ALREADY_USE);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_if_nickname_exists_in_registr() {
+        let (cfg_c, data_c, token) = get_cfg_data(true, USER);
+        let nickname1 = data_c.2.get(0).unwrap().nickname.clone();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", nickname1).build();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::CONFLICT); // 409
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_CONFLICT);
+        assert_eq!(app_err.message, err::MSG_NICKNAME_ALREADY_USE);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_if_email_exists_in_registr() {
+        let (cfg_c, data_c, token) = get_cfg_data(true, USER);
+        let email1 = data_c.2.get(0).unwrap().email.clone();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", email1).build();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::CONFLICT); // 409
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_CONFLICT);
+        assert_eq!(app_err.message, err::MSG_EMAIL_ALREADY_USE);
     }
     #[actix_web::test]
     async fn test_put_profile_invalid_file_size() {
