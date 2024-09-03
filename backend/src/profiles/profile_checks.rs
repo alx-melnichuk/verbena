@@ -24,8 +24,8 @@ pub async fn uniqueness_nickname_or_email(
     let nickname = opt_nickname.unwrap_or("".to_string());
     let email = opt_email.unwrap_or("".to_string());
     #[rustfmt::skip]
-    let opt_nickname = if nickname.len() > 0 { Some(nickname) } else { None };
-    let opt_email = if email.len() > 0 { Some(email) } else { None };
+    let opt_nickname = if nickname.len() > 0 { Some(nickname.clone()) } else { None };
+    let opt_email = if email.len() > 0 { Some(email.clone()) } else { None };
 
     if opt_nickname.is_none() && opt_email.is_none() {
         let json = serde_json::json!({ "nickname": "null", "email": "null" });
@@ -48,8 +48,8 @@ pub async fn uniqueness_nickname_or_email(
     .map_err(|e| AppError::blocking506(&e.to_string()))?; // 506
 
     // If such an entry exists in the "profiles" table, then exit.
-    if opt_profile.is_some() {
-        return Ok(Some((true, false)));
+    if let Some(profile) = opt_profile {
+        return Ok(Some((nickname == profile.nickname, email == profile.email)));
     }
 
     // Find in the "user_registr" table an entry with an active date, by nickname or email.
@@ -64,8 +64,8 @@ pub async fn uniqueness_nickname_or_email(
     .map_err(|e| AppError::blocking506(&e.to_string()))?; // 506
 
     // If such a record exists in the "registration" table, then exit.
-    if opt_user_registr.is_some() {
-        return Ok(Some((false, true)));
+    if let Some(user_registr) = opt_user_registr {
+        return Ok(Some((nickname == user_registr.nickname, email == user_registr.email)));
     }
 
     Ok(None)
@@ -174,7 +174,7 @@ mod tests {
 
         let result = uniqueness_nickname_or_email(opt_nickname, opt_email, profile_orm, user_registr_orm).await;
         assert!(result.is_ok());
-        assert_eq!(result.ok().unwrap(), Some((true, false)));
+        assert_eq!(result.ok().unwrap(), Some((false, true)));
     }
     #[actix_web::test]
     async fn test_uniqueness_nickname_or_email_by_nickname_registr() {
@@ -187,7 +187,7 @@ mod tests {
 
         let result = uniqueness_nickname_or_email(opt_nickname, opt_email, profile_orm, user_registr_orm).await;
         assert!(result.is_ok());
-        assert_eq!(result.ok().unwrap(), Some((false, true)));
+        assert_eq!(result.ok().unwrap(), Some((true, false)));
     }
     #[actix_web::test]
     async fn test_uniqueness_nickname_or_email_by_email_registr() {
