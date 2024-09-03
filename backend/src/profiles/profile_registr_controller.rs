@@ -7,6 +7,7 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
+    profile_checks,
     profile_models::{
         self, Profile, ProfileDto, RegistrProfileDto, RegistrProfileResponseDto, PROFILE_THEME_LIGHT_DEF, RecoveryProfileResponseDto, RecoveryProfileDto, RecoveryDataDto, PROFILE_THEME_DARK, ClearForExpiredResponseDto,
     },
@@ -151,57 +152,22 @@ pub async fn registration(
     let nickname = registr_profile_dto.nickname.clone();
     let email = registr_profile_dto.email.clone();
 
-    // Find in the "user" table an entry by nickname or email.
-    let opt_profile = web::block(move || {
-        let existing_profile = profile_orm
-            .find_profile_by_nickname_or_email(Some(&nickname), Some(&email), false)
-            .map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e) // 507
-            });
-        existing_profile
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
-    })??;
+    let profile_orm2 = profile_orm.get_ref().clone();
+    let registr_orm2 = user_registr_orm.get_ref().clone();
 
-    let nickname = registr_profile_dto.nickname.clone();
+    let res_search = profile_checks::uniqueness_nickname_or_email(
+        Some(nickname), Some(email), profile_orm2, registr_orm2)
+        .await
+        .map_err(|err| {
+            #[rustfmt::skip]
+            let prm1 = match err.params.first_key_value() { Some((_, v)) => v.to_string(), None => "".to_string() };
+            log::error!("{}:{}; {}", &err.code, &err.message, &prm1);
+            err
+        })?;
 
-    // If such an entry exists, then exit with code 409.
-    if let Some(profile) = opt_profile {
+    if let Some((is_nickname, _)) = res_search {
         #[rustfmt::skip]
-        let message = if profile.nickname == nickname { MSG_NICKNAME_ALREADY_USE } else { MSG_EMAIL_ALREADY_USE };
-        log::error!("{}: {}", err::CD_CONFLICT, &message);
-        return Err(AppError::conflict409(&message)); // 409
-    }
-
-    let email = registr_profile_dto.email.clone();
-    let user_registr_orm2 = user_registr_orm.clone();
-
-    // Find in the "user_registr" table an entry with an active date, by nickname or email.
-    let opt_user_registr = web::block(move || {
-        let existing_user_registr = user_registr_orm2
-            .find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))
-            .map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e) // 507
-            });
-        existing_user_registr
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
-    })??;
-
-    let nickname = registr_profile_dto.nickname.clone();
-
-    // If such an entry exists, then exit with code 409.
-    if let Some(user_registr) = opt_user_registr {
-        #[rustfmt::skip]
-        let message = if user_registr.nickname == nickname { MSG_NICKNAME_ALREADY_USE } else { MSG_EMAIL_ALREADY_USE };
+        let message = if is_nickname { MSG_NICKNAME_ALREADY_USE } else { MSG_EMAIL_ALREADY_USE };
         log::error!("{}: {}", err::CD_CONFLICT, &message);
         return Err(AppError::conflict409(&message)); // 409
     }
