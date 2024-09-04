@@ -38,8 +38,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             // GET /api/profiles_current
             .service(get_profile_current)
             // GET /api/profiles_uniqueness
-            .service(uniqueness_check)
-            ;
+            .service(uniqueness_check);
     }
 }
 
@@ -171,15 +170,13 @@ pub async fn get_profile_by_id(
 #[get("/api/profiles_config", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web::Result<HttpResponse, AppError> {
     let cfg_prfl = config_prfl;
+    let max_size = if cfg_prfl.prfl_avatar_max_size > 0 { Some(cfg_prfl.prfl_avatar_max_size) } else { None };
+    let valid_types = cfg_prfl.prfl_avatar_valid_types.clone();
+    let ext = cfg_prfl.prfl_avatar_ext.clone();
+    let max_width = if cfg_prfl.prfl_avatar_max_width > 0 { Some(cfg_prfl.prfl_avatar_max_width) } else { None };
+    let max_height = if cfg_prfl.prfl_avatar_max_height > 0 { Some(cfg_prfl.prfl_avatar_max_height) } else { None };
     // Get configuration data.
-    #[rustfmt::skip]
-    let profile_config_dto = ProfileConfigDto::new(
-        if cfg_prfl.prfl_avatar_max_size > 0 { Some(cfg_prfl.prfl_avatar_max_size) } else { None },
-        cfg_prfl.prfl_avatar_valid_types.clone(),
-        cfg_prfl.prfl_avatar_ext.clone(),
-        if cfg_prfl.prfl_avatar_max_width > 0 { Some(cfg_prfl.prfl_avatar_max_width) } else { None },
-        if cfg_prfl.prfl_avatar_max_height > 0 { Some(cfg_prfl.prfl_avatar_max_height) } else { None },
-    );
+    let profile_config_dto = ProfileConfigDto::new(max_size, valid_types, ext, max_width, max_height);
 
     Ok(HttpResponse::Ok().json(profile_config_dto)) // 200
 }
