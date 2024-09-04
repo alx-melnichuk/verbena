@@ -268,7 +268,7 @@ impl StreamInfoDto {
 
 // **  Section: table "streams" data creation **
 
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset, Insertable)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, AsChangeset, Insertable)]
 #[diesel(table_name = schema::streams)]
 pub struct CreateStream {
     pub user_id: i32,
@@ -299,7 +299,8 @@ impl CreateStream {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateStreamInfoDto {
     pub title: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -340,7 +341,7 @@ impl Validator for CreateStreamInfoDto {
 
 // **  Section: table "streams" data editing **
 
-#[derive(Debug, Serialize, Deserialize, Clone, AsChangeset)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, AsChangeset)]
 #[diesel(table_name = schema::streams)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ModifyStream {
@@ -369,7 +370,8 @@ impl ModifyStream {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct ModifyStreamInfoDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
@@ -449,7 +451,7 @@ impl Into<ModifyStream> for ModifyStreamInfoDto {
 
 // **  Section: table "stream_tags" receiving data **
 
-#[derive(Debug, Serialize, Deserialize, Clone, Queryable, Selectable, QueryableByName)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable, QueryableByName)]
 #[diesel(table_name = schema::stream_tags)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StreamTag {
@@ -458,7 +460,7 @@ pub struct StreamTag {
     pub name: String, // min_len=2 max_len=255
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, QueryableByName)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
 #[diesel(table_name = schema::stream_tags)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct StreamTagStreamId {
@@ -472,7 +474,7 @@ pub struct StreamTagStreamId {
 
 // **  Section: table "link_stream_tags_to_streams" receiving data **
 
-#[derive(Debug, Serialize, Deserialize, Clone, Queryable, Selectable)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
 #[diesel(table_name = schema::link_stream_tags_to_streams)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct LinkStreamTagsToStreams {
@@ -514,7 +516,7 @@ pub const SEARCH_STREAM_LIMIT: u32 = 5;
 pub const SEARCH_STREAM_ORDER_COLUMN: OrderColumn = OrderColumn::Starttime;
 pub const SEARCH_STREAM_ORDER_DIRECTION: OrderDirection = OrderDirection::Asc;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct SearchStream {
     pub user_id: i32,
     pub live: Option<bool>,
@@ -541,7 +543,7 @@ impl SearchStream {
 
 // * SearchStreamInfoDto *
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchStreamInfoDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -563,7 +565,8 @@ pub struct SearchStreamInfoDto {
 
 // * StreamInfoPageDto *
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct StreamInfoPageDto {
     #[schema(example = json!(Self::create_streams(1,2)))]
     pub list: Vec<StreamInfoDto>,
@@ -602,7 +605,7 @@ impl StreamInfoPageDto {
 pub const SEARCH_STREAM_EVENT_PAGE: u32 = 1;
 pub const SEARCH_STREAM_EVENT_LIMIT: u32 = 10;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct SearchStreamEvent {
     pub user_id: i32,
     pub starttime: DateTime<Utc>,
@@ -621,7 +624,7 @@ impl SearchStreamEvent {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchStreamEventDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -660,7 +663,8 @@ impl From<Stream> for StreamEventDto {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct StreamEventPageDto {
     #[schema(example = json!(Self::create_events(1,2)))]
     pub list: Vec<StreamEventDto>,
@@ -690,7 +694,7 @@ impl StreamEventPageDto {
 
 // **  Section: Search for data "StreamPeriodDto" of the "streams" table. **
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct SearchStreamPeriod {
     pub user_id: i32,
     pub start: DateTime<Utc>,
@@ -707,7 +711,7 @@ impl SearchStreamPeriod {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchStreamPeriodDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
