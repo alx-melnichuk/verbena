@@ -2,6 +2,9 @@
 
 @use '../../../styles-dimensions.scss' as dimensions;
 
+.dark-theme app-stream-list {
+  --app-link-cl: var(--app-link2-cl);
+}
 
 app-stream-list {
   @media screen and (width <= dimensions.$mobile-480) {
@@ -24,7 +27,7 @@ app-stream-list {
     --sl-pd: 3em;
     --wd: 36em;
   }
-
+  
   box-sizing: border-box;
   display: flex;
   height: 100%;

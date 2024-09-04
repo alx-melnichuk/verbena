@@ -91,7 +91,9 @@ body {
     --demo-default-cl: hsl(0, 0%, 100%); // #ffffff
     --app-default-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
 
-    
+    --app-link1-cl: hsl(209, 90%, 22%);
+    --app-link2-cl: hsl(209, 78%, 70%);
+
     --app-default-bg-high: hsl(0, 0%, 22%);
     --app-default-bg-low: hsl(0, 0%, 17%);
 
@@ -117,7 +119,7 @@ body {
     --app-site-auth: hsl(var(--app-site-auth-h),var(--app-site-auth-s),var(--app-site-auth-l));
 
     --app-pn-stream: hsl(210, 11%, 38%);
-    --app-pn-stream-low: hsl(210, 11%, 48%);
+    --app-pn-stream-low: hsl(210, 11%, 54%);
     --app-pn-stream-day: hsl(140, 40%, 27%);
 
     --app-pn-profile: hsl(300, 15%, 30%);
@@ -140,6 +142,8 @@ body {
     --demo-default-cl: hsl(0, 0%, 0%); // #000000
     --app-default-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
 
+    --app-link1-cl: hsl(209, 78%, 33%);
+    --app-link2-cl: hsl(209, 78%, 23%);
 
     --demo-color: rgb(0, 0, 0);
     --demo-color2: rgba(0, 0, 0, 0.87);
@@ -168,7 +172,7 @@ body {
     --app-site-auth: hsl(var(--app-site-auth-h),var(--app-site-auth-s),var(--app-site-auth-l));
 
     --app-pn-stream: hsl(222, 50%, 96%);  // --app-theme-background-panel-2: hsl(222, 50%, 96%);
-    --app-pn-stream-low: hsl(222, 50%, 86%);
+    --app-pn-stream-low: hsl(222, 50%, 80%);
     --app-pn-stream-day: hsl(140, 40%, 75%);
 
     --app-pn-profile: hsl(300, 35%, 95%);
@@ -187,7 +191,10 @@ body {
     color: var(--app-default-cl);
   }
 
-
-
+  a,
+  a:visited,
+  a:hover {
+    color: var(--app-link-cl, var(--app-link1-cl));
+  }
 
 }

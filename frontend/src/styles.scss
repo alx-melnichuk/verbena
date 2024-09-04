@@ -34,13 +34,14 @@ p {
   margin: 0;
 }
 
-a,
-a:visited,
-a:hover {
-  color: #125699; // hsl(209.78, 78.95%, 33.53%);
-//   color: hsl(209.84, 78.72%, 45%); 
-//   color: #1976d2; // hsl(209.84, 78.72%, 46.08%);
-}
+// a,
+// a:visited,
+// a:hover {
+//   color: #005ab3;
+// //   color: #125699; // hsl(209.78, 78.95%, 33.53%);
+// //   color: hsl(209.84, 78.72%, 45%); 
+// //   color: #1976d2; // hsl(209.84, 78.72%, 46.08%);
+// }
 a[nodecor],
 a:visited[nodecor],
 a:hover[nodecor] {
