@@ -13,14 +13,15 @@ pub struct ConfigPrfl {
     pub prfl_avatar_files_dir: String,
     // Maximum size for avatar files.
     pub prfl_avatar_max_size: u32,
-    // List of valid input mime types for avatar files (comma delimited).
+    // List of valid input mime types for avatar files.
+    // ["image/bmp", "image/gif", "image/jpeg", "image/png"]
     pub prfl_avatar_valid_types: Vec<String>,
     // Avatar files will be converted to this MIME type.
-    // Valid values: jpeg,gif,png,bmp
+    // Valid values: "image/bmp", "image/gif", "image/jpeg", "image/png"
     pub prfl_avatar_ext: Option<String>,
-    // Maximum width for a avatar file.
+    // Maximum width of avatar image after saving.
     pub prfl_avatar_max_width: u32,
-    // Maximum height for a avatar file.
+    // Maximum height of avatar image after saving.
     pub prfl_avatar_max_height: u32,
 }
 
@@ -64,7 +65,7 @@ impl ConfigPrfl {
         }
     }
 
-    pub fn get_image_types() -> Vec<String> {
+    pub fn image_types() -> Vec<String> {
         vec![
             IMAGE_BMP.essence_str().to_string(),
             IMAGE_GIF.essence_str().to_string(),
@@ -81,7 +82,7 @@ impl ConfigPrfl {
         std::env::var("PRFL_AVATAR_VALID_TYPES").expect("PRFL_AVATAR_VALID_TYPES must be set")
     }
     pub fn get_avatar_valid_types_by_str(avatar_valid_types: &str) -> Result<Vec<String>, io::Error> {
-        let image_types: Vec<String> = Self::get_image_types();
+        let image_types: Vec<String> = Self::image_types();
 
         let mut errors: Vec<String> = Vec::new();
         let mut result: Vec<String> = Vec::new();
@@ -100,7 +101,7 @@ impl ConfigPrfl {
         Ok(result)
     }
     fn avatar_ext_validate(value: &str) -> bool {
-        let type_list: Vec<String> = Self::get_types(Self::get_image_types());
+        let type_list: Vec<String> = Self::get_types(Self::image_types());
         value.len() > 0 && type_list.contains(&value.to_string())
     }
 }
