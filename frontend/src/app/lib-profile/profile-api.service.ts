@@ -50,7 +50,7 @@ export class ProfileApiService {
     const search = { nickname: (!nickname ? null : nickname), email: (!email ? null : email) };
     const params: HttpParams = HttpParamsUtil.create(search);
 
-    const url = Uri.appUri("appApi://profiles/uniqueness");
+    const url = Uri.appUri("appApi://profiles_uniqueness");
     return HttpObservableUtil.toPromise<UniquenessDto>(this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }));
     //return this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }).toPromise();
   }
