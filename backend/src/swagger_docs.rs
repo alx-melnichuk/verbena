@@ -16,6 +16,7 @@ use crate::{
         profile_get_controller::uniqueness_check,
         profile_get_controller::get_profile_by_id,
         profile_get_controller::get_profile_current,
+        profile_get_controller::get_profile_config,
         profile_controller::put_profile,
         profile_controller::put_profile_new_password,
         profile_controller::delete_profile,
@@ -42,7 +43,9 @@ use crate::{
             // user model
             user_models::UserRole,
             // profile_get_controller
-            profile_models::UniquenessProfileDto,
+            profile_models::UniquenessProfileDto, // ::uniqueness_check
+            profile_models::UniquenessProfileResponseDto, // ::uniqueness_check
+            profile_models::ProfileConfigDto, // ::get_profile_config
             // profile_controller, profile_get_controller
             profile_models::ProfileDto, // ::put_profile
             profile_models::ModifyProfileDto, // ::put_stream
