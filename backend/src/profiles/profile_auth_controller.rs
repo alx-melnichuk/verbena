@@ -69,11 +69,11 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             example = json!(AppError::validations(
                 (LoginProfileDto { nickname: "us".to_string(), password: "pas".to_string() }).validate().err().unwrap()) )),
         ( status = 406, description = "Error session not found.", body = AppError,
-            example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, 1)))),
+            example = json!(AppError::not_acceptable406(&format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, 1)))),
         (status = 409, description = "Error when comparing password hashes.", body = AppError,
-            example = json!(AppError::conflict409(&format!("{}: {}", err::MSG_INVALID_HASH, "Parameter is empty.")))),
+            example = json!(AppError::conflict409(&format!("{}; {}", err::MSG_INVALID_HASH, "Parameter is empty.")))),
         ( status = 422, description = "Token encoding error.", body = AppError,
-            example = json!(AppError::unprocessable422(&format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
+            example = json!(AppError::unprocessable422(&format!("{}; {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -138,14 +138,14 @@ pub async fn login(
 
     // Packing two parameters (user_id, num_token) into access_token.
     let access_token = tokens::encode_token(profile_pwd.user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        let message = format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        let message = format!("{}; {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
         AppError::unprocessable422(&message) // 422
     })?;
 
     // Packing two parameters (user_id, num_token) into refresh_token.
     let refresh_token = tokens::encode_token(profile_pwd.user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        let message = format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        let message = format!("{}; {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
         AppError::unprocessable422(&message)
     })?;
@@ -165,7 +165,7 @@ pub async fn login(
     })??;
 
     if opt_session.is_none() {
-        let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, profile_pwd.user_id);
+        let message = format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, profile_pwd.user_id);
         log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
         return Err(AppError::not_acceptable406(&message)); // 406
     }
@@ -211,7 +211,7 @@ pub async fn login(
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
         (status = 406, description = "Error session not found.", body = AppError,
-            example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, 1)))),
+            example = json!(AppError::not_acceptable406(&format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, 1)))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -243,7 +243,7 @@ pub async fn logout(
     })??;
 
     if opt_session.is_none() {
-        let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, profile_user.user_id);
+        let message = format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, profile_user.user_id);
         log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
         return Err(AppError::not_acceptable406(&message)); // 406
     }
@@ -278,15 +278,15 @@ pub async fn logout(
         (status = 401, description = "Authorization required.", body = AppError, examples(
             ("Token" = (summary = "Token is invalid or expired",
                 description = "The token is invalid or expired.",
-                value = json!(AppError::unauthorized401(&format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidToken"))))),
+                value = json!(AppError::unauthorized401(&format!("{}; {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidToken"))))),
             ("Token_number" = (summary = "Token number is incorrect", 
                 description = "The specified token number is incorrect.",
-                value = json!(AppError::unauthorized401(&format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, 1)))))
+                value = json!(AppError::unauthorized401(&format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, 1)))))
         )),
         (status = 406, description = "Error session not found.", body = AppError,
-            example = json!(AppError::not_acceptable406(&format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, 1)))),
+            example = json!(AppError::not_acceptable406(&format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, 1)))),
         (status = 422, description = "Token encoding error.", body = AppError,
-            example = json!(AppError::unprocessable422(&format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
+            example = json!(AppError::unprocessable422(&format!("{}; {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -306,7 +306,7 @@ pub async fn update_token(
 
     // Get user ID.
     let (user_id, num_token) = tokens::decode_token(&token, jwt_secret).map_err(|e| {
-        let message = format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
+        let message = format!("{}; {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
         log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
         AppError::unauthorized401(&message) // 401
     })?;
@@ -329,7 +329,7 @@ pub async fn update_token(
 
     let session = opt_session.ok_or_else(|| {
         // There is no session for this user.
-        let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id);
+        let message = format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id);
         log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
         AppError::not_acceptable406(&message) // 406
     })?;
@@ -339,7 +339,7 @@ pub async fn update_token(
     // Compare an additional numeric value from the session and from the token.
     if session_num_token != num_token {
         // If they do not match, then this is an error.
-        let message = format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
+        let message = format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
         log::error!("{}: {}", err::CD_UNAUTHORIZED, &message); // 401
         return Err(AppError::unauthorized401(&message));
     }
@@ -350,14 +350,14 @@ pub async fn update_token(
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let access_token = tokens::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        let message = format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        let message = format!("{}; {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
         AppError::unprocessable422(&message) // 422
     })?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let refresh_token = tokens::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        let message = format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        let message = format!("{}; {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
         AppError::unprocessable422(&message) // 422
     })?;
@@ -379,7 +379,7 @@ pub async fn update_token(
 
     if opt_session.is_none() {
         // There is no session for this user.
-        let message = format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id);
+        let message = format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id);
         log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
         return Err(AppError::not_acceptable406(&message));
     }
