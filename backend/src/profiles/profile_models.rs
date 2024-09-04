@@ -1,3 +1,5 @@
+use std::convert::From;
+
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -225,7 +227,7 @@ impl Profile {
 
 // ** Model: "CreateProfile". Used: ProfileOrm::create_profile_user() **
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct CreateProfile {
     pub nickname: String,         // min_len=3 max_len=64
     pub email: String,            // min_len=5 max_len=254
@@ -252,7 +254,7 @@ impl CreateProfile {
 
 // ** Model: "ModifyProfile". Used: ProfileOrm::modify_profile() **
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ModifyProfile {
     pub nickname: Option<String>,       // min_len=3,max_len=64
     pub email: Option<String>,          // min_len=5,max_len=254,"email:email_type"
@@ -263,9 +265,35 @@ pub struct ModifyProfile {
     pub theme: Option<String>,          // min_len=2,max_len=32 default "light"
 }
 
-// * * * * Section: models for the "profile_controller". * * * *
+// * * * * Section: models for the "profile_get_controller". * * * *
 
-// ** Model Dto: "ProfileDto". Used: in "profile_controller::get_profile_by_id()" and many other methods. **
+// ** Model Dto: "UniquenessProfileDto". Used: in "profile_get_controller::uniqueness_check()". **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct UniquenessProfileDto {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nickname: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+}
+
+// ** Model Dto: "UniquenessProfileResponseDto". Used: in "profile_get_controller::uniqueness_check()". **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct UniquenessProfileResponseDto {
+    pub uniqueness: bool,
+}
+
+impl UniquenessProfileResponseDto {
+    pub fn new(uniqueness: bool) -> Self {
+        UniquenessProfileResponseDto { uniqueness }
+    }
+}
+
+// ** Model Dto: "ProfileDto". Used: in "profile_get_controller::get_profile_by_id()" and many other methods. **
+// **                          Used: in "profile_controller::put_profile()" and many other methods. **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -286,8 +314,8 @@ pub struct ProfileDto {
     pub updated_at: DateTime<Utc>,
 }
 
-impl ProfileDto {
-    pub fn from(profile: Profile) -> ProfileDto {
+impl From<Profile> for ProfileDto {
+    fn from(profile: Profile) -> Self {
         ProfileDto {
             id: profile.user_id,
             nickname: profile.nickname,
@@ -302,20 +330,52 @@ impl ProfileDto {
     }
 }
 
-// ** Model Dto: "UniquenessProfileDto". Used: in "profile_controller::uniqueness_check()". **
+// ** Model Dto: "ProfileConfigDto". Used: in "profile_get_controller::get_profile_config()". **
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct UniquenessProfileDto {
+pub struct ProfileConfigDto {
+    // Maximum size for avatar files.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub nickname: Option<String>,
+    pub avatar_max_size: Option<u32>,
+    // List of valid input mime types for avatar files.
+    // ["image/bmp", "image/gif", "image/jpeg", "image/png"]
+    pub avatar_valid_types: Vec<String>,
+    // Avatar files will be converted to this MIME type.
+    // Valid values: "image/bmp", "image/gif", "image/jpeg", "image/png"
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
+    pub avatar_ext: Option<String>,
+    // Maximum width of avatar image after saving.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub avatar_max_width: Option<u32>,
+    // Maximum height of avatar image after saving.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub avatar_max_height: Option<u32>,
 }
+
+impl ProfileConfigDto {
+    pub fn new(
+        max_size: Option<u32>,
+        valid_types: Vec<String>,
+        ext: Option<String>,
+        max_width: Option<u32>,
+        max_height: Option<u32>,
+    ) -> ProfileConfigDto {
+        ProfileConfigDto {
+            avatar_max_size: max_size.clone(),
+            avatar_valid_types: valid_types.clone(),
+            avatar_ext: ext.clone(),
+            avatar_max_width: max_width.clone(),
+            avatar_max_height: max_height.clone(),
+        }
+    }
+}
+
+// * * * * Section: models for the "profile_controller". * * * *
 
 // ** Model Dto: "ModifyProfileDto". Used: in "profile_controller::put_profile()" **
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ModifyProfileDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -397,7 +457,8 @@ impl Into<ModifyProfile> for ModifyProfileDto {
 
 // ** Model Dto: "NewPasswordProfileDto". Used: in "profile_controller::put_profile_new_password()" **
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct NewPasswordProfileDto {
     pub password: String,
     pub new_password: String,
@@ -425,7 +486,7 @@ impl Validator for NewPasswordProfileDto {
 
 // ** Model Dto: "LoginProfileDto". Used: in "profile_auth_controller::login()". **
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginProfileDto {
     pub nickname: String,
@@ -446,7 +507,7 @@ impl Validator for LoginProfileDto {
 
 // ** Model Dto: "LoginProfileResponseDto". Used: in "profile_auth_controller::login()". **
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginProfileResponseDto {
     pub profile_dto: ProfileDto,
@@ -455,7 +516,7 @@ pub struct LoginProfileResponseDto {
 
 // ** Model Dto: "TokenDto". Used: in "profile_auth_controller::update_token(). **
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct TokenDto {
     // refreshToken
@@ -464,7 +525,7 @@ pub struct TokenDto {
 
 // ** Model Dto: "ProfileTokensDto". Used: in "profile_auth_controller::update_token(). **
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ProfileTokensDto {
     pub access_token: String,
@@ -475,7 +536,8 @@ pub struct ProfileTokensDto {
 
 // ** Model Dto: "RegistrProfileDto". Used: in "profile_registr_controller::registration(). **
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct RegistrProfileDto {
     pub nickname: String,
     pub email: String,
@@ -497,7 +559,7 @@ impl Validator for RegistrProfileDto {
 
 // ** Model Dto: "RegistrProfileResponseDto". Used: in "profile_registr_controller::registration(). **
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RegistrProfileResponseDto {
     pub nickname: String,
@@ -507,7 +569,7 @@ pub struct RegistrProfileResponseDto {
 
 // ** Model Dto: "RecoveryProfileDto". Used: in "profile_registr_controller::recovery(). **
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RecoveryProfileDto {
     pub email: String,
@@ -526,7 +588,7 @@ impl Validator for RecoveryProfileDto {
 
 // ** Model Dto: "RecoveryProfileResponseDto". Used: in "profile_registr_controller::recovery(). **
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RecoveryProfileResponseDto {
     pub id: i32,
@@ -536,7 +598,7 @@ pub struct RecoveryProfileResponseDto {
 
 // ** Model Dto: "RecoveryDataDto". Used: in "profile_registr_controller::confirm_recovery(). **
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RecoveryDataDto {
     pub password: String,
@@ -555,7 +617,7 @@ impl Validator for RecoveryDataDto {
 
 // ** Model Dto: "ClearForExpiredResponseDto". Used: in "profile_registr_controller::clear_for_expired(). **
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ClearForExpiredResponseDto {
     pub count_inactive_registr: usize,
