@@ -1,5 +1,9 @@
 /*# sourceURL=panel-stream-event.component.scss */
 
+.dark-theme app-panel-stream-event {
+  ---pse-edit-btn-cl: var(--app-primary-high);
+}
+
 app-panel-stream-event {
   --pse-logo-wd: 4.5em;
   --pse-edit-wd: 40px;
@@ -55,7 +59,7 @@ app-panel-stream-event {
   .pse-edit-btn {
     background: transparent;
     border: none;
-    color: var(--app-primary);
+    color: var(---pse-edit-btn-cl, var(--app-primary));
     cursor: pointer;
     font-weight: 600;
     outline: none;
