@@ -3,18 +3,18 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 
 import { ROUTE_LOGIN } from '../common/routes';
-import { UserService } from '../lib-user/user.service';
-import { UserDto } from '../lib-user/user-api.interface';
+import { ProfileService } from '../lib-profile/profile.service';
+import { ProfileDto } from '../lib-profile/profile-api.interface';
 
-export const pgUserInfoResolver: ResolveFn<UserDto | HttpErrorResponse | undefined> = 
+export const pgProfileResolver: ResolveFn<ProfileDto | HttpErrorResponse | undefined> = 
 (_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) => {
   const router = inject(Router);
-  const userService: UserService = inject(UserService);
-  const userDto: UserDto | null = userService.userInfo;
+  const profileService: ProfileService = inject(ProfileService);
+  const profileDto: ProfileDto | null = profileService.profileDto;
 
-  if (userDto == null) {
+  if (profileDto == null) {
     return router.navigateByUrl(ROUTE_LOGIN).then(() => Promise.resolve(undefined));
   } else {
-    return Promise.resolve(userDto);
+    return Promise.resolve(profileDto);
   }
 };

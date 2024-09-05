@@ -10,10 +10,8 @@ import { SpinnerComponent } from '../components/spinner/spinner.component';
 import { ROUTE_LOGIN } from '../common/routes';
 import { DialogService } from '../lib-dialog/dialog.service';
 import { PanelProfileInfoComponent } from '../lib-profile/panel-profile-info/panel-profile-info.component';
-import { ProfileDto } from '../lib-profile/profile-api.interface';
+import { UpdateProfileFile, ProfileDto, ModifyProfileDto, NewPasswordProfileDto } from '../lib-profile/profile-api.interface';
 import { ProfileService } from '../lib-profile/profile.service';
-import { UserService } from '../lib-user/user.service';
-import { ModifyProfileDto, UpdatePasswordDto, UpdateProfileFileDto, UserDto } from '../lib-user/user-api.interface';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
 @Component({
@@ -27,7 +25,7 @@ import { HttpErrorUtil } from '../utils/http-error.util';
 })
 export class PgProfileComponent {
 
-  public userDto: UserDto;
+  public profileDto: ProfileDto;
   public isLoadData = false;
   public errMsgsProfile: string[] = [];
   public errMsgsPassword: string[] = [];
@@ -39,34 +37,39 @@ export class PgProfileComponent {
     private router: Router,
     private translate: TranslateService,
     private dialogService: DialogService,
-    private userService: UserService,
     private profileService: ProfileService,
   ) {
-    this.userDto = this.route.snapshot.data['userDto'];
+    this.profileDto = this.route.snapshot.data['profileDto'];
   }
   
   // ** Public API **
 
   // ** Section "Udate profile" FormGroup1 **
 
-  public doUpdateProfile(updateProfileFile: UpdateProfileFileDto): void {
-    if (!updateProfileFile || (!updateProfileFile.id)) {
+  public doUpdateProfile(updateProfileFile: UpdateProfileFile): void {
+    if (!updateProfileFile) {
       return;
     }
     const modifyProfileDto: ModifyProfileDto = {
       nickname: updateProfileFile.nickname,
       email: updateProfileFile.email,
-      password: updateProfileFile.password,
+      role: updateProfileFile.role,
       descript: updateProfileFile.descript,
+      theme: updateProfileFile.theme,
     };
     this.isLoadData = true;
-    this.userService.modifyProfile(updateProfileFile.id, modifyProfileDto, updateProfileFile.avatarFile)
-    //   .then(() => {
-    //     Promise.resolve()
-    //       .then(() => { // UserProfileDto
-    //         this.goBack();
-    //       });
-    //   })
+    this.profileService.modifyProfile(modifyProfileDto, updateProfileFile.avatarFile)
+      .then((response: ProfileDto | HttpErrorResponse | undefined) => {
+        if (!response) {
+          this.errMsgsPassword = [this.translate.instant('profile.error_editing_profile')];
+        } else {
+          this.profileDto = response as ProfileDto;
+          this.profileService.setProfileDto({...this.profileDto});
+          const title = this.translate.instant('profile.dialog_title_editing');
+          const message = this.translate.instant('profile.dialog_message_editing');
+          this.dialogService.openConfirmation(message, title, null, 'buttons.ok');
+        }          
+       })
       .catch((error: HttpErrorResponse) => {
         this.errMsgsProfile = HttpErrorUtil.getMsgs(error);
       })
@@ -78,17 +81,17 @@ export class PgProfileComponent {
 
   // ** Section "Set new password" FormGroup2 **
 
-  public doUpdatePassword(updatePasswordDto: UpdatePasswordDto): void {
-    if (!updatePasswordDto) {
+  public doUpdatePassword(newPasswordProfile: NewPasswordProfileDto): void { // UpdatePasswordDto
+    if (!newPasswordProfile) {
       return;
     }
     this.isLoadData = true;
-    this.userService.new_password(updatePasswordDto)
-      .then((response: UserDto | HttpErrorResponse | undefined) => {
+    this.profileService.newPassword(newPasswordProfile)
+      .then((response: ProfileDto | HttpErrorResponse | undefined) => {
         if (!response) {
-          this.errMsgsPassword = [this.translate.instant('profile.error_update_password', { nickname: this.userDto.nickname })];
+          this.errMsgsPassword = [this.translate.instant('profile.error_update_password', { nickname: this.profileDto.nickname })];
         } else {
-          this.userDto = response as UserDto;
+          this.profileDto = response as ProfileDto;
           const title = this.translate.instant('profile.dialog_title_password');
           const message = this.translate.instant('profile.dialog_message_password');
           this.dialogService.openConfirmation(message, title, null, 'buttons.ok');
@@ -110,10 +113,10 @@ export class PgProfileComponent {
     this.profileService.delete_profile_current()
     .then((response: ProfileDto | HttpErrorResponse | undefined) => {
         if (!response) {
-          this.errMsgsAccount = [this.translate.instant('profile.error_delete_account', { nickname: this.userDto.nickname })];
+          this.errMsgsAccount = [this.translate.instant('profile.error_delete_account', { nickname: this.profileDto.nickname })];
         } else {
-          const title = this.translate.instant('profile.dialog_title_delete_account');
-          const message = this.translate.instant('profile.dialog_message_delete_account');
+          const title = this.translate.instant('profile.dialog_title_delete');
+          const message = this.translate.instant('profile.dialog_message_delete');
           this.dialogService.openConfirmation(message, title, null, 'buttons.ok')
           .finally(() => {
             // Closing the session.
