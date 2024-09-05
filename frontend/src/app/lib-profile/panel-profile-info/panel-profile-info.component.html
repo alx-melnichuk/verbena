@@ -50,10 +50,10 @@
         <button mat-raised-button color="primary"
           class="app-infix app-ordinary"
           [disabled]="formGroup1.pristine || formGroup1.invalid"
-          (click)="saveProfileCard()">
+          (click)="saveProfile()">
           <span class="ppi-actions-label">
             <i class="ppi-save"></i>
-            {{ 'profile.save' | translate }}
+            {{ 'profile.btn_save_profile' | translate }}
           </span>
         </button>
       </div>
@@ -93,7 +93,7 @@
           (click)="setNewPassword()">
           <span class="ppi-actions-label">
             <i class="ppi-save"></i>
-            {{ 'profile.set_password' | translate }}
+            {{ 'profile.btn_set_password' | translate }}
           </span>
         </button>
       </div>
@@ -118,7 +118,7 @@
         (click)="performDeleteAccount()">
         <span class="ppi-actions-label">
           <i class="ppi-save"></i>
-          {{ 'profile.delete_account' | translate }}
+          {{ 'profile.btn_delete_account' | translate }}
         </span>
       </button>
     </div>

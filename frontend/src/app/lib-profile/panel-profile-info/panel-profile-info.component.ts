@@ -17,10 +17,9 @@ import { FieldNicknameComponent } from 'src/app/components/field-nickname/field-
 import { FieldPasswordComponent } from 'src/app/components/field-password/field-password.component';
 import { UniquenessCheckComponent } from 'src/app/components/uniqueness-check/uniqueness-check.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
-import { UserDto, UserDtoUtil, UpdateProfileFileDto, UpdatePasswordDto } from 'src/app/lib-user/user-api.interface';
 
 import { ProfileService } from '../profile.service';
-import { UniquenessDto } from '../profile-api.interface';
+import { NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, UniquenessDto, UpdateProfileFile } from '../profile-api.interface';
 
 export const PPI_DEBOUNCE_DELAY = 900;
 
@@ -37,7 +36,7 @@ export const PPI_DEBOUNCE_DELAY = 900;
 })
 export class PanelProfileInfoComponent implements OnInit, OnChanges {
   @Input()
-  public userInfo: UserDto | null = null;
+  public profileDto: ProfileDto | null = null;
   @Input()
   public isDisabledSubmit: boolean = false;
   @Input()
@@ -53,9 +52,9 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   public fieldEmailComp!: FieldEmailComponent;
 
   @Output()
-  readonly updateProfile: EventEmitter<UpdateProfileFileDto> = new EventEmitter();
+  readonly updateProfile: EventEmitter<UpdateProfileFile> = new EventEmitter();
   @Output()
-  readonly updatePassword: EventEmitter<UpdatePasswordDto> = new EventEmitter();
+  readonly updatePassword: EventEmitter<NewPasswordProfileDto> = new EventEmitter();
   @Output()
   readonly deleteAccount: EventEmitter<void> = new EventEmitter();
 
@@ -89,7 +88,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   public avatarView: string = '';
   public isAvatarOrig: boolean = false; // original has an avatar.
   
-  private origUserDto: UserDto = UserDtoUtil.create();
+  private origProfileDto: ProfileDto = ProfileDtoUtil.create();
 
   constructor(
     private changeDetector: ChangeDetectorRef,
@@ -105,8 +104,11 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   }
     
   ngOnChanges(changes: SimpleChanges): void {
-    if (!!changes['userInfo']) {
-      this.prepareForm1GroupByUserDto(this.userInfo);
+    if (!!changes['profileDto']) {
+      this.prepareForm1GroupByUserDto(this.profileDto);
+      this.controls2.password.setValue(null);
+      this.controls2.new_password.setValue(null);
+      this.isRequiredPassword = false;
     }
     if (!!changes['isDisabledSubmit']) {
       if (this.isDisabledSubmit != this.formGroup1.disabled) {
@@ -118,16 +120,6 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
         this.changeDetector.markForCheck();
       }
     }
-    if (!!changes['userInfo']) {
-      if (!!this.controls2.password.value) {
-        this.controls2.password.setValue(null);
-        this.isRequiredPassword = false;
-      }
-      if (!!this.controls2.new_password.value) {
-        this.controls2.new_password.setValue(null);
-        this.isRequiredPassword = false;
-      }
-    }
   }
  
   // ** Public API **
@@ -135,14 +127,14 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   // ** Section "Udate profile" FormGroup1 **
 
   public checkUniquenessNickname = (nickname: string | null | undefined): Promise<boolean> => {
-    if (!nickname || this.origUserDto.nickname.toLowerCase() == nickname.toLowerCase()) {
+    if (!nickname || this.origProfileDto.nickname.toLowerCase() == nickname.toLowerCase()) {
       return Promise.resolve(true);
     }
     return this.profileService.uniqueness(nickname, '').then((response) => response == null || (response as UniquenessDto).uniqueness);
   }
 
   public checkUniquenessEmail = (email: string | null | undefined): Promise<boolean> => {
-    if (!email || this.origUserDto.email.toLowerCase() == email.toLowerCase()) {
+    if (!email || this.origProfileDto.email.toLowerCase() == email.toLowerCase()) {
       return Promise.resolve(true);
     }
     return this.profileService.uniqueness('', email).then((response) => response == null || (response as UniquenessDto).uniqueness);
@@ -164,21 +156,26 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     this.errMsgsProfile = errMsgList;
   }
 
-  public saveProfileCard(): void {
-    const nickname: string | undefined = this.controls1.nickname.value || undefined;
-    const email: string | undefined = this.controls1.email.value || undefined;
-    const password: string | undefined = this.controls1.password.value || undefined;
-    const descript: string | undefined = this.controls1.descript.value || undefined;
+  public saveProfile(): void {
+    if (this.formGroup1.pristine || this.formGroup1.invalid) {
+      return;
+    }
+    const nickname: string = this.controls1.nickname.value || '';
+    const email: string = this.controls1.email.value || '';
+    const descript: string = this.controls1.descript.value || '';
 
-    const updateProfileFileDto: UpdateProfileFileDto = {
-      id: this.origUserDto.id,
-      nickname: (this.controls1.nickname.dirty ? nickname : undefined),
-      email: (this.controls1.email.dirty ? email : undefined),
-      password: (this.controls1.password.dirty ? password : undefined),
-      descript: (this.controls1.descript.dirty ? descript : undefined),
+    const updateProfileFileDto: UpdateProfileFile = {
+      nickname: (this.origProfileDto.nickname != nickname ? nickname : undefined),
+      email: (this.origProfileDto.email != email ? email : undefined),
+      // role?: string; // UserRole ["User","Admin"]
+      descript: (this.origProfileDto.descript != descript ? descript : undefined),
+      // theme?: string | undefined; // Default color theme. ["light","dark"]
       avatarFile: this.avatarFile,
     };
-    this.updateProfile.emit(updateProfileFileDto);
+    let is_all_empty = Object.values(updateProfileFileDto).findIndex((value) => value != undefined) == -1;
+    if (!is_all_empty) {
+      this.updateProfile.emit(updateProfileFileDto);
+    }
   }
 
   // ** Section "Set new password" FormGroup2 **
@@ -191,12 +188,15 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
 
   public setNewPassword(): void {
     if (this.controls2.password.pristine || this.controls2.password.invalid
-    || this.controls2.new_password.pristine || this.controls2.new_password.invalid
-    || !this.controls2.password.value
-    || !this.controls2.new_password.value) {
-        return;
+     || this.controls2.new_password.pristine || this.controls2.new_password.invalid
+     || !this.controls2.password.value || !this.controls2.new_password.value) {
+       return;
     }
-    this.updatePassword.emit({ password: this.controls2.password.value, new_password: this.controls2.new_password.value });
+    const newPasswordProfileDto: NewPasswordProfileDto = {
+        password: this.controls2.password.value, 
+        newPassword: this.controls2.new_password.value
+    };
+    this.updatePassword.emit(newPasswordProfileDto);
   }
 
   public updateErrMsgsPassword(errMsgList: string[] = []): void {
@@ -207,7 +207,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
 
   public performDeleteAccount(): void {
     const title = this.translate.instant('profile.dialog_title_question_account');
-    const nickname = this.userInfo?.nickname || '';
+    const nickname = this.profileDto?.nickname || '';
     const appName = this.translate.instant('app.name');
     const message = this.translate.instant('profile.dialog_message_question_account', { nickname, appName: appName });
     this.dialogService.openConfirmation(message, title, 'buttons.no', 'buttons.yes').then((respose) => {
@@ -219,24 +219,22 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
 
   // ** Private API **
 
-  private prepareForm1GroupByUserDto(userInfo: UserDto | null): void {
-    if (!userInfo) {
+  private prepareForm1GroupByUserDto(profileDto: ProfileDto | null): void {
+    if (!profileDto) {
       return;
     }
-    this.origUserDto = { ...userInfo };
-    Object.freeze(this.origUserDto);
+    this.origProfileDto = { ...profileDto };
+    Object.freeze(this.origProfileDto);
 
     this.formGroup1.patchValue({
-      avatar: '/logo/10_02280e22j4di504.png',
-      nickname: userInfo.nickname,
-      email: userInfo.email,
-      password: userInfo.password,
-      descript: 'Description of a beautiful trip 2024 to greece 6 - E.Allen',
+      nickname: profileDto.nickname,
+      email: profileDto.email,
+      descript: profileDto.descript,
+      avatar: profileDto.avatar,
     });
     this.avatarFile = undefined;
     this.initIsAvatar = !!this.controls1.avatar.value;
-     this.avatarView = ''; // /*streamDto.logo ||*/ '/logo/10_02280e22j4di504.png';
+     this.avatarView = profileDto.avatar || '';
      this.isAvatarOrig = !!this.avatarView;
-    // this.controls.avatar.disable();
   }
 }
