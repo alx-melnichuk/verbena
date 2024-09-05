@@ -6,7 +6,10 @@ import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
 import { HttpObservableUtil } from '../utils/http-observable.util';
 
-import { LoginProfileDto, LoginProfileResponseDto, ProfileDto, ProfileDtoUtil, ProfileTokensDto, TokenDto, UniquenessDto } from './profile-api.interface';
+import {
+ LoginProfileDto, LoginProfileResponseDto, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, ProfileTokensDto,
+ TokenDto, UniquenessDto
+} from './profile-api.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -55,6 +58,39 @@ export class ProfileApiService {
     //return this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }).toPromise();
   }
 
+public modifyProfile(modifyProfileDto: ModifyProfileDto, file?: File | null): Promise<ProfileDto | HttpErrorResponse | undefined> {
+    const formData: FormData = new FormData();
+    if (modifyProfileDto.nickname != null) {
+      formData.set('nickname', modifyProfileDto.nickname);
+    }
+    if (modifyProfileDto.email != null) {
+      formData.set('email', modifyProfileDto.email);
+    }
+    if (modifyProfileDto.role != null) {
+      formData.set('role', modifyProfileDto.role);
+    }
+    if (modifyProfileDto.descript != null) {
+      formData.set('descript', modifyProfileDto.descript);
+    }
+    if (modifyProfileDto.theme != null) {
+      formData.set('theme', modifyProfileDto.theme);
+    }
+    if (file !== undefined) {
+      const currFile: File = (file !== null ? file : new File([], "file"));
+      formData.set('avatarfile', currFile, currFile.name);
+    }
+    const headers = new HttpHeaders({ 'enctype': 'multipart/form-data' });
+    const url = Uri.appUri(`appApi://profiles`);
+    return this.http.put<ProfileDto | HttpErrorResponse>(url, formData, { headers: headers }).toPromise();
+  }
+
+  public newPassword(newPasswordProfileDto: NewPasswordProfileDto): Promise<ProfileDto | HttpErrorResponse | undefined> {
+    if (!newPasswordProfileDto.password && !newPasswordProfileDto.newPassword) {
+      return Promise.resolve(undefined);
+    }
+    const url = Uri.appUri("appApi://profiles_new_password");
+    return this.http.put<ProfileDto | HttpErrorResponse>(url, newPasswordProfileDto).toPromise();
+  }
 
   public delete_profile_current(): Promise<ProfileDto | HttpErrorResponse | undefined> {
     const url = Uri.appUri("appApi://profiles_current");

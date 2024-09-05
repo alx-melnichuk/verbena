@@ -87,4 +87,31 @@ export interface TokenUpdate {
   getAccessToken(): string | null;
   refreshToken(): Promise<ProfileTokensDto | HttpErrorResponse>;
 }
+
+// ** ModifyProfileDto **
+
+export interface ModifyProfileDto {
+  nickname?: string | undefined;
+  email?: string | undefined;
+  role?: string; // UserRole ["User","Admin"]
+  descript?: string | undefined;
+  theme?: string | undefined; // Default color theme. ["light","dark"]
+}
+
+export interface UpdateProfileFile {
+  nickname?: string | undefined;
+  email?: string | undefined;
+  role?: string; // UserRole ["User","Admin"]
+  descript?: string | undefined;
+  theme?: string | undefined; // Default color theme. ["light","dark"]
+  avatarFile?: File | null | undefined;
+}
+
+// ** NewPasswordProfileDto **
+
+export interface NewPasswordProfileDto {
+  password: string;
+  newPassword: string;
+}
+
 // ** **

@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { LoginProfileResponseDto, ProfileDto, ProfileTokensDto, TokenUpdate, UniquenessDto } from './profile-api.interface';
+import {
+ LoginProfileResponseDto, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileTokensDto, TokenUpdate, UniquenessDto
+} from './profile-api.interface';
 import { ProfileApiService } from './profile-api.service';
 
 export const ACCESS_TOKEN = 'accessToken';
@@ -92,6 +94,14 @@ export class ProfileService implements TokenUpdate {
     const profileDto: ProfileDto = (await this.profileApiService.currentProfile()) as ProfileDto;
     this.profileDto = { ...profileDto } as ProfileDto;
     return Promise.resolve(profileDto);
+  }
+
+  public modifyProfile(modifyProfileDto: ModifyProfileDto, file?: File | null): Promise<ProfileDto | HttpErrorResponse | undefined> {
+    return this.profileApiService.modifyProfile(modifyProfileDto, file);
+  }
+
+  public newPassword(newPasswordProfileDto: NewPasswordProfileDto): Promise<ProfileDto | HttpErrorResponse | undefined> {
+    return this.profileApiService.newPassword(newPasswordProfileDto);
   }
 
   public delete_profile_current(): Promise<ProfileDto | HttpErrorResponse | undefined> {
