@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { UserApiService } from './user-api.service';
-import { ModifyProfileDto, UpdatePasswordDto, UserDto, UserProfileDto, UserTokensDto } from './user-api.interface';
+import { UserDto, UserTokensDto } from './user-api.interface';
 
 export const ACCESS_TOKEN = 'accessToken_old';
 export const REFRESH_TOKEN = 'refreshToken_old';
@@ -32,16 +32,6 @@ export class UserService {
       return Promise.reject();
     }
     return this.userApiService.recovery({ email });
-  }
-
-  public modifyProfile(
-    id: number, modifyProfileDto: ModifyProfileDto, file?: File | null
-  ): Promise<UserProfileDto | HttpErrorResponse | undefined> {
-    return this.userApiService.modifyProfile(id, modifyProfileDto, file);
-  }
-  
-  public new_password(updatePasswordDto: UpdatePasswordDto): Promise<UserDto | HttpErrorResponse | undefined> {
-    return this.userApiService.new_password(updatePasswordDto);
   }
 
 }
