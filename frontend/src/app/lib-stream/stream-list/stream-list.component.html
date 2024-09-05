@@ -7,7 +7,7 @@
     
     <app-spinner isFillParent *ngIf="streamCalendarService.calendarLoading">
     </app-spinner>
-    <app-panel-stream-calendar
+    <app-panel-stream-calendar class="sl-pn-calendar"
       [selected]="streamCalendarService.eventsOfDaySelected"
       [markedDates]="streamCalendarService.calendarMarkedDates"
       [minDate]="streamCalendarService.calendarMinDate"
@@ -16,6 +16,8 @@
       (changeCalendar)="getCalendarInfoForPeriod($event)">
     </app-panel-stream-calendar>
   </div>
+
+  <div class="sl-delim"></div>
 
   <div class="sl-events sl-relative sl-brd">
     <div [ngClass]="{ 'sl-heavier': streamCalendarService.isShowEvents(streamCalendarService.calendarMonth) }"
@@ -60,6 +62,8 @@
       (actionDelete)="actionDelete($event)">
     </app-panel-stream-info>
   </div>
+
+  <div class="sl-delim"></div>
 
   <div class="sl-stream-box sl-relative sl-brd">
     <div class="sl-title">

@@ -2,29 +2,25 @@
 
 @use '../../../styles-dimensions.scss' as dimensions;
 
-.dark-theme app-stream-list {
-  --app-link-cl: var(--app-link2-cl);
-}
-
 app-stream-list {
   @media screen and (width <= dimensions.$mobile-480) {
     --sl-pd: 0.5em;
     --wd: 100%;
   }
   @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
-    --sl-pd: 1.5em;
+    --sl-pd: 1em;
     --wd: 30em;
   }
   @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
-    --sl-pd: 2em;
+    --sl-pd: 1.25em;
     --wd: 32em; // !!
   }
   @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
-    --sl-pd: 2.5em;
+    --sl-pd: 1.5em;
     --wd: 34em;
   }
   @media screen and (dimensions.$desktop-1280 < width) {
-    --sl-pd: 3em;
+    --sl-pd: 1.75em;
     --wd: 36em;
   }
   
@@ -60,10 +56,14 @@ app-stream-list {
   .sl-relative {
     position: relative;
   }
-
+  .sl-delim {
+    padding-top: var(--sl-pd);
+  }
   .sl-brd {
     border: 1px solid var(--app-pn-stream-low);
     border-radius: 1em;
+    box-sizing: border-box;
+    padding: var(--sl-brd-pd , 2px);
   }
 
   // ** "My Calendar" **
@@ -76,6 +76,9 @@ app-stream-list {
     display: flex;
     flex-direction: column;
   }
+  .sl-pn-calendar {
+    margin-bottom: 1px;
+  }
   .sl-events {
     display: flex;
     flex-direction: column;
@@ -87,7 +90,7 @@ app-stream-list {
     font-weight: var(--sl-fn-wg, lighter);
     height: 4em;
     line-height: 4em;
-    padding-left: 5em;
+    padding-left: 25%;
   }
   .sl-event-list {
     height: calc(100% - 4em);
@@ -95,7 +98,7 @@ app-stream-list {
   .sl-stream-box {
     display: flex;
     flex-direction: column;
-    flex: 0 0 50%;
+    flex: 0 0 calc((100% - var(--sl-pd)) / 2);
     overflow-y: hidden;
   }
   .sl-hidden {
