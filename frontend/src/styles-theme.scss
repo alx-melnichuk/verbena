@@ -185,16 +185,22 @@ body {
   .dark-theme {
     background-color: var(--app-default-bg);
     color: var(--app-default-cl);
+    a[dr2] {
+     ---link-cl: var(--app-link2-cl);
+    }
   }
   .light-theme {
     background-color: var(--app-default-bg);
     color: var(--app-default-cl);
+    a[lg2] {
+      ---link-cl: var(--app-link2-cl);
+    }
   }
 
   a,
   a:visited,
   a:hover {
-    color: var(--app-link-cl, var(--app-link1-cl));
+    color: var(--app-link-cl, var(---link-cl, var(--app-link1-cl)));
   }
 
 }

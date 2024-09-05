@@ -10,7 +10,6 @@ html {
   --scrollbarBG: rgb(207 216 220 / 20%);
   --thumbBG: #90a4ae;
   font-family: Roboto, 'Helvetica Neue', sans-serif;
-  font-size: 14px;
   height: 100%;
   line-height: 1.5;
 }
@@ -34,14 +33,6 @@ p {
   margin: 0;
 }
 
-// a,
-// a:visited,
-// a:hover {
-//   color: #005ab3;
-// //   color: #125699; // hsl(209.78, 78.95%, 33.53%);
-// //   color: hsl(209.84, 78.72%, 45%); 
-// //   color: #1976d2; // hsl(209.84, 78.72%, 46.08%);
-// }
 a[nodecor],
 a:visited[nodecor],
 a:hover[nodecor] {
