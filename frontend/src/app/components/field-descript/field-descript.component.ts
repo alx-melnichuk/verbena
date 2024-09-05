@@ -12,7 +12,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { ValidatorUtils } from 'src/app/utils/validator.utils';
 
 export const DESCRIPT = 'descript';
-export const DESCRIPT_MIN_LENGTH = 5;
+export const DESCRIPT_MIN_LENGTH = 2;
 export const DESCRIPT_MAX_LENGTH = 2048; // 2*1024
 export const DESCRIPT_ROWS = 6;
 
