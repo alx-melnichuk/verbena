@@ -59,7 +59,7 @@ pub const MSG_THEME_MAX_LENGTH: &str = "theme:max_length";
 
 pub const MSG_USER_ROLE_INVALID_VALUE: &str = "user_role:invalid_value";
 
-// MIN=3,MAX=64,"^[a-zA-Z]+[\\w]+$"
+// MIN=3, MAX=64, REG="^[a-zA-Z]+[\\w]+$"
 pub fn validate_nickname(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_NICKNAME_REQUIRED)?;
     ValidationChecks::min_length(value, NICKNAME_MIN.into(), MSG_NICKNAME_MIN_LENGTH)?;
@@ -67,7 +67,7 @@ pub fn validate_nickname(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::regexp(value, NICKNAME_REGEX, MSG_NICKNAME_REGEX)?; // /^[a-zA-Z]+[\w]+$/
     Ok(())
 }
-// MIN=5,MAX=254,"email:email_type"
+// MIN=5, MAX=254, "email:email_type"
 pub fn validate_email(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_EMAIL_REQUIRED)?;
     ValidationChecks::min_length(value, EMAIL_MIN.into(), MSG_EMAIL_MIN_LENGTH)?;
@@ -84,7 +84,7 @@ pub fn validate_nickname_or_email(value: &str) -> Result<(), ValidationError> {
     }
     Ok(())
 }
-// MIN=6,MAX=64,"[a-z]+","[A-Z]+","[\\d]+"
+// MIN=6, MAX=64, REG="[a-z]+","[A-Z]+","[\\d]+"
 pub fn validate_password(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_PASSWORD_REQUIRED)?;
     ValidationChecks::min_length(value, PASSWORD_MIN.into(), MSG_PASSWORD_MIN_LENGTH)?;
@@ -94,7 +94,7 @@ pub fn validate_password(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::regexp(value, PASSWORD_NUMBER_REGEX, MSG_PASSWORD_REGEX)?;
     Ok(())
 }
-// MIN=6,MAX=64,"[a-z]+","[A-Z]+","[\\d]+"
+// MIN=6, MAX=64, REG="[a-z]+","[A-Z]+","[\\d]+" OR "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d\\W_]{6,}$"
 pub fn validate_new_password(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::required(value, MSG_NEW_PASSWORD_REQUIRED)?;
     ValidationChecks::min_length(value, PASSWORD_MIN.into(), MSG_NEW_PASSWORD_MIN_LENGTH)?;
@@ -111,13 +111,13 @@ pub fn validate_inequality(value1: &str, value2: &str) -> Result<(), ValidationE
     }
     Ok(())
 }
-// MIN=2,MAX=2048
+// MIN=2, MAX=2048
 pub fn validate_descript(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::min_length(value, DESCRIPT_MIN.into(), MSG_DESCRIPT_MIN_LENGTH)?;
     ValidationChecks::max_length(value, DESCRIPT_MAX.into(), MSG_DESCRIPT_MAX_LENGTH)?;
     Ok(())
 }
-// MIN=2,MAX=32
+// MIN=2, MAX=32
 pub fn validate_theme(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::min_length(value, THEME_MIN.into(), MSG_THEME_MIN_LENGTH)?;
     ValidationChecks::max_length(value, THEME_MAX.into(), MSG_THEME_MAX_LENGTH)?;

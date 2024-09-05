@@ -50,11 +50,13 @@ pub const MSG_NO_REQUIRED_FIELDS: &str = "Nothing to update! One of the required
 
 //  ** CreateStreamInfoDto **
 
+// MIN=2, MAX=255
 pub fn validate_title(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::min_length(value, TITLE_MIN.into(), MSG_TITLE_MIN_LENGTH)?;
     ValidationChecks::max_length(value, TITLE_MAX.into(), MSG_TITLE_MAX_LENGTH)?;
     Ok(())
 }
+// MIN=2, MAX=2048
 pub fn validate_descript(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::min_length(value, DESCRIPT_MIN.into(), MSG_DESCRIPT_MIN_LENGTH)?;
     ValidationChecks::max_length(value, DESCRIPT_MAX.into(), MSG_DESCRIPT_MAX_LENGTH)?;
@@ -65,11 +67,13 @@ pub fn validate_starttime(value: &DateTime<Utc>) -> Result<(), ValidationError> 
     ValidationChecks::min_valid_date(value, &min_date_time, MSG_MIN_VALID_STARTTIME)?;
     Ok(())
 }
+// MIN=2, MAX=255
 pub fn validate_source(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::min_length(value, SOURCE_MIN.into(), MSG_SOURCE_MIN_LENGTH)?;
     ValidationChecks::max_length(&value, SOURCE_MAX.into(), MSG_SOURCE_MAX_LENGTH)?;
     Ok(())
 }
+// MIN=2, MAX=255
 pub fn validate_tag_name(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::min_length(value, TAG_MIN.into(), MSG_TAG_MIN_LENGTH)?;
     ValidationChecks::max_length(value, TAG_MAX.into(), MSG_TAG_MAX_LENGTH)?;
