@@ -14,7 +14,7 @@
       {{ stream.starttime | date: (!isFuture ? formatDate : formatDateTime) }}
     </div>
     <div class="psi-title">
-      <a (click)="doRedirectToStream(stream.id)">
+      <a dr2 (click)="doRedirectToStream(stream.id)">
         {{ stream.title }}
       </a>
     </div>
