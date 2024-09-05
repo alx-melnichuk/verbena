@@ -2,19 +2,24 @@ use actix_files::Files;
 use actix_web::{get, http, web, HttpRequest, HttpResponse};
 use std::{io::Error, path};
 
-use crate::{
-    settings::config_app,
-    streams::{config_strm, stream_controller},
-};
+use crate::profiles::{config_prfl, profile_controller};
+use crate::settings::config_app;
+use crate::streams::{config_strm, stream_controller};
+
+const NAME_LOGO: &str = "name_logo";
+const NAME_AVATAR: &str = "name_avatar";
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
-        let logo = stream_controller::ALIAS_LOGO_FILES_DIR;
-        let alias_logo = format!("{}/{}", logo, "{name_logo:.*}");
+        #[rustfmt::skip]
+        let alias_avatar = format!("{}/{{{}:.*}}", profile_controller::ALIAS_AVATAR_FILES_DIR,  NAME_AVATAR);
+        #[rustfmt::skip]
+        let alias_logo = format!("{}/{{{}:.*}}", stream_controller::ALIAS_LOGO_FILES_DIR, NAME_LOGO);
 
         config
             .service(Files::new("/static", "static").show_files_listing())
             .service(Files::new("/assets", "static/assets").show_files_listing())
+            .service(web::resource(&alias_avatar).route(web::get().to(load_files_avatar)))
             .service(web::resource(&alias_logo).route(web::get().to(load_files_logo)))
             .service(web::resource("/{name1:.(.+).js|(.+).css}").route(web::get().to(load_files_js_css)))
             .service(web::resource("/{name2:.(.+).ico|(.+).png|(.+).svg}").route(web::get().to(load_files_images)))
@@ -85,15 +90,24 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
 
 pub async fn load_files_logo(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
     let config_strm = config_strm::ConfigStrm::init_by_env();
-    load_file_from_dir(&config_strm.strm_logo_files_dir, &get_param(request, "name_logo")).await
+    let file_name = get_param(request, NAME_LOGO);
+    load_file_from_dir(&config_strm.strm_logo_files_dir, &file_name).await
+}
+
+pub async fn load_files_avatar(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
+    let config_prfl = config_prfl::ConfigPrfl::init_by_env();
+    let file_name = get_param(request, NAME_AVATAR);
+    load_file_from_dir(&config_prfl.prfl_avatar_files_dir, &file_name).await
 }
 
 pub async fn load_files_js_css(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    load_file_from_dir("static", &get_param(request, "name1")).await
+    let file_name = get_param(request, "name1");
+    load_file_from_dir("static", &file_name).await
 }
 
 pub async fn load_files_images(request: HttpRequest) -> Result<actix_files::NamedFile, Error> {
-    load_file_from_dir("static", &get_param(request, "name2")).await
+    let file_name = get_param(request, "name2");
+    load_file_from_dir("static", &file_name).await
 }
 
 /// Get the value of the parameter.
