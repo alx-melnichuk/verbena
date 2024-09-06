@@ -8,7 +8,7 @@ import { StrParams } from '../common/str-params';
 import { ROUTE_LOGIN } from '../common/routes';
 import { DialogService } from '../lib-dialog/dialog.service';
 import { ForgotPasswordComponent } from '../lib-forgot-password/forgot-password/forgot-password.component';
-import { UserService } from '../lib-user/user.service';
+import { ProfileService } from '../lib-profile/profile.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
 @Component({
@@ -29,7 +29,7 @@ export class PgForgotPasswordComponent {
     private router: Router,
     private translate: TranslateService,
     private dialogService: DialogService,
-    private userService: UserService
+    private profileService: ProfileService
   ) {
   }
   
@@ -47,7 +47,7 @@ export class PgForgotPasswordComponent {
 
     this.isDisabledSubmit = true;
     this.errMsgList = [];
-    this.userService.recovery(email)
+    this.profileService.recovery(email)
       .then(() => {
         const appName = this.translate.instant('app.name');
         const title = this.translate.instant('forgot-password.dialog_title', { appName: appName });

@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
 import { StrParams } from '../common/str-params';
 import { ROUTE_LOGIN } from '../common/routes';
 import { DialogService } from '../lib-dialog/dialog.service';
-import { UserService } from '../lib-user/user.service';
+import { ProfileService } from '../lib-profile/profile.service';
 import { SignupComponent } from '../lib-signup/signup/signup.component';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
@@ -30,7 +30,7 @@ export class PgSignupComponent {
     private router: Router,
     private translate: TranslateService,
     private dialogService: DialogService,
-    private userService: UserService
+    private profileService: ProfileService,
   ) {
   }
 
@@ -50,7 +50,7 @@ export class PgSignupComponent {
 
     this.isDisabledSubmit = true;
     this.errMsgList = [];
-    this.userService.registration(nickname, email, password)
+    this.profileService.registration(nickname, email, password)
       .then(() => {
         const appName = this.translate.instant('app.name');
         const title = this.translate.instant('signup.dialog_title', { appName: appName });
