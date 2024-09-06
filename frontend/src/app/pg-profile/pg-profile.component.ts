@@ -92,6 +92,7 @@ export class PgProfileComponent {
           this.errMsgsPassword = [this.translate.instant('profile.error_update_password', { nickname: this.profileDto.nickname })];
         } else {
           this.profileDto = response as ProfileDto;
+          this.profileService.setProfileDto({...this.profileDto});
           const title = this.translate.instant('profile.dialog_title_password');
           const message = this.translate.instant('profile.dialog_message_password');
           this.dialogService.openConfirmation(message, title, null, 'buttons.ok');
@@ -110,13 +111,14 @@ export class PgProfileComponent {
 
   public doDeleteAccount(): void {
     this.isLoadData = true;
-    this.profileService.delete_profile_current()
+    this.profileService.deleteProfileCurrent()
     .then((response: ProfileDto | HttpErrorResponse | undefined) => {
+        const nickname = this.profileDto.nickname;
         if (!response) {
-          this.errMsgsAccount = [this.translate.instant('profile.error_delete_account', { nickname: this.profileDto.nickname })];
+          this.errMsgsAccount = [this.translate.instant('profile.error_delete_account', { nickname })];
         } else {
           const title = this.translate.instant('profile.dialog_title_delete');
-          const message = this.translate.instant('profile.dialog_message_delete');
+          const message = this.translate.instant('profile.dialog_message_delete', { nickname });
           this.dialogService.openConfirmation(message, title, null, 'buttons.ok')
           .finally(() => {
             // Closing the session.

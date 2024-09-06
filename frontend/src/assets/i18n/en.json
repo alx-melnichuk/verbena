@@ -284,6 +284,6 @@
     "btn_delete_account": "Delete account",
     "error_delete_account": "Error deleting account. Record \"{{nickname}}\" not found.",
     "dialog_title_delete": "Account deletion operation.",
-    "dialog_message_delete": "The account deletion operation has been successfully completed!"
+    "dialog_message_delete": "The operation to delete account \"{{nickname}}\" has been successfully completed!"
   }
 }
