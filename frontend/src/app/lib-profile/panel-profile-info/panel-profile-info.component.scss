@@ -14,24 +14,30 @@ app-panel-profile-info {
   @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
     ---ppi-crd-wd: 100vw;
     ---ppi-pd: 1em;
-    ---ppi-wd: 39em; // 30em;
+    ---ppi-wd: 39em;
   }
   @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
     ---ppi-crd-wd: 80vw;
     ---ppi-pd: 1.5em;
-    ---ppi-wd: 50%; // 41em; // 32em;
+    ---ppi-wd: 49vw;
     ---ppi-fl-wr: wrap;
   }
   @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
     ---ppi-crd-wd: 60vw;
     ---ppi-pd: 2em;
-    ---ppi-wd: 50%; //  43em; //34em;
+    ---ppi-wd: 49.5vw;
     ---ppi-fl-wr: wrap;
   }
-  @media screen and (dimensions.$desktop-1280 < width) {
+  @media screen and (dimensions.$desktop-1280 < width <= dimensions.$extra-1536) {
     ---ppi-crd-wd: 40vw;
     ---ppi-pd: 2.5em;
-    ---ppi-wd: 45em; //36em;
+    ---ppi-wd: 50vw;
+    ---ppi-fl-wr: wrap;
+  }
+  @media screen and (dimensions.$extra-1536 < width) {
+    ---ppi-crd-wd: 40vw;
+    ---ppi-pd: 2.5em;
+    ---ppi-wd: 46em;
     ---ppi-fl-wr: wrap;
   }
 
@@ -68,10 +74,10 @@ app-panel-profile-info {
     flex-direction: column;
     margin-bottom: var(---ppi-pd);
     margin-top: var(---ppi-pd);
-    margin-left: calc(var(---ppi-pd) / 2);
-    margin-right: calc(var(---ppi-pd) / 2);
+    margin-left: calc(var(---ppi-pd) / 3);
+    margin-right: calc(var(---ppi-pd) / 3);
     padding: var(---ppi-pd) var(---ppi-pd) calc(var(---ppi-pd) / 2) var(---ppi-pd);
-    width: calc(var(---ppi-wd) - var(---ppi-pd));
+    width: min(calc(var(---ppi-wd) - var(---ppi-pd)), 100%);
   }
 
   .ppi-title {
