@@ -13,7 +13,6 @@ import { RouterOutlet } from '@angular/router';
 })
 export class PgStreamComponent {
   constructor() {
-    console.log(`PgStreamComponent()`); // #-
   }
 }
   
