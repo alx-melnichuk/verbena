@@ -8,6 +8,8 @@ import { HttpObservableUtil } from '../utils/http-observable.util';
 
 import {
  LoginProfileDto, LoginProfileResponseDto, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, ProfileTokensDto,
+ RecoveryProfileDto,
+ RegistrProfileDto,
  TokenDto, UniquenessDto
 } from './profile-api.interface';
 
@@ -24,6 +26,16 @@ export class ProfileApiService {
     .then((response: ProfileDto | HttpErrorResponse | undefined) => {
       return ProfileDtoUtil.new(response as ProfileDto)
     });
+  }
+
+  public registration(registrProfileDto: RegistrProfileDto): Promise<null | HttpErrorResponse | undefined> {
+    const url = Uri.appUri('appApi://registration');
+    return HttpObservableUtil.toPromise<null>(this.http.post<null | HttpErrorResponse>(url, registrProfileDto));
+  }
+
+  public recovery(recoveryProfileDto: RecoveryProfileDto): Promise<null | HttpErrorResponse | undefined> {
+    const url = Uri.appUri('appApi://recovery');
+    return HttpObservableUtil.toPromise<null>(this.http.post<null | HttpErrorResponse>(url, recoveryProfileDto));
   }
 
   public login(loginProfileDto: LoginProfileDto): Promise<LoginProfileResponseDto | HttpErrorResponse | undefined> {
@@ -81,7 +93,7 @@ public modifyProfile(modifyProfileDto: ModifyProfileDto, file?: File | null): Pr
     }
     const headers = new HttpHeaders({ 'enctype': 'multipart/form-data' });
     const url = Uri.appUri(`appApi://profiles`);
-    return this.http.put<ProfileDto | HttpErrorResponse>(url, formData, { headers: headers }).toPromise();
+    return HttpObservableUtil.toPromise<ProfileDto>(this.http.put<ProfileDto | HttpErrorResponse>(url, formData, { headers: headers }));
   }
 
   public newPassword(newPasswordProfileDto: NewPasswordProfileDto): Promise<ProfileDto | HttpErrorResponse | undefined> {
@@ -89,10 +101,10 @@ public modifyProfile(modifyProfileDto: ModifyProfileDto, file?: File | null): Pr
       return Promise.resolve(undefined);
     }
     const url = Uri.appUri("appApi://profiles_new_password");
-    return this.http.put<ProfileDto | HttpErrorResponse>(url, newPasswordProfileDto).toPromise();
+    return HttpObservableUtil.toPromise<ProfileDto>(this.http.put<ProfileDto | HttpErrorResponse>(url, newPasswordProfileDto));
   }
 
-  public delete_profile_current(): Promise<ProfileDto | HttpErrorResponse | undefined> {
+  public deleteProfileCurrent(): Promise<ProfileDto | HttpErrorResponse | undefined> {
     const url = Uri.appUri("appApi://profiles_current");
     return HttpObservableUtil.toPromise<ProfileDto>(this.http.delete<ProfileDto | HttpErrorResponse>(url));
   }

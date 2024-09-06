@@ -1,3 +1,17 @@
+// ** Registration User **
+
+export interface RegistrProfileDto {
+  nickname: string;
+  email: string;
+  password: string;
+}
+
+// ** Recovery User **
+
+export interface RecoveryProfileDto {
+  email: string;
+}
+
 // ** Login Profile **
 
 import { HttpErrorResponse } from "@angular/common/http";

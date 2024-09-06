@@ -17,6 +17,7 @@ export class ProfileService implements TokenUpdate {
   public profileTokensDto: ProfileTokensDto | null = null;
 
   constructor(private profileApiService: ProfileApiService) {
+    this.profileTokensDto = this.getProfileTokensDtoFromLocalStorage();
   }
 
   public setProfileDto(profileDto: ProfileDto | null = null): void {
@@ -30,6 +31,20 @@ export class ProfileService implements TokenUpdate {
     return !!localStorage.getItem(ACCESS_TOKEN);
   }
 
+  public registration(nickname: string, email: string, password: string): Promise<null | HttpErrorResponse | undefined> {
+    if (!nickname || !email || !password) {
+      return Promise.reject();
+    }
+    return this.profileApiService.registration({ nickname, email, password });
+  }
+
+  public recovery(email: string): Promise<null | HttpErrorResponse | undefined> {
+    if (!email) {
+      return Promise.reject();
+    }
+    return this.profileApiService.recovery({ email });
+  }
+
   public login(nickname: string, password: string): Promise<LoginProfileResponseDto | HttpErrorResponse | undefined> {
     if (!nickname || !password) {
       return Promise.reject();
@@ -41,7 +56,6 @@ export class ProfileService implements TokenUpdate {
       let profileResponseDto: LoginProfileResponseDto = response as LoginProfileResponseDto;
       this.profileDto = { ...profileResponseDto.profileDto } as ProfileDto;
       this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(profileResponseDto.profileTokensDto);
-      console.log(`login() this.profileDto: `, this.profileDto);
       return profileResponseDto;
     });
   }
@@ -104,8 +118,8 @@ export class ProfileService implements TokenUpdate {
     return this.profileApiService.newPassword(newPasswordProfileDto);
   }
 
-  public delete_profile_current(): Promise<ProfileDto | HttpErrorResponse | undefined> {
-    return this.profileApiService.delete_profile_current();
+  public deleteProfileCurrent(): Promise<ProfileDto | HttpErrorResponse | undefined> {
+    return this.profileApiService.deleteProfileCurrent();
   }
 
   // ** Private Api **
