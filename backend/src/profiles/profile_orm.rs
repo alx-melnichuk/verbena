@@ -1,5 +1,4 @@
 use crate::profiles::profile_models::{CreateProfile, ModifyProfile, Profile};
-use crate::users::user_models::UserRole;
 
 pub trait ProfileOrm {
     /// Get an entity (profile + user) by ID.
@@ -94,11 +93,9 @@ pub mod impls {
             let nickname2_len = nickname2.len();
             let email2 = email.unwrap_or(&"".to_string()).to_lowercase();
             let email2_len = email2.len();
-
             if nickname2_len == 0 && email2_len == 0 {
                 return Ok(None);
             }
-
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -119,17 +116,18 @@ pub mod impls {
         fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String> {
             let nickname = create_profile.nickname.to_lowercase(); // #?
             let email = create_profile.email.to_lowercase();
-            let password = create_profile.password.clone();
-            let role = create_profile.role.unwrap_or(UserRole::User);
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select * from create_profile_user($1,$2,$3,$4);")
-                .bind::<sql_types::Text, _>(nickname.to_string())
-                .bind::<sql_types::Text, _>(email.to_string())
-                .bind::<sql_types::Text, _>(password.to_string())
-                .bind::<schema::sql_types::UserRole, _>(role);
+            let query = diesel::sql_query("select * from create_profile_user($1,$2,$3,$4,$5,$6,$7);")
+                .bind::<sql_types::Text, _>(nickname) // $1
+                .bind::<sql_types::Text, _>(email) // $2
+                .bind::<sql_types::Text, _>(create_profile.password) // $3
+                .bind::<sql_types::Nullable<schema::sql_types::UserRole>, _>(create_profile.role) // $4
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.avatar) // $5
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.descript) // $6
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.theme); // $7
 
             // Run a query with Diesel to create a new user and return it.
             let profile_user = query
@@ -141,10 +139,8 @@ pub mod impls {
         /// Modify an entity (profile, user).
         fn modify_profile(&self, user_id: i32, modify_profile: ModifyProfile) -> Result<Option<Profile>, String> {
             //
-            let nickname = modify_profile.nickname;
-            let email = modify_profile.email;
-            let password = modify_profile.password;
-            let role = modify_profile.role;
+            let nickname = modify_profile.nickname.map(|v| v.to_lowercase()); // #?
+            let email = modify_profile.email.map(|v| v.to_lowercase());
             let avatar = match modify_profile.avatar {
                 Some(value1) => match value1 {
                     Some(value2) => Some(value2),
@@ -152,8 +148,6 @@ pub mod impls {
                 },
                 None => None,
             };
-            let descript = modify_profile.descript;
-            let theme = modify_profile.theme;
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
@@ -162,11 +156,11 @@ pub mod impls {
                 .bind::<sql_types::Integer, _>(user_id) // $1
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(nickname) // $2
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(email) // $3
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(password) // $4
-                .bind::<sql_types::Nullable<schema::sql_types::UserRole>, _>(role) // $5
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.password) // $4
+                .bind::<sql_types::Nullable<schema::sql_types::UserRole>, _>(modify_profile.role) // $5
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(avatar) // $6
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(descript) // $7
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(theme); // $8
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.descript) // $7
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.theme); // $8
 
             // Run a query with Diesel to create a new user and return it.
             let profile_user = query

@@ -81,9 +81,13 @@ CREATE OR REPLACE FUNCTION create_profile_user(
   IN _email VARCHAR,
   IN _password VARCHAR,
   IN _role user_role,
+  IN _avatar VARCHAR,
+  IN _descript TEXT,
+  IN _theme VARCHAR,
   OUT user_id INTEGER,
   OUT nickname VARCHAR,
   OUT email VARCHAR,
+  OUT "password" VARCHAR,
   OUT "role" user_role,
   OUT avatar VARCHAR,
   OUT descript TEXT,
@@ -98,13 +102,13 @@ DECLARE
 BEGIN
   -- Add a new entry to the "users" table.
   INSERT INTO users(nickname, email, "password", "role")
-  VALUES (_nickname, _email, _password, _role)
-  RETURNING users.id, users.nickname, users.email, users."password", users."role", users.created_at, users.updated_at
+  VALUES (_nickname, _email, _password, COALESCE(_role, 'user'))
+  RETURNING users.id, users.nickname, users.email, users."role", users.created_at, users.updated_at
     INTO rec1;
 
   -- Add a new entry to the "profiles" table.
-  INSERT INTO profiles(user_id)
-  VALUES (rec1.id)
+  INSERT INTO profiles(user_id, avatar, descript, theme)
+  VALUES (rec1.id, _avatar, COALESCE(_descript, ''), COALESCE(_theme, 'light'))
   RETURNING profiles.user_id, profiles.avatar, profiles.descript, profiles.theme, profiles.created_at, profiles.updated_at
     INTO rec2;
 
@@ -113,7 +117,7 @@ BEGIN
   VALUES (rec1.id);
 
   RETURN QUERY SELECT
-    rec2.user_id, rec1.nickname, rec1.email, rec1."role", rec2.avatar, rec2.descript, rec2.theme,
+    rec2.user_id, rec1.nickname, rec1.email, ''::VARCHAR AS "password", rec1."role", rec2.avatar, rec2.descript, rec2.theme,
     rec1.created_at,
     CASE WHEN rec1.updated_at > rec2.updated_at THEN rec1.updated_at ELSE rec2.updated_at END as updated_at;
 END;
@@ -175,7 +179,7 @@ BEGIN
       || ' FROM profiles'  
       || ' WHERE users.id = profiles.user_id AND id = ' || user_id
       || ' RETURNING '
-      || ' users.id AS user_id, users.nickname, users.email, users."password", users."role",'
+      || ' users.id AS user_id, users.nickname, users.email, ''''::VARCHAR AS "password", users."role",'
       || ' profiles.avatar, profiles.descript, profiles.theme,'
       || ' users.created_at, users.updated_at'; 
     EXECUTE sql1 INTO
@@ -188,7 +192,7 @@ BEGIN
       || ' FROM users'  
       || ' WHERE users.id = profiles.user_id AND profiles.user_id = ' || user_id
       || ' RETURNING '
-      || ' users.id AS user_id, users.nickname, users.email, users."password", users."role",'
+      || ' users.id AS user_id, users.nickname, users.email, ''''::VARCHAR AS "password", users."role",'
       || ' profiles.avatar, profiles.descript, profiles.theme,'
       || ' users.created_at, profiles.updated_at'; 
     EXECUTE sql1 INTO
