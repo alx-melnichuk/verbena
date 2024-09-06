@@ -214,6 +214,7 @@ CREATE OR REPLACE FUNCTION delete_profile_user(
   OUT user_id INTEGER,
   OUT nickname VARCHAR,
   OUT email VARCHAR,
+  OUT "password" VARCHAR,
   OUT "role" user_role,
   OUT avatar VARCHAR,
   OUT descript TEXT,
@@ -248,7 +249,7 @@ BEGIN
   END IF;
 
   RETURN QUERY SELECT
-    rec1.user_id, rec1.nickname, rec1.email, rec1."role", rec1.avatar, rec1.descript, rec1.theme,
+    rec1.user_id, rec1.nickname, rec1.email, ''::VARCHAR AS "password", rec1."role", rec1.avatar, rec1.descript, rec1.theme,
     rec1.created_at, rec1.updated_at;
 END;
 $$;
