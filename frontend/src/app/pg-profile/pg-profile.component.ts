@@ -11,6 +11,7 @@ import { ROUTE_LOGIN } from '../common/routes';
 import { DialogService } from '../lib-dialog/dialog.service';
 import { PanelProfileInfoComponent } from '../lib-profile/panel-profile-info/panel-profile-info.component';
 import { UpdateProfileFile, ProfileDto, ModifyProfileDto, NewPasswordProfileDto } from '../lib-profile/profile-api.interface';
+import { ProfileConfigDto } from '../lib-profile/profile-config.interface';
 import { ProfileService } from '../lib-profile/profile.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
@@ -30,7 +31,8 @@ export class PgProfileComponent {
   public errMsgsProfile: string[] = [];
   public errMsgsPassword: string[] = [];
   public errMsgsAccount: string[] = [];
-  
+  public profileConfigDto: ProfileConfigDto;
+
   constructor(
     private changeDetectorRef: ChangeDetectorRef,
     private route: ActivatedRoute,
@@ -40,6 +42,7 @@ export class PgProfileComponent {
     private profileService: ProfileService,
   ) {
     this.profileDto = this.route.snapshot.data['profileDto'];
+    this.profileConfigDto = this.route.snapshot.data['profileConfigDto'];
   }
   
   // ** Public API **
