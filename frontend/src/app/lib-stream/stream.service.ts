@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 
 import { StreamApiService } from './stream-api.service';
 import {
-  CreateStreamDto, SearchStreamDto, ModifyStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto, SearchStreamsPeriodDto, StreamsPeriodDto
+  SearchStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto, SearchStreamsPeriodDto, StreamsPeriodDto,UpdateStreamFileDto
 } from './stream-api.interface';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Uri } from '../common/uri';
@@ -102,13 +102,13 @@ export class StreamService {
   }*/
 
   /** Add stream * @ files logo (jpg, png and gif only, 5MB) */
-  public createStream(createStreamDto: CreateStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
-    return this.streamApiService.createStream(createStreamDto, file);
+  public createStream(updateStreamFileDto: UpdateStreamFileDto): Promise<StreamDto | HttpErrorResponse | undefined> {
+    return this.streamApiService.createStream(updateStreamFileDto);
   }
 
   /** Update stream */
-  public modifyStream(id: number, modStreamDto: ModifyStreamDto, file?: File | null): Promise<StreamDto | HttpErrorResponse | undefined> {
-    return this.streamApiService.modifyStream(id, modStreamDto, file);
+  public modifyStream(id: number, updateStreamFileDto: UpdateStreamFileDto): Promise<StreamDto | HttpErrorResponse | undefined> {
+    return this.streamApiService.modifyStream(id, updateStreamFileDto);
   }
 
   /** Delete stream */

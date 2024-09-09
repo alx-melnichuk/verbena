@@ -4,9 +4,8 @@ import { Injectable } from '@angular/core';
 import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
 import {
-  CreateStreamDto, SearchStreamDto, ModifyStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto,
-  SearchStreamsPeriodDto,
-  StreamsPeriodDto
+  SearchStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto, SearchStreamsPeriodDto,
+  StreamsPeriodDto, UpdateStreamFileDto
 } from './stream-api.interface';
 import { StringDateTime, StringDateTimeUtil } from '../common/string-date-time';
 import { map } from 'rxjs/operators';
@@ -129,23 +128,23 @@ constructor(private http: HttpClient) {
    * @ required title, description
    * @ access protected
    */
-  public createStream(createStreamDto: CreateStreamDto, file?: File): Promise<StreamDto | HttpErrorResponse | undefined> {
+  public createStream(updateStreamFileDto: UpdateStreamFileDto): Promise<StreamDto | HttpErrorResponse | undefined> {
     const formData: FormData = new FormData();
-    formData.set('title', createStreamDto.title);
-    if (!!createStreamDto.descript) {
-      formData.set('descript', createStreamDto.descript);
+    formData.set('title', updateStreamFileDto.title || '');
+    if (!!updateStreamFileDto.descript) {
+      formData.set('descript', updateStreamFileDto.descript);
     }
-    if (!!createStreamDto.starttime) {
-      formData.set('starttime', createStreamDto.starttime);
+    if (!!updateStreamFileDto.starttime) {
+      formData.set('starttime', updateStreamFileDto.starttime);
     }
-    if (!!createStreamDto.source) {
-      formData.set('source', createStreamDto.source);
+    if (!!updateStreamFileDto.source) {
+      formData.set('source', updateStreamFileDto.source);
     }
-    if (createStreamDto.tags.length > 0) {
-        formData.set('tags', JSON.stringify(createStreamDto.tags));
+    if (!!updateStreamFileDto.tags) {
+        formData.set('tags', JSON.stringify(updateStreamFileDto.tags));
     }
-    if (!!file) {
-      formData.set('logofile', file, file.name);
+    if (!!updateStreamFileDto.logoFile) {
+      formData.set('logofile', updateStreamFileDto.logoFile, updateStreamFileDto.logoFile.name);
     }
     const url = Uri.appUri(`appApi://streams`);
     return this.http.post<StreamDto | HttpErrorResponse>(url, formData).toPromise();
@@ -159,26 +158,26 @@ constructor(private http: HttpClient) {
    * @ required streamId
    * @ access protected
    */
-  public modifyStream(id: number, modifStreamDto: ModifyStreamDto, file?: File | null): Promise<StreamDto | HttpErrorResponse | undefined> {
+  public modifyStream(id: number, updateStreamFileDto: UpdateStreamFileDto): Promise<StreamDto | HttpErrorResponse | undefined> {
     const formData: FormData = new FormData();
-    if (modifStreamDto.title != null) {
-      formData.set('title', modifStreamDto.title);
+    if (updateStreamFileDto.title != null) {
+      formData.set('title', updateStreamFileDto.title);
     }
-    if (modifStreamDto.descript != null) {
-      formData.set('descript', modifStreamDto.descript);
+    if (updateStreamFileDto.descript != null) {
+      formData.set('descript', updateStreamFileDto.descript);
     }
-    if (file !== undefined) {
-      const currFile: File = (file !== null ? file : new File([], "file"));
+    if (updateStreamFileDto.logoFile !== undefined) {
+      const currFile: File = (updateStreamFileDto.logoFile !== null ? updateStreamFileDto.logoFile : new File([], "file"));
       formData.set('logofile', currFile, currFile.name);
     }
-    if (!!modifStreamDto.starttime) {
-      formData.set('starttime', modifStreamDto.starttime);
+    if (!!updateStreamFileDto.starttime) {
+      formData.set('starttime', updateStreamFileDto.starttime);
     }
-    if (!!modifStreamDto.source) {
-      formData.set('source', modifStreamDto.source);
+    if (!!updateStreamFileDto.source) {
+      formData.set('source', updateStreamFileDto.source);
     }
-    if (!!modifStreamDto.tags) {
-      formData.set('tags', JSON.stringify(modifStreamDto.tags));
+    if (!!updateStreamFileDto.tags) {
+      formData.set('tags', JSON.stringify(updateStreamFileDto.tags));
     }
     const headers = new HttpHeaders({ 'enctype': 'multipart/form-data' });
     const url = Uri.appUri(`appApi://streams/${id}`);

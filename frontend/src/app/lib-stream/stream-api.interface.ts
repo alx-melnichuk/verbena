@@ -136,29 +136,16 @@ export interface StreamEventPageDto {
   pages: number;
 }
 
-export interface ModifyStreamDto {
+export interface UpdateStreamFileDto {
+  id?: number | undefined;
   title?: string | undefined;
   descript?: string | undefined;
   starttime?: StringDateTime | null | undefined;
   source?: string | undefined;
   tags?: string[] | undefined;
-} 
-
-export interface CreateStreamDto {
-  title: string;
-  descript?: string | undefined;
-  starttime?: StringDateTime | undefined;
-  source?: string | undefined;
-  tags: string[];
-} 
-
-export interface UpdateStreamFileDto {
-  id?: number | undefined;
-  modifyStreamDto?: ModifyStreamDto | undefined;
-  createStreamDto?: CreateStreamDto | undefined;
   logoFile?: File | null | undefined;
 }
-
+  
 // ** getStreams()  **
 
 export interface SearchStreamDto {
