@@ -52,23 +52,19 @@ export class StreamEditComponent {
     this.goBack();
   }
 
-  public doUpdateStream(updateStreamFile: UpdateStreamFileDto): void {
+  public doUpdateStream(updateStreamFileDto: UpdateStreamFileDto): void {
     this.alertService.hide();
-    if (!updateStreamFile || (!updateStreamFile.createStreamDto && !updateStreamFile.modifyStreamDto)) {
+    if (!updateStreamFileDto) {
       return;
     }
-    const isEdit = (!!updateStreamFile.modifyStreamDto);
+    const isEdit = (!!updateStreamFileDto.id);
     const buffPromise: Promise<unknown>[] = [];
     this.isLoadDataStream = true;
     
-    if (!!updateStreamFile.createStreamDto) {
-      buffPromise.push(
-        this.streamService.createStream(updateStreamFile.createStreamDto, updateStreamFile.logoFile || undefined)
-      );
-    } else if (!!updateStreamFile.id && !!updateStreamFile.modifyStreamDto) {
-      buffPromise.push(
-        this.streamService.modifyStream(updateStreamFile.id, updateStreamFile.modifyStreamDto, updateStreamFile.logoFile)
-      );
+    if (!!updateStreamFileDto.id) {
+      buffPromise.push(this.streamService.modifyStream(updateStreamFileDto.id, updateStreamFileDto));
+    } else {
+      buffPromise.push(this.streamService.createStream(updateStreamFileDto));
     }
     Promise.all(buffPromise)
       .then((responses) => {
@@ -78,7 +74,6 @@ export class StreamEditComponent {
           });
       })
       .catch((error: HttpErrorResponse) => {
-        console.error(`error: `, error); // #
         const title = (isEdit ? 'stream_edit.error_editing_stream' : 'stream_edit.error_creating_stream');
         this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], title);
         throw error;
