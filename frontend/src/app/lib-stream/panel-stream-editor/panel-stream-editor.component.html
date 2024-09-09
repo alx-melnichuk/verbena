@@ -26,18 +26,13 @@
       <div class="pse-text">{{ 'stream_edit.thumbnail' | translate }}</div>
 
       <div class="pse-logo">
-        <app-field-file-upload hg-100 class="pse-file-upload" *ngIf="!addedLogoView"
-          [maxFileSize]="maxFileSize"
-          [validFileTypes]="validFileTypes"
-          (addFile)="addFile($event)"
-          (readFile)="readFile($event)">
-        </app-field-file-upload>
-        <div *ngIf="!!addedLogoView" class="pse-logo-image">
-          <img class="pse-image-view" [src]="addedLogoView" alt="logo unavailable">
-          <button class="pse-delete-logo" (click)="deleteFileLogo()">
-            <span class="pse-delete-box"></span>
-          </button>
-        </div>
+        <app-field-image-and-upload class="pse-logo-img"
+          formControlName="logo"
+          [acceptList]="acceptList"
+          [maxSize]="maxSize"
+          (addFile)="addLogoFile($event)"
+          (deleteFile)="deleteLogoFile()">
+        </app-field-image-and-upload>
       </div>
 
       <div class="pse-text">{{ 'stream_edit.tags' | translate }}</div>
@@ -103,7 +98,7 @@
       <button mat-raised-button color="primary"
         class="app-infix app-ordinary"
         [disabled]="formGroup.pristine || formGroup.invalid"
-        (click)="saveStreamCard()">
+        (click)="saveStream(formGroup)">
         <span class="pse-actions-label">
           <i class="pse-save"></i>
           {{ (isCreate ? 'stream_edit.go_public' : 'stream_edit.save') | translate }}

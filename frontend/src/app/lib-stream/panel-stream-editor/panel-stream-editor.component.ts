@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, Input, OnChanges, Output, 
+  ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, OnChanges, Output, 
   SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -18,6 +18,7 @@ import { MAX_FILE_SIZE, IMAGE_VALID_FILE_TYPES } from 'src/app/common/constants'
 import { FieldChipGridComponent } from 'src/app/components/field-chip-grid/field-chip-grid.component';
 import { FieldDescriptComponent } from 'src/app/components/field-descript/field-descript.component';
 import { FieldFileUploadComponent } from 'src/app/components/field-file-upload/field-file-upload.component';
+import { FieldImageAndUploadComponent } from 'src/app/components/field-image-and-upload/field-image-and-upload.component';
 import { FieldTimeComponent } from 'src/app/components/field-time/field-time.component';
 import { StringDateTime } from 'src/app/common/string-date-time';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
@@ -33,6 +34,7 @@ import { StreamDto, StreamDtoUtil, UpdateStreamFileDto } from '../stream-api.int
   imports: [
     CommonModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule,  MatSlideToggleModule,
     MatDatepickerModule, MatTooltipModule, TranslateModule, ReactiveFormsModule, FieldDescriptComponent, FieldChipGridComponent,
+    FieldImageAndUploadComponent,
     FieldFileUploadComponent, FieldTimeComponent
   ],
   templateUrl: './panel-stream-editor.component.html',
@@ -60,12 +62,13 @@ export class PanelStreamEditorComponent implements OnChanges {
   public minDate: Date = new Date(Date.now());
   public maxDate: Date = new Date(this.minDate.getFullYear(), this.minDate.getMonth() + 7, 0);
 
-  public origLogo: string | null = '';
-  public addedLogoView: string = '';
-  public maxFileSize = MAX_FILE_SIZE;
-  public validFileTypes = IMAGE_VALID_FILE_TYPES;
-  public addedLogoFile: File | null | undefined;
-
+  // FieldImageAndUpload parameters
+  public acceptList = IMAGE_VALID_FILE_TYPES;
+  public maxSize = MAX_FILE_SIZE;
+  // FieldImageAndUpload FormControl
+  public logoFile: File | null | undefined;
+  public initIsLogo: boolean = false; // original has an logo.
+  
   readonly separatorCodes: number[] = [ENTER];
   readonly tagMaxLength: number = 255;
   readonly tagMinLength: number = 2;
@@ -93,14 +96,13 @@ export class PanelStreamEditorComponent implements OnChanges {
   private origStreamDto: StreamDto = StreamDtoUtil.create();
   
   constructor(
-    private changeDetectorRef: ChangeDetectorRef,
     private alertService: AlertService,
     private streamService: StreamService,
   ) {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!!changes['streamDto'] && !!this.streamDto) {
+    if (!!changes['streamDto']) {
       this.prepareData(this.streamDto);
     }
   }
@@ -119,24 +121,13 @@ export class PanelStreamEditorComponent implements OnChanges {
     return result;
   }
 
-  public addFile(file: File): void {
-    this.addedLogoFile = file;
-    this.controls.logo.setValue(file.name);
-    this.controls.logo.markAsDirty();
+  // ** Logo file **
+  public addLogoFile(file: File): void {
+    this.logoFile = file;
   }
-
-  public readFile(buffFile: string[]): void {
-    if (buffFile.length > 0) {
-      this.addedLogoView = buffFile[1];
-      this.changeDetectorRef.markForCheck();
-    }
-  }
-
-  public deleteFileLogo(): void {
-    this.addedLogoFile = (!!this.origLogo ? null : undefined);
-    this.addedLogoView = '';
-    this.controls.logo.setValue(null);
-    if (!!this.origLogo) {
+  public deleteLogoFile(): void {
+    this.logoFile = (!!this.initIsLogo ? null : undefined);
+    if (!!this.initIsLogo) {
       this.controls.logo.markAsDirty();
     } else {
       this.controls.logo.markAsPristine();
@@ -158,37 +149,40 @@ export class PanelStreamEditorComponent implements OnChanges {
     this.cancelStream.emit();
   }
 
-  public saveStreamCard(): void {
+  public saveStream(formGroup: FormGroup): void {
+    const cntlTitle = formGroup.get('title');
+    const cntlDescript = formGroup.get('descript');
+    const cntlTags = formGroup.get('tags');
+    const cntlIsStartTime = formGroup.get('isStartTime');
+    const cntlStartDate = formGroup.get('startDate');
+    const cntlStartTime = formGroup.get('startTime');
+    if (formGroup.pristine || formGroup.invalid || !cntlTitle || !cntlDescript || !cntlTags || !cntlIsStartTime
+        || !cntlStartDate || !cntlStartTime) {
+      return;
+    }
+
+    const title: string = cntlTitle.value || '';
+    const descript: string = cntlDescript.value || '';
     let starttime: StringDateTime | undefined;
-    const isStartTime: boolean = !!this.controls.isStartTime.value;
-    if (isStartTime) {
+    if (!!cntlIsStartTime.value) {
       const startDateTime = this.getStartDateTime(this.controls.startDate.value, this.controls.startTime.value);
       starttime = !!startDateTime ? startDateTime.toISOString() : undefined;
     }
-    const title: string | undefined = this.controls.title.value || undefined;
-    const descript: string | undefined = this.controls.descript.value || undefined;
-    const tags = (this.controls.tags.value || []);
+    const tags: string[] = cntlTags.value || [];
 
-    const updateStreamFileDto: UpdateStreamFileDto = {};
+    const updateStreamFileDto: UpdateStreamFileDto = {
+      id: (this.isCreate ? undefined : this.streamDto.id),
+      title: (this.isCreate ? title : (this.origStreamDto.title != title ? title : undefined)),
+      descript: (this.isCreate ? descript : (this.origStreamDto.descript != descript ? descript : undefined)),
+      starttime: (this.isCreate ? starttime : (this.origStreamDto.starttime != starttime ? starttime : undefined)),
+      tags: (this.isCreate ? tags : (this.origStreamDto.tags.join(',') != tags.join(',') ? tags : undefined)),
+      logoFile: this.logoFile,
+    };
 
-    if (this.isCreate) { // Mode: "create"
-      updateStreamFileDto.createStreamDto = {
-        title: (title || ""),
-        descript,
-        starttime,
-        tags,
-      };
-    } else { // Mode: "update"
-      updateStreamFileDto.id = this.streamDto.id;
-      updateStreamFileDto.modifyStreamDto = {
-        title: (this.controls.title.dirty ? (title || "") : undefined),
-        descript: (this.controls.descript.dirty ? (descript || "") : undefined),
-        starttime: (this.controls.startDate.dirty || this.controls.startTime.dirty ? starttime : undefined),
-        tags: (this.controls.tags.dirty ? tags : undefined),
-      }
+    const is_all_empty = Object.values(updateStreamFileDto).findIndex((value) => value !== undefined) == -1;
+    if (!is_all_empty) {
+      this.updateStream.emit(updateStreamFileDto);
     }
-    updateStreamFileDto.logoFile = this.addedLogoFile;
-    this.updateStream.emit(updateStreamFileDto);
   }
 
   public doCopyToClipboard(value: string): void {
@@ -226,9 +220,10 @@ export class PanelStreamEditorComponent implements OnChanges {
     });
     this.linkForVisitors = this.streamService.getLinkForVisitors(streamDto.id, true);
     this.changeIsStartTime();
-    this.addedLogoView = streamDto.logo || '';
-    this.origLogo = streamDto.logo;
-    this.addedLogoFile = undefined;
+
+    this.logoFile = undefined;
+    this.initIsLogo = !!streamDto.logo;
+
     this.isCreate = (streamDto.id < 0);
   }
   // '10:12'
