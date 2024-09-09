@@ -20,6 +20,7 @@ import { DialogService } from 'src/app/lib-dialog/dialog.service';
 
 import { ProfileService } from '../profile.service';
 import { NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, UniquenessDto, UpdateProfileFile } from '../profile-api.interface';
+import { ProfileConfigDto } from '../profile-config.interface';
 
 export const PPI_DEBOUNCE_DELAY = 900;
 
@@ -28,7 +29,7 @@ export const PPI_DEBOUNCE_DELAY = 900;
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, TranslateModule, FieldNicknameComponent,
     FieldEmailComponent, FieldPasswordComponent, FieldDescriptComponent, FieldFileUploadComponent, FieldImageAndUploadComponent,
-     UniquenessCheckComponent],
+    UniquenessCheckComponent],
   templateUrl: './panel-profile-info.component.html',
   styleUrls: ['./panel-profile-info.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -37,6 +38,8 @@ export const PPI_DEBOUNCE_DELAY = 900;
 export class PanelProfileInfoComponent implements OnInit, OnChanges {
   @Input()
   public profileDto: ProfileDto | null = null;
+  @Input()
+  public profileConfigDto: ProfileConfigDto | null = null;
   @Input()
   public isDisabledSubmit: boolean = false;
   @Input()
@@ -80,13 +83,12 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   public isRequiredPassword: boolean = false;
 
   public debounceDelay: number = PPI_DEBOUNCE_DELAY;
-  // Avatar Image Options
+  // FieldImageAndUpload parameters
+  public acceptList = IMAGE_VALID_FILE_TYPES;
   public maxSize = MAX_FILE_SIZE;
-  public validTypes = IMAGE_VALID_FILE_TYPES;
+  // FieldImageAndUpload FormControl
   public avatarFile: File | null | undefined;
   public initIsAvatar: boolean = false; // original has an avatar.
-  public avatarView: string = '';
-  public isAvatarOrig: boolean = false; // original has an avatar.
   
   private origProfileDto: ProfileDto = ProfileDtoUtil.create();
 
@@ -106,10 +108,13 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['profileDto']) {
-      this.prepareForm1GroupByUserDto(this.profileDto);
+      this.prepareFormGroupByProfileDto(this.profileDto);
       this.cntlsPassword.password.setValue(null);
       this.cntlsPassword.new_password.setValue(null);
       this.isRequiredPassword = false;
+    }
+    if (!!changes['profileConfigDto']) {
+      this.prepareFormGroupByProfileConfigDto(this.profileConfigDto);
     }
     if (!!changes['isDisabledSubmit']) {
       if (this.isDisabledSubmit != this.formGroupProfile.disabled) {
@@ -175,7 +180,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
       // theme?: string | undefined; // Default color theme. ["light","dark"]
       avatarFile: this.avatarFile,
     };
-    let is_all_empty = Object.values(updateProfileFileDto).findIndex((value) => value != undefined) == -1;
+    const is_all_empty = Object.values(updateProfileFileDto).findIndex((value) => value !== undefined) == -1;
     if (!is_all_empty) {
       this.updateProfile.emit(updateProfileFileDto);
     }
@@ -254,7 +259,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
 
   // ** Private API **
 
-  private prepareForm1GroupByUserDto(profileDto: ProfileDto | null): void {
+  private prepareFormGroupByProfileDto(profileDto: ProfileDto | null): void {
     if (!profileDto) {
       return;
     }
@@ -268,8 +273,12 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
       avatar: profileDto.avatar,
     });
     this.avatarFile = undefined;
-    this.initIsAvatar = !!this.cntlsProfile.avatar.value;
-     this.avatarView = profileDto.avatar || '';
-     this.isAvatarOrig = !!this.avatarView;
+    this.initIsAvatar = !!profileDto.avatar;
+  }
+
+  private prepareFormGroupByProfileConfigDto(profileConfigDto: ProfileConfigDto | null): void {
+    // Set FieldImageAndUpload parameters
+    this.maxSize = profileConfigDto?.avatarMaxSize || MAX_FILE_SIZE;
+    this.acceptList = (profileConfigDto?.avatarValidTypes || []).join(',');
   }
 }

@@ -7,8 +7,8 @@
 
       <app-field-image-and-upload mr-tp-1 class="ppi-avatar"
         formControlName="avatar"
+        [acceptList]="acceptList"
         [maxSize]="maxSize"
-        [validTypes]="validTypes"
         (addFile)="addAvatarFile($event)"
         (deleteFile)="deleteAvatarFile()">
       </app-field-image-and-upload>
