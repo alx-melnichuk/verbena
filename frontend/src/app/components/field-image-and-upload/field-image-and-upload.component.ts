@@ -24,13 +24,13 @@ import {
 })
 export class FieldImageAndUploadComponent implements OnChanges, ControlValueAccessor, Validator {
   @Input()
+  public acceptList: string | null | undefined;
+  @Input()
   public isDisabled: boolean = false;
   @Input()
   public isReadonly: boolean = false;
   @Input()
   public maxSize = -1;
-  @Input()
-  public validTypes = '';
   
   @Output()
   readonly addFile: EventEmitter<File> = new EventEmitter();

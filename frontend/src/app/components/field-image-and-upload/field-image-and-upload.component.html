@@ -2,10 +2,10 @@
   <input type="text" formControlName="image" />
   <ng-container *ngIf="!imageView; else templateImage">
     <app-field-file-upload class="fiau-file-upload"
+      [acceptList]="acceptList"
       [isDisabled]="isDisabledVal"
       [isReadonly]="isReadonly"
       [maxFileSize]="maxSize"
-      [validFileTypes]="validTypes"
       (addFile)="addImage($event)"
       (readFile)="readImage($event)">
     </app-field-file-upload>
