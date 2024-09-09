@@ -1,5 +1,12 @@
 /*# sourceURL=field-file-upload.component.scss */
 
+.dark-theme app-field-file-upload {
+  ---ffu-text-cl: hsl(210, 8%, 60%); // black350
+}
+.light-theme app-field-file-upload {
+  ---ffu-text-cl: hsl(210, 8%, 45%); // black500
+}
+  
 app-field-file-upload {
   align-items: center;
   border-radius: 0.286em;
@@ -50,7 +57,12 @@ app-field-file-upload {
     height: 33px;
     display: inline-block;
     background: transparent none no-repeat center center;
-    background-image: url('../../../assets/icons/upload-file.svg');
+    background-image: url('/assets/icons/upload-file.svg');
   }
-    
+  .ffu-label {
+    margin-left: 0.5em;
+  }
+  .ffu-text {
+    color: var(--ffu-text-cl, var(---ffu-text-cl));
+  }
 }

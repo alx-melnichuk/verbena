@@ -153,10 +153,11 @@
     "label": "Description"
   },
   "field-file-upload": {
-    "drag_and_drop_file_or": "Drag and drop file here or",
-    "browse_for_file": "Browse for file",
-    "upload_images_use_valid_types": "Please upload images and use {{validTypes}} file formats.",
-    "file_size_must_not_exceed_max": "The file size must not exceed the maximum {{maxFileSize}}."
+    "drag_or_choose_file": "Drag and drop file here or choose file",
+    "label_max_file_size": "Maximum file size: {{maxFileSize}}.",
+    "label_accepted_file_types": "Accepted file types: {{validTypes}}",
+    "err_upload_images_use_valid_types": "Please upload images with valid format: {{validTypes}}.",
+    "err_file_size_must_not_exceed_max": "The file size must not exceed the maximum {{maxFileSize}}."
   },
   "field-time": {
     "label": "Time "

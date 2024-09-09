@@ -1,10 +1,11 @@
 import {
-  ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, Output, ViewEncapsulation
+  ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { FieldDragAndDropDirective } from 'src/app/directives/field-drag-and-drop.directive';
+import { ValidFileTypesUtil } from 'src/app/utils/valid_file_types.util';
 
 let idx = 0;
 
@@ -18,7 +19,9 @@ let idx = 0;
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class FieldFileUploadComponent {
+export class FieldFileUploadComponent implements OnChanges {
+  @Input()
+  public acceptList: string | null | undefined;
   @Input()
   public isDisabled: boolean = false;
   @Input()
@@ -26,9 +29,7 @@ export class FieldFileUploadComponent {
   @Input()
   public isMultiple = false;
   @Input()
-  public maxFileSize = -1;
-  @Input()
-  public validFileTypes = '';
+  public maxFileSize: number = -1;
 
   @Output()
   readonly addFile: EventEmitter<File> = new EventEmitter();
@@ -46,8 +47,19 @@ export class FieldFileUploadComponent {
 
   public files: File[] = [];
   public id = 'fileDropId_' + (++idx);
+  public textAcceptList: string | undefined;
+  public textMaxFileSize: string | undefined;
 
   constructor(private translate: TranslateService) {
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!!changes['acceptList']) {
+      this.textAcceptList = this.prepareAcceptList(this.acceptList);
+    }
+    if (!!changes['maxFileSize']) {
+      this.textMaxFileSize = this.prepareMaxFileSize(this.maxFileSize);
+    }
   }
 
   // ** Public API **
@@ -55,13 +67,13 @@ export class FieldFileUploadComponent {
   // on file drop handler
   public doFileDropped(event: FileList): void {
     if (!this.isDisabled && !this.isReadonly) {
-      this.prepareFilesList(event);
+      this.prepareFilesList(event, this.acceptList, this.maxFileSize);
     }
   }
   // handle file from browsing
   public fileBrowseHandler(target: any): void {
     if (!this.isDisabled && !this.isReadonly) {
-      this.prepareFilesList(target.files);
+      this.prepareFilesList(target.files, this.acceptList, this.maxFileSize);
     }
   }
   // Delete file from files list
@@ -69,10 +81,10 @@ export class FieldFileUploadComponent {
     this.files.splice(index, 1);
   }
   // Convert Files list to normal array list
-  public prepareFilesList(files: FileList): void {
+  public prepareFilesList(files: FileList, acceptList: string | null | undefined, maxFileSize: number): void {
     for (let idx = 0, len = files.length; idx < len; idx++) {
       const itemFile: File = files[idx];
-      if (this.checkFile(itemFile, this.validFileTypes, this.maxFileSize)) {
+      if (this.checkFile(itemFile, acceptList || '', maxFileSize)) {
         this.files.push(itemFile);
         this.addFile.emit(itemFile);
         this.readDataFile(itemFile);
@@ -101,18 +113,35 @@ export class FieldFileUploadComponent {
     };
     reader.readAsDataURL(file); // convert to base64 string and render as a preview
   }
-  private checkFile(file: File, validFileTypes: string, maxFileSize: number): boolean {
+  private checkFile(file: File, acceptList: string, maxFileSize: number): boolean {
     let result = false;
-    const types = validFileTypes.split(','); // ['png', 'jpg', 'jpeg', 'gif'];
+    const types = acceptList.split(','); // ['png', 'jpg', 'jpeg', 'gif'];
     const isExist = types.some((item) => file.type.includes(item));
     if (!!types && !isExist) {
-      const msg = this.translate.instant('field-file-upload.upload_images_use_valid_types', { 'validTypes': types });
+      const validTypes = ValidFileTypesUtil.get(acceptList);
+      const msg = this.translate.instant('field-file-upload.err_upload_images_use_valid_types', { 'validTypes': validTypes });
       alert(msg);
     } else if (maxFileSize > 0 && file.size > maxFileSize) {
-      const msg = this.translate.instant('field-file-upload.file_size_must_not_exceed_max', { 'maxFileSize': maxFileSize });
+      const msg = this.translate.instant('field-file-upload.err_file_size_must_not_exceed_max', { 'maxFileSize': maxFileSize });
       alert(msg);
     } else {
       result = true;
+    }
+    return result;
+  }
+  private prepareMaxFileSize(maxFileSize: number | null | undefined): string {
+    let result: string = '';
+    if (maxFileSize != null && maxFileSize > 0) {
+      const maxSizeStr = this.formatBytes(maxFileSize, 1);
+      result = this.translate.instant('field-file-upload.label_max_file_size', { 'maxFileSize': maxSizeStr });
+    }
+    return result;
+  }
+  private prepareAcceptList(acceptList: string | null | undefined): string {
+    let result: string = '';
+    const validTypes = ValidFileTypesUtil.get(acceptList);
+    if (validTypes.length > 0) {
+      result = this.translate.instant('field-file-upload.label_accepted_file_types', { 'validTypes': validTypes });
     }
     return result;
   }
