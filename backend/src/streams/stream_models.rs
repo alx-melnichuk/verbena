@@ -52,6 +52,7 @@ pub const MSG_NO_REQUIRED_FIELDS: &str = "Nothing to update! One of the required
 
 // MIN=2, MAX=255
 pub fn validate_title(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::required(value, MSG_TITLE_REQUIRED)?;
     ValidationChecks::min_length(value, TITLE_MIN.into(), MSG_TITLE_MIN_LENGTH)?;
     ValidationChecks::max_length(value, TITLE_MAX.into(), MSG_TITLE_MAX_LENGTH)?;
     Ok(())
@@ -321,7 +322,6 @@ impl Validator for CreateStreamInfoDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        errors.push(ValidationChecks::required(&self.title, MSG_TITLE_REQUIRED).err());
         errors.push(validate_title(&self.title).err());
 
         if let Some(value) = &self.descript {
