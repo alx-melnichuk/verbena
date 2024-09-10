@@ -1,0 +1,20 @@
+<ng-container [formGroup]="formGroup">
+  <mat-form-field
+    appearance="outline"
+    color="primary">
+    <mat-label>{{ label | translate }}</mat-label>
+    <input [type]="type || 'text'"
+      matInput
+      autocomplete="off"
+      autocapitalize="off"
+      formControlName="nickname"
+      [required]="isRequired"
+      [attr.maxlength]="maxLen > 0 ? maxLen + 1 : undefined"
+      [attr.spellcheck] ="!!isSpellcheck"
+      (input)="onChange(formControl.value)"
+    />
+    <mat-hint>{{ hint | translate }}</mat-hint>
+    <mat-error>{{ (errorMsg || getErrorMsg(formControl.errors)) | translate : formControl.errors }}</mat-error>
+  </mat-form-field>
+</ng-container>    
+
