@@ -6,6 +6,10 @@ app-field-title {
   &[wd100] {
     width: 100%;
   }
+  &[hg100] {
+    height: 100%;
+  }
+
   mat-form-field {
     max-width: inherit;
     width: inherit;
