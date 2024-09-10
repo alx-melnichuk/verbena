@@ -1,4 +1,4 @@
-use std::{borrow::Cow::Borrowed, ops::Deref, path};
+use std::{borrow::Cow, ops::Deref, path};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, post, put, web, HttpResponse};
@@ -199,11 +199,11 @@ impl CreateStreamForm {
                 &format!("{}; {}", MSG_INVALID_FIELD_TAG, "EOF while parsing a list at line 1 column 6")))),
         (status = 413, description = "Invalid image file size. `curl -i -X POST http://localhost:8080/api/streams
             -F 'title=title2'  -F 'tags=[\"tag1\"]' -F 'logofile=@image.jpg'`", body = AppError,
-            example = json!(AppError::content_large413(err::MSG_INVALID_FILE_SIZE).add_param(Borrowed("invalidFileSize"),
+            example = json!(AppError::content_large413(err::MSG_INVALID_FILE_SIZE).add_param(Cow::Borrowed("invalidFileSize"),
                 &json!({ "actualFileSize": 186, "maxFileSize": 160 })))),
         (status = 415, description = "Uploading a file with an invalid type `svg`. `curl -i -X POST http://localhost:8080/api/streams
             -F 'title=title3'  -F 'tags=[\"tag3\"]' -F 'logofile=@image.svg'`", body = AppError,
-            example = json!(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE).add_param(Borrowed("invalidFileType"),
+            example = json!(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE).add_param(Cow::Borrowed("invalidFileType"),
                 &json!({ "actualFileType": "image/svg+xml", "validFileType": "image/jpeg,image/png" })))),
         (status = 417, description = "Validation error. `curl -X POST http://localhost:8080/api/streams
             -F 'title=t' -F 'descript=d' -F 'starttime=2020-01-20T20:10:57.000Z' -F 'tags=[]'`", body = [AppError],
@@ -263,7 +263,7 @@ pub async fn post_stream(
             let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": logo_max_size });
             log::error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
             return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
-                .add_param(Borrowed("invalidFileSize"), &json));
+                .add_param(Cow::Borrowed("invalidFileSize"), &json));
         }
         // Checking the mime type file for valid mime types.
         #[rustfmt::skip]
@@ -273,7 +273,7 @@ pub async fn post_stream(
             let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
             log::error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
             return Err(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE) // 415
-                .add_param(Borrowed("invalidFileType"), &json));
+                .add_param(Cow::Borrowed("invalidFileType"), &json));
         }
         // Get the file stem and extension for the new file.
         #[rustfmt::skip]
@@ -437,11 +437,11 @@ impl ModifyStreamForm {
                 &format!("{}; {}", MSG_INVALID_FIELD_TAG, "EOF while parsing a list at line 1 column 6")))),
         (status = 413, description = "Invalid image file size. `curl -i -X PUT http://localhost:8080/api/streams/1
             -F 'title=title2'  -F 'tags=[\"tag1\"]' -F 'logofile=@image.jpg'`", body = AppError,
-            example = json!(AppError::content_large413(err::MSG_INVALID_FILE_SIZE).add_param(Borrowed("invalidFileSize"),
+            example = json!(AppError::content_large413(err::MSG_INVALID_FILE_SIZE).add_param(Cow::Borrowed("invalidFileSize"),
                 &json!({ "actualFileSize": 186, "maxFileSize": 160 })))),
         (status = 415, description = "Uploading a file with an invalid type `svg`. `curl -i -X PUT http://localhost:8080/api/streams/1
             -F 'title=title3'  -F 'tags=[\"tag3\"]' -F 'logofile=@image.svg'`", body = AppError,
-            example = json!(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE).add_param(Borrowed("invalidFileType"),
+            example = json!(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE).add_param(Cow::Borrowed("invalidFileType"),
                 &json!({ "actualFileType": "image/svg+xml", "validFileType": "image/jpeg,image/png" })))),
         (status = 416, description = "Error parsing input parameter. `curl -i -X PUT http://localhost:8080/api/streams/2a
                 -F 'title=title3'  -F 'tags=[\"tag3\"]'`", body = AppError,
@@ -538,7 +538,7 @@ pub async fn put_stream(
             let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": logo_max_size });
             log::error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
             return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
-                .add_param(Borrowed("invalidFileSize"), &json));
+                .add_param(Cow::Borrowed("invalidFileSize"), &json));
         }
 
         // Checking the mime type file for valid mime types.
@@ -549,7 +549,7 @@ pub async fn put_stream(
             let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
             log::error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
             return Err(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE) // 415
-                .add_param(Borrowed("invalidFileType"), &json));
+                .add_param(Cow::Borrowed("invalidFileType"), &json));
         }
 
         // Get the file stem and extension for the new file.
@@ -1621,7 +1621,7 @@ mod tests {
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
         assert_eq!(app_err.message, err::MSG_NO_FIELDS_TO_UPDATE);
-        let key = Borrowed(validators::NM_NO_FIELDS_TO_UPDATE);
+        let key = Cow::Borrowed(validators::NM_NO_FIELDS_TO_UPDATE);
         #[rustfmt::skip]
         let names1 = app_err.params.get(&key).unwrap().get("validNames").unwrap().as_str().unwrap();
         let names2 = [ModifyStreamInfoDto::valid_names(), vec!["logofile"]].concat().join(",");

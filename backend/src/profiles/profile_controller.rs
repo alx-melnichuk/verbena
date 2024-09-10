@@ -682,7 +682,7 @@ pub async fn delete_profile_current(
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use std::{borrow::Cow::Borrowed, fs, io::Write};
+    use std::{borrow::Cow, fs, io::Write};
 
     use actix_multipart_test::MultiPartFormDataBuilder;
     use actix_web::{
@@ -927,7 +927,7 @@ mod tests {
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
         assert_eq!(app_err.message, err::MSG_NO_FIELDS_TO_UPDATE);
-        let key = Borrowed(validators::NM_NO_FIELDS_TO_UPDATE);
+        let key = Cow::Borrowed(validators::NM_NO_FIELDS_TO_UPDATE);
         #[rustfmt::skip]
         let names1 = app_err.params.get(&key).unwrap().get("validNames").unwrap().as_str().unwrap();
         let names2 = [ModifyProfileDto::valid_names(), vec!["avatarfile"]].concat().join(",");

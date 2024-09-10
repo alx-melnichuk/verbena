@@ -1,4 +1,4 @@
-use std::{borrow::Cow::Borrowed, ops::Deref};
+use std::{borrow::Cow, ops::Deref};
 
 use actix_web::{get, web, HttpResponse};
 use chrono::{Duration, SecondsFormat::Millis};
@@ -413,10 +413,10 @@ pub async fn get_streams_events(
             example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED, 
                 MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, "curr_user_id: 1, user_id: 2")))),
         (status = 406, description = "The finish date is less than the start date.", body = AppError,
-            example = json!(AppError::not_acceptable406(MSG_FINISH_LESS_START).add_param(Borrowed("invalidPeriod"), &serde_json::json!(
+            example = json!(AppError::not_acceptable406(MSG_FINISH_LESS_START).add_param(Cow::Borrowed("invalidPeriod"), &serde_json::json!(
                 { "streamPeriodStart": "2030-03-02T08:00:00.000Z", "streamPeriodFinish": "2030-03-01T08:00:00.000Z" })))),
         (status = 413, description = "The finish date of the search period exceeds the limit.", body = AppError,
-            example = json!(AppError::content_large413(MSG_FINISH_EXCEEDS_LIMIT).add_param(Borrowed("periodTooLong"), &serde_json::json!(
+            example = json!(AppError::content_large413(MSG_FINISH_EXCEEDS_LIMIT).add_param(Cow::Borrowed("periodTooLong"), &serde_json::json!(
                 { "actualPeriodFinish": "2030-04-01T08:00:00.000Z", "maxPeriodFinish": "2030-03-10T08:00:00.000Z" 
                 , "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS })))),
         (status = 506, description = "Blocking error.", body = AppError, 
@@ -455,7 +455,7 @@ pub async fn get_streams_period(
             , "streamPeriodFinish": finish.to_rfc3339_opts(Millis, true) });
         log::error!("{}: {}: {}", err::CD_NOT_ACCEPTABLE, MSG_FINISH_LESS_START, json.to_string());
         return Err(AppError::not_acceptable406(MSG_FINISH_LESS_START) // 406
-            .add_param(Borrowed("invalidPeriod"), &json));
+            .add_param(Cow::Borrowed("invalidPeriod"), &json));
     }
     let max_finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
     if max_finish <= finish {
@@ -463,7 +463,7 @@ pub async fn get_streams_period(
             , "maxPeriodFinish": max_finish.to_rfc3339_opts(Millis, true), "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS });
         log::error!("{}: {}: {}", err::CD_CONTENT_TOO_LARGE, MSG_FINISH_EXCEEDS_LIMIT, json.to_string());
         return Err(AppError::content_large413(MSG_FINISH_EXCEEDS_LIMIT) // 413
-            .add_param(Borrowed("periodTooLong"), &json));
+            .add_param(Cow::Borrowed("periodTooLong"), &json));
     }
 
     let res_data = web::block(move || {
