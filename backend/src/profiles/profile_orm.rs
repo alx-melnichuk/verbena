@@ -196,6 +196,8 @@ pub mod tests {
 
     use super::*;
 
+    use crate::users::user_models::UserRole;
+
     pub const PROFILE_USER_ID: i32 = 1100;
 
     #[derive(Debug, Clone)]
