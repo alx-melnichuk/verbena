@@ -32,7 +32,10 @@ app-panel-stream-editor {
     ---pse-wd: 45em; //36em;
   }
 
-  [mr-tp-025] { margin-top: 0.25em; }
+  [mr-tp-0_25] { margin-top: 0.25em; }
+  [mr-tp-0_5] { margin-top: 0.5em; }
+  [mr-tp-1] { margin-top: 1em; }
+  [mr-tp-1_5] { margin-top: 1.5em; }
 
   box-sizing: border-box;
   display: flex;
@@ -40,6 +43,10 @@ app-panel-stream-editor {
   justify-content: center;
   overflow: auto;
   user-select: none;
+
+  .pse-err-pd.ng-invalid.ng-touched {
+    padding-bottom: 1em;
+  }
 
   .pse-panel {
     align-content: center;
@@ -63,7 +70,7 @@ app-panel-stream-editor {
     margin-top: var(---pse-pd);
     margin-left: calc(var(---pse-pd) / 2);
     margin-right: calc(var(---pse-pd) / 2);
-    padding: var(---pse-pd);
+    padding: var(---pse-pd) var(---pse-pd) calc(var(---pse-pd) / 2) var(---pse-pd);
     width: calc(var(---pse-wd) - var(---pse-pd));
   }
 
@@ -76,39 +83,29 @@ app-panel-stream-editor {
     font-style: normal;
     font-weight: 500;
     font-size: medium;
-    margin-bottom: 0.5em;
   }
   .pse-logo {
-    border-color: var(--pse-logo-brd-cl, var(--app-theme-input-border));
-    border-style: solid;
-    border-width: 1px;
-    border-radius: var(--pse-logo-brd-rd, 0.3em);    
-    box-sizing: border-box;
     height: 10em;
-    margin-bottom: 0.5em;
-    text-align: center;
-  }
-  .pse-logo-img {
-    height: inherit;
   }
 
   mat-hint {
     color: var(--black-500);
   }
 
-  .pse-start-date-time-label {
-    margin-bottom: 0.5em;
-  }
   .pse-toggle {
     margin-left: 2em;
   }
   .pse-start-date-time {
     display: flex;
-    width: 26em;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .pse-start-date {
+    margin-right: var(---pse-pd);
+    width: 18em;
   }
   .pse-start-time {
-    margin-left: 2em;
-    width: 16em;
+    width: 13em;
   }
 
   .pse-link-param {
@@ -118,7 +115,6 @@ app-panel-stream-editor {
     border-radius: var(--pse-logo-brd-rd, 0.3em);    
     box-sizing: border-box;
     display: flex;
-    margin-bottom: 1.5em;
     padding: 10px 13px 10px 13px;
     &>.icon { flex: 0 0 auto; }
     align-items: center;
@@ -161,6 +157,16 @@ app-panel-stream-editor {
     background: transparent none no-repeat center center;
     background-image: url('../../../assets/icons/save-file.svg');
     margin-right: 0.5em;
+  }
+
+  // ** Form **
+  .pse-form {
+    padding-bottom: calc(var(---pse-pd) / 2);
+  }
+
+  // ** Error **
+  .pse-err {
+    font-size: calc(1em - 1px);
   }
 }
 

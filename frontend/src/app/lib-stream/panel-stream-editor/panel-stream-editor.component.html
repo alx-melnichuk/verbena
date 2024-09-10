@@ -1,43 +1,37 @@
 <div class="pse-panel">
   <div class="pse-content">
 
-    <form [formGroup]="formGroup" novalidate>
+    <form [formGroup]="formGroup" class="pse-form" novalidate>
         
       <div class="pse-text">{{ 'stream_edit.caption' | translate }}</div>
 
-      <mat-form-field appearance="outline" color="primary" class="pse-title">
-        <mat-label>{{ 'stream_edit.title' | translate }}</mat-label>
-        <input matInput
-          type="text"
-          formControlName="title"
-          [required]="isCreate"
-          [attr.maxlength]="(maxLenTitle > 0 ? maxLenTitle + 1 : null)"
-          autocomplete="off"
-        />
-        <mat-error>{{ getErrorMsg(controls.title.errors, 'title') | translate : controls.title.errors }}</mat-error>
-      </mat-form-field>
+      <app-field-title wd100 mr-tp-0_5 class="pse-err-pd"
+        formControlName="title"
+        [isRequired]="false"
+        label="stream_edit.title"
+        (input)="updateErrMsgs();">
+      </app-field-title>
 
-      <app-field-descript wd100 mr-tp-025
+      <app-field-descript wd100 mr-tp-0_5 class="pse-err-pd"
         formControlName="descript"
         [isRequired]="false"
-        label="stream_edit.descript">
+        label="stream_edit.descript"
+        (input)="updateErrMsgs();">
       </app-field-descript>
 
       <div class="pse-text">{{ 'stream_edit.thumbnail' | translate }}</div>
 
-      <div class="pse-logo">
-        <app-field-image-and-upload class="pse-logo-img"
-          formControlName="logo"
-          [acceptList]="acceptList"
-          [maxSize]="maxSize"
-          (addFile)="addLogoFile($event)"
-          (deleteFile)="deleteLogoFile()">
-        </app-field-image-and-upload>
-      </div>
+      <app-field-image-and-upload class="pse-logo pse-err-pd"
+        formControlName="logo"
+        [acceptList]="acceptList"
+        [maxSize]="maxSize"
+        (addFile)="updateErrMsgs();addLogoFile($event);"
+        (deleteFile)="updateErrMsgs();deleteLogoFile();">
+      </app-field-image-and-upload>
 
-      <div class="pse-text">{{ 'stream_edit.tags' | translate }}</div>
+      <div mr-tp-0_5 class="pse-text">{{ 'stream_edit.tags' | translate }}</div>
 
-      <app-field-chip-grid wd100
+      <app-field-chip-grid wd100 mr-tp-0_5 class="pse-err-pd"
         formControlName="tags"
         [label]="'stream_edit.add_tags'"
         [isReadonly]="(controls.tags.value || '').length == tagMaxAmount ? true : null"
@@ -49,38 +43,40 @@
         [maxAmount]="tagMaxAmount"
         [separatorCodes]="separatorCodes"
         [hint]="'stream_edit.tags_hint'"
-      >
+        (input)="updateErrMsgs();"
+        (removedChip)="updateErrMsgs();">
       </app-field-chip-grid>
 
-      <div class="pse-start-date-time-label">
+      <div mr-tp-0_5>
         <span class="pse-text">{{ 'stream_edit.set_date_and_time_or_now' | translate }}</span>
         <mat-slide-toggle class="pse-toggle"
           color="primary"
           formControlName="isStartTime"
-          (change)="changeIsStartTime()">
+          (change)="updateErrMsgs();changeIsStartTime();">
         </mat-slide-toggle>
       </div>
 
-      <div class="pse-start-date-time">
-        <mat-form-field appearance="outline" color="primary">
-          <mat-label>{{ 'stream_edit.start_date' | translate }}</mat-label>
-          <input matInput formControlName="startDate"
-            [matDatepicker]="datepickerStartDate"
-          />
-          <mat-datepicker-toggle matSuffix [for]="datepickerStartDate"></mat-datepicker-toggle>
-          <mat-datepicker #datepickerStartDate></mat-datepicker>
-        </mat-form-field>
+      <div mr-tp-0_5 class="pse-start-date-time">
+        <app-field-date mr-tp-0_5 class="pse-start-date pse-err-pd"
+          formControlName="startDate"
+          [isRequired]="true"
+          [minDate]="minDate"
+          [maxDate]="maxDate"
+          (dateInput)="updateErrMsgs();"
+          (dateChange)="updateErrMsgs();">
+        </app-field-date>
 
-        <app-field-time class="pse-start-time"
+        <app-field-time mr-tp-0_5 class="pse-start-time pse-err-pd"
           formControlName="startTime"
-          [isRequired]="true">
+          [isRequired]="true"
+          (input)="updateErrMsgs();">
         </app-field-time>
       </div>
 
       <ng-container *ngIf="!isCreate">
-        <div class="pse-text">{{ 'stream_edit.link_for_visitors' | translate }}</div>
+        <div mr-tp-0_5 class="pse-text">{{ 'stream_edit.link_for_visitors' | translate }}</div>
 
-        <div class="pse-link-param">
+        <div mr-tp-0_5 class="pse-link-param">
           <div class="pse-ellipsis">
             <span>{{ linkForVisitors }}</span>
           </div>
@@ -92,19 +88,23 @@
         </div>
       </ng-container>
 
+      <div mr-tp-1_5 class="pse-actions">
+        <button mat-raised-button color="primary"
+          class="app-infix app-ordinary"
+          [disabled]="formGroup.pristine || formGroup.invalid"
+          (click)="saveStream(formGroup)">
+          <span class="pse-actions-label">
+            <i class="pse-save"></i>
+            {{ (isCreate ? 'stream_edit.go_public' : 'stream_edit.save') | translate }}
+          </span>
+        </button>
+      </div>
+
     </form>
 
-    <div class="pse-actions">
-      <button mat-raised-button color="primary"
-        class="app-infix app-ordinary"
-        [disabled]="formGroup.pristine || formGroup.invalid"
-        (click)="saveStream(formGroup)">
-        <span class="pse-actions-label">
-          <i class="pse-save"></i>
-          {{ (isCreate ? 'stream_edit.go_public' : 'stream_edit.save') | translate }}
-        </span>
-      </button>
-    </div>
+    <ng-container *ngFor="let errMsg of errMsgs">
+      <mat-error class="pse-err">{{ errMsg | translate }}</mat-error>
+    </ng-container>
 
   </div>
 </div>

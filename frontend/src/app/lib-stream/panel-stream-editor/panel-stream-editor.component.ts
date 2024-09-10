@@ -4,10 +4,9 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ENTER } from '@angular/cdk/keycodes';
-import { ReactiveFormsModule, FormControl, Validators, FormGroup, ValidationErrors, FormArray } from '@angular/forms';
+import { ReactiveFormsModule, FormControl, FormGroup  } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -16,10 +15,12 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { MAX_FILE_SIZE, IMAGE_VALID_FILE_TYPES } from 'src/app/common/constants';
 import { FieldChipGridComponent } from 'src/app/components/field-chip-grid/field-chip-grid.component';
+import { FieldDateComponent } from 'src/app/components/field-date/field-date.component';
 import { FieldDescriptComponent } from 'src/app/components/field-descript/field-descript.component';
 import { FieldFileUploadComponent } from 'src/app/components/field-file-upload/field-file-upload.component';
 import { FieldImageAndUploadComponent } from 'src/app/components/field-image-and-upload/field-image-and-upload.component';
 import { FieldTimeComponent } from 'src/app/components/field-time/field-time.component';
+import { FieldTitleComponent } from 'src/app/components/field-title/field-title.component';
 import { StringDateTime } from 'src/app/common/string-date-time';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { CopyToClipboardUtil } from 'src/app/utils/copy-to-clipboard.util';
@@ -33,9 +34,8 @@ import { StreamDto, StreamDtoUtil, UpdateStreamFileDto } from '../stream-api.int
   standalone: true,
   imports: [
     CommonModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule,  MatSlideToggleModule,
-    MatDatepickerModule, MatTooltipModule, TranslateModule, ReactiveFormsModule, FieldDescriptComponent, FieldChipGridComponent,
-    FieldImageAndUploadComponent,
-    FieldFileUploadComponent, FieldTimeComponent
+    MatTooltipModule, TranslateModule, ReactiveFormsModule, FieldDescriptComponent, FieldChipGridComponent,
+    FieldImageAndUploadComponent, FieldFileUploadComponent, FieldTimeComponent, FieldTitleComponent, FieldDateComponent,
   ],
   templateUrl: './panel-stream-editor.component.html',
   styleUrls: ['./panel-stream-editor.component.scss'],
@@ -47,6 +47,8 @@ export class PanelStreamEditorComponent implements OnChanges {
   public isDisabledSubmit = false;
   @Input()
   public streamDto: StreamDto = StreamDtoUtil.create();
+  @Input()
+  public errMsgs: string[] = [];
   
   @Output()
   readonly updateStream: EventEmitter<UpdateStreamFileDto> = new EventEmitter();
@@ -55,9 +57,6 @@ export class PanelStreamEditorComponent implements OnChanges {
   
   @HostBinding('class.global-scroll')
   public get isGlobalScroll(): boolean { return true; }
-
-  public minLenTitle = 2;
-  public maxLenTitle = 255;
 
   public minDate: Date = new Date(Date.now());
   public maxDate: Date = new Date(this.minDate.getFullYear(), this.minDate.getMonth() + 7, 0);
@@ -79,8 +78,7 @@ export class PanelStreamEditorComponent implements OnChanges {
   public isCreate = true;
   
   public controls = {
-    title: new FormControl(null,
-      [Validators.required, Validators.minLength(this.minLenTitle), Validators.maxLength(this.maxLenTitle)]),
+    title: new FormControl(null, []),      
     descript: new FormControl(null, []),
     logo: new FormControl('', []),
     tags: new FormControl([], []),
@@ -109,18 +107,6 @@ export class PanelStreamEditorComponent implements OnChanges {
   
   // ** Public API **
 
-  public getErrorMsg(errors: ValidationErrors | null, name: string): string {
-    let result: string = '';
-    const errorsProps: string[] = errors != null ? Object.keys(errors) : [];
-    for (let index = 0; index < errorsProps.length && !result; index++) {
-      const error: string = errorsProps[index];
-      result = !result && 'required' === error ? `Validation.${name}:required` : result;
-      result = !result && 'minlength' === error ? `Validation.${name}:min_length` : result;
-      result = !result && 'maxlength' === error ? `Validation.${name}:max_length` : result;
-    }
-    return result;
-  }
-
   // ** Logo file **
   public addLogoFile(file: File): void {
     this.logoFile = file;
@@ -147,6 +133,10 @@ export class PanelStreamEditorComponent implements OnChanges {
 
   public cancelStreamCard(): void {
     this.cancelStream.emit();
+  }
+
+  public updateErrMsgs(errMsgList: string[] = []): void {
+    this.errMsgs = errMsgList;
   }
 
   public saveStream(formGroup: FormGroup): void {
