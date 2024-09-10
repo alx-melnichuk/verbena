@@ -18,6 +18,7 @@
         [matChipInputFor]="chipGrid"
         [matChipInputSeparatorKeyCodes]="separatorCodes"
         (matChipInputTokenEnd)="chipAdd($event, formControl.value)"
+        (blur)="onTouched()"
       />
     </mat-chip-grid>
     <mat-hint>{{ hint | translate }}</mat-hint>

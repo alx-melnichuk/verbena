@@ -11,6 +11,7 @@
       [step]="step"
       autocomplete="off"
       (input)="onChange(formControl.value)"
+      (blur)="onTouched()"
     />
     <mat-hint>{{ hint | translate }}</mat-hint>
     <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>

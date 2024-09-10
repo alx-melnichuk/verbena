@@ -12,8 +12,9 @@
       [required]="isRequired"
       [attr.maxlength]="maxLen > 0 ? maxLen + 1 : undefined"
       [attr.spellcheck] ="!!isSpellcheck"
+      [rows]="numberRows"
       (input)="onChange(formControl.value)"
-      [rows]="numberRows">
+      (blur)="onTouched()">
     </textarea>
     <mat-hint>{{ hint | translate }}</mat-hint>
     <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>

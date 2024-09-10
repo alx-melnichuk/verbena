@@ -13,6 +13,7 @@
       [attr.maxlength]="maxLen > 0 ? maxLen + 1 : undefined"
       [attr.spellcheck] ="!!isSpellcheck"
       (input)="onChange(formControl.value)"
+      (blur)="onTouched()"
     />
     <mat-hint>{{ hint | translate }}</mat-hint>
     <mat-error>{{ (errorMsg || getErrorMsg(formControl.errors)) | translate : formControl.errors }}</mat-error>
