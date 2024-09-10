@@ -53,6 +53,10 @@ app-panel-profile-info {
   overflow: auto;
   user-select: none;
 
+  .ppi-err-pd.ng-invalid.ng-touched {
+    padding-bottom: 1em;
+  }
+
   .ppi-panel {
     align-content: center;
     align-items: center;
@@ -115,11 +119,13 @@ app-panel-profile-info {
     margin-right: 0.5em;
   }
 
+  // ** Form **
   .ppi-form {
     padding-bottom: calc(var(---ppi-pd) / 2);
   }
+
+  // ** Error **
   .ppi-err {
     font-size: calc(1em - 1px);
   }
-
 }

@@ -5,12 +5,12 @@
     
     <form [formGroup]="formGroupProfile" class="ppi-form" novalidate>
 
-      <app-field-image-and-upload mr-tp-1 class="ppi-avatar"
+      <app-field-image-and-upload mr-tp-0_5 class="ppi-avatar"
         formControlName="avatar"
         [acceptList]="acceptList"
         [maxSize]="maxSize"
-        (addFile)="addAvatarFile($event)"
-        (deleteFile)="deleteAvatarFile()">
+        (addFile)="updateErrMsgsProfile();addAvatarFile($event);"
+        (deleteFile)="updateErrMsgsProfile();deleteAvatarFile();">
       </app-field-image-and-upload>
 
       <app-uniqueness-check mr-tp-1
@@ -32,7 +32,7 @@
         #uniquenessCheckEmail="appUniquenessCheck"
         [debounceDelay]="debounceDelay"
         [checkUniquenessFn]="checkUniquenessEmail">
-        <app-field-email wd100 
+        <app-field-email wd100 class="ppi-err-pd"
           formControlName="email"
           [isRequired]="true"
           label="field-email.label"
@@ -42,10 +42,11 @@
         </app-field-email>
       </app-uniqueness-check>
         
-      <app-field-descript wd100 mr-tp-1_5
+      <app-field-descript wd100 mr-tp-0_5 class="ppi-err-pd"
         formControlName="descript"
         [isRequired]="false"
-        label="stream_edit.descript">
+        label="stream_edit.descript"
+        (input)="updateErrMsgsProfile();">
       </app-field-descript>
       
       <div class="ppi-actions">
@@ -59,6 +60,7 @@
           </span>
         </button>
       </div>
+
     </form>
 
     <ng-container *ngFor="let errMsg of errMsgsProfile">
