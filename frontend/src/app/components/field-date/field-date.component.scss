@@ -1,0 +1,21 @@
+/*# sourceURL=field-date.component.scss */
+
+app-field-date {
+  display: block;
+
+  &[wd100] {
+    width: 100%;
+  }
+  &[hg100] {
+    height: 100%;
+  }
+  
+  mat-form-field {
+    max-width: inherit;
+    width: inherit;
+  }
+  .mat-mdc-form-field-subscript-wrapper {
+    --mdc-typography-caption-line-height: 1.25;
+  }
+}
+  

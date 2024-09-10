@@ -1,0 +1,24 @@
+<ng-container [formGroup]="formGroup">
+  <mat-form-field
+    appearance="outline"
+    color="primary">
+    <mat-label>{{ label | translate }}</mat-label>
+    <input
+      matInput
+      formControlName="date"
+      [matDatepicker]="datepickerItem"
+      [required]="isRequired"
+      [max]="maxDate"
+      [min]="minDate"
+      autocomplete="off"
+      (input)="onChange(formControl.value)"
+      (dateInput)="doDateInput($event)"
+      (dateChange)="doDateChange($event)"
+      (blur)="onTouched()"
+    />
+    <mat-datepicker-toggle matSuffix [for]="datepickerItem"></mat-datepicker-toggle>
+    <mat-datepicker #datepickerItem></mat-datepicker>
+    <mat-hint>{{ hint | translate }}</mat-hint>
+    <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
+  </mat-form-field>
+</ng-container>
