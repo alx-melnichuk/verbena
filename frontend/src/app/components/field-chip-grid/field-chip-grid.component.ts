@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewChild, ViewEncapsulation, forwardRef
+  ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation, forwardRef
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -50,6 +50,9 @@ export class FieldChipGridComponent implements OnChanges, ControlValueAccessor, 
   @Input()
   public separatorCodes: readonly number[] | ReadonlySet<number> = [ENTER];
   
+  @Output()
+  readonly removedChip: EventEmitter<string> = new EventEmitter();
+
   @ViewChild('chipInput', { read: HTMLInputElement, static: false }) 
   public chipInputElem: HTMLInputElement | undefined;
 
@@ -125,8 +128,11 @@ export class FieldChipGridComponent implements OnChanges, ControlValueAccessor, 
     const chipValueList: string[] = (chipValues || []).concat();
     const index = chipValueList.indexOf(chipValue);
     if (index >= 0) {
-      chipValueList.splice(index, 1);
+      const chipValue = chipValueList.splice(index, 1)[0];
       this.updateValueAndValidity(chipValueList);
+      if (!!this.isRemovable) {
+        this.removedChip.emit(chipValue)
+      }
     }
   }
 
