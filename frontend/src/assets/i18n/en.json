@@ -104,6 +104,10 @@
     "tag:max_amount" : "The number of \"tag\" elements ({{ maxAmount.actualAmount }}) is greater than the maximum value ({{ maxAmount.requiredAmount }}).",
     "tag:min_length" : "The \"tag\" must have at least {{ minlength.requiredLength }} characters ({{ minlength.actualValue }}).",
     "tag:max_length" : "The \"tag\" must have no more {{ maxlength.requiredLength }} characters ({{ maxlength.actualValue }}).",
+    "date:required": "The \"date\" field is required.",
+    "date:invalid_format": "Invalid date format.",
+    "date:minDate": "The \"date\" \"{{matDatepickerMin.actual_s}}\" is less than the minimum value \"{{matDatepickerMin.min_s}}\".",
+    "date:maxDate": "The \"date\" \"{{matDatepickerMax.actual_s}}\" is greater than the maximum value \"{{matDatepickerMax.max_s}}\".",
     "time:required": "The \"time\" field is required.",
     "time:min": "The \"time\" must be more {{ min.requiredMin }}.",
     "time:max": "The \"time\" must be less {{ max.requiredMax }}.",
@@ -136,10 +140,27 @@
     "error_convert_file" : "Error while converting file.",
     "error_sending_email" : "Error when sending email."
   },
+  "field-chip-grid": {
+    "label": "Add value",
+    "hint": "separator: Enter and space"
+  },
+  "field-date": {
+    "label": "Date "
+  },
+  "field-descript": {
+    "label": "Description"
+  },
   "field-email": {
     "err_minlength_symbol_search": "The symbol search should have {{value}} characters or more.",
     "err_maxlength_symbol_search": "The symbol search should be less than {{value}} characters.",
     "label": "Email "
+  },
+  "field-file-upload": {
+    "drag_or_choose_file": "Drag and drop file here or choose file",
+    "label_max_file_size": "Maximum file size: {{maxFileSize}}.",
+    "label_accepted_file_types": "Accepted file types: {{validTypes}}",
+    "err_upload_images_use_valid_types": "Please upload images with valid format: {{validTypes}}.",
+    "err_file_size_must_not_exceed_max": "The file size must not exceed the maximum {{maxFileSize}}."
   },
   "field-nickname": {
     "label": "Nickname ",
@@ -149,22 +170,11 @@
     "label": "Password ",
     "password_hint": "Use at least 6 characters, with one lowercase letter, one uppercase letter and a number."
   },
-  "field-descript": {
-    "label": "Description"
-  },
-  "field-file-upload": {
-    "drag_or_choose_file": "Drag and drop file here or choose file",
-    "label_max_file_size": "Maximum file size: {{maxFileSize}}.",
-    "label_accepted_file_types": "Accepted file types: {{validTypes}}",
-    "err_upload_images_use_valid_types": "Please upload images with valid format: {{validTypes}}.",
-    "err_file_size_must_not_exceed_max": "The file size must not exceed the maximum {{maxFileSize}}."
-  },
   "field-time": {
     "label": "Time "
   },
-  "field-chip-grid": {
-    "label": "Add value",
-    "hint": "separator: Enter and space"
+  "field-title": {
+    "label": "Title "
   },
   "login": {
     "title": "Log in",
