@@ -126,7 +126,7 @@ pub fn validate_theme(value: &str) -> Result<(), ValidationError> {
 pub fn validate_role(value: &str) -> Result<(), ValidationError> {
     let res_user_role = UserRole::try_from(value);
     if res_user_role.is_err() {
-        ValidationChecks::valid_value(value, vec![], MSG_USER_ROLE_INVALID_VALUE)?;
+        ValidationChecks::valid_value(value, &[], MSG_USER_ROLE_INVALID_VALUE)?;
     }
     Ok(())
 }
