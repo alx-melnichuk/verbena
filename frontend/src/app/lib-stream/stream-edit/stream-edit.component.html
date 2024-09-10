@@ -2,6 +2,7 @@
 </app-spinner>
 <app-panel-stream-editor
   [streamDto]="streamDto"
+  [errMsgs]="errMsgs"
   (updateStream)="doUpdateStream($event)"
   (cancelStream)="doCancelStream()"
 ></app-panel-stream-editor>

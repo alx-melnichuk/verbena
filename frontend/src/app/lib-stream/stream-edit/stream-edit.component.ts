@@ -24,6 +24,7 @@ import { StreamDto, UpdateStreamFileDto } from '../stream-api.interface';
 export class StreamEditComponent {
   public isLoadDataStream = false;
   public streamDto: StreamDto;
+  public errMsgs: string[] = [];
   
   private goBackToRoute: string = ROUTE_STREAM_LIST;
 
@@ -75,7 +76,8 @@ export class StreamEditComponent {
       })
       .catch((error: HttpErrorResponse) => {
         const title = (isEdit ? 'stream_edit.error_editing_stream' : 'stream_edit.error_creating_stream');
-        this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], title);
+        this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], title); // # del:
+        this.errMsgs = HttpErrorUtil.getMsgs(error); 
         throw error;
       })
       .finally(() => {
