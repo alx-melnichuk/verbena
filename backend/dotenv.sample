@@ -119,7 +119,7 @@ PRFL_AVATAR_VALID_TYPES=image/jpeg,image/gif,image/png,image/bmp
 # Logo files will be converted to this MIME type.
 # Valid values: jpeg,gif,png,bmp
 PRFL_AVATAR_EXT=jpeg
-# Maximum width for a avatar file. (default 0)
-PRFL_AVATAR_MAX_WIDTH=128
-# Maximum height for a avatar file. (default 0)
-PRFL_AVATAR_MAX_HEIGHT=128
+# Maximum width (px) for a avatar file. (default 0) A 128px image can be enlarged 3 times (up to 384px).
+PRFL_AVATAR_MAX_WIDTH=200
+# Maximum height (px) for a avatar file. (default 0)
+PRFL_AVATAR_MAX_HEIGHT=200
