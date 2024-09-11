@@ -16,7 +16,12 @@ app-panel-profile-info {
     ---ppi-pd: 1em;
     ---ppi-wd: 39em;
   }
-  @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
+  @media screen and (dimensions.$tablet-768 < width <= dimensions.$FWVGA-854) {
+    ---ppi-crd-wd: 100vw;
+    ---ppi-pd: 1.25em;
+    ---ppi-wd: 43em;
+  }
+  @media screen and (dimensions.$FWVGA-854 < width <= dimensions.$laptop-1024) {
     ---ppi-crd-wd: 80vw;
     ---ppi-pd: 1.5em;
     ---ppi-wd: 49vw;
@@ -40,6 +45,8 @@ app-panel-profile-info {
     ---ppi-wd: 46em;
     ---ppi-fl-wr: wrap;
   }
+  
+  ---ppi-group-wd: calc(var(---ppi-wd) - 1.5 * var(---ppi-pd));
 
   [mr-tp-0_5] { margin-top: 0.5em; }
   [mr-tp-1] { margin-top: 1em; }
@@ -57,6 +64,13 @@ app-panel-profile-info {
     padding-bottom: 1em;
   }
 
+  .ppi-mr-bt {
+    margin-bottom: var(---ppi-pd);
+  }
+  .ppi-mr-hr {
+    margin-left: calc(var(---ppi-pd) / 2);
+    margin-right: calc(var(---ppi-pd) / 2);
+  }
   .ppi-panel {
     align-content: center;
     align-items: center;
@@ -65,6 +79,11 @@ app-panel-profile-info {
     flex-wrap: var(---ppi-fl-wr, nowrap);
     height: 100%;
     width: 100%;
+  }
+  .ppi-group {
+    display: flex;
+    flex-direction: column;
+    width: min(var(---ppi-group-wd), 100%);
   }
   .ppi-content {
     background-color:  var(--ppi-pn-bg,var(---ppi-pn-bg));
@@ -76,12 +95,8 @@ app-panel-profile-info {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    margin-bottom: var(---ppi-pd);
-    margin-top: var(---ppi-pd);
-    margin-left: calc(var(---ppi-pd) / 3);
-    margin-right: calc(var(---ppi-pd) / 3);
     padding: var(---ppi-pd) var(---ppi-pd) calc(var(---ppi-pd) / 2) var(---ppi-pd);
-    width: min(calc(var(---ppi-wd) - var(---ppi-pd)), 100%);
+    width: 100%;
   }
 
   .ppi-title {
@@ -91,7 +106,7 @@ app-panel-profile-info {
   }
 
   .ppi-avatar {
-    height: 10em;
+    --fiau-hg: calc(var(---ppi-avatar-mx-hg, 5em) * 2);
   }
 
   // ** Card Actions **

@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, 
+  ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, 
   SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -17,12 +17,15 @@ import { FieldNicknameComponent } from 'src/app/components/field-nickname/field-
 import { FieldPasswordComponent } from 'src/app/components/field-password/field-password.component';
 import { UniquenessCheckComponent } from 'src/app/components/uniqueness-check/uniqueness-check.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
+import { HtmlElemUtil } from 'src/app/utils/html-elem.util';
 
 import { ProfileService } from '../profile.service';
 import { NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, UniquenessDto, UpdateProfileFile } from '../profile-api.interface';
 import { ProfileConfigDto } from '../profile-config.interface';
 
 export const PPI_DEBOUNCE_DELAY = 900;
+export const PPI_AVATAR_MX_HG = '---ppi-avatar-mx-hg';
+export const PPI_AVATAR_MX_WD = '---ppi-avatar-mx-wd';
 
 @Component({
   selector: 'app-panel-profile-info',
@@ -93,6 +96,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   private origProfileDto: ProfileDto = ProfileDtoUtil.create();
 
   constructor(
+    public hostRef: ElementRef<HTMLElement>,
     private changeDetector: ChangeDetectorRef,
     private translate: TranslateService,
     private dialogService: DialogService,
@@ -115,6 +119,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     }
     if (!!changes['profileConfigDto']) {
       this.prepareFormGroupByProfileConfigDto(this.profileConfigDto);
+      this.settingProperties(this.hostRef, this.profileConfigDto);
     }
     if (!!changes['isDisabledSubmit']) {
       if (this.isDisabledSubmit != this.formGroupProfile.disabled) {
@@ -127,7 +132,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
       }
     }
   }
- 
+
   // ** Public API **
   
   // ** Section: Update profile (formGroupProfile) **
@@ -280,5 +285,14 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     // Set FieldImageAndUpload parameters
     this.maxSize = profileConfigDto?.avatarMaxSize || MAX_FILE_SIZE;
     this.acceptList = (profileConfigDto?.avatarValidTypes || []).join(',');
+  }
+  private settingProperties(elem: ElementRef<HTMLElement> | null, profileConfigDto: ProfileConfigDto | null): void {
+    const avatarMaxWidth = profileConfigDto?.avatarMaxWidth;
+    const maxWidth = (avatarMaxWidth && avatarMaxWidth > 0 ? avatarMaxWidth : undefined)
+    HtmlElemUtil.setProperty(elem, PPI_AVATAR_MX_WD, maxWidth?.toString().concat('px'));
+
+    const avatarMaxHeight = profileConfigDto?.avatarMaxHeight;
+    const maxHeight = (avatarMaxHeight && avatarMaxHeight > 0 ? avatarMaxHeight : undefined)
+    HtmlElemUtil.setProperty(elem, PPI_AVATAR_MX_HG, maxHeight?.toString().concat('px'));
   }
 }
