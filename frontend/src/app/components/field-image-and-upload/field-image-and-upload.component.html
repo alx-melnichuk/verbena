@@ -14,7 +14,7 @@
     <div [ngClass]="['fiau-image-box', (isDisabledVal || isReadonly ? 'is-disabled':''), (isReadonly ? 'is-non-event':'')]">
       <img class="fiau-image-img"
         [src]="imageView"
-        alt="image unavailable"
+        alt="image"
       />
       <button class="fiau-delete" *ngIf="!isDisabledVal && !isReadonly"
         (click)="deleteImage()">

@@ -1,15 +1,18 @@
 /*# sourceURL=field-image-and-upload.component.scss */
 
 app-field-image-and-upload {
+  align-items: center;
   border-color: var(--fiau-image-brd-cl, var(--app-theme-input-border));
   border-style: solid;
   border-width: 1px;
   border-radius: var(--fiau-image-brd-rd, 0.3em);
   box-sizing: border-box;
-  display: block;
-  min-height: 5em;
-  min-width: 5em;
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  height: var(--fiau-hg, unset);
+  min-height: var(--fiau-mn-hg, 8em);
+  min-width: var(--fiau-mn-wd, 8em);
+  width: var(--fiau-wd, unset);
 
   &[wd100] {
     width: 100%;
@@ -36,8 +39,10 @@ app-field-image-and-upload {
     }
   }
   .fiau-image-img {
-    height: 100%;
     border-radius: 0.5em;
+    height: 100%;
+    max-width: 100%;
+    object-fit: cover;
   }
   .fiau-delete {
     position: absolute;
