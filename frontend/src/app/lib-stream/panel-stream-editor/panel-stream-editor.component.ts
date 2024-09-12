@@ -62,7 +62,7 @@ export class PanelStreamEditorComponent implements OnChanges {
   public maxDate: Date = new Date(this.minDate.getFullYear(), this.minDate.getMonth() + 7, 0);
 
   // FieldImageAndUpload parameters
-  public acceptList = IMAGE_VALID_FILE_TYPES;
+  public accepts = IMAGE_VALID_FILE_TYPES;
   public maxSize = MAX_FILE_SIZE;
   // FieldImageAndUpload FormControl
   public logoFile: File | null | undefined;

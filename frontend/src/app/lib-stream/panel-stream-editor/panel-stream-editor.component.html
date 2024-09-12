@@ -23,7 +23,7 @@
 
       <app-field-image-and-upload class="pse-logo pse-err-pd"
         formControlName="logo"
-        [acceptList]="acceptList"
+        [accepts]="accepts"
         [maxSize]="maxSize"
         (addFile)="updateErrMsgs();addLogoFile($event);"
         (deleteFile)="updateErrMsgs();deleteLogoFile();">
