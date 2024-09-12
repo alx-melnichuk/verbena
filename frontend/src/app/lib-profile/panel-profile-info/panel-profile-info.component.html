@@ -10,7 +10,7 @@
         <div mr-tp-0_5 class="ppi-avatar">
           <app-field-image-and-upload
             formControlName="avatar"
-            [acceptList]="acceptList"
+            [accepts]="accepts"
             [maxSize]="maxSize"
             (addFile)="updateErrMsgsProfile();addAvatarFile($event);"
             (deleteFile)="updateErrMsgsProfile();deleteAvatarFile();">

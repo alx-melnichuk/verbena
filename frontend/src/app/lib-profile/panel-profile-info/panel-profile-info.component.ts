@@ -87,7 +87,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
 
   public debounceDelay: number = PPI_DEBOUNCE_DELAY;
   // FieldImageAndUpload parameters
-  public acceptList = IMAGE_VALID_FILE_TYPES;
+  public accepts = IMAGE_VALID_FILE_TYPES;
   public maxSize = MAX_FILE_SIZE;
   // FieldImageAndUpload FormControl
   public avatarFile: File | null | undefined;
@@ -284,7 +284,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   private prepareFormGroupByProfileConfigDto(profileConfigDto: ProfileConfigDto | null): void {
     // Set FieldImageAndUpload parameters
     this.maxSize = profileConfigDto?.avatarMaxSize || MAX_FILE_SIZE;
-    this.acceptList = (profileConfigDto?.avatarValidTypes || []).join(',');
+    this.accepts = (profileConfigDto?.avatarValidTypes || []).join(',');
   }
   private settingProperties(elem: ElementRef<HTMLElement> | null, profileConfigDto: ProfileConfigDto | null): void {
     const avatarMaxWidth = profileConfigDto?.avatarMaxWidth;
