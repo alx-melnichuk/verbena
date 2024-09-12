@@ -156,11 +156,11 @@
     "label": "Email "
   },
   "field-file-upload": {
-    "drag_or_choose_file": "Drag and drop file here or choose file",
-    "label_max_file_size": "Maximum file size: {{maxFileSize}}.",
-    "label_accepted_file_types": "Accepted file types: {{validTypes}}",
+    "drag_files_or_browse": "Drag files here or browse",
+    "supported_file_types": "Supported file types: {{validTypes}}",
+    "upload_up_to": "Upload up to {{maxFileSize}}",
     "err_upload_images_use_valid_types": "Please upload images with valid format: {{validTypes}}.",
-    "err_file_size_must_not_exceed_max": "The file size must not exceed the maximum {{maxFileSize}}."
+    "err_file_size_must_not_exceed_max": "The file size must not exceed the maximum {{maxFileSize}} B ({{maxFileSizeShort}})."
   },
   "field-nickname": {
     "label": "Nickname ",
