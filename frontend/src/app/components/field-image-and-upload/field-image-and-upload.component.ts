@@ -24,7 +24,8 @@ import {
 })
 export class FieldImageAndUploadComponent implements OnChanges, ControlValueAccessor, Validator {
   @Input()
-  public acceptList: string | null | undefined;
+  // ".doc,.docx,.xls,.xlsx"; ".bmp,.gif"; "image/png,image/jpeg"; "audio/*,video/*,image/*";
+  public accepts: string | null | undefined; // Define the file types (separated by commas) available for upload.
   @Input()
   public isDisabled: boolean = false;
   @Input()
