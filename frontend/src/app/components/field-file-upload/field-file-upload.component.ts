@@ -21,7 +21,8 @@ let idx = 0;
 })
 export class FieldFileUploadComponent implements OnChanges {
   @Input()
-  public acceptList: string | null | undefined;
+  // ".doc,.docx,.xls,.xlsx"; ".bmp,.gif"; "image/png,image/jpeg"; "audio/*,video/*,image/*";
+  public accepts: string | null | undefined; // Define the file types (separated by commas) available for upload.
   @Input()
   public isDisabled: boolean = false;
   @Input()
@@ -47,15 +48,15 @@ export class FieldFileUploadComponent implements OnChanges {
 
   public files: File[] = [];
   public id = 'fileDropId_' + (++idx);
-  public textAcceptList: string | undefined;
+  public textAccepts: string | undefined;
   public textMaxFileSize: string | undefined;
 
   constructor(private translate: TranslateService) {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!!changes['acceptList']) {
-      this.textAcceptList = this.prepareAcceptList(this.acceptList);
+    if (!!changes['accepts']) {
+      this.textAccepts = this.prepareAccepts(ValidFileTypesUtil.text(this.accepts).join(', ').toUpperCase());
     }
     if (!!changes['maxFileSize']) {
       this.textMaxFileSize = this.prepareMaxFileSize(this.maxFileSize);
@@ -64,32 +65,37 @@ export class FieldFileUploadComponent implements OnChanges {
 
   // ** Public API **
 
-  // on file drop handler
-  public doFileDropped(event: FileList): void {
-    if (!this.isDisabled && !this.isReadonly) {
-      this.prepareFilesList(event, this.acceptList, this.maxFileSize);
-    }
+  public getFileList(target: any): FileList {
+    return target.files;
   }
-  // handle file from browsing
-  public fileBrowseHandler(target: any): void {
-    if (!this.isDisabled && !this.isReadonly) {
-      this.prepareFilesList(target.files, this.acceptList, this.maxFileSize);
+  // on file drop handler => fileHandler($event, accepts, maxFileSize) 
+  // handle file from browsing => fileHandler(target.files, accepts, maxFileSize)
+  public fileHandler(files: FileList, accepts: string | null | undefined, maxFileSize: number): void {
+    const acceptsSort: string = ValidFileTypesUtil.sorting(accepts || '').join(',');
+    const maxFileSizeShort = this.formatBytes(maxFileSize, 1);
+
+    for (let idx = 0, len = files.length; idx < len; idx++) {
+      const file: File = files[idx];
+      let msg = '';
+      if (!msg && !ValidFileTypesUtil.checkFileByAccept(file.name, file.type, acceptsSort)) {
+        const validTypes = ValidFileTypesUtil.text(acceptsSort).join(', ').toUpperCase();
+        msg = this.translate.instant('field-file-upload.err_upload_images_use_valid_types', { 'validTypes': validTypes });
+      }
+      if (!msg && maxFileSize > 0 && file.size > maxFileSize) {
+        msg = this.translate.instant('field-file-upload.err_file_size_must_not_exceed_max', { maxFileSize, maxFileSizeShort });
+      }
+      if (!!msg) {
+        alert(msg);
+        continue;
+      }
+      this.files.push(file);
+      this.addFile.emit(file);
+      this.readDataFile(file);
     }
   }
   // Delete file from files list
   public deleteFile(index: number): void {
     this.files.splice(index, 1);
-  }
-  // Convert Files list to normal array list
-  public prepareFilesList(files: FileList, acceptList: string | null | undefined, maxFileSize: number): void {
-    for (let idx = 0, len = files.length; idx < len; idx++) {
-      const itemFile: File = files[idx];
-      if (this.checkFile(itemFile, acceptList || '', maxFileSize)) {
-        this.files.push(itemFile);
-        this.addFile.emit(itemFile);
-        this.readDataFile(itemFile);
-      }
-    }
   }
   // format bytes
   public formatBytes(bytes: number, decimals: number): string {
@@ -113,36 +119,15 @@ export class FieldFileUploadComponent implements OnChanges {
     };
     reader.readAsDataURL(file); // convert to base64 string and render as a preview
   }
-  private checkFile(file: File, acceptList: string, maxFileSize: number): boolean {
-    let result = false;
-    const types = acceptList.split(','); // ['png', 'jpg', 'jpeg', 'gif'];
-    const isExist = types.some((item) => file.type.includes(item));
-    if (!!types && !isExist) {
-      const validTypes = ValidFileTypesUtil.get(acceptList);
-      const msg = this.translate.instant('field-file-upload.err_upload_images_use_valid_types', { 'validTypes': validTypes });
-      alert(msg);
-    } else if (maxFileSize > 0 && file.size > maxFileSize) {
-      const msg = this.translate.instant('field-file-upload.err_file_size_must_not_exceed_max', { 'maxFileSize': maxFileSize });
-      alert(msg);
-    } else {
-      result = true;
-    }
-    return result;
-  }
   private prepareMaxFileSize(maxFileSize: number | null | undefined): string {
     let result: string = '';
     if (maxFileSize != null && maxFileSize > 0) {
       const maxSizeStr = this.formatBytes(maxFileSize, 1);
-      result = this.translate.instant('field-file-upload.label_max_file_size', { 'maxFileSize': maxSizeStr });
+      result = this.translate.instant('field-file-upload.upload_up_to', { 'maxFileSize': maxSizeStr });
     }
     return result;
   }
-  private prepareAcceptList(acceptList: string | null | undefined): string {
-    let result: string = '';
-    const validTypes = ValidFileTypesUtil.get(acceptList);
-    if (validTypes.length > 0) {
-      result = this.translate.instant('field-file-upload.label_accepted_file_types', { 'validTypes': validTypes });
-    }
-    return result;
+  private prepareAccepts(accepts: string): string {
+    return (accepts.length > 0 ? this.translate.instant('field-file-upload.supported_file_types', { 'validTypes': accepts }) : '');
   }
 }

@@ -14,6 +14,7 @@ app-field-file-upload {
   display: flex;
   justify-content: center;
 
+  // ** Root level styles (as additional input parameters). **
   &[wd100] {
     width: 100%;
   }
@@ -21,7 +22,7 @@ app-field-file-upload {
     height: 100%;
   }
   &[is-border] {
-    border: 1px solid var(--app-theme-input-border);
+    border: 1px solid var(--ffu-border-cl, var(--app-theme-input-border));
   }
   &.is-disabled {
     opacity: 0.6;
@@ -30,8 +31,14 @@ app-field-file-upload {
     pointer-events: none;
   }
 
-  label:not(.is-disabled) {
+  // ** **
+
+  label:not([is-disabled]) {
     cursor: pointer;
+    ---ffu-cl: var(--ffu-label-cl, var(--app-theme-primary));
+  }
+  .ffu-label {
+    color: var(---ffu-cl, var(--ffu-text-cl, var(---ffu-text-cl)));
   }
 
   mat-form-field {
@@ -42,13 +49,6 @@ app-field-file-upload {
   .ffu-container {
     align-items: center;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-
-    &>.ffu-upload-file { margin-top: 4%; }
-    &>label:not(.is-disabled) {
-      color: var(--app-theme-primary);
-    }
   }
   input[type='file'] {
     display: none;
@@ -57,15 +57,17 @@ app-field-file-upload {
     font-size: inherit;
     font-weight: 400;
   }
-  .ffu-upload-file {
-    width: 33px;
-    height: 33px;
-    display: inline-block;
+  .ffu-image {
     background: transparent none no-repeat center center;
     background-image: url('/assets/icons/upload-file.svg');
+    display: inline-block;
+    height: 33px;
+    padding: var(--ffu-image-pg, 0.5em);
+    width: 33px;
   }
-  .ffu-label {
-    margin-left: 0.5em;
+  .ffu-msg {
+    padding-left: var(--ffu-msg-pg-lf, 1.5em);
+    padding: var(--ffu-msg-pg, 0.5em);
   }
   .ffu-text {
     color: var(--ffu-text-cl, var(---ffu-text-cl));

@@ -1,17 +1,18 @@
 <div class="ffu-container"
   appFieldDragAndDrop
-  (fileDropped)="doFileDropped($event)">
+  (fileDropped)="fileHandler($event, accepts, maxFileSize)">
   <input type="file" #fileDropRef [attr.id]="id"
-    [attr.accept]="acceptList ? acceptList : undefined"
+    [attr.accept]="accepts || undefined"
     [attr.multiple]="isMultiple ? '': undefined"
     [attr.disabled]="isDisabled || isReadonly ? '': undefined"
     [attr.readonly]="isReadonly ? '': undefined"
-    (change)="fileBrowseHandler($event.target)"
+    (change)="fileHandler(getFileList($event.target), accepts, maxFileSize)"
   />
-  <div class="ffu-upload-file"></div>
-  <label [ngClass]="['ffu-label', (isDisabled || isReadonly ? 'is-disabled':'')]" [attr.for]="id">
-    {{ 'field-file-upload.drag_or_choose_file' | translate }}
+  <label [attr.for]="id" [attr.is-disabled]="isDisabled || isReadonly ? '': undefined" class="ffu-image">
   </label>
-  <span class="ffu-text">{{ textMaxFileSize }}</span>
-  <span class="ffu-text">{{ textAcceptList }}</span>
+  <label [attr.for]="id" [attr.is-disabled]="isDisabled || isReadonly ? '': undefined" class="ffu-msg">
+    <div class="ffu-label">{{ 'field-file-upload.drag_files_or_browse' | translate }}</div>
+    <div class="ffu-text">{{ textAccepts }}</div>
+    <div class="ffu-text">{{ textMaxFileSize }}</div>
+  </label>
 </div>
