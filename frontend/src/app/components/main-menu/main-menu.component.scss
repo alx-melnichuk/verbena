@@ -1,8 +1,14 @@
 /*# sourceURL=main-menu.component.scss */
 
 app-main-menu {
-  display: inline;
   --mdc-typography-button-letter-spacing: normal;
+  align-items: center;
+  display: flex;
+  height: 100%;
+
+  .mat-mdc-button {
+    padding-right: 0;
+  }
 }
 
 .cdk-overlay-container 
