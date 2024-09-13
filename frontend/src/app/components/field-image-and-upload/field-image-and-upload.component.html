@@ -1,18 +1,20 @@
 <ng-container [formGroup]="formGroup">
   <input type="text" formControlName="image" />
   <ng-container *ngIf="!imageView; else templateImage">
-    <app-field-file-upload class="fiau-file-upload"
-      [accepts]="accepts"
-      [isDisabled]="isDisabledVal"
-      [isReadonly]="isReadonly"
-      [maxFileSize]="maxSize"
-      (addFile)="addImage($event)"
-      (readFile)="readImage($event)">
-    </app-field-file-upload>
+    <div class="fiau-file-upload">
+      <app-field-file-upload hg100 wd100 is-border
+        [accepts]="accepts"
+        [isDisabled]="isDisabledVal"
+        [isReadonly]="isReadonly"
+        [maxFileSize]="maxSize"
+        (addFile)="addImage($event)"
+        (readFile)="readImage($event)">
+      </app-field-file-upload>
+    </div>
   </ng-container>
   <ng-template #templateImage>
-    <div [ngClass]="['fiau-image-box', (isDisabledVal || isReadonly ? 'is-disabled':''), (isReadonly ? 'is-non-event':'')]">
-      <img class="fiau-image-img"
+    <div [ngClass]="['fiau-image-wrap', (isDisabledVal || isReadonly ? 'is-disabled':''), (isReadonly ? 'is-non-event':'')]">
+      <img class="fiau-image"
         [src]="imageView"
         alt="image"
       />
