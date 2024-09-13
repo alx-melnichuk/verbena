@@ -8,8 +8,7 @@
     [attr.readonly]="isReadonly ? '': undefined"
     (change)="fileHandler(getFileList($event.target), accepts, maxFileSize)"
   />
-  <label [attr.for]="id" [attr.is-disabled]="isDisabled || isReadonly ? '': undefined" class="ffu-image">
-  </label>
+  <label [attr.for]="id" [attr.is-disabled]="isDisabled || isReadonly ? '': undefined" class="ffu-file-add-plus"></label>
   <label [attr.for]="id" [attr.is-disabled]="isDisabled || isReadonly ? '': undefined" class="ffu-msg">
     <div class="ffu-label">{{ 'field-file-upload.drag_files_or_browse' | translate }}</div>
     <div class="ffu-text">{{ textAccepts }}</div>
