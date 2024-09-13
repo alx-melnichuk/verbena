@@ -15,7 +15,7 @@ export class FieldDragAndDropDirective {
   @HostBinding('class.fileover')
   public fileOver = false;
 
-  // Dragover listener
+  // A dragged element is over the drop target.
   @HostListener('dragover', ['$event'])
   public onDragOver(evt: DragEvent): void {
     evt.preventDefault();
@@ -23,7 +23,7 @@ export class FieldDragAndDropDirective {
     this.fileOver = true;
   }
 
-  // Dragleave listener
+  // A dragged element leaves the drop target.
   @HostListener('dragleave', ['$event'])
   public onDragLeave(evt: DragEvent): void {
     evt.preventDefault();
@@ -31,9 +31,9 @@ export class FieldDragAndDropDirective {
     this.fileOver = false;
   }
 
-  // Drop listener
+  // A dragged element is dropped on the target.
   @HostListener('drop', ['$event'])
-  public ondrop(evt: DragEvent): void {
+  public onDrop(evt: DragEvent): void {
     evt.preventDefault();
     evt.stopPropagation();
     this.fileOver = false;
