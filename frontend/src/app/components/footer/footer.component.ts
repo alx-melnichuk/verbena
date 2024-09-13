@@ -4,7 +4,6 @@ import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { ROUTE_LOGIN } from 'src/app/common/routes';
-import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 
 @Component({
   selector: 'app-footer',
@@ -17,11 +16,11 @@ import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 })
 export class FooterComponent {
   @Input()
-  public profileDto: ProfileDto | null = null;
+  public isAuthorized: boolean | null | undefined;
   
-  @HostBinding('class.ft-is-profile')
-  get isProfileDto(): boolean {
-    return !!this.profileDto;
+  @HostBinding('class.ft-is-authorized')
+  get isAuthorizedVal(): boolean {
+    return !!this.isAuthorized;
   }
 
   linkLogin = ROUTE_LOGIN;

@@ -9,5 +9,5 @@
   <router-outlet></router-outlet>
 </main>
 <footer>
-  <app-footer [profileDto]="profileService.profileDto"></app-footer>
+  <app-footer [isAuthorized]="!!profileService.profileDto"></app-footer>
 </footer>
