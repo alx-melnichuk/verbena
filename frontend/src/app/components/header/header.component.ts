@@ -6,12 +6,12 @@ import {
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { MainMenuComponent } from '../main-menu/main-menu.component';
 import { InitializationService } from 'src/app/common/initialization.service';
 import { MainMenu, MainMenuUtil } from 'src/app/common/main-menu';
 import { ROUTE_LOGIN } from 'src/app/common/routes';
 import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 
+import { MainMenuComponent } from '../main-menu/main-menu.component';
 
 @Component({
   selector: 'app-header',
@@ -33,8 +33,8 @@ export class HeaderComponent implements OnChanges {
   public menuList: MainMenu[] = [];
   public linkLogin = ROUTE_LOGIN;
 
-  @HostBinding('class.hd-is-profile')
-  get isProfileDto(): boolean {
+  @HostBinding('class.hd-is-authorized')
+  get isAuthorizedVal(): boolean {
     return !!this.profileDto;
   }
 

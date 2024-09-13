@@ -5,12 +5,12 @@ app-header {
   justify-content: space-between;
   height: 100%;
   
-  &:not(.hd-is-profile) {
+  &:not(.hd-is-authorized) {
     ---hd-bg-h: var(--app-site-unauth-h);
     ---hd-bg-s: var(--app-site-unauth-s);
     ---hd-bg-l: var(--app-site-unauth-l);
   }
-  &.hd-is-profile {
+  &.hd-is-authorized {
     ---hd-bg-h: var(--app-site-auth-h);
     ---hd-bg-s: var(--app-site-auth-s);
     ---hd-bg-l: var(--app-site-auth-l);
@@ -80,23 +80,20 @@ app-header {
 
   }
   // "box-user"
-  .hd-profile {
+  .hd-profile-avatar {
     display: flex;
     align-items: center;
   }
-  .hd-user-image {
-    width: 45px;
-    height: 45px;
-    margin-left: 10px;
-    border-radius: 12px;
+  img.hd-avatar {
+    border-radius: var(--hd-image-brd-rd, 0.3em);
+    height: var(--header-hg, 100%);
+    margin-left: 0.75em;
   }
 
-  // -- --
   .hd-icon {
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
-    // &.hd-my-profile { width: 21px; height: 21px; }
-    // &.hd-create-stream { width: 24px; height: 24px; }
   }
+
 }

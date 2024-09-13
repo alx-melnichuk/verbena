@@ -31,15 +31,9 @@
       [isShowLogout]="true"
       (setDarkTheme)="setDarkTheme($event)"
       (logout)="doLogout()">
-      <div class="hd-profile">
+      <div class="hd-profile-avatar">
         <span>{{ profileDto.nickname }}</span>
-        <!-- <app-avatar class="hd-user-image"
-        [avatar]="sessionDTO.avatar"
-        [nickname]="sessionDTO.nickname">
-      </app-avatar> -->
-        <!-- <i class="hd-user-image hd-icon"
-          style="background-image: url('../../../assets/images/icon_man.png')">
-        </i> -->
+        <img class="hd-avatar" [src]="profileDto.avatar || '/assets/images/icon_man.png'" alt="image" />
       </div>
     </app-main-menu>
   </ng-container>
