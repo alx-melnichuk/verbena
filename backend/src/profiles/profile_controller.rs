@@ -49,7 +49,13 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             .service(delete_profile_current);
     }
 }
-
+fn remove_image_file(path_file_img: &str, alias_file_img: &str, img_file_dir: &str, err_msg: &str) {
+    // If the image file name starts with the specified alias, then delete the file.
+    if path_file_img.len() > 0 && (alias_file_img.len() == 0 || path_file_img.starts_with(alias_file_img)) {
+        let avatar_name_full_path = path_file_img.replace(alias_file_img, img_file_dir);
+        remove_file_and_log(&avatar_name_full_path, err_msg);
+    }
+}
 fn remove_file_and_log(file_name: &str, msg: &str) {
     if file_name.len() > 0 {
         let res_remove = std::fs::remove_file(file_name);
@@ -264,7 +270,6 @@ pub async fn put_profile(
     let mut avatar: Option<Option<String>> = None;
 
     let config_prfl = config_prfl.get_ref().clone();
-    let avatar_files_dir = config_prfl.prfl_avatar_files_dir.clone();
     let mut path_new_avatar_file = "".to_string();
 
     while let Some(temp_file) = avatar_file {
@@ -298,7 +303,7 @@ pub async fn put_profile(
         #[rustfmt::skip]
         let name = format!("{}.{}", get_file_name(curr_user_id, Utc::now()), file_mime_type.replace(&format!("{}/", IMAGE), ""));
         // Add 'file path' + 'file name'.'file extension'.
-        let path: path::PathBuf = [&avatar_files_dir, &name].iter().collect();
+        let path: path::PathBuf = [&config_prfl.prfl_avatar_files_dir, &name].iter().collect();
         let full_path_file = path.to_str().unwrap().to_string();
         // Persist the temporary file at the target path.
         // Note: if a file exists at the target path, persist will atomically replace it.
@@ -321,7 +326,7 @@ pub async fn put_profile(
             path_new_avatar_file = new_path_file;
         }
     
-        let alias_avatar_file = path_new_avatar_file.replace(&avatar_files_dir, ALIAS_AVATAR_FILES_DIR);
+        let alias_avatar_file = path_new_avatar_file.replace(&config_prfl.prfl_avatar_files_dir, ALIAS_AVATAR_FILES_DIR);
         avatar = Some(Some(alias_avatar_file));
 
         break;
@@ -329,23 +334,21 @@ pub async fn put_profile(
     let mut modify_profile: ModifyProfile = modify_profile_dto.into();
     modify_profile.avatar = avatar;
 
-    let res_data = web::block(move || {
-        let mut old_avatar_file = "".to_string();
+    let path_old_avatar_file = if modify_profile.avatar.is_some() { 
+        opt_curr_avatar.unwrap_or("".to_string())
+    } else {
+        "".to_string()
+    };
 
-        if modify_profile.avatar.is_some() {
-            // Get the current avatar file name for the profile.
-            if let Some(old_avatar) = opt_curr_avatar {
-                old_avatar_file = old_avatar.replace(ALIAS_AVATAR_FILES_DIR, &avatar_files_dir);
-            }
-        }
+    let res_profile = web::block(move || {
         // Modify an entity (profile).
-        let res_profile = profile_orm.modify_profile(curr_user_id, modify_profile)
+        let res_data_profile = profile_orm.modify_profile(curr_user_id, modify_profile)
         .map_err(|e| {
             log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
 
-        (old_avatar_file, res_profile)
+        res_data_profile
     })
     .await
     .map_err(|e| {
@@ -353,14 +356,12 @@ pub async fn put_profile(
         AppError::blocking506(&e.to_string())
     })?;
 
-    let (path_old_avatar_file, res_profile) = res_data;
-
     let mut opt_profile_dto: Option<ProfileDto> = None;
 
     if let Ok(Some(profile)) = res_profile {
         opt_profile_dto = Some( ProfileDto::from(profile) );
-
-        remove_file_and_log(&path_old_avatar_file, &"put_profile()");
+        // If the image file name starts with the specified alias, then delete the file.
+        remove_image_file(&path_old_avatar_file, ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"put_profile()");
     } else {
         remove_file_and_log(&path_new_avatar_file, &"put_profile()");
     }
@@ -586,15 +587,11 @@ pub async fn delete_profile(
     })??;
 
     if let Some(profile) = opt_profile {
+        let config_prfl = config_prfl.get_ref().clone();
         // Get the path to the "avatar" file.
-        let path_file_img: String = profile.avatar.clone().unwrap_or("".to_string());
-        if path_file_img.starts_with(ALIAS_AVATAR_FILES_DIR) {
-            // If there is a "avatar" file, then delete this file.
-            let config_prfl = config_prfl.get_ref().clone();
-            let avatar_files_dir = config_prfl.prfl_avatar_files_dir.clone();
-            let avatar_name_full_path = path_file_img.replace(ALIAS_AVATAR_FILES_DIR, &avatar_files_dir);
-            remove_file_and_log(&avatar_name_full_path, &"delete_profile()");
-        }
+        let path_file_img = profile.avatar.clone().unwrap_or("".to_string());
+        // If the image file name starts with the specified alias, then delete the file.
+        remove_image_file(&path_file_img, ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"delete_profile()");
         
         Ok(HttpResponse::Ok().json(ProfileDto::from(profile))) // 200
     } else {
@@ -664,15 +661,11 @@ pub async fn delete_profile_current(
     })??;
 
     if let Some(profile) = opt_profile {
+        let config_prfl = config_prfl.get_ref().clone();
         // Get the path to the "avatar" file.
-        let path_file_img: String = profile.avatar.clone().unwrap_or("".to_string());
-        if path_file_img.starts_with(ALIAS_AVATAR_FILES_DIR) {
-            // If there is a "avatar" file, then delete this file.
-            let config_prfl = config_prfl.get_ref().clone();
-            let avatar_files_dir = config_prfl.prfl_avatar_files_dir.clone();
-            let avatar_name_full_path = path_file_img.replace(ALIAS_AVATAR_FILES_DIR, &avatar_files_dir);
-            remove_file_and_log(&avatar_name_full_path, &"delete_profile_current()");
-        }
+        let path_file_img = profile.avatar.clone().unwrap_or("".to_string());
+        // If the image file name starts with the specified alias, then delete the file.
+        remove_image_file(&path_file_img, ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"delete_profile_current()");
 
         Ok(HttpResponse::Ok().json(ProfileDto::from(profile))) // 200
     } else {
