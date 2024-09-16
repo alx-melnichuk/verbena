@@ -49,6 +49,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             .service(delete_profile_current);
     }
 }
+
 fn remove_image_file(path_file_img: &str, alias_file_img: &str, img_file_dir: &str, err_msg: &str) {
     // If the image file name starts with the specified alias, then delete the file.
     if path_file_img.len() > 0 && (alias_file_img.len() == 0 || path_file_img.starts_with(alias_file_img)) {
