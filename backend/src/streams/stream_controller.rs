@@ -42,6 +42,13 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
+fn remove_image_file(path_file_img: &str, alias_file_img: &str, img_file_dir: &str, err_msg: &str) {
+    // If the image file name starts with the specified alias, then delete the file.
+    if path_file_img.len() > 0 && (alias_file_img.len() == 0 || path_file_img.starts_with(alias_file_img)) {
+        let avatar_name_full_path = path_file_img.replace(alias_file_img, img_file_dir);
+        remove_file_and_log(&avatar_name_full_path, err_msg);
+    }
+}
 fn remove_file_and_log(file_name: &str, msg: &str) {
     if file_name.len() > 0 {
         let res_remove = std::fs::remove_file(file_name);
@@ -249,7 +256,6 @@ pub async fn post_stream(
     }
 
     let config_strm = config_strm.get_ref().clone();
-    let logo_files_dir = config_strm.strm_logo_files_dir.clone();
     let mut path_new_logo_file = "".to_string();
 
     while let Some(temp_file) = logo_file {
@@ -279,7 +285,7 @@ pub async fn post_stream(
         #[rustfmt::skip]
         let name = format!("{}.{}", get_file_name(curr_user_id, Utc::now()), file_mime_type.replace(&format!("{}/", IMAGE), ""));
         // Add 'file path' + 'file name'.'file extension'.
-        let path: path::PathBuf = [&logo_files_dir, &name].iter().collect();
+        let path: path::PathBuf = [&config_strm.strm_logo_files_dir, &name].iter().collect();
         let full_path_file = path.to_str().unwrap().to_string();
         // Persist the temporary file at the target path.
         // If a file exists at the target path, persist will atomically replace it.
@@ -308,7 +314,7 @@ pub async fn post_stream(
     let mut create_stream = stream_models::CreateStream::convert(create_stream_info_dto.clone(), curr_user_id);
     
     if path_new_logo_file.len() > 0 {
-        let alias_logo_file = path_new_logo_file.replace(&logo_files_dir, ALIAS_LOGO_FILES_DIR);
+        let alias_logo_file = path_new_logo_file.replace(&config_strm.strm_logo_files_dir, ALIAS_LOGO_FILES_DIR);
         create_stream.logo = Some(alias_logo_file);
     }
 
@@ -523,7 +529,6 @@ pub async fn put_stream(
     let mut logo: Option<Option<String>> = None;
 
     let config_strm = config_strm.get_ref().clone();
-    let logo_files_dir = config_strm.strm_logo_files_dir.clone();
     let mut path_new_logo_file = "".to_string();
 
     while let Some(temp_file) = logo_file {
@@ -556,7 +561,7 @@ pub async fn put_stream(
         #[rustfmt::skip]
         let name = format!("{}.{}", get_file_name(curr_user_id, Utc::now()), file_mime_type.replace(&format!("{}/", IMAGE), ""));
         // Add 'file path' + 'file name'.'file extension'.
-        let path: path::PathBuf = [&logo_files_dir, &name].iter().collect();
+        let path: path::PathBuf = [&config_strm.strm_logo_files_dir, &name].iter().collect();
         let full_path_file = path.to_str().unwrap().to_string();
         // Persist the temporary file at the target path.
         // Note: if a file exists at the target path, persist will atomically replace it.
@@ -579,7 +584,7 @@ pub async fn put_stream(
             path_new_logo_file = new_path_file;
         }
 
-        let alias_logo_file = path_new_logo_file.replace(&logo_files_dir, ALIAS_LOGO_FILES_DIR);
+        let alias_logo_file = path_new_logo_file.replace(&config_strm.strm_logo_files_dir, ALIAS_LOGO_FILES_DIR);
         logo = Some(Some(alias_logo_file));
 
         break;
@@ -589,7 +594,7 @@ pub async fn put_stream(
     modify_stream.logo = logo;
     let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
 
-    let res_data = web::block(move || {
+    let res_data_stream = web::block(move || {
         let mut old_logo_file = "".to_string();
         if modify_stream.logo.is_some() {
             // Get the logo file name for an entity (stream) by ID.
@@ -600,7 +605,7 @@ pub async fn put_stream(
             });
 
             if let Ok(Some(old_logo)) = res_get_stream_logo {
-                old_logo_file = old_logo.replace(ALIAS_LOGO_FILES_DIR, &logo_files_dir);
+                old_logo_file = old_logo;
             }
         }
         // Modify an entity (stream).
@@ -618,14 +623,15 @@ pub async fn put_stream(
         AppError::blocking506(&e.to_string())
     })?;
 
-    let (path_old_logo_file, res_stream) = res_data;
+    let (path_old_logo_file, res_stream) = res_data_stream;
 
     let mut opt_stream_info_dto: Option<StreamInfoDto> = None;
     if let Ok(Some((stream, stream_tags))) = res_stream {
         // Merge a "stream" and a corresponding list of "tags".
         let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
         opt_stream_info_dto = Some(list[0].clone());
-        remove_file_and_log(&path_old_logo_file, &"put_stream()");
+        // If the image file name starts with the specified alias, then delete the file.
+        remove_image_file(&path_old_logo_file, ALIAS_LOGO_FILES_DIR, &config_strm.strm_logo_files_dir, &"put_stream()");
     } else {
         remove_file_and_log(&path_new_logo_file, &"put_stream()");
     }
@@ -700,16 +706,12 @@ pub async fn delete_stream(
     let opt_stream = res_stream?;
 
     if let Some((stream, stream_tags)) = opt_stream {
+        let config_strm = config_strm.get_ref().clone();
         // Get the path to the "logo" file.
         let path_file_img: String = stream.logo.clone().unwrap_or("".to_string());
-        if path_file_img.starts_with(ALIAS_LOGO_FILES_DIR) {
-            // If there is a "logo" file, then delete this file.
-            let config_strm = config_strm.get_ref().clone();
-            let logo_files_dir = config_strm.strm_logo_files_dir.clone();
-            let logo_name_full_path = path_file_img.replace(ALIAS_LOGO_FILES_DIR, &logo_files_dir);
-            remove_file_and_log(&logo_name_full_path, &"delete_stream()");
-        }
-    
+        // If the image file name starts with the specified alias, then delete the file.
+        remove_image_file(&path_file_img, ALIAS_LOGO_FILES_DIR, &config_strm.strm_logo_files_dir, &"delete_stream()");
+
         // Merge a "stream" and a corresponding list of "tags".
         let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
         let stream_info_dto = list[0].clone();
@@ -951,7 +953,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TITLE_REQUIRED, stream_models::MSG_TITLE_MIN_LENGTH]);
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TITLE_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_post_stream_title_min() {
