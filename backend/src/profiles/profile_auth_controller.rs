@@ -875,7 +875,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNPROCESSABLE_ENTITY);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: InvalidKeyFormat", p_err::MSG_JSON_WEB_TOKEN_ENCODE));
+        assert_eq!(app_err.message, format!("{}; InvalidKeyFormat", p_err::MSG_JSON_WEB_TOKEN_ENCODE));
     }
     #[actix_web::test]
     async fn test_login_if_session_not_exist() {
@@ -902,7 +902,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, profile1_id));
+        assert_eq!(app_err.message, format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, profile1_id));
     }
     #[actix_web::test]
     async fn test_login_valid_credentials() {
@@ -1046,7 +1046,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidSubject"));
+        assert_eq!(app_err.message, format!("{}; {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidSubject"));
     }
     #[actix_web::test]
     async fn test_update_token_invalid_dto_token_invalid() {
@@ -1094,7 +1094,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, profile_id_bad));
+        assert_eq!(app_err.message, format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, profile_id_bad));
     }
     #[actix_web::test]
     async fn test_update_token_unacceptable_token_num() {
@@ -1120,7 +1120,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, profile1_id));
+        assert_eq!(app_err.message, format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, profile1_id));
     }
     #[actix_web::test]
     async fn test_update_token_valid_dto_token() {
