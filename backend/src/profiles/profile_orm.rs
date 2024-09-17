@@ -120,14 +120,15 @@ pub mod impls {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select * from create_profile_user($1,$2,$3,$4,$5,$6,$7);")
+            let query = diesel::sql_query("select * from create_profile_user($1,$2,$3,$4,$5,$6,$7,$8);")
                 .bind::<sql_types::Text, _>(nickname) // $1
                 .bind::<sql_types::Text, _>(email) // $2
                 .bind::<sql_types::Text, _>(create_profile.password) // $3
                 .bind::<sql_types::Nullable<schema::sql_types::UserRole>, _>(create_profile.role) // $4
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.avatar) // $5
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.descript) // $6
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.theme); // $7
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.theme) // $7
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(create_profile.locale); // $8
 
             // Run a query with Diesel to create a new user and return it.
             let profile_user = query
@@ -152,7 +153,7 @@ pub mod impls {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select * from modify_profile_user($1,$2,$3,$4,$5,$6,$7,$8);")
+            let query = diesel::sql_query("select * from modify_profile_user($1,$2,$3,$4,$5,$6,$7,$8,$9);")
                 .bind::<sql_types::Integer, _>(user_id) // $1
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(nickname) // $2
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(email) // $3
@@ -160,7 +161,8 @@ pub mod impls {
                 .bind::<sql_types::Nullable<schema::sql_types::UserRole>, _>(modify_profile.role) // $5
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(avatar) // $6
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.descript) // $7
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.theme); // $8
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.theme) // $8
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_profile.locale); // $9
 
             // Run a query with Diesel to create a new user and return it.
             let profile_user = query
@@ -225,6 +227,7 @@ pub mod tests {
                     profile.avatar.as_deref(),
                     Some(profile.descript.as_str()),
                     Some(profile.theme.as_str()),
+                    Some(profile.locale.as_str()),
                 );
                 profile2.password = profile.password.clone();
                 profile2.created_at = profile.created_at;
@@ -240,6 +243,7 @@ pub mod tests {
                 &nickname.to_lowercase(),
                 &email.to_lowercase(),
                 role.clone(),
+                None,
                 None,
                 None,
                 None,
@@ -324,6 +328,7 @@ pub mod tests {
                 create_profile.avatar.as_deref(),
                 create_profile.descript.as_deref(),
                 create_profile.theme.as_deref(),
+                create_profile.locale.as_deref(),
             );
             Ok(profile_user)
         }
@@ -340,6 +345,7 @@ pub mod tests {
                     avatar: modify_profile.avatar.unwrap_or(profile.avatar.clone()),
                     descript: modify_profile.descript.unwrap_or(profile.descript.clone()),
                     theme: modify_profile.theme.unwrap_or(profile.theme.clone()),
+                    locale: modify_profile.locale.unwrap_or(profile.locale.clone()),
                     created_at: profile.created_at,
                     updated_at: Utc::now(),
                 };

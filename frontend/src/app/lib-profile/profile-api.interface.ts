@@ -46,6 +46,7 @@ export interface ProfileDto {
   avatar: string | undefined | null; // Link to user avatar, optional
   descript: string;
   theme: string; // Default color theme. ["light","dark"]
+  locale: string; // Default locale. ["default"]
   createdAt: string; // DateTime<Utc> "rfc2822z"
   updatedAt: string; // DateTime<Utc> "rfc2822z"
 }
@@ -60,6 +61,7 @@ export class ProfileDtoUtil {
       avatar: value['avatar'],
       descript: value['descript'],
       theme: value['theme'],
+      locale: value['locale'],
       createdAt: typeof value.createdAt == 'string' ? new Date(value['createdAt']) : value['createdAt'],
       updatedAt: typeof value.updatedAt == 'string' ? new Date(value['updatedAt']) : value['updatedAt'],
     };
@@ -73,6 +75,7 @@ export class ProfileDtoUtil {
       avatar: (profileDto?.avatar || ''),
       descript: (profileDto?.descript || ''),
       theme: (profileDto?.theme || ''),
+      locale: (profileDto?.locale || ''),
       createdAt: (profileDto?.createdAt || ''),
       updatedAt: (profileDto?.updatedAt || ''),
     };
