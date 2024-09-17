@@ -26,6 +26,8 @@ diesel::table! {
         descript -> Text,
         #[max_length = 32]
         theme -> Varchar,
+        #[max_length = 32]
+        locale -> Varchar,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
     }
