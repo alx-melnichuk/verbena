@@ -16,7 +16,7 @@ use crate::profiles::{
     profile_checks,
     profile_models::{
         Profile, ProfileConfigDto, ProfileDto, UniquenessProfileDto, UniquenessProfileResponseDto, PROFILE_THEME_DARK,
-        PROFILE_THEME_LIGHT_DEF,
+        PROFILE_THEME_LIGHT_DEF, PROFILE_LOCALE_DEF,
     },
     profile_orm::ProfileOrm,
 };
@@ -61,12 +61,13 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             examples(
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(ProfileDto::from(
-                    Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                        Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF)))
+                Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
+                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF)))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
                 value = json!(ProfileDto::from(
-                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
+                Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK), 
+                    Some(PROFILE_LOCALE_DEF)))
             )))),
         ),
         (status = 204, description = "The user with the specified ID was not found."),
@@ -202,12 +203,13 @@ pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web
             examples(
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(ProfileDto::from(
-                    Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                        Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF)))
+                Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
+                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF)))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
                 value = json!(ProfileDto::from(
-                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
+                Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK),
+                    Some(PROFILE_LOCALE_DEF)))
             )))),
         ),
         (status = 401, description = "An authorization token is required.", body = AppError,

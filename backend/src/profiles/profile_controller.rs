@@ -20,8 +20,8 @@ use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
     config_prfl, profile_checks,
     profile_models::{
-        ModifyProfile, ModifyProfileDto, NewPasswordProfileDto, Profile, ProfileDto, PROFILE_THEME_DARK,
-        PROFILE_THEME_LIGHT_DEF,
+        ModifyProfile, ModifyProfileDto, NewPasswordProfileDto, Profile, ProfileDto, PROFILE_LOCALE_DEF,
+        PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF,
     },
     profile_orm::ProfileOrm,
 };
@@ -103,6 +103,7 @@ pub struct ModifyProfileForm {
     pub role: Option<Text<String>>,
     pub descript: Option<Text<String>>,
     pub theme: Option<Text<String>>,
+    pub locale: Option<Text<String>>,
     pub avatarfile: Option<TempFile>,
 }
 
@@ -115,6 +116,7 @@ impl ModifyProfileForm {
                 role: modify_profile_form.role.map(|v| v.into_inner()),
                 descript: modify_profile_form.descript.map(|v| v.into_inner()),
                 theme: modify_profile_form.theme.map(|v| v.into_inner()),
+                locale: modify_profile_form.locale.map(|v| v.into_inner()),
             },
             modify_profile_form.avatarfile,
         )
@@ -161,12 +163,13 @@ impl ModifyProfileForm {
         examples(
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(ProfileDto::from(
-                    Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                        Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF)))
+                Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
+                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF)))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
                 value = json!(ProfileDto::from(
-                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
+                Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK), 
+                    Some(PROFILE_LOCALE_DEF)))
             )))),    
         ),
         (status = 204, description = "The current user's profile was not found."),
@@ -190,7 +193,7 @@ impl ModifyProfileForm {
             -F 'descript=Description' -F 'theme=light' -F 'avatarfile=@image.png'`", body = [AppError],
             example = json!(AppError::validations(
                 (ModifyProfileDto { nickname: None, email: None, role: None,
-                    descript: Some("d".to_string()), theme: Some("light".to_string()) }).validate().err().unwrap()
+                    descript: Some("d".to_string()), theme: Some("light".to_string()), locale: None }).validate().err().unwrap()
             ) )),
         (status = 500, description = "Error loading file.", body = AppError, example = json!(
             AppError::internal_err500(&format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, "/tmp/demo.jpg", "File not found.")))),
@@ -392,12 +395,13 @@ pub async fn put_profile(
             examples(
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(ProfileDto::from(
-                    Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                        Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF)))
+                Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
+                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF)))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
                 value = json!(ProfileDto::from(
-                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
+                Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK),
+                Some(PROFILE_LOCALE_DEF)))
             )))),
         ),
         (status = 204, description = "The current user was not found."),
@@ -413,7 +417,7 @@ pub async fn put_profile(
             example = json!(AppError::validations(
                 (NewPasswordProfileDto {password: "pas".to_string(), new_password: "word".to_string()}).validate().err().unwrap()) )),
         (status = 500, description = "Error while calculating the password hash.", body = AppError, 
-            example = json!(AppError::internal_err500(&format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty.")))),
+            example = json!(AppError::internal_err500(&format!("{}; {}", err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty.")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -443,7 +447,7 @@ pub async fn put_profile_new_password(
     let new_password = new_password_user.new_password.clone();
     // Get a hash of the new password.
     let new_password_hashed = hash_tools::encode_hash(&new_password).map_err(|e| {
-        let message = format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, e.to_string());
+        let message = format!("{}; {}", err::MSG_ERROR_HASHING_PASSWORD, e.to_string());
         log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
         AppError::internal_err500(&message) // 500
     })?;
@@ -490,6 +494,7 @@ pub async fn put_profile_new_password(
     // Create a model to update the "password" field in the user profile.
     let modify_profile = ModifyProfile{
         nickname: None, email: None, password: Some(new_password_hashed), role: None, avatar: None, descript: None, theme: None,
+        locale: None,
     };
     // Update the password hash for the user profile.
     let opt_profile = web::block(move || {
@@ -533,12 +538,13 @@ pub async fn put_profile_new_password(
             examples(
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(ProfileDto::from(
-                    Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                        Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF)))
+                Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
+                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF)))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
                 value = json!(ProfileDto::from(
-                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
+                Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK), 
+                    Some(PROFILE_LOCALE_DEF)))
             )))),
         ),
         (status = 204, description = "The specified user profile was not found."),
@@ -617,12 +623,13 @@ pub async fn delete_profile(
             examples(
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(ProfileDto::from(
-                    Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                        Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF)))
+                Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
+                    Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), Some(PROFILE_LOCALE_DEF)))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
                 value = json!(ProfileDto::from(
-                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
+                Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK), 
+                    Some(PROFILE_LOCALE_DEF)))
             )))),
         ),
         (status = 204, description = "The current user's profile was not found."),
@@ -1190,6 +1197,55 @@ mod tests {
         #[rustfmt::skip]
         check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_THEME_MAX_LENGTH]);
     }
+    #[actix_web::test]
+    async fn test_put_profile_locale_min() {
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("locale", ProfileTest::locale_min())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_LOCALE_MIN_LENGTH]);
+    }
+    #[actix_web::test]
+    async fn test_put_profile_locale_max() {
+        let (header, body) = MultiPartFormDataBuilder::new()
+            .with_text("locale", ProfileTest::locale_max())
+            .build();
+
+        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri("/api/profiles")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[profile_models::MSG_LOCALE_MAX_LENGTH]);
+    }
+
     #[actix_web::test]
     async fn test_put_profile_if_nickname_exists_in_users() {
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);

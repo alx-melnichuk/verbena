@@ -57,6 +57,11 @@ pub const MSG_THEME_MIN_LENGTH: &str = "theme:min_length";
 pub const THEME_MAX: u8 = 32;
 pub const MSG_THEME_MAX_LENGTH: &str = "theme:max_length";
 
+pub const LOCALE_MIN: u8 = 2;
+pub const MSG_LOCALE_MIN_LENGTH: &str = "locale:min_length";
+pub const LOCALE_MAX: u8 = 32;
+pub const MSG_LOCALE_MAX_LENGTH: &str = "locale:max_length";
+
 pub const MSG_USER_ROLE_INVALID_VALUE: &str = "user_role:invalid_value";
 
 // MIN=3, MAX=64, REG="^[a-zA-Z]+[\\w]+$"
@@ -123,6 +128,12 @@ pub fn validate_theme(value: &str) -> Result<(), ValidationError> {
     ValidationChecks::max_length(value, THEME_MAX.into(), MSG_THEME_MAX_LENGTH)?;
     Ok(())
 }
+// MIN=2, MAX=32
+pub fn validate_locale(value: &str) -> Result<(), ValidationError> {
+    ValidationChecks::min_length(value, LOCALE_MIN.into(), MSG_LOCALE_MIN_LENGTH)?;
+    ValidationChecks::max_length(value, LOCALE_MAX.into(), MSG_LOCALE_MAX_LENGTH)?;
+    Ok(())
+}
 pub fn validate_role(value: &str) -> Result<(), ValidationError> {
     let res_user_role = UserRole::try_from(value);
     if res_user_role.is_err() {
@@ -153,6 +164,7 @@ pub struct ProfileTbl {
 pub const PROFILE_DESCRIPT_DEF: &str = "";
 pub const PROFILE_THEME_LIGHT_DEF: &str = "light";
 pub const PROFILE_THEME_DARK: &str = "dark";
+pub const PROFILE_LOCALE_DEF: &str = "default";
 
 impl ProfileTbl {
     pub fn new(user_id: i32, avatar: Option<&str>, descript: Option<&str>, theme: Option<&str>) -> ProfileTbl {
@@ -195,6 +207,7 @@ pub struct Profile {
     pub avatar: Option<String>,
     pub descript: String,
     pub theme: String,
+    pub locale: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -208,6 +221,7 @@ impl Profile {
         avatar: Option<&str>,
         descript: Option<&str>,
         theme: Option<&str>,
+        locale: Option<&str>,
     ) -> Profile {
         let now = Utc::now();
         Profile {
@@ -219,6 +233,7 @@ impl Profile {
             avatar: avatar.map(|v| v.to_string()),
             descript: descript.unwrap_or(PROFILE_DESCRIPT_DEF).to_string(),
             theme: theme.unwrap_or(PROFILE_THEME_LIGHT_DEF).to_string(),
+            locale: locale.unwrap_or(PROFILE_LOCALE_DEF).to_string(),
             created_at: now.clone(),
             updated_at: now.clone(),
         }
@@ -236,6 +251,7 @@ pub struct CreateProfile {
     pub avatar: Option<String>,   // min_len=2 max_len=255 Nullable
     pub descript: Option<String>, // min_len=2,max_len=2048 default ""
     pub theme: Option<String>,    // min_len=2 max_len=32 default "light"
+    pub locale: Option<String>,   // min_len=2 max_len=32 default "default"
 }
 
 impl CreateProfile {
@@ -248,6 +264,7 @@ impl CreateProfile {
             avatar: None,
             descript: None,
             theme: None,
+            locale: None,
         }
     }
 }
@@ -263,6 +280,7 @@ pub struct ModifyProfile {
     pub avatar: Option<Option<String>>, // min_len=2,max_len=255 Nullable
     pub descript: Option<String>,       // min_len=2,max_len=2048 default ""
     pub theme: Option<String>,          // min_len=2,max_len=32 default "light"
+    pub locale: Option<String>,         // min_len=2,max_len=32 default "default"
 }
 
 // * * * * Section: models for the "profile_get_controller". * * * *
@@ -308,6 +326,8 @@ pub struct ProfileDto {
     pub descript: String, // type: Text default ""
     // Default color theme. ["light","dark"]
     pub theme: String, // min_len=2 max_len=32 default "light"
+    // Default locale. ("default")
+    pub locale: String, // min_len=2 max_len=32 default "default"
     #[serde(with = "serial_datetime")]
     pub created_at: DateTime<Utc>,
     #[serde(with = "serial_datetime")]
@@ -324,6 +344,7 @@ impl From<Profile> for ProfileDto {
             avatar: profile.avatar.clone(),
             descript: profile.descript.clone(),
             theme: profile.theme.clone(),
+            locale: profile.locale.clone(),
             created_at: profile.created_at.clone(),
             updated_at: profile.updated_at.clone(),
         }
@@ -388,11 +409,13 @@ pub struct ModifyProfileDto {
     pub descript: Option<String>, // min_len=2,max_len=2048 default ""
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub theme: Option<String>, // min_len=2,max_len=32 default "light"
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locale: Option<String>, // min_len=2,max_len=32 default "default"
 }
 
 impl ModifyProfileDto {
     pub fn valid_names<'a>() -> Vec<&'a str> {
-        vec!["nickname", "email", "role", "descript", "theme"]
+        vec!["nickname", "email", "role", "descript", "theme", "locale"]
     }
 }
 
@@ -419,6 +442,9 @@ impl Validator for ModifyProfileDto {
         if let Some(value) = &self.theme {
             errors.push(validate_theme(&value).err());
         }
+        if let Some(value) = &self.locale {
+            errors.push(validate_locale(&value).err());
+        }
 
         let list_is_some = vec![
             self.nickname.is_some(),
@@ -426,6 +452,7 @@ impl Validator for ModifyProfileDto {
             self.role.is_some(),
             self.descript.is_some(),
             self.theme.is_some(),
+            self.locale.is_some(),
         ];
         let valid_names = ModifyProfileDto::valid_names().join(",");
         errors.push(
@@ -451,6 +478,7 @@ impl Into<ModifyProfile> for ModifyProfileDto {
             avatar: None,
             descript: self.descript.clone(),
             theme: self.theme.clone(),
+            locale: self.locale.clone(),
         }
     }
 }
@@ -685,5 +713,11 @@ impl ProfileTest {
     }
     pub fn theme_max() -> String {
         (0..(THEME_MAX + 1)).map(|_| 'a').collect()
+    }
+    pub fn locale_min() -> String {
+        (0..(LOCALE_MIN - 1)).map(|_| 'a').collect()
+    }
+    pub fn locale_max() -> String {
+        (0..(LOCALE_MAX + 1)).map(|_| 'a').collect()
     }
 }

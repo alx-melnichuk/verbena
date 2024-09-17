@@ -109,9 +109,9 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
                 (RegistrProfileDto { nickname: "us".to_string(), email: "us_email".to_string(), password: "pas".to_string() })
                     .validate().err().unwrap()) )),
         (status = 422, description = "Token encoding error.", body = AppError,
-            example = json!(AppError::unprocessable422(&format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
+            example = json!(AppError::unprocessable422(&format!("{}; {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
         (status = 500, description = "Error while calculating the password hash.", body = AppError, 
-            example = json!(AppError::internal_err500(&format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty.")))),
+            example = json!(AppError::internal_err500(&format!("{}; {}", err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty.")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -142,7 +142,7 @@ pub async fn registration(
 
     let password = registr_profile_dto.password.clone();
     let password_hashed = hash_tools::encode_hash(&password).map_err(|e| {
-        let message = format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, e.to_string());
+        let message = format!("{}; {}", err::MSG_ERROR_HASHING_PASSWORD, e.to_string());
         log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
         AppError::internal_err500(&message) // 500
     })?;
@@ -203,7 +203,7 @@ pub async fn registration(
 
     // Pack two parameters (user_registr.id, num_token) into a registr_token.
     let registr_token = encode_token(user_registr.id, num_token, jwt_secret, app_registr_duration).map_err(|e| {
-        let message = format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, e.to_string());
+        let message = format!("{}; {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, e.to_string());
         log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
         AppError::unprocessable422(&message) // 422
     })?;
@@ -247,7 +247,7 @@ pub async fn registration(
     responses(
         (status = 201, description = "New user profile.", body = ProfileDto,
             example = json!(ProfileDto::from(
-                Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_LIGHT_DEF)))
+            Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_LIGHT_DEF), None))
             )
         ),
         (status = 401, description = "The token is invalid or expired.", body = AppError,
@@ -371,7 +371,7 @@ pub async fn confirm_registration(
             description = "Validation error. `curl -i -X POST http://localhost:8080/api/recovery -d '{\"email\": \"us_email\" }'`",
             example = json!(AppError::validations((RecoveryProfileDto { email: "us_email".to_string() }).validate().err().unwrap()))),
         (status = 422, description = "Token encoding error.", body = AppError,
-            example = json!(AppError::unprocessable422(&format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
+            example = json!(AppError::unprocessable422(&format!("{}; {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -508,7 +508,7 @@ pub async fn recovery(
         app_recovery_duration,
     )
     .map_err(|e| {
-        let message = format!("{}: {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, e.to_string());
+        let message = format!("{}; {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, e.to_string());
         log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
         AppError::unprocessable422(&message) // 422
     })?;
@@ -565,11 +565,11 @@ pub async fn recovery(
             ("with_avatar" = (summary = "with an avatar", description = "User profile with avatar.",
                 value = json!(ProfileDto::from(
                     Profile::new(1, "Emma_Johnson", "Emma_Johnson@gmail.us", UserRole::User, Some("/avatar/1234151234.png"),
-                        Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF)))
+                        Some("Description Emma_Johnson"), Some(PROFILE_THEME_LIGHT_DEF), None))
             ))),
             ("without_avatar" = (summary = "without avatar", description = "User profile without avatar.",
                 value = json!(ProfileDto::from(
-                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK)))
+                    Profile::new(2, "James_Miller", "James_Miller@gmail.us", UserRole::User, None, None, Some(PROFILE_THEME_DARK), None))
             )))),
         ),
         (status = 401, description = "The token is invalid or expired.", body = AppError,
@@ -686,7 +686,7 @@ pub async fn confirm_recovery(
     })?;
     // Create a model to update the "password" field in the user profile.
     let modify_profile = profile_models::ModifyProfile{
-        nickname: None, email: None, password: Some(password_hashed), role: None, avatar: None, descript: None, theme: None,
+        nickname: None, email: None, password: Some(password_hashed), role: None, avatar: None, descript: None, theme: None, locale: None,
     };
     // Update the password hash for the user profile.
     let opt_profile = web::block(move || {
@@ -811,7 +811,10 @@ mod tests {
 
     use crate::errors::AppError;
     use crate::extractors::authentication::BEARER;
-    use crate::profiles::profile_models::{self, Profile, ProfileTest};
+    use crate::profiles::{
+        profile_models::{self, Profile, ProfileTest},
+        profile_err as p_err,
+    };
     use crate::send_email::config_smtp;
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::decode_token,
@@ -1349,7 +1352,7 @@ mod tests {
         assert_eq!(app_err.message, err::MSG_EMAIL_ALREADY_USE);
     }
     #[actix_web::test]
-    async fn test_login_err_jsonwebtoken_encode() {
+    async fn test_registration_err_jsonwebtoken_encode() {
         let (cfg_c, data_c, _token) = get_cfg_data(false, None);
         let mut config_jwt = cfg_c.1;
         config_jwt.jwt_secret = "".to_string();
@@ -1372,7 +1375,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNPROCESSABLE_ENTITY);
-        assert!(app_err.message.starts_with(p_err::MSG_JSON_WEB_TOKEN_ENCODE));
+        assert!(app_err.message.starts_with(&format!("{};", p_err::MSG_JSON_WEB_TOKEN_ENCODE)));
     }
     #[actix_web::test]
     async fn test_registration_new_user() {
@@ -1750,7 +1753,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNPROCESSABLE_ENTITY);
-        assert!(app_err.message.starts_with(p_err::MSG_JSON_WEB_TOKEN_ENCODE));
+        assert!(app_err.message.starts_with(&format!("{};", p_err::MSG_JSON_WEB_TOKEN_ENCODE)));
     }
 
     // ** confirm_recovery **
