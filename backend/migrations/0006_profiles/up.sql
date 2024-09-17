@@ -4,10 +4,12 @@ CREATE TABLE profiles (
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     /* Link to user avatar, optional */
     avatar VARCHAR(255) NULL,
-    /* user description */
+    /* User description. */
     descript TEXT DEFAULT '' NOT NULL,
-    /* Default color theme. 'light','dark' */
+    /* Default color theme. ('light','dark') */
     theme VARCHAR(32) DEFAULT 'light' NOT NULL,
+    /* Default locale. ('default') */
+    locale VARCHAR(32) DEFAULT 'default' NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     PRIMARY KEY (user_id)
@@ -33,6 +35,7 @@ CREATE OR REPLACE FUNCTION find_profile_user(
   OUT avatar VARCHAR,
   OUT descript TEXT,
   OUT theme VARCHAR,
+  OUT locale VARCHAR,
   OUT created_at TIMESTAMP WITH TIME ZONE,
   OUT updated_at TIMESTAMP WITH TIME ZONE
 ) RETURNS SETOF record LANGUAGE plpgsql
@@ -53,6 +56,7 @@ BEGIN
       "profiles".avatar,
       "profiles".descript,
       "profiles".theme,
+      "profiles".locale,
       "users".created_at,
       CASE WHEN "users".updated_at > "profiles".updated_at
         THEN "users".updated_at ELSE "profiles".updated_at END as updated_at
@@ -84,6 +88,7 @@ CREATE OR REPLACE FUNCTION create_profile_user(
   IN _avatar VARCHAR,
   IN _descript TEXT,
   IN _theme VARCHAR,
+  IN _locale VARCHAR,
   OUT user_id INTEGER,
   OUT nickname VARCHAR,
   OUT email VARCHAR,
@@ -92,6 +97,7 @@ CREATE OR REPLACE FUNCTION create_profile_user(
   OUT avatar VARCHAR,
   OUT descript TEXT,
   OUT theme VARCHAR,
+  OUT locale VARCHAR,
   OUT created_at TIMESTAMP WITH TIME ZONE,
   OUT updated_at TIMESTAMP WITH TIME ZONE
 ) RETURNS SETOF record LANGUAGE plpgsql
@@ -107,9 +113,10 @@ BEGIN
     INTO rec1;
 
   -- Add a new entry to the "profiles" table.
-  INSERT INTO profiles(user_id, avatar, descript, theme)
-  VALUES (rec1.id, _avatar, COALESCE(_descript, ''), COALESCE(_theme, 'light'))
-  RETURNING profiles.user_id, profiles.avatar, profiles.descript, profiles.theme, profiles.created_at, profiles.updated_at
+  INSERT INTO profiles(user_id, avatar, descript, theme, locale)
+  VALUES (rec1.id, _avatar, COALESCE(_descript, ''), COALESCE(_theme, 'light'), COALESCE(_locale, 'default'))
+  RETURNING profiles.user_id, profiles.avatar, profiles.descript, profiles.theme, profiles.locale,
+    profiles.created_at, profiles.updated_at
     INTO rec2;
 
   -- Add a new entry to the "sessions" table.
@@ -118,7 +125,7 @@ BEGIN
 
   RETURN QUERY SELECT
     rec2.user_id, rec1.nickname, rec1.email, ''::VARCHAR AS "password", rec1."role", rec2.avatar, rec2.descript, rec2.theme,
-    rec1.created_at,
+    rec2.locale, rec1.created_at,
     CASE WHEN rec1.updated_at > rec2.updated_at THEN rec1.updated_at ELSE rec2.updated_at END as updated_at;
 END;
 $$;
@@ -133,6 +140,7 @@ CREATE OR REPLACE FUNCTION modify_profile_user(
   INOUT avatar VARCHAR,
   INOUT descript TEXT,
   INOUT theme VARCHAR,
+  INOUT locale VARCHAR,
   OUT created_at TIMESTAMP WITH TIME ZONE,
   OUT updated_at TIMESTAMP WITH TIME ZONE
 ) RETURNS SETOF record LANGUAGE plpgsql
@@ -172,6 +180,9 @@ BEGIN
   IF theme IS NOT NULL AND LENGTH(theme) > 0 THEN
     update_profiles := ARRAY_APPEND(update_profiles, 'theme = ''' || theme || '''');
   END IF;
+  IF locale IS NOT NULL AND LENGTH(locale) > 0 THEN
+    update_profiles := ARRAY_APPEND(update_profiles, 'locale = ''' || locale || '''');
+  END IF;
 
   IF ARRAY_LENGTH(update_users, 1) > 0 THEN
     sql1 := 'UPDATE users SET '
@@ -180,10 +191,10 @@ BEGIN
       || ' WHERE users.id = profiles.user_id AND id = ' || user_id
       || ' RETURNING '
       || ' users.id AS user_id, users.nickname, users.email, ''''::VARCHAR AS "password", users."role",'
-      || ' profiles.avatar, profiles.descript, profiles.theme,'
+      || ' profiles.avatar, profiles.descript, profiles.theme, profiles.locale,'
       || ' users.created_at, users.updated_at'; 
     EXECUTE sql1 INTO
-      user_id, nickname, email, "password", "role", avatar, descript, theme, created_at, updated_at;
+      user_id, nickname, email, "password", "role", avatar, descript, theme, locale, created_at, updated_at;
   END IF;
 
   IF ARRAY_LENGTH(update_profiles, 1) > 0 THEN
@@ -193,10 +204,10 @@ BEGIN
       || ' WHERE users.id = profiles.user_id AND profiles.user_id = ' || user_id
       || ' RETURNING '
       || ' users.id AS user_id, users.nickname, users.email, ''''::VARCHAR AS "password", users."role",'
-      || ' profiles.avatar, profiles.descript, profiles.theme,'
+      || ' profiles.avatar, profiles.descript, profiles.theme, profiles.locale,'
       || ' users.created_at, profiles.updated_at'; 
     EXECUTE sql1 INTO
-      user_id, nickname, email, "password", "role", avatar, descript, theme, created_at, updated_at;
+      user_id, nickname, email, "password", "role", avatar, descript, theme, locale, created_at, updated_at;
   END IF;
 
   IF user_id IS NULL THEN
@@ -204,7 +215,7 @@ BEGIN
   END IF;
 
   RETURN QUERY SELECT
-    user_id, nickname, email, "password", "role", avatar, descript, theme, created_at, updated_at;
+    user_id, nickname, email, "password", "role", avatar, descript, theme, locale, created_at, updated_at;
 END;
 $$;
 
@@ -219,6 +230,7 @@ CREATE OR REPLACE FUNCTION delete_profile_user(
   OUT avatar VARCHAR,
   OUT descript TEXT,
   OUT theme VARCHAR,
+  OUT locale VARCHAR,
   OUT created_at TIMESTAMP WITH TIME ZONE,
   OUT updated_at TIMESTAMP WITH TIME ZONE
 ) RETURNS SETOF record LANGUAGE plpgsql
@@ -239,6 +251,7 @@ BEGIN
     "profiles".avatar,
     "profiles".descript,
     "profiles".theme,
+    "profiles".locale,
     "users".created_at,
     CASE WHEN "users".updated_at > "profiles".updated_at
     THEN "users".updated_at ELSE "profiles".updated_at END as updated_at
@@ -249,7 +262,7 @@ BEGIN
   END IF;
 
   RETURN QUERY SELECT
-    rec1.user_id, rec1.nickname, rec1.email, ''::VARCHAR AS "password", rec1."role", rec1.avatar, rec1.descript, rec1.theme,
+    rec1.user_id, rec1.nickname, rec1.email, ''::VARCHAR AS "password", rec1."role", rec1.avatar, rec1.descript, rec1.theme, rec1.locale,
     rec1.created_at, rec1.updated_at;
 END;
 $$;
