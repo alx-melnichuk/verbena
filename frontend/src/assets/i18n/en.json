@@ -113,6 +113,8 @@
     "time:max": "The \"time\" must be less {{ max.requiredMax }}.",
     "theme:min_length" : "The \"theme\" must have at least {{ minlength.requiredLength }} characters.",
     "theme:max_length" : "The \"theme\" must have no more {{ maxlength.requiredLength }} characters.",
+    "locale:min_length" : "The \"locale\" must have at least {{ minlength.requiredLength }} characters.",
+    "locale:max_length" : "The \"locale\" must have no more {{ maxlength.requiredLength }} characters.",
     "user_role:invalid_value": "Invalid value for \"user role\" ({{ invalid.actualValue }}).",
     "no_fields_to_update": "There are no fields to update. Valid names: {{ noRequiredFields.validNames }}."
   },
