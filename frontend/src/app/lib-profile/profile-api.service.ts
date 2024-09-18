@@ -91,9 +91,17 @@ public modifyProfile(modifyProfileDto: ModifyProfileDto, file?: File | null): Pr
       const currFile: File = (file !== null ? file : new File([], "file"));
       formData.set('avatarfile', currFile, currFile.name);
     }
-    const headers = new HttpHeaders({ 'enctype': 'multipart/form-data' });
-    const url = Uri.appUri(`appApi://profiles`);
-    return HttpObservableUtil.toPromise<ProfileDto>(this.http.put<ProfileDto | HttpErrorResponse>(url, formData, { headers: headers }));
+    let cnt = 0;
+    formData.forEach(() => {
+        cnt++;
+    }); 
+    if (cnt == 0) {
+      return Promise.resolve(undefined);
+    } else {
+      const headers = new HttpHeaders({ 'enctype': 'multipart/form-data' });
+      const url = Uri.appUri(`appApi://profiles`);
+      return HttpObservableUtil.toPromise<ProfileDto>(this.http.put<ProfileDto | HttpErrorResponse>(url, formData, { headers: headers }));
+    }
   }
 
   public newPassword(newPasswordProfileDto: NewPasswordProfileDto): Promise<ProfileDto | HttpErrorResponse | undefined> {

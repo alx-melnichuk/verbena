@@ -10,7 +10,7 @@ import { SpinnerComponent } from '../components/spinner/spinner.component';
 import { ROUTE_LOGIN } from '../common/routes';
 import { DialogService } from '../lib-dialog/dialog.service';
 import { PanelProfileInfoComponent } from '../lib-profile/panel-profile-info/panel-profile-info.component';
-import { UpdateProfileFile, ProfileDto, ModifyProfileDto, NewPasswordProfileDto } from '../lib-profile/profile-api.interface';
+import { ProfileDto, ModifyProfileDto, NewPasswordProfileDto } from '../lib-profile/profile-api.interface';
 import { ProfileConfigDto } from '../lib-profile/profile-config.interface';
 import { ProfileService } from '../lib-profile/profile.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
@@ -49,19 +49,12 @@ export class PgProfileComponent {
 
   // ** Section "Udate profile" FormGroup1 **
 
-  public doUpdateProfile(updateProfileFile: UpdateProfileFile): void {
-    if (!updateProfileFile) {
+  public doUpdateProfile(obj: { modifyProfile: ModifyProfileDto, avatarFile: File | null | undefined }): void {
+    if (!obj || !obj.modifyProfile) {
       return;
     }
-    const modifyProfileDto: ModifyProfileDto = {
-      nickname: updateProfileFile.nickname,
-      email: updateProfileFile.email,
-      role: updateProfileFile.role,
-      descript: updateProfileFile.descript,
-      theme: updateProfileFile.theme,
-    };
     this.isLoadData = true;
-    this.profileService.modifyProfile(modifyProfileDto, updateProfileFile.avatarFile)
+    this.profileService.modifyProfile(obj.modifyProfile, obj.avatarFile)
       .then((response: ProfileDto | HttpErrorResponse | undefined) => {
         if (!response) {
           this.errMsgsPassword = [this.translate.instant('profile.error_editing_profile')];
