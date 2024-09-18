@@ -146,7 +146,7 @@ pub fn validate_role(value: &str) -> Result<(), ValidationError> {
 
 // ** Table: "profiles" **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable, Insertable, AsChangeset)]
+/*#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = schema::profiles)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ProfileTbl {
@@ -159,14 +159,14 @@ pub struct ProfileTbl {
     pub theme: String, // min_len=2 max_len=32 default "light"
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-}
+}*/
 
 pub const PROFILE_DESCRIPT_DEF: &str = "";
 pub const PROFILE_THEME_LIGHT_DEF: &str = "light";
 pub const PROFILE_THEME_DARK: &str = "dark";
 pub const PROFILE_LOCALE_DEF: &str = "default";
 
-impl ProfileTbl {
+/*impl ProfileTbl {
     pub fn new(user_id: i32, avatar: Option<&str>, descript: Option<&str>, theme: Option<&str>) -> ProfileTbl {
         let now = Utc::now();
         ProfileTbl {
@@ -178,7 +178,7 @@ impl ProfileTbl {
             updated_at: now.clone(),
         }
     }
-}
+}*/
 
 // * * * * Section: models for "ProfileOrm". * * * *
 
@@ -205,9 +205,9 @@ pub struct Profile {
     #[diesel(column_name = "role")]
     pub role: UserRole,
     pub avatar: Option<String>,
-    pub descript: String,
-    pub theme: String,
-    pub locale: String,
+    pub descript: Option<String>,
+    pub theme: Option<String>,
+    pub locale: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -231,9 +231,9 @@ impl Profile {
             password: "".to_string(),
             role,
             avatar: avatar.map(|v| v.to_string()),
-            descript: descript.unwrap_or(PROFILE_DESCRIPT_DEF).to_string(),
-            theme: theme.unwrap_or(PROFILE_THEME_LIGHT_DEF).to_string(),
-            locale: locale.unwrap_or(PROFILE_LOCALE_DEF).to_string(),
+            descript: descript.map(|v| v.to_string()),
+            theme: theme.map(|v| v.to_string()),
+            locale: locale.map(|v| v.to_string()),
             created_at: now.clone(),
             updated_at: now.clone(),
         }
@@ -323,11 +323,11 @@ pub struct ProfileDto {
     // Link to user avatar, optional
     pub avatar: Option<String>, // min_len=2 max_len=255 Nullable
     // User description.
-    pub descript: String, // type: Text default ""
+    pub descript: Option<String>, // type: Text default ""
     // Default color theme. ["light","dark"]
-    pub theme: String, // min_len=2 max_len=32 default "light"
-    // Default locale. ("default")
-    pub locale: String, // min_len=2 max_len=32 default "default"
+    pub theme: Option<String>, // min_len=2 max_len=32 default "light"
+    // Default locale.
+    pub locale: Option<String>, // min_len=2 max_len=32 default "default"
     #[serde(with = "serial_datetime")]
     pub created_at: DateTime<Utc>,
     #[serde(with = "serial_datetime")]
@@ -423,7 +423,7 @@ impl Validator for ModifyProfileDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
-
+        dbg!(self);
         if let Some(value) = &self.nickname {
             errors.push(validate_nickname(&value).err());
         }
@@ -440,9 +440,11 @@ impl Validator for ModifyProfileDto {
             }
         }
         if let Some(value) = &self.theme {
+            eprintln!("@_theme: {}", value);
             errors.push(validate_theme(&value).err());
         }
         if let Some(value) = &self.locale {
+            eprintln!("@_locale: {}", value);
             errors.push(validate_locale(&value).err());
         }
 

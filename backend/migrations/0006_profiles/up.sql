@@ -5,11 +5,11 @@ CREATE TABLE profiles (
     /* Link to user avatar, optional */
     avatar VARCHAR(255) NULL,
     /* User description. */
-    descript TEXT DEFAULT '' NOT NULL,
+    descript TEXT NULL,
     /* Default color theme. ('light','dark') */
-    theme VARCHAR(32) DEFAULT 'light' NOT NULL,
-    /* Default locale. ('default') */
-    locale VARCHAR(32) DEFAULT 'default' NOT NULL,
+    theme VARCHAR(32) NULL,
+    /* Default locale. */
+    locale VARCHAR(32) NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     PRIMARY KEY (user_id)
@@ -114,7 +114,7 @@ BEGIN
 
   -- Add a new entry to the "profiles" table.
   INSERT INTO profiles(user_id, avatar, descript, theme, locale)
-  VALUES (rec1.id, _avatar, COALESCE(_descript, ''), COALESCE(_theme, 'light'), COALESCE(_locale, 'default'))
+  VALUES (rec1.id, _avatar, _descript, _theme, _locale)
   RETURNING profiles.user_id, profiles.avatar, profiles.descript, profiles.theme, profiles.locale,
     profiles.created_at, profiles.updated_at
     INTO rec2;

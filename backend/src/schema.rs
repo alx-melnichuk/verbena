@@ -23,11 +23,11 @@ diesel::table! {
         user_id -> Int4,
         #[max_length = 255]
         avatar -> Nullable<Varchar>,
-        descript -> Text,
+        descript -> Nullable<Text>,
         #[max_length = 32]
-        theme -> Varchar,
+        theme -> Nullable<Varchar>,
         #[max_length = 32]
-        locale -> Varchar,
+        locale -> Nullable<Varchar>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
     }
