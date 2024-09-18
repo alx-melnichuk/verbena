@@ -200,16 +200,16 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     const email: string = cntlEmail.value || '';
     const descript: string = cntlDescript.value || '';
 
-    const theme = formGroup.get('theme')?.value || '';
-    const locale = formGroup.get('locale')?.value || '';
+    const theme = formGroup.get('theme')?.value;
+    const locale = formGroup.get('locale')?.value;
 
     const modifyProfile: ModifyProfileDto = {
         nickname: (this.origProfileDto.nickname != nickname ? nickname : undefined),
         email: (this.origProfileDto.email != email ? email : undefined),
         descript: (this.origProfileDto.descript != descript ? descript : undefined),
 
-        theme: (this.origProfileDto.theme != theme ? theme : undefined),
-        locale: (this.origProfileDto.locale != locale ? locale : undefined),
+        theme: (this.origProfileDto.theme !== theme ? theme : undefined),
+        locale: (this.origProfileDto.locale !== locale ? locale : undefined),
     };
     const is_all_empty = Object.values(modifyProfile).findIndex((value) => value !== undefined) == -1;
     if (!is_all_empty || !!this.avatarFile) {
