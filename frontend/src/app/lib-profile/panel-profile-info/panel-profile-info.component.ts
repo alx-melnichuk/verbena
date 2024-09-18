@@ -6,9 +6,13 @@ import { CommonModule } from '@angular/common';
 import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
-import { IMAGE_VALID_FILE_TYPES, MAX_FILE_SIZE } from 'src/app/common/constants';
+import {
+  IMAGE_VALID_FILE_TYPES, MAX_FILE_SIZE, THEME_DARK, THEME_LIGHT, LOCALE_EN_US, LOCALE_DE_DE, LOCALE_UK, 
+} from 'src/app/common/constants';
 import { FieldDescriptComponent } from 'src/app/components/field-descript/field-descript.component';
 import { FieldEmailComponent    } from 'src/app/components/field-email/field-email.component';
 import { FieldFileUploadComponent } from 'src/app/components/field-file-upload/field-file-upload.component';
@@ -20,7 +24,7 @@ import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { HtmlElemUtil } from 'src/app/utils/html-elem.util';
 
 import { ProfileService } from '../profile.service';
-import { NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, UniquenessDto, UpdateProfileFile } from '../profile-api.interface';
+import { ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, UniquenessDto } from '../profile-api.interface';
 import { ProfileConfigDto } from '../profile-config.interface';
 
 export const PPI_DEBOUNCE_DELAY = 900;
@@ -30,9 +34,9 @@ export const PPI_AVATAR_MX_WD = '---ppi-avatar-mx-wd';
 @Component({
   selector: 'app-panel-profile-info',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, TranslateModule, FieldNicknameComponent,
-    FieldEmailComponent, FieldPasswordComponent, FieldDescriptComponent, FieldFileUploadComponent, FieldImageAndUploadComponent,
-    UniquenessCheckComponent],
+  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, MatSelectModule,
+    MatSlideToggleModule, TranslateModule, FieldNicknameComponent, FieldEmailComponent, FieldPasswordComponent,
+    FieldDescriptComponent, FieldFileUploadComponent, FieldImageAndUploadComponent, UniquenessCheckComponent],
   templateUrl: './panel-profile-info.component.html',
   styleUrls: ['./panel-profile-info.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -58,7 +62,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   public fieldEmailComp!: FieldEmailComponent;
 
   @Output()
-  readonly updateProfile: EventEmitter<UpdateProfileFile> = new EventEmitter();
+  readonly updateProfile: EventEmitter<{ modifyProfile: ModifyProfileDto, avatarFile: File | null | undefined }> = new EventEmitter();
   @Output()
   readonly updatePassword: EventEmitter<NewPasswordProfileDto> = new EventEmitter();
   @Output()
@@ -75,8 +79,19 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     password: new FormControl(null, []),
     avatar: new FormControl('', []),
     descript: new FormControl(null, []),
+    theme: new FormControl('', []),
+    locale: new FormControl('', []),
   };
   public formGroupProfile: FormGroup = new FormGroup(this.cntlsProfile);
+  public themeList = [
+    { value: THEME_LIGHT, name: this.translate.instant('profile.text_light_theme') },
+    { value: THEME_DARK, name: this.translate.instant('profile.text_dark_theme') },
+  ];
+  public localeList = [
+    { value: LOCALE_EN_US, name: this.translate.instant('profile.text_locale_en_us') },
+    { value: LOCALE_DE_DE, name: this.translate.instant('profile.text_locale_de_de') },
+    { value: LOCALE_UK, name: this.translate.instant('profile.text_locale_uk') },
+  ];
 
   public cntlsPassword = {
     password: new FormControl(null, []),
@@ -167,27 +182,38 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     this.errMsgsProfile = errMsgList;
   }
 
+  public changeTheme(event: string): void {
+    console.log(event);
+    // console.log(event.source.value, event.source.selected);
+  }
+
   public saveProfile(formGroup: FormGroup): void {
     const cntlNickname = formGroup.get('nickname');
     const cntlEmail = formGroup.get('email');
     const cntlDescript = formGroup.get('descript');
-    if (formGroup.pristine ||  formGroup.invalid || !cntlNickname || !cntlEmail || !cntlDescript) {
+    
+    if (!formGroup || formGroup.pristine ||  formGroup.invalid || !cntlNickname || !cntlEmail || !cntlDescript) {
       return;
     }
+
     const nickname: string = cntlNickname.value || '';
     const email: string = cntlEmail.value || '';
     const descript: string = cntlDescript.value || '';
 
-    const updateProfileFileDto: UpdateProfileFile = {
-      nickname: (this.origProfileDto.nickname != nickname ? nickname : undefined),
-      email: (this.origProfileDto.email != email ? email : undefined),
-      descript: (this.origProfileDto.descript != descript ? descript : undefined),
-      // theme?: string | undefined; // Default color theme. ["light","dark"]
-      avatarFile: this.avatarFile,
+    const theme = formGroup.get('theme')?.value || '';
+    const locale = formGroup.get('locale')?.value || '';
+
+    const modifyProfile: ModifyProfileDto = {
+        nickname: (this.origProfileDto.nickname != nickname ? nickname : undefined),
+        email: (this.origProfileDto.email != email ? email : undefined),
+        descript: (this.origProfileDto.descript != descript ? descript : undefined),
+
+        theme: (this.origProfileDto.theme != theme ? theme : undefined),
+        locale: (this.origProfileDto.locale != locale ? locale : undefined),
     };
-    const is_all_empty = Object.values(updateProfileFileDto).findIndex((value) => value !== undefined) == -1;
-    if (!is_all_empty) {
-      this.updateProfile.emit(updateProfileFileDto);
+    const is_all_empty = Object.values(modifyProfile).findIndex((value) => value !== undefined) == -1;
+    if (!is_all_empty || !!this.avatarFile) {
+      this.updateProfile.emit({ modifyProfile, avatarFile: this.avatarFile });
     }
   }
 
@@ -234,7 +260,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   public setNewPassword(formGroup: FormGroup): void {
     const cntlPassword = formGroup.get('password');
     const cntlNewPassword = formGroup.get('new_password');
-    if (formGroup.pristine ||  formGroup.invalid || !cntlPassword || !cntlNewPassword) {
+    if (formGroup.pristine || formGroup.invalid || !cntlPassword || !cntlNewPassword) {
       return;
     }
     const newPasswordProfileDto: NewPasswordProfileDto = {
@@ -255,11 +281,12 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     const nickname = this.profileDto?.nickname || '';
     const appName = this.translate.instant('app.name');
     const message = this.translate.instant('profile.dialog_message_question_account', { nickname, appName: appName });
-    this.dialogService.openConfirmation(message, title, 'buttons.no', 'buttons.yes').then((respose) => {
-      if (!!respose) {
-        this.deleteAccount.emit();
-      }
-    });
+    this.dialogService.openConfirmation(message, title, 'buttons.no', 'buttons.yes')
+      .then((respose) => {
+        if (!!respose) {
+         this.deleteAccount.emit();
+        } 
+      });
   }
 
   // ** Private API **
@@ -275,6 +302,8 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
       nickname: profileDto.nickname,
       email: profileDto.email,
       descript: profileDto.descript,
+      theme: profileDto.theme,
+      locale: profileDto.locale,
       avatar: profileDto.avatar,
     });
     this.avatarFile = undefined;

@@ -7,7 +7,9 @@
     
       <form [formGroup]="formGroupProfile" class="ppi-form" novalidate>
 
-        <div mr-tp-0_5 class="ppi-avatar">
+        <div class="ppi-label">{{ 'profile.label_avatar' | translate }}</div>
+
+        <div class="ppi-avatar">
           <app-field-image-and-upload
             formControlName="avatar"
             [accepts]="accepts"
@@ -46,6 +48,27 @@
           </app-field-email>
         </app-uniqueness-check>
         
+        <div mr-tp-0_5 class="ppi-them-local">
+          <mat-form-field
+            appearance="outline"
+            color="primary">
+            <mat-label>{{ 'profile.label_theme' | translate }}</mat-label>
+            <mat-select formControlName="theme" panelClass="ppi-option"
+              (selectionChange)="changeTheme($event.source.value)">
+              <mat-option *ngFor="let themeItem of themeList" [value]="themeItem.value">{{ themeItem.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field
+            appearance="outline"
+            color="primary">
+            <mat-label>{{ 'profile.label_locale' | translate }}</mat-label>
+            <mat-select formControlName="locale" panelClass="ppi-option">
+              <mat-option *ngFor="let localeItem of localeList" [value]="localeItem.value">{{ localeItem.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+  
         <app-field-descript wd100 mr-tp-0_5 class="ppi-err-pd"
           formControlName="descript"
           [isRequired]="false"
