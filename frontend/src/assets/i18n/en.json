@@ -277,6 +277,15 @@
   },
   "profile": {
     "title_profile": "Personal information",
+    "label_avatar": "Avatar",
+    "label_theme": "Color theme",
+    "text_light_theme": "Light Theme",
+    "text_dark_theme": "Dark Theme",
+    "label_locale": "Locale",
+    "text_locale_en_us": "English - United States",
+    "text_locale_de_de": "German - Germany",
+    "text_locale_uk": "Ukrainian",
+
     "btn_save_profile": "Save",
     "error_editing_profile": "Error editing profile.",
     "dialog_title_editing": "Profile change operation.",
