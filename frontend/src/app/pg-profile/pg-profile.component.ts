@@ -63,7 +63,7 @@ export class PgProfileComponent {
           this.profileService.setProfileDto({...this.profileDto});
           const title = this.translate.instant('profile.dialog_title_editing');
           const message = this.translate.instant('profile.dialog_message_editing');
-          this.dialogService.openConfirmation(message, title, null, 'buttons.ok');
+          this.dialogService.openConfirmation(message, title, { btnNameAccept: 'buttons.ok' }, { maxWidth: '40vw' });
         }          
        })
       .catch((error: HttpErrorResponse) => {
@@ -91,7 +91,7 @@ export class PgProfileComponent {
           this.profileService.setProfileDto({...this.profileDto});
           const title = this.translate.instant('profile.dialog_title_password');
           const message = this.translate.instant('profile.dialog_message_password');
-          this.dialogService.openConfirmation(message, title, null, 'buttons.ok');
+          this.dialogService.openConfirmation(message, title, { btnNameAccept: 'buttons.ok' }, { maxWidth: '40vw' });
         }
       })
       .catch((error: HttpErrorResponse) => {
@@ -115,7 +115,7 @@ export class PgProfileComponent {
         } else {
           const title = this.translate.instant('profile.dialog_title_delete');
           const message = this.translate.instant('profile.dialog_message_delete', { nickname });
-          this.dialogService.openConfirmation(message, title, null, 'buttons.ok')
+          this.dialogService.openConfirmation(message, title, { btnNameAccept: 'buttons.ok' }, { maxWidth: '40vw' })
           .finally(() => {
             // Closing the session.
             this.profileService.setProfileDto(null);

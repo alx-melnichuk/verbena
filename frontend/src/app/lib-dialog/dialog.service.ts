@@ -12,15 +12,18 @@ export class DialogService {
 
   // ** Public API **
 
-  public openConfirmation(message: string, title?: string, btnNameCancel?: string | null, btnNameAccept?: string | null): Promise<unknown> {
+  public openConfirmation(message: string, title?: string, 
+    params?: { btnNameCancel?: string | null, btnNameAccept?: string | null},
+    dialogConfig?: MatDialogConfig
+  ): Promise<unknown> {
     const confirmationData: ConfirmationData = { title, message };
-    if (!!btnNameCancel) {
-      confirmationData.btnNameCancel = btnNameCancel;
+    if (!!params?.btnNameCancel) {
+      confirmationData.btnNameCancel = params.btnNameCancel;
     }
-    if (!!btnNameAccept) {
-      confirmationData.btnNameAccept = btnNameAccept;
+    if (!!params?.btnNameAccept) {
+      confirmationData.btnNameAccept = params.btnNameAccept;
     }
-    return this.openComponentExt(ConfirmationComponent, confirmationData);
+    return this.openComponentExt(ConfirmationComponent, confirmationData, dialogConfig);
   }
 
   public openComponent(component: ComponentType<unknown>, dataParams: any): void {
@@ -38,19 +41,19 @@ export class DialogService {
     this.dialog.open(component, dialogConfig);
   }
 
-  public openComponentExt(component: ComponentType<unknown>, dataParams: any): Promise<unknown> {
-    const dialogConfig = new MatDialogConfig();
+  public openComponentExt(component: ComponentType<unknown>, dataParams: any, dialogConfig?: MatDialogConfig): Promise<unknown> {
+    const dialogCfg = {...(new MatDialogConfig()), ...dialogConfig };
     // Custom class for the overlay pane.
-    dialogConfig.panelClass = ['app-modal-panel', 'large'];
+    dialogCfg.panelClass = ['app-modal-panel', 'large'];
     // Whether the dialog has a backdrop.
-    dialogConfig.hasBackdrop = true;
+    dialogCfg.hasBackdrop = true;
     // Custom class for the backdrop.
-    dialogConfig.backdropClass = 'app-modal-backdrop';
+    dialogCfg.backdropClass = 'app-modal-backdrop';
     // Whether the user can use escape or clicking on the backdrop to close the modal. disableClose?: boolean;
-    dialogConfig.disableClose = false;
-    dialogConfig.data = dataParams;
+    dialogCfg.disableClose = false;
+    dialogCfg.data = dataParams;
 
-    const dialogRef = this.dialog.open(ConfirmationComponent, dialogConfig);
+    const dialogRef = this.dialog.open(ConfirmationComponent, dialogCfg);
     // const answer = new Promise((resolve, reject) => {
     //   dialogRef.afterClosed().subscribe(result => {
     //     if (!!result) { resolve(result); } else { reject(); }

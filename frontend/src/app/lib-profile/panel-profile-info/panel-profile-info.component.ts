@@ -278,7 +278,8 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     const nickname = this.profileDto?.nickname || '';
     const appName = this.translate.instant('app.name');
     const message = this.translate.instant('profile.dialog_message_question_account', { nickname, appName: appName });
-    this.dialogService.openConfirmation(message, title, 'buttons.no', 'buttons.yes')
+    const params = { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' };
+    this.dialogService.openConfirmation(message, title, params, { maxWidth: '40vw' })
       .then((respose) => {
         if (!!respose) {
          this.deleteAccount.emit();

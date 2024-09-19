@@ -115,7 +115,7 @@ export class StreamListComponent {
     if (!!info && !!info.id) {
       this.alertService.hide();
       const message = this.translateService.instant('stream_list.sure_you_want_delete_stream', { title: info.title });
-      this.dialogService.openConfirmation(message, '', 'buttons.no', 'buttons.yes')
+      this.dialogService.openConfirmation(message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' })
         .then((result) => {
           if (!!result) {
             this.deleteDataStream(info.id);
