@@ -225,9 +225,9 @@ pub mod tests {
                     &profile.email.to_lowercase(),
                     profile.role.clone(),
                     profile.avatar.as_deref(),
-                    Some(profile.descript.as_str()),
-                    Some(profile.theme.as_str()),
-                    Some(profile.locale.as_str()),
+                    profile.descript.as_deref(),
+                    profile.theme.as_deref(),
+                    profile.locale.as_deref(),
                 );
                 profile2.password = profile.password.clone();
                 profile2.created_at = profile.created_at;
@@ -343,9 +343,9 @@ pub mod tests {
                     password: modify_profile.password.unwrap_or(profile.password.clone()),
                     role: modify_profile.role.unwrap_or(profile.role.clone()),
                     avatar: modify_profile.avatar.unwrap_or(profile.avatar.clone()),
-                    descript: modify_profile.descript.unwrap_or(profile.descript.clone()),
-                    theme: modify_profile.theme.unwrap_or(profile.theme.clone()),
-                    locale: modify_profile.locale.unwrap_or(profile.locale.clone()),
+                    descript: modify_profile.descript.or(profile.descript.clone()),
+                    theme: modify_profile.theme.or(profile.theme.clone()),
+                    locale: modify_profile.locale.or(profile.locale.clone()),
                     created_at: profile.created_at,
                     updated_at: Utc::now(),
                 };
