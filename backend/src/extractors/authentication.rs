@@ -454,7 +454,7 @@ mod tests {
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
         assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id));
+        assert_eq!(app_err.message, format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id));
     }
     #[test]
     async fn test_authentication_middelware_valid_token_non_existent_user() {
@@ -485,7 +485,7 @@ mod tests {
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id_bad));
+        assert_eq!(app_err.message, format!("{}; user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id_bad));
     }
     #[test]
     async fn test_authentication_middelware_valid_token_non_existent_num() {
@@ -509,7 +509,7 @@ mod tests {
         let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
         assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id));
+        assert_eq!(app_err.message, format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id));
     }
     #[test]
     async fn test_authentication_middleware_access_admin_only_endpoint_fail() {
