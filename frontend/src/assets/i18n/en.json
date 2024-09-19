@@ -278,6 +278,7 @@
   "profile": {
     "title_profile": "Personal information",
     "label_avatar": "Avatar",
+    "text_nothing": "nothing",
     "label_theme": "Color theme",
     "text_light_theme": "Light Theme",
     "text_dark_theme": "Dark Theme",
