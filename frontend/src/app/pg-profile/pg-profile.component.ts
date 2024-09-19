@@ -57,7 +57,7 @@ export class PgProfileComponent {
     this.profileService.modifyProfile(obj.modifyProfile, obj.avatarFile)
       .then((response: ProfileDto | HttpErrorResponse | undefined) => {
         if (!response) {
-          this.errMsgsPassword = [this.translate.instant('profile.error_editing_profile')];
+          this.errMsgsProfile = [this.translate.instant('profile.error_editing_profile')];
         } else {
           this.profileDto = response as ProfileDto;
           this.profileService.setProfileDto({...this.profileDto});
