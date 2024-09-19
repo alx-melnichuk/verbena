@@ -423,7 +423,7 @@ impl Validator for ModifyProfileDto {
     // Check the model against the required conditions.
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
-        dbg!(self);
+
         if let Some(value) = &self.nickname {
             errors.push(validate_nickname(&value).err());
         }
@@ -434,18 +434,22 @@ impl Validator for ModifyProfileDto {
             errors.push(validate_role(&value).err());
         }
         if let Some(value) = &self.descript {
-            // The field is optional and we check if there is a value.
             if value.len() > 0 {
+                // If the string is empty, the DB will assign NULL.
                 errors.push(validate_descript(&value).err());
             }
         }
         if let Some(value) = &self.theme {
-            eprintln!("@_theme: {}", value);
-            errors.push(validate_theme(&value).err());
+            if value.len() > 0 {
+                // If the string is empty, the DB will assign NULL.
+                errors.push(validate_theme(&value).err());
+            }
         }
         if let Some(value) = &self.locale {
-            eprintln!("@_locale: {}", value);
-            errors.push(validate_locale(&value).err());
+            if value.len() > 0 {
+                // If the string is empty, the DB will assign NULL.
+                errors.push(validate_locale(&value).err());
+            }
         }
 
         let list_is_some = vec![
