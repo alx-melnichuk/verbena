@@ -594,7 +594,7 @@ pub async fn put_stream(
     modify_stream.logo = logo;
     let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
 
-    let res_data_stream = web::block(move || {
+    let (path_old_logo_file, res_data_stream) = web::block(move || {
         let mut old_logo_file = "".to_string();
         if modify_stream.logo.is_some() {
             // Get the logo file name for an entity (stream) by ID.
@@ -609,13 +609,13 @@ pub async fn put_stream(
             }
         }
         // Modify an entity (stream).
-        let res_stream = stream_orm.modify_stream(id, opt_user_id, modify_stream, tags)
+        let res_data_stream = stream_orm.modify_stream(id, opt_user_id, modify_stream, tags)
         .map_err(|e| {
             log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
 
-        (old_logo_file, res_stream)
+        (old_logo_file, res_data_stream)
     })
     .await
     .map_err(|e| {
@@ -623,22 +623,22 @@ pub async fn put_stream(
         AppError::blocking506(&e.to_string())
     })?;
 
-    let (path_old_logo_file, res_stream) = res_data_stream;
+    let opt_data_stream = res_data_stream
+    .map_err(|err| {
+        remove_file_and_log(&path_new_logo_file, &"put_stream()");
+        err
+    })?;
 
-    let mut opt_stream_info_dto: Option<StreamInfoDto> = None;
-    if let Ok(Some((stream, stream_tags))) = res_stream {
+    if let Some((stream, stream_tags)) = opt_data_stream {
         // Merge a "stream" and a corresponding list of "tags".
         let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
-        opt_stream_info_dto = Some(list[0].clone());
+        let stream_info_dto: StreamInfoDto = list[0].clone();
         // If the image file name starts with the specified alias, then delete the file.
         remove_image_file(&path_old_logo_file, ALIAS_LOGO_FILES_DIR, &config_strm.strm_logo_files_dir, &"put_stream()");
-    } else {
-        remove_file_and_log(&path_new_logo_file, &"put_stream()");
-    }
-    if let Some(stream_info_dto) = opt_stream_info_dto {
         Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
     } else {
-        Ok(HttpResponse::NoContent().finish()) // 204
+        remove_file_and_log(&path_new_logo_file, &"put_stream()");
+        Ok(HttpResponse::NoContent().finish()) // 204        
     }
 }
 
