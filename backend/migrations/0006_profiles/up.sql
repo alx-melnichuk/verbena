@@ -146,8 +146,8 @@ CREATE OR REPLACE FUNCTION modify_profile_user(
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE 
+  is_request_completed BOOLEAN = FALSE;
   sql1 TEXT;
-  s2 VARCHAR;
   update_users VARCHAR[];
   update_profiles VARCHAR[];
 BEGIN
@@ -159,29 +159,38 @@ BEGIN
   IF nickname IS NOT NULL AND LENGTH(nickname) > 0 THEN
     update_users := ARRAY_APPEND(update_users, 'nickname = ''' || nickname || '''');
   END IF;
+
   IF email IS NOT NULL AND LENGTH(email) > 0 THEN
     update_users := ARRAY_APPEND(update_users, 'email = ''' || email || '''');
   END IF;
+
   IF "password" IS NOT NULL AND LENGTH("password") > 0 THEN
     update_users := ARRAY_APPEND(update_users, '"password" = ''' || "password" || '''');
   END IF;
+
   IF "role" IS NOT NULL AND LENGTH("role"::VARCHAR) > 0 THEN
     update_users := ARRAY_APPEND(update_users, '"role" = ''' || "role" || '''');
   END IF;
 
   update_profiles := ARRAY[]::VARCHAR[];
   IF avatar IS NOT NULL THEN
-    s2 := CASE WHEN LENGTH(avatar) > 0 THEN '''' || avatar || '''' ELSE ' NULL' END;
-    update_profiles := ARRAY_APPEND(update_profiles, 'avatar = ' || s2);
+    update_profiles := ARRAY_APPEND(update_profiles, 'avatar = '
+    || CASE WHEN LENGTH(avatar) > 0 THEN '''' || avatar || '''' ELSE ' NULL' END);
   END IF;
-  IF descript IS NOT NULL AND LENGTH(descript) > 0 THEN
-    update_profiles := ARRAY_APPEND(update_profiles, 'descript = ''' || descript || '''');
+
+  IF descript IS NOT NULL THEN
+    update_profiles := ARRAY_APPEND(update_profiles, 'descript = '
+    || CASE WHEN LENGTH(descript) > 0 THEN '''' || descript || '''' ELSE ' NULL' END);
   END IF;
-  IF theme IS NOT NULL AND LENGTH(theme) > 0 THEN
-    update_profiles := ARRAY_APPEND(update_profiles, 'theme = ''' || theme || '''');
+
+  IF theme IS NOT NULL THEN
+    update_profiles := ARRAY_APPEND(update_profiles, 'theme = '
+    || CASE WHEN LENGTH(theme) > 0 THEN '''' || theme || '''' ELSE ' NULL' END);
   END IF;
-  IF locale IS NOT NULL AND LENGTH(locale) > 0 THEN
-    update_profiles := ARRAY_APPEND(update_profiles, 'locale = ''' || locale || '''');
+
+  IF locale IS NOT NULL THEN
+    update_profiles := ARRAY_APPEND(update_profiles, 'locale = '
+    || CASE WHEN LENGTH(locale) > 0 THEN '''' || locale || '''' ELSE ' NULL' END);
   END IF;
 
   IF ARRAY_LENGTH(update_users, 1) > 0 THEN
@@ -190,11 +199,12 @@ BEGIN
       || ' FROM profiles'  
       || ' WHERE users.id = profiles.user_id AND id = ' || user_id
       || ' RETURNING '
-      || ' users.id AS user_id, users.nickname, users.email, ''''::VARCHAR AS "password", users."role",'
+      || ' users.nickname, users.email, ''''::VARCHAR AS "password", users."role",'
       || ' profiles.avatar, profiles.descript, profiles.theme, profiles.locale,'
       || ' users.created_at, users.updated_at'; 
     EXECUTE sql1 INTO
-      user_id, nickname, email, "password", "role", avatar, descript, theme, locale, created_at, updated_at;
+      nickname, email, "password", "role", avatar, descript, theme, locale, created_at, updated_at;
+    is_request_completed := TRUE;
   END IF;
 
   IF ARRAY_LENGTH(update_profiles, 1) > 0 THEN
@@ -203,19 +213,18 @@ BEGIN
       || ' FROM users'  
       || ' WHERE users.id = profiles.user_id AND profiles.user_id = ' || user_id
       || ' RETURNING '
-      || ' users.id AS user_id, users.nickname, users.email, ''''::VARCHAR AS "password", users."role",'
+      || ' users.nickname, users.email, ''''::VARCHAR AS "password", users."role",'
       || ' profiles.avatar, profiles.descript, profiles.theme, profiles.locale,'
       || ' users.created_at, profiles.updated_at'; 
     EXECUTE sql1 INTO
+      nickname, email, "password", "role", avatar, descript, theme, locale, created_at, updated_at;
+    is_request_completed := TRUE;
+  END IF;
+
+  IF is_request_completed THEN
+    RETURN QUERY SELECT
       user_id, nickname, email, "password", "role", avatar, descript, theme, locale, created_at, updated_at;
   END IF;
-
-  IF user_id IS NULL THEN
-    RETURN;
-  END IF;
-
-  RETURN QUERY SELECT
-    user_id, nickname, email, "password", "role", avatar, descript, theme, locale, created_at, updated_at;
 END;
 $$;
 
