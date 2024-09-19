@@ -69,9 +69,6 @@ app-panel-profile-info {
   overflow: auto;
   user-select: none;
 
-  .ppi-err-pd.ng-invalid {
-    padding-bottom: 1em;
-  }
   .ppi-mr-bt {
     margin-bottom: var(---ppi-pd);
   }
@@ -175,12 +172,20 @@ app-panel-profile-info {
   }
 
   // ** Error **
+  .ppi-err-pd.ng-invalid.ng-touched {
+    padding-bottom: 1em;
+  }
   .ppi-err {
     font-size: calc(1em - 1px);
   }
 }
 
 
-.cdk-overlay-pane .ppi-option > .mat-mdc-option {
+.cdk-overlay-pane {
+  .ppi-option > .mat-mdc-option {
     min-height: 40px;
+  }
+  mat-option.ppi-fn-it {
+    font-style: italic;
+  }
 }

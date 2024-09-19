@@ -74,20 +74,22 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   }
 
   public cntlsProfile = {
-    nickname: new FormControl(null, []),
-    email: new FormControl(null, []),
-    password: new FormControl(null, []),
+    nickname: new FormControl('', []),
+    email: new FormControl('', []),
+    password: new FormControl('', []),
     avatar: new FormControl('', []),
-    descript: new FormControl(null, []),
+    descript: new FormControl('', []),
     theme: new FormControl('', []),
     locale: new FormControl('', []),
   };
   public formGroupProfile: FormGroup = new FormGroup(this.cntlsProfile);
   public themeList = [
+    { value: '', name: this.translate.instant('profile.text_nothing') },
     { value: THEME_LIGHT, name: this.translate.instant('profile.text_light_theme') },
     { value: THEME_DARK, name: this.translate.instant('profile.text_dark_theme') },
   ];
   public localeList = [
+    { value: '', name: this.translate.instant('profile.text_nothing') },
     { value: LOCALE_EN_US, name: this.translate.instant('profile.text_locale_en_us') },
     { value: LOCALE_DE_DE, name: this.translate.instant('profile.text_locale_de_de') },
     { value: LOCALE_UK, name: this.translate.instant('profile.text_locale_uk') },
@@ -121,7 +123,9 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   }
 
   ngOnInit(): void {
+    this.cntlsProfile.nickname.markAsTouched();
     this.fieldNicknameComp.getFormControl().markAsTouched();
+    this.cntlsProfile.email.markAsTouched();
     this.fieldEmailComp.getFormControl().markAsTouched();
   }
     
@@ -188,18 +192,12 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
   }
 
   public saveProfile(formGroup: FormGroup): void {
-    const cntlNickname = formGroup.get('nickname');
-    const cntlEmail = formGroup.get('email');
-    const cntlDescript = formGroup.get('descript');
-    
-    if (!formGroup || formGroup.pristine ||  formGroup.invalid || !cntlNickname || !cntlEmail || !cntlDescript) {
+    if (!formGroup || formGroup.pristine ||  formGroup.invalid) {
       return;
     }
-
-    const nickname: string = cntlNickname.value || '';
-    const email: string = cntlEmail.value || '';
-    const descript: string = cntlDescript.value || '';
-
+    const nickname = formGroup.get('nickname')?.value || '';
+    const email = formGroup.get('email')?.value || '';
+    const descript = formGroup.get('descript')?.value;
     const theme = formGroup.get('theme')?.value;
     const locale = formGroup.get('locale')?.value;
 
@@ -207,9 +205,8 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
         nickname: (this.origProfileDto.nickname != nickname ? nickname : undefined),
         email: (this.origProfileDto.email != email ? email : undefined),
         descript: (this.origProfileDto.descript != descript ? descript : undefined),
-
-        theme: (this.origProfileDto.theme !== theme ? theme : undefined),
-        locale: (this.origProfileDto.locale !== locale ? locale : undefined),
+        theme: (this.origProfileDto.theme != theme ? theme : undefined),
+        locale: (this.origProfileDto.locale != locale ? locale : undefined),
     };
     const is_all_empty = Object.values(modifyProfile).findIndex((value) => value !== undefined) == -1;
     if (!is_all_empty || !!this.avatarFile) {
@@ -295,15 +292,19 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     if (!profileDto) {
       return;
     }
-    this.origProfileDto = { ...profileDto };
+    this.origProfileDto = ProfileDtoUtil.create(profileDto);
+    this.origProfileDto.descript = (profileDto.descript || '');
+    this.origProfileDto.theme = (profileDto.theme || '');
+    this.origProfileDto.locale = (profileDto.locale || '');
+    
     Object.freeze(this.origProfileDto);
 
     this.formGroupProfile.patchValue({
       nickname: profileDto.nickname,
       email: profileDto.email,
-      descript: profileDto.descript,
-      theme: profileDto.theme,
-      locale: profileDto.locale,
+      descript: (profileDto.descript || ''),
+      theme: (profileDto.theme || ''),
+      locale: (profileDto.locale || ''),
       avatar: profileDto.avatar,
     });
     this.avatarFile = undefined;

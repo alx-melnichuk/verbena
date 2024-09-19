@@ -55,7 +55,11 @@
             <mat-label>{{ 'profile.label_theme' | translate }}</mat-label>
             <mat-select formControlName="theme" panelClass="ppi-option"
               (selectionChange)="changeTheme($event.source.value)">
-              <mat-option *ngFor="let themeItem of themeList" [value]="themeItem.value">{{ themeItem.name }}</mat-option>
+              <mat-option *ngFor="let themeItem of themeList"
+                [ngClass]="(themeItem.value == '' ? 'ppi-fn-it' : '')"
+                [value]="themeItem.value">
+                {{ themeItem.name }}
+              </mat-option>
             </mat-select>
           </mat-form-field>
 
@@ -64,7 +68,11 @@
             color="primary">
             <mat-label>{{ 'profile.label_locale' | translate }}</mat-label>
             <mat-select formControlName="locale" panelClass="ppi-option">
-              <mat-option *ngFor="let localeItem of localeList" [value]="localeItem.value">{{ localeItem.name }}</mat-option>
+              <mat-option *ngFor="let localeItem of localeList"
+                [ngClass]="(localeItem.value == '' ? 'ppi-fn-it' : '')"
+                [value]="localeItem.value">
+                {{ localeItem.name }}
+              </mat-option>
             </mat-select>
           </mat-form-field>
         </div>
