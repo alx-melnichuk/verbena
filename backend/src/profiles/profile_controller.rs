@@ -373,6 +373,7 @@ pub async fn put_profile(
         let profile_dto = ProfileDto::from(profile);
         Ok(HttpResponse::Ok().json(profile_dto)) // 200
     } else {
+        remove_file_and_log(&path_new_avatar_file, &"put_profile()");
         Ok(HttpResponse::NoContent().finish()) // 204        
     }
 }
@@ -1410,8 +1411,8 @@ mod tests {
         let nickname_s = format!("{}_a", profile.nickname.clone());
         let email_s = format!("{}_a", profile.email.clone());
         let user_role = UserRole::Admin;
-        let descript_s = format!("{}_a", profile.descript.clone());
-        let theme_s = format!("{}_a", profile.theme.clone());
+        let descript_s = format!("{}_a", profile.descript.clone().unwrap_or("default".to_string()));
+        let theme_s = format!("{}_a", profile.theme.clone().unwrap_or("default".to_string()));
 
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("nickname", &nickname_s)
@@ -1440,8 +1441,8 @@ mod tests {
         assert_eq!(profile_dto_res.nickname, nickname_s);
         assert_eq!(profile_dto_res.email, email_s);
         assert_eq!(profile_dto_res.role, user_role);
-        assert_eq!(profile_dto_res.descript, descript_s);
-        assert_eq!(profile_dto_res.theme, theme_s);
+        assert_eq!(profile_dto_res.descript, Some(descript_s));
+        assert_eq!(profile_dto_res.theme, Some(theme_s));
         // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
         let res_created_at = profile_dto_res.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
         let old_created_at = profile.created_at.to_rfc3339_opts(SecondsFormat::Secs, true);
