@@ -136,7 +136,8 @@ impl ModifyProfileForm {
 ///   email?: String,        // optional - user email;
 ///   role?: String,         // optional - user role;
 ///   descript?: String,     // optional - user description;
-///   theme?: String,        // optional - user color theme ("light", "dark");
+///   theme?: String,        // optional - default color theme. ('light','dark');
+///   locale?: String,       // optional - default locale;
 ///   avatarfile?: TempFile, // optional - attached user image file (jpeg,gif,png,bmp);
 /// }
 /// ```
@@ -360,19 +361,19 @@ pub async fn put_profile(
         AppError::blocking506(&e.to_string())
     })?;
 
-    let mut opt_profile_dto: Option<ProfileDto> = None;
+    let opt_profile = res_profile
+    .map_err(|err| {
+        remove_file_and_log(&path_new_avatar_file, &"put_profile()");
+        err
+    })?;
 
-    if let Ok(Some(profile)) = res_profile {
-        opt_profile_dto = Some( ProfileDto::from(profile) );
+    if let Some(profile) = opt_profile {
         // If the image file name starts with the specified alias, then delete the file.
         remove_image_file(&path_old_avatar_file, ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"put_profile()");
-    } else {
-        remove_file_and_log(&path_new_avatar_file, &"put_profile()");
-    }
-    if let Some(profile_dto) = opt_profile_dto {
+        let profile_dto = ProfileDto::from(profile);
         Ok(HttpResponse::Ok().json(profile_dto)) // 200
     } else {
-        Ok(HttpResponse::NoContent().finish()) // 204
+        Ok(HttpResponse::NoContent().finish()) // 204        
     }
 }
 
