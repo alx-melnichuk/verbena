@@ -15,6 +15,7 @@ export const PIPE_DATE_TIME = 'dd MMMM yyyy HH:mm'; // 'dd MMMM yyyy HH:mm aa';
 
 export const THEME_LIGHT = 'light';
 export const THEME_DARK = 'dark';
+export const THEME_SUFFIX = 'theme';
 
 export const LOCALE_EN_US = 'en-US';  // 'English - United States'
 export const LOCALE_DE_DE = 'de-DE'; // 'German - Germany'

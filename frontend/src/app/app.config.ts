@@ -51,23 +51,23 @@ export const appConfig: ApplicationConfig = {
     ),
     importProvidersFrom(MatDialogModule, MatSnackBarModule, MatNativeDateModule),
     {
-        provide: DateAdapter,
-        useClass: AppDateAdapter
+      provide: DateAdapter,
+      useClass: AppDateAdapter
     },
     {
-        provide: MAT_DATE_FORMATS,
-        useValue: APP_DATE_FORMATS
-    },
-    {
-      provide: APP_INITIALIZER,
-      deps: [InitializationService],
-      useFactory: INITIALIZE_TRANSLATE_FACTORY,
-      multi: true,
+      provide: MAT_DATE_FORMATS,
+      useValue: APP_DATE_FORMATS
     },
     {
       provide: APP_INITIALIZER,
       deps: [InitializationService],
       useFactory: INITIALIZE_AUTHENTICATION_USER_FACTORY,
+      multi: true,
+    },
+    {
+      provide: APP_INITIALIZER,
+      deps: [InitializationService],
+      useFactory: INITIALIZE_TRANSLATE_FACTORY,
       multi: true,
     },
   ],
