@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
+import { LocalStorageUtil } from '../utils/local-storage.util';
+
 import {
  LoginProfileResponseDto, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileTokensDto, TokenUpdate, UniquenessDto
 } from './profile-api.interface';
@@ -134,10 +136,9 @@ export class ProfileService implements TokenUpdate {
     }
   }
   private setProfileTokensDtoToLocalStorage(profileTokensDto: ProfileTokensDto | null): ProfileTokensDto | null {
-    const accessToken = profileTokensDto?.accessToken || null;
-    this.updateItemInLocalStorage(ACCESS_TOKEN, accessToken);
-    const refreshToken = profileTokensDto?.refreshToken || null;
-    this.updateItemInLocalStorage(REFRESH_TOKEN, refreshToken);
+    LocalStorageUtil.update(ACCESS_TOKEN, profileTokensDto?.accessToken || null);
+    LocalStorageUtil.update(REFRESH_TOKEN, profileTokensDto?.refreshToken || null);
+
     return !!profileTokensDto ? { ...profileTokensDto } : null;
   }
   private getProfileTokensDtoFromLocalStorage(): ProfileTokensDto | null {
