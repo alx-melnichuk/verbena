@@ -171,6 +171,10 @@ app-panel-profile-info {
     font-size: calc(1em - 2px);
   }
 
+  .ppi-fn-it {
+    font-style: italic;
+    color: var(--ppi-text-cl, var(---ppi-text-cl));
+  }
   // ** Error **
   .ppi-err-pd.ng-invalid.ng-touched {
     padding-bottom: 1em;
@@ -185,7 +189,7 @@ app-panel-profile-info {
   .ppi-option > .mat-mdc-option {
     min-height: 40px;
   }
-  mat-option.ppi-fn-it {
+  mat-option.ppi-opt-fn-it {
     font-style: italic;
   }
 }

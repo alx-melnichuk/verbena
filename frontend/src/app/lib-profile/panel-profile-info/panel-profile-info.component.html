@@ -53,10 +53,12 @@
             appearance="outline"
             color="primary">
             <mat-label>{{ 'profile.label_theme' | translate }}</mat-label>
-            <mat-select formControlName="theme" panelClass="ppi-option"
-              (selectionChange)="changeTheme($event.source.value)">
+            <mat-select formControlName="theme" panelClass="ppi-option">
+              <mat-select-trigger [ngClass]="(!cntlsProfile.theme.value ? 'ppi-fn-it' : '')">
+                {{ themeMap[cntlsProfile.theme.value || ''] }}
+              </mat-select-trigger>
               <mat-option *ngFor="let themeItem of themeList"
-                [ngClass]="(themeItem.value == '' ? 'ppi-fn-it' : '')"
+                [ngClass]="(themeItem.value == '' ? 'ppi-opt-fn-it' : '')"
                 [value]="themeItem.value">
                 {{ themeItem.name }}
               </mat-option>
@@ -68,8 +70,11 @@
             color="primary">
             <mat-label>{{ 'profile.label_locale' | translate }}</mat-label>
             <mat-select formControlName="locale" panelClass="ppi-option">
+              <mat-select-trigger [ngClass]="(!cntlsProfile.locale.value ? 'ppi-fn-it' : '')">
+                {{ localeMap[cntlsProfile.locale.value || ''] }}
+              </mat-select-trigger>
               <mat-option *ngFor="let localeItem of localeList"
-                [ngClass]="(localeItem.value == '' ? 'ppi-fn-it' : '')"
+                [ngClass]="(localeItem.value == '' ? 'ppi-opt-fn-it' : '')"
                 [value]="localeItem.value">
                 {{ localeItem.name }}
               </mat-option>

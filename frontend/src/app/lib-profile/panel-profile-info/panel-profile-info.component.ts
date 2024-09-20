@@ -88,12 +88,14 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     { value: THEME_LIGHT, name: this.translate.instant('profile.text_light_theme') },
     { value: THEME_DARK, name: this.translate.instant('profile.text_dark_theme') },
   ];
+  public themeMap: { [key: string]: string } = {};
   public localeList = [
     { value: '', name: this.translate.instant('profile.text_nothing') },
     { value: LOCALE_EN_US, name: this.translate.instant('profile.text_locale_en_us') },
     { value: LOCALE_DE_DE, name: this.translate.instant('profile.text_locale_de_de') },
     { value: LOCALE_UK, name: this.translate.instant('profile.text_locale_uk') },
   ];
+  public localeMap: { [key: string]: string } = {};
 
   public cntlsPassword = {
     password: new FormControl(null, []),
@@ -120,6 +122,14 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     private profileService: ProfileService,
   ) {
     this.formGroupPassword.setValidators(this.validatorsForPassword());
+    for (let idx = 0; idx < this.themeList.length; idx++) {
+        const item = this.themeList[idx];
+        this.themeMap[item.value] = item.name;
+    }
+    for (let idx = 0; idx < this.localeList.length; idx++) {
+        const item = this.localeList[idx];
+        this.localeMap[item.value] = item.name;
+    }
   }
 
   ngOnInit(): void {
@@ -135,6 +145,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
       this.cntlsPassword.password.setValue(null);
       this.cntlsPassword.new_password.setValue(null);
       this.isRequiredPassword = false;
+      this.formGroupPassword.markAsPristine();
     }
     if (!!changes['profileConfigDto']) {
       this.prepareFormGroupByProfileConfigDto(this.profileConfigDto);
@@ -184,11 +195,6 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
 
   public updateErrMsgsProfile(errMsgList: string[] = []): void {
     this.errMsgsProfile = errMsgList;
-  }
-
-  public changeTheme(event: string): void {
-    console.log(event);
-    // console.log(event.source.value, event.source.selected);
   }
 
   public saveProfile(formGroup: FormGroup): void {
@@ -310,6 +316,7 @@ export class PanelProfileInfoComponent implements OnInit, OnChanges {
     });
     this.avatarFile = undefined;
     this.initIsAvatar = !!profileDto.avatar;
+    this.formGroupProfile.markAsPristine();
   }
 
   private prepareFormGroupByProfileConfigDto(profileConfigDto: ProfileConfigDto | null): void {
