@@ -1,3 +1,66 @@
 {
-  "app_name": "Eisenkraut"
+  "app": {
+    "name": "Eisénkraut",
+    "demo_site": " demo seite."
+  },
+  "error": {
+    "required": "Bitte geben Sie ein Pflichtfeld ein.",
+    "server_api_call": "Beim Aufrufen der Server-API ist ein Fehler aufgetreten."
+  },
+  "buttons": {
+    "ok": "Ok",
+    "cancel": "Stornieren",
+    "yes": "Ja",
+    "no": "Nein"
+  },
+  "main_menu": {
+    "about": "Um",
+    "login": "Anmelden",
+    "signup": "Registrieren",
+    "profile": "Profil",
+    "my_streams": "Meine Streams",
+    "create_stream": "Stream erstellen",
+    "my_follows_": "Meine follower",
+    "dark_theme": "Dunkles Design",
+    "log_out": "Abmelden"
+  },
+  "dialog": {
+    "confirmation": "Bestätigung"
+  },
+
+  "profile": {
+    "title_profile": "Persönliche informationen",
+    "label_avatar": "Avatar",
+    "text_nothing": "nichts",
+    "label_theme": "Farbthema",
+    "text_light_theme": "Helles thema",
+    "text_dark_theme": "Dunkles thema",
+    "label_locale": "Gebietsschema",
+    "text_locale_en_us": "Englisch - Vereinigte Staaten",
+    "text_locale_de_de": "Deutsch - Deutschland",
+    "text_locale_uk": "Ukrainisch",
+
+    "btn_save_profile": "Speichern",
+    "error_editing_profile": "Fehler beim Bearbeiten des Profils.",
+    "dialog_title_editing": "Profiländerungs vorgang.",
+    "dialog_message_editing": "Der Profiländerungs vorgang wurde erfolgreich abgeschlossen!",
+ 
+    "title_change_password": "Kennwort ändern",
+    "current_password": "Aktuelles Passwort",
+    "new_password": "Neues Passwort",
+    "btn_set_password": "Passwort festlegen",
+    "error_update_password": "Fehler beim Festlegen des neuen Passworts. Datensatz \"{{nickname}}\" nicht gefunden.",
+    "dialog_title_password": "Vorgang zum Ändern des Passworts.",
+    "dialog_message_password": "Der Vorgang zur Passwortänderung wurde erfolgreich abgeschlossen!",
+    
+    "title_delete_account": "Löschen Sie Ihr Konto",
+    "note_before_deleting_account": "Dabei gehen sämtliche Daten und Inhalte dieses Accounts, wie E-Mails, Dateien und Fotos verloren. Diese Daten können nicht mehr wiederhergestellt werden.",
+    "dialog_title_question_account": "Löschen Sie Ihr Konto",
+    "dialog_message_question_account": "Möchten Sie Ihr Konto \"{{nickname}}\" auf der Website \"{{appName}}\" wirklich löschen?",
+    "btn_delete_account": "Konto löschen",
+    "error_delete_account": "Fehler beim Löschen des Kontos. Datensatz \"{{nickname}}\" nicht gefunden.",
+    "dialog_title_delete": "Konto löschvorgang.",
+    "dialog_message_delete": "Der Vorgang zum Löschen des Kontos \"{{nickname}}\" wurde erfolgreich abgeschlossen!"
+  }
+
 }

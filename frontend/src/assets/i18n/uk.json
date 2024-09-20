@@ -1,0 +1,64 @@
+{
+  "app": {
+   "name": "Вербéна",
+   "demo_site": " демонстраційний сайт."
+  },
+  "error": {
+    "required": "Введіть обов'язкове поле.",
+    "server_api_call": "Під час виклику API сервера сталася помилка."
+  },
+  "buttons": {
+    "ok": "Ok",
+    "cancel": "Скасувати",
+    "yes": "Так",
+    "no": "Hi"
+  },
+  "main_menu": {
+    "about": "Про",
+    "login": "Увійти",
+    "signup": "Реєстрація",
+    "profile": "Профіль",
+    "my_streams": "Мої потоки",
+    "create_stream": "Створити потік",
+    "my_follows_": "Мої підписники",
+    "dark_theme": "Темна тема",
+    "log_out": "Вийти"
+  },
+  "dialog": {
+    "confirmation": "Підтвердження"
+  },
+  "profile": {
+    "title_profile": "Особиста інформація",
+    "label_avatar": "Аватар",
+    "text_nothing": "нічого",
+    "label_theme": "Кольорова тема",
+    "text_light_theme": "Світла тема",
+    "text_dark_theme": "Темна тема",
+    "label_locale": "Локаль",
+    "text_locale_en_us": "Англійська - США",
+    "text_locale_de_de": "Німецька - Німеччина",
+    "text_locale_uk": "Українська",
+
+    "btn_save_profile": "Зберегти",
+    "error_editing_profile": "Помилка редагування профілю.",
+    "dialog_title_editing": "Операція зміни профілю.",
+    "dialog_message_editing": "Операція зі зміни профілю успішно завершена !",
+ 
+    "title_change_password": "Змінити пароль",
+    "current_password": "Поточний пароль",
+    "new_password": "Новий пароль",
+    "btn_set_password": "Встановити пароль",
+    "error_update_password": "Помилка встановлення нового пароля. Запис \"{{nickname}}\" не знайдено.",
+    "dialog_title_password": "Операція зміни пароля.",
+    "dialog_message_password": "Операція зі зміни пароля успішно завершена !",
+    
+    "title_delete_account": "Видалити обліковий запис",
+    "note_before_deleting_account": "Ви втратите всі дані та вміст цього облікового запису, як-от електронні листи, файли та фотографії. Ці дані більше не можна відновити.",
+    "dialog_title_question_account": "Видалити обліковий запис",
+    "dialog_message_question_account": "Ви впевнені, що хочете видалити свій обліковий запис \"{{nickname}}\" на веб-сайті \"{{appName}}\"",
+    "btn_delete_account": "Видалити акаунт",
+    "error_delete_account": "Помилка видалення облікового запису. Запис \"{{nickname}}\" не знайдено.",
+    "dialog_title_delete": "Операція видалення облікового запису.",
+    "dialog_message_delete": "Операцію з видалення облікового запису \"{{nickname}}\" успішно завершено !"
+  }
+}      
