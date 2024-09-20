@@ -87,6 +87,9 @@ public modifyProfile(modifyProfileDto: ModifyProfileDto, file?: File | null): Pr
     if (modifyProfileDto.theme != null) {
       formData.set('theme', modifyProfileDto.theme);
     }
+    if (modifyProfileDto.locale != null) {
+        formData.set('locale', modifyProfileDto.locale);
+    }
     if (file !== undefined) {
       const currFile: File = (file !== null ? file : new File([], "file"));
       formData.set('avatarfile', currFile, currFile.name);
