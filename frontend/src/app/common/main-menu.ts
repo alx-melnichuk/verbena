@@ -1,5 +1,7 @@
 import { AuthorizationUtil } from '../utils/authorization.util';
-import { ROUTE_ABOUT, ROUTE_LOGIN, ROUTE_SIGNUP, ROUTE_PROFILE, ROUTE_STREAM_LIST, ROUTE_STREAM_CREATE } from './routes';
+import {
+  ROUTE_ABOUT, ROUTE_LOGIN, ROUTE_SIGNUP, ROUTE_PROFILE, ROUTE_STREAM_LIST, ROUTE_STREAM_CREATE, ROUTE_CONCEPT_LIST, ROUTE_CONCEPT_VIEW
+} from './routes';
 
 export interface MainMenu {
   name: string;
@@ -13,6 +15,8 @@ export const mainMenuList = [
   { name: 'main_menu.profile', link: ROUTE_PROFILE },
   { name: 'main_menu.my_streams', link: ROUTE_STREAM_LIST },
   { name: 'main_menu.create_stream', link: ROUTE_STREAM_CREATE },
+  { name: 'concept list', link: ROUTE_CONCEPT_LIST },
+  { name: 'concept view', link: ROUTE_CONCEPT_VIEW + '/876' },
 ];
 
 export class MainMenuUtil {
