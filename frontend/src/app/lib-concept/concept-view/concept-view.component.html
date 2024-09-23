@@ -1,0 +1,87 @@
+<!-- <p>concept-view works!</p> -->
+
+<!-- <app-spinner *ngIf="streamStateService.changeOfState" [isFullOwner]="true"></app-spinner> -->
+
+<app-sidebar class="cv-side-bar cv-brd-rg" [isOpen]="isSidebarLeftOpen">
+  <button class="cv-btn-arrow cv-left" (click)="isSidebarLeftOpen = !isSidebarLeftOpen;">
+    <div [ngClass]="['cv-icon cv-angle-left cv-rotate', (isSidebarLeftOpen ? 'cv-0deg' : 'cv-180deg')]"></div>
+  </button>
+  <aside class="cv-aside">
+    cv-bar-left
+  <!-- <app-panel-left-followers
+    [isMiniSize]="isMiniSidebarLeft"
+    [isLoading]="followersService.followersAndPopularLoading"
+    [followerList]="followersService.followerDTOList"
+    [popularList]="followersService.popularDTOList"
+  >
+    <div class="ticker" [appTradMarketOverview]="{ isDarkTheme: isDarkTheme }">
+    </div>
+  </app-panel-left-followers> -->
+  </aside>
+</app-sidebar>
+
+<div class="cv-center global-scroll">
+    cv-bar-center
+  <!-- <div [ngClass]="[(isStreamVideo ? 'stream-video' : '')]">
+    <div [ngClass]="['box-video', classNameViewerSize()]">
+
+      <div class="height-100ps" [appMillicastViewer]="millicastViewer"
+      ></div>
+      <app-panel-stream-state class="stream-state"
+        [isDarkTheme]="isDarkTheme"
+        [streamState]="streamDTO?.state || null"
+      ></app-panel-stream-state>
+
+    </div>
+  </div> -->
+
+  <!-- <div class="stream-info" *ngIf="!isStreamOwner">
+    <app-spinner *ngIf="subscribeLoading" [isFullOwner]="true" [diameter]="60"></app-spinner>
+    <app-panel-stream-info
+      [streamDTO]="streamDTO"
+      [extendedUserDTO]="extendedUserDTO"
+      [hasSubscribe]="hasSubscriptionToAuthor"
+      [countOfViewer]="socketService.countOfViewer$ | async"
+      [broadcastDuration]="broadcastDuration"
+      (actionSubscribe)="doActionSubscribe($event)"
+    ></app-panel-stream-info>
+  </div> -->
+  <!-- <div class="stream-info" *ngIf="isStreamOwner">
+    <app-panel-stream-info-owner
+      [streamDTO]="streamDTO"
+      [countOfViewer]="socketService.countOfViewer$ | async"
+      [broadcastDuration]="broadcastDuration"
+      (actionPrepare)="doActionPrepare($event)"
+      (actionStart)="doActionStart($event)"
+      (actionStop)="doActionStop($event)"
+      (actionPause)="doActionPause($event)"
+    ></app-panel-stream-info-owner>
+  </div> -->
+  <!-- <div class="user-portfolio">
+    <app-panel-portfolio-schedule class="details"
+      [isDarkTheme]="isDarkTheme"
+      [queryParamMap]="route.queryParamMap | async"
+      [userId]="streamDTO?.userId || null"
+    ></app-panel-portfolio-schedule>
+  </div> -->
+</div>
+
+<app-sidebar class="cv-side-bar cv-brd-lf" [isOpen]="isSidebarRightOpen">
+  <button class="cv-btn-arrow cv-right" (click)="isSidebarRightOpen = !isSidebarRightOpen;">
+    <div [ngClass]="['cv-icon cv-angle-right cv-rotate', (isSidebarRightOpen ? 'cv-0deg' : 'cv-180deg')]"></div>
+  </button>
+  <aside class="cv-aside">
+    cv-bar-right
+  <!-- <app-panel-right-chat
+    [isEditable]="isEditableChat"
+    [userId]="profileService.getUserId()"
+    [chatMessages]="chatMessages"
+    [isStreamOwner]="isStreamOwner"
+    [isUserBanned]="isUserBanned || (socketService.userBanned$ | async)"
+    (sendMessage)="doSendMessage($event)"
+    (removeMessage)="doRemoveMessage($event)"
+    (editMessage)="doEditMessage($event)"
+    (bannedUser)="doBannedUser($event)"
+  ></app-panel-right-chat> -->
+  </aside>
+</app-sidebar>
