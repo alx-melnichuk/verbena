@@ -10,8 +10,8 @@
 }
   
 app-panel-profile-info {
-  ---ppi-pn-bg: var(--app-pn-profile);
-  ---ppi-pn-brd: var(--app-pn-profile-low);
+  ---ppi-pn-bg: var(--app-profile-pn);
+  ---ppi-pn-brd: var(--app-profile-pn-low);
 
   @media screen and (width <= dimensions.$mobile-480) {
     ---ppi-crd-wd: 100vw;

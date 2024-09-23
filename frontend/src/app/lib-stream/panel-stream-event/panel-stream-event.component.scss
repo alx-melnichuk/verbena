@@ -7,8 +7,8 @@
 app-panel-stream-event {
   --pse-logo-wd: 4.5em;
   --pse-edit-wd: 40px;
-  --pse-pn-stream-bg: var(--app-pn-stream);
-  --pse-pn-stream-brd: var(--app-pn-stream-low);
+  --pse-pn-stream-bg: var(--app-stream-pn);
+  --pse-pn-stream-brd: var(--app-stream-pn-low);
   display: flex;
   flex-direction: column;
   height: 100%;
