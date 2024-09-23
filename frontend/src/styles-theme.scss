@@ -118,13 +118,19 @@ body {
     --demo-site-auth: hsl(140, 14%, 50%);
     --app-site-auth: hsl(var(--app-site-auth-h),var(--app-site-auth-s),var(--app-site-auth-l));
 
-    --app-pn-stream: hsl(210, 11%, 38%);
-    --app-pn-stream-low: hsl(210, 11%, 54%);
-    --app-pn-stream-day: hsl(140, 40%, 27%);
+    --app-stream-pn     : hsl(203, 25%, 40%);
+    --app-stream-pn-low : hsl(203, 25%, 50%);
+    --app-stream-pn-day : hsl(140, 40%, 27%);
 
-    --app-pn-profile: hsl(300, 15%, 30%);
-    --app-pn-profile-low: hsl(300, 15%, 40%);
+    --app-about-pn      : hsl( 16, 25%, 40%);
+    --app-about-pn-low  : hsl( 16, 25%, 50%);
 
+    --app-profile-pn    : hsl(300, 25%, 40%);  // hsl(54, 77%, 20%);
+    --app-profile-pn-low: hsl(300, 25%, 50%);  // hsl(54, 77%, 30%);
+
+    --app-concept-pn    : hsl(220, 25%, 40%);
+    --app-concept-pn-low: hsl(220, 25%, 50%);
+    --app-concept-arrow : hsl(248, 60%, 70%);
   }
   .light-theme {
     color-scheme: light;
@@ -145,9 +151,6 @@ body {
     --app-link1-cl: hsl(209, 78%, 33%);
     --app-link2-cl: hsl(209, 78%, 23%);
 
-    --demo-color: rgb(0, 0, 0);
-    --demo-color2: rgba(0, 0, 0, 0.87);
-    
     --mat-card-background: white;
     --mat-card-color: #000000de; 
     --mat-card-color2: hsla(0, 0%, 0%, 0.87);
@@ -171,13 +174,19 @@ body {
     --demo-site-auth: hsl(140, 40%, 90%);
     --app-site-auth: hsl(var(--app-site-auth-h),var(--app-site-auth-s),var(--app-site-auth-l));
 
-    --app-pn-stream: hsl(222, 50%, 96%);  // --app-theme-background-panel-2: hsl(222, 50%, 96%);
-    --app-pn-stream-low: hsl(222, 50%, 80%);
-    --app-pn-stream-day: hsl(140, 40%, 75%);
+    --app-stream-pn     : hsl(203, 60%, 90%);  // --app-theme-background-panel-2: hsl(222, 50%, 96%);
+    --app-stream-pn-low : hsl(203, 60%, 80%);
+    --app-stream-pn-day : hsl(140, 40%, 75%);
 
-    --app-pn-profile: hsl(300, 35%, 95%);
-    --app-pn-profile-low: hsl(300, 35%, 85%);
+    --app-about-pn      : hsl(16, 60%, 90%);
+    --app-about-pn-low  : hsl(16, 60%, 80%);
 
+    --app-profile-pn    : hsl(300, 60%, 90%);  // hsl(54, 77%, 95%);
+    --app-profile-pn-low: hsl(300, 60%, 80%);  // hsl(54, 77%, 85%);
+
+    --app-concept-pn    : hsl(220, 60%, 90%);
+    --app-concept-pn-low: hsl(220, 60%, 80%);
+    --app-concept-arrow : hsl(248, 60%, 70%);
   }
 
 
