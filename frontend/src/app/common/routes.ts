@@ -24,7 +24,7 @@ export const ROUTE_PROFILE = '/' + R_PROFILE;      // '/ind/profile'
 
 // ** Page: Stream **
 export const R_STREAM = R_ROOT + '/' + 'stream'; // 'ind/stream'
-export const ROUTE_STREAM = '/' + R_STREAM;
+export const ROUTE_STREAM = '/' + R_STREAM;      // '/ind/stream'
 
 // export const R_STREAM_LIST = 'list';
 export const E_STREAM_LIST = 'list';
@@ -41,10 +41,6 @@ export const E_STREAM_CREATE = 'create';
 export const R_STREAM_CREATE = R_STREAM + '/' + E_STREAM_CREATE; //  'ind/stream/create'
 export const ROUTE_STREAM_CREATE = '/' + R_STREAM_CREATE;        // '/ind/stream/create'
 // export const ROUTE_STREAM_CREATE = '/' + R_STREAM + '/' + R_STREAM_CREATE;
-
-// ** Page: View **
-export const R_VIEW = R_ROOT + '/' + 'view'; // 'ind/view'
-export const ROUTE_VIEW = '/' + R_VIEW; // '/ind/view'
 
 // ** **
 

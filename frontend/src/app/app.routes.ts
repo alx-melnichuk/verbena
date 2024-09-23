@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { R_ABOUT, R_FORGOT_PASSWORD, R_LOGIN, R_PROFILE, R_SIGNUP, R_STREAM, R_VIEW } from './common/routes';
+import { R_ABOUT, R_FORGOT_PASSWORD, R_LOGIN, R_PROFILE, R_SIGNUP, R_STREAM } from './common/routes';
 import { authenticationGuard } from './common/authentication.guard';
 
 export const APP_ROUTES: Routes = [
@@ -23,11 +23,6 @@ export const APP_ROUTES: Routes = [
   {
     path: R_PROFILE,
     loadChildren: () => import('./pg-profile/pg-profile.routes').then((c) => c.PG_PROFILE_ROUTES),
-    canActivate: [authenticationGuard],
-  },
-  {
-    path: R_VIEW,
-    loadComponent: () => import('./pg-view/pg-view.component').then((c) => c.PgViewComponent),
     canActivate: [authenticationGuard],
   },
   {
