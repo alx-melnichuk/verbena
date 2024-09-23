@@ -7,7 +7,7 @@ import {
 } from './stream-api.interface';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Uri } from '../common/uri';
-import { ROUTE_VIEW } from '../common/routes';
+import { ROUTE_CONCEPT_VIEW } from '../common/routes';
 
 @Injectable({
   providedIn: 'root'
@@ -121,7 +121,7 @@ export class StreamService {
     if (prefix.slice(-1) === '/') {
       prefix = prefix.slice(0, prefix.length - 1);
     }
-    return (!!streamId ? prefix + ROUTE_VIEW + '/' + streamId : '');
+    return (!!streamId ? prefix + ROUTE_CONCEPT_VIEW + '/' + streamId.toString() : '');
   }
 
   public redirectToStreamViewPage(streamId: number): void {
