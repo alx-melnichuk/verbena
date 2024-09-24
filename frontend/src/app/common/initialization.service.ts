@@ -20,7 +20,7 @@ export const LANGUAGES = [LOCALE_EN, LOCALE_DE, LOCALE_UK];
   providedIn: 'root',
 })
 export class InitializationService {
-  private isDarkTheme: boolean | undefined;
+  private currTheme: string | null = null;
   private currLocale: string | null = null;
 
   constructor(
@@ -33,33 +33,14 @@ export class InitializationService {
   }
 
   public initTranslate(): Promise<void | unknown> {
-    let language = this.currLocale || this.getBrowserLanguage(LOCALE_EN).slice(0,2);
-    language = (LANGUAGES.indexOf(language) > -1 ? language : LOCALE_EN);
     // Download translations before starting the application.
     this.translate.addLangs(LANGUAGES);
     this.translate.setDefaultLang(LOCALE_EN);
+
+    const languageValue = this.currLocale || this.getBrowserLanguage(LOCALE_EN).slice(0,2);
+    const language = (LANGUAGES.indexOf(languageValue) > -1 ? languageValue : LOCALE_EN);
     
-    this.dateAdapter.setLocale(language);
-    /*
-    const userLanguage = this.getBrowserLanguage('en');
-    this.dateAdapter.setLocale(userLanguage);
-    // Download translations before starting the application.
-    this.translate.addLangs(['en', 'de']);
-    this.translate.setDefaultLang('en');
-    const browserLang = this.translate.getBrowserLang() || '';
-    const lang: string = browserLang.match(/en|de/) ? browserLang : 'en';
-    // return this.translate.use(lang).toPromise();
-    */
-    return new Promise<void>((resolve: () => void, reject: (reason: unknown) => void) => {
-      this.translate.use(language).pipe(first())
-        .subscribe({
-          next: () => {
-            HttpErrorUtil.setTranslate(this.translate);
-            resolve();
-          },
-          error: (err) => reject(err) 
-        });
-    });
+    return this.setLocale(language);
   }
 
   public async initSession(): Promise<void> {
@@ -83,37 +64,48 @@ export class InitializationService {
     return Promise.resolve();
   }
 
-  public getDarkTheme(): boolean {
-    return !!this.isDarkTheme;
+  // ** Theme **
+  public getTheme(): string | null {
+    return this.currTheme;
   }
   
-  public setDarkTheme(value: boolean, renderer: Renderer2): void {
-    if (this.isDarkTheme !== value) {
-      const oldClassName = this.getThemeName(!!this.isDarkTheme);
-      this.isDarkTheme = !!value;
-      const newClassName = this.getThemeName(this.isDarkTheme);
-
+  public setTheme(value: string | null | undefined, renderer: Renderer2): void {
+    const theme = value || THEME_LIGHT;
+    if ([THEME_DARK, THEME_LIGHT].indexOf(theme) > -1 && this.currTheme != theme) {
+      const oldClassName = `${this.currTheme}-${THEME_SUFFIX}`;
       renderer.removeClass(document.body, oldClassName);
+      this.currTheme = theme;
+      const newClassName = `${theme}-${THEME_SUFFIX}`;
       renderer.addClass(document.body, newClassName);
     }
   }
-
+  // ** Locale ** 
   public getLocale(): string | null {
     return this.currLocale;
   }
+  
+  public setLocale(value: string | null): Promise<void> {
+    const language: string = value || LOCALE_EN;
+    if (!language || LANGUAGES.indexOf(language) == -1) {
+      return Promise.reject();
+    }
+    if (this.currLocale == language) {
+      Promise.resolve();
+    }
 
-  public setLocale(language: string | null): void {
-    if (!!language && LANGUAGES.indexOf(language) > -1) {
-      this.currLocale = language;
-      this.dateAdapter.setLocale(language);
+    return new Promise<void>((resolve: () => void, reject: (reason: unknown) => void) => {
       this.translate.use(language).pipe(first())
-      .subscribe({
-        next: () => {
-          HttpErrorUtil.setTranslate(this.translate);
-        },
+        .subscribe({
+          next: () => {
+            this.currLocale = language;
+            this.dateAdapter.setLocale(language);
+            HttpErrorUtil.setTranslate(this.translate);
+            resolve();
+          },
+          error: (err) => reject(err) 
+        });
       });
     }
-  }
 
   // ** Private Api **
 
@@ -126,9 +118,4 @@ export class InitializationService {
     lang = lang || wn.language || wn.browserLanguage || wn.userLanguage;
     return lang;
   }
-
-  private getThemeName(isDarkTheme: boolean): string {
-    return !!isDarkTheme ? `${THEME_DARK}-${THEME_SUFFIX}` : `${THEME_LIGHT}-${THEME_SUFFIX}`;
-  }
-
 }

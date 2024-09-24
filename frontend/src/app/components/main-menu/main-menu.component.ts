@@ -9,6 +9,7 @@ import { RouterLink } from '@angular/router';
 
 import { InitializationService } from 'src/app/common/initialization.service';
 import { ROUTE_STREAM_CREATE, ROUTE_STREAM_LIST } from 'src/app/common/routes';
+import { THEME_DARK } from 'src/app/common/constants';
 
 
 @Component({
@@ -46,14 +47,14 @@ export class MainMenuComponent implements OnInit {
   }
   
   ngOnInit(): void {
-    this.isDarkTheme = this.initializationService.getDarkTheme();
+    this.isDarkTheme = this.initializationService.getTheme() == THEME_DARK;
   }
 
   // **Public API **
 
   public doChangeDarkTheme(value: boolean): void {
     this.setDarkTheme.emit(value);
-    this.isDarkTheme = this.initializationService.getDarkTheme();
+    this.isDarkTheme = this.initializationService.getTheme() == THEME_DARK;
   }
 
   public doLogout(): void {

@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation
+  ChangeDetectionStrategy, ChangeDetectorRef, Component, Renderer2, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -14,6 +14,7 @@ import { ProfileDto, ModifyProfileDto, NewPasswordProfileDto } from '../lib-prof
 import { ProfileConfigDto } from '../lib-profile/profile-config.interface';
 import { ProfileService } from '../lib-profile/profile.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
+import { InitializationService } from '../common/initialization.service';
 
 @Component({
   selector: 'app-pg-profile',
@@ -37,6 +38,8 @@ export class PgProfileComponent {
     private changeDetectorRef: ChangeDetectorRef,
     private route: ActivatedRoute,
     private router: Router,
+    private renderer: Renderer2,
+    private initializationService: InitializationService,
     private translate: TranslateService,
     private dialogService: DialogService,
     private profileService: ProfileService,
@@ -56,14 +59,18 @@ export class PgProfileComponent {
     this.isLoadData = true;
     this.profileService.modifyProfile(obj.modifyProfile, obj.avatarFile)
       .then((response: ProfileDto | HttpErrorResponse | undefined) => {
-        if (!response) {
+        if (response == null) {
           this.errMsgsProfile = [this.translate.instant('profile.error_editing_profile')];
         } else {
           this.profileDto = response as ProfileDto;
           this.profileService.setProfileDto({...this.profileDto});
-          const title = this.translate.instant('profile.dialog_title_editing');
-          const message = this.translate.instant('profile.dialog_message_editing');
-          this.dialogService.openConfirmation(message, title, { btnNameAccept: 'buttons.ok' }, { maxWidth: '40vw' });
+          this.initializationService.setTheme(this.profileService.profileDto?.theme, this.renderer);
+          this.initializationService.setLocale(this.profileDto.locale)
+          .finally(() => {
+            const title = this.translate.instant('profile.dialog_title_editing');
+            const message = this.translate.instant('profile.dialog_message_editing');
+            this.dialogService.openConfirmation(message, title, { btnNameAccept: 'buttons.ok' }, { maxWidth: '40vw' });
+          });
         }          
        })
       .catch((error: HttpErrorResponse) => {

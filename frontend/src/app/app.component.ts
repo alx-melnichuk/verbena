@@ -8,7 +8,6 @@ import { HeaderComponent } from './components/header/header.component';
 import { AUTHORIZATION_DENIED, ROUTE_LOGIN } from './common/routes';
 import { InitializationService } from './common/initialization.service';
 import { ACCESS_TOKEN, ProfileService } from './lib-profile/profile.service';
-import { THEME_DARK, THEME_LIGHT } from './common/constants';
 
 @Component({
   selector: 'app-root',
@@ -49,9 +48,7 @@ export class AppComponent {
     private router: Router,
     private initializationService: InitializationService,
   ) {
-    const theme = this.profileService.profileDto?.theme || THEME_LIGHT;
-    const isDarkTheme = theme == THEME_DARK;
-    this.initializationService.setDarkTheme(isDarkTheme, this.renderer);
+    this.initializationService.setTheme(this.profileService.profileDto?.theme, this.renderer);
   }
 
   // ** Public API **

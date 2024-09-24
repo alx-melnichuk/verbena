@@ -12,6 +12,7 @@ import { ROUTE_LOGIN } from 'src/app/common/routes';
 import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 
 import { MainMenuComponent } from '../main-menu/main-menu.component';
+import { THEME_DARK, THEME_LIGHT } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-header',
@@ -50,7 +51,7 @@ export class HeaderComponent implements OnChanges {
   // ** Public API **
 
   public setDarkTheme(value: boolean): void {
-    this.initializationService.setDarkTheme(value, this.renderer);
+    this.initializationService.setTheme((!!value ? THEME_DARK : THEME_LIGHT), this.renderer);
   }
 
   public doLogout(): void {

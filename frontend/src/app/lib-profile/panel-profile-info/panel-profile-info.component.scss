@@ -3,7 +3,7 @@
 @use '../../../styles-dimensions.scss' as dimensions;
 
 .dark-theme app-panel-profile-info {
-  ---ppi-text-cl: hsl(210, 8%, 60%); // black350
+  ---ppi-text-cl: hsl(210, 8%, 80%); // black-150
 }
 .light-theme app-panel-profile-info {
   ---ppi-text-cl: hsl(210, 8%, 45%); // black500
