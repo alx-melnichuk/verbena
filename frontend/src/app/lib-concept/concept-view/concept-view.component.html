@@ -21,19 +21,17 @@
 </app-sidebar>
 
 <div class="cv-center global-scroll">
-    cv-bar-center
-  <!-- <div [ngClass]="[(isStreamVideo ? 'stream-video' : '')]">
-    <div [ngClass]="['box-video', classNameViewerSize()]">
-
-      <div class="height-100ps" [appMillicastViewer]="millicastViewer"
-      ></div>
-      <app-panel-stream-state class="stream-state"
-        [isDarkTheme]="isDarkTheme"
-        [streamState]="streamDTO?.state || null"
-      ></app-panel-stream-state>
-
+    
+  <div [ngClass]="[(isStreamVideo ? 'cv-stream-video' : '')]">
+    <div [ngClass]="['cv-box-video', classNameViewerSize()]">
+      <!-- <div class="height-100ps" [appMillicastViewer]="millicastViewer"></div> -->
+      <div class="cv-hg100"></div>
+      <app-panel-stream-state class="cv-stream-state"
+        [streamState]="streamDto?.state || null"
+        [theme]="initializationService.theme">
+      </app-panel-stream-state>
     </div>
-  </div> -->
+  </div>
 
   <!-- <div class="stream-info" *ngIf="!isStreamOwner">
     <app-spinner *ngIf="subscribeLoading" [isFullOwner]="true" [diameter]="60"></app-spinner>

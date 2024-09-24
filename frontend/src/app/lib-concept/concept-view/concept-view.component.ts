@@ -1,4 +1,6 @@
-import { AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, HostBinding, Input, OnInit, ViewEncapsulation } from '@angular/core';
+import {
+  AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnChanges, OnInit, SimpleChanges, ViewEncapsulation
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -9,16 +11,19 @@ import { SidebarComponent } from 'src/app/components/sidebar/sidebar.component';
 import { DialogService    } from 'src/app/lib-dialog/dialog.service';
 import { StreamDto        } from 'src/app/lib-stream/stream-api.interface';
 
+import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-state.component';
+import { InitializationService } from 'src/app/common/initialization.service';
+
 @Component({
   selector: 'app-concept-view',
   standalone: true,
-  imports: [CommonModule, TranslateModule, SpinnerComponent, SidebarComponent],
+  imports: [CommonModule, TranslateModule, SpinnerComponent, SidebarComponent, PanelStreamStateComponent],
   templateUrl: './concept-view.component.html',
   styleUrls: ['./concept-view.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ConceptViewComponent implements AfterContentInit, OnInit {
+export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit {
 
 //   @Input()
 //   public streamId: string | null = null;
@@ -44,14 +49,15 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
 //   @Output()
 //   readonly bannedUser: EventEmitter<string> = new EventEmitter();
 
+  public isSidebarLeftOpen: boolean = true;
+  public isSidebarRightOpen: boolean = true;
+
   public isDarkTheme = false;
   public isMiniSidebarLeft = false;
-  public isSidebarLeftOpen: boolean = true;
   public isMiniSidebarRight = false;
-  public isSidebarRightOpen: boolean = true;
 //   public streamSetStateForbbidenDTO: StreamSetStateForbbidenDTO | null = null;
-//   // To disable the jumping effect of the "stream-video" panel at startup.
-//   public isStreamVideo = false;
+  // To disable the jumping effect of the "stream-video" panel at startup.
+  public isStreamVideo = false;
 
 //   // An indication that this is the owner of the stream.
 //   public isStreamOwner = false;
@@ -77,6 +83,7 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private translateService: TranslateService,
+    public initializationService: InitializationService,
     private dialogService: DialogService,
     // private streamService: StreamService,
     // public socketService: SocketService,
@@ -112,8 +119,13 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
 
   // To disable the jumping effect of the "stream-video" panel at startup.
   ngAfterContentInit(): void {
-    // this.isStreamVideo = true;
-    // this.changeDetectorRef.markForCheck();
+    this.isStreamVideo = true;
+    this.changeDetectorRef.markForCheck();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!!changes['streamDto']) {
+    }
   }
 
   ngOnInit(): void {
