@@ -23,6 +23,12 @@ export class InitializationService {
   private currTheme: string | null = null;
   private currLocale: string | null = null;
 
+  get theme(): string | null {
+    return this.currTheme;
+  }
+  set theme(value: string | null) {
+  }
+
   constructor(
     private router: Router,
     private dateAdapter: DateAdapter<any>,
@@ -70,6 +76,7 @@ export class InitializationService {
   }
   
   public setTheme(value: string | null | undefined, renderer: Renderer2): void {
+    console.log(`#2_ setTheme(`,value,');'); // #
     const theme = value || THEME_LIGHT;
     if ([THEME_DARK, THEME_LIGHT].indexOf(theme) > -1 && this.currTheme != theme) {
       const oldClassName = `${this.currTheme}-${THEME_SUFFIX}`;
