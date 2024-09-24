@@ -61,6 +61,14 @@
     "error_delete_account": "Fehler beim Löschen des Kontos. Datensatz \"{{nickname}}\" nicht gefunden.",
     "dialog_title_delete": "Konto löschvorgang.",
     "dialog_message_delete": "Der Vorgang zum Löschen des Kontos \"{{nickname}}\" wurde erfolgreich abgeschlossen!"
+  },
+  "stream_state_de": {
+    "has_not_started": "Die Übertragung hat noch nicht begonnen.",
+    "has_paused": "Die Übertragung wurde pausiert.",
+    "has_ended": "Die Übertragung ist bereits beendet.",
+    "error_preparing_broadcast"     : "Fehler beim Vorbereiten des Streams",
+    "error_when_starting_the_stream": "Fehler beim Starten des Streams",
+    "error_when_stopping_the_stream": "Fehler beim Stoppen des Streams",
+    "error_while_pause_stream"      : "Fehler beim Anhalten des Streams"
   }
-
 }

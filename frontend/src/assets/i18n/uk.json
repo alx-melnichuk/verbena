@@ -60,5 +60,15 @@
     "error_delete_account": "Помилка видалення облікового запису. Запис \"{{nickname}}\" не знайдено.",
     "dialog_title_delete": "Операція видалення облікового запису.",
     "dialog_message_delete": "Операцію з видалення облікового запису \"{{nickname}}\" успішно завершено !"
+  },
+  "stream_state_uk": {
+    "has_not_started": "Трансляція ще не розпочалася.",
+    "has_paused": "Трансляцію призупинено.",
+    "has_ended": "Трансляція вже закінчилася.",
+    "error_preparing_broadcast"     : "Помилка підготовки потоку",
+    "error_when_starting_the_stream": "Помилка запуску потоку",
+    "error_when_stopping_the_stream": "Помилка зупинки трансляції",
+    "error_while_pause_stream"      : "Помилка призупинення трансляції"
+
   }
-}      
+}

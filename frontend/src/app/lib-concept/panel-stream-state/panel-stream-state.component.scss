@@ -1,0 +1,81 @@
+/*# sourceURL=panel-stream-state.component.scss */
+
+@use '../../../styles-dimensions.scss' as dimensions;
+
+app-panel-stream-state {
+  height: 100%;
+  color: inherit;
+
+  &:not(.is-hide) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  &.is-hide {
+    display: none;
+  }
+  
+  &:not(.is-transparent) {
+    background-color: var(--pss-panel-bg);
+  }
+  &.is-transparent {
+    background-color: transparent;
+  }
+
+  .pss-container {
+    box-sizing: border-box;
+    font-size: medium;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .pss-image {
+    width: 20vw;
+    height: 20vh;
+    color: var(--pss-icon-cl);
+  }
+
+  .pss-text-box {
+    flex-shrink: 0;
+    max-width: 95%;
+    text-align: center;
+  }
+ .pss-text {
+    font-family: Roboto;
+    font-style: normal;
+    font-weight: 700;
+  }
+
+
+  @media screen and (width <= dimensions.$tablet-768)  {
+    .pss-container { flex-direction: column; }
+    .image-box { width: min(200px, 50vh); height: min(200px, 50vh); }
+    .pss-text { font-size: min(2.3em, 11vh); }
+  }
+
+  @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
+    .image-box { width: min(300px, 50vh); height: min(300px, 50vh); }
+    .pss-text { font-size: min(5em, 15vh); }
+    @media (orientation: landscape) {
+      .pss-container { flex-direction: row; }
+      .image-box { width: min(300px, 45vh); height: min(300px, 45vh); }
+      .pss-text { font-size: min(5em, 11vh); }
+    }
+    @media (orientation: portrait) {
+      .pss-container { flex-direction: column; }
+    }
+  }
+
+  @media screen and (dimensions.$laptop-1024 < width) {
+    .pss-text-box { width: 47vw; }
+    .pss-text { font-size: 4em; }
+    @media (orientation: landscape) {
+      .pss-container { flex-direction: row; }
+    }
+    @media (orientation: portrait) {
+      .pss-container { flex-direction: column; }
+    }
+  }
+
+}
