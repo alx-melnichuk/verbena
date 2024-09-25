@@ -5,6 +5,15 @@
   --demo-button-bg: #797979;
 
     
+  .mat-mdc-form-field-subscript-wrapper {
+    --mdc-typography-caption-line-height: 1.25;
+    // &::before { height: calc(2em + 2px); }
+    mat-hint, mat-error {
+      display: flex;
+      margin-top: 1px;
+    }
+  }
+
   &.dark-theme {
     --infix-button-ordinary-brd: var(--app-ordinary-low); // high
     // --demo--button-ordinary-text-cl: hsl(0, 0%, 100%); // #ffffff
