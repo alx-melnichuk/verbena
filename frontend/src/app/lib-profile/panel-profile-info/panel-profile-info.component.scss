@@ -10,9 +10,6 @@
 }
   
 app-panel-profile-info {
-  ---ppi-pn-bg: var(--app-profile-pn);
-  ---ppi-pn-brd: var(--app-profile-pn-low);
-
   @media screen and (width <= dimensions.$mobile-480) {
     ---ppi-crd-wd: 100vw;
     ---ppi-pd: 0.5em;
@@ -54,6 +51,8 @@ app-panel-profile-info {
   }
   
   ---ppi-group-wd: calc(var(---ppi-wd) - 1.5 * var(---ppi-pd));
+  ---ppi-pn-bg: var(--app-profile-pn);
+  ---ppi-pn-brd: var(--app-profile-pn-low);
 
   [mr-lf-1] { margin-left: 1em; }
   [mr-rg-1] { margin-right: 1em; }
@@ -94,9 +93,9 @@ app-panel-profile-info {
     background-color:  var(--ppi-pn-bg,var(---ppi-pn-bg));
     border-color: var(--ppi-pn-brd, var(---ppi-pn-brd));
     border-style: solid;
-    border-width: 1px;
+    border-width: 2px;
     border-radius: var(--ppi-pn-brd-rd, var(---ppi-pd));
-    box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -186,10 +185,7 @@ app-panel-profile-info {
 
 
 .cdk-overlay-pane {
-  .ppi-option > .mat-mdc-option {
-    min-height: 40px;
-  }
-  mat-option.ppi-opt-fn-it {
+  .ppi-opt-fn-it {
     font-style: italic;
   }
 }
