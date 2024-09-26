@@ -43,8 +43,8 @@ export class InitializationService {
     this.translate.addLangs(LANGUAGES);
     this.translate.setDefaultLang(LOCALE_EN);
 
-    const languageValue = this.currLocale || this.getBrowserLanguage(LOCALE_EN).slice(0,2);
-    const language = (LANGUAGES.indexOf(languageValue) > -1 ? languageValue : LOCALE_EN);
+    const locale = this.currLocale || this.getBrowserLanguage(LOCALE_EN).slice(0, 2);
+    const language = (LANGUAGES.indexOf(locale) > -1 ? locale : LOCALE_EN);
     
     return this.setLocale(language);
   }
@@ -58,10 +58,9 @@ export class InitializationService {
     if (isAuthorizationRequired || (isNotAuthorizationDenied && isExistAccessToken)) {
       try {
         await this.profileService.getCurrentProfile();
-        const language = this.profileService.profileDto?.locale;
-        if (!!language && language != this.currLocale) {
-          this.currLocale = language.slice(0,2);
-          this.setLocale(this.currLocale);
+        const locale = this.profileService.profileDto?.locale;
+        if (!!locale && this.currLocale != locale) {
+          await this.setLocale(locale);
         }
       } catch {
         this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
@@ -76,7 +75,6 @@ export class InitializationService {
   }
   
   public setTheme(value: string | null | undefined, renderer: Renderer2): void {
-    console.log(`#2_ setTheme(`,value,');'); // #
     const theme = value || THEME_LIGHT;
     if ([THEME_DARK, THEME_LIGHT].indexOf(theme) > -1 && this.currTheme != theme) {
       const oldClassName = `${this.currTheme}-${THEME_SUFFIX}`;
@@ -92,20 +90,20 @@ export class InitializationService {
   }
   
   public setLocale(value: string | null): Promise<void> {
-    const language: string = value || LOCALE_EN;
+    const locale: string = value || LOCALE_EN;
+    const language: string = locale.slice(0, 2);
     if (!language || LANGUAGES.indexOf(language) == -1) {
       return Promise.reject();
     }
-    if (this.currLocale == language) {
+    if (this.currLocale == locale) {
       Promise.resolve();
     }
-
     return new Promise<void>((resolve: () => void, reject: (reason: unknown) => void) => {
       this.translate.use(language).pipe(first())
         .subscribe({
           next: () => {
-            this.currLocale = language;
-            this.dateAdapter.setLocale(language);
+            this.currLocale = locale;
+            this.dateAdapter.setLocale(locale);
             HttpErrorUtil.setTranslate(this.translate);
             resolve();
           },
