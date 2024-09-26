@@ -30,13 +30,14 @@
     }
 
     // ** mat-select **
-    --mat-option-hover-state-layer-color: rgba(224, 227, 226, .08);
-    --mat-option-focus-state-layer-color: rgba(224, 227, 226, .12); // hsl(180, 5%, 25%)
-    --mat-option-label-text-color: #e0e3e2;
-    --mat-option-selected-state-layer-color: hsl(180, 10%, 30%); // #324b4b;
-    --mat-option-selected-state-label-text-color: #cce8e7;
 
-    --mat-select-panel-background-color: hsl(180, 10%, 25%);
+    --mat-option-selected-state-label-text-color: #cce8e7;
+    --mat-option-label-text-color: #e0e3e2; // white;
+    --mat-option-hover-state-layer-color: rgba(224, 227, 226, .08); // rgba(255, 255, 255, .08);
+    --mat-option-focus-state-layer-color: rgba(224, 227, 226, .12); // rgba(255, 255, 255, .08);
+    --mat-option-selected-state-layer-color: hsl(180, 10%, 33%); // // #324b4b; 
+
+    --mat-select-panel-background-color: hsl(180, 10%, 30%); // hsl(180, 10%, 25%); 
     --mat-select-enabled-trigger-text-color: #e0e3e2;
     --mat-select-disabled-trigger-text-color: rgba(224, 227, 226, .38);
     --mat-select-placeholder-text-color: #dae5e4;
@@ -44,6 +45,13 @@
     --mat-select-disabled-arrow-color: rgba(224, 227, 226, .38);
     --mat-select-focused-arrow-color: #00dddd;
     --mat-select-invalid-arrow-color: #ffb4ab;
+
+    // ** mat-menu
+    --mat-menu-item-label-text-color: white;
+    --mat-menu-item-icon-color: white;
+    --mat-menu-item-hover-state-layer-color: rgba(255, 255, 255, .08);
+    --mat-menu-item-focus-state-layer-color: rgba(255, 255, 255, .08);
+    --mat-menu-container-color: hsl(180, 10%, 30%); // #424242;
   }
   &.light-theme {
     --infix-button-ordinary-brd: var(--app-ordinary-high);
@@ -70,22 +78,23 @@
     --mdc-protected-button-container-color: var(--infix-button-ordinary-bg);
   }
 
-//   .mat-mdc-button.mat-primary, .mat-mdc-outlined-button.mat-primary {
-//     --mat-mdc-button-persistent-ripple-color: #3f51b5;
-//     --mat-mdc-button-ripple-color: rgba(63, 81, 181, 0.1);
-//   }
-// .mat-mdc-raised-button:not(:disabled) {
-//     background-color: var(--mdc-protected-button-container-color, transparent);
-// }
-
-//   .mat-mdc-dialog-actions {
-//     padding-top: 0px;
-//     padding-bottom: 1.3em;
-//   }
   .mat-mdc-dialog-content.mdc-dialog__content {
     padding-top: 1em;
   }
   .mat-mdc-form-field-hint {
     color: var(--infix-form-field-hint-cl);
   }
+
+   //  cdk-overlay-container
+  .cdk-overlay-container {
+    .mat-mdc-menu-item, // Mat-Menu
+    .mat-mdc-option {   // Mat-Select
+      min-height: 40px;
+    }
+    // Mat-Select
+    .mat-mdc-option .mat-pseudo-checkbox-minimal {
+      margin-left: 0.5em;
+    }
+  }
+  
 }
