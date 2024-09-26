@@ -27,6 +27,38 @@
   "dialog": {
     "confirmation": "Підтвердження"
   },
+
+  "panel-login": {
+    "title": "Авторизація",
+    "email_or_nickname": "Email або псевдонім ",
+    "btn_login": "Аторизуватися",
+    "create_an_account": "Створіть обліковий запис",
+    "forgot_password": "Забули пароль?"
+  },
+
+  "panel-about": {
+    "title": "Про веб-сайт {{appName}}.",
+    "label": "Сайт {{appName}} є демонстраційним. І не має комерційних цілей.",
+    "label_swagger": "\"swagger\" візуальний інтерфейс",
+    "label_redoc": "\"redoc\" документація",
+    "label_rapidoc": "\"rapidoc\" документація",
+    "frontend_used": "У Frontend ми використовували:",
+    "frontend_items": [
+        "angular v.16",
+        "ngx-translate v.15",
+        "angular/material v.16",
+        "angular/mat-datepicker",
+        "компоненти введення з реалізацією ControlValueAccessor",
+        "компонент для виведення файлу зображення",
+        "\"DragAndDrop\" директива",
+        "сервіс і компонент для відображення модальних вікон",
+        "Перехоплювач для оновлення маркера авторизації",
+        "Охоронець для контролю доступу до пунктів меню",
+        "\"нескінченна прокрутка\" для посторінкового завантаження даних"
+    ],
+    "backend_used": "На Backend ми використовували:"
+  },
+
   "profile": {
     "title_profile": "Особиста інформація",
     "label_avatar": "Аватар",

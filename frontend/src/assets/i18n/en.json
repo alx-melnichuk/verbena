@@ -22,6 +22,7 @@
     "create_stream": "Create stream",
     "my_follows_": "My follows",
     "dark_theme": "Dark Theme",
+    "locale": "Locale",
     "log_out": "Log Out"
   },
   "dialog": {
@@ -178,13 +179,12 @@
   "field-title": {
     "label": "Title "
   },
-  "login": {
+  "panel-login": {
     "title": "Log in",
     "email_or_nickname": "Email or Nickname ",
-    "button_login": "Log in",
+    "btn_login": "Log in",
     "create_an_account": "Create an account",
-    "forgot_password": "Forgot password ?",
-    "err_not_correct_password": "The nickname or password is not correct."
+    "forgot_password": "Forgot password ?"
   },
   "signup": {
     "title": "Sign up",
@@ -253,12 +253,12 @@
     "copy_stream_link_to_clipboard": "Copy stream link to clipboard",
     "stream_link_copied_to_clipboard": "Stream link copied to clipboard"
   },
-  "about": {
+  "panel-about": {
     "title": "About the {{appName}} website.",
     "label": "The {{appName}} site is a demo site. And has no commercial purposes.",
-    "label_swagger": "swagger visual interface",
-    "label_redoc": "redoc documentation",
-    "label_rapidoc": "rapidoc documentation",
+    "label_swagger": "\"swagger\" visual interface",
+    "label_redoc": "\"redoc\" documentation",
+    "label_rapidoc": "\"rapidoc\" documentation",
     "frontend_used": "On the Frontend we used:",
     "frontend_items": [
         "angular v.16",
@@ -267,7 +267,7 @@
         "angular/mat-datepicker",
         "input components with ControlValueAccessor implementation",
         "component for outputting an image file",
-        "DragAndDrop directive",
+        "\"DragAndDrop\" directive",
         "service and component for displaying modal windows",
         "Interceptor for updating the authorization token",
         "Guard to control access to menu items",
