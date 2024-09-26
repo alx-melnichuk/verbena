@@ -1,0 +1,69 @@
+/*# sourceURL=panel-about.component.scss */
+
+@use '../../../styles-dimensions.scss' as dimensions;
+
+app-panel-about {
+  @media screen and (width <= dimensions.$mobile-480) {
+    ---pa-pd: 0.5em;
+    ---pa-wd: 100%;
+  }
+  @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
+    ---pa-pd: 1em;
+    ---pa-wd: 39em; // 30em;
+  }
+  @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
+    ---pa-pd: 1.5em;
+    ---pa-wd: 41em; // 32em;
+  }
+  @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
+    ---pa-pd: 2em;
+    ---pa-wd: 43em; //34em;
+  }
+  @media screen and (dimensions.$desktop-1280 < width) {
+    ---pa-pd: 2.5em;
+    ---pa-wd: 45em; //36em;
+  }
+
+  ---pa-pn-bg: var(--app-about-pn);
+  ---pa-pn-brd: var(--app-about-pn-low);
+
+  box-sizing: border-box;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  padding: var(---pa-pd) 0;
+
+  [pd-ver] {
+    padding-left: var(---pa-pd);
+    padding-right: var(---pa-pd);
+  }
+  [mr-tp-1] { margin-top: 1em; }
+
+  .pa-content {
+    background-color:  var(--pa-pn-bg, var(---pa-pn-bg));
+    border-color: var(--pa-pn-brd, var(---pa-pn-brd));
+    border-style: solid;
+    border-width: 2px;
+    border-radius: var(--pa-pn-brd-rd, var(---pa-pd));
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: var(---pa-pd) 0;
+    width: var(---pa-wd);
+  }
+  .pa-title {
+    font-size: calc(100% + 6px);
+    font-weight: 500;
+    margin-bottom: 1em;
+    text-align: center;
+  }
+  .pa-over-auto {
+    overflow: auto;
+    ul {
+      margin-block-start: 0px;
+      padding-inline-start: 2em;
+    }
+  }
+}

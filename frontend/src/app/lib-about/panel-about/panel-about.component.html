@@ -1,0 +1,32 @@
+<div class="pa-content">
+
+  <div pd-ver>
+    <div class="pa-title">{{ title }}</div>
+    <p>{{ label }}</p>
+    <p><a href="{{ linkSwaggerUi }}" target="_blank">Swagger-UI</a> - {{ 'panel-about.label_swagger' | translate }}</p>
+    <p><a href="{{ linkRapidoc }}" target="_blank">RapiDoc</a> - {{ 'panel-about.label_rapidoc' | translate }}</p>
+    <p><a href="{{ linkRedoc }}" target="_blank">ReDoc</a> - {{ 'panel-about.label_redoc' | translate }}</p>
+  </div>
+
+  <div pd-ver mr-tp-1 class="pa-over-auto global-scroll">
+    <span>{{ 'panel-about.frontend_used' | translate }}</span>
+    <ul>
+      <li *ngFor="let item of frontendItems">{{ item }}</li>
+    </ul>
+    <span>{{ 'panel-about.backend_used' | translate }}</span>
+    <ul>
+      <li>{{ backendItem01 }}</li>
+      <li>[dependencies]
+        <ul>
+          <li *ngFor="let item of backendItem02">{{ item }}</li>
+        </ul>
+      </li>
+      <li>[dev-dependencies]
+          <ul>
+          <li *ngFor="let item of backendItem03">{{ item }}</li>
+          </ul>
+      </li>
+    </ul>
+  </div>
+      
+</div>
