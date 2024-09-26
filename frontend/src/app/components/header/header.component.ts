@@ -25,11 +25,20 @@ import { THEME_DARK, THEME_LIGHT } from 'src/app/common/constants';
 })
 export class HeaderComponent implements OnChanges {
   @Input()
+  public currentRoute: string | null = null;
+  @Input()
+  public locale: string | null = null;
+  @Input()
   public profileDto: ProfileDto | null = null;
   @Input()
-  public currentRoute: string | null = null;
+  public theme: string | null = null;
+
   @Output()
   readonly logout: EventEmitter<void> = new EventEmitter();
+  @Output()
+  readonly setLocale: EventEmitter<string> = new EventEmitter();
+  @Output()
+  readonly setTheme: EventEmitter<string> = new EventEmitter();
 
   public menuList: MainMenu[] = [];
   public linkLogin = ROUTE_LOGIN;
@@ -50,12 +59,16 @@ export class HeaderComponent implements OnChanges {
 
   // ** Public API **
 
-  public setDarkTheme(value: boolean): void {
-    this.initializationService.setTheme((!!value ? THEME_DARK : THEME_LIGHT), this.renderer);
-  }
-
   public doLogout(): void {
     this.logout.emit();
+  }
+
+  public doSetLocale(value: string): void {
+    this.setLocale.emit(value);
+  }
+
+  public doSetTheme(value: string): void {
+    this.setTheme.emit(value);
   }
 
   // ** Private API **

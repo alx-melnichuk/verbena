@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostListener, Renderer2, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, OnInit, Renderer2, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -18,9 +18,11 @@ import { ACCESS_TOKEN, ProfileService } from './lib-profile/profile.service';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   public title = 'verbena';
   public linkLogin = ROUTE_LOGIN;
+  public locale: string | null = null;
+  public theme: string | null = null;
 
   @HostListener('window:storage', ['$event'])
   public windowStorage(event: StorageEvent): void {
@@ -51,6 +53,11 @@ export class AppComponent {
     this.initializationService.setTheme(this.profileService.profileDto?.theme, this.renderer);
   }
 
+  async ngOnInit(): Promise<void> {
+    this.locale = this.initializationService.getLocale();
+    this.theme = this.initializationService.getTheme();
+  }
+
   // ** Public API **
 
   public async doLogout(): Promise<void> {
@@ -61,6 +68,18 @@ export class AppComponent {
     const queryParams = this.router.routerState.snapshot.root.queryParams;
     await this.router.navigate([currentRoute], { queryParams }); // ByUrl(currentRoute, { });
     return Promise.resolve();
+  }
+
+  public doSetLocale(value: string): void {
+    this.initializationService.setLocale(value)
+      .finally(() => {
+        this.locale = this.initializationService.getLocale();
+      });
+  }
+
+  public doSetTheme(value: string): void {
+    this.initializationService.setTheme(value, this.renderer);
+    this.theme = this.initializationService.getTheme();
   }
 
   // ** Private API **

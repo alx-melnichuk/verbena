@@ -1,8 +1,12 @@
 <header>
   <app-header
-    [profileDto]="profileService.profileDto"
     [currentRoute]="currentRoute"
-    (logout)="doLogout()">
+    [locale]="locale"
+    [profileDto]="profileService.profileDto"
+    [theme]="theme"
+    (logout)="doLogout()"
+    (setLocale)="doSetLocale($event)"
+    (setTheme)="doSetTheme($event)">
   </app-header>
 </header>
 <main>

@@ -11,9 +11,14 @@ app-main-menu {
   }
 }
 
-.cdk-overlay-container 
-.app-panel-mainmenu {
-  .mm-mr-lf {
+.cdk-overlay-container .mat-mdc-menu-panel {
+  .mm-mr-lf-1 {
     margin-left: 1em;
   }
-}
+  .mm-item-fn-it {
+    font-style: italic;
+  }
+  .mm-mr-lf-0_5 {
+    margin-left: 0.5em;
+  }
+}  

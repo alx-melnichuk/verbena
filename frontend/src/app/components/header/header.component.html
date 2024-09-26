@@ -23,18 +23,32 @@
 <div class="hd-box-user">
   <!-- <span>box-user</span> -->
 
-  <ng-container *ngIf="!!profileDto">
+  <ng-container *ngIf="!!profileDto; else templateMenu">
     <app-main-menu
       [isShowMyStreams]="true"
       [isShowCreateStream]="true"
-      [isShowDarkTheme]="true"
+      [isShowLocale]="true"
+      [isShowTheme]="true"
       [isShowLogout]="true"
-      (setDarkTheme)="setDarkTheme($event)"
-      (logout)="doLogout()">
+      [locale]="locale"
+      [theme]="theme"
+      (logout)="doLogout()"
+      (setLocale)="doSetLocale($event)"
+      (setTheme)="doSetTheme($event)">
       <div class="hd-profile-avatar">
         <span>{{ profileDto.nickname }}</span>
         <img class="hd-avatar" [src]="profileDto.avatar || '/assets/images/icon_man.png'" alt="image" />
       </div>
     </app-main-menu>
   </ng-container>
+  <ng-template #templateMenu>
+    <app-main-menu
+      [isShowTheme]="true"
+      [isShowLocale]="true"
+      [locale]="locale"
+      [theme]="theme"
+      (setLocale)="doSetLocale($event)"
+      (setTheme)="doSetTheme($event)">
+    </app-main-menu>
+  </ng-template>
 </div>
