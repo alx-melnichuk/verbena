@@ -1,0 +1,76 @@
+/*# sourceURL=panel-login.component.scss */
+
+@use '../../../styles-dimensions.scss' as dimensions;
+
+app-panel-login {
+
+  ---pl-pn-bg: var(--app-login-pn);
+  ---pl-pn-brd: var(--app-login-pn-low);
+
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+
+  [mr-tp-1] { margin-top: 1em; }
+
+  .pl-content {
+    @media screen and (width <= dimensions.$mobile-480) {
+      ---pl-pd: 0.5em;
+      ---pl-wd: 100%;
+    }
+    @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
+      ---pl-pd: 1.5em;
+      ---pl-wd: 30em;
+    }
+    @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
+      ---pl-pd: 2em;
+      ---pl-wd: 32em;
+    }
+    @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
+      ---pl-pd: 2.5em;
+      ---pl-wd: 34em;
+    }
+    @media screen and (dimensions.$desktop-1280 < width) {
+      ---pl-pd: 3em;
+      ---pl-wd: 36em;
+    }
+  
+    background-color:  var(--pl-pn-bg, var(---pl-pn-bg));
+    border-color: var(--pl-pn-brd, var(---pl-pn-brd));
+    border-style: solid;
+    border-width: 2px;
+    border-radius: var(--pl-pn-brd-rd, var(---pl-pd));
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 7em;
+    padding: var(---pl-pd) var(---pl-pd) calc(var(---pl-pd) / 2) var(---pl-pd);
+    width: var(---pl-wd);
+  }
+
+  .pl-form {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0.5em;
+  }
+
+  .pl-title {
+    font-size: calc(100% + 6px);
+    font-weight: 500;
+    margin-bottom: 1em;
+    text-align: center;
+  }
+
+  .pl-note {
+    display: flex;
+    margin-top: 0.5em;
+    justify-content: space-between;
+  }
+
+  .pl-err {
+    font-size: calc(1em - 1px);
+  }
+}

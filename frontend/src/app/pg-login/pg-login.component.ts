@@ -5,14 +5,14 @@ import { Router } from '@angular/router';
 
 import { StrParams } from '../common/str-params';
 import { REDIRECT_AFTER_LOGIN } from '../common/routes';
-import { LoginComponent } from '../lib-login/login/login.component';
+import { PanelLoginComponent } from '../lib-login/panel-login/panel-login.component';
 import { ProfileService } from '../lib-profile/profile.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
 @Component({
   selector: 'app-pg-login',
   standalone: true,
-  imports: [CommonModule, LoginComponent],
+  imports: [CommonModule, PanelLoginComponent],
   templateUrl: './pg-login.component.html',
   styleUrls: ['./pg-login.component.scss'],
   encapsulation: ViewEncapsulation.None,

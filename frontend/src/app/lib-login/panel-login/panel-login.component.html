@@ -1,0 +1,43 @@
+<div class="pl-content">
+  <form class="pl-form" novalidate
+    [formGroup]="formGroup">
+
+    <div class="pl-title">{{ 'panel-login.title' | translate }}</div>
+  
+    <app-field-nickname wd100
+      formControlName="nickname"
+      [gist]="isEmail ? 'email' : 'nickname'"
+      [isRequired]="true"
+      label="panel-login.email_or_nickname"
+      [maxLen]="isEmail ? emailMaxLen : nicknameMaxLen"
+      [minLen]="isEmail ? emailMinLen : nicknameMinLen"
+      [pattern]="isEmail ? '' : nicknamePattern"
+      [type]="isEmail ? 'email' : 'text'"
+      (input)="changeType($event['target']);updateErrMsg();"
+      (focusout)="nicknameFocusout()">
+    </app-field-nickname>
+  
+    <app-field-password wd100 mr-tp-1
+      formControlName="password"
+      [isRequired]="true"
+      (input)="updateErrMsg()">
+    </app-field-password>
+  
+    <button type="button" mr-tp-1 mat-raised-button
+      class="mat-primary"
+      [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
+      (click)="doLogin()">
+      {{ 'panel-login.btn_login' | translate }}
+    </button>
+  
+  </form>
+
+  <ng-container *ngFor="let errMsg of errMsgList">
+    <mat-error class="pl-err">{{ errMsg }}</mat-error>
+  </ng-container>
+
+  <div class="pl-note">
+    <a nodecor routerLink="{{linkSignup}}">{{ 'panel-login.create_an_account' | translate }}</a>
+    <a nodecor routerLink="{{linkForgotPassword}}">{{ 'panel-login.forgot_password' | translate }}</a>
+  </div>
+</div>
