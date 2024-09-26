@@ -5,7 +5,7 @@ export class TimeUtil {
     let minutes: number = -1;
     let seconds: number = 0;
     if (!!value && value.length > 4 && value.slice(2, 3) == ':') {
-      hours = parseInt(value.slice(0,2), 10);
+      hours = parseInt(value.slice(0, 2), 10);
       minutes = parseInt(value.slice(3,5), 10);
     }
     if (!!value && value.length > 7 && value.slice(5, 6) == ':') {
@@ -18,7 +18,7 @@ export class TimeUtil {
     let hours: number = 0;
     let minutes: number = 0;
     if (!!value && value.length > 4 && value.slice(2, 3) == ':') {
-        const hoursStr = value.slice(0,2);
+        const hoursStr = value.slice(0, 2);
         hours = parseInt(hoursStr, 10);
         const minutesStr = value.slice(3,6);
         minutes = parseInt(minutesStr, 10);
