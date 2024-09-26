@@ -1,6 +1,6 @@
 <app-spinner isFillParent *ngIf="isLoadData">
 </app-spinner>
-<app-panel-profile-info
+<app-panel-profile
   [profileDto]="profileDto"
   [profileConfigDto]="profileConfigDto"
   [isDisabledSubmit]="isLoadData"
@@ -10,4 +10,4 @@
   (updateProfile)="doUpdateProfile($event)"
   (updatePassword)="doUpdatePassword($event)"
   (deleteAccount)="doDeleteAccount()">
-</app-panel-profile-info>
+</app-panel-profile>

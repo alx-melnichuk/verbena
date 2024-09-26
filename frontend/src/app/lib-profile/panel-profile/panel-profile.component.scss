@@ -1,0 +1,172 @@
+/*# sourceURL=panel-profile.component.scss */
+
+@use '../../../styles-dimensions.scss' as dimensions;
+
+.dark-theme app-panel-profile {
+  ---pp-text-cl: hsl(210, 8%, 80%); // black-150
+}
+.light-theme app-panel-profile {
+  ---pp-text-cl: hsl(210, 8%, 45%); // black500
+}
+  
+app-panel-profile {
+  @media screen and (width <= dimensions.$mobile-480) {
+    ---pp-crd-wd: 100vw;
+    ---pp-pd: 0.5em;
+    ---pp-wd: 100%;
+  }
+  @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
+    ---pp-crd-wd: 100vw;
+    ---pp-pd: 1em;
+    ---pp-wd: 39em;
+  }
+  @media screen and (dimensions.$tablet-768 < width <= dimensions.$FWVGA-854) {
+    ---pp-crd-wd: 100vw;
+    ---pp-pd: 1.25em;
+    ---pp-wd: 43em;
+  }
+  @media screen and (dimensions.$FWVGA-854 < width <= dimensions.$laptop-1024) {
+    ---pp-crd-wd: 80vw;
+    ---pp-pd: 1.5em;
+    ---pp-wd: 49vw;
+    ---pp-fl-wr: wrap;
+  }
+  @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
+    ---pp-crd-wd: 60vw;
+    ---pp-pd: 2em;
+    ---pp-wd: 49.5vw;
+    ---pp-fl-wr: wrap;
+  }
+  @media screen and (dimensions.$desktop-1280 < width <= dimensions.$extra-1536) {
+    ---pp-crd-wd: 40vw;
+    ---pp-pd: 2.5em;
+    ---pp-wd: 50vw;
+    ---pp-fl-wr: wrap;
+  }
+  @media screen and (dimensions.$extra-1536 < width) {
+    ---pp-crd-wd: 40vw;
+    ---pp-pd: 2.5em;
+    ---pp-wd: 46em;
+    ---pp-fl-wr: wrap;
+  }
+  
+  ---pp-group-wd: calc(var(---pp-wd) - 1.5 * var(---pp-pd));
+  ---pp-pn-bg: var(--app-profile-pn);
+  ---pp-pn-brd: var(--app-profile-pn-low);
+
+  [mr-lf-1] { margin-left: 1em; }
+  [mr-rg-1] { margin-right: 1em; }
+  [mr-tp-0_5] { margin-top: 0.5em; }
+  [mr-tp-1] { margin-top: 1em; }
+  [mr-tp-1_5] { margin-top: 1.5em; }
+
+  box-sizing: border-box;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  padding: var(---pp-pd) 0;
+  overflow: auto;
+  user-select: none;
+
+  .pp-mr-bt {
+    margin-bottom: var(---pp-pd);
+  }
+  .pp-mr-hr {
+    margin-left: calc(var(---pp-pd) / 2);
+    margin-right: calc(var(---pp-pd) / 2);
+  }
+  .pp-panel {
+    align-content: center;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: var(---pp-fl-wr, nowrap);
+    height: 100%;
+    width: 100%;
+  }
+  .pp-group {
+    display: flex;
+    flex-direction: column;
+    width: min(var(---pp-group-wd), 100%);
+  }
+  .pp-content {
+    background-color:  var(--ppi-pn-bg,var(---pp-pn-bg));
+    border-color: var(--ppi-pn-brd, var(---pp-pn-brd));
+    border-style: solid;
+    border-width: 2px;
+    border-radius: var(--ppi-pn-brd-rd, var(---pp-pd));
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    padding: var(---pp-pd) var(---pp-pd) calc(var(---pp-pd) / 2) var(---pp-pd);
+    width: 100%;
+  }
+
+  .pp-title {
+    font-size: calc(100% + 6px);
+    font-weight: 500;
+    text-align: center;
+  }
+
+  .pp-avatar {
+    --fiau-hg: calc(var(---pp-avatar-mx-hg, 5em) * 2);
+  }
+
+  // ** Card Actions **
+
+  .pp-actions {
+    display: flex;
+    justify-content: center;
+  }
+  .pp-actions-label {
+    display: flex;
+    align-items: center;
+  }
+
+  .pp-them-local {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    &>mat-form-field { flex-basis: 48%; }
+  }
+
+  .pp-save {
+    width: 25px;
+    height: 25px;
+    display: inline-block;
+    background: transparent none no-repeat center center;
+    background-image: url('../../../assets/icons/file-save.svg');
+    margin-right: 0.5em;
+  }
+
+  // ** Form **
+  .pp-form {
+    padding-bottom: calc(var(---pp-pd) / 2);
+  }
+
+  // ** Text **
+  .ppi-label {
+    color: var(--ppi-text-cl, var(---pp-text-cl));
+    font-size: calc(1em - 2px);
+  }
+
+  .pp-fn-it {
+    font-style: italic;
+    color: var(--ppi-text-cl, var(---pp-text-cl));
+  }
+  // ** Error **
+  .pp-err-pd.ng-invalid.ng-touched {
+    padding-bottom: 1em;
+  }
+  .pp-err {
+    font-size: calc(1em - 1px);
+  }
+}
+
+
+.cdk-overlay-pane {
+  .ppi-opt-fn-it {
+    font-style: italic;
+  }
+}

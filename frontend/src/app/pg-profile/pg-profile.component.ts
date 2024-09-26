@@ -9,7 +9,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { SpinnerComponent } from '../components/spinner/spinner.component';
 import { ROUTE_LOGIN } from '../common/routes';
 import { DialogService } from '../lib-dialog/dialog.service';
-import { PanelProfileInfoComponent } from '../lib-profile/panel-profile-info/panel-profile-info.component';
+import { PanelProfileComponent } from '../lib-profile/panel-profile/panel-profile.component';
 import { ProfileDto, ModifyProfileDto, NewPasswordProfileDto } from '../lib-profile/profile-api.interface';
 import { ProfileConfigDto } from '../lib-profile/profile-config.interface';
 import { ProfileService } from '../lib-profile/profile.service';
@@ -19,7 +19,7 @@ import { InitializationService } from '../common/initialization.service';
 @Component({
   selector: 'app-pg-profile',
   standalone: true,
-  imports: [CommonModule, PanelProfileInfoComponent, SpinnerComponent],
+  imports: [CommonModule, PanelProfileComponent, SpinnerComponent],
   templateUrl: './pg-profile.component.html',
   styleUrls: ['./pg-profile.component.scss'],
   encapsulation: ViewEncapsulation.None,
