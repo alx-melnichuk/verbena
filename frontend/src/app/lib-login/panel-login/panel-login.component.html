@@ -32,9 +32,11 @@
   
   </form>
 
-  <ng-container *ngFor="let errMsg of errMsgList">
-    <mat-error class="pl-err">{{ errMsg }}</mat-error>
-  </ng-container>
+  <div class="mat-mdc-form-field-subscript-wrapper">
+    <ng-container *ngFor="let errMsg of errMsgList">
+      <mat-error>{{ errMsg }}</mat-error>
+    </ng-container>
+  </div>
 
   <div class="pl-note">
     <a nodecor routerLink="{{linkSignup}}">{{ 'panel-login.create_an_account' | translate }}</a>

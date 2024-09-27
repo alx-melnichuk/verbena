@@ -3,7 +3,6 @@
 @use '../../../styles-dimensions.scss' as dimensions;
 
 app-panel-login {
-
   ---pl-pn-bg: var(--app-login-pn);
   ---pl-pn-brd: var(--app-login-pn-low);
 
@@ -68,9 +67,5 @@ app-panel-login {
     display: flex;
     margin-top: 0.5em;
     justify-content: space-between;
-  }
-
-  .pl-err {
-    font-size: calc(1em - 1px);
   }
 }
