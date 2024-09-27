@@ -91,6 +91,8 @@ body {
     --demo-default-cl: hsl(0, 0%, 100%); // #ffffff
     --app-default-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
 
+    --app-default-dis-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),80%);
+
     --app-link1-cl: hsl(209, 90%, 22%);
     --app-link2-cl: hsl(209, 78%, 70%);
 
@@ -145,6 +147,8 @@ body {
     --app-default-cl-h: 0;    --app-default-cl-s: 0%;    --app-default-cl-l: 0%;
     --demo-default-cl: hsl(0, 0%, 0%); // #000000
     --app-default-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
+
+    --app-default-dis-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),45%);
 
     --app-link1-cl: hsl(209, 78%, 33%);
     --app-link2-cl: hsl(209, 78%, 23%);
