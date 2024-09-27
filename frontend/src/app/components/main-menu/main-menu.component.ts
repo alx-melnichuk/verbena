@@ -1,15 +1,17 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewEncapsulation
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslateModule } from '@ngx-translate/core';
 import { RouterLink } from '@angular/router';
 
 import { InitializationService } from 'src/app/common/initialization.service';
 import { ROUTE_STREAM_CREATE, ROUTE_STREAM_LIST } from 'src/app/common/routes';
-import { LOCALE_DE_DE, LOCALE_EN_US, LOCALE_UK, THEME_DARK, THEME_LIGHT } from 'src/app/common/constants';
+import { LOCALE_DE_DE, LOCALE_EN_US, LOCALE_NOTHING, LOCALE_UK, THEME_DARK, THEME_LIGHT } from 'src/app/common/constants';
 
 
 @Component({
@@ -50,22 +52,10 @@ export class MainMenuComponent implements OnInit, OnChanges {
   public linkMyStreams = ROUTE_STREAM_LIST;
   public linkCreateStream = ROUTE_STREAM_CREATE;
 
-  public localeList = [
-    { value: '', name: this.translate.instant('profile.text_nothing') },
-    { value: LOCALE_EN_US, name: this.translate.instant('profile.text_locale_en_us') },
-    { value: LOCALE_DE_DE, name: this.translate.instant('profile.text_locale_de_de') },
-    { value: LOCALE_UK, name: this.translate.instant('profile.text_locale_uk') },
-  ];
-  public localeMap: { [key: string]: string } = {};
+  public nothing = LOCALE_NOTHING;
+  public localeList: string[] = ['', LOCALE_EN_US, LOCALE_DE_DE, LOCALE_UK];
 
-  constructor(
-    private translate: TranslateService,
-    public initializationService: InitializationService,
-  ) {
-    for (let idx = 0; idx < this.localeList.length; idx++) {
-        const item = this.localeList[idx];
-        this.localeMap[item.value] = item.name;
-    }
+  constructor(public initializationService: InitializationService) {
   }
   
   ngOnInit(): void {

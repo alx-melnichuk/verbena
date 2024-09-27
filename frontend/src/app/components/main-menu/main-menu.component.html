@@ -37,10 +37,10 @@
 
 <mat-menu #locales="matMenu">
   <button mat-menu-item *ngFor="let localeItem of localeList"
-    [ngClass]="(localeItem.value == '' ? 'mm-item-fn-it' : '')"
-    [value]="localeItem.value"
-    (click)="doSetLocale(localeItem.value)">
-    {{ localeItem.name }}
-    <span [ngClass]="['mm-mr-lf-0_5', (locale == localeItem.value ? 'mm-item-check' : '')]"></span>
+    [ngClass]="(localeItem == '' ? 'mm-item-fn-it' : '')"
+    [value]="localeItem"
+    (click)="doSetLocale(localeItem)">
+    {{ ('locale.' + localeItem) | translate }}
+    <span [ngClass]="['mm-mr-lf-0_5', (locale == localeItem ? 'mm-item-check' : '')]"></span>
   </button>
 </mat-menu>
