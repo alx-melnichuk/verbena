@@ -27,6 +27,24 @@
   "dialog": {
     "confirmation": "Bestätigung"
   },
+  "locale": {
+    "": "nichts",
+    "en-US": "Englisch - Vereinigte Staaten",
+    "de-DE": "Deutsch - Deutschland",
+    "uk": "Ukrainisch"
+  },
+  "theme": {
+    "": "nichts",
+    "light": "Helles thema",
+    "dark": "Dunkles thema"
+  },
+
+  "field-locale": {
+    "label": "Gebietsschema "
+  },
+  "field-theme": {
+    "label": "Farbthema "
+  },
 
   "panel-login": {
     "title": "Genehmigung",
@@ -61,16 +79,8 @@
 
   "profile": {
     "title_profile": "Persönliche informationen",
-    "label_avatar": "Avatar",
-    "text_nothing": "nichts",
-    "label_theme": "Farbthema",
-    "text_light_theme": "Helles thema",
-    "text_dark_theme": "Dunkles thema",
-    "label_locale": "Gebietsschema",
-    "text_locale_en_us": "Englisch - Vereinigte Staaten",
-    "text_locale_de_de": "Deutsch - Deutschland",
-    "text_locale_uk": "Ukrainisch",
 
+    "label_avatar": "Avatar",
     "btn_save_profile": "Speichern",
     "error_editing_profile": "Fehler beim Bearbeiten des Profils.",
     "dialog_title_editing": "Profiländerungs vorgang.",

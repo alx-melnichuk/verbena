@@ -27,6 +27,24 @@
   "dialog": {
     "confirmation": "Підтвердження"
   },
+  "locale": {
+    "": "нічого",
+    "en-US": "Англійська - США",
+    "de-DE": "Німецька - Німеччина",
+    "uk": "Українська"
+  },
+  "theme": {
+    "": "нічого",
+    "light": "Світла тема",
+    "dark": "Темна тема"
+  },
+
+  "field-locale": {
+    "label": "Локаль "
+  },
+  "field-theme": {
+    "label": "Кольорова тема "
+  },
 
   "panel-login": {
     "title": "Авторизація",
@@ -61,16 +79,8 @@
 
   "profile": {
     "title_profile": "Особиста інформація",
-    "label_avatar": "Аватар",
-    "text_nothing": "нічого",
-    "label_theme": "Кольорова тема",
-    "text_light_theme": "Світла тема",
-    "text_dark_theme": "Темна тема",
-    "label_locale": "Локаль",
-    "text_locale_en_us": "Англійська - США",
-    "text_locale_de_de": "Німецька - Німеччина",
-    "text_locale_uk": "Українська",
 
+    "label_avatar": "Аватар",
     "btn_save_profile": "Зберегти",
     "error_editing_profile": "Помилка редагування профілю.",
     "dialog_title_editing": "Операція зміни профілю.",

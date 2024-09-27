@@ -28,6 +28,17 @@
   "dialog": {
     "confirmation": "Confirmation"
   },
+  "locale": {
+    "": "nothing",
+    "en-US": "English - United States",
+    "de-DE": "German - Germany",
+    "uk": "Ukrainian"
+  },
+  "theme": {
+    "": "nothing",
+    "light": "Light theme",
+    "dark": "Dark theme"
+  },
   "Forbidden": {
     "status": 403,
     "access_denied" : "Access is denied."
@@ -112,8 +123,10 @@
     "time:required": "The \"time\" field is required.",
     "time:min": "The \"time\" must be more {{ min.requiredMin }}.",
     "time:max": "The \"time\" must be less {{ max.requiredMax }}.",
+    "theme:required": "The \"theme\" field is required.",
     "theme:min_length" : "The \"theme\" must have at least {{ minlength.requiredLength }} characters.",
     "theme:max_length" : "The \"theme\" must have no more {{ maxlength.requiredLength }} characters.",
+    "locale:required": "The \"locale\" field is required.",
     "locale:min_length" : "The \"locale\" must have at least {{ minlength.requiredLength }} characters.",
     "locale:max_length" : "The \"locale\" must have no more {{ maxlength.requiredLength }} characters.",
     "user_role:invalid_value": "Invalid value for \"user role\" ({{ invalid.actualValue }}).",
@@ -172,6 +185,12 @@
   "field-password": {
     "label": "Password ",
     "password_hint": "Use at least 6 characters, with one lowercase letter, one uppercase letter and a number."
+  },
+  "field-locale": {
+    "label": "Locale "
+  },
+  "field-theme": {
+    "label": "Color theme "
   },
   "field-time": {
     "label": "Time "
@@ -277,16 +296,8 @@
   },
   "profile": {
     "title_profile": "Personal information",
-    "label_avatar": "Avatar",
-    "text_nothing": "nothing",
-    "label_theme": "Color theme",
-    "text_light_theme": "Light theme",
-    "text_dark_theme": "Dark theme",
-    "label_locale": "Locale",
-    "text_locale_en_us": "English - United States",
-    "text_locale_de_de": "German - Germany",
-    "text_locale_uk": "Ukrainian",
 
+    "label_avatar": "Avatar",
     "btn_save_profile": "Save",
     "error_editing_profile": "Error editing profile.",
     "dialog_title_editing": "Profile change operation.",
