@@ -6,19 +6,17 @@ import { CommonModule } from '@angular/common';
 import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
-import {
-  IMAGE_VALID_FILE_TYPES, MAX_FILE_SIZE, THEME_DARK, THEME_LIGHT, LOCALE_EN_US, LOCALE_DE_DE, LOCALE_UK, 
-} from 'src/app/common/constants';
+import { IMAGE_VALID_FILE_TYPES, MAX_FILE_SIZE } from 'src/app/common/constants';
 import { FieldDescriptComponent } from 'src/app/components/field-descript/field-descript.component';
-import { FieldEmailComponent    } from 'src/app/components/field-email/field-email.component';
+import { FieldEmailComponent } from 'src/app/components/field-email/field-email.component';
 import { FieldFileUploadComponent } from 'src/app/components/field-file-upload/field-file-upload.component';
 import { FieldImageAndUploadComponent } from 'src/app/components/field-image-and-upload/field-image-and-upload.component';
+import { FieldLocaleComponent } from 'src/app/components/field-locale/field-locale.component';
 import { FieldNicknameComponent } from 'src/app/components/field-nickname/field-nickname.component';
 import { FieldPasswordComponent } from 'src/app/components/field-password/field-password.component';
+import { FieldThemeComponent } from 'src/app/components/field-theme/field-theme.component';
 import { UniquenessCheckComponent } from 'src/app/components/uniqueness-check/uniqueness-check.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { HtmlElemUtil } from 'src/app/utils/html-elem.util';
@@ -34,9 +32,9 @@ export const PPI_AVATAR_MX_WD = '---pp-avatar-mx-wd';
 @Component({
   selector: 'app-panel-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, MatSelectModule,
-    MatSlideToggleModule, TranslateModule, FieldNicknameComponent, FieldEmailComponent, FieldPasswordComponent,
-    FieldDescriptComponent, FieldFileUploadComponent, FieldImageAndUploadComponent, UniquenessCheckComponent],
+  imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatButtonModule, MatInputModule, 
+    UniquenessCheckComponent, FieldNicknameComponent, FieldEmailComponent, FieldPasswordComponent,
+    FieldDescriptComponent, FieldFileUploadComponent, FieldImageAndUploadComponent, FieldThemeComponent, FieldLocaleComponent],
   templateUrl: './panel-profile.component.html',
   styleUrls: ['./panel-profile.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -83,19 +81,6 @@ export class PanelProfileComponent implements OnInit, OnChanges {
     locale: new FormControl('', []),
   };
   public formGroupProfile: FormGroup = new FormGroup(this.cntlsProfile);
-  public themeList = [
-    { value: '', name: this.translate.instant('profile.text_nothing') },
-    { value: THEME_LIGHT, name: this.translate.instant('profile.text_light_theme') },
-    { value: THEME_DARK, name: this.translate.instant('profile.text_dark_theme') },
-  ];
-  public themeMap: { [key: string]: string } = {};
-  public localeList = [
-    { value: '', name: this.translate.instant('profile.text_nothing') },
-    { value: LOCALE_EN_US, name: this.translate.instant('profile.text_locale_en_us') },
-    { value: LOCALE_DE_DE, name: this.translate.instant('profile.text_locale_de_de') },
-    { value: LOCALE_UK, name: this.translate.instant('profile.text_locale_uk') },
-  ];
-  public localeMap: { [key: string]: string } = {};
 
   public cntlsPassword = {
     password: new FormControl(null, []),
@@ -122,14 +107,6 @@ export class PanelProfileComponent implements OnInit, OnChanges {
     private profileService: ProfileService,
   ) {
     this.formGroupPassword.setValidators(this.validatorsForPassword());
-    for (let idx = 0; idx < this.themeList.length; idx++) {
-        const item = this.themeList[idx];
-        this.themeMap[item.value] = item.name;
-    }
-    for (let idx = 0; idx < this.localeList.length; idx++) {
-        const item = this.localeList[idx];
-        this.localeMap[item.value] = item.name;
-    }
   }
 
   ngOnInit(): void {
@@ -164,7 +141,7 @@ export class PanelProfileComponent implements OnInit, OnChanges {
   }
 
   // ** Public API **
-  
+
   // ** Section: Update profile (formGroupProfile) **
 
   public checkUniquenessNickname = (nickname: string | null | undefined): Promise<boolean> => {

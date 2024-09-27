@@ -48,40 +48,20 @@
           </app-field-email>
         </app-uniqueness-check>
         
-        <div mr-tp-0_5 class="pp-them-local">
-          <mat-form-field
-            appearance="outline"
-            color="primary">
-            <mat-label>{{ 'profile.label_theme' | translate }}</mat-label>
-            <mat-select formControlName="theme" panelClass="ppi-option">
-              <mat-select-trigger [ngClass]="(!cntlsProfile.theme.value ? 'pp-fn-it' : '')">
-                {{ themeMap[cntlsProfile.theme.value || ''] }}
-              </mat-select-trigger>
-              <mat-option *ngFor="let themeItem of themeList"
-                [ngClass]="(themeItem.value == '' ? 'pp-opt-fn-it' : '')"
-                [value]="themeItem.value">
-                {{ themeItem.name }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
+        <div mr-tp-0_5 class="pp-theme-locale">
+          <app-field-theme wd100 class="pp-theme"
+            formControlName="theme"
+            [isRequired]="false"
+            (change)="updateErrMsgsProfile();">
+          </app-field-theme>
 
-          <mat-form-field
-            appearance="outline"
-            color="primary">
-            <mat-label>{{ 'profile.label_locale' | translate }}</mat-label>
-            <mat-select formControlName="locale" panelClass="ppi-option">
-              <mat-select-trigger [ngClass]="(!cntlsProfile.locale.value ? 'pp-fn-it' : '')">
-                {{ localeMap[cntlsProfile.locale.value || ''] }}
-              </mat-select-trigger>
-              <mat-option *ngFor="let localeItem of localeList"
-                [ngClass]="(localeItem.value == '' ? 'pp-opt-fn-it' : '')"
-                [value]="localeItem.value">
-                {{ localeItem.name }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
+          <app-field-locale wd100 class="pp-locale"
+            formControlName="locale"
+            [isRequired]="false"
+            (change)="updateErrMsgsProfile();">
+          </app-field-locale>
         </div>
-  
+
         <app-field-descript wd100 mr-tp-0_5 class="pp-err-pd"
           formControlName="descript"
           [isRequired]="false"
@@ -103,9 +83,11 @@
 
       </form>
 
-      <ng-container *ngFor="let errMsg of errMsgsProfile">
-        <mat-error class="pp-err">{{ errMsg | translate }}</mat-error>
-      </ng-container>
+      <div class="mat-mdc-form-field-subscript-wrapper">
+        <ng-container *ngFor="let errMsg of errMsgsProfile">
+            <mat-error>{{ errMsg | translate }}</mat-error>
+        </ng-container>
+      </div>
     </div>
   </div>
 
@@ -149,9 +131,11 @@
         </div>
       </form>
 
-      <ng-container *ngFor="let errMsg of errMsgsPassword">
-        <mat-error class="pp-err">{{ errMsg | translate }}</mat-error>
-      </ng-container>
+      <div class="mat-mdc-form-field-subscript-wrapper">
+        <ng-container *ngFor="let errMsg of errMsgsPassword">
+          <mat-error>{{ errMsg | translate }}</mat-error>
+        </ng-container>
+      </div>
     </div>
 
     <div class="pp-content">
@@ -171,9 +155,11 @@
         </button>
       </div>
 
-      <ng-container *ngFor="let errMsg of errMsgsAccount">
-        <mat-error class="pp-err">{{ errMsg | translate }}</mat-error>
-      </ng-container>
+      <div class="mat-mdc-form-field-subscript-wrapper">
+        <ng-container *ngFor="let errMsg of errMsgsAccount">
+          <mat-error>{{ errMsg | translate }}</mat-error>
+        </ng-container>
+      </div>
     </div>
 
   </div>

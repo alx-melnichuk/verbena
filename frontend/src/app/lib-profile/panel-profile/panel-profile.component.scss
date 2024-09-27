@@ -2,13 +2,6 @@
 
 @use '../../../styles-dimensions.scss' as dimensions;
 
-.dark-theme app-panel-profile {
-  ---pp-text-cl: hsl(210, 8%, 80%); // black-150
-}
-.light-theme app-panel-profile {
-  ---pp-text-cl: hsl(210, 8%, 45%); // black500
-}
-  
 app-panel-profile {
   @media screen and (width <= dimensions.$mobile-480) {
     ---pp-crd-wd: 100vw;
@@ -90,11 +83,11 @@ app-panel-profile {
     width: min(var(---pp-group-wd), 100%);
   }
   .pp-content {
-    background-color:  var(--ppi-pn-bg,var(---pp-pn-bg));
-    border-color: var(--ppi-pn-brd, var(---pp-pn-brd));
+    background-color:  var(--pp-pn-bg, var(---pp-pn-bg));
+    border-color: var(--pp-pn-brd, var(---pp-pn-brd));
     border-style: solid;
     border-width: 2px;
-    border-radius: var(--ppi-pn-brd-rd, var(---pp-pd));
+    border-radius: var(--pp-pn-brd-rd, var(---pp-pd));
     box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px;
     box-sizing: border-box;
     display: flex;
@@ -124,12 +117,14 @@ app-panel-profile {
     align-items: center;
   }
 
-  .pp-them-local {
+  .pp-theme-locale {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    &>mat-form-field { flex-basis: 48%; }
+    &>.pp-theme { flex-basis: 48%; }
+    &>.pp-locale { flex-basis: 48%; }
   }
+
 
   .pp-save {
     width: 25px;
@@ -146,27 +141,14 @@ app-panel-profile {
   }
 
   // ** Text **
-  .ppi-label {
-    color: var(--ppi-text-cl, var(---pp-text-cl));
+  .pp-label {
+    color: var(--pp-text-cl, var(--app-default-dis-cl));
     font-size: calc(1em - 2px);
   }
 
-  .pp-fn-it {
-    font-style: italic;
-    color: var(--ppi-text-cl, var(---pp-text-cl));
-  }
   // ** Error **
   .pp-err-pd.ng-invalid.ng-touched {
     padding-bottom: 1em;
   }
-  .pp-err {
-    font-size: calc(1em - 1px);
-  }
 }
 
-
-.cdk-overlay-pane {
-  .ppi-opt-fn-it {
-    font-style: italic;
-  }
-}
