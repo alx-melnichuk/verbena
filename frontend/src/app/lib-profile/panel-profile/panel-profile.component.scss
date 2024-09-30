@@ -30,13 +30,13 @@ app-panel-profile {
     ---pp-wd: 49.5vw;
     ---pp-fl-wr: wrap;
   }
-  @media screen and (dimensions.$desktop-1280 < width <= dimensions.$extra-1536) {
+  @media screen and (dimensions.$desktop-1280 < width <= dimensions.$extra-wide-1536) {
     ---pp-crd-wd: 40vw;
     ---pp-pd: 2.5em;
     ---pp-wd: 50vw;
     ---pp-fl-wr: wrap;
   }
-  @media screen and (dimensions.$extra-1536 < width) {
+  @media screen and (dimensions.$extra-wide-1536 < width) {
     ---pp-crd-wd: 40vw;
     ---pp-pd: 2.5em;
     ---pp-wd: 46em;
@@ -83,7 +83,7 @@ app-panel-profile {
     width: min(var(---pp-group-wd), 100%);
   }
   .pp-content {
-    background-color:  var(--pp-pn-bg, var(---pp-pn-bg));
+    background-color: var(--pp-pn-bg, var(---pp-pn-bg));
     border-color: var(--pp-pn-brd, var(---pp-pn-brd));
     border-style: solid;
     border-width: 2px;

@@ -108,7 +108,7 @@
             checkPassword(formGroupPassword);">
         </app-field-password>
 
-        <app-field-password wd100 mr-tp-1_5
+        <app-field-password wd100 mr-tp-1
           formControlName="new_password"
           [isRequired]="isRequiredPassword"
           label="profile.new_password"
@@ -118,7 +118,7 @@
             checkPassword(formGroupPassword);">
         </app-field-password>
 
-        <div class="pp-actions" mr-tp-1_5>
+        <div class="pp-actions" mr-tp-1>
           <button mat-raised-button color="primary"
             class="app-infix app-ordinary"
             [disabled]="formGroupPassword.pristine || formGroupPassword.invalid"
@@ -140,10 +140,10 @@
 
     <div class="pp-content">
       <div class="pp-title">{{ 'profile.title_delete_account' | translate }}</div>
-      <div mr-tp-1_5>
+      <div mr-tp-1>
         <span>{{ 'profile.note_before_deleting_account' | translate }}</span>
       </div>
-      <div class="pp-actions pp-form" mr-tp-1_5>
+      <div class="pp-actions pp-form" mr-tp-1>
         <button mat-raised-button color="primary"
           class="app-infix app-ordinary"
           [disabled]="isDisabledSubmit"

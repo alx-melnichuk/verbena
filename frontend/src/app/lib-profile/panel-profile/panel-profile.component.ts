@@ -31,6 +31,7 @@ export const PPI_AVATAR_MX_WD = '---pp-avatar-mx-wd';
 
 @Component({
   selector: 'app-panel-profile',
+  exportAs: 'appPanelProfile',
   standalone: true,
   imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatButtonModule, MatInputModule, 
     UniquenessCheckComponent, FieldNicknameComponent, FieldEmailComponent, FieldPasswordComponent,
