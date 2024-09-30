@@ -6,12 +6,14 @@ $tablet-768: 768px;
 $laptop-992: 992px;
 $desktop-1024: 1024px;
 */
-$mobile-480  :  480px;
-$tablet-768  :  768px; // +288
-$FWVGA-854   :  854px;
-$laptop-1024 : 1024px; // +256
-$desktop-1280: 1280px; // +256
-$extra-1536  : 1536px; // +256
+$mobile-480       :  480px; // +288 = 768
+$tablet-768       :  768px; // +256 = 1024
+$FWVGA-854        :  854px;
+$laptop-1024      : 1024px; // +256 = 1280
+$desktop-1280     : 1280px; // +256 = 1536
+$extra-wide-1536  : 1536px; // +256 = 1792
+$super-wide-1792  : 1792px; // +256 = 2048
+//$ultra-wide-2048  : 2048px; // +256 = 2304
 
 /*
 $size-mobile-max: 767.99px;
