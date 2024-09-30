@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
-  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostListener, Input, OnChanges, Output,
+  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, HostListener, Input, OnChanges, Output,
   SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -19,6 +19,7 @@ import { FieldPasswordComponent } from 'src/app/components/field-password/field-
 
 @Component({
   selector: 'app-panel-login',
+  exportAs: 'appPanelLogin',
   standalone: true,
   imports: [ CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslateModule,
     FieldNicknameComponent, FieldPasswordComponent,],
@@ -31,19 +32,15 @@ export class PanelLoginComponent implements OnChanges {
   @Input()
   public isDisabledSubmit: boolean = false;
   @Input()
-  public errMsgList: string[] = [];
+  public errMsgs: string[] = [];
   @Output()
   readonly login: EventEmitter<StrParams> = new EventEmitter();
 
+  @HostBinding('class.global-scroll')
+  public get isGlobalScroll(): boolean { return true; }
+
   public linkSignup = ROUTE_SIGNUP;
   public linkForgotPassword = ROUTE_FORGOT_PASSWORD;
-
-  public nicknameMinLen: number = NICKNAME_MIN_LENGTH;
-  public nicknameMaxLen: number = NICKNAME_MAX_LENGTH;
-  public nicknamePattern: string = NICKNAME_PATTERN;
-
-  public emailMinLen: number = EMAIL_MIN_LENGTH;
-  public emailMaxLen: number = EMAIL_MAX_LENGTH;
 
   public controls = {
     nickname: new FormControl<string | null>(null, []),
@@ -51,7 +48,14 @@ export class PanelLoginComponent implements OnChanges {
     password: new FormControl<string | null>(null, []),
   };
   public formGroup: FormGroup = new FormGroup(this.controls);
+
   public isEmail: boolean = false;
+  public nicknameMinLen: number = NICKNAME_MIN_LENGTH;
+  public nicknameMaxLen: number = NICKNAME_MAX_LENGTH;
+  public nicknamePattern: string = NICKNAME_PATTERN;
+
+  public emailMinLen: number = EMAIL_MIN_LENGTH;
+  public emailMaxLen: number = EMAIL_MAX_LENGTH;
 
   constructor(private changeDetector: ChangeDetectorRef) {}
 
@@ -82,12 +86,12 @@ export class PanelLoginComponent implements OnChanges {
     this.login.emit({ nickname, password });
   }
 
-  public changeType(target: any ): void {
-    this.isEmail = (target || { "value":"" }).value.indexOf('@') > -1;
+  public updateErrMsg(errMsgList: string[] = []): void {
+    this.errMsgs = errMsgList;
   }
 
-  public updateErrMsg(errMsgList: string[] = []): void {
-    this.errMsgList = errMsgList;
+  public changeType(target: any ): void {
+    this.isEmail = (target || { "value":"" }).value.indexOf('@') > -1;
   }
 
   public nicknameFocusout(): void {

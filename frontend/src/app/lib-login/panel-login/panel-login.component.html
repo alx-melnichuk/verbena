@@ -1,10 +1,10 @@
 <div class="pl-content">
-  <form class="pl-form" novalidate
+  <form novalidate class="pl-form"
     [formGroup]="formGroup">
 
-    <div class="pl-title">{{ 'panel-login.title' | translate }}</div>
+    <div pl-mr-tp-0_5 class="pl-title">{{ 'panel-login.title' | translate }}</div>
   
-    <app-field-nickname wd100
+    <app-field-nickname wd100 pl-mr-tp-0_5
       formControlName="nickname"
       [gist]="isEmail ? 'email' : 'nickname'"
       [isRequired]="true"
@@ -17,29 +17,28 @@
       (focusout)="nicknameFocusout()">
     </app-field-nickname>
   
-    <app-field-password wd100 mr-tp-1
+    <app-field-password wd100 pl-mr-tp-1
       formControlName="password"
       [isRequired]="true"
       (input)="updateErrMsg()">
     </app-field-password>
   
-    <button type="button" mr-tp-1 mat-raised-button
+    <button type="button" mat-raised-button pl-mr-tp-1
       class="mat-primary"
       [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
       (click)="doLogin()">
       {{ 'panel-login.btn_login' | translate }}
     </button>
   
+    <div pl-mr-tp-1 class="pl-note">
+      <a no-decor routerLink="{{linkSignup}}">{{ 'panel-login.create_an_account' | translate }}</a>
+      <a no-decor routerLink="{{linkForgotPassword}}">{{ 'panel-login.forgot_password' | translate }}</a>
+    </div>
   </form>
 
   <div class="mat-mdc-form-field-subscript-wrapper">
-    <ng-container *ngFor="let errMsg of errMsgList">
+    <ng-container *ngFor="let errMsg of errMsgs">
       <mat-error>{{ errMsg }}</mat-error>
     </ng-container>
-  </div>
-
-  <div class="pl-note">
-    <a nodecor routerLink="{{linkSignup}}">{{ 'panel-login.create_an_account' | translate }}</a>
-    <a nodecor routerLink="{{linkForgotPassword}}">{{ 'panel-login.forgot_password' | translate }}</a>
   </div>
 </div>
