@@ -3,44 +3,24 @@
 @use '../../../styles-dimensions.scss' as dimensions;
 
 app-panel-about {
-  @media screen and (width <= dimensions.$mobile-480) {
-    ---pa-pd: 0.5em;
-    ---pa-wd: 100%;
-  }
-  @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
-    ---pa-pd: 1em;
-    ---pa-wd: 39em; // 30em;
-  }
-  @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
-    ---pa-pd: 1.5em;
-    ---pa-wd: 41em; // 32em;
-  }
-  @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
-    ---pa-pd: 2em;
-    ---pa-wd: 43em; //34em;
-  }
-  @media screen and (dimensions.$desktop-1280 < width) {
-    ---pa-pd: 2.5em;
-    ---pa-wd: 45em; //36em;
-  }
-
   ---pa-pn-bg: var(--app-about-pn);
   ---pa-pn-brd: var(--app-about-pn-low);
+  
+  ---pa-pd: calc(min(var(--app-display-size), 1280) / 128 * 3 / 10 * 1em);
+  ---pa-wd: min(100vw, calc((28 + var(--app-display-size) / 128) * 1em));
+  
+  [pa-mr-tp-0_5] { margin-top: 0.5em; }
+  [pa-mr-tp-1] { margin-top: 1em; }
 
-  box-sizing: border-box;
+  align-items: center;
   display: flex;
-  height: 100%;
+  flex-direction: column;
   justify-content: center;
-  padding: var(---pa-pd) 0;
-
-  [pd-ver] {
-    padding-left: var(---pa-pd);
-    padding-right: var(---pa-pd);
-  }
-  [mr-tp-1] { margin-top: 1em; }
+  height: 100%;
+  overflow: auto;
 
   .pa-content {
-    background-color:  var(--pa-pn-bg, var(---pa-pn-bg));
+    background-color: var(--pa-pn-bg, var(---pa-pn-bg));
     border-color: var(--pa-pn-brd, var(---pa-pn-brd));
     border-style: solid;
     border-width: 2px;
@@ -49,16 +29,22 @@ app-panel-about {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    height: 100%;
-    padding: var(---pa-pd) 0;
+    padding: calc(var(---pa-pd) / 2) var(---pa-pd);
     width: var(---pa-wd);
   }
+  
+  .pa-form {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0.5em;
+  }
+
   .pa-title {
     font-size: calc(100% + 6px);
     font-weight: 500;
-    margin-bottom: 1em;
     text-align: center;
   }
+
   .pa-over-auto {
     overflow: auto;
     ul {
