@@ -6,91 +6,64 @@ app-panel-stream-editor {
   ---pse-pn-bg: var(--app-stream-pn);
   ---pse-pn-brd: var(--app-stream-pn-low);
 
-  @media screen and (width <= dimensions.$mobile-480) {
-    ---pse-crd-wd: 100vw;
-    ---pse-pd: 0.5em;
-    ---pse-wd: 100%;
-  }
-  @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
-    ---pse-crd-wd: 100vw;
-    ---pse-pd: 1em;
-    ---pse-wd: 39em; // 30em;
-  }
-  @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
-    ---pse-crd-wd: 80vw;
-    ---pse-pd: 1.5em;
-    ---pse-wd: 41em; // 32em;
-  }
-  @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
-    ---pse-crd-wd: 60vw;
-    ---pse-pd: 2em;
-    ---pse-wd: 43em; //34em;
-  }
-  @media screen and (dimensions.$desktop-1280 < width) {
-    ---pse-crd-wd: 40vw;
-    ---pse-pd: 2.5em;
-    ---pse-wd: 45em; //36em;
-  }
+  ---pse-pd: calc(min(var(--app-display-size), 1280) / 128 * 3 / 10 * 1em);
+  ---pse-wd: min(100vw, calc((32 + var(--app-display-size) / 128) * 1em));
 
-  [mr-tp-0_25] { margin-top: 0.25em; }
-  [mr-tp-0_5] { margin-top: 0.5em; }
-  [mr-tp-1] { margin-top: 1em; }
-  [mr-tp-1_5] { margin-top: 1.5em; }
+  [pse-mr-tp-0_5] { margin-top: 0.5em; }
+  [pse-mr-tp-1] { margin-top: 1.1em; }
+  [pse-mr-bt-0_5] { margin-bottom: 0.55em; }
 
-  box-sizing: border-box;
+  align-items: center;
   display: flex;
-  height: 100%;
+  flex-direction: column;
   justify-content: center;
+  height: 100%;
   overflow: auto;
-  user-select: none;
 
-  .pse-err-pd.ng-invalid.ng-touched {
-    padding-bottom: 1em;
-  }
-
-  .pse-panel {
-    align-content: center;
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    width: 100%;
-  }
   .pse-content {
-    background-color: var(--pse-pn-bg,var(---pse-pn-bg));
+    background-color: var(--pse-pn-bg, var(---pse-pn-bg));
     border-color: var(--pse-pn-brd, var(---pse-pn-brd));
     border-style: solid;
-    border-width: 1px;
+    border-width: 2px;
     border-radius: var(--pse-pn-brd-rd, var(---pse-pd));
-    box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    margin-bottom: var(---pse-pd);
-    margin-top: var(---pse-pd);
-    margin-left: calc(var(---pse-pd) / 2);
-    margin-right: calc(var(---pse-pd) / 2);
-    padding: var(---pse-pd) var(---pse-pd) calc(var(---pse-pd) / 2) var(---pse-pd);
-    width: calc(var(---pse-wd) - var(---pse-pd));
+    padding: calc(var(---pse-pd) / 2) var(---pse-pd);
+    width: var(---pse-wd);
   }
 
-  // ** Card Content **
+  .pse-form {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0.5em;
+  }
 
   .pse-title {
-    width: 100%;
-  }
-  .pse-text {
-    font-style: normal;
+    font-size: calc(100% + 6px);
     font-weight: 500;
-    font-size: medium;
-  }
-  .pse-logo {
-    height: 10em;
+    text-align: center;
   }
 
-  mat-hint {
-    color: var(--black-500);
+  .pse-logo {
+    // --fiau-hg: calc(var(---pse-logo-mx-hg, 5em) * 2);
+    
+    
+    .mat-mdc-text-field-wrapper {
+      .mat-mdc-form-field-infix {
+        padding-top: 0.25em;
+        padding-bottom: 0;
+      }
+      .mdc-text-field__input.pse-hide {
+        display: none;
+      }
+    }
   }
+  .pse-logo-image {
+    height: calc(var(---pse-logo-mx-hg, 5em) * 2);
+  }
+
 
   .pse-toggle {
     margin-left: 2em;
@@ -108,30 +81,17 @@ app-panel-stream-editor {
     width: 13em;
   }
 
-  .pse-link-param {
-    border-color: var(--pse-logo-brd-cl, var(--app-theme-input-border));
-    border-style: solid;
-    border-width: 1px;
-    border-radius: var(--pse-logo-brd-rd, 0.3em);    
-    box-sizing: border-box;
-    display: flex;
-    padding: 10px 13px 10px 13px;
-    &>.icon { flex: 0 0 auto; }
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .pse-ellipsis {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
   .pse-icon {
     background-position-x: center;
     background-position-y: center;
     background-repeat: no-repeat;
     background-size: cover;
-    &.pse-copy { width: 31px; height: 25px; margin-left: 7px; }
+    display: inline-block;
+  }
+  .pse-copy {
+    margin: 0.5em;
+    height: 2em;
+    width: 2em;
   }
 
   // ** Card Actions **
@@ -159,21 +119,12 @@ app-panel-stream-editor {
     margin-right: 0.5em;
   }
 
-  // ** Form **
-  .pse-form {
-    padding-bottom: calc(var(---pse-pd) / 2);
-  }
-
-  // ** Error **
-  .pse-err {
-    font-size: calc(1em - 1px);
-  }
 }
 
-.dark-theme app-panel-stream-editor .psd-icon {
-  &.pse-copy { background-image: url('../../../assets/icons/copy.svg'); }
+.dark-theme app-panel-stream-editor .pse-icon {
+  &.pse-copy { background-image: url('/assets/icons/copy.svg'); }
 }
 
-.light-theme app-panel-stream-editor .psd-icon {
-  &.pse-copy { background-image: url('../../../assets/icons/copy-light.svg'); }
+.light-theme app-panel-stream-editor .pse-icon {
+  &.pse-copy { background-image: url('/assets/icons/copy-light.svg'); }
 }

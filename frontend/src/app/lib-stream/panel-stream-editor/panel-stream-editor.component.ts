@@ -31,6 +31,7 @@ import { StreamDto, StreamDtoUtil, UpdateStreamFileDto } from '../stream-api.int
 
 @Component({
   selector: 'app-panel-stream-editor',
+  exportAs: 'appPanelStreamEditor',
   standalone: true,
   imports: [
     CommonModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule,  MatSlideToggleModule,
@@ -85,6 +86,7 @@ export class PanelStreamEditorComponent implements OnChanges {
     isStartTime: new FormControl(false, []),
     startDate: new FormControl({ value: new Date(Date.now()), disabled: true }, []),
     startTime: new FormControl('', []),
+    link: new FormControl('', []),
   };
 
   public linkForVisitors = '';
@@ -190,6 +192,7 @@ export class PanelStreamEditorComponent implements OnChanges {
     }
     this.origStreamDto = { ...streamDto };
     Object.freeze(this.origStreamDto);
+    this.isCreate = (streamDto.id < 0);
     const now = new Date(Date.now())
     const currentTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 5, now.getSeconds());
     // Date.parse("2019-01-01T00:00:00.000Z");
@@ -198,23 +201,22 @@ export class PanelStreamEditorComponent implements OnChanges {
     const startMinutes = ('00' + startDate.getMinutes()).slice(-2);
     const startSeconds = ('00' + startDate.getSeconds()).slice(-2);
     const startTimeStr = startHours + ':' + startMinutes + ':' + startSeconds;
+    const link = !this.isCreate ? this.streamService.getLinkForVisitors(streamDto.id, true) : '';
     this.formGroup.patchValue({
       title: streamDto.title,
       descript: streamDto.descript,
       logo: streamDto.logo,
-      tags: streamDto.tags,
+      tags: (streamDto.tags || []),
       starttime: streamDto.starttime,
       isStartTime: (streamDto.id > 0 && !!streamDto.starttime),
       startDate: startDate,
       startTime: startTimeStr,
+      link: link,
     });
-    this.linkForVisitors = this.streamService.getLinkForVisitors(streamDto.id, true);
+    this.linkForVisitors = link;
     this.changeIsStartTime();
-
     this.logoFile = undefined;
     this.initIsLogo = !!streamDto.logo;
-
-    this.isCreate = (streamDto.id < 0);
   }
   // '10:12'
   private getStartDateTime(startDate: Date | null, startTime: string | null): Date | null {
