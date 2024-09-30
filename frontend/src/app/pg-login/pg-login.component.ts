@@ -21,7 +21,7 @@ import { HttpErrorUtil } from '../utils/http-error.util';
 export class PgLoginComponent {
   public isLogin = true;
   public isDisabledSubmit = false;
-  public errMsgList: string[] = [];
+  public errMsgs: string[] = [];
 
   constructor(
     private changeDetector: ChangeDetectorRef,
@@ -44,13 +44,13 @@ export class PgLoginComponent {
     }
 
     this.isDisabledSubmit = true;
-    this.errMsgList = [];
+    this.errMsgs = [];
     try {
       await this.profileService.login(nickname, password);
       this.router.navigateByUrl(REDIRECT_AFTER_LOGIN);
     } catch (error) {
       if (error instanceof HttpErrorResponse) {
-        this.errMsgList = HttpErrorUtil.getMsgs(error);
+        this.errMsgs = HttpErrorUtil.getMsgs(error);
       } else {
         throw error;
       }
