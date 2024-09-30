@@ -53,6 +53,28 @@
     "create_an_account": "Ein konto erstellen",
     "forgot_password": "Passwort vergessen?"
   },
+  "panel-signup": {
+    "title": "Registrieren",
+    "button_signup": "Registrieren",
+    "already_registered": "Schon registriert?",
+    "go_to_login_page": "Gehen sie zur anmeldeseite."
+  },
+  "pg-signup": {
+    "dialog_title": "Willkommen bei {{appName}} !",
+    "dialog_message": "Wir haben einen registrierungslink an \"{{value}}\" gesendet."
+  },
+  "panel-forgot-password": {
+    "title": "Passwort änderungsanfrage",
+    "you_forgot_password": "Sollten sie ihr passwort vergessen haben, geben sie bitte ihre e-mail-adresse an und senden sie dort ihren änderungswunsch.",
+    "email_address": "E-mail-adresse ",
+    "button_send": "Anfrage senden",
+    "go_to_login_page": "Gehen sie zur anmeldeseite."
+  },
+  "pg-forgot-password": {
+    "dialog_title": "Willkommen bei {{appName}} !",
+    "dialog_message": "Wir haben ihnen einen link zum ändern ihres passworts in \"{{value}}\" gesendet."
+  },
+
 
   "panel-about": {
     "title": "Über die {{appName}}-Website.",

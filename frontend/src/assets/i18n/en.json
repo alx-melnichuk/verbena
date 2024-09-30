@@ -205,20 +205,24 @@
     "create_an_account": "Create an account",
     "forgot_password": "Forgot password ?"
   },
-  "signup": {
+  "panel-signup": {
     "title": "Sign up",
     "button_signup": "Sign up",
     "already_registered": "Already registered ?",
-    "go_to_login_page": "Go to the login page.",
+    "go_to_login_page": "Go to the login page."
+  },
+  "pg-signup": {
     "dialog_title": "Welcome to the {{appName}} !",
     "dialog_message": "We have sent a registration link to \"{{value}}\"."
   },
-  "forgot-password": {
+  "panel-forgot-password": {
     "title": "Password change request",
     "you_forgot_password": "If you have forgotten your password, please provide your email address and send a change request to it.",
-    "email_address": "Email Address",
+    "email_address": "Email Address ",
     "button_send": "Send request",
-    "go_to_login_page": "Go to the login page.",
+    "go_to_login_page": "Go to the login page."
+  },
+  "pg-forgot-password": {
     "dialog_title": "Welcome to the {{appName}} !",
     "dialog_message": "We have sent a link to change your password to \"{{value}}\"."
   },
@@ -253,7 +257,7 @@
       "edit": "Edit"
     }
   },
-  "stream_edit": {
+  "panel-stream-editor": {
     "caption": "Stream Caption",
     "title": "Title",
     "save": "Save",

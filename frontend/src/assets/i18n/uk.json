@@ -53,6 +53,27 @@
     "create_an_account": "Створіть обліковий запис",
     "forgot_password": "Забули пароль?"
   },
+  "panel-signup": {
+    "title": "Реєстрація",
+    "button_signup": "Реєстрація",
+    "already_registered": "Вже зареєстровані ?",
+    "go_to_login_page": "Перейдіть на сторінку входу."
+  },
+  "pg-signup": {
+    "dialog_title": "Ласкаво просимо до {{appName}}! !",
+    "dialog_message": "Ми надіслали реєстраційне посилання \"{{value}}\"."
+  },
+  "panel-forgot-password": {
+    "title": "Запит на зміну пароля",
+    "you_forgot_password": "Якщо ви забули свій пароль, будь ласка, вкажіть адресу електронної пошти та надішліть на неї запит на зміну.",
+    "email_address": "Email адреса ",
+    "button_send": "Надіслати запит",
+    "go_to_login_page": "Перейдіть на сторінку входу."
+  },
+  "pg-forgot-password": {
+    "dialog_title": "Welcome to the {{appName}} !",
+    "dialog_message": "We have sent a link to change your password to \"{{value}}\"."
+  },
 
   "panel-about": {
     "title": "Про веб-сайт {{appName}}.",
