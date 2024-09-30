@@ -75,6 +75,64 @@ body {
 }
 */
 :root {
+  .light-theme {
+    color-scheme: light;
+    // "default" background-color
+    --app-default-bg-h: 0;    --app-default-bg-s: 0%;    --app-default-bg-l: 98%;
+    --demo-default-bg: hsl(0, 0%, 98%); // #fafafa
+    --app-default-bg: hsl(var(--app-default-bg-h),var(--app-default-bg-s),var(--app-default-bg-l));
+
+    // "default" color: hsl(0, 0%, 0%); // Old hsl(0, 5%, 10%); #1b1818
+    --app-default-cl-h: 0;    --app-default-cl-s: 0%;    --app-default-cl-l: 0%;
+    --demo-default-cl: hsl(0, 0%, 0%); // #000000
+    --app-default-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
+
+    --app-default-dis-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),45%);
+
+    --app-link1-cl: hsl(209, 78%, 33%);
+    --app-link2-cl: hsl(209, 78%, 23%);
+
+    --mat-card-background: white;
+    --mat-card-color: #000000de; 
+    --mat-card-color2: hsla(0, 0%, 0%, 0.87);
+
+    --mat-chip-background-color: #e1e1e1;
+    --mat-chip-background-color2: hsl(0, 0%, 88.24%);
+    --mat-chip-color: #000000de;
+    --mat-chip-color2: hsla(0, 0%, 0%, 0.87);
+    
+    --app-site-unauth-h: 27;    --app-site-unauth-s: 95%;    --app-site-unauth-l: 90%;
+    --demo-site-unauth: hsl(27, 95%, 90%);
+    --app-site-unauth: hsl(var(--app-site-unauth-h),var(--app-site-unauth-s),var(--app-site-unauth-l));
+
+    --app-site-auth-h: 140;    --app-site-auth-s: 40%;    --app-site-auth-l: 90%;
+    --demo-site-auth: hsl(140, 40%, 90%);
+    --app-site-auth: hsl(var(--app-site-auth-h),var(--app-site-auth-s),var(--app-site-auth-l));
+
+    --app-about-pn         : hsl( 40, 60%, 90%);
+    --app-about-pn-low     : hsl( 40, 60%, 80%);
+
+    --app-forgot-pw-pn     : hsl( 55, 60%, 90%);
+    --app-forgot-pw-pn-low : hsl( 55, 60%, 80%);
+
+    --app-signup-pn        : hsl( 70, 60%, 90%);
+    --app-signup-pn-low    : hsl( 70, 60%, 80%);
+  
+    --app-login-pn         : hsl( 85, 60%, 90%);
+    --app-login-pn-low     : hsl( 85, 60%, 80%);
+
+    --app-stream-pn        : hsl(210, 60%, 90%);  // --app-theme-background-panel-2: hsl(222, 50%, 96%);
+    --app-stream-pn-low    : hsl(210, 60%, 80%);
+    --app-stream-pn-day    : hsl(190, 40%, 75%);
+
+
+    --app-profile-pn       : hsl(180, 60%, 90%);  // hsl(54, 77%, 95%);
+    --app-profile-pn-low   : hsl(180, 60%, 80%);  // hsl(54, 77%, 85%);
+
+    --app-concept-pn       : hsl(220, 60%, 90%);
+    --app-concept-pn-low   : hsl(220, 60%, 80%);
+    --app-concept-arrow    : hsl(220, 60%, 70%);
+  }
   .dark-theme {
     color-scheme: dark;
     // "default" background-color
@@ -119,89 +177,46 @@ body {
     --demo-site-auth    : hsl(140, 14%, 50%);
     --app-site-auth     : hsl(var(--app-site-auth-h),var(--app-site-auth-s),var(--app-site-auth-l));
 
-    --app-login-pn      : hsl( 60, 25%, 40%);
-    --app-login-pn-low  : hsl( 60, 25%, 50%);
+    --app-about-pn         : hsl( 40, 25%, 40%);
+    --app-about-pn-low     : hsl( 40, 25%, 50%);
 
-    --app-stream-pn     : hsl(210, 25%, 40%);
-    --app-stream-pn-low : hsl(210, 25%, 50%);
-    --app-stream-pn-day : hsl(190, 40%, 27%);
+    --app-forgot-pw-pn     : hsl( 55, 25%, 40%);
+    --app-forgot-pw-pn-low : hsl( 55, 25%, 50%);
 
-    --app-about-pn      : hsl( 40, 25%, 40%);
-    --app-about-pn-low  : hsl( 40, 25%, 50%);
+    --app-signup-pn        : hsl( 70, 25%, 40%);
+    --app-signup-pn-low    : hsl( 70, 25%, 50%);
+  
+    --app-login-pn         : hsl( 85, 25%, 40%);
+    --app-login-pn-low     : hsl( 85, 25%, 50%);
 
-    --app-profile-pn    : hsl(180, 25%, 40%);  // hsl(54, 77%, 20%);
-    --app-profile-pn-low: hsl(180, 25%, 50%);  // hsl(54, 77%, 30%);
+    --app-stream-pn        : hsl(210, 25%, 40%);
+    --app-stream-pn-low    : hsl(210, 25%, 50%);
+    --app-stream-pn-day    : hsl(190, 40%, 27%);
 
-    --app-concept-pn    : hsl(220, 25%, 40%);
-    --app-concept-pn-low: hsl(220, 25%, 50%);
-    --app-concept-arrow : hsl(220, 60%, 70%);
-  }
-  .light-theme {
-    color-scheme: light;
-    // "default" background-color
-    --app-default-bg-h: 0;    --app-default-bg-s: 0%;    --app-default-bg-l: 98%;
-    --demo-default-bg: hsl(0, 0%, 98%); // #fafafa
-    --app-default-bg: hsl(var(--app-default-bg-h),var(--app-default-bg-s),var(--app-default-bg-l));
+    --app-profile-pn       : hsl(180, 25%, 40%);  // hsl(54, 77%, 20%);
+    --app-profile-pn-low   : hsl(180, 25%, 50%);  // hsl(54, 77%, 30%);
 
-    // "default" color: hsl(0, 0%, 0%); // Old hsl(0, 5%, 10%); #1b1818
-    --app-default-cl-h: 0;    --app-default-cl-s: 0%;    --app-default-cl-l: 0%;
-    --demo-default-cl: hsl(0, 0%, 0%); // #000000
-    --app-default-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
+    --app-concept-pn       : hsl(220, 25%, 40%);
+    --app-concept-pn-low   : hsl(220, 25%, 50%);
+    --app-concept-arrow    : hsl(220, 60%, 70%);
 
-    --app-default-dis-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),45%);
-
-    --app-link1-cl: hsl(209, 78%, 33%);
-    --app-link2-cl: hsl(209, 78%, 23%);
-
-    --mat-card-background: white;
-    --mat-card-color: #000000de; 
-    --mat-card-color2: hsla(0, 0%, 0%, 0.87);
-
-    --mat-chip-background-color: #e1e1e1;
-    --mat-chip-background-color2: hsl(0, 0%, 88.24%);
-    --mat-chip-color: #000000de;
-    --mat-chip-color2: hsla(0, 0%, 0%, 0.87);
-    
-    --app-site-unauth-h: 27;    --app-site-unauth-s: 95%;    --app-site-unauth-l: 90%;
-    --demo-site-unauth: hsl(27, 95%, 90%);
-    --app-site-unauth: hsl(var(--app-site-unauth-h),var(--app-site-unauth-s),var(--app-site-unauth-l));
-
-    --app-site-auth-h: 140;    --app-site-auth-s: 40%;    --app-site-auth-l: 90%;
-    --demo-site-auth: hsl(140, 40%, 90%);
-    --app-site-auth: hsl(var(--app-site-auth-h),var(--app-site-auth-s),var(--app-site-auth-l));
-
-    --app-login-pn      : hsl( 60, 60%, 90%);
-    --app-login-pn-low  : hsl( 60, 60%, 80%);
-
-    --app-stream-pn     : hsl(210, 60%, 90%);  // --app-theme-background-panel-2: hsl(222, 50%, 96%);
-    --app-stream-pn-low : hsl(210, 60%, 80%);
-    --app-stream-pn-day : hsl(190, 40%, 75%);
-
-    --app-about-pn      : hsl( 40, 60%, 90%);
-    --app-about-pn-low  : hsl( 40, 60%, 80%);
-
-    --app-profile-pn    : hsl(180, 60%, 90%);  // hsl(54, 77%, 95%);
-    --app-profile-pn-low: hsl(180, 60%, 80%);  // hsl(54, 77%, 85%);
-
-    --app-concept-pn    : hsl(220, 60%, 90%);
-    --app-concept-pn-low: hsl(220, 60%, 80%);
-    --app-concept-arrow : hsl(220, 60%, 70%);
+    --mdc-theme-error: hsl(4 80% 40% / 1);  // color for .mat-mdc-form-field-error
   }
 
 
   
-  .dark-theme {
-    background-color: var(--app-default-bg);
-    color: var(--app-default-cl);
-    a[dr2] {
-     ---link-cl: var(--app-link2-cl);
-    }
-  }
   .light-theme {
     background-color: var(--app-default-bg);
     color: var(--app-default-cl);
     a[lg2] {
       ---link-cl: var(--app-link2-cl);
+    }
+  }
+  .dark-theme {
+    background-color: var(--app-default-bg);
+    color: var(--app-default-cl);
+    a[dr2] {
+     ---link-cl: var(--app-link2-cl);
     }
   }
 
