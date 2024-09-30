@@ -8,13 +8,13 @@ import { StrParams } from '../common/str-params';
 import { ROUTE_LOGIN } from '../common/routes';
 import { DialogService } from '../lib-dialog/dialog.service';
 import { ProfileService } from '../lib-profile/profile.service';
-import { SignupComponent } from '../lib-signup/signup/signup.component';
+import { PanelSignupComponent } from '../lib-signup/panel-signup/panel-signup.component';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
 @Component({
   selector: 'app-pg-signup',
   standalone: true,
-  imports: [CommonModule, TranslateModule, SignupComponent],
+  imports: [CommonModule, TranslateModule, PanelSignupComponent],
   templateUrl: './pg-signup.component.html',
   styleUrls: ['./pg-signup.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -23,7 +23,7 @@ import { HttpErrorUtil } from '../utils/http-error.util';
 })
 export class PgSignupComponent {
   public isDisabledSubmit = false;
-  public errMsgList: string[] = [];
+  public errMsgs: string[] = [];
 
   constructor(
     private changeDetector: ChangeDetectorRef,
@@ -49,18 +49,18 @@ export class PgSignupComponent {
     }
 
     this.isDisabledSubmit = true;
-    this.errMsgList = [];
+    this.errMsgs = [];
     this.profileService.registration(nickname, email, password)
       .then(() => {
         const appName = this.translate.instant('app.name');
-        const title = this.translate.instant('signup.dialog_title', { appName: appName });
-        const message = this.translate.instant('signup.dialog_message', { value: email });
+        const title = this.translate.instant('pg-signup.dialog_title', { appName: appName });
+        const message = this.translate.instant('pg-signup.dialog_message', { value: email });
         this.dialogService.openConfirmation(message, title, { btnNameAccept: 'buttons.ok' }).then(() => {
           this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
         });
       })
       .catch((error: HttpErrorResponse) => {
-        this.errMsgList = HttpErrorUtil.getMsgs(error);
+        this.errMsgs = HttpErrorUtil.getMsgs(error);
       })
       .finally(() => {
         this.isDisabledSubmit = false;
