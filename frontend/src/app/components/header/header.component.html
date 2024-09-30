@@ -12,7 +12,7 @@
   <nav>
     <ul>
       <li *ngFor="let item of menuList">
-        <a nodecor class="hd-menu" routerLink="{{ item.link }}" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <a no-decor class="hd-menu" routerLink="{{ item.link }}" routerLinkActive="active" ariaCurrentWhenActive="page">
           {{ item.name | translate }}
         </a>
       </li>
