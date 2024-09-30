@@ -4,16 +4,6 @@
 .stl-mdc-infix {
   --demo-button-bg: #797979;
 
-    
-  .mat-mdc-form-field-subscript-wrapper {
-    --mdc-typography-caption-line-height: 1.25;
-    // &::before { height: calc(2em + 2px); }
-    mat-hint, mat-error {
-      display: flex;
-      margin-top: 1px;
-    }
-  }
-
   &.dark-theme {
     --infix-button-ordinary-brd: var(--app-ordinary-low); // high
     // --demo--button-ordinary-text-cl: hsl(0, 0%, 100%); // #ffffff
@@ -64,7 +54,7 @@
     --infix-form-field-hint-cl: hsl(210, 8%, 35%);
   }
 
-            
+  // ** mat-button **          
   button.app-infix.app-ordinary {
     --mdc-outlined-button-outline-color: var(--infix-button-ordinary-brd);
     --mdc-outlined-button-label-text-color: var(--infix-button-ordinary-text-cl);
@@ -78,11 +68,28 @@
     --mdc-protected-button-container-color: var(--infix-button-ordinary-bg);
   }
 
+  // ** mat-dialog **
   .mat-mdc-dialog-content.mdc-dialog__content {
     padding-top: 1em;
   }
+
+  // ** mat-form-field **
   .mat-mdc-form-field-hint {
     color: var(--infix-form-field-hint-cl);
+  }
+
+   // ** mat-error **
+   .mat-mdc-form-field-subscript-wrapper {
+    --mdc-typography-caption-line-height: 1.1; //1.25;
+    --mdc-typography-caption-font-size: calc(1em - 2px); // 14px
+    // &::before { height: calc(2em + 2px); }
+    mat-hint, mat-error {
+      display: flex;
+    //   margin-top: 1px;
+    }
+  }
+  .infix-err-hg-bg .ng-invalid.ng-touched .mat-mdc-form-field-subscript-wrapper {
+    height: 2.25em;
   }
 
    //  cdk-overlay-container
