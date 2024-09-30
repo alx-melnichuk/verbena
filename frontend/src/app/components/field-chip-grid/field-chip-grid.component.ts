@@ -64,7 +64,8 @@ export class FieldChipGridComponent implements OnChanges, ControlValueAccessor, 
   constructor() {}
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!!changes['isRequired'] || !!changes['minLength'] || !!changes['maxLength']
+    if (!!changes['isReadonly'] || !!changes['isRequired']
+      || !!changes['minLength'] || !!changes['maxLength']
       || !!changes['minAmount'] || !!changes['maxAmount']) {
       this.prepareFormGroup();
     }

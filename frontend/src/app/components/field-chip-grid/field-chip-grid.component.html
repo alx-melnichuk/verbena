@@ -15,6 +15,7 @@
         autocomplete="off"
         autocapitalize="off"
         [readonly]="isReadonly"
+        [required]="isRequired"
         [matChipInputFor]="chipGrid"
         [matChipInputSeparatorKeyCodes]="separatorCodes"
         (matChipInputTokenEnd)="chipAdd($event, formControl.value)"
