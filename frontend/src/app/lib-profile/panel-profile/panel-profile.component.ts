@@ -171,8 +171,8 @@ export class PanelProfileComponent implements OnInit, OnChanges {
     }
   }
 
-  public updateErrMsgsProfile(errMsgList: string[] = []): void {
-    this.errMsgsProfile = errMsgList;
+  public updateErrMsgsProfile(errMsgs: string[] = []): void {
+    this.errMsgsProfile = errMsgs;
   }
 
   public saveProfile(formGroup: FormGroup): void {
@@ -251,8 +251,8 @@ export class PanelProfileComponent implements OnInit, OnChanges {
     this.updatePassword.emit(newPasswordProfileDto);
   }
 
-  public updateErrMsgsPassword(errMsgList: string[] = []): void {
-    this.errMsgsPassword = errMsgList;
+  public updateErrMsgsPassword(errMsgs: string[] = []): void {
+    this.errMsgsPassword = errMsgs;
   }
 
   // ** Section "Delete Account" **

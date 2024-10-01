@@ -88,8 +88,8 @@ export class PanelSignupComponent implements OnChanges {
     this.signup.emit({ nickname, email, password });
   }
 
-  public updateErrMsg(errMsgList: string[] = []): void {
-    this.errMsgs = errMsgList;
+  public updateErrMsg(errMsgs: string[] = []): void {
+    this.errMsgs = errMsgs;
   }
 
   public checkUniquenessNickname = (nickname: string | null | undefined): Promise<boolean> => {

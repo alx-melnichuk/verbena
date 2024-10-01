@@ -86,8 +86,8 @@ export class PanelLoginComponent implements OnChanges {
     this.login.emit({ nickname, password });
   }
 
-  public updateErrMsg(errMsgList: string[] = []): void {
-    this.errMsgs = errMsgList;
+  public updateErrMsg(errMsgs: string[] = []): void {
+    this.errMsgs = errMsgs;
   }
 
   public changeType(target: any ): void {

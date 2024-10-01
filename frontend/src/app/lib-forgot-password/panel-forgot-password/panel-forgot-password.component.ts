@@ -72,7 +72,7 @@ export class PanelForgotPasswordComponent implements OnChanges {
     this.resend.emit({ email });
   }
 
-  public updateErrMsg(errMsgList: string[] = []): void {
-    this.errMsgs = errMsgList;
+  public updateErrMsg(errMsgs: string[] = []): void {
+    this.errMsgs = errMsgs;
   }
 }
