@@ -137,8 +137,8 @@ export class PanelStreamEditorComponent implements OnChanges {
     this.cancelStream.emit();
   }
 
-  public updateErrMsgs(errMsgList: string[] = []): void {
-    this.errMsgs = errMsgList;
+  public updateErrMsgs(errMsgs: string[] = []): void {
+    this.errMsgs = errMsgs;
   }
 
   public saveStream(formGroup: FormGroup): void {

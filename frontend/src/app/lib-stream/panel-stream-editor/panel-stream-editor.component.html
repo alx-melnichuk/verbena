@@ -50,16 +50,16 @@
     </app-field-chip-grid>
 
     <div pse-mr-tp-0_5>
-      <span class="pse-label">{{ 'panel-stream-editor.set_date_and_time_or_now' | translate }}</span>
-      <mat-slide-toggle class="pse-toggle"
+      <mat-slide-toggle
         color="primary"
         formControlName="isStartTime"
         (change)="updateErrMsgs();changeIsStartTime();">
+        <span class="pse-date-toggle">{{ 'panel-stream-editor.set_date_and_time_or_now' | translate }}</span>
       </mat-slide-toggle>
     </div>
 
     <div pse-mr-tp-0_5 class="pse-start-date-time">
-      <app-field-date pse-mr-tp-0_5 pse-mr-bt-0_5 class="pse-start-date"
+      <app-field-date pse-mr-tp-0_5 class="pse-start-date"
         formControlName="startDate"
         [isRequired]="true"
         [minDate]="minDate"
