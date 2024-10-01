@@ -4,6 +4,25 @@
 .stl-mdc-infix {
   --demo-button-bg: #797979;
 
+  &.light-theme {
+    --infix-button-ordinary-brd: var(--app-ordinary-high);
+    // --demo--button-ordinary-text-cl: hsl(0, 0%, 0%); // #000000
+    --app-default-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
+    --infix-button-ordinary-text-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
+    --infix-button-ordinary-text-dis-cl: hsla(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l),0.50);
+    // --demo-button-ordinary-bg : hsl(0, 0%, 84%);
+    --infix-button-ordinary-bg: hsl(var(--app-ordinary-h), var(--app-ordinary-s), calc(var(--app-ordinary-l) + 37%));
+    --infix-form-field-hint-cl: hsl(210, 8%, 35%);
+
+    .mdc-text-field:not(.mdc-text-field--disabled) .mdc-text-field__input {
+      color: inherit;
+    }
+    .mdc-text-field:not(.mdc-text-field--disabled) .mdc-floating-label {
+      color: rgba(0, 0, 0, 0.75);
+    }
+
+  }
+
   &.dark-theme {
     --infix-button-ordinary-brd: var(--app-ordinary-low); // high
     // --demo--button-ordinary-text-cl: hsl(0, 0%, 100%); // #ffffff
@@ -12,11 +31,12 @@
     // --demo--button-ordinary-bg : hsl(0, 0%, 19%);
     --infix-button-ordinary-bg: hsl(var(--app-ordinary-h), var(--app-ordinary-s), calc(var(--app-ordinary-l) - 28%));
     --infix-form-field-hint-cl: hsla(0, 0%, 100%, 0.6);
+
     .mdc-text-field:not(.mdc-text-field--disabled) .mdc-text-field__input {
       color: inherit;
     }
     .mdc-text-field:not(.mdc-text-field--disabled) .mdc-floating-label {
-      color: rgba(256, 256, 256, 0.6);
+      color: rgba(256, 256, 256, 0.75);
     }
 
     // ** mat-select **
@@ -42,16 +62,6 @@
     --mat-menu-item-hover-state-layer-color: rgba(255, 255, 255, .08);
     --mat-menu-item-focus-state-layer-color: rgba(255, 255, 255, .08);
     --mat-menu-container-color: hsl(180, 10%, 30%); // #424242;
-  }
-  &.light-theme {
-    --infix-button-ordinary-brd: var(--app-ordinary-high);
-    // --demo--button-ordinary-text-cl: hsl(0, 0%, 0%); // #000000
-    --app-default-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
-    --infix-button-ordinary-text-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
-    --infix-button-ordinary-text-dis-cl: hsla(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l),0.50);
-    // --demo-button-ordinary-bg : hsl(0, 0%, 84%);
-    --infix-button-ordinary-bg: hsl(var(--app-ordinary-h), var(--app-ordinary-s), calc(var(--app-ordinary-l) + 37%));
-    --infix-form-field-hint-cl: hsl(210, 8%, 35%);
   }
 
   // ** mat-button **          
@@ -81,7 +91,7 @@
    // ** mat-error **
    .mat-mdc-form-field-subscript-wrapper {
     --mdc-typography-caption-line-height: 1.1; //1.25;
-    --mdc-typography-caption-font-size: calc(1em - 2px); // 14px
+    --mdc-typography-caption-font-size: calc(1em - 3px); // 13px
     // &::before { height: calc(2em + 2px); }
     mat-hint, mat-error {
       display: flex;
