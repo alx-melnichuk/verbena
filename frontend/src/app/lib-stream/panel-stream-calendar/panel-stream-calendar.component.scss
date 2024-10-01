@@ -3,7 +3,7 @@
 app-panel-stream-calendar {
   display: block;
   padding-bottom: 1px;
-  background-color: var(--app-stream-pn);
+  background-color: var(--app-stream-pn-clndr, var(--app-stream-pn));
   border: 1px solid var(--app-stream-pn-low);
   border-radius: 0.75em;
   box-sizing: border-box;
@@ -12,7 +12,7 @@ app-panel-stream-calendar {
     min-height: 24em;
   }
   button.psc-day-with-streams {
-    background: var(--app-stream-pn-day);
+    background-color: var(--app-stream-pn-day);
     border-radius: 100%;
   }
 
@@ -21,12 +21,15 @@ app-panel-stream-calendar {
   }
 }
 
-
 .dark-theme app-panel-stream-calendar {
   .mat-calendar-table-header, .mat-calendar-body-label {
     color: inherit;
   }
   .mat-calendar-body-cell-content, .mat-date-range-input-separator {
     color: inherit;
+  }
+
+  .mat-calendar-body-cell:not(.mat-calendar-body-disabled):hover>.mat-calendar-body-cell-content:not(.mat-calendar-body-selected):not(.mat-calendar-body-comparison-identical) {
+    background-color: var(--app-stream-pn-clndr-hv);
   }
 }
