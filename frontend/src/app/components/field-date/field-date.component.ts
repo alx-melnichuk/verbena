@@ -91,24 +91,7 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
   // ** Validator - start ** createFieldTimeMinValidator()
 
   public validate(control: AbstractControl): ValidationErrors | null {
-    const errors = this.formControl.errors;
-    if (errors != null) {
-      const minDate = errors['matDatepickerMin'];
-      if (minDate?.min != null) {
-        errors['matDatepickerMin']['min_s'] = minDate.min.toISOString().slice(0,10);
-      }
-      if (minDate?.actual != null) {
-        errors['matDatepickerMin']['actual_s'] = minDate.actual.toISOString().slice(0,10);
-      }
-      const maxDate = errors['matDatepickerMax'];
-      if (maxDate?.max != null) {
-        errors['matDatepickerMax']['max_s'] = maxDate.max.toISOString().slice(0,10);
-      }
-      if (maxDate?.actual != null) {
-        errors['matDatepickerMax']['actual_s'] = maxDate.actual.toISOString().slice(0,10);
-      }
-    }
-    return errors;
+    return this.addDateStringToError(this.formControl.errors);
   }
 
   // ** Validator - finish **
@@ -121,7 +104,8 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
 
   public getErrorMsg(errors: ValidationErrors | null): string {
     let result: string = '';
-    const errorsList: string[] = errors != null ? Object.keys(errors) : [];
+    const errors2 = this.addDateStringToError(errors);
+    const errorsList: string[] = errors2 != null ? Object.keys(errors2) : [];
     const idxRequired = errorsList.indexOf('required');
     const errorProps = (idxRequired > -1 ? errorsList.splice(idxRequired, 1) : errorsList);
     for (let index = 0; index < errorProps.length && !result; index++) {
@@ -153,5 +137,23 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
     ];
     this.formControl.setValidators(newValidator);
   }
-
+  private addDateStringToError(errors: ValidationErrors | null): ValidationErrors | null {
+    if (errors != null) {
+      const minDate = errors['matDatepickerMin'];
+      if (minDate?.min != null && minDate?.min_s == null) {
+        minDate['min_s'] = minDate.min.toISOString().slice(0,10);
+      }
+      if (minDate?.actual != null && minDate?.actual_s == null) {
+        minDate['actual_s'] = minDate.actual.toISOString().slice(0,10);
+      }
+      const maxDate = errors['matDatepickerMax'];
+      if (maxDate?.max != null && maxDate?.max_s == null) {
+        maxDate['max_s'] = maxDate.max.toISOString().slice(0,10);
+      }
+      if (maxDate?.actual != null && maxDate?.actual_s == null) {
+        maxDate['actual_s'] = maxDate.actual.toISOString().slice(0,10);
+      }
+    }
+    return errors;
+  }
 }
