@@ -17,7 +17,6 @@ import { MAX_FILE_SIZE, IMAGE_VALID_FILE_TYPES } from 'src/app/common/constants'
 import { FieldChipGridComponent } from 'src/app/components/field-chip-grid/field-chip-grid.component';
 import { FieldDateComponent } from 'src/app/components/field-date/field-date.component';
 import { FieldDescriptComponent } from 'src/app/components/field-descript/field-descript.component';
-import { FieldFileUploadComponent } from 'src/app/components/field-file-upload/field-file-upload.component';
 import { FieldImageAndUploadComponent } from 'src/app/components/field-image-and-upload/field-image-and-upload.component';
 import { FieldTimeComponent } from 'src/app/components/field-time/field-time.component';
 import { FieldTitleComponent } from 'src/app/components/field-title/field-title.component';
@@ -36,7 +35,7 @@ import { StreamDto, StreamDtoUtil, UpdateStreamFileDto } from '../stream-api.int
   imports: [
     CommonModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule,  MatSlideToggleModule,
     MatTooltipModule, TranslateModule, ReactiveFormsModule, FieldDescriptComponent, FieldChipGridComponent,
-    FieldImageAndUploadComponent, FieldFileUploadComponent, FieldTimeComponent, FieldTitleComponent, FieldDateComponent,
+    FieldImageAndUploadComponent, FieldTimeComponent, FieldTitleComponent, FieldDateComponent,
   ],
   templateUrl: './panel-stream-editor.component.html',
   styleUrls: ['./panel-stream-editor.component.scss'],

@@ -17,21 +17,18 @@
       (input)="updateErrMsgs();">
     </app-field-descript>
 
-    <mat-form-field pse-mr-tp-1 class="pse-logo"
-      appearance="outline"
-      color="primary">
-      <mat-label>{{ 'panel-stream-editor.thumbnail' | translate }}</mat-label>
-      <input matInput class="pse-hide"
-        formControlName="logo" 
-        [readonly]="true" />
-      <app-field-image-and-upload wd100 hg100 class="pse-logo-image"
+    <div pse-mr-tp-1 class="pse-logo">
+      <app-field-image-and-upload hg100  
         formControlName="logo"
+        [hint]="'demo text hint1, demo text hint2, demo text hint3'"
+        [errorMsg]="'demo text error1, demo text error2, demo text error3'"
+        [label]="'panel-stream-editor.thumbnail'"
         [accepts]="accepts"
         [maxSize]="maxSize"
         (addFile)="updateErrMsgs();addLogoFile($event);"
         (deleteFile)="updateErrMsgs();deleteLogoFile();">
       </app-field-image-and-upload>
-    </mat-form-field>
+    </div>
 
     <app-field-chip-grid wd100 pse-mr-tp-1
       formControlName="tags"

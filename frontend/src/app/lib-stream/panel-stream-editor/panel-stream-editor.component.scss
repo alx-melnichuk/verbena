@@ -46,20 +46,6 @@ app-panel-stream-editor {
   }
 
   .pse-logo {
-    // --fiau-hg: calc(var(---pse-logo-mx-hg, 5em) * 2);
-    
-    
-    .mat-mdc-text-field-wrapper {
-      .mat-mdc-form-field-infix {
-        padding-top: 0.25em;
-        padding-bottom: 0;
-      }
-      .mdc-text-field__input.pse-hide {
-        display: none;
-      }
-    }
-  }
-  .pse-logo-image {
     height: calc(var(---pse-logo-mx-hg, 5em) * 2);
   }
 
