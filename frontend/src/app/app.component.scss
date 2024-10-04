@@ -48,6 +48,7 @@ app-root {
   display: block;
   flex-direction: column;
   height: 100%;
+  overflow-y: hidden;
   // If the app-spinner is expanded to full screen, then "position: relative;" should only be present on the root element.
   position: relative;
 
@@ -58,8 +59,10 @@ app-root {
     height: var(--footer-hg);
   }
   & > main {
-    height: calc(100% - var(--header-hg) - var(--footer-hg) - 1px);
-    overflow-y: hidden;
+    // height: calc(100% - var(--header-hg) - var(--footer-hg) - 1px);
+    // height: 100%;
+    height: calc(100% - var(--header-hg) - var(--footer-hg));
+    overflow-y: auto;
   }
   // ** **
 
@@ -67,4 +70,32 @@ app-root {
   .mat-mdc-button.mat-unthemed {
     --mdc-text-button-label-text-color: currentColor;
   }
+
+  // "icon-svg color" Lightness low
+  --app-icon-enb1-cl: var(--app-def-cl-l40);  // rgba(0, 0, 0, 0.54);
+  --app-icon-enb-cl: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  40%);
+  --app-icon-dsb1-cl: var(--app-def-cl-l60);  // rgba(0, 0, 0, 0.38);
+  --app-icon-dsb-cl: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  60%);
+        
+  //   --app-icon-hov-cl: hsla(var(--app-default-cl-h), var(--app-default-cl-s),  50%, 10%);
+  //   --dem-icon-hov-cl: hsla(0, 0%, 50%, 10%);
+  demo-html {
+    --mat-option-selected-state-label-text-color: #3f51b5;
+    --mat-option-label-text-color: rgba(0, 0, 0, 0.87);
+    --mat-option-hover-state-layer-color: rgba(0, 0, 0, 0.04);
+    --mat-option-focus-state-layer-color: rgba(0, 0, 0, 0.04);
+    --mat-option-selected-state-layer-color: rgba(0, 0, 0, 0.04)
+  }
+
+  demo-html {
+    --mat-select-panel-background-color: white;
+    --mat-select-enabled-trigger-text-color: rgba(0, 0, 0, 0.87);
+    --mat-select-disabled-trigger-text-color: rgba(0, 0, 0, 0.38);
+    --mat-select-placeholder-text-color: rgba(0, 0, 0, 0.6);
+    --mat-select-enabled-arrow-color: rgba(0, 0, 0, 0.54);
+    --mat-select-disabled-arrow-color: rgba(0, 0, 0, 0.38);
+    --mat-select-focused-arrow-color: rgba(63, 81, 181, 0.87);
+    --mat-select-invalid-arrow-color: rgba(244, 67, 54, 0.87);
+  }
+      
 }
