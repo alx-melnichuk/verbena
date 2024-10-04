@@ -19,6 +19,7 @@ app-header {
   ---hd-bg-hov: -7%;
 
   background-color: hsl(var(---hd-bg-h), var(---hd-bg-s), var(---hd-bg-l));
+   --app-link-cl: var(--app-default-cl);
 
   & > div {
     align-items: center;
