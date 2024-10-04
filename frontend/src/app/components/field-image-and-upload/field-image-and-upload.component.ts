@@ -1,18 +1,31 @@
 import {
-  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation,
-  forwardRef
+  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, Input, OnChanges, Output, SimpleChanges,
+  ViewEncapsulation, forwardRef
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FieldFileUploadComponent } from '../field-file-upload/field-file-upload.component';
 import {
   AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule, ValidationErrors,
-  Validator
+  Validator,
+  ValidatorFn
 } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslateModule } from '@ngx-translate/core';
+import { ValidatorUtils } from 'src/app/utils/validator.utils';
+
+import { FieldFileUploadComponent } from '../field-file-upload/field-file-upload.component';
+
+export const IMAGE_AND_UPLOAD = "image_and_upload";
+export const CUSTOM_ERROR = 'customError';
 
 @Component({
   selector: 'app-field-image-and-upload',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FieldFileUploadComponent],
+  exportAs: 'appFieldImageAndUpload',
+  imports: [CommonModule,  ReactiveFormsModule, MatButtonModule, MatInputModule, MatFormFieldModule, MatTooltipModule, TranslateModule,
+    FieldFileUploadComponent],
   templateUrl: './field-image-and-upload.component.html',
   styleUrls: ['./field-image-and-upload.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -24,14 +37,24 @@ import {
 })
 export class FieldImageAndUploadComponent implements OnChanges, ControlValueAccessor, Validator {
   @Input()
+  public gist: string = IMAGE_AND_UPLOAD;
+  @Input()
   // ".doc,.docx,.xls,.xlsx"; ".bmp,.gif"; "image/png,image/jpeg"; "audio/*,video/*,image/*";
   public accepts: string | null | undefined; // Define the file types (separated by commas) available for upload.
+  @Input()
+  public hint: string = '';
   @Input()
   public isDisabled: boolean = false;
   @Input()
   public isReadonly: boolean = false;
   @Input()
+  public isRequired: boolean = false;
+  @Input()
+  public label: string = 'field-image-and-upload.label';
+  @Input()
   public maxSize = -1;
+  @Input()
+  public errorMsg: string | null | undefined;
   
   @Output()
   readonly addFile: EventEmitter<File> = new EventEmitter();
@@ -60,9 +83,18 @@ export class FieldImageAndUploadComponent implements OnChanges, ControlValueAcce
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (!!changes['isRequired']) {
+      this.prepareFormGroup();
+    }
     if (!!changes['isDisabled']) {
       this.setDisabledState(this.isDisabled);
     }
+    if (!!changes['errorMsg']) {
+      this.prepareErrMsg(this.errorMsg);
+    }
+    const errorsObj = { demo1: 'demo1-txt', demo2: 2 };
+    const err1 = {...errorsObj, ...{ [CUSTOM_ERROR]: true } }
+    console.log('err1:', err1);
   }
 
   // ** ControlValueAccessor - start **
@@ -87,10 +119,8 @@ export class FieldImageAndUploadComponent implements OnChanges, ControlValueAcce
   }
 
   public setDisabledState(isDisabled: boolean): void {
-    if (this.isDisabledVal != isDisabled) {
-      this.isDisabledVal = isDisabled;
-      isDisabled ? this.formGroup.disable() : this.formGroup.enable();
-    }
+    this.isDisabledVal = isDisabled;
+    isDisabled ? this.formGroup.disable() : this.formGroup.enable();
   }
 
   // ** ControlValueAccessor - finish **
@@ -105,6 +135,14 @@ export class FieldImageAndUploadComponent implements OnChanges, ControlValueAcce
 
   // ** Public API **
   
+  public getErrorMsg(errors: ValidationErrors | null): string {
+    return ValidatorUtils.getErrorMsg(errors, this.gist || IMAGE_AND_UPLOAD);
+  }
+
+  public getFormControl(): FormControl {
+    return this.formControl;
+  }
+
   public addImage(file: File): void {
     if (this.isDisabledVal || this.isReadonly) {
       return;
@@ -140,5 +178,34 @@ export class FieldImageAndUploadComponent implements OnChanges, ControlValueAcce
   }
 
   // ** Private API **
+
+  private prepareFormGroup(): void {
+    this.formControl.clearValidators();
+    const paramsObj = {
+      ...(this.isRequired ? { "required": true } : {}),
+    };
+    const newValidator: ValidatorFn[] = ValidatorUtils.prepare(paramsObj);
+    this.formControl.setValidators(newValidator);
+    this.formControl.updateValueAndValidity();
+  }
+
+  private prepareErrMsg(errMsg: string | null | undefined): void {
+    let result: ValidationErrors | null = null;
+    const errorsObj = {...this.formControl.errors};
+    if (!!errMsg) {
+      result = {...errorsObj, ...{ [CUSTOM_ERROR]: true } };
+    } else {
+      const list = Object.keys(errorsObj);
+      let res: ValidationErrors = {};
+      for (let index = 0; index < list.length; index++) {
+        const key = list[index];
+        if (key !== CUSTOM_ERROR) {
+          res[key] = errorsObj[key];
+        }
+      }
+      result = (Object.keys(res).length > 0 ? res : null);
+    }
+    this.formControl.setErrors(result, { emitEvent: true });
+  }
 
 }

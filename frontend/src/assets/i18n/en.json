@@ -178,6 +178,10 @@
     "err_upload_images_use_valid_types": "Please upload images with valid format: {{validTypes}}.",
     "err_file_size_must_not_exceed_max": "The file size must not exceed the maximum {{maxFileSize}} B ({{maxFileSizeShort}})."
   },
+  "field-image-and-upload": {
+    "label": "Image file",
+    "remove_image": "Remove this image"
+  },
   "field-nickname": {
     "label": "Nickname ",
     "nickname_hint": "Used: lowercase letters, uppercase letters, numbers and underscores. Minimum 3 characters."

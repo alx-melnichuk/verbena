@@ -1,70 +1,60 @@
 /*# sourceURL=field-image-and-upload.component.scss */
 
 app-field-image-and-upload {
+  &[hg100] { ---fiau-hg100: 100%; }
+  &[wd100] { ---fiau-wd100: 100%; }
 
   align-items: center;
   box-sizing: border-box;
-  display: flex;
-  justify-content: center;
-  height: var(--fiau-hg, inherit);
-  min-height: var(--fiau-mn-hg, 8em);
-  min-width: var(--fiau-mn-wd, 8em);
-  width: var(--fiau-wd, inherit);
+  display: block;
+  height: 100%;
+  width: 100%;
 
-  &[wd100] {
+  .mat-mdc-form-field {
+    height: 100%;
     width: 100%;
   }
-  &[hg100] {
+  .mat-mdc-text-field-wrapper {
+    height: 100%;
+   }
+  .mat-mdc-form-field-flex {
     height: 100%;
   }
-  &>input[type="text"] {
-    display: none;
-  }
-
-  .fiau-file-upload {
-    box-sizing: border-box;
+  .mat-mdc-form-field-infix {
+    text-align:center;
     height: 100%;
-    padding: var(--fiau-upload-pd, 0.5em);
-    width: 100%;
   }
   .fiau-image-wrap {
+    display: inline-flex;
     height: 100%;
-    display: inline-block;
+    justify-content: center;
     position: relative;
-    &.is-disabled {
-      opacity: 0.6;
-    }
-    &.is-non-event {
-      pointer-events: none;
-    }
+    max-width: 100%;
+    width: var(---fiau-wd100, inherit);
   }
   .fiau-image {
     border-radius: 0.5em;
-    height: 100%;
-    max-width: 100%;
     object-fit: cover;
+    height: var(---fiau-hg100);
+    width:  var(---fiau-wd100);
   }
-  .fiau-delete {
+  .fiau-remove {
+    &:not(:disabled) { color: var(--app-icon-enb-cl); }
+    &:disabled { color: var(--app-icon-dsb-cl); }
     position: absolute;
-    right: -2em;
-    width: 20px;
-    height: 22px;
-    top: 0;
-    background-color: transparent;
-    border: none;
-    padding: 0 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
+    right: -36px;
+    top: -27px;
+    z-index: 1;
+  }
+  .mat-mdc-text-field-wrapper.mdc-text-field--outlined .mdc-text-field__input.fiau-hide {
+    display: none;
   }
 
-  .fiau-delete-box {
-    width: 14px;
-    height: 18px;
+  .fiau-remove-icon {
+    width: 24px;
+    height: 24px;
     display: inline-block;
-    background: transparent none no-repeat center center;
-    background-image: url('/assets/icons/delete-box.svg');
+    background-color: currentColor;
+    mask: url('/assets/icons/trash-bin.svg');
   }
-
 }
