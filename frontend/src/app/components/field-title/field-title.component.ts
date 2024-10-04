@@ -138,7 +138,7 @@ export class FieldTitleComponent implements OnChanges, ControlValueAccessor, Val
     let result: ValidationErrors | null = null;
     const errorsObj = {...this.formControl.errors};
     if (!!errMsg) {
-      result = {...errorsObj, ...{ CUSTOM_ERROR: true } };
+      result = {...errorsObj, ...{ [CUSTOM_ERROR]: true } };
     } else {
       const list = Object.keys(errorsObj);
       let res: ValidationErrors = {};
