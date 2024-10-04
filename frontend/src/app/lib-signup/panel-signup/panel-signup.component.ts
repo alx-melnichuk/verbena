@@ -41,8 +41,8 @@ export class PanelSignupComponent implements OnChanges {
   @Output()
   readonly signup: EventEmitter<StrParams> = new EventEmitter();
 
-  @HostBinding('class.global-scroll')
-  public get isGlobalScroll(): boolean { return true; }
+//   @HostBinding('class.global-scroll')
+//   public get isGlobalScroll(): boolean { return true; }
 
   public linkLogin = ROUTE_LOGIN;
   public debounceDelay: number = SG_DEBOUNCE_DELAY;

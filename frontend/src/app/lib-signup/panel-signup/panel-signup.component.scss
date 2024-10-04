@@ -13,12 +13,22 @@ app-panel-signup {
   [ps-mr-tp-1] { margin-top: 1.1em; }
   [ps-mr-lf-0_5] { margin-left: 0.5em; }
 
+//   display: block;
   align-items: center;
   display: flex;
-  flex-direction: column;
+//   flex-direction: column;
   justify-content: center;
   height: 100%;
-  overflow: auto;
+//   min-height: fit-content;
+//   height: max(100%, fit-content);
+  min-height: 456.44px;
+// #  overflow: auto;
+//   .ps-box {
+//     align-items: center;
+//     display: flex;
+//     justify-content: center;
+//     height: max(fit-content, 100%);
+//   }
 
   .ps-content {
     background-color: var(--ps-pn-bg, var(---ps-pn-bg));
@@ -30,6 +40,7 @@ app-panel-signup {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    height: fit-content;
     padding: calc(var(---ps-pd) / 2) var(---ps-pd);
     width: var(---ps-wd);
   }
@@ -38,6 +49,8 @@ app-panel-signup {
     display: flex;
     flex-direction: column;
     padding-bottom: 0.5em;
+    box-sizing: border-box;
+    margin-right: var(---ps-cont-hg);
   }
 
   .ps-title {
