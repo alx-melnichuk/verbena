@@ -42,26 +42,26 @@
 
   }
 
-  --app-def-cl-l10: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  10%);
-  --dem-def-cl-l10: hsl(0, 0%,  10%);
-  --app-def-cl-l20: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  20%);
-  --dem-def-cl-l20: hsl(0, 0%,  20%);
-  --app-def-cl-l30: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  30%);
-  --dem-def-cl-l30: hsl(0, 0%,  30%);
-  --app-def-cl-l40: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  40%);
-  --dem-def-cl-l40: hsl(0, 0%,  40%);
-  --app-def-cl-l50: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  50%);
-  --dem-def-cl-l50: hsl(0, 0%,  50%);
-  --app-def-cl-l60: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  60%);
-  --dem-def-cl-l60: hsl(0, 0%,  60%);
-  --app-def-cl-l70: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  70%);
-  --dem-def-cl-l70: hsl(0, 0%,  70%);
-  --app-def-cl-l80: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  80%);
-  --dem-def-cl-l80: hsl(0, 0%,  80%);
-  --app-def-cl-l90: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  90%);
-  --dem-def-cl-l90: hsl(0, 0%,  90%);
-  --app-def-cl-l100: hsl(var(--app-default-cl-h), var(--app-default-cl-s), 100%);
-  --dem-def-cl-l100: hsl(0, 0%, 100%);
+//   --app-def-cl-l10: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  10%);
+//   --dem-def-cl-l10: hsl(0, 0%,  10%);
+//   --app-def-cl-l20: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  20%);
+//   --dem-def-cl-l20: hsl(0, 0%,  20%);
+//   --app-def-cl-l30: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  30%);
+//   --dem-def-cl-l30: hsl(0, 0%,  30%);
+//   --app-def-cl-l40: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  40%);
+//   --dem-def-cl-l40: hsl(0, 0%,  40%);
+//   --app-def-cl-l50: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  50%);
+//   --dem-def-cl-l50: hsl(0, 0%,  50%);
+//   --app-def-cl-l60: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  60%);
+//   --dem-def-cl-l60: hsl(0, 0%,  60%);
+//   --app-def-cl-l70: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  70%);
+//   --dem-def-cl-l70: hsl(0, 0%,  70%);
+//   --app-def-cl-l80: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  80%);
+//   --dem-def-cl-l80: hsl(0, 0%,  80%);
+//   --app-def-cl-l90: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  90%);
+//   --dem-def-cl-l90: hsl(0, 0%,  90%);
+//   --app-def-cl-l100: hsl(var(--app-default-cl-h), var(--app-default-cl-s), 100%);
+//   --dem-def-cl-l100: hsl(0, 0%, 100%);
 
 
 /*--app-icon-lght-11                       : hsl(0, 0%, 0%);
@@ -171,6 +171,9 @@ body {
     --app-link1-cl: hsl(209, 78%, 33%);
     --app-link2-cl: hsl(209, 78%, 23%);
 
+    // "icon-svg color" light
+    --app-icon-enb-cl: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  40%); // rgba(0, 0, 0, 0.54);
+    --app-icon-dsb-cl: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  60%);  // rgba(0, 0, 0, 0.38);
 
     --app-about-pn         : hsl( 40, 60%, 90%);
     --app-about-pn-low     : hsl( 40, 60%, 80%);
@@ -206,7 +209,9 @@ body {
     --app-default-bg-high: hsl(0, 0%, 22%);
     --app-default-bg-low: hsl(0, 0%, 17%);
 
-    
+    // "icon-svg color" dark
+    --app-icon-enb-cl: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  70%); // rgba(0, 0, 0, 0.54);
+    --app-icon-dsb-cl: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  60%);  // rgba(0, 0, 0, 0.38);
 
     --app-about-pn         : hsl( 40, 25%, 40%);
     --app-about-pn-low     : hsl( 40, 25%, 50%);
