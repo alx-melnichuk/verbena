@@ -29,9 +29,9 @@
   },
   "locale": {
     "": "nichts",
-    "en-US": "Englisch - Vereinigte Staaten",
-    "de-DE": "Deutsch - Deutschland",
-    "uk": "Ukrainisch"
+    "en-US": "English [en]",
+    "de-DE": "Deutsch [de]",
+    "uk": "Українська [uk]"
   },
   "theme": {
     "": "nichts",

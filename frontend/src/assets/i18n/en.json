@@ -30,9 +30,9 @@
   },
   "locale": {
     "": "nothing",
-    "en-US": "English - United States",
-    "de-DE": "German - Germany",
-    "uk": "Ukrainian"
+    "en-US": "English [en]",
+    "de-DE": "Deutsch [de]",
+    "uk": "Українська [uk]"
   },
   "theme": {
     "": "nothing",
