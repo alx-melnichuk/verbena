@@ -4,39 +4,45 @@ app-field-image-and-upload {
   &[hg100] { ---fiau-hg100: 100%; }
   &[wd100] { ---fiau-wd100: 100%; }
 
+  ---fiau-wd: var(---fiau-wd100, var(--fiau-wd));
+
   align-items: center;
   box-sizing: border-box;
   display: block;
-  height: 100%;
-  width: 100%;
+  height: var(---fiau-hg100, var(--fiau-hg)); // image-size
+  width : var(---fiau-wd100, var(--fiau-wd)); // image-size
 
   .mat-mdc-form-field {
     height: 100%;
-    width: 100%;
+    // height: var(---fiau-hg, 10em); // image-size does not affect
+    width: 100%;                      // image-size does affect
   }
   .mat-mdc-text-field-wrapper {
-    height: calc(100% - 19.167px);
+    cursor: pointer;
+    height: calc(100% - 19.167px);    // image-size  does not affect
+    // max-width: var(---fiau-wd);    // image-size  does not affect
    }
   .mat-mdc-form-field-flex {
-    height: 100%;
+    height: 100%;                     // image-size  does not affect
   }
   .mat-mdc-form-field-infix {
     text-align:center;
-    height: 100%;
+    height: 100%;                     // image-size  does not affect
+    // width: var(---fiau-img-wd, var(---fiau-wd));// image-size  does affect width: 100%;
   }
   .fiau-image-wrap {
     display: inline-flex;
-    height: 100%;
+    height: 100%;                     // image-size  does not affect
     justify-content: center;
     position: relative;
-    max-width: 100%;
-    width: var(---fiau-wd100, inherit);
+    max-width: 100%;                  // image-size  does not affect
+    width: var(---fiau-wd100, inherit);//image-size  does not affect
   }
   .fiau-image {
     border-radius: 0.5em;
     object-fit: cover;
-    height: var(---fiau-hg100);
-    width:  var(---fiau-wd100);
+    height: 100%;                     // image-size  does not affect
+    width: 100%;                      // image-size  does affect
   }
   .fiau-remove {
     &:not(:disabled) { color: var(--app-icon-enb-cl); }

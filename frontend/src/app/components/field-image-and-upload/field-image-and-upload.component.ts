@@ -19,6 +19,22 @@ import { FieldFileUploadComponent } from '../field-file-upload/field-file-upload
 
 export const IMAGE_AND_UPLOAD = "image_and_upload";
 export const CUSTOM_ERROR = 'customError';
+/*
+  <!-- The dimensions are minimal. -->
+  <div>
+    <app-field-image-and-upload></app-field-image-and-upload>
+  </div>
+
+  <!-- The dimensions are equal to the parent element. -->
+  <div style="width: 430px; height: 210px;">
+    <app-field-image-and-upload hg100 wd100></app-field-image-and-upload>
+  </div>
+
+  <!-- The dimensions are determined by CSS variables. -->
+  <div style="--fiau-hg: 170px; --fiau-wd: 350px;">
+    <app-field-image-and-upload></app-field-image-and-upload>
+  </div>
+*/
 
 @Component({
   selector: 'app-field-image-and-upload',
@@ -92,9 +108,6 @@ export class FieldImageAndUploadComponent implements OnChanges, ControlValueAcce
     if (!!changes['errorMsg']) {
       this.prepareErrMsg(this.errorMsg);
     }
-    const errorsObj = { demo1: 'demo1-txt', demo2: 2 };
-    const err1 = {...errorsObj, ...{ [CUSTOM_ERROR]: true } }
-    console.log('err1:', err1);
   }
 
   // ** ControlValueAccessor - start **
