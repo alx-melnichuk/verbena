@@ -2,7 +2,7 @@
 
 app-field-image-and-upload {
   &[hg100] { ---fiau-hg100: 100%; }
-  &[wd100] { ---fiau-wd100: 100%; }
+  &[wd100] { ---fiau-wd100: 100%; ---fiau-rmv-dl: 6px; }
 
   align-items: center;
   box-sizing: border-box;
@@ -42,7 +42,7 @@ app-field-image-and-upload {
     &:not(:disabled) { color: var(--app-icon-enb-cl); }
     &:disabled { color: var(--app-icon-dsb-cl); }
     position: absolute;
-    right: -36px;
+    right: calc(-36px + var(---fiau-rmv-dl, 0px));
     top: -27px;
     z-index: 1;
   }
