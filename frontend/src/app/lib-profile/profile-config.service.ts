@@ -10,7 +10,7 @@ import { ProfileConfigDto } from './profile-config.interface';
   providedIn: 'root'
 })
 export class ProfileConfigService {
-    public profileConfigDto: ProfileConfigDto | null = null;
+  public profileConfigDto: ProfileConfigDto | null = null;
 
   constructor(private http: HttpClient) {}
 
