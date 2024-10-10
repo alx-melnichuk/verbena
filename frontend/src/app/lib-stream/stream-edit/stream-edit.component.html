@@ -1,8 +1,9 @@
 <app-spinner isFillParent *ngIf="isLoadDataStream">
 </app-spinner>
 <app-panel-stream-editor
+  [isDisabledSubmit]="isLoadDataStream"
   [streamDto]="streamDto"
+  [streamConfigDto]="streamConfigDto"
   [errMsgs]="errMsgs"
-  (updateStream)="doUpdateStream($event)"
-  (cancelStream)="doCancelStream()"
-></app-panel-stream-editor>
+  (updateStream)="doUpdateStream($event)">
+</app-panel-stream-editor>

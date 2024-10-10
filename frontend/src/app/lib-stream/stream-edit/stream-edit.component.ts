@@ -11,6 +11,7 @@ import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 
 import { StreamService } from '../stream.service';
 import { StreamDto, UpdateStreamFileDto } from '../stream-api.interface';
+import { StreamConfigDto } from '../stream-config.interface';
 
 @Component({
   selector: 'app-stream-edit',
@@ -24,6 +25,7 @@ import { StreamDto, UpdateStreamFileDto } from '../stream-api.interface';
 export class StreamEditComponent {
   public isLoadDataStream = false;
   public streamDto: StreamDto;
+  public streamConfigDto: StreamConfigDto;
   public errMsgs: string[] = [];
   
   private goBackToRoute: string = ROUTE_STREAM_LIST;
@@ -41,6 +43,8 @@ export class StreamEditComponent {
     private alertService: AlertService,
   ) {
     this.streamDto = this.route.snapshot.data['streamDto'];
+    this.streamConfigDto = this.route.snapshot.data['streamConfigDto'];
+
     const previousNav = this.router.getCurrentNavigation()?.previousNavigation?.finalUrl?.toString() || ''; 
     if (!!previousNav && !previousNav.startsWith(ROUTE_STREAM_EDIT)) {
       this.goBackToRoute = previousNav;
