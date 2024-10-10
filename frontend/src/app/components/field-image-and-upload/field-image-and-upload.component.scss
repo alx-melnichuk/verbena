@@ -15,7 +15,6 @@ app-field-image-and-upload {
     width: 100%;
   }
   .mat-mdc-text-field-wrapper {
-    cursor: pointer;
     height: calc(100% - 19.167px); // subtract height for "mat-hint"/"mat-error".
    }
   .mat-mdc-form-field-flex {
