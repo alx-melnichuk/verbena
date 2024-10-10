@@ -48,7 +48,7 @@ impl ConfigPrfl {
         let max_width_def = PRFL_AVATAR_MAX_WIDTH_DEF.to_string();
         #[rustfmt::skip]
         let avatar_max_width: u32 = std::env::var("PRFL_AVATAR_MAX_WIDTH")
-        .unwrap_or(max_width_def).trim().parse().unwrap();
+            .unwrap_or(max_width_def).trim().parse().unwrap();
 
         let max_height_def = PRFL_AVATAR_MAX_HEIGHT_DEF.to_string();
         #[rustfmt::skip]

@@ -13,7 +13,8 @@ pub struct ConfigStrm {
     pub strm_logo_files_dir: String,
     // Maximum size for logo files.
     pub strm_logo_max_size: u32,
-    // List of valid input mime types for logo files (comma delimited).
+    // List of valid input mime types for logo files.
+    // ["image/bmp", "image/gif", "image/jpeg", "image/png"]
     pub strm_logo_valid_types: Vec<String>,
     // Logo files will be converted to this MIME type.
     // Valid values: jpeg,gif,png,bmp
@@ -46,11 +47,13 @@ impl ConfigStrm {
 
         let max_width_def = STRM_LOGO_MAX_WIDTH_DEF.to_string();
         #[rustfmt::skip]
-        let logo_max_width: u32 = std::env::var("STRM_LOGO_MAX_WIDTH").unwrap_or(max_width_def).trim().parse().unwrap();
+        let logo_max_width: u32 = std::env::var("STRM_LOGO_MAX_WIDTH")
+            .unwrap_or(max_width_def).trim().parse().unwrap();
 
         let max_height_def = STRM_LOGO_MAX_HEIGHT_DEF.to_string();
         #[rustfmt::skip]
-        let logo_max_height: u32 = std::env::var("STRM_LOGO_MAX_HEIGHT").unwrap_or(max_height_def).trim().parse().unwrap();
+        let logo_max_height: u32 = std::env::var("STRM_LOGO_MAX_HEIGHT")
+            .unwrap_or(max_height_def).trim().parse().unwrap();
 
         ConfigStrm {
             strm_logo_files_dir,
@@ -62,7 +65,7 @@ impl ConfigStrm {
         }
     }
 
-    pub fn get_image_types() -> Vec<String> {
+    pub fn image_types() -> Vec<String> {
         vec![
             IMAGE_BMP.essence_str().to_string(),
             IMAGE_GIF.essence_str().to_string(),
@@ -79,7 +82,7 @@ impl ConfigStrm {
         std::env::var("STRM_LOGO_VALID_TYPES").expect("STRM_LOGO_VALID_TYPES must be set")
     }
     pub fn get_logo_valid_types_by_str(logo_valid_types: &str) -> Result<Vec<String>, io::Error> {
-        let image_types: Vec<String> = Self::get_image_types();
+        let image_types: Vec<String> = Self::image_types();
 
         let mut errors: Vec<String> = Vec::new();
         let mut result: Vec<String> = Vec::new();
@@ -98,7 +101,7 @@ impl ConfigStrm {
         Ok(result)
     }
     fn logo_ext_validate(value: &str) -> bool {
-        let type_list: Vec<String> = Self::get_types(Self::get_image_types());
+        let type_list: Vec<String> = Self::get_types(Self::image_types());
         value.len() > 0 && type_list.contains(&value.to_string())
     }
 }

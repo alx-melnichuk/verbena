@@ -271,6 +271,47 @@ impl StreamInfoDto {
     }
 }
 
+// ** Model Dto: "StreamConfigDto". Used: in "stream_get_controller::get_stream_config()". **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct StreamConfigDto {
+    // Maximum size for logo files.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logo_max_size: Option<u32>,
+    // List of valid input mime types for logo files.
+    // ["image/bmp", "image/gif", "image/jpeg", "image/png"]
+    pub logo_valid_types: Vec<String>,
+    // Logo files will be converted to this MIME type.
+    // Valid values: "image/bmp", "image/gif", "image/jpeg", "image/png"
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logo_ext: Option<String>,
+    // Maximum width of logo image after saving.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logo_max_width: Option<u32>,
+    // Maximum height of logo image after saving.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logo_max_height: Option<u32>,
+}
+
+impl StreamConfigDto {
+    pub fn new(
+        max_size: Option<u32>,
+        valid_types: Vec<String>,
+        ext: Option<String>,
+        max_width: Option<u32>,
+        max_height: Option<u32>,
+    ) -> StreamConfigDto {
+        StreamConfigDto {
+            logo_max_size: max_size.clone(),
+            logo_valid_types: valid_types.clone(),
+            logo_ext: ext.clone(),
+            logo_max_width: max_width.clone(),
+            logo_max_height: max_height.clone(),
+        }
+    }
+}
+
 // **  Section: table "streams" data creation **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, AsChangeset, Insertable)]

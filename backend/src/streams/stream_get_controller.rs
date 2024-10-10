@@ -12,9 +12,10 @@ use crate::streams::stream_orm::impls::StreamOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::streams::stream_orm::tests::StreamOrmApp;
 use crate::streams::{
+    config_strm::ConfigStrm,
     stream_models::{
-        self, SearchStreamEventDto, SearchStreamInfoDto, SearchStreamPeriodDto, StreamEventPageDto, StreamInfoDto,
-        StreamInfoPageDto,
+        self, SearchStreamEventDto, SearchStreamInfoDto, SearchStreamPeriodDto, StreamConfigDto, StreamEventPageDto,
+        StreamInfoDto, StreamInfoPageDto,
     },
     stream_orm::StreamOrm,
 };
@@ -40,6 +41,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             .service(get_stream_by_id)
             // GET /api/streams
             .service(get_streams)
+            // GET /api/streams_config
+            .service(get_stream_config)
             // GET /api/streams_events
             .service(get_streams_events)
             // GET /api/streams_period
@@ -243,6 +246,65 @@ pub async fn get_streams(
     let result = StreamInfoPageDto { list, limit, count, page, pages };
 
     Ok(HttpResponse::Ok().json(result)) // 200
+}
+
+/// streams_config
+///
+/// Get information about the image configuration settings in the stream (`StreamConfigDto`).
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/streams_config
+/// ```
+///
+/// Returns the configuration settings for the stream image (`StreamConfigDto`) with status 200.
+///
+/// The structure is returned:
+/// ```text
+/// {
+///   logo_max_size?: Number,      // optional - Maximum size for logo files;
+///   logo_valid_types: String[],  //          - List of valid input mime types for logo files;
+/// //                                         ["image/bmp", "image/gif", "image/jpeg", "image/png"]
+///   logo_ext?: String,           // optional - Logo files will be converted to this MIME type;
+/// //                                  Valid values: "image/bmp", "image/gif", "image/jpeg", "image/png"
+///   logo_max_width?: Number,     // optional - Maximum width of logo image after saving;
+///   logo_max_height?: Number,    // optional - Maximum height of logo image after saving;
+/// }
+/// ```
+///
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Get information about the image configuration settings in the stream",
+            body = StreamConfigDto,
+            examples(
+            ("max_config" = (summary = "maximum configuration", description = "Maximum configuration for logo image.",
+                value = json!(StreamConfigDto::new(
+                    Some(2*1024*1024), ConfigStrm::image_types(), Some(ConfigStrm::image_types()[0].clone()), Some(512), Some(512)))
+            )),
+            ("min_config" = (summary = "minimum configuration", description = "Minimum configuration for logo image.",
+                value = json!(StreamConfigDto::new(None, ConfigStrm::image_types(), None, None, None))
+            )), ),
+        ),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[get("/api/streams_config", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[rustfmt::skip]
+pub async fn get_stream_config(config_strm: web::Data<ConfigStrm>) -> actix_web::Result<HttpResponse, AppError> {
+    let cfg_strm = config_strm;
+    let max_size = if cfg_strm.strm_logo_max_size > 0 { Some(cfg_strm.strm_logo_max_size) } else { None };
+    let valid_types = cfg_strm.strm_logo_valid_types.clone();
+    let ext = cfg_strm.strm_logo_ext.clone();
+    let max_width = if cfg_strm.strm_logo_max_width > 0 { Some(cfg_strm.strm_logo_max_width) } else { None };
+    let max_height = if cfg_strm.strm_logo_max_height > 0 { Some(cfg_strm.strm_logo_max_height) } else { None };
+    // Get configuration data.
+    let stream_config_dto = StreamConfigDto::new(max_size, valid_types, ext, max_width, max_height);
+
+    Ok(HttpResponse::Ok().json(stream_config_dto)) // 200
 }
 
 /// get_streams_events
@@ -1156,6 +1218,36 @@ mod tests {
         assert_eq!(response.count, count);
         assert_eq!(response.page, page);
         assert_eq!(response.pages, 1);
+    }
+
+    // ** get_stream_config **
+    #[actix_web::test]
+    async fn test_get_stream_config_data() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let cfg_strm = cfg_c.1.clone();
+        #[rustfmt::skip]
+        let stream_config_dto = StreamConfigDto::new(
+            if cfg_strm.strm_logo_max_size > 0 { Some(cfg_strm.strm_logo_max_size) } else { None },
+            cfg_strm.strm_logo_valid_types.clone(),
+            cfg_strm.strm_logo_ext.clone(),
+            if cfg_strm.strm_logo_max_width > 0 { Some(cfg_strm.strm_logo_max_width) } else { None },
+            if cfg_strm.strm_logo_max_height > 0 { Some(cfg_strm.strm_logo_max_height) } else { None },
+        );
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_stream_config).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get().uri("/api/streams_config")
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+
+        let stream_config_dto_res: StreamConfigDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(stream_config_dto_res, stream_config_dto);
     }
 
     // ** get_streams_events **
