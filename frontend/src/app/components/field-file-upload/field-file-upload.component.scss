@@ -1,14 +1,16 @@
 /*# sourceURL=field-file-upload.component.scss */
 
-.dark-theme app-field-file-upload {
-  ---ffu-label-cl: hsl(206, 100%, 70%);
-  ---ffu-text-cl: hsl(210, 8%, 60%); // black350
-}
 .light-theme app-field-file-upload {
   ---ffu-label-cl: var(--app-theme-primary);
   ---ffu-text-cl: hsl(210, 8%, 45%); // black500
+  ---ffu-brd-cl: hsl(210, 8%, 50%);
 }
-
+.dark-theme app-field-file-upload {
+  ---ffu-label-cl: hsl(206, 100%, 70%);
+  ---ffu-text-cl: hsl(210, 8%, 60%); // black350
+  ---ffu-brd-cl: hsl(210, 8%, 65%);
+}
+  
 app-field-file-upload {
   align-items: center;
   border-radius: var(--ffu-brd-rd);
@@ -23,8 +25,8 @@ app-field-file-upload {
     height: 100%;
   }
   &[is-border] {
-    border-color: var(--ffu-brd-cl);
-    border-style: var(--ffu-brd-st, solid);
+    border-color: var(--ffu-brd-cl, var(---ffu-brd-cl));
+    border-style: var(--ffu-brd-st, dashed);
     border-width: var(--ffu-brd-wd, 1px);
     box-sizing: border-box;
   }
@@ -56,11 +58,6 @@ app-field-file-upload {
     display: none;
   }
 
-  h3 {
-    font-size: inherit;
-    font-weight: 400;
-  }
-
   .ffu-file-add-plus {
     background: transparent none no-repeat center center;
     background-image: url('/assets/icons/file-add-plus.svg');
@@ -77,5 +74,6 @@ app-field-file-upload {
   }
   .ffu-text {
     color: var(--ffu-text-cl, var(---ffu-text-cl));
+    font-size: var(--ffu-text-fn-sz, calc(1em - 2px));
   }
 }
