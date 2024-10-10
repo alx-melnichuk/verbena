@@ -4,45 +4,40 @@ app-field-image-and-upload {
   &[hg100] { ---fiau-hg100: 100%; }
   &[wd100] { ---fiau-wd100: 100%; }
 
-  ---fiau-wd: var(---fiau-wd100, var(--fiau-wd));
-
   align-items: center;
   box-sizing: border-box;
   display: block;
-  height: var(---fiau-hg100, var(--fiau-hg)); // image-size
-  width : var(---fiau-wd100, var(--fiau-wd)); // image-size
+  height: var(---fiau-hg100, var(--fiau-hg));
+  width : var(---fiau-wd100, var(--fiau-wd));
 
   .mat-mdc-form-field {
     height: 100%;
-    // height: var(---fiau-hg, 10em); // image-size does not affect
-    width: 100%;                      // image-size does affect
+    width: 100%;
   }
   .mat-mdc-text-field-wrapper {
     cursor: pointer;
-    height: calc(100% - 19.167px);    // image-size  does not affect
-    // max-width: var(---fiau-wd);    // image-size  does not affect
+    height: calc(100% - 19.167px); // subtract height for "mat-hint"/"mat-error".
    }
   .mat-mdc-form-field-flex {
-    height: 100%;                     // image-size  does not affect
+    height: 100%;
   }
   .mat-mdc-form-field-infix {
+    height: 100%;
     text-align:center;
-    height: 100%;                     // image-size  does not affect
-    // width: var(---fiau-img-wd, var(---fiau-wd));// image-size  does affect width: 100%;
   }
   .fiau-image-wrap {
     display: inline-flex;
-    height: 100%;                     // image-size  does not affect
+    height: 100%;
     justify-content: center;
+    max-width: 100%;
     position: relative;
-    max-width: 100%;                  // image-size  does not affect
-    width: var(---fiau-wd100, inherit);//image-size  does not affect
+    width: var(---fiau-wd100, inherit);
   }
   .fiau-image {
     border-radius: 0.5em;
+    height: 100%;
     object-fit: cover;
-    height: 100%;                     // image-size  does not affect
-    width: 100%;                      // image-size  does affect
+    width: 100%;
   }
   .fiau-remove {
     &:not(:disabled) { color: var(--app-icon-enb-cl); }
@@ -57,10 +52,10 @@ app-field-image-and-upload {
   }
 
   .fiau-remove-icon {
-    width: 24px;
-    height: 24px;
-    display: inline-block;
     background-color: currentColor;
+    display: inline-block;
+    height: 24px;
     mask: url('/assets/icons/trash-bin.svg');
+    width: 24px;
   }
 }
