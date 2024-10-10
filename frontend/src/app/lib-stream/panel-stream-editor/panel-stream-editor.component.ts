@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, OnChanges, Output, 
+  ChangeDetectionStrategy, Component, ElementRef, EventEmitter, HostBinding, Input, OnChanges, Output, 
   SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -27,6 +27,11 @@ import { TimeUtil } from 'src/app/utils/time.util';
 
 import { StreamService } from '../stream.service';
 import { StreamDto, StreamDtoUtil, UpdateStreamFileDto } from '../stream-api.interface';
+import { StreamConfigDto } from '../stream-config.interface';
+import { HtmlElemUtil } from 'src/app/utils/html-elem.util';
+
+export const PSE_LOGO_MX_HG = '---pse-logo-mx-hg';
+export const PSE_LOGO_MX_WD = '---pse-logo-mx-wd';
 
 @Component({
   selector: 'app-panel-stream-editor',
@@ -48,12 +53,12 @@ export class PanelStreamEditorComponent implements OnChanges {
   @Input()
   public streamDto: StreamDto = StreamDtoUtil.create();
   @Input()
+  public streamConfigDto: StreamConfigDto | null = null;
+  @Input()
   public errMsgs: string[] = [];
   
   @Output()
   readonly updateStream: EventEmitter<UpdateStreamFileDto> = new EventEmitter();
-  @Output()
-  readonly cancelStream: EventEmitter<void> = new EventEmitter();
   
   @HostBinding('class.global-scroll')
   public get isGlobalScroll(): boolean { return true; }
@@ -95,6 +100,7 @@ export class PanelStreamEditorComponent implements OnChanges {
   private origStreamDto: StreamDto = StreamDtoUtil.create();
   
   constructor(
+    public hostRef: ElementRef<HTMLElement>,
     private alertService: AlertService,
     private streamService: StreamService,
   ) {
@@ -102,7 +108,11 @@ export class PanelStreamEditorComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['streamDto']) {
-      this.prepareData(this.streamDto);
+      this.prepareFormGroupByStreamDto(this.streamDto);
+    }
+    if (!!changes['streamConfigDto']) {
+      this.prepareFormGroupByStreamConfigDto(this.streamConfigDto);
+      this.settingProperties(this.hostRef, this.streamConfigDto);
     }
   }
   
@@ -130,10 +140,6 @@ export class PanelStreamEditorComponent implements OnChanges {
       this.controls.startDate.enable({ emitEvent: false });
       this.controls.startTime.enable();
     }
-  }
-
-  public cancelStreamCard(): void {
-    this.cancelStream.emit();
   }
 
   public updateErrMsgs(errMsgs: string[] = []): void {
@@ -185,12 +191,13 @@ export class PanelStreamEditorComponent implements OnChanges {
 
   // ** Private API **
 
-  private prepareData(streamDto: StreamDto): void {
+  private prepareFormGroupByStreamDto(streamDto: StreamDto | null): void {
     if (!streamDto) {
       return;
     }
     this.origStreamDto = { ...streamDto };
     Object.freeze(this.origStreamDto);
+
     this.isCreate = (streamDto.id < 0);
     const now = new Date(Date.now())
     const currentTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 5, now.getSeconds());
@@ -231,5 +238,19 @@ export class PanelStreamEditorComponent implements OnChanges {
         startDateTime.setMilliseconds(0);
       }
     return startDateTime;
+  }
+  private prepareFormGroupByStreamConfigDto(streamConfigDto: StreamConfigDto | null): void {
+    // Set FieldImageAndUpload parameters
+    this.maxSize = streamConfigDto?.logoMaxSize || MAX_FILE_SIZE;
+    this.accepts = (streamConfigDto?.logoValidTypes || []).join(',');
+  }
+  private settingProperties(elem: ElementRef<HTMLElement> | null, streamConfigDto: StreamConfigDto | null): void {
+    const avatarMaxWidth = streamConfigDto?.logoMaxWidth;
+    const maxWidth = (avatarMaxWidth && avatarMaxWidth > 0 ? avatarMaxWidth : undefined)
+    HtmlElemUtil.setProperty(elem, PSE_LOGO_MX_WD, maxWidth?.toString().concat('px'));
+
+    const avatarMaxHeight = streamConfigDto?.logoMaxHeight;
+    const maxHeight = (avatarMaxHeight && avatarMaxHeight > 0 ? avatarMaxHeight : undefined)
+    HtmlElemUtil.setProperty(elem, PSE_LOGO_MX_HG, maxHeight?.toString().concat('px'));
   }
 }
