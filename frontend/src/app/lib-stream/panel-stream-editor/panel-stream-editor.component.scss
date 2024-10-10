@@ -46,7 +46,7 @@ app-panel-stream-editor {
   }
 
   .pse-logo {
-    height: calc(var(---pse-logo-mx-hg, 5em) * 2);
+    --fiau-hg: calc(var(---pse-logo-mx-hg, 5em) * 2);
   }
 
   .pse-date-toggle {
