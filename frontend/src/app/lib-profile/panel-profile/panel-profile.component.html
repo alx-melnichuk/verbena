@@ -7,12 +7,11 @@
     
       <form [formGroup]="formGroupProfile" class="pp-form" novalidate>
 
-        <div class="pp-label">{{ 'profile.label_avatar' | translate }}</div>
-
         <div class="pp-avatar">
           <app-field-image-and-upload
             formControlName="avatar"
             [accepts]="accepts"
+            label="profile.label_avatar"
             [maxSize]="maxSize"
             (addFile)="updateErrMsgsProfile();addAvatarFile($event);"
             (deleteFile)="updateErrMsgsProfile();deleteAvatarFile();">
