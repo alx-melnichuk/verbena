@@ -8,6 +8,7 @@ import {
 import { HttpErrorResponse } from '@angular/common/http';
 import { Uri } from '../common/uri';
 import { ROUTE_CONCEPT_VIEW } from '../common/routes';
+import { StringDateTime } from '../common/string-date-time';
 
 @Injectable({
   providedIn: 'root'
@@ -30,7 +31,7 @@ export class StreamService {
   /*public getStreamsCalendar(userId: string, month: number, year: number): Promise<StreamsCalendarDTO[] | HttpErrorResponse> {
     return this.streamApiService.getStreamsCalendar(userId, month, year);
   }*/
-  public getStreamsCalendar(search: SearchStreamsPeriodDto): Promise<StreamsPeriodDto[] | HttpErrorResponse | undefined> {
+  public getStreamsCalendar(search: SearchStreamsPeriodDto): Promise<StringDateTime[] | HttpErrorResponse | undefined> {
     return this.streamApiService.getStreamsPeriod(search);
   }
 

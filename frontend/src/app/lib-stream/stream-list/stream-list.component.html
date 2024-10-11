@@ -10,6 +10,7 @@
     <app-panel-stream-calendar class="sl-pn-calendar"
       [selected]="streamCalendarService.eventsOfDaySelected"
       [markedDates]="streamCalendarService.calendarMarkedDates"
+      [markedDates2]="streamCalendarService.calendarMarkedDates2"
       [minDate]="streamCalendarService.calendarMinDate"
       [maxDate]="streamCalendarService.calendarMaxDate"
       (changeSelected)="getListEventsForDate($event, 1)"

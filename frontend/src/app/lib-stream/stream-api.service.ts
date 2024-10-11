@@ -5,10 +5,10 @@ import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
 import {
   SearchStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto, SearchStreamsPeriodDto,
-  StreamsPeriodDto, UpdateStreamFileDto
+  UpdateStreamFileDto
 } from './stream-api.interface';
-import { StringDateTime, StringDateTimeUtil } from '../common/string-date-time';
-import { map } from 'rxjs/operators';
+import { StringDateTime } from '../common/string-date-time';
+import { HttpObservableUtil } from '../utils/http-observable.util';
 
 @Injectable({
   providedIn: 'root'
@@ -25,7 +25,7 @@ constructor(private http: HttpClient) {
    */
   /*public getStreamsPopularTags(): Promise<StreamsPopularTagsDTO[] | HttpErrorResponse> {
     const url = Uri.appUri('appApi://streams/popular/tags');
-    return this.http.get<StreamsPopularTagsDTO[] | HttpErrorResponse>(url).toPromise();
+    return HttpObservableUtil.toPromise<StreamsPopularTagsDTO[]>(this.http.get<StreamsPopularTagsDTO[] | HttpErrorResponse>(url));
   }*/
 
   /** Get streams calendar
@@ -37,32 +37,12 @@ constructor(private http: HttpClient) {
    */
   /*public getStreamsCalendar(userId: string, month: number, year: number): Promise<StreamsCalendarDTO[] | HttpErrorResponse> {
     const url = Uri.appUri(`appApi://streams/calendar/${userId}/${month}/${year}`);
-    return this.http.get<StreamsCalendarDTO[] | HttpErrorResponse>(url).toPromise();
+    return HttpObservableUtil.toPromise<StreamsCalendarDTO[]>(this.http.get<StreamsCalendarDTO[] | HttpErrorResponse>(url));
   }*/
-  public getStreamsPeriod(search: SearchStreamsPeriodDto): Promise<StreamsPeriodDto[] | HttpErrorResponse | undefined> {
+  public getStreamsPeriod(search: SearchStreamsPeriodDto): Promise<StringDateTime[] | HttpErrorResponse | undefined> {
     const params: HttpParams = HttpParamsUtil.create(search);
     const url = Uri.appUri(`appApi://streams_period`);
-    return this.http.get<StringDateTime[] | HttpErrorResponse>(url, { params })
-      .pipe(map((response) => {
-        const result: StreamsPeriodDto[] = [];
-        if (Array.isArray(response)) {
-          const obj: {[key: string]: number} = {};
-          for (let idx = 0; idx < response.length; idx++) {
-            const itemDate = StringDateTimeUtil.toDate(response[idx]);
-            if (!itemDate) continue;
-            itemDate.setHours(0, 0, 0, 0);
-            const itemLocal = StringDateTimeUtil.toISOLocal(itemDate);
-
-            obj[itemLocal] = (obj[itemLocal] || 0) + 1;
-          }
-          const keys = Object.keys(obj);
-          for (let i = 0; i < keys.length; i++) {
-            result.push({ date: keys[i], count: obj[keys[i]] });
-          }
-        }
-        return result;
-      }))
-      .toPromise();
+    return HttpObservableUtil.toPromise<StringDateTime[]>(this.http.get<StringDateTime[] | HttpErrorResponse>(url, { params }));
   }
   /** Get streams
    * @ route streams
@@ -83,13 +63,13 @@ constructor(private http: HttpClient) {
    public getStreams(searchStreamDto: SearchStreamDto): Promise<StreamListDto | HttpErrorResponse | undefined> {
     const params: HttpParams = HttpParamsUtil.create(searchStreamDto);
     const url = Uri.appUri('appApi://streams');
-    return this.http.get<StreamListDto | HttpErrorResponse>(url, { params }).toPromise();
+    return HttpObservableUtil.toPromise<StreamListDto>(this.http.get<StreamListDto | HttpErrorResponse>(url, { params }));
   }
   
   public getStreamsEvent(searchStreamEventDto: SearchStreamEventDto): Promise<StreamEventPageDto | HttpErrorResponse | undefined> {
     const params: HttpParams = HttpParamsUtil.create(searchStreamEventDto);
     const url = Uri.appUri('appApi://streams_events');
-    return this.http.get<StreamEventPageDto | HttpErrorResponse>(url, { params }).toPromise();
+    return HttpObservableUtil.toPromise<StreamEventPageDto>(this.http.get<StreamEventPageDto | HttpErrorResponse>(url, { params }));
   }
 
   /** Get stream
@@ -101,7 +81,7 @@ constructor(private http: HttpClient) {
    */
   public getStream(id: number): Promise<StreamDto | HttpErrorResponse | undefined> {
     const url = Uri.appUri(`appApi://streams/${id}`);
-    return this.http.get<StreamDto | HttpErrorResponse>(url).toPromise();
+    return HttpObservableUtil.toPromise<StreamDto>(this.http.get<StreamDto | HttpErrorResponse>(url));
   }
 
   /** Change state stream
@@ -117,7 +97,7 @@ constructor(private http: HttpClient) {
      streamId: string, data: ToggleStreamStateDTO
    ): Promise<StreamDTO | StreamSetStateForbbidenDTO | HttpErrorResponse> {
     const url = Uri.appUri(`appApi://streams/toggle/${streamId}`);
-    return this.http.put<StreamDTO | HttpErrorResponse>(url, data).toPromise();
+    return HttpObservableUtil.toPromise<StreamDto>(this.http.put<StreamDTO | HttpErrorResponse>(url, data));
   }*/
 
   /** Add stream
@@ -147,7 +127,7 @@ constructor(private http: HttpClient) {
       formData.set('logofile', updateStreamFileDto.logoFile, updateStreamFileDto.logoFile.name);
     }
     const url = Uri.appUri(`appApi://streams`);
-    return this.http.post<StreamDto | HttpErrorResponse>(url, formData).toPromise();
+    return HttpObservableUtil.toPromise<StreamDto>(this.http.post<StreamDto | HttpErrorResponse>(url, formData));
   }
 
   /** Update stream
@@ -181,7 +161,7 @@ constructor(private http: HttpClient) {
     }
     const headers = new HttpHeaders({ 'enctype': 'multipart/form-data' });
     const url = Uri.appUri(`appApi://streams/${id}`);
-    return this.http.put<StreamDto | HttpErrorResponse>(url, formData, { headers: headers }).toPromise();
+    return HttpObservableUtil.toPromise<StreamDto>(this.http.put<StreamDto | HttpErrorResponse>(url, formData, { headers: headers }));
   }
 
   /** Delete stream
@@ -193,6 +173,6 @@ constructor(private http: HttpClient) {
    */
   public deleteStream(streamId: number): Promise<void | HttpErrorResponse | undefined> {
     const url = Uri.appUri(`appApi://streams/${streamId}`);
-    return this.http.delete<void | HttpErrorResponse>(url).toPromise();
+    return HttpObservableUtil.toPromise<void>(this.http.delete<void | HttpErrorResponse>(url));
   }
 }

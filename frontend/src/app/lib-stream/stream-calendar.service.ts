@@ -24,6 +24,7 @@ export class StreamCalendarService {
   
   // ** "Streams Calendar" **
   public calendarMarkedDates: StringDateTime[] = [];
+  public calendarMarkedDates2: StreamsPeriodDto[] = [];
   public calendarLoading = false;
   public calendarMonth: Date = new Date();
 
@@ -42,7 +43,9 @@ export class StreamCalendarService {
   // ** "Streams Calendar" **
 
   /** Get calendar information for a period. */
-  public getCalendarInfoForPeriod(start: Date, isRequired: boolean, userId?: number): Promise<StreamsPeriodDto[] | HttpErrorResponse | undefined> {
+  public getCalendarInfoForPeriod(
+    start: Date, isRequired: boolean, userId?: number
+  ): Promise<StreamsPeriodDto[] | HttpErrorResponse | undefined> {
     this.alertService.hide();
     const date: Date = new Date(start);
     date.setHours(0, 0, 0, 0);
@@ -58,9 +61,11 @@ export class StreamCalendarService {
       finish: StringDateTimeUtil.toISO(endMonth),
       userId
     })
-    .then((response: StreamsPeriodDto[] | HttpErrorResponse | undefined) => {
-      this.calendarMarkedDates = (response as StreamsPeriodDto[]).map((val) => val.date);
-      return response;
+    .then((response: StringDateTime[] | HttpErrorResponse | undefined) => {
+      const streamsPeriodList: StreamsPeriodDto[] = this.convertStringDateTimeToStreamsPeriodDto(response as StringDateTime[]);
+      this.calendarMarkedDates = (streamsPeriodList).map((val) => val.date);
+      this.calendarMarkedDates2 = (streamsPeriodList);
+      return streamsPeriodList;
     })
     .catch((error: HttpErrorResponse) => {
       this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], 'stream_list.error_get_streams_for_active_period');
@@ -69,6 +74,24 @@ export class StreamCalendarService {
     .finally(() => this.calendarLoading = false);
   }
 
+  private convertStringDateTimeToStreamsPeriodDto(response: StringDateTime[]): StreamsPeriodDto[] {
+    const result: StreamsPeriodDto[] = [];
+    if (Array.isArray(response)) {
+      const obj: {[key: string]: number} = {};
+      for (let idx = 0; idx < response.length; idx++) {
+        const itemDate: Date | null = StringDateTimeUtil.toDate(response[idx]);
+        if (!itemDate) continue;
+        itemDate.setHours(0, 0, 0, 0);
+        const itemLocal = StringDateTimeUtil.toISOLocal(itemDate);
+        obj[itemLocal] = (obj[itemLocal] || 0) + 1;
+      }
+      const keys = Object.keys(obj);
+      for (let i = 0; i < keys.length; i++) {
+        result.push({ date: keys[i], count: obj[keys[i]] });
+      }
+    }
+    return result;
+  }
   // ** "Streams Event" **
 
   /** Clear array of "Streams Event". */
