@@ -2,7 +2,7 @@
 
 app-field-image-and-upload {
   &[hg100] { ---fiau-hg100: 100%; }
-  &[wd100] { ---fiau-wd100: 100%; ---fiau-rmv-dl: 6px; }
+  &[wd100] { ---fiau-wd100: 100%; ---fiau-rmv-dl: -6px; }
 
   align-items: center;
   box-sizing: border-box;
@@ -24,25 +24,22 @@ app-field-image-and-upload {
     height: 100%;
     text-align:center;
   }
-  .fiau-image-wrap {
-    display: inline-flex;
-    height: 100%;
-    justify-content: center;
-    max-width: 100%;
-    position: relative;
-    width: var(---fiau-wd100, inherit);
-  }
   .fiau-image {
     border-radius: 0.5em;
     height: 100%;
     object-fit: cover;
-    width: 100%;
+    width : var(---fiau-wd100, var(--fiau-wd));
+    max-width: 100%;
+  }
+  .fiau-remove-wrap {
+    position: relative;
+    vertical-align: top;
   }
   .fiau-remove {
     &:not(:disabled) { color: var(--app-icon-enb-cl); }
     &:disabled { color: var(--app-icon-dsb-cl); }
     position: absolute;
-    right: calc(-36px + var(---fiau-rmv-dl, 0px));
+    right: calc(-36px - var(---fiau-rmv-dl, 0px));
     top: -27px;
     z-index: 1;
   }

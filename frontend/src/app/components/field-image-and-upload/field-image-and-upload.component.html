@@ -16,8 +16,8 @@
     </app-field-file-upload>
   </ng-container>
   <ng-template #templateImage>
-    <div class="fiau-image-wrap">
-      <img class="fiau-image" [src]="imageView" alt="image" />
+    <img class="fiau-image" [src]="imageView" alt="image" />
+    <span class="fiau-remove-wrap">
       <button mat-icon-button
         class="fiau-remove"
         *ngIf="!isDisabledVal && !isReadonly"
@@ -26,7 +26,7 @@
         matTooltipPosition="above">
         <span class="fiau-remove-icon"></span>
       </button>
-    </div>
+    </span>
   </ng-template>
   <mat-hint>{{ hint | translate }}</mat-hint>
   <mat-error>{{ (errorMsg || getErrorMsg(formControl.errors)) | translate : formControl.errors }}</mat-error>

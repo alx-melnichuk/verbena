@@ -5,8 +5,7 @@ import {
 import { CommonModule } from '@angular/common';
 import {
   AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule, ValidationErrors,
-  Validator,
-  ValidatorFn
+  Validator, ValidatorFn
 } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -19,20 +18,56 @@ import { FieldFileUploadComponent } from '../field-file-upload/field-file-upload
 
 export const IMAGE_AND_UPLOAD = "image_and_upload";
 export const CUSTOM_ERROR = 'customError';
+
 /*
-  <!-- The dimensions are minimal. -->
-  <div>
+  <!-- ** 1 ** - The width and height dimensions correspond to the actual dimensions of the image. -->
+
+  <div variant="1">
     <app-field-image-and-upload></app-field-image-and-upload>
   </div>
 
-  <!-- The dimensions are equal to the parent element. -->
-  <div style="width: 430px; height: 210px;">
-    <app-field-image-and-upload hg100 wd100></app-field-image-and-upload>
+  <!-- ** 2 ** - The height of the element is specified. The aspect ratio of the image is preserved. -->
+
+  <div variant="2a" style="height: 200px;">
+    <app-field-image-and-upload hg100></app-field-image-and-upload>
+  </div>
+    
+  <div variant="2b">
+    <app-field-image-and-upload style="height: 200px;"></app-field-image-and-upload>
   </div>
 
-  <!-- The dimensions are determined by CSS variables. -->
-  <div style="--fiau-hg: 170px; --fiau-wd: 350px;">
-    <app-field-image-and-upload></app-field-image-and-upload>
+  <div variant="2c">
+    <app-field-image-and-upload style="--fiau-hg: 200px;"></app-field-image-and-upload>
+  </div>
+
+  <!-- ** 3 ** - The width of the element is specified. The aspect ratio of the image is preserved. -->
+
+  <div variant="3a" style="width: 300px;">
+    <app-field-image-and-upload wd100></app-field-image-and-upload>
+  </div>
+      
+  <div variant="3b">
+    <app-field-image-and-upload style="width: 300px; ---fiau-rmv-dl: -6px;"></app-field-image-and-upload>
+  </div>
+  
+  <div variant="3c">
+    <app-field-image-and-upload style="--fiau-wd: 300px; ---fiau-rmv-dl: -6px;"></app-field-image-and-upload>
+  </div>
+
+  <!-- ** 4 ** - The width and height of the element are specified. The aspect ratio of the image is preserved. -->
+
+  <div variant="4a" style="width: 300px; height: 200px;">
+    <app-field-image-and-upload wd100 hg100></app-field-image-and-upload>
+  </div>
+          
+  <div variant="4b">
+    <app-field-image-and-upload style="width: 300px; height: 200px; ---fiau-rmv-dl: -6px; --fiau-wd: 100%;">
+    </app-field-image-and-upload>
+  </div>
+      
+  <div variant="4c">
+    <app-field-image-and-upload style="--fiau-wd: 300px; --fiau-hg: 200px; ---fiau-rmv-dl: -6px;">
+    </app-field-image-and-upload>
   </div>
 */
 
