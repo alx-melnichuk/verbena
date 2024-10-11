@@ -18,10 +18,10 @@
     "login": "Anmelden",
     "signup": "Registrieren",
     "profile": "Profil",
-    "my_streams": "Meine Streams",
+    "my_streams": "Meine streams",
     "create_stream": "Stream erstellen",
     "my_follows_": "Meine follower",
-    "dark_theme": "Dunkles Design",
+    "dark_theme": "Dunkles design",
     "log_out": "Abmelden"
   },
   "dialog": {
@@ -75,6 +75,11 @@
     "dialog_message": "Wir haben ihnen einen link zum ändern ihres passworts in \"{{value}}\" gesendet."
   },
 
+  "stream_list": {
+    "my_calendar": "Mein kalender",
+    "my_future_streams": "Meine zukünftigen streams",
+    "my_past_streams": "Meine vergangenen streams"
+  },
 
   "panel-about": {
     "title": "Über die {{appName}}-Website.",

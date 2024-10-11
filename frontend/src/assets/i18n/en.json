@@ -236,7 +236,9 @@
   "stream_list": {
     "my_calendar": "My calendar",
     "my_future_streams": "My future streams",
-    "my_past_streams": "My past streams",
+    "my_past_streams": "My past streams"
+  },
+  "demo": {
     "sure_you_want_delete_stream": "Are you sure you want to delete the stream \"{{title}}\" ?",
     "_sure_you_want_stop_stream": "Are you sure you want to stop the stream \"{{title}}\" ?",
     "error_get_streams_for_selected_day": "Error getting streams for the selected day",

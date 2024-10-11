@@ -71,8 +71,14 @@
     "go_to_login_page": "Перейдіть на сторінку входу."
   },
   "pg-forgot-password": {
-    "dialog_title": "Welcome to the {{appName}} !",
-    "dialog_message": "We have sent a link to change your password to \"{{value}}\"."
+    "dialog_title": "Ласкаво просимо до {{appName}}!",
+    "dialog_message": "Ми надіслали посилання для зміни вашого пароля на \"{{value}}\"."
+  },
+
+  "stream_list": {
+    "my_calendar": "Мій календар",
+    "my_future_streams": "Мої майбутні потоки",
+    "my_past_streams": "Мої минулі потоки"
   },
 
   "panel-about": {
