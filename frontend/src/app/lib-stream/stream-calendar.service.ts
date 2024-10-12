@@ -23,8 +23,7 @@ export class StreamCalendarService {
   public calendarMaxDate: Date | null = null;
   
   // ** "Streams Calendar" **
-  public calendarMarkedDates: StringDateTime[] = [];
-  public calendarMarkedDates2: StreamsPeriodDto[] = [];
+  public calendarMarkedDates: StreamsPeriodDto[] = [];
   public calendarLoading = false;
   public calendarMonth: Date = new Date();
 
@@ -62,10 +61,8 @@ export class StreamCalendarService {
       userId
     })
     .then((response: StringDateTime[] | HttpErrorResponse | undefined) => {
-      const streamsPeriodList: StreamsPeriodDto[] = this.convertStringDateTimeToStreamsPeriodDto(response as StringDateTime[]);
-      this.calendarMarkedDates = (streamsPeriodList).map((val) => val.date);
-      this.calendarMarkedDates2 = (streamsPeriodList);
-      return streamsPeriodList;
+      this.calendarMarkedDates = this.convertStringDateTimeToStreamsPeriodDto(response as StringDateTime[]);
+      return this.calendarMarkedDates;
     })
     .catch((error: HttpErrorResponse) => {
       this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], 'stream_list.error_get_streams_for_active_period');
