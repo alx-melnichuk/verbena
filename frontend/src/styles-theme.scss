@@ -189,8 +189,10 @@ body {
 
     --app-stream-pn        : hsl(210, 60%, 90%);  // --app-theme-background-panel-2: hsl(222, 50%, 96%);
     --app-stream-pn-low    : hsl(210, 60%, 60%);  // hsl(  0,   0%, -30%);
-    --app-stream-pn-day    : hsl(190, 40%, 75%);  // hsl(-20, -20%, -15%);
-    --app-stream-pn-clndr  : hsl(200, 50%, 90%);  // hsl(-10, -10%,   0%);
+    --app-pn-clndr-bg      : hsl(200, 50%, 90%);  // hsl(-10, -10%,   0%);
+    --app-pn-clndr-bg-hv   : hsl(228, 45%, 52%);
+    --app-pn-clndr-day-bg  : hsl(190, 40%, 75%);  // hsl(-20, -20%, -15%);
+    --app-pn-clndr-cnt-bg  : hsl(290, 60%, 80%);
 
     --app-profile-pn       : hsl(180, 60%, 90%);  // hsl(54, 77%, 95%);
     --app-profile-pn-low   : hsl(180, 60%, 80%);  // hsl(54, 77%, 85%);
@@ -227,9 +229,9 @@ body {
 
     --app-stream-pn        : hsl(210, 45%, 30%);
     --app-stream-pn-low    : hsl(210, 45%, 60%);  // hsl(  0,   0%, +30%);
-    --app-stream-pn-day    : hsl(190, 65%, 45%);  // hsl(-20, +20%, +15%);
-    --app-stream-pn-clndr  : hsl(200, 55%, 30%);  // hsl(-10, +10%,   0%);
-    --app-stream-pn-clndr-hv: hsl(228, 45%, 52%);
+    --app-pn-clndr-bg      : hsl(200, 55%, 30%);  // hsl(-10, +10%,   0%);
+    --app-pn-clndr-bg-hv   : hsl(228, 45%, 52%);
+    --app-pn-clndr-day-bg  : hsl(190, 65%, 45%);  // hsl(-20, +20%, +15%);
 
     --app-profile-pn       : hsl(180, 25%, 40%);  // hsl(54, 77%, 20%);
     --app-profile-pn-low   : hsl(180, 25%, 50%);  // hsl(54, 77%, 30%);

@@ -5,11 +5,15 @@ import {
 import { CommonModule } from '@angular/common';
 import { MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { StringDateTime, StringDateTimeUtil } from 'src/app/common/string-date-time';
 import { Subscription } from 'rxjs';
+
+import { StringDateTime, StringDateTimeUtil } from 'src/app/common/string-date-time';
+import { HtmlElemUtil } from 'src/app/utils/html-elem.util';
+
 import { StreamsPeriodDto } from '../stream-api.interface';
 
 export const PSC_DAY_WITH_STREAMS = 'psc-day-with-streams';
+export const PSC_DAY = '---psc-day-';
 
 type PeriodMapType = {[key: string]: number};
 
@@ -27,9 +31,7 @@ export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterVie
   @Input()
   public selected: Date | null = null;
   @Input()
-  public markedDates: StringDateTime[] = [];
-  @Input()
-  public markedDates2: StreamsPeriodDto[] = [];
+  public markedDates: StreamsPeriodDto[] = [];
   @Input()
   public minDate: Date | null = null;
   @Input()
@@ -48,7 +50,6 @@ export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterVie
 
   private stateChangesSub: Subscription | undefined;
   private markedDatesStr: string[] = [];
-  private markedPeriod: StreamsPeriodDto[] = [];
   private markedPeriodMap: PeriodMapType = {};
 
   constructor(
@@ -62,14 +63,10 @@ export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterVie
   
   public ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['markedDates'] && !!this.markedDates && !!this.calendar) {
-      this.markedDatesStr = this.markedDates.map(val => this.getInfoDate(new Date(val)));
+      this.settingPropertiesByPeriodDate(this.hostRef, this.markedPeriodMap, false);
+      this.markedPeriodMap = this.preparePeriodDate(this.markedDates);
       this.calendar.updateTodaysDate();
-    }
-    if (!!changes['markedDates2'] && !!this.markedDates2 && !!this.calendar) {
-      this.markedPeriod = this.markedDates2;
-      this.markedPeriodMap = this.preparePeriodDate(this.markedDates2);
-      this.calendar.updateTodaysDate();
-      this.updateItemCalendar(this.hostRef);
+      this.settingPropertiesByPeriodDate(this.hostRef, this.markedPeriodMap, true);
     }
   }
   
@@ -96,21 +93,19 @@ export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterVie
     }
   }
   // Function that can be used to add custom CSS classes to dates.
-  public dateClassFn: MatCalendarCellClassFunction<Date> = (date: Date, view: 'month' | 'year' | 'multi-year') => {
-    let result: string = '';
+  public dateClassFn: MatCalendarCellClassFunction<Date> = (date: Date, view: 'month' | 'year' | 'multi-year'): string[] => {
+    let result: string[] = [];
     // Only highlight dates inside the month view.
     if (view === 'month') {
       const value = this.getInfoDate(date);
       if (this.markedDatesStr.includes(value)) {
-        result = PSC_DAY_WITH_STREAMS;
+        result.push(PSC_DAY_WITH_STREAMS);
       }
       const itemLocal: StringDateTime = StringDateTimeUtil.toISOLocal(date);
       const itemCount = this.markedPeriodMap[itemLocal];
       if (itemCount != null) {
-        result = PSC_DAY_WITH_STREAMS;
-        // console.log(`date: ${date}`); // #
-        // console.log(`itemLocal: ${itemLocal} itemCount: ${itemCount}`); // #
-        // console.log(``);
+        result = [PSC_DAY_WITH_STREAMS];
+        result.push('psc-day-' + ('00' + date.getDate()).slice(-2));
       }
     }
     return result;
@@ -143,9 +138,7 @@ export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterVie
   private preparePeriodDate(list: StreamsPeriodDto[]): PeriodMapType {
     const result: PeriodMapType = {};
     for (let idx = 0; idx < list.length; idx++) {
-    //   console.log(`!_ list[${idx}].count: ${list[idx].count} list[${idx}].date: "${list[idx].date}"`); // #
       const itemDate: Date | null = new Date(list[idx].date);
-    //   console.log(`!_ itemDate                : "${itemDate.toString().slice(0,33)}"`); // #
       if (!itemDate) continue;
       itemDate.setHours(0, 0, 0, 0);
       const itemLocal: StringDateTime = StringDateTimeUtil.toISOLocal(itemDate);
@@ -153,16 +146,11 @@ export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterVie
     }
     return result;
   }
-
-  private updateItemCalendar(elemRef: ElementRef<HTMLElement>): void {
-    if (!elemRef) {
-      return; 
+  private settingPropertiesByPeriodDate(elem: ElementRef<HTMLElement> | null, periodMap: PeriodMapType, isSetValue: boolean): void {
+    const list: string[] = Object.keys(periodMap);
+    for (let idx = 0; idx < list.length; idx++) {
+      const value = isSetValue ? periodMap[list[idx]].toString() : null;
+      HtmlElemUtil.setProperty(elem, PSC_DAY + list[idx].slice(8,10), value);
     }
-    // const dayElements = document.querySelectorAll('mat-calendar .mat-calendar-table .mat-calendar-body-cell');
-    const dayElements = elemRef.nativeElement.querySelectorAll('.mat-calendar-table .mat-calendar-body-cell');
-    let i = 0;
-    Array.from(dayElements).forEach((element) => {
-      console.log(`i: ${i++}`); // #
-    });
   }
 }
