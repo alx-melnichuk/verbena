@@ -14,10 +14,7 @@ export enum StreamStatus {
   Paused = 'Paused'
 }
 
-const NAME_IS_HIDE = 'is-hide';
-const NAME_IS_TRANSPARENT = 'is-transparent';
-const BUFF: StreamStatus[] = [StreamStatus.Waiting, StreamStatus.Preparing, StreamStatus.Paused, StreamStatus.Stopped];
-
+const ATTR_STATE = 'state';
 
 @Component({
   selector: 'app-panel-stream-state',
@@ -38,8 +35,6 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
   public valueText: string | null = null;
   
   private innStreamStatus: StreamStatus = StreamStatus.Waiting;
-  private isHidePanel: boolean = false;
-  private isTransparent: boolean = false;
 
   constructor(
     private renderer: Renderer2,
@@ -50,17 +45,14 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    const theme = this.theme || this.initializationService.getTheme() || '';
     if (!!changes['streamState']) {
-      this.innStreamStatus = this.createStreamStatus(this.streamState) || StreamStatus.Waiting;
-      this.isHidePanel = !BUFF.includes(this.innStreamStatus);
-      HtmlElemUtil.setClass(this.renderer, this.hostRef, NAME_IS_HIDE, this.isHidePanel);
-      this.isTransparent = this.innStreamStatus === StreamStatus.Paused;
-      HtmlElemUtil.setClass(this.renderer, this.hostRef, NAME_IS_TRANSPARENT, this.isTransparent);
+      this.innStreamStatus = this.createStreamStatus(this.streamState);
+      HtmlElemUtil.setAttr(this.renderer, this.hostRef, ATTR_STATE, this.innStreamStatus);
 
       this.valueText = this.getValueText(this.innStreamStatus);
     }
     if (!!changes['theme'] || !!changes['streamState']) {
+      const theme = this.theme || this.initializationService.getTheme() || '';
       this.imageSrc = this.getImageSrc(this.innStreamStatus, theme);
     }
   }
@@ -70,8 +62,8 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
 
   // ** Private API **
 
-  private createStreamStatus(value: string | null | undefined): StreamStatus | null {
-    let result: StreamStatus | null = null;
+  private createStreamStatus(value: string | null | undefined): StreamStatus {
+    let result: StreamStatus = StreamStatus.Waiting;
     switch (value) {
       case StreamStatus.Waiting: result = StreamStatus.Waiting; break;
       case StreamStatus.Preparing: result = StreamStatus.Preparing; break;

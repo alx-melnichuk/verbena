@@ -3,24 +3,23 @@
 @use '../../../styles-dimensions.scss' as dimensions;
 
 app-panel-stream-state {
-  height: 100%;
-  color: inherit;
+  &[state="Paused"] {
+    ---pss-bg-tr_pr: transparent;
+  }
 
-  &:not(.is-hide) {
+  background-color: var(---pss-bg-tr_pr, var(--pss-panel-bg));
+  color: inherit;
+  height: 100%;
+  overflow: hidden;
+
+  &[state="Started"] {
+    display: none;
+  }
+  &:not([state="Started"]) {
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-  &.is-hide {
-    display: none;
-  }
-  
-  &:not(.is-transparent) {
-    background-color: var(--pss-panel-bg);
-  }
-  &.is-transparent {
-    background-color: transparent;
-  }
+  } 
 
   .pss-container {
     box-sizing: border-box;
@@ -77,5 +76,4 @@ app-panel-stream-state {
       .pss-container { flex-direction: column; }
     }
   }
-
 }
