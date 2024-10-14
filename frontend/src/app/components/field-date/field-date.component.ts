@@ -126,6 +126,7 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
   
   public doDateChange(e: any): void {
     this.dateChange.emit(this.formControl.value);
+    this.onChange(this.formControl.value);
   }
 
   // ** Private API **
