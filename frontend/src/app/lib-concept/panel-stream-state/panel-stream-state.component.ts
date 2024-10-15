@@ -3,7 +3,6 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateService } from '@ngx-translate/core';
-import { InitializationService } from 'src/app/common/initialization.service';
 import { HtmlElemUtil } from 'src/app/utils/html-elem.util';
 
 export enum StreamStatus {
@@ -31,7 +30,7 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
   @Input()
   public theme: string | null = null;
 
-  public imageSrc: string | null = null;
+  public state: string | null = null;
   public valueText: string | null = null;
   
   private innStreamStatus: StreamStatus = StreamStatus.Waiting;
@@ -40,7 +39,6 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
     private renderer: Renderer2,
     public hostRef: ElementRef<HTMLElement>,
     private translateService: TranslateService,
-    private initializationService: InitializationService,
   ) {
   }
 
@@ -48,12 +46,8 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
     if (!!changes['streamState']) {
       this.innStreamStatus = this.createStreamStatus(this.streamState);
       HtmlElemUtil.setAttr(this.renderer, this.hostRef, ATTR_STATE, this.innStreamStatus);
-
+      this.state = this.innStreamStatus;
       this.valueText = this.getValueText(this.innStreamStatus);
-    }
-    if (!!changes['theme'] || !!changes['streamState']) {
-      const theme = this.theme || this.initializationService.getTheme() || '';
-      this.imageSrc = this.getImageSrc(this.innStreamStatus, theme);
     }
   }
 
@@ -86,15 +80,4 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
     }
     return (!!res ? this.translateService.instant(res): '');
   }
-  private getImageSrc(streamStatus: StreamStatus, theme: string): string {
-    let name = '';
-    switch (streamStatus) {
-      case StreamStatus.Waiting: name = 'has-not-started'; break;
-      case StreamStatus.Preparing: name = 'has-not-started'; break;
-      case StreamStatus.Paused: name = 'has-paused'; break;
-      case StreamStatus.Stopped: name = 'has-ended'; break;
-    }
-    return (!!name ? `/assets/icons/concept-view/${name}-${theme}.svg` : '');
-  }
-
 }

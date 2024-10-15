@@ -30,10 +30,17 @@ app-panel-stream-state {
     flex-wrap: wrap;
   }
   .pss-image {
-    width: 20vw;
-    height: 20vh;
     color: var(--pss-icon-cl);
+    background-color: currentColor;
+    display: inline-block;
+    height: 20vh;
+    width: 20vh;
   }
+  
+  &[state="Started"] .pss-image { mask: url('/assets/icons/stream-status/has-ended-bin.svg'); }
+  &[state="Waiting"] .pss-image { mask: url('/assets/icons/stream-status/has-not-started-bin.svg'); }
+  &[state="Preparing"] .pss-image { mask: url('/assets/icons/stream-status/has-not-started-bin.svg'); }
+  &[state="Paused"] .pss-image { mask: url('/assets/icons/stream-status/has-paused-bin.svg'); }
 
   .pss-text-box {
     flex-shrink: 0;
