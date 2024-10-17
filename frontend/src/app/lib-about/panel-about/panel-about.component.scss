@@ -7,7 +7,7 @@ app-panel-about {
   ---pa-pn-bg: var(--app-about-pn);
   ---pa-pn-brd: var(--app-about-pn-low);
   
-  ---pa-pd: calc(var(---pa-width) / 1280 * 48);
+  ---pa-pd: calc(min(var(---pa-width), 1280px) / 1280 * 48);
   ---pa-wd: min(100vw, calc((28px + var(---pa-width) / 128) * 16));
 
   [pa-mr-tp-0_5] { margin-top: 0.5em; }
