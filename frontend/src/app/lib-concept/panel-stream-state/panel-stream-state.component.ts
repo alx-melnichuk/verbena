@@ -27,10 +27,7 @@ const ATTR_STATE = 'state';
 export class PanelStreamStateComponent implements OnChanges, OnInit {
   @Input()
   public streamState: string | null | undefined = null;
-  @Input()
-  public theme: string | null = null;
 
-  public state: string | null = null;
   public valueText: string | null = null;
   
   private innStreamStatus: StreamStatus = StreamStatus.Waiting;
@@ -46,7 +43,6 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
     if (!!changes['streamState']) {
       this.innStreamStatus = this.createStreamStatus(this.streamState);
       HtmlElemUtil.setAttr(this.renderer, this.hostRef, ATTR_STATE, this.innStreamStatus);
-      this.state = this.innStreamStatus;
       this.valueText = this.getValueText(this.innStreamStatus);
     }
   }
