@@ -39,54 +39,24 @@ app-panel-stream-state {
   &[state] .pss-image { mask-repeat: no-repeat; }
   
   .pss-text {
+    font-size: var(---pss-text-fn-sz);
     font-style: normal;
     font-weight: 700;
-    flex-shrink: 0;
     margin-top: 1em;
-    max-height: calc(100% - var(---pss-image-wd));
     max-width: 95%;
     text-align: center;
   }
 
   @container cnt-state (width <= 768px) {
-    .pss-container { ---pss-demo1: 12px;    }
     .pss-image { ---pss-image-wd: min(30vh, 30vw); }
-    .pss-text {  ---pss-image-wd: min(30vh, 30vw);
-      font-size: min(2.5em, 11vh); // 36.8px
-    }
+    .pss-text { ---pss-text-fn-sz: min(2.5em, 11vh); } // 36.8px
   }
   @container cnt-state (768px < width <= 1024px) {
-    .pss-container { ---pss-demo1: 24px;    }
     .pss-image { ---pss-image-wd: min(25vh, 25vw); }
-    .pss-text {  ---pss-image-wd: min(25vh, 25vw);
-      font-size: 3.5em; // 56px
-    }
+    .pss-text { ---pss-text-fn-sz: 3.5em; } // 56px
   }
   @container cnt-state (1024px < width) {
-    .pss-container { ---pss-demo1: 48px; }
-    .pss-image { ---pss-image-wd: min(25vh, 25vw); }
-    .pss-text {  ---pss-image-wd: min(25vh, 25vw);
-      font-size: 4em; // 64px
-    }
-  }
-
-
-  @media screen and (width <= dimensions.$tablet-768)  {
-    .pss-container0 { flex-direction: column; }
-    // .image-box { width: min(200px, 50vh); height: min(200px, 50vh); }
-    // .pss-text { font-size: min(2.3em, 11vh); }
-  }
-
-  @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
-    // .image-box { width: min(300px, 50vh); height: min(300px, 50vh); }
-    // .pss-text { font-size: min(5em, 15vh); }
-    @media (orientation: landscape) {
-      .pss-container0 { flex-direction: row; }
-      .image-box { width: min(300px, 45vh); height: min(300px, 45vh); }
-    //   .pss-text { font-size: min(5em, 11vh); }
-    }
-    @media (orientation: portrait) {
-      .pss-container0 { flex-direction: column; }
-    }
+    .pss-image { ---pss-image-wd: min(23vh, 23vw); }
+    .pss-text { ---pss-text-fn-sz: 4em; } // 64px
   }
 }
