@@ -18,14 +18,14 @@ export class PanelAboutComponent {
   public backendItem02: string[] = this.appAbout['backend02'] || [];
   public backendItem03: string[] = this.appAbout['backend03'] || [];
 
+  @HostBinding('class.global-scroll')
+  public get isGlobalScroll(): boolean { return true; }
+
   public get appAbout(): any {
     return APP_ABOUT || {};
   }
   public set appAbout(value: any) {
   }
-
-  @HostBinding('class.global-scroll')
-  public get isGlobalScroll(): boolean { return true; }
 
   constructor() {
   }

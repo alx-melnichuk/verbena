@@ -3,19 +3,18 @@
 @use '../../../styles-dimensions.scss' as dimensions;
 
 app-panel-about {
+  ---pa-width: calc(100% - 1vw + 1vw); // width in "px".
   ---pa-pn-bg: var(--app-about-pn);
   ---pa-pn-brd: var(--app-about-pn-low);
   
-  ---pa-pd: calc(min(var(--app-display-size), 1280) / 128 * 3 / 10 * 1em);
-  ---pa-wd: min(100vw, calc((28 + var(--app-display-size) / 128) * 1em));
-  
+  ---pa-pd: calc(var(---pa-width) / 1280 * 48);
+  ---pa-wd: min(100vw, calc((28px + var(---pa-width) / 128) * 16));
+
   [pa-mr-tp-0_5] { margin-top: 0.5em; }
   [pa-mr-tp-1] { margin-top: 1em; }
 
-  align-items: center;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   height: 100%;
   overflow: auto;
 
@@ -29,6 +28,7 @@ app-panel-about {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    margin: auto;
     padding: calc(var(---pa-pd) / 2) var(---pa-pd);
     width: var(---pa-wd);
   }
@@ -45,8 +45,7 @@ app-panel-about {
     text-align: center;
   }
 
-  .pa-over-auto {
-    overflow: auto;
+  .pa-details {
     ul {
       margin-block-start: 0px;
       padding-inline-start: 2em;
