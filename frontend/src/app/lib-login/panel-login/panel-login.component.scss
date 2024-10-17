@@ -3,19 +3,18 @@
 @use '../../../styles-dimensions.scss' as dimensions;
 
 app-panel-login {
+  ---pl-width: calc(100% - 1vw + 1vw); // width in "px".
   ---pl-pn-bg: var(--app-login-pn);
   ---pl-pn-brd: var(--app-login-pn-low);
 
-  ---pl-pd: calc(min(var(--app-display-size), 1280) / 128 * 3 / 10 * 1em);
-  ---pl-wd: min(100vw, calc((26 + var(--app-display-size) / 128) * 1em));
+  ---pl-pd: calc(var(---pl-width) / 1280 * 48);
+  ---pl-wd: min(100vw, calc((26px + var(---pl-width) / 128) * 16));
 
   [pl-mr-tp-0_5] { margin-top: 0.5em; }
   [pl-mr-tp-1] { margin-top: 1.1em; }
 
-  align-items: center;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   height: 100%;
   overflow: auto;
 
@@ -29,6 +28,7 @@ app-panel-login {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    margin: auto;
     padding: calc(var(---pl-pd) / 2) var(---pl-pd);
     width: var(---pl-wd);
   }
