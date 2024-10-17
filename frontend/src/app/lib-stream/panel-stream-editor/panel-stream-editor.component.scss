@@ -3,19 +3,18 @@
 @use '../../../styles-dimensions.scss' as dimensions;
 
 app-panel-stream-editor {
+  ---pse-width: calc(100% - 1vw + 1vw); // width in "px".
   ---pse-pn-bg: var(--app-stream-pn);
   ---pse-pn-brd: var(--app-stream-pn-low);
 
-  ---pse-pd: calc(min(var(--app-display-size), 1280) / 128 * 3 / 10 * 1em);
-  ---pse-wd: min(100vw, calc((32 + var(--app-display-size) / 128) * 1em));
+  ---pse-pd: calc(min(var(---pse-width), 1280px) / 1280 * 48);
+  ---pse-wd: min(100vw, calc((32px + var(---pse-width) / 128) * 16));
 
   [pse-mr-tp-0_5] { margin-top: 0.5em; }
   [pse-mr-tp-1] { margin-top: 1.1em; }
 
-  align-items: center;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   height: 100%;
   overflow: auto;
 
@@ -29,6 +28,7 @@ app-panel-stream-editor {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    margin: auto;
     padding: calc(var(---pse-pd) / 2) var(---pse-pd);
     width: var(---pse-wd);
   }
