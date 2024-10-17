@@ -32,10 +32,10 @@ app-panel-stream-state {
     width: var(---pss-image-wd);
   }
   
-  &[state="Started"] .pss-image { mask-image: url('/assets/icons/stream-status/has-ended-bin.svg'); }
-  &[state="Waiting"] .pss-image { mask-image: url('/assets/icons/stream-status/has-not-started-bin.svg'); }
-  &[state="Preparing"] .pss-image { mask-image: url('/assets/icons/stream-status/has-not-started-bin.svg'); }
-  &[state="Paused"] .pss-image { mask-image: url('/assets/icons/stream-status/has-paused-bin.svg'); }
+  &[state="Stopped"] .pss-image { mask-image: url('/assets/icons/panel-stream-state/has-ended-bin.svg'); }
+  &[state="Waiting" ] .pss-image { mask-image: url('/assets/icons/panel-stream-state/has-not-started-bin.svg'); }
+  &[state="Preparing" ] .pss-image { mask-image: url('/assets/icons/panel-stream-state/has-not-started-bin.svg'); }
+  &[state="Paused" ] .pss-image { mask-image: url('/assets/icons/panel-stream-state/has-paused-bin.svg'); }
   &[state] .pss-image { mask-repeat: no-repeat; }
   
   .pss-text {
