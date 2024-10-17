@@ -7,7 +7,7 @@ app-panel-login {
   ---pl-pn-bg: var(--app-login-pn);
   ---pl-pn-brd: var(--app-login-pn-low);
 
-  ---pl-pd: calc(var(---pl-width) / 1280 * 48);
+  ---pl-pd: calc(min(var(---pl-width), 1280px) / 1280 * 48);
   ---pl-wd: min(100vw, calc((26px + var(---pl-width) / 128) * 16));
 
   [pl-mr-tp-0_5] { margin-top: 0.5em; }
