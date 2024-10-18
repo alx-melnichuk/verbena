@@ -304,10 +304,11 @@
     ],
     "backend_used": "On the Backend we used:"
   },
-  "profile": {
+  "panel-profile": {
     "title_profile": "Personal information",
-
     "label_avatar": "Avatar",
+    "descript": "Description",
+
     "btn_save_profile": "Save",
     "error_editing_profile": "Error editing profile.",
     "dialog_title_editing": "Profile change operation.",

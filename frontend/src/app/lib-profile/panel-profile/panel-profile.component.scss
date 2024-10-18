@@ -3,84 +3,124 @@
 @use '../../../styles-dimensions.scss' as dimensions;
 
 app-panel-profile {
-  @media screen and (width <= dimensions.$mobile-480) {
-    ---pp-crd-wd: 100vw;
-    ---pp-pd: 0.5em;
-    ---pp-wd: 100%;
+  ---pp-width: 100vw; // width in "px".
+  ---pp-pd: calc(min(var(---pp-width), 1536px) / 1280 * 38); // * 32);
+
+  /*@media screen and (width <= dimensions.$mobile-480) {
+    ---pp-crd-wd: 100vw;    ---pp-wd: 100%;
   }
   @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
-    ---pp-crd-wd: 100vw;
-    ---pp-pd: 1em;
-    ---pp-wd: 39em;
+    ---pp-crd-wd: 100vw;    ---pp-wd: 39em;
   }
   @media screen and (dimensions.$tablet-768 < width <= dimensions.$FWVGA-854) {
-    ---pp-crd-wd: 100vw;
-    ---pp-pd: 1.25em;
-    ---pp-wd: 43em;
+    ---pp-crd-wd: 100vw;    ---pp-wd: 43em;
   }
   @media screen and (dimensions.$FWVGA-854 < width <= dimensions.$laptop-1024) {
-    ---pp-crd-wd: 80vw;
-    ---pp-pd: 1.5em;
-    ---pp-wd: 49vw;
-    ---pp-fl-wr: wrap;
+    ---pp-crd-wd: 80vw;    ---pp-wd: 49vw;    ---pp-fl-wr: wrap;
   }
   @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
-    ---pp-crd-wd: 60vw;
-    ---pp-pd: 2em;
-    ---pp-wd: 49.5vw;
-    ---pp-fl-wr: wrap;
+    ---pp-crd-wd: 60vw;    ---pp-wd: 49.5vw;    ---pp-fl-wr: wrap;
   }
   @media screen and (dimensions.$desktop-1280 < width <= dimensions.$extra-wide-1536) {
-    ---pp-crd-wd: 40vw;
-    ---pp-pd: 2.5em;
-    ---pp-wd: 50vw;
-    ---pp-fl-wr: wrap;
+    ---pp-crd-wd: 40vw;    ---pp-wd: 50vw;    ---pp-fl-wr: wrap;
   }
   @media screen and (dimensions.$extra-wide-1536 < width) {
-    ---pp-crd-wd: 40vw;
-    ---pp-pd: 2.5em;
-    ---pp-wd: 46em;
-    ---pp-fl-wr: wrap;
-  }
+    ---pp-crd-wd: 40vw;    ---pp-wd: 46em;    ---pp-fl-wr: wrap;
+  }*/
   
   ---pp-group-wd: calc(var(---pp-wd) - 1.5 * var(---pp-pd));
   ---pp-pn-bg: var(--app-profile-pn);
   ---pp-pn-brd: var(--app-profile-pn-low);
 
-  [mr-lf-1] { margin-left: 1em; }
-  [mr-rg-1] { margin-right: 1em; }
-  [mr-tp-0_5] { margin-top: 0.5em; }
-  [mr-tp-1] { margin-top: 1em; }
-  [mr-tp-1_5] { margin-top: 1.5em; }
+  // [pp_mr-lf-1] { margin-left: 1em; }
+  // [pp_mr-rg-1] { margin-right: 1em; }
+  [pp-mr-tp-0_5] { margin-top: 0.5em; }
+  [pp-mr-tp-1] { margin-top: 1em; }
+  [pp-mr-tp-1_5] { margin-top: 1.5em; }
 
-  box-sizing: border-box;
+  container: cnt-profile / inline-size;
   display: flex;
+  flex-direction: column;
   height: 100%;
-  justify-content: center;
-  padding: var(---pp-pd) 0;
   overflow: auto;
-  user-select: none;
+  
+  @container cnt-profile (width <= 480px) {                   //  wd:480
+    .pp-container { ---pp-crd-wd: 100vw;    ---pp-wd: 100%; }
+  }
+  @container cnt-profile (480px < width <= 768px) {           //  wd:624
+    .pp-container { ---pp-crd-wd: 100vw;    ---pp-wd: 39em; }
+  }
+  @container cnt-profile (768px < width <= 854px) {           //  wd:688
+    .pp-container { ---pp-crd-wd: 100vw;    ---pp-wd: 43em; }
+  }
+  @container cnt-profile (854px < width <= 1024px) {          //  855 - wd:418.9, 1024 - wd:501.8
+    .pp-container { ---pp-crd-wd: 80vw;    ---pp-wd: 49vw; }
+  }
+  /*@container cnt-profile (1024px < width <= 1280px) {         // 1024 - wd:506.8, 1280 - wd:633,6
+    .pp-container { ---pp-crd-wd: 60vw;    ---pp-wd: 49.5vw; }
+  }
+  @container cnt-profile (1280px < width <= 1536px) {         // 1280 - wd:640  , 1536 - wd:768
+    .pp-container { ---pp-crd-wd: 40vw;    ---pp-wd: 50vw; }
+  }
+  @container cnt-profile (1536px < width) {                   // 1536 - wd:736
+    .pp-container { ---pp-crd-wd: 40vw;    ---pp-wd: 46em; }
+  }*/
 
-  .pp-mr-bt {
-    margin-bottom: var(---pp-pd);
+  @container cnt-profile (width <= 1024px) {          //  855 - wd:418.9, 1024 - wd:501.8
+    .pp-container {
+      //   ---pp-cnt-wd: 80%;
+      //---pp-item-wd: calc(var(---pp-width) - (var(---pp-width) / 128 * 64));
+      ---pp-item-wd: var(---pp-crd-wd);
+    }
   }
-  .pp-mr-hr {
-    margin-left: calc(var(---pp-pd) / 2);
-    margin-right: calc(var(---pp-pd) / 2);
+  @container cnt-profile (1024px < width) {         // 1024 - wd:506.8, 1280 - wd:633,6
+    .pp-container {
+      ---pp-cnt-grd-tmp-col: auto auto;
+      ---pp-item-wd: calc(min(var(---pp-width), 1450px) / 35.114 * 16);
+    }
   }
-  .pp-panel {
-    align-content: center;
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    flex-wrap: var(---pp-fl-wr, nowrap);
-    height: 100%;
-    width: 100%;
-  }
-  .pp-group {
-    display: flex;
-    flex-direction: column;
-    width: min(var(---pp-group-wd), 100%);
+
+  //---pp-pd: calc(min(var(---pp-width), 1536px) / 1280 * 38);
+  //---pp-wd2: calc((28px + min(var(---pp-width), 1536px) / 128) * 16);
+  // wd            480px  768px  854px  1024px  1280px 1450px 1536px 1792px
+  // wd/128:        3.75   6.00  6.672   8.0    10.0           12.0   14.0 
+  // wd/64          7.5   12.0   13.34  16.0    20.0    22,66  24.0   28.0
+  //               100vw  624px? 688px? 482.3   602.0          722.7  850.5
+  // wd-sz                              466.6   582.99  660    699.1
+  // wd-sz/16                           29,162  36,437  41.25
+  //
+  // wd/(wd-sz/16)                      35,114  35,129  35,151
+  // wd/35,114*16                       466,59  583,24  660,70 699,89
+  //                                    466.79  583.23  660.69
+  //---pp-wd2: calc((100vw - 2 * var(---pp-pd)) / 2);
+  //---pp-wd2: calc((100vw - 3 * var(---pp-pd)) / 2);
+                                     
+  // wd            480px 384px   512px   640px   768px   896px   1024px
+  // wd-sz,%             100%     96%     92%     88%     84%      80%
+  // wd-sz,px                    491,52  588,8   675,84  752,64   819,2
+  // wd-sz/16                     30,72   36,8    42,24   47,04    51,2
+  // wd/(wd-sz/16)               16,6667 17,3913 18,1818 19,0476  20
+  
+  // wd / 32              12      16      20     24     28      32
+  // wd / 64               6       8      10     12     14      16
+  // wd / 128              3       4       5      6      7       8
+  //---pp-wd3: calc(var(---pp-width) - (var(---pp-width) / 128 * 16));
+  //                     
+
+  // width         480px  768px  854px  1024px  1280px 1450px 1536px 1792px
+  // ---pp-wd                           466.79  583.23  660.69
+  //---pp-wd2: calc(min(var(---pp-width), 1450px) / 35.114 * 16); // !!
+  
+
+  .pp-container {
+    display: grid;
+    grid-template-columns: var(---pp-cnt-grd-tmp-col, auto);
+    gap: var(---pp-pd);
+    margin: auto;
+    .pp-first {
+      grid-row-start: 1;
+      grid-row-end: 4;
+    }
   }
   .pp-content {
     background-color: var(--pp-pn-bg, var(---pp-pn-bg));
@@ -92,31 +132,24 @@ app-panel-profile {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    padding: var(---pp-pd) var(---pp-pd) calc(var(---pp-pd) / 2) var(---pp-pd);
-    width: 100%;
+    padding: calc(var(---pp-pd) / 2) var(---pp-pd);
+    width: var(---pp-item-wd);
   }
 
+  // ** Form **
+  .pp-form {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0.5em;  // padding-bottom: calc(var(---pp-pd) / 2);
+  }
   .pp-title {
     font-size: calc(100% + 6px);
     font-weight: 500;
     text-align: center;
   }
-
   .pp-avatar {
-    --fiau-hg: calc(var(---pp-avatar-mx-hg, 11em) * 1.5);
+    height: calc(var(---pp-avatar-mx-hg, 11em) * 1.5);
   }
-
-  // ** Card Actions **
-
-  .pp-actions {
-    display: flex;
-    justify-content: center;
-  }
-  .pp-actions-label {
-    display: flex;
-    align-items: center;
-  }
-
   .pp-theme-locale {
     display: flex;
     flex-wrap: wrap;
@@ -125,30 +158,27 @@ app-panel-profile {
     &>.pp-locale { flex-basis: 48%; }
   }
 
+  // ** Error **
+  .pp-err-pd.ng-invalid.ng-touched {
+    padding-bottom: 1em;
+  }
 
+  // ** Actions **
+  .pp-actions {
+    display: flex;
+    justify-content: center;
+    .mdc-button__label {
+      display: flex;
+      align-items: center;    
+    }
+  }
   .pp-save {
     width: 25px;
     height: 25px;
     display: inline-block;
     background: transparent none no-repeat center center;
-    background-image: url('../../../assets/icons/file-save.svg');
+    background-image: url('/assets/icons/file-save.svg');
     margin-right: 0.5em;
-  }
-
-  // ** Form **
-  .pp-form {
-    padding-bottom: calc(var(---pp-pd) / 2);
-  }
-
-  // ** Text **
-  .pp-label {
-    color: var(--pp-text-cl, var(--app-default-dis-cl));
-    font-size: calc(1em - 2px);
-  }
-
-  // ** Error **
-  .pp-err-pd.ng-invalid.ng-touched {
-    padding-bottom: 1em;
   }
 }
 

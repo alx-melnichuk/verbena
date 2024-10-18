@@ -1,167 +1,154 @@
-<div class="pp-panel pp-mr-hr">
-  
-  <div class="pp-group pp-mr-hr pp-mr-bt">
+<div class="pp-container">
 
-    <div class="pp-content">
-      <div class="pp-title">{{ 'profile.title_profile' | translate }}</div>
+  <div class="pp-content pp-first">
+    <form novalidate class="pp-form" [formGroup]="formGroupProfile">
     
-      <form [formGroup]="formGroupProfile" class="pp-form" novalidate>
+      <div pp-mr-tp-0_5 class="pp-title">{{ 'panel-profile.title_profile' | translate }}</div>
 
-        <div class="pp-avatar">
-          <app-field-image-and-upload
+      <div pp-mr-tp-0_5 class="pp-avatar">
+        <app-field-image-and-upload hg100
             formControlName="avatar"
             [accepts]="accepts"
-            label="profile.label_avatar"
+            label="panel-profile.label_avatar"
             [maxSize]="maxSize"
             (addFile)="updateErrMsgsProfile();addAvatarFile($event);"
             (deleteFile)="updateErrMsgsProfile();deleteAvatarFile();">
-          </app-field-image-and-upload>
-        </div>
-
-        <app-uniqueness-check mr-tp-1
-          #uniquenessCheckNickname="appUniquenessCheck"
-          [debounceDelay]="debounceDelay"
-          [checkUniquenessFn]="checkUniquenessNickname">
-          <app-field-nickname wd100
-            formControlName="nickname"
-            [isRequired]="true"
-            label="field-nickname.label"
-            hint="field-nickname.nickname_hint"
-            [errorMsg]="uniquenessCheckNickname.isUniquenessError ? 'Conflict.nickname_already_use' : undefined"
-            (input)="updateErrMsgsProfile();
-              uniquenessCheckNickname.checkParameter(cntlsProfile.nickname.value);">
-          </app-field-nickname>
-        </app-uniqueness-check>
-
-        <app-uniqueness-check mr-tp-1_5
-          #uniquenessCheckEmail="appUniquenessCheck"
-          [debounceDelay]="debounceDelay"
-          [checkUniquenessFn]="checkUniquenessEmail">
-          <app-field-email wd100 class="pp-err-pd"
-            formControlName="email"
-            [isRequired]="true"
-            label="field-email.label"
-            [errorMsg]="uniquenessCheckEmail.isUniquenessError ? 'Conflict.email_already_use' : undefined"
-            (input)="updateErrMsgsProfile();
-              uniquenessCheckEmail.checkParameter(cntlsProfile.email.value);">
-          </app-field-email>
-        </app-uniqueness-check>
-        
-        <div mr-tp-0_5 class="pp-theme-locale">
-          <app-field-theme wd100 class="pp-theme"
-            formControlName="theme"
-            [isRequired]="false"
-            (change)="updateErrMsgsProfile();">
-          </app-field-theme>
-
-          <app-field-locale wd100 class="pp-locale"
-            formControlName="locale"
-            [isRequired]="false"
-            (change)="updateErrMsgsProfile();">
-          </app-field-locale>
-        </div>
-
-        <app-field-descript wd100 mr-tp-0_5 class="pp-err-pd"
-          formControlName="descript"
-          [isRequired]="false"
-          label="stream_edit.descript"
-          (input)="updateErrMsgsProfile();">
-        </app-field-descript>
-      
-        <div class="pp-actions">
-          <button mat-raised-button color="primary"
-            class="app-infix app-ordinary"
-            [disabled]="formGroupProfile.pristine || formGroupProfile.invalid"
-            (click)="saveProfile(formGroupProfile)">
-            <span class="pp-actions-label">
-              <i class="pp-save"></i>
-              {{ 'profile.btn_save_profile' | translate }}
-            </span>
-          </button>
-        </div>
-
-      </form>
-
-      <div class="mat-mdc-form-field-subscript-wrapper">
-        <ng-container *ngFor="let errMsg of errMsgsProfile">
-            <mat-error>{{ errMsg | translate }}</mat-error>
-        </ng-container>
+        </app-field-image-and-upload>
       </div>
+    
+      <app-uniqueness-check pp-mr-tp-1
+        #uniquenessCheckNickname="appUniquenessCheck"
+        [debounceDelay]="debounceDelay"
+        [checkUniquenessFn]="checkUniquenessNickname">
+        <app-field-nickname wd100
+          formControlName="nickname"
+          [isRequired]="true"
+          label="field-nickname.label"
+          hint="field-nickname.nickname_hint"
+          [errorMsg]="uniquenessCheckNickname.isUniquenessError ? 'Conflict.nickname_already_use' : undefined"
+          (input)="updateErrMsgsProfile();
+            uniquenessCheckNickname.checkParameter(cntlsProfile.nickname.value);">
+        </app-field-nickname>
+      </app-uniqueness-check>
+    
+      <app-uniqueness-check pp-mr-tp-1
+        #uniquenessCheckEmail="appUniquenessCheck"
+        [debounceDelay]="debounceDelay"
+        [checkUniquenessFn]="checkUniquenessEmail">
+        <app-field-email wd100 class="pp-err-pd"
+          formControlName="email"
+          [isRequired]="true"
+          label="field-email.label"
+          [errorMsg]="uniquenessCheckEmail.isUniquenessError ? 'Conflict.email_already_use' : undefined"
+          (input)="updateErrMsgsProfile();
+            uniquenessCheckEmail.checkParameter(cntlsProfile.email.value);">
+        </app-field-email>
+      </app-uniqueness-check>
+        
+      <div class="pp-theme-locale">
+        <app-field-theme wd100 class="pp-theme"
+          formControlName="theme"
+          [isRequired]="false"
+          (change)="updateErrMsgsProfile();">
+        </app-field-theme>
+        <app-field-locale wd100 class="pp-locale"
+          formControlName="locale"
+          [isRequired]="false"
+          (change)="updateErrMsgsProfile();">
+        </app-field-locale>
+      </div>
+    
+      <app-field-descript wd100 pp-mr-tp-0_5 class="pp-err-pd"
+        formControlName="descript"
+        [isRequired]="false"
+        label="panel-profile.descript"
+        (input)="updateErrMsgsProfile();">
+      </app-field-descript>
+        
+      <div pp-mr-tp-1 class="pp-actions">
+        <button mat-raised-button color="primary"
+          class="app-infix app-ordinary"
+          [disabled]="formGroupProfile.pristine || formGroupProfile.invalid || isDisabledSubmit"
+          (click)="saveProfile(formGroupProfile)">
+          <i class="pp-save"></i>{{ 'panel-profile.btn_save_profile' | translate }}
+        </button>
+      </div>
+    </form>
+
+    <div class="mat-mdc-form-field-subscript-wrapper">
+      <ng-container *ngFor="let errMsg of errMsgsProfile">
+        <mat-error>{{ errMsg | translate }}</mat-error>
+      </ng-container>
+    </div>
+  </div>
+      
+  <div class="pp-content">
+    <form novalidate class="pp-form" [formGroup]="formGroupPassword">
+
+      <div pp-mr-tp-0_5 class="pp-title">{{ 'panel-profile.title_change_password' | translate }}</div>
+
+      <app-field-password wd100 pp-mr-tp-0_5
+        formControlName="password"
+        [isRequired]="isRequiredPassword"
+        label="panel-profile.current_password"
+        hint="field-password.password_hint"
+        (input)="updateErrMsgsPassword();
+          statePassword(cntlsPassword.password.value);
+          checkPassword(formGroupPassword);">
+      </app-field-password>
+
+      <app-field-password wd100 pp-mr-tp-1
+        formControlName="new_password"
+        [isRequired]="isRequiredPassword"
+        label="panel-profile.new_password"
+        hint="field-password.password_hint"
+        (input)="updateErrMsgsPassword();
+          statePassword(cntlsPassword.password.value || cntlsPassword.new_password.value);
+          checkPassword(formGroupPassword);">
+      </app-field-password>
+
+      <div pp-mr-tp-1 class="pp-actions">
+        <button mat-raised-button color="primary"
+          class="app-infix app-ordinary"
+          [disabled]="formGroupPassword.pristine || formGroupPassword.invalid || isDisabledSubmit"
+          (click)="setNewPassword(formGroupPassword)">
+          <i class="pp-save"></i>{{ 'panel-profile.btn_set_password' | translate }}
+        </button>
+      </div>
+    </form>
+
+    <div class="mat-mdc-form-field-subscript-wrapper">
+      <ng-container *ngFor="let errMsg of errMsgsPassword">
+        <mat-error>{{ errMsg | translate }}</mat-error>
+      </ng-container>
     </div>
   </div>
 
-  <div class="pp-group pp-mr-hr">
+  <div class="pp-content">
+    <div class="pp-form">
 
-    <div class="pp-content pp-mr-bt">
-      <div class="pp-title">{{ 'profile.title_change_password' | translate }}</div>
-
-      <form [formGroup]="formGroupPassword" class="pp-form" novalidate>
-
-        <app-field-password wd100 mr-tp-0_5
-          formControlName="password"
-          [isRequired]="isRequiredPassword"
-          label="profile.current_password"
-          hint="field-password.password_hint"
-          (input)="updateErrMsgsPassword();
-            statePassword(cntlsPassword.password.value);
-            checkPassword(formGroupPassword);">
-        </app-field-password>
-
-        <app-field-password wd100 mr-tp-1
-          formControlName="new_password"
-          [isRequired]="isRequiredPassword"
-          label="profile.new_password"
-          hint="field-password.password_hint"
-          (input)="updateErrMsgsPassword();
-            statePassword(cntlsPassword.password.value || cntlsPassword.new_password.value);
-            checkPassword(formGroupPassword);">
-        </app-field-password>
-
-        <div class="pp-actions" mr-tp-1>
-          <button mat-raised-button color="primary"
-            class="app-infix app-ordinary"
-            [disabled]="formGroupPassword.pristine || formGroupPassword.invalid"
-            (click)="setNewPassword(formGroupPassword)">
-            <span class="pp-actions-label">
-              <i class="pp-save"></i>
-              {{ 'profile.btn_set_password' | translate }}
-            </span>
-          </button>
-        </div>
-      </form>
-
-      <div class="mat-mdc-form-field-subscript-wrapper">
-        <ng-container *ngFor="let errMsg of errMsgsPassword">
-          <mat-error>{{ errMsg | translate }}</mat-error>
-        </ng-container>
+      <div class="pp-title">{{ 'panel-profile.title_delete_account' | translate }}</div>
+      <div pp-mr-tp-1>
+        <span>{{ 'panel-profile.note_before_deleting_account' | translate }}</span>
       </div>
-    </div>
 
-    <div class="pp-content">
-      <div class="pp-title">{{ 'profile.title_delete_account' | translate }}</div>
-      <div mr-tp-1>
-        <span>{{ 'profile.note_before_deleting_account' | translate }}</span>
-      </div>
-      <div class="pp-actions pp-form" mr-tp-1>
+      <div pp-mr-tp-1 class="pp-actions">
         <button mat-raised-button color="primary"
           class="app-infix app-ordinary"
           [disabled]="isDisabledSubmit"
           (click)="removeAccount()">
-          <span class="pp-actions-label">
-            <i class="pp-save"></i>
-            {{ 'profile.btn_delete_account' | translate }}
-          </span>
+          <i class="pp-save"></i>{{ 'panel-profile.btn_delete_account' | translate }}
         </button>
-      </div>
-
-      <div class="mat-mdc-form-field-subscript-wrapper">
-        <ng-container *ngFor="let errMsg of errMsgsAccount">
-          <mat-error>{{ errMsg | translate }}</mat-error>
-        </ng-container>
       </div>
     </div>
 
+    <div class="mat-mdc-form-field-subscript-wrapper">
+      <ng-container *ngFor="let errMsg of errMsgsAccount">
+        <mat-error>{{ errMsg | translate }}</mat-error>
+      </ng-container>
+    </div>
   </div>
 
-  <span>&nbsp;</span>
 </div>
+<!-- <span>&nbsp;</span> -->
+

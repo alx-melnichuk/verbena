@@ -104,10 +104,11 @@
     "backend_used": "Auf dem Backend haben wir verwendet:"
   },
 
-  "profile": {
+  "panel-profile": {
     "title_profile": "Persönliche informationen",
-
     "label_avatar": "Avatar",
+    "descript": "Beschreibung",
+
     "btn_save_profile": "Speichern",
     "error_editing_profile": "Fehler beim Bearbeiten des Profils.",
     "dialog_title_editing": "Profiländerungs vorgang.",

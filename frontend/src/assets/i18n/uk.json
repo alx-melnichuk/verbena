@@ -104,10 +104,11 @@
     "backend_used": "На Backend ми використовували:"
   },
 
-  "profile": {
+  "panel-profile": {
     "title_profile": "Особиста інформація",
-
     "label_avatar": "Аватар",
+    "descript": "Опис",
+
     "btn_save_profile": "Зберегти",
     "error_editing_profile": "Помилка редагування профілю.",
     "dialog_title_editing": "Операція зміни профілю.",

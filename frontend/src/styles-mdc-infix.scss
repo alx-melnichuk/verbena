@@ -93,8 +93,9 @@
     color: var(--infix-form-field-hint-cl);
   }
 
-   // ** mat-error **
-   .mat-mdc-form-field-subscript-wrapper {
+  // ** mat-error **
+  .mat-mdc-form-field-subscript-wrapper {
+    // outline: 1px dashed red;
     --mdc-typography-caption-line-height: 1.1; //1.25;
     --mdc-typography-caption-font-size: calc(1em - 3px); // 13px
     // &::before { height: calc(2em + 2px); }
