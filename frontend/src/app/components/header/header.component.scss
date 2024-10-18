@@ -87,8 +87,11 @@ app-header {
   }
   img.hd-avatar {
     border-radius: var(--hd-image-brd-rd, 0.3em);
-    height: var(--header-hg, 100%);
+    box-sizing: border-box;
+    height: calc(var(--header-hg, 62px) - 4px);
     margin-left: 0.75em;
+    object-fit: cover;
+    width: calc(var(--header-hg, 62px) - 4px);
   }
 
   .hd-icon {
