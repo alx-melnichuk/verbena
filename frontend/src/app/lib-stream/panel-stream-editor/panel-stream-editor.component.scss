@@ -7,7 +7,8 @@ app-panel-stream-editor {
   ---pse-pn-bg: var(--app-stream-pn);
   ---pse-pn-brd: var(--app-stream-pn-low);
 
-  ---pse-pd: calc(min(var(---pse-width), 1280px) / 1280 * 48);
+  // 512.22px: 18.767px;  640px: 23.976px;  767.78px: 28.767px;  896.67px: 33.611px;  1024.44px: 38.403px;  1280px: 47.986px;
+  ---pse-pd: calc(0.0375 * min(var(---pse-width), 1280px) - 0.0115px);  
   ---pse-wd: min(100vw, calc((32px + var(---pse-width) / 128) * 16));
 
   [pse-mr-tp-0_5] { margin-top: 0.5em; }

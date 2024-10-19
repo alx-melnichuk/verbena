@@ -7,7 +7,8 @@ app-panel-signup {
   ---ps-pn-bg: var(--app-signup-pn);
   ---ps-pn-brd: var(--app-signup-pn-low);
 
-  ---ps-pd: calc(min(var(---ps-width), 1280px) / 1280 * 48);
+  // 512.22px: 18.767px;  640px: 23.976px;  767.78px: 28.767px;  896.67px: 33.611px;  1024.44px: 38.403px;  1280px: 47.986px;
+  ---ps-pd: calc(0.0375 * min(var(---ps-width), 1280px) - 0.0115px);  
   ---ps-wd: min(100vw, calc((26px + var(---ps-width) / 128) * 16));
 
   [ps-mr-tp-0_5] { margin-top: 0.5em; }
