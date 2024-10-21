@@ -339,5 +339,20 @@
     "error_when_starting_the_stream": "Error starting broadcast",
     "error_when_stopping_the_stream": "Error stopping broadcast",
     "error_while_pause_stream"      : "Error pausing broadcast"
+  },
+  "panel-stream-info-owner": {
+    "_followers": "Followers",
+    "btn_settings": "Connect to OBS",
+    "_error_get_stream": "Error getting stream",
+    "_error_get_user_profile": "Error getting user profile",
+    "_error_get_profile_contact": "Error getting profile contact",
+    "_error_subscription": "Error while a subscription",
+    "_error_unsubscription": "Error while a unsubscription",
+    "prepare": "Streaming Studio",
+    "go_live": "GO LIVE",
+    "pause": "Pause",
+    "stop_stream": "STOP STREAM",
+    "_cannot_start_stream": "Cannot start the stream",
+    "_cannot_start_stream_message": "You already have the active stream running <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
   }
 }
