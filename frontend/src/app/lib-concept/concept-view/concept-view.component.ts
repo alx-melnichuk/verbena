@@ -7,17 +7,20 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
-import { SidebarComponent } from 'src/app/components/sidebar/sidebar.component';
-import { DialogService    } from 'src/app/lib-dialog/dialog.service';
-import { StreamDto        } from 'src/app/lib-stream/stream-api.interface';
+import { InitializationService } from 'src/app/common/initialization.service';
+import { SidebarComponent      } from 'src/app/components/sidebar/sidebar.component';
+import { DialogService         } from 'src/app/lib-dialog/dialog.service';
+import { ProfileService        } from 'src/app/lib-profile/profile.service';
+import { StreamDto             } from 'src/app/lib-stream/stream-api.interface';
 
 import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-state.component';
-import { InitializationService } from 'src/app/common/initialization.service';
+import { PanelStreamInfoOwnerComponent } from '../panel-stream-info-owner/panel-stream-info-owner.component';
 
 @Component({
   selector: 'app-concept-view',
   standalone: true,
-  imports: [CommonModule, TranslateModule, SpinnerComponent, SidebarComponent, PanelStreamStateComponent],
+  imports: [CommonModule, TranslateModule, SpinnerComponent, SidebarComponent, 
+    PanelStreamStateComponent, PanelStreamInfoOwnerComponent],
   templateUrl: './concept-view.component.html',
   styleUrls: ['./concept-view.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -59,16 +62,16 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
   // To disable the jumping effect of the "stream-video" panel at startup.
   public isStreamVideo = false;
 
-//   // An indication that this is the owner of the stream.
-//   public isStreamOwner = false;
+  // An indication that this is the owner of the stream.
+  public isStreamOwner = false;
 
 //   // Block: "Stream Video". Contains a link to the Millicast frame.
 //   public millicastViewer: MillicastViewerPrm | null = null;
 
-//   // Blocks: "Stream info" and "Stream info owner"
-//   public broadcastDuration: string | null = null;
-//   public starttimeValue: string | null = null;
-//   public settimeoutId: number | null = null;
+  // Blocks: "Stream info" and "Stream info owner"
+  public broadcastDuration: string | null = null;
+  public starttimeValue: string | null = null;
+  public settimeoutId: number | null = null;
 
 //   // Block "Chat"
 //   public isEditableChat = false;
@@ -89,7 +92,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     // public socketService: SocketService,
     // public firebaseService: FirebaseService,
     // public streamInfoService: StreamInfoService,
-    // public profileService: ProfileService,
+    public profileService: ProfileService,
     // public followersService: FollowersService,
     // public streamStateService: StreamStateService,
   ) {
@@ -129,10 +132,10 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
   }
 
   ngOnInit(): void {
-    // const currentUserId: string = (this.profileService.getUserId() as string);
-    // // An indication that this is the owner of the stream.
-    // this.isStreamOwner = ((!!this.streamDTO && this.streamDTO.userId) === currentUserId);
-
+    const currentUserId: number = this.profileService.profileDto?.id || -1;
+    // An indication that this is the owner of the stream.
+    this.isStreamOwner = (this.streamDto?.userId === currentUserId);
+    console.log(`#_this.isStreamOwner:${this.isStreamOwner}`); // #
     // // "Stream Targets Subscribe"
     // if (!!this.streamDTO?.id) {
     //   if (this.isStreamOwner) {
@@ -145,16 +148,24 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     //   // Subscribe to receive chat content.
     //   this.firebaseService.subscribingToChatContent(this.streamDTO.id);
     // }
+    this.broadcastDuration = '00';
   }
 
   // ** Public API **
 
-  // "Stream video"
+  // "panel-stream-state"
 
   public classNameViewerSize(): string {
     const isMiniLeft = this.isMiniSidebarLeft;
     return (!isMiniLeft && !this.isMiniSidebarRight ? 'size1' : (isMiniLeft && this.isMiniSidebarRight ? 'size3' : 'size2'));
   }
+
+  // "panel-stream-info-owner"
+
+  public doActionPrepare(streamId: number): void {}
+  public doActionStart(streamId: number): void {}
+  public doActionStop(streamId: number): void {}
+  public doActionPause(streamId: number): void {}
 
   // ** Private API **
 
@@ -165,5 +176,36 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
 //       .finally(() => this.changeDetector.markForCheck());
 //   }
 
+  // Turn on/off the display of "Broadcast duration".
+  /*private setBroadcastDuration(): void {
+    this.broadcastDuration = '';
+    if (!!this.starttimeValue) {
+      const startedDate: moment.Moment = moment(this.starttimeValue, MOMENT_ISO8601);
+      const currentDate: moment.Moment = moment().clone();
+      const duration = moment.duration(currentDate.diff(startedDate));
+      const days = Math.floor(duration.asDays());
+      const daysInHours = days * 24;
+      const hours = Math.floor(duration.asHours() - daysInHours);
+      const hoursInMinutes = hours * 60;
+      const daysInMinutes = daysInHours * 60;
+      const minutes = Math.floor(duration.asMinutes() - daysInMinutes - hoursInMinutes);
+      const minutesInSeconds = minutes * 60;
+      const seconds = Math.floor(duration.asSeconds() - daysInMinutes * 60 - hoursInMinutes * 60 - minutesInSeconds);
 
+      if (days > 0) {
+        this.broadcastDuration = '' + days + ' ' + (days > 1 ? 'days' : 'day') + ' ';
+      }
+      this.broadcastDuration += ('00' + hours).substr(-2) + ':' + ('00' + minutes).substr(-2) + ':' + ('00' + seconds).substr(-2);
+
+      this.settimeoutId = window.setTimeout(() => {
+        this.setBroadcastDuration();
+      }, 1000);
+    } else {
+      if (!this.settimeoutId) {
+        window.clearTimeout(this.settimeoutId as number);
+        this.settimeoutId = null;
+      }
+    }
+    this.changeDetector.markForCheck();
+  }*/
 }

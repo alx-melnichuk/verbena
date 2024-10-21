@@ -32,8 +32,9 @@
     </div>
   </div>
 
-  <!-- <div class="stream-info" *ngIf="!isStreamOwner">
-    <app-spinner *ngIf="subscribeLoading" [isFullOwner]="true" [diameter]="60"></app-spinner>
+  <ng-container *ngIf="!isStreamOwner; else templateIsOwner">
+    Is not Stream Owner
+    <!-- <app-spinner *ngIf="subscribeLoading" [isFullOwner]="true" [diameter]="60"></app-spinner>
     <app-panel-stream-info
       [streamDTO]="streamDTO"
       [extendedUserDTO]="extendedUserDTO"
@@ -41,19 +42,26 @@
       [countOfViewer]="socketService.countOfViewer$ | async"
       [broadcastDuration]="broadcastDuration"
       (actionSubscribe)="doActionSubscribe($event)"
-    ></app-panel-stream-info>
-  </div> -->
-  <!-- <div class="stream-info" *ngIf="isStreamOwner">
-    <app-panel-stream-info-owner
-      [streamDTO]="streamDTO"
-      [countOfViewer]="socketService.countOfViewer$ | async"
-      [broadcastDuration]="broadcastDuration"
-      (actionPrepare)="doActionPrepare($event)"
-      (actionStart)="doActionStart($event)"
-      (actionStop)="doActionStop($event)"
-      (actionPause)="doActionPause($event)"
-    ></app-panel-stream-info-owner>
-  </div> -->
+    ></app-panel-stream-info> -->
+  </ng-container>
+  <ng-template #templateIsOwner>
+    Is Stream Owner
+    <div class="cv-stream-info">
+      <app-panel-stream-info-owner
+        [streamDto]="streamDto"
+        countOfViewer9="socketService.countOfViewer$ | async"
+        [countOfViewer]="0"
+        [broadcastDuration]="broadcastDuration"
+        (actionPrepare)="doActionPrepare($event)"
+        (actionStart)="doActionStart($event)"
+        (actionStop)="doActionStop($event)"
+        (actionPause)="doActionPause($event)">
+      </app-panel-stream-info-owner>
+    </div>    
+  </ng-template>
+
+
+
   <!-- <div class="user-portfolio">
     <app-panel-portfolio-schedule class="details"
       [isDarkTheme]="isDarkTheme"

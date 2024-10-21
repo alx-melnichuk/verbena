@@ -45,7 +45,7 @@ app-concept-view {
     flex-direction: column;
     overflow-y: auto;
     &>.cv-stream-video { flex: 1 1 auto; }
-    &>.stream-info { flex: 0 0 70px; }
+    &>.cv-stream-info { flex: 0 0 70px; }
     &>.user-portfolio { flex: 0 0 auto; } 
   }
   .cv-box-video {
@@ -68,6 +68,13 @@ app-concept-view {
     }
   }
   .cv-hg100 { height: 100%; }
+
+  .cv-stream-info {
+    outline: 1px dashed orange;
+    margin-top: 20px;
+    min-height: 50px;
+    position: relative;
+  }
 
   // ** sidebar **
   .cv-aside {
