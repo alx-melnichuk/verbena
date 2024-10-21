@@ -22,8 +22,14 @@ export class ProfileService implements TokenUpdate {
     this.profileTokensDto = this.getProfileTokensDtoFromLocalStorage();
   }
 
+  public getProfileDto(): ProfileDto | null {
+    return this.profileDto != null ? { ...this.profileDto } : null;
+  }
   public setProfileDto(profileDto: ProfileDto | null = null): void {
     this.profileDto = profileDto;
+  }
+  public getProfileTokensDto(): ProfileTokensDto | null {
+    return this.profileTokensDto != null ? { ...this.profileTokensDto } : null;
   }
   public setProfileTokensDto(profileTokensDto: ProfileTokensDto | null = null): void {
     this.profileTokensDto = this.setProfileTokensDtoToLocalStorage(profileTokensDto);
