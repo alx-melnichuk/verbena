@@ -1,4 +1,5 @@
-import { StringDate, StringDateTime,  StringDateTimeUtil } from '../common/string-date-time';
+import { StringDate, StringDateTime } from '../common/string-date-time';
+import { StringDateTimeUtil } from '../utils/string-date-time.util';
 
 
 export enum StreamState {

@@ -2,10 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { PageInfo, PageInfoUtil } from '../common/page-info';
-import { StringDateTime, StringDateTimeUtil } from '../common/string-date-time';
+import { StringDateTime } from '../common/string-date-time';
 import { AlertService } from '../lib-dialog/alert.service';
 import { DateUtil } from '../utils/date.utils';
 import { HttpErrorUtil } from '../utils/http-error.util';
+import { StringDateTimeUtil } from '../utils/string-date-time.util';
 
 import { StreamService } from './stream.service';
 import { SearchStreamEventDto, StreamEventDto, StreamEventPageDto, StreamsPeriodDto } from './stream-api.interface';

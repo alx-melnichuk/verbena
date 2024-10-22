@@ -7,8 +7,9 @@ import { MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule } from '
 import { MatNativeDateModule } from '@angular/material/core';
 import { Subscription } from 'rxjs';
 
-import { StringDateTime, StringDateTimeUtil } from 'src/app/common/string-date-time';
+import { StringDateTime } from 'src/app/common/string-date-time';
 import { HtmlElemUtil } from 'src/app/utils/html-elem.util';
+import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
 
 import { StreamsPeriodDto } from '../stream-api.interface';
 
