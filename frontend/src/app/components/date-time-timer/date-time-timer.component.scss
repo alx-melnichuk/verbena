@@ -1,0 +1,108 @@
+/*# sourceURL=date-time-timer.component.scss */
+
+app-date-time-timer {
+  display: block;
+
+
+  & > [dtt-box] {
+    display: inline-block;
+    min-width: 2ch;
+    max-width: 2ch;
+    //outline: 1px dashed green;
+  }
+  & > [dtt-sec] {
+    counter-reset: dtt-seconds-cnr var(--dtt-seconds);
+  }
+  
+  &[is-active] {
+    & > [dtt-sec][animat1]::before {
+      content: counter(dtt-seconds-cnr);
+      animation: anm-dtt-seconds1a 20s linear 0s 1, anm-dtt-seconds1b 20s linear 20s 1, anm-dtt-seconds1c 20s linear 40s 1;
+    }
+    & > [dtt-sec][animat2]::after {
+      content: counter(dtt-seconds-cnr);
+      animation: anm-dtt-seconds1a 20s linear 0s 1, anm-dtt-seconds1b 20s linear 20s 1, anm-dtt-seconds1c 20s linear 40s 1;
+    }
+  }
+
+  @keyframes anm-dtt-seconds1a {
+     0% {  }
+     5% { counter-increment: dtt-seconds-cnr  calc(1 * var(--dtt-trend, 1)); }
+    10% { counter-increment: dtt-seconds-cnr  calc(2 * var(--dtt-trend, 1)); }
+    15% { counter-increment: dtt-seconds-cnr  calc(3 * var(--dtt-trend, 1)); }
+    20% { counter-increment: dtt-seconds-cnr  calc(4 * var(--dtt-trend, 1)); }
+    25% { counter-increment: dtt-seconds-cnr  calc(5 * var(--dtt-trend, 1)); }
+    30% { counter-increment: dtt-seconds-cnr  calc(6 * var(--dtt-trend, 1)); }
+    35% { counter-increment: dtt-seconds-cnr  calc(7 * var(--dtt-trend, 1)); }
+    40% { counter-increment: dtt-seconds-cnr  calc(8 * var(--dtt-trend, 1)); }
+    45% { counter-increment: dtt-seconds-cnr  calc(9 * var(--dtt-trend, 1)); }
+    50% { counter-increment: dtt-seconds-cnr  calc(10 * var(--dtt-trend, 1)); }
+    55% { counter-increment: dtt-seconds-cnr  calc(11 * var(--dtt-trend, 1)); }
+    60% { counter-increment: dtt-seconds-cnr  calc(12 * var(--dtt-trend, 1)); }
+    65% { counter-increment: dtt-seconds-cnr  calc(13 * var(--dtt-trend, 1)); }
+    70% { counter-increment: dtt-seconds-cnr  calc(14 * var(--dtt-trend, 1)); }
+    75% { counter-increment: dtt-seconds-cnr  calc(15 * var(--dtt-trend, 1)); }
+    80% { counter-increment: dtt-seconds-cnr  calc(16 * var(--dtt-trend, 1)); }
+    85% { counter-increment: dtt-seconds-cnr  calc(17 * var(--dtt-trend, 1)); }
+    90% { counter-increment: dtt-seconds-cnr  calc(18 * var(--dtt-trend, 1)); }
+    95% { counter-increment: dtt-seconds-cnr  calc(19 * var(--dtt-trend, 1)); }
+    100% { counter-increment: dtt-seconds-cnr  calc(20 * var(--dtt-trend, 1)); }
+  }
+  @keyframes anm-dtt-seconds1b {
+    0% { counter-increment: dtt-seconds-cnr  calc(20 * var(--dtt-trend, 1)); }
+    5% { counter-increment: dtt-seconds-cnr  calc(21 * var(--dtt-trend, 1)); }
+   10% { counter-increment: dtt-seconds-cnr  calc(22 * var(--dtt-trend, 1)); }
+   15% { counter-increment: dtt-seconds-cnr  calc(23 * var(--dtt-trend, 1)); }
+   20% { counter-increment: dtt-seconds-cnr  calc(24 * var(--dtt-trend, 1)); }
+   25% { counter-increment: dtt-seconds-cnr  calc(25 * var(--dtt-trend, 1)); }
+   30% { counter-increment: dtt-seconds-cnr  calc(26 * var(--dtt-trend, 1)); }
+   35% { counter-increment: dtt-seconds-cnr  calc(27 * var(--dtt-trend, 1)); }
+   40% { counter-increment: dtt-seconds-cnr  calc(28 * var(--dtt-trend, 1)); }
+   45% { counter-increment: dtt-seconds-cnr  calc(29 * var(--dtt-trend, 1)); }
+   50% { counter-increment: dtt-seconds-cnr  calc(30 * var(--dtt-trend, 1)); }
+   55% { counter-increment: dtt-seconds-cnr  calc(31 * var(--dtt-trend, 1)); }
+   60% { counter-increment: dtt-seconds-cnr  calc(32 * var(--dtt-trend, 1)); }
+   65% { counter-increment: dtt-seconds-cnr  calc(33 * var(--dtt-trend, 1)); }
+   70% { counter-increment: dtt-seconds-cnr  calc(34 * var(--dtt-trend, 1)); }
+   75% { counter-increment: dtt-seconds-cnr  calc(35 * var(--dtt-trend, 1)); }
+   80% { counter-increment: dtt-seconds-cnr  calc(36 * var(--dtt-trend, 1)); }
+   85% { counter-increment: dtt-seconds-cnr  calc(37 * var(--dtt-trend, 1)); }
+   90% { counter-increment: dtt-seconds-cnr  calc(38 * var(--dtt-trend, 1)); }
+   95% { counter-increment: dtt-seconds-cnr  calc(39 * var(--dtt-trend, 1)); }
+   100% { counter-increment: dtt-seconds-cnr  calc(40 * var(--dtt-trend, 1)); }
+ }
+ @keyframes anm-dtt-seconds1c {
+    0% { counter-increment: dtt-seconds-cnr  calc(40 * var(--dtt-trend, 1)); }
+    5% { counter-increment: dtt-seconds-cnr  calc(41 * var(--dtt-trend, 1)); }
+   10% { counter-increment: dtt-seconds-cnr  calc(42 * var(--dtt-trend, 1)); }
+   15% { counter-increment: dtt-seconds-cnr  calc(43 * var(--dtt-trend, 1)); }
+   20% { counter-increment: dtt-seconds-cnr  calc(44 * var(--dtt-trend, 1)); }
+   25% { counter-increment: dtt-seconds-cnr  calc(45 * var(--dtt-trend, 1)); }
+   30% { counter-increment: dtt-seconds-cnr  calc(46 * var(--dtt-trend, 1)); }
+   35% { counter-increment: dtt-seconds-cnr  calc(47 * var(--dtt-trend, 1)); }
+   40% { counter-increment: dtt-seconds-cnr  calc(48 * var(--dtt-trend, 1)); }
+   45% { counter-increment: dtt-seconds-cnr  calc(49 * var(--dtt-trend, 1)); }
+   50% { counter-increment: dtt-seconds-cnr  calc(50 * var(--dtt-trend, 1)); }
+   55% { counter-increment: dtt-seconds-cnr  calc(51 * var(--dtt-trend, 1)); }
+   60% { counter-increment: dtt-seconds-cnr  calc(52 * var(--dtt-trend, 1)); }
+   65% { counter-increment: dtt-seconds-cnr  calc(53 * var(--dtt-trend, 1)); }
+   70% { counter-increment: dtt-seconds-cnr  calc(54 * var(--dtt-trend, 1)); }
+   75% { counter-increment: dtt-seconds-cnr  calc(55 * var(--dtt-trend, 1)); }
+   80% { counter-increment: dtt-seconds-cnr  calc(56 * var(--dtt-trend, 1)); }
+   85% { counter-increment: dtt-seconds-cnr  calc(57 * var(--dtt-trend, 1)); }
+   90% { counter-increment: dtt-seconds-cnr  calc(58 * var(--dtt-trend, 1)); }
+   95% { counter-increment: dtt-seconds-cnr  calc(59 * var(--dtt-trend, 1)); }
+   100% { counter-increment: dtt-seconds-cnr  calc(59 * var(--dtt-trend, 1)); }
+ }
+
+  /*counter-reset: my-count 5;
+  animation: countdown 5s linear infinite;*/
+  /*@keyframes countdown {
+    0% {  }
+    20% {    counter-increment: my-count -1;  }
+    40% {    counter-increment: my-count -2;  }
+    60% {    counter-increment: my-count -3;  }
+    80% {    counter-increment: my-count -4;  }
+    100% {  }
+  } */
+}
