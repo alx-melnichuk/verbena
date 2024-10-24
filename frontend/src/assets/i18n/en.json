@@ -240,7 +240,6 @@
   },
   "demo": {
     "sure_you_want_delete_stream": "Are you sure you want to delete the stream \"{{title}}\" ?",
-    "_sure_you_want_stop_stream": "Are you sure you want to stop the stream \"{{title}}\" ?",
     "error_get_streams_for_selected_day": "Error getting streams for the selected day",
     "error_get_streams_for_active_period": "Error getting streams for the active period",
     "error_delete_stream": "Error while deleting stream",
@@ -340,18 +339,19 @@
     "error_when_stopping_the_stream": "Error stopping broadcast",
     "error_while_pause_stream"      : "Error pausing broadcast"
   },
-  "panel-stream-info-owner": {
-    "_followers": "Followers",
+  "panel-stream-admin": {
+    "sure_you_want_stop_stream": "Are you sure you want to stop the stream \"{{title}}\" ?",
     "btn_settings": "Connect to OBS",
+    "prepare": "Streaming Studio",
+    "go_live": "GO LIVE",
+    "pause": "Pause",
+    "stop_stream": "STOP STREAM",
+    "_followers": "Followers",
     "_error_get_stream": "Error getting stream",
     "_error_get_user_profile": "Error getting user profile",
     "_error_get_profile_contact": "Error getting profile contact",
     "_error_subscription": "Error while a subscription",
     "_error_unsubscription": "Error while a unsubscription",
-    "prepare": "Streaming Studio",
-    "go_live": "GO LIVE",
-    "pause": "Pause",
-    "stop_stream": "STOP STREAM",
     "_cannot_start_stream": "Cannot start the stream",
     "_cannot_start_stream_message": "You already have the active stream running <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
   }
