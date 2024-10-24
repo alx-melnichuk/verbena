@@ -45,27 +45,29 @@ app-concept-view {
     flex-direction: column;
     overflow-y: auto;
     &>.cv-stream-video { flex: 1 1 auto; }
-    &>.cv-stream-info { flex: 0 0 70px; }
+    &>.cv-stream-info { flex: 0 0 10em; }
     &>.user-portfolio { flex: 0 0 auto; } 
   }
-  .cv-box-video {
-    &.size1 { height: 54vh; }
-    &.size2 { height: 64vh; }
-    &.size3 { height: 81vh; }
-    transition-property: height;
-    transition-duration: var(---cv-sb-durt);
+  .cv-stream-video {
     position: relative;
-
-    &>.cv-stream-state {
-      --pss-panel-bg: var(---cv-pn-bg);
-    //   --pss-icon-cl: var(---cv-pn-low-bg);
-      --pss-icon-cl: green;
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-    }
+  }
+//   .cv-box-video {
+//     &.size1 { height: 54vh; }
+//     &.size2 { height: 64vh; }
+//     &.size3 { height: 81vh; }
+//     transition-property: height;
+//     transition-duration: var(---cv-sb-durt);
+//     position: relative;
+//   }
+  .cv-stream-state {
+    --pss-panel-bg: var(---cv-pn-bg);
+  //   --pss-icon-cl: var(---cv-pn-low-bg);
+    --pss-icon-cl: green;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
   }
   .cv-hg100 { height: 100%; }
 

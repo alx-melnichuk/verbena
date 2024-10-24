@@ -23,13 +23,13 @@
 <div class="cv-center global-scroll">
     
   <div [ngClass]="[(isStreamVideo ? 'cv-stream-video' : '')]">
-    <div [ngClass]="['cv-box-video', classNameViewerSize()]">
+    <!-- <div [ngClass]="['cv-box-video', classNameViewerSize()]"> -->
       <!-- <div class="height-100ps" [appMillicastViewer]="millicastViewer"></div> -->
       <div class="cv-hg100"></div>
       <app-panel-stream-state class="cv-stream-state"
         [streamState]="streamDto?.state || null">
       </app-panel-stream-state>
-    </div>
+    <!-- </div> -->
   </div>
 
   <ng-container *ngIf="!isStreamOwner; else templateIsOwner">
@@ -45,9 +45,8 @@
     ></app-panel-stream-info> -->
   </ng-container>
   <ng-template #templateIsOwner>
-    Is Stream Owner
     <div class="cv-stream-info">
-      <app-panel-stream-info-owner
+      <app-panel-stream-admin
         [streamDto]="streamDto"
         countOfViewer9="socketService.countOfViewer$ | async"
         [countOfViewer]="0"
@@ -56,7 +55,7 @@
         (actionStart)="doActionStart($event)"
         (actionStop)="doActionStop($event)"
         (actionPause)="doActionPause($event)">
-      </app-panel-stream-info-owner>
+      </app-panel-stream-admin>
     </div>    
   </ng-template>
 
