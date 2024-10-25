@@ -6,7 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
-//import { DateTimeTimerComponent } from 'src/app/components/date-time-timer/date-time-timer.component';
+import { DateTimeTimerComponent } from 'src/app/components/date-time-timer/date-time-timer.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { StreamDto, StreamState } from 'src/app/lib-stream/stream-api.interface';
 
@@ -14,7 +14,7 @@ import { StreamDto, StreamState } from 'src/app/lib-stream/stream-api.interface'
   selector: 'app-panel-stream-admin',
   standalone: true,
   imports: [CommonModule, MatButtonModule, MatTooltipModule, TranslateModule, 
-    //DateTimeTimerComponent
+    DateTimeTimerComponent
   ],
   templateUrl: './panel-stream-admin.component.html',
   styleUrls: ['./panel-stream-admin.component.scss'],

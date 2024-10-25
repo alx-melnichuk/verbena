@@ -7,7 +7,8 @@
       <div class="psa-icon-clock"></div>
       <div class="psa-info-text">{{ broadcastDuration }}</div>
     </ng-container>
-    <!-- <app-date-time-timer [isActive]="true" ></app-date-time-timer> -->
+    <app-date-time-timer style="font-size: 25px;"
+      [isActive]="true" [letterSpacing]="2" isHideLeadingZero9="true" isAlignCenter9="true"></app-date-time-timer>
   </div>
   <div class="psa-name-label">
     <span>{{ streamDto?.title }}</span>
