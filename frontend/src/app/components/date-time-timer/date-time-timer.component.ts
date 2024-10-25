@@ -7,6 +7,11 @@ import { HtmlElemUtil } from 'src/app/utils/html-elem.util';
 
 const DEF_LEADING_ZEROS = 2;
 const ATTR_IS_ACTIVE = 'is-active';
+const CSS_BOX_JUSTIFY_CONTENT = '--dtt-box-justify-content';
+const CSS_LEADING_ZERO = '--dtt-leading-zero';
+const CSS_LETTER_SPACING = '--dtt-letter-spacing';
+const CSS_HOURS = '--dtt-hours';
+const CSS_MINUTES = '--dtt-minutes';
 const CSS_SECONDS = '--dtt-seconds';
 
 @Component({
@@ -22,10 +27,14 @@ export class DateTimeTimerComponent implements OnChanges, OnInit {
   @Input()
   public isActive: boolean | null | undefined;
   @Input()
+  public isAlignCenter: boolean | null | undefined; // together with "isHideLeadingZero"
+  @Input()
   public isCountdown: boolean | null | undefined;
   @Input()
-  public isLeadingZero: boolean | null | undefined = true;
-  
+  public isHideLeadingZero: boolean | null | undefined;  // together with "isAlignCenter"
+  @Input()
+  public letterSpacing: number | null | undefined = 0; // in 'px'
+
   public currValue: Date | null = null;
   public hours: number = 0;
   public minutes: number = 0;
@@ -35,38 +44,56 @@ export class DateTimeTimerComponent implements OnChanges, OnInit {
   public settimeoutId: number | null = null;  
 
 
-  private count = 0;
+  private count = 0; // tmp
+
   constructor(
     private renderer: Renderer2,
     public hostRef: ElementRef<HTMLElement>,
     private changeDetectorRef: ChangeDetectorRef,
   ) {
-
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['isActive']) {
       console.log(`isActive: ${this.isActive}`); // #
       if (this.isActive) {
-        HtmlElemUtil.setProperty(this.hostRef, CSS_SECONDS, '1');
+        //this.updateCurrValue(new Date(Date.now())); // #
+        //HtmlElemUtil.setProperty(this.hostRef, CSS_HOURS, this.hours.toString()); // #
+        //HtmlElemUtil.setProperty(this.hostRef, CSS_MINUTES, this.minutes.toString()); // #
+        //this.seconds = 40;
+        //HtmlElemUtil.setProperty(this.hostRef, CSS_SECONDS, this.seconds.toString()); // #
+  
         this.isEvenIteration = false;
-        // this.modifyCurrValueAndSetTimeout();
+        this.modifyCurrValueAndSetTimeout();
       } else {
         this.isEvenIteration = null;
         this.clearCurrValue();
       }
-      
+        
       HtmlElemUtil.setAttr(this.renderer, this.hostRef, ATTR_IS_ACTIVE, !!this.isActive ? '' : null);
-      console.log(`this.isActive: ${this.isActive}`); // #
+    }
+    if (!!changes['isAlignCenter']) {
+      HtmlElemUtil.setProperty(this.hostRef, CSS_BOX_JUSTIFY_CONTENT, !!this.isAlignCenter ? 'center' : null);
+      // justify-content: center
+    }
+    if (!!changes['isHideLeadingZero']) {
+        console.log(`leadingZero: ${!!this.isHideLeadingZero ? JSON.stringify('') : 'null'}`); // #
+        HtmlElemUtil.setProperty(this.hostRef, CSS_LEADING_ZERO, !!this.isHideLeadingZero ? '""' : null);
+    }
+
+    if (!!changes['letterSpacing']) {
+      const letterSpacing = (this.letterSpacing || -1) > 0 ? this.letterSpacing?.toString() + 'px' : null;
+      HtmlElemUtil.setProperty(this.hostRef, CSS_LETTER_SPACING, letterSpacing);
     }
   }
   
   ngOnInit(): void {
   }
-
   // ** Public API **
 
-
+  public log(text: string): void {
+    console.log(`log() ${text}`); // #
+  }
   // ** Public API **
 
   private showValue(value: number, isLeadingZero?: boolean | null): string {
@@ -81,7 +108,7 @@ export class DateTimeTimerComponent implements OnChanges, OnInit {
     this.currValue = null;
 
   }
-  private updateCurrValue(currValue: Date, isLeadingZero: boolean): number {
+  private updateCurrValue(currValue: Date): number {
     this.hours = currValue.getHours();
     this.minutes = currValue.getMinutes();
     this.seconds = currValue.getSeconds();
@@ -90,11 +117,15 @@ export class DateTimeTimerComponent implements OnChanges, OnInit {
   }
   
   private modifyCurrValueAndSetTimeout = () => {
-    if (this.isActive && this.count < 5) {
+    if (this.isActive && this.count < 2) {
       this.count++
       
-      const seconds = this.updateCurrValue(new Date(Date.now()), !!this.isLeadingZero);
-
+      let seconds = this.updateCurrValue(new Date(Date.now()));
+      HtmlElemUtil.setProperty(this.hostRef, CSS_HOURS, this.hours.toString());
+      HtmlElemUtil.setProperty(this.hostRef, CSS_MINUTES, this.minutes.toString());
+      if (this.count == 1) {
+        seconds = this.seconds = 0;
+      }
       HtmlElemUtil.setProperty(this.hostRef, CSS_SECONDS, (0 != seconds ? this.seconds.toString() : null));
 
       const duration = (!this.isCountdown ? 60 - seconds : seconds);

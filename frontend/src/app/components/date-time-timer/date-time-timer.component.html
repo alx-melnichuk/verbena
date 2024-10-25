@@ -1,14 +1,14 @@
-<span dtt-box dtt-hr class="dtt-hours">{{ hours }}</span>
+<div dtt-box dtt-hr class="dtt-hours"></div>
 <span class="dtt-separator">
 :
 </span>
-<span dtt-box dtt-min class="dtt-minutes">{{ minutes }}</span>
+<div dtt-box dtt-min class="dtt-minutes"></div>
 <span class="dtt-separator">
 :
 </span>
-<span dtt-box dtt-sec
-  [attr.animat1]="isEvenIteration == true ? '' : null"
-  [attr.animat2]="isEvenIteration == false ? '' : null"
+<div dtt-box dtt-sec
+  [attr.animat1]="isEvenIteration == false ? '' : null"
+  [attr.animat2]="isEvenIteration == true ? '' : null"
   class="dtt-seconds">
-</span>
+</div>
 
