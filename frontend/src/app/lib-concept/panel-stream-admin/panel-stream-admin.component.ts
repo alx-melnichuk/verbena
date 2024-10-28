@@ -38,10 +38,12 @@ export class PanelStreamAdminComponent implements OnChanges, OnInit {
   @Output()
   readonly actionPause: EventEmitter<number> = new EventEmitter();
 
+  public futureDate: Date;
   constructor(
     private translateService: TranslateService,
     private dialogService: DialogService,
   ) {
+    this.futureDate = new Date('2024-10-31T22:10:00');
   }
 
   ngOnChanges(changes: SimpleChanges): void {
