@@ -3,30 +3,30 @@ import { StringDateTimeUtil } from '../utils/string-date-time.util';
 
 
 export enum StreamState {
-  Waiting = 'Waiting',
-  Preparing = 'Preparing',
-  Started = 'Started',
-  Stopped = 'Stopped',
-  Paused = 'Paused'
+  waiting = 'waiting',
+  preparing = 'preparing',
+  started = 'started',
+  stopped = 'stopped',
+  paused = 'paused'
 }
 export class StreamStateUtil {
   public static create(value: string): StreamState | null {
     let result: StreamState | null = null;
     switch (value) {
-      case StreamState.Waiting: result = StreamState.Waiting; break;
-      case StreamState.Preparing: result = StreamState.Preparing; break;
-      case StreamState.Started: result = StreamState.Started; break;
-      case StreamState.Stopped: result = StreamState.Stopped; break;
-      case StreamState.Paused: result = StreamState.Paused; break;
+      case StreamState.waiting: result = StreamState.waiting; break;
+      case StreamState.preparing: result = StreamState.preparing; break;
+      case StreamState.started: result = StreamState.started; break;
+      case StreamState.stopped: result = StreamState.stopped; break;
+      case StreamState.paused: result = StreamState.paused; break;
     }
     return result;
   }
   public static isActive(streamState: StreamState): boolean {
-    return [StreamState.Preparing, StreamState.Started, StreamState.Paused].includes(streamState);
+    return [StreamState.preparing, StreamState.started, StreamState.paused].includes(streamState);
   }
 } 
 
-export type StreamSateType = 'Waiting' | 'Preparing' | 'Started' | 'Stopped' | 'Paused';
+export type StreamSateType = 'waiting' | 'preparing' | 'Started' | 'Stopped' | 'Paused';
 
 export interface StreamDto {
   id: number;
@@ -36,7 +36,7 @@ export interface StreamDto {
   logo: string | null;
   starttime: StringDateTime | null;
   live: boolean;
-  state: StreamState; // ['Waiting', 'Preparing', 'Started', 'Stopped', 'Paused']
+  state: StreamState; // ['waiting', 'Preparing', 'Started', 'Stopped', 'Paused']
   started: StringDateTime | null; // Date | null;
   stopped: StringDateTime | null; // Date | null;
   // status: bool,
@@ -88,7 +88,7 @@ export class StreamDtoUtil {
       live: (streamDto?.live || false),
       started: (streamDto?.started || null),
       stopped: (streamDto?.stopped || null),
-      state: (streamDto?.state || StreamState.Waiting),
+      state: (streamDto?.state || StreamState.waiting),
       tags: (streamDto?.tags || []),
       source: (streamDto?.source || 'obs'),
       isMyStream: (streamDto?.isMyStream),

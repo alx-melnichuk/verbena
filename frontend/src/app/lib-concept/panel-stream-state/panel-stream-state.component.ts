@@ -3,15 +3,9 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateService } from '@ngx-translate/core';
-import { HtmlElemUtil } from 'src/app/utils/html-elem.util';
 
-export enum StreamStatus {
-  Waiting = 'Waiting',
-  Preparing = 'Preparing',
-  Started = 'Started',
-  Stopped = 'Stopped',
-  Paused = 'Paused'
-}
+import { StreamState } from 'src/app/lib-stream/stream-api.interface';
+import { HtmlElemUtil } from 'src/app/utils/html-elem.util';
 
 const ATTR_STATE = 'state';
 
@@ -27,12 +21,10 @@ const ATTR_STATE = 'state';
 })
 export class PanelStreamStateComponent implements OnChanges, OnInit {
   @Input()
-  public streamState: string | null | undefined = null;
+  public streamState: StreamState | null | undefined = null;
 
   public valueText: string | null = null;
   
-  private innStreamStatus: StreamStatus = StreamStatus.Waiting;
-
   constructor(
     private renderer: Renderer2,
     public hostRef: ElementRef<HTMLElement>,
@@ -42,9 +34,9 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['streamState']) {
-      this.innStreamStatus = this.createStreamStatus(this.streamState);
-      HtmlElemUtil.setAttr(this.renderer, this.hostRef, ATTR_STATE, this.innStreamStatus);
-      this.valueText = this.getValueText(this.innStreamStatus);
+      const streamState = this.streamState || StreamState.waiting;
+      HtmlElemUtil.setAttr(this.renderer, this.hostRef, ATTR_STATE, streamState);
+      this.valueText = this.getValueText(streamState);
     }
   }
 
@@ -53,27 +45,16 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
 
   // ** Private API **
 
-  private createStreamStatus(value: string | null | undefined): StreamStatus {
-    let result: StreamStatus = StreamStatus.Waiting;
-    switch (value) {
-      case StreamStatus.Waiting: result = StreamStatus.Waiting; break;
-      case StreamStatus.Preparing: result = StreamStatus.Preparing; break;
-      case StreamStatus.Started: result = StreamStatus.Started; break;
-      case StreamStatus.Stopped: result = StreamStatus.Stopped; break;
-      case StreamStatus.Paused: result = StreamStatus.Paused; break;
-    }
-    return result;
+  private isActive(streamStatus: StreamState): boolean {
+    return [StreamState.preparing, StreamState.started, StreamState.paused].includes(streamStatus);
   }
-  private isActive(streamStatus: StreamStatus): boolean {
-    return [StreamStatus.Preparing, StreamStatus.Started, StreamStatus.Paused].includes(streamStatus);
-  }
-  private getValueText(streamState: StreamStatus): string {
+  private getValueText(streamState: StreamState): string {
     let res = '';
     switch (streamState) {
-      case StreamStatus.Waiting: res = 'stream_state.has_not_started'; break;
-      case StreamStatus.Preparing: res = 'stream_state.has_not_started'; break;
-      case StreamStatus.Paused: res = 'stream_state.has_paused'; break;
-      case StreamStatus.Stopped: res = 'stream_state.has_ended'; break;
+      case StreamState.waiting: res = 'stream_state.has_not_started'; break;
+      case StreamState.preparing: res = 'stream_state.has_not_started'; break;
+      case StreamState.paused: res = 'stream_state.has_paused'; break;
+      case StreamState.stopped: res = 'stream_state.has_ended'; break;
     }
     return (!!res ? this.translateService.instant(res): '');
   }
