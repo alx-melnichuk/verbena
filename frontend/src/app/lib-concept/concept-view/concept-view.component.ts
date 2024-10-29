@@ -168,10 +168,10 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
   // "Panel stream info Owner"
 
   public doActionPrepare(streamId: number): void {
-    this.toggleStreamState(streamId, StreamState.Preparing);
+    this.toggleStreamState(streamId, StreamState.preparing);
   }
   public doActionStart(streamId: number): void {
-    this.toggleStreamState(streamId, StreamState.Started);
+    this.toggleStreamState(streamId, StreamState.started);
   }
   public doActionStop(streamId: number): void {
     // if (!streamId || !this.streamDto) {
@@ -183,12 +183,15 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
     //   .then((response) => {
     //     if (!!response) {
         //   this.changeDetectorRef.markForCheck();
-          this.toggleStreamState(streamId, StreamState.Stopped);
+          this.toggleStreamState(streamId, StreamState.stopped);
     //     }
     //   });
   }
   public doActionPause(streamId: number): void {
-    this.toggleStreamState(streamId, StreamState.Paused);
+    this.toggleStreamState(streamId, StreamState.paused);
+  }
+  public doChangeState(streamState: StreamState): void {
+    console.log(`doChangeState(streamState: ${streamState})`); // #
   }
 
   // Chat
@@ -349,7 +352,7 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
       // const src: string | null = streamDto.publicTarget;
       // this.millicastViewer = (!!src ? ({ src } as MillicastViewerPrm) : null);
       // this.isEditableChat = StreamStateUtil.isActive(streamDto.state);
-      this.starttimeValue = (streamDto.state === StreamState.Started ? streamDto.starttime : null);
+      this.starttimeValue = (streamDto.state === StreamState.started ? streamDto.starttime : null);
       this.setBroadcastDuration();
     }
   }

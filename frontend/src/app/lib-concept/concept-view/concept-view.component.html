@@ -47,14 +47,17 @@
   <ng-template #templateIsOwner>
     <div class="cv-stream-info">
       <app-panel-stream-admin
-        [streamDto]="streamDto"
+        streamDto9="streamDto"
         countOfViewer9="socketService.countOfViewer$ | async"
         [countOfViewer]="0"
-        [broadcastDuration]="broadcastDuration"
-        (actionPrepare)="doActionPrepare($event)"
-        (actionStart)="doActionStart($event)"
-        (actionStop)="doActionStop($event)"
-        (actionPause)="doActionPause($event)">
+        [streamState]="streamDto?.state"
+        [streamTitle]="streamDto?.title"
+        broadcastDuration9="broadcastDuration"
+        actionPrepare9="doActionPrepare($event)"
+        actionStart9="doActionStart($event)"
+        actionStop9="doActionStop($event)"
+        actionPause9="doActionPause($event)"
+        (changeState)="doChangeState($event)">
       </app-panel-stream-admin>
     </div>    
   </ng-template>
