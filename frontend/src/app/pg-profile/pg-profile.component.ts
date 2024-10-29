@@ -60,15 +60,15 @@ export class PgProfileComponent {
     this.profileService.modifyProfile(obj.modifyProfile, obj.avatarFile)
       .then((response: ProfileDto | HttpErrorResponse | undefined) => {
         if (response == null) {
-          this.errMsgsProfile = [this.translate.instant('profile.error_editing_profile')];
+          this.errMsgsProfile = [this.translate.instant('panel-profile.error_editing_profile')];
         } else {
           this.profileDto = response as ProfileDto;
           this.profileService.setProfileDto({...this.profileDto});
           this.initializationService.setTheme(this.profileService.profileDto?.theme, this.renderer);
           this.initializationService.setLocale(this.profileDto.locale)
           .finally(() => {
-            const title = this.translate.instant('profile.dialog_title_editing');
-            const message = this.translate.instant('profile.dialog_message_editing');
+            const title = this.translate.instant('panel-profile.dialog_title_editing');
+            const message = this.translate.instant('panel-profile.dialog_message_editing');
             this.dialogService.openConfirmation(message, title, { btnNameAccept: 'buttons.ok' }, { maxWidth: '40vw' });
           });
         }          
@@ -92,12 +92,12 @@ export class PgProfileComponent {
     this.profileService.newPassword(newPasswordProfile)
       .then((response: ProfileDto | HttpErrorResponse | undefined) => {
         if (!response) {
-          this.errMsgsPassword = [this.translate.instant('profile.error_update_password', { nickname: this.profileDto.nickname })];
+          this.errMsgsPassword = [this.translate.instant('panel-profile.error_update_password', { nickname: this.profileDto.nickname })];
         } else {
           this.profileDto = response as ProfileDto;
           this.profileService.setProfileDto({...this.profileDto});
-          const title = this.translate.instant('profile.dialog_title_password');
-          const message = this.translate.instant('profile.dialog_message_password');
+          const title = this.translate.instant('panel-profile.dialog_title_password');
+          const message = this.translate.instant('panel-profile.dialog_message_password');
           this.dialogService.openConfirmation(message, title, { btnNameAccept: 'buttons.ok' }, { maxWidth: '40vw' });
         }
       })
@@ -118,10 +118,10 @@ export class PgProfileComponent {
     .then((response: ProfileDto | HttpErrorResponse | undefined) => {
         const nickname = this.profileDto.nickname;
         if (!response) {
-          this.errMsgsAccount = [this.translate.instant('profile.error_delete_account', { nickname })];
+          this.errMsgsAccount = [this.translate.instant('panel-profile.error_delete_account', { nickname })];
         } else {
-          const title = this.translate.instant('profile.dialog_title_delete');
-          const message = this.translate.instant('profile.dialog_message_delete', { nickname });
+          const title = this.translate.instant('panel-profile.dialog_title_delete');
+          const message = this.translate.instant('panel-profile.dialog_message_delete', { nickname });
           this.dialogService.openConfirmation(message, title, { btnNameAccept: 'buttons.ok' }, { maxWidth: '40vw' })
           .finally(() => {
             // Closing the session.
