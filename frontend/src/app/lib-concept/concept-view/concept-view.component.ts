@@ -21,6 +21,7 @@ import { PanelStreamAdminComponent } from '../panel-stream-admin/panel-stream-ad
 
 @Component({
   selector: 'app-concept-view',
+  exportAs: 'appConceptView',
   standalone: true,
   imports: [CommonModule, TranslateModule, SpinnerComponent, SidebarComponent, 
     PanelStreamStateComponent, PanelStreamAdminComponent],

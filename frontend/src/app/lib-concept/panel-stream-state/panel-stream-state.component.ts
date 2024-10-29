@@ -17,6 +17,7 @@ const ATTR_STATE = 'state';
 
 @Component({
   selector: 'app-panel-stream-state',
+  exportAs: 'appPanelStreamState',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './panel-stream-state.component.html',

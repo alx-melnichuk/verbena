@@ -16,6 +16,7 @@ import { THEME_DARK, THEME_LIGHT } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-header',
+  exportAs: 'appHeader',
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive, TranslateModule, MainMenuComponent],
   templateUrl: './header.component.html',

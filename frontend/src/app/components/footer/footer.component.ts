@@ -7,6 +7,7 @@ import { ROUTE_LOGIN } from 'src/app/common/routes';
 
 @Component({
   selector: 'app-footer',
+  exportAs: 'appFooter',
   standalone: true,
   imports: [CommonModule, RouterLink, TranslateModule],
   templateUrl: './footer.component.html',

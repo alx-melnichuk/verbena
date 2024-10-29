@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-concept-list',
+  exportAs: 'appConceptList',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './concept-list.component.html',

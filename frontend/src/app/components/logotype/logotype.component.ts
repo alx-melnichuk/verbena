@@ -4,6 +4,7 @@ import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-logotype',
+  exportAs: 'appLogotype',
   standalone: true,
   imports: [CommonModule, TranslateModule],
   templateUrl: './logotype.component.html',

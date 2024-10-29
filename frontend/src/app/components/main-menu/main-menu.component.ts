@@ -16,6 +16,7 @@ import { LOCALE_DE_DE, LOCALE_EN_US, LOCALE_NOTHING, LOCALE_UK, THEME_DARK, THEM
 
 @Component({
   selector: 'app-main-menu',
+  exportAs: 'appMainMenu',
   standalone: true,
   imports: [CommonModule, FormsModule, MatMenuModule, MatButtonModule, MatSlideToggleModule, TranslateModule,  RouterLink],
   templateUrl: './main-menu.component.html',

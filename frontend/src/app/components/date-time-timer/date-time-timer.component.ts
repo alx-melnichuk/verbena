@@ -17,6 +17,7 @@ const CSS_SECONDS = '--dtt-seconds';
 
 @Component({
   selector: 'app-date-time-timer',
+  exportAs: 'appDateTimeTimer',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './date-time-timer.component.html',

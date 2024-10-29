@@ -12,6 +12,7 @@ import { StreamDto, StreamState } from 'src/app/lib-stream/stream-api.interface'
 
 @Component({
   selector: 'app-panel-stream-admin',
+  exportAs: 'appPanelStreamAdmin',
   standalone: true,
   imports: [CommonModule, MatButtonModule, MatTooltipModule, TranslateModule, 
     DateTimeTimerComponent
