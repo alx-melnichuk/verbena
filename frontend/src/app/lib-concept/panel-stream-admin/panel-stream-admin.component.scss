@@ -33,7 +33,10 @@ app-panel-stream-admin {
     //   height: 12px;
     //   background-image: url('/assets/icons/clock.svg');
     // }
-  
+    .psa-timer {
+      width: 9ch;
+    }
+
     // Block "Actions"
     .psa-actions {
       display: flex;

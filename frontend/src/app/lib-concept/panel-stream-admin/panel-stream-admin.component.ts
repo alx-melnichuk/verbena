@@ -8,7 +8,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { DateTimeTimerComponent } from 'src/app/components/date-time-timer/date-time-timer.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
-import { StreamDto, StreamState } from 'src/app/lib-stream/stream-api.interface';
+import { StreamState } from 'src/app/lib-stream/stream-api.interface';
 
 @Component({
   selector: 'app-panel-stream-admin',
@@ -24,27 +24,23 @@ import { StreamDto, StreamState } from 'src/app/lib-stream/stream-api.interface'
 })
 export class PanelStreamAdminComponent implements OnChanges, OnInit {
   @Input()
-  public streamDto: StreamDto | null = null;
-  @Input()
   public countOfViewer: number | null = null;
   @Input()
-  public broadcastDuration: string | null = null;
+  public streamState: StreamState | null | undefined;
+  @Input()
+  public streamTitle: string | null | undefined;
 
   @Output()
-  readonly actionPrepare: EventEmitter<number> = new EventEmitter();
-  @Output()
-  readonly actionStart: EventEmitter<number> = new EventEmitter();
-  @Output()
-  readonly actionStop: EventEmitter<number> = new EventEmitter();
-  @Output()
-  readonly actionPause: EventEmitter<number> = new EventEmitter();
+  readonly changeState: EventEmitter<StreamState> = new EventEmitter();
 
-  public futureDate: Date;
+  public statePaused = StreamState.paused;
+  public statePreparing = StreamState.preparing;
+  public stateStarted = StreamState.started;
+
   constructor(
     private translateService: TranslateService,
     private dialogService: DialogService,
   ) {
-    this.futureDate = new Date('2024-10-31T22:10:00');
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -58,21 +54,22 @@ export class PanelStreamAdminComponent implements OnChanges, OnInit {
 
   // ** Public API **
 
-  public isBntPrepare(state: StreamState | undefined): boolean {
-    const streamSate: StreamState = (state || StreamState.Waiting);
-    return [StreamState.Waiting, StreamState.Stopped].includes(streamSate);
+  public isBntPrepare(streamState: StreamState | null | undefined): boolean {
+    const streamState2: StreamState = (streamState || StreamState.waiting);
+    console.log(`isBntPrepare(${streamState})=`, [StreamState.waiting, StreamState.stopped].includes(streamState2)); // #
+    return [StreamState.waiting, StreamState.stopped].includes(streamState2);
   }
-  public isBntStart(state: StreamState | undefined): boolean {
-    const streamSate: StreamState = (state || StreamState.Waiting);
-    return [StreamState.Preparing, StreamState.Paused].includes(streamSate);
+  public isBntStart(streamState: StreamState | null | undefined): boolean {
+    const streamSate: StreamState = (streamState || StreamState.waiting);
+    return [StreamState.preparing, StreamState.paused].includes(streamSate);
   }
-  public isBntPause(state: StreamState | undefined): boolean {
-    const streamSate: StreamState = (state || StreamState.Waiting);
-    return [StreamState.Started].includes(streamSate);
+  public isBntPause(streamState: StreamState | null | undefined): boolean {
+    const streamSate: StreamState = (streamState || StreamState.waiting);
+    return [StreamState.started].includes(streamSate);
   }
-  public isBtnStop(state: StreamState | undefined): boolean {
-    const streamSate: StreamState = (state || StreamState.Waiting);
-    return [StreamState.Preparing, StreamState.Started, StreamState.Paused].includes(streamSate);
+  public isBtnStop(streamState: StreamState | null | undefined): boolean {
+    const streamSate: StreamState = (streamState || StreamState.waiting);
+    return [StreamState.preparing, StreamState.started, StreamState.paused].includes(streamSate);
   }
 
   /*public doSettings(credentials: Credentials | null): void {
@@ -83,32 +80,21 @@ export class PanelStreamAdminComponent implements OnChanges, OnInit {
     };
     this.dialogService.openComponent(SettingsComponent, dataParams);
   }*/
-  public doActionPrepare(): void {
-    if (!!this.streamDto?.id) {
-      this.actionPrepare.emit(this.streamDto.id);
+  public doChangeState(newStreamState: StreamState): void {
+    if (this.streamState != null) {
+      this.changeState.emit(newStreamState);
     }
   }
-  public doActionStart(): void {
-    if (!!this.streamDto?.id) {
-      this.actionStart.emit(this.streamDto.id);
-    }
-  }
-  public doActionStop(): void {
-    if (!!this.streamDto?.id) {
-      const streamId = this.streamDto.id;
-      const message = this.translateService.instant('panel-stream-admin.sure_you_want_stop_stream', { title: this.streamDto.title });
+  public doChangeOnStateStopped(): void {
+    if (this.streamState != null) {
+      const message = this.translateService.instant('panel-stream-admin.sure_you_want_stop_stream', { title: this.streamTitle });
       const params = { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' };
       this.dialogService.openConfirmation(message, '', params)
         .then((response) => {
           if (!!response) {
-            this.actionStop.emit(streamId);
+            this.doChangeState(StreamState.stopped);
           }
         });
-    }
-  }
-  public doActionPause(): void {
-    if (!!this.streamDto?.id) {
-      this.actionPause.emit(this.streamDto.id);
     }
   }
 
