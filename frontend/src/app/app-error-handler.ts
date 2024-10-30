@@ -6,9 +6,7 @@ export class AppErrorHandler implements ErrorHandler {
   public handleError(error: any): void {
     const chunkFailedMessage = /Loading chunk [\d]+ failed/;
     if (chunkFailedMessage.test(error.message)) {
-      if (confirm('New version available. Load New Version?')) {
-        window.location.reload();
-      }
+      window.location.reload();
     }
   }
 }
