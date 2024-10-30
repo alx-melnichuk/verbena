@@ -122,6 +122,10 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
 
     // this.getFollowersAndPopular();
     this.streamDto = this.route.snapshot.data['streamDto'];
+    // #if (this.streamDto != null) { // #
+    // #  this.streamDto.state = StreamState.started; // #
+    // #  this.streamDto.starttime = "2024-10-29T16:34:00.000Z";
+    // #} // #
   }
 
   // To disable the jumping effect of the "stream-video" panel at startup.
@@ -167,6 +171,9 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
 
   // "Panel stream info Owner"
 
+  public getDate(starttime: StringDateTime | null | undefined): Date | null {
+    return StringDateTimeUtil.toDate(starttime);
+  }
   public doActionPrepare(streamId: number): void {
     this.toggleStreamState(streamId, StreamState.preparing);
   }
