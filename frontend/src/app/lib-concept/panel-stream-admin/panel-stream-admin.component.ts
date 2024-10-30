@@ -26,9 +26,11 @@ export class PanelStreamAdminComponent implements OnChanges, OnInit {
   @Input()
   public countOfViewer: number | null = null;
   @Input()
-  public streamState: StreamState | null | undefined;
+  public state: StreamState | null | undefined;
   @Input()
-  public streamTitle: string | null | undefined;
+  public startDate: Date | null | undefined;
+  @Input()
+  public title: string | null | undefined;
 
   @Output()
   readonly changeState: EventEmitter<StreamState> = new EventEmitter();
@@ -54,22 +56,25 @@ export class PanelStreamAdminComponent implements OnChanges, OnInit {
 
   // ** Public API **
 
-  public isBntPrepare(streamState: StreamState | null | undefined): boolean {
-    const streamState2: StreamState = (streamState || StreamState.waiting);
-    console.log(`isBntPrepare(${streamState})=`, [StreamState.waiting, StreamState.stopped].includes(streamState2)); // #
-    return [StreamState.waiting, StreamState.stopped].includes(streamState2);
+  public isShowTimer(state: StreamState | null | undefined): boolean {
+    const state2: StreamState = (state || StreamState.waiting);
+    return [StreamState.preparing, StreamState.started].includes(state2);
   }
-  public isBntStart(streamState: StreamState | null | undefined): boolean {
-    const streamSate: StreamState = (streamState || StreamState.waiting);
-    return [StreamState.preparing, StreamState.paused].includes(streamSate);
+  public isShowBntPrepare(state: StreamState | null | undefined): boolean {
+    const state2: StreamState = (state || StreamState.waiting);
+    return [StreamState.waiting, StreamState.stopped].includes(state2);
   }
-  public isBntPause(streamState: StreamState | null | undefined): boolean {
-    const streamSate: StreamState = (streamState || StreamState.waiting);
-    return [StreamState.started].includes(streamSate);
+  public isShowBntStart(state: StreamState | null | undefined): boolean {
+    const state2: StreamState = (state || StreamState.waiting);
+    return [StreamState.preparing, StreamState.paused].includes(state2);
   }
-  public isBtnStop(streamState: StreamState | null | undefined): boolean {
-    const streamSate: StreamState = (streamState || StreamState.waiting);
-    return [StreamState.preparing, StreamState.started, StreamState.paused].includes(streamSate);
+  public isShowBntPause(state: StreamState | null | undefined): boolean {
+    const state2: StreamState = (state || StreamState.waiting);
+    return [StreamState.started].includes(state2);
+  }
+  public isBtnStop(state: StreamState | null | undefined): boolean {
+    const state2: StreamState = (state || StreamState.waiting);
+    return [StreamState.preparing, StreamState.started, StreamState.paused].includes(state2);
   }
 
   /*public doSettings(credentials: Credentials | null): void {
@@ -80,14 +85,14 @@ export class PanelStreamAdminComponent implements OnChanges, OnInit {
     };
     this.dialogService.openComponent(SettingsComponent, dataParams);
   }*/
-  public doChangeState(newStreamState: StreamState): void {
-    if (this.streamState != null) {
-      this.changeState.emit(newStreamState);
+  public doChangeState(newtate: StreamState): void {
+    if (this.state != null) {
+      this.changeState.emit(newtate);
     }
   }
   public doChangeOnStateStopped(): void {
-    if (this.streamState != null) {
-      const message = this.translateService.instant('panel-stream-admin.sure_you_want_stop_stream', { title: this.streamTitle });
+    if (this.state != null) {
+      const message = this.translateService.instant('panel-stream-admin.sure_you_want_stop_stream', { title: this.title });
       const params = { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' };
       this.dialogService.openConfirmation(message, '', params)
         .then((response) => {

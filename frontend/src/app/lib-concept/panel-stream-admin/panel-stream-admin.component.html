@@ -7,11 +7,13 @@
       <div class="psa-info-text">{{ broadcastDuration }}</div>
     </ng-container> -->
     <div class="psa-timer">
-      <app-date-time-timer *ngIf="streamState == stateStarted" [isActive]="true"></app-date-time-timer>
+      <app-date-time-timer *ngIf="isShowTimer(state)"
+        [isActive]="true" [startDate]="startDate">
+      </app-date-time-timer>
     </div>
   </div>
   <div class="psa-name-label">
-    <span>{{ streamTitle }}</span>
+    <span>{{ title }}</span>
   </div>
 </div>
 
@@ -29,14 +31,14 @@
 
   </div>
   <div class="psa-box-right">
-    <ng-container *ngIf="isBntPrepare(streamState)">
+    <ng-container *ngIf="isShowBntPrepare(state)">
       <button type="button" mat-stroked-button (click)="doChangeState(statePreparing)"
         class="smd-button slim mat-elevation-z btn-orange">
         <span>{{ 'panel-stream-admin.prepare' | translate }}</span>
       </button>
     </ng-container>
 
-    <ng-container *ngIf="isBntStart(streamState)">
+    <ng-container *ngIf="isShowBntStart(state)">
       <button type="button" mat-stroked-button (click)="doChangeState(stateStarted)"
         class="smd-button slim mat-elevation-z btn-orange">
         <span class="icon streaming"></span>
@@ -44,7 +46,7 @@
       </button>
     </ng-container>
 
-    <ng-container *ngIf="isBntPause(streamState)">
+    <ng-container *ngIf="isShowBntPause(state)">
       <button type="button" mat-stroked-button color="warn" (click)="doChangeState(statePaused)"
         class="smd-button slim mat-elevation-z"
         [matTooltip]="'panel-stream-admin.pause' | translate"
@@ -53,7 +55,7 @@
       </button>
     </ng-container>
 
-    <ng-container *ngIf="isBtnStop(streamState)">
+    <ng-container *ngIf="isBtnStop(state)">
       <button type="button" mat-stroked-button color="warn" (click)="doChangeOnStateStopped()"
         class="smd-button slim mat-elevation-z">
         <span class="icon streaming"></span>
