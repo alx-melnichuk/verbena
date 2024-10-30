@@ -307,25 +307,28 @@
     "title_profile": "Personal information",
     "label_avatar": "Avatar",
     "descript": "Description",
-
     "btn_save_profile": "Save",
-    "error_editing_profile": "Error editing profile.",
-    "dialog_title_editing": "Profile change operation.",
-    "dialog_message_editing": "The profile change operation has been completed successfully !",
  
     "title_change_password": "Change password",
     "current_password": "Current Password",
     "new_password": "New password",
     "btn_set_password": "Set password",
-    "error_update_password": "Error setting new password. Record \"{{nickname}}\" not found.",
-    "dialog_title_password": "Password change operation.",
-    "dialog_message_password": "The password change operation was completed successfully !",
     
     "title_delete_account": "Delete your account",
     "note_before_deleting_account": "You will lose all data and content from this account, such as emails, files and photos. This data can no longer be restored.",
     "dialog_title_question_account": "Delete your account",
     "dialog_message_question_account": "Are you sure you want to delete your account \"{{nickname}}\" on the \"{{appName}}\" website ?",
-    "btn_delete_account": "Delete account",
+    "btn_delete_account": "Delete account"
+  },
+  "pg-profile": {
+    "error_editing_profile": "Error editing profile.",
+    "dialog_title_editing": "Profile change operation.",
+    "dialog_message_editing": "The profile change operation has been completed successfully !",
+
+    "error_update_password": "Error setting new password. Record \"{{nickname}}\" not found.",
+    "dialog_title_password": "Password change operation.",
+    "dialog_message_password": "The password change operation was completed successfully !",
+
     "error_delete_account": "Error deleting account. Record \"{{nickname}}\" not found.",
     "dialog_title_delete": "Account deletion operation.",
     "dialog_message_delete": "The operation to delete account \"{{nickname}}\" has been successfully completed !"

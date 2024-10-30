@@ -108,30 +108,33 @@
     "title_profile": "Persönliche informationen",
     "label_avatar": "Avatar",
     "descript": "Beschreibung",
-
     "btn_save_profile": "Speichern",
-    "error_editing_profile": "Fehler beim Bearbeiten des Profils.",
-    "dialog_title_editing": "Profiländerungs vorgang.",
-    "dialog_message_editing": "Der Profiländerungs vorgang wurde erfolgreich abgeschlossen!",
  
     "title_change_password": "Kennwort ändern",
     "current_password": "Aktuelles Passwort",
     "new_password": "Neues Passwort",
     "btn_set_password": "Passwort festlegen",
-    "error_update_password": "Fehler beim Festlegen des neuen Passworts. Datensatz \"{{nickname}}\" nicht gefunden.",
-    "dialog_title_password": "Vorgang zum Ändern des Passworts.",
-    "dialog_message_password": "Der Vorgang zur Passwortänderung wurde erfolgreich abgeschlossen!",
     
     "title_delete_account": "Löschen Sie Ihr Konto",
     "note_before_deleting_account": "Dabei gehen sämtliche Daten und Inhalte dieses Accounts, wie E-Mails, Dateien und Fotos verloren. Diese Daten können nicht mehr wiederhergestellt werden.",
     "dialog_title_question_account": "Löschen Sie Ihr Konto",
     "dialog_message_question_account": "Möchten Sie Ihr Konto \"{{nickname}}\" auf der Website \"{{appName}}\" wirklich löschen?",
-    "btn_delete_account": "Konto löschen",
+    "btn_delete_account": "Konto löschen"
+  },
+  "pg-profile": {
+    "error_editing_profile": "Fehler beim Bearbeiten des Profils.",
+    "dialog_title_editing": "Profiländerungs vorgang.",
+    "dialog_message_editing": "Der Profiländerungs vorgang wurde erfolgreich abgeschlossen!",
+
+    "error_update_password": "Fehler beim Festlegen des neuen Passworts. Datensatz \"{{nickname}}\" nicht gefunden.",
+    "dialog_title_password": "Vorgang zum Ändern des Passworts.",
+    "dialog_message_password": "Der Vorgang zur Passwortänderung wurde erfolgreich abgeschlossen!",
+
     "error_delete_account": "Fehler beim Löschen des Kontos. Datensatz \"{{nickname}}\" nicht gefunden.",
     "dialog_title_delete": "Konto löschvorgang.",
     "dialog_message_delete": "Der Vorgang zum Löschen des Kontos \"{{nickname}}\" wurde erfolgreich abgeschlossen!"
   },
-  "stream_state_de": {
+  "stream_state": {
     "has_not_started": "Die Übertragung hat noch nicht begonnen.",
     "has_paused": "Die Übertragung wurde pausiert.",
     "has_ended": "Die Übertragung ist bereits beendet.",
