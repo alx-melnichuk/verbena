@@ -139,7 +139,6 @@ export class PanelProfileComponent implements OnInit, OnChanges {
         this.changeDetector.markForCheck();
       }
     }
-    // this.errMsgsProfile=['test demo error1, test demo error2, test demo error3, test demo error4, test demo error5, test demo error6']
   }
 
   // ** Public API **
