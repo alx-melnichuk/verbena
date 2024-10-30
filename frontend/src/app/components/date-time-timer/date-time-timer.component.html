@@ -1,17 +1,10 @@
-<ng-container *ngIf="startDate != null">
+<ng-container *ngIf="!isHideDays && days > 0">
   <span dtt-days class="dtt-days"></span>
-  <span>
-  {{ innLabelDays }}
-  </span>
+  <span dtt-label-days class="dtt-label-days">{{ innLabelDays }}</span>
 </ng-container>
 <div dtt-box dtt-hr class="dtt-hours"></div>
-<span class="dtt-separator">
-:
-</span>
+<span dtt-spr class="dtt-separator">:</span>
 <div dtt-box dtt-min class="dtt-minutes"></div>
-<span class="dtt-separator">
-:
-</span>
+<span dtt-spr class="dtt-separator">:</span>
 <div dtt-box dtt-sec class="dtt-seconds">
 </div>
-

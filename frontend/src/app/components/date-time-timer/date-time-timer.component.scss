@@ -2,6 +2,7 @@
 
 app-date-time-timer {
   display: block;
+  container: cnt-d-t-timer / inline-size;
   letter-spacing: var(--dtt-letter-spacing, 0px);
 
   & > [dtt-box] {
@@ -10,11 +11,20 @@ app-date-time-timer {
     overflow: hidden;
     width: calc(2ch + 3 * var(--dtt-letter-spacing, 0px));
   }
+  & > [dtt-spr] {
+    padding: 0px 0.25em;
+  }
 
   & > [dtt-days]::after {
     counter-reset: dtt-days-cnr var(--dtt-days);
     content: counter(dtt-days-cnr);
   }
+  & > [dtt-label-days] {
+    display: inline-block;
+    min-width: 6ch;
+    padding: 0px 0.25em;
+  }
+
   & > [dtt-hr]::after {
     counter-reset: dtt-hours-cnr var(--dtt-hours);
     content: var(--dtt-leading-zero, '0') counter(dtt-hours-cnr);
@@ -46,66 +56,66 @@ app-date-time-timer {
   &:not([is-custom-animat]) {
     @keyframes anm-dtt-seconds { // 60s
         0%     {  }
-        2.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min( 1, var(--dtt-max-seconds))); }
-        3.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min( 2, var(--dtt-max-seconds))); }
-        5.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min( 3, var(--dtt-max-seconds))); }
-        7.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min( 4, var(--dtt-max-seconds))); }
-        8.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min( 5, var(--dtt-max-seconds))); }
-       10.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min( 6, var(--dtt-max-seconds))); }
-       12.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min( 7, var(--dtt-max-seconds))); }
-       13.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min( 8, var(--dtt-max-seconds))); }
-       15.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min( 9, var(--dtt-max-seconds))); }
-       17.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(10, var(--dtt-max-seconds))); }
-       18.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(11, var(--dtt-max-seconds))); }
-       20.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(12, var(--dtt-max-seconds))); }
-       22.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(13, var(--dtt-max-seconds))); }
-       23.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(14, var(--dtt-max-seconds))); }
-       25.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(15, var(--dtt-max-seconds))); }
-       27.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(16, var(--dtt-max-seconds))); }
-       28.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(17, var(--dtt-max-seconds))); }
-       30.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(18, var(--dtt-max-seconds))); }
-       32.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(19, var(--dtt-max-seconds))); }
-       33.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(20, var(--dtt-max-seconds))); }
-       35.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(21, var(--dtt-max-seconds))); }
-       37.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(22, var(--dtt-max-seconds))); }
-       38.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(23, var(--dtt-max-seconds))); }
-       40.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(24, var(--dtt-max-seconds))); }
-       42.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(25, var(--dtt-max-seconds))); }
-       43.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(26, var(--dtt-max-seconds))); }
-       45.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(27, var(--dtt-max-seconds))); }
-       47.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(28, var(--dtt-max-seconds))); }
-       48.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(29, var(--dtt-max-seconds))); }
-       50.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(30, var(--dtt-max-seconds))); }
-       52.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(31, var(--dtt-max-seconds))); }
-       53.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(32, var(--dtt-max-seconds))); }
-       55.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(33, var(--dtt-max-seconds))); }
-       57.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(34, var(--dtt-max-seconds))); }
-       58.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(35, var(--dtt-max-seconds))); }
-       60.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(36, var(--dtt-max-seconds))); }
-       62.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(37, var(--dtt-max-seconds))); }
-       63.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(38, var(--dtt-max-seconds))); }
-       65.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(39, var(--dtt-max-seconds))); }
-       67.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(40, var(--dtt-max-seconds))); }
-       68.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(41, var(--dtt-max-seconds))); }
-       70.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(42, var(--dtt-max-seconds))); }
-       72.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(43, var(--dtt-max-seconds))); }
-       73.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(44, var(--dtt-max-seconds))); }
-       75.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(45, var(--dtt-max-seconds))); }
-       77.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(46, var(--dtt-max-seconds))); }
-       78.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(47, var(--dtt-max-seconds))); }
-       80.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(48, var(--dtt-max-seconds))); }
-       82.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(49, var(--dtt-max-seconds))); }
-       83.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(50, var(--dtt-max-seconds))); }
-       85.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(51, var(--dtt-max-seconds))); }
-       87.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(52, var(--dtt-max-seconds))); }
-       88.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(53, var(--dtt-max-seconds))); }
-       90.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(54, var(--dtt-max-seconds))); }
-       92.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(55, var(--dtt-max-seconds))); }
-       93.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(56, var(--dtt-max-seconds))); }
-       95.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(57, var(--dtt-max-seconds))); }
-       97.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(58, var(--dtt-max-seconds))); }
-       98.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(59, var(--dtt-max-seconds))); }
-      100%     { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-rate, 1) * min(59, var(--dtt-max-seconds))); }
+        2.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min( 1, var(--dtt-max-seconds))); }
+        3.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min( 2, var(--dtt-max-seconds))); }
+        5.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min( 3, var(--dtt-max-seconds))); }
+        7.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min( 4, var(--dtt-max-seconds))); }
+        8.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min( 5, var(--dtt-max-seconds))); }
+       10.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min( 6, var(--dtt-max-seconds))); }
+       12.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min( 7, var(--dtt-max-seconds))); }
+       13.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min( 8, var(--dtt-max-seconds))); }
+       15.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min( 9, var(--dtt-max-seconds))); }
+       17.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(10, var(--dtt-max-seconds))); }
+       18.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(11, var(--dtt-max-seconds))); }
+       20.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(12, var(--dtt-max-seconds))); }
+       22.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(13, var(--dtt-max-seconds))); }
+       23.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(14, var(--dtt-max-seconds))); }
+       25.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(15, var(--dtt-max-seconds))); }
+       27.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(16, var(--dtt-max-seconds))); }
+       28.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(17, var(--dtt-max-seconds))); }
+       30.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(18, var(--dtt-max-seconds))); }
+       32.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(19, var(--dtt-max-seconds))); }
+       33.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(20, var(--dtt-max-seconds))); }
+       35.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(21, var(--dtt-max-seconds))); }
+       37.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(22, var(--dtt-max-seconds))); }
+       38.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(23, var(--dtt-max-seconds))); }
+       40.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(24, var(--dtt-max-seconds))); }
+       42.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(25, var(--dtt-max-seconds))); }
+       43.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(26, var(--dtt-max-seconds))); }
+       45.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(27, var(--dtt-max-seconds))); }
+       47.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(28, var(--dtt-max-seconds))); }
+       48.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(29, var(--dtt-max-seconds))); }
+       50.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(30, var(--dtt-max-seconds))); }
+       52.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(31, var(--dtt-max-seconds))); }
+       53.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(32, var(--dtt-max-seconds))); }
+       55.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(33, var(--dtt-max-seconds))); }
+       57.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(34, var(--dtt-max-seconds))); }
+       58.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(35, var(--dtt-max-seconds))); }
+       60.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(36, var(--dtt-max-seconds))); }
+       62.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(37, var(--dtt-max-seconds))); }
+       63.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(38, var(--dtt-max-seconds))); }
+       65.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(39, var(--dtt-max-seconds))); }
+       67.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(40, var(--dtt-max-seconds))); }
+       68.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(41, var(--dtt-max-seconds))); }
+       70.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(42, var(--dtt-max-seconds))); }
+       72.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(43, var(--dtt-max-seconds))); }
+       73.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(44, var(--dtt-max-seconds))); }
+       75.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(45, var(--dtt-max-seconds))); }
+       77.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(46, var(--dtt-max-seconds))); }
+       78.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(47, var(--dtt-max-seconds))); }
+       80.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(48, var(--dtt-max-seconds))); }
+       82.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(49, var(--dtt-max-seconds))); }
+       83.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(50, var(--dtt-max-seconds))); }
+       85.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(51, var(--dtt-max-seconds))); }
+       87.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(52, var(--dtt-max-seconds))); }
+       88.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(53, var(--dtt-max-seconds))); }
+       90.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(54, var(--dtt-max-seconds))); }
+       92.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(55, var(--dtt-max-seconds))); }
+       93.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(56, var(--dtt-max-seconds))); }
+       95.500% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(57, var(--dtt-max-seconds))); }
+       97.167% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(58, var(--dtt-max-seconds))); }
+       98.833% { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(59, var(--dtt-max-seconds))); }
+      100%     { counter-set: dtt-seconds-cnr calc(var(--dtt-seconds) + var(--dtt-increment) * min(59, var(--dtt-max-seconds))); }
     }
   }
 }
