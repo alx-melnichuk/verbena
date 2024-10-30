@@ -22,12 +22,14 @@ app-confirmation {
     z-index: 1;
   }
 
-  .dc-content {
-    font-size: medium;
-    font-style: normal;
+  .mdc-dialog__content.dc-content {
+    padding-bottom: 0.5em;
+    padding-top: 1em;
   }
 
-  .dc-actions {
+  .mdc-dialog__actions.dc-actions {
     justify-content: center;
+    padding-bottom: 1em;
+    padding-top: 0.5em;
   }
 }
