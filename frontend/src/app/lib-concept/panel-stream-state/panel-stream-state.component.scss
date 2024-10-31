@@ -24,19 +24,19 @@ app-panel-stream-state {
     justify-content: center;
   } 
    
-  .pss-image {
+  .pss-icon {
     color: var(--pss-icon-cl);
     background-color: currentColor;
     display: inline-block;
-    height: var(---pss-image-wd);
-    width: var(---pss-image-wd);
+    height: var(---pss-icon-wd);
+    mask-size: cover;
+    width: var(---pss-icon-wd);
   }
   
-  &[state="stopped"] .pss-image { mask-image: url('/assets/icons/panel-stream-state/has-ended-bin.svg'); }
-  &[state="waiting" ] .pss-image { mask-image: url('/assets/icons/panel-stream-state/has-not-started-bin.svg'); }
-  &[state="preparing" ] .pss-image { mask-image: url('/assets/icons/panel-stream-state/has-not-started-bin.svg'); }
-  &[state="paused" ] .pss-image { mask-image: url('/assets/icons/panel-stream-state/has-paused-bin.svg'); }
-  &[state] .pss-image { mask-repeat: no-repeat; }
+  &[state="stopped"] .pss-icon { mask-image: url('/assets/icons/panel-stream-state/has-ended-bin.svg'); }
+  &[state="waiting" ] .pss-icon { mask-image: url('/assets/icons/panel-stream-state/has-not-started-bin.svg'); }
+  &[state="preparing" ] .pss-icon { mask-image: url('/assets/icons/panel-stream-state/has-not-started-bin.svg'); }
+  &[state="paused" ] .pss-icon { mask-image: url('/assets/icons/panel-stream-state/has-paused-bin.svg'); }
   
   .pss-text {
     font-size: var(---pss-text-fn-sz);
@@ -48,15 +48,15 @@ app-panel-stream-state {
   }
 
   @container cnt-state (width <= 768px) {
-    .pss-image { ---pss-image-wd: min(30vh, 30vw); }
+    .pss-icon { ---pss-icon-wd: min(30vh, 30vw); }
     .pss-text { ---pss-text-fn-sz: min(2.5em, 11vh); } // 36.8px
   }
   @container cnt-state (768px < width <= 1024px) {
-    .pss-image { ---pss-image-wd: min(25vh, 25vw); }
+    .pss-icon { ---pss-icon-wd: min(25vh, 25vw); }
     .pss-text { ---pss-text-fn-sz: 3.5em; } // 56px
   }
   @container cnt-state (1024px < width) {
-    .pss-image { ---pss-image-wd: min(23vh, 23vw); }
+    .pss-icon { ---pss-icon-wd: min(23vh, 23vw); }
     .pss-text { ---pss-text-fn-sz: 4em; } // 64px
   }
 }
