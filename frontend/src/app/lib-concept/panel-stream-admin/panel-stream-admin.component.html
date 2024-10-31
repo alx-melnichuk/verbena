@@ -18,48 +18,51 @@
 </div>
 
 <div class="psa-actions">
-  <div class="psa-box-left">
-    <!-- <ng-container *ngIf="!!streamDto?.credentials">
-      <button type="button" mat-button color="accent" (click)="doSettings(streamDto?.credentials || null)"
-        class="mat-stroked-button smd-button slim mat-elevation-z">
-        <span class="icon settings"></span>
-        <span>{{ 'panel-stream-admin.btn_settings' | translate }}</span>
-      </button>
-    </ng-container> -->
-  </div>
-  <div class="psa-box-middle">
 
+  <div class="psa-box-left">
+    <button *ngIf="isShowSettings()"
+      type="button" mat-stroked-button click9="doSettings(streamDto?.credentials || null)"
+      class="psa-pd-lf-0_25">
+      <span class="psa-icon settings"></span>
+      <span class="psa-vert psa-pd-lf-0_25">{{ 'panel-stream-admin.btn_settings' | translate }}</span>
+    </button>
   </div>
+
+  <div class="psa-box-middle">
+  </div>
+
   <div class="psa-box-right">
     <ng-container *ngIf="isShowBntPrepare(state)">
       <button type="button" mat-stroked-button (click)="doChangeState(statePreparing)"
-        class="smd-button slim mat-elevation-z btn-orange">
-        <span>{{ 'panel-stream-admin.prepare' | translate }}</span>
+        class="psa-pd-lf-0_25 btn-orange">
+        <span class="psa-icon prepare"></span>
+        <span class="psa-vert"> Prepare
+            <!-- {{ 'panel-stream-admin.prepare' | translate }} -->
+        </span>
       </button>
     </ng-container>
 
     <ng-container *ngIf="isShowBntStart(state)">
       <button type="button" mat-stroked-button (click)="doChangeState(stateStarted)"
-        class="smd-button slim mat-elevation-z btn-orange">
-        <span class="icon streaming"></span>
-        <span>{{ 'panel-stream-admin.go_live' | translate }}</span>
+        class="psa-pd-lf-0_25 btn-orange">
+        <span class="psa-icon play"></span>
+        <span class="psa-vert">{{ 'panel-stream-admin.go_live_stream' | translate }}</span>
       </button>
     </ng-container>
 
     <ng-container *ngIf="isShowBntPause(state)">
       <button type="button" mat-stroked-button color="warn" (click)="doChangeState(statePaused)"
-        class="smd-button slim mat-elevation-z"
-        [matTooltip]="'panel-stream-admin.pause' | translate"
-        matTooltipPosition="above">
-        <span class="icon no-indent pause"></span>
+        class="psa-pd-lf-0_25">
+        <span class="psa-icon pause"></span>
+        <span class="psa-vert">{{ 'panel-stream-admin.pause_stream' | translate }}</span>
       </button>
     </ng-container>
 
     <ng-container *ngIf="isBtnStop(state)">
       <button type="button" mat-stroked-button color="warn" (click)="doChangeOnStateStopped()"
-        class="smd-button slim mat-elevation-z">
-        <span class="icon streaming"></span>
-        <span>{{ 'panel-stream-admin.stop_stream' | translate }}</span>
+        class="psa-mr-lf-0_5 psa-pd-lf-0_25">
+        <span class="psa-icon stop"></span>
+        <span class="psa-vert">{{ 'panel-stream-admin.stop_stream' | translate }}</span>
       </button>
     </ng-container>
   </div>

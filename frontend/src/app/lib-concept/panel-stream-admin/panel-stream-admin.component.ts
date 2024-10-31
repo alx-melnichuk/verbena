@@ -3,7 +3,6 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { DateTimeTimerComponent } from 'src/app/components/date-time-timer/date-time-timer.component';
@@ -14,7 +13,7 @@ import { StreamState } from 'src/app/lib-stream/stream-api.interface';
   selector: 'app-panel-stream-admin',
   exportAs: 'appPanelStreamAdmin',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTooltipModule, TranslateModule, 
+  imports: [CommonModule, MatButtonModule, TranslateModule, 
     DateTimeTimerComponent
   ],
   templateUrl: './panel-stream-admin.component.html',
@@ -56,6 +55,9 @@ export class PanelStreamAdminComponent implements OnChanges, OnInit {
 
   // ** Public API **
 
+  public isShowSettings(): boolean {
+    return true; // !!this.streamDto?.credentials
+  }
   public isShowTimer(state: StreamState | null | undefined): boolean {
     const state2: StreamState = (state || StreamState.waiting);
     return [StreamState.preparing, StreamState.started].includes(state2);
@@ -77,6 +79,8 @@ export class PanelStreamAdminComponent implements OnChanges, OnInit {
     return [StreamState.preparing, StreamState.started, StreamState.paused].includes(state2);
   }
 
+  public doSettings(): void {
+  }
   /*public doSettings(credentials: Credentials | null): void {
     if (!credentials || !credentials.rtmpPublishPath) { return; }
     const dataParams: SettingsData = {
