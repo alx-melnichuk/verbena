@@ -144,41 +144,9 @@ pub fn validate_role(value: &str) -> Result<(), ValidationError> {
 
 // * * * * Section: "database". * * * *
 
-// ** Table: "profiles" **
-
-/*#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable, Insertable, AsChangeset)]
-#[diesel(table_name = schema::profiles)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct ProfileTbl {
-    pub user_id: i32,
-    // Link to user avatar, optional
-    pub avatar: Option<String>, // min_len=2 max_len=255 Nullable
-    // User description.
-    pub descript: String, // type: Text default ""
-    // Default color theme. ["light","dark"]
-    pub theme: String, // min_len=2 max_len=32 default "light"
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}*/
-
-pub const PROFILE_DESCRIPT_DEF: &str = "";
 pub const PROFILE_THEME_LIGHT_DEF: &str = "light";
 pub const PROFILE_THEME_DARK: &str = "dark";
 pub const PROFILE_LOCALE_DEF: &str = "default";
-
-/*impl ProfileTbl {
-    pub fn new(user_id: i32, avatar: Option<&str>, descript: Option<&str>, theme: Option<&str>) -> ProfileTbl {
-        let now = Utc::now();
-        ProfileTbl {
-            user_id,
-            avatar: avatar.map(|v| v.to_string()),
-            descript: descript.unwrap_or(PROFILE_DESCRIPT_DEF).to_string(),
-            theme: theme.unwrap_or(PROFILE_THEME_LIGHT_DEF).to_string(),
-            created_at: now.clone(),
-            updated_at: now.clone(),
-        }
-    }
-}*/
 
 // * * * * Section: models for "ProfileOrm". * * * *
 
