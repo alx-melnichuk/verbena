@@ -429,7 +429,6 @@ pub mod impls {
                 };
 
                 let opt_stream = res_stream?;
-                // let opt_stream = res_stream_info.map_err(|e| format!("delete_stream: {}", e.to_string()))?;
 
                 if let Some(stream) = opt_stream {
                     let stream_id = stream.id;
