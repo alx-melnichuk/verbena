@@ -12,6 +12,8 @@ html {
   font-family: Roboto, 'Helvetica Neue', sans-serif;
   height: 100%;
   line-height: 1.5;
+  scrollbar-width: thin;
+  scrollbar-color: var(--thumbBG) var(--scrollbarBG);
 }
 body {
   height: 100%;
