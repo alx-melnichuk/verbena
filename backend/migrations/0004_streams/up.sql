@@ -5,9 +5,9 @@
     preparing - stream is preparing (is live),
     started - stream has started (is live),
     paused - stream is paused (is live),
-    disabled - stream is disabled
+    stopped - stream is stopped
  */
-CREATE TYPE stream_state AS ENUM ('waiting', 'preparing', 'started', 'paused', 'disabled');
+CREATE TYPE stream_state AS ENUM ('waiting', 'preparing', 'started', 'paused', 'stopped');
 
 /* Create "streams" table. */
 CREATE TABLE streams (
@@ -24,7 +24,7 @@ CREATE TABLE streams (
     starttime TIMESTAMP WITH TIME ZONE NOT NULL,
     /* Stream live status, false means inactive */
     live BOOLEAN NOT NULL DEFAULT FALSE,
-    /* Stream live state - waiting (default), preparing, start, paused, disabled. */
+    /* Stream live state - waiting (default), preparing, start, paused, stopped. */
     "state" stream_state DEFAULT 'waiting' NOT NULL,
     /* Time when stream was started */
     "started" TIMESTAMP WITH TIME ZONE NULL,
