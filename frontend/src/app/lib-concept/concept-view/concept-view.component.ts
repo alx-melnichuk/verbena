@@ -13,7 +13,8 @@ import { SpinnerComponent      } from 'src/app/components/spinner/spinner.compon
 import { ConfirmationData      } from 'src/app/lib-dialog/confirmation/confirmation.component';
 import { DialogService         } from 'src/app/lib-dialog/dialog.service';
 import { ProfileService        } from 'src/app/lib-profile/profile.service';
-import { StreamDto, StreamState, StreamStateUtil } from 'src/app/lib-stream/stream-api.interface';
+import { StreamService         } from 'src/app/lib-stream/stream.service';
+import { StreamDto, StreamState } from 'src/app/lib-stream/stream-api.interface';
 import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
 
 import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-state.component';
@@ -92,7 +93,7 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
     private translateService: TranslateService,
     public initializationService: InitializationService,
     private dialogService: DialogService,
-    // private streamService: StreamService,
+    private streamService: StreamService,
     // public socketService: SocketService,
     // public firebaseService: FirebaseService,
     // public streamInfoService: StreamInfoService,
@@ -156,31 +157,24 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
 
   // ** Public API **
 
-  // "panel-stream-state" ("Stream video")
-
-  public classNameViewerSize(): string {
-    const isMiniLeft = this.isMiniSidebarLeft;
-    return (!isMiniLeft && !this.isMiniSidebarRight ? 'size1' : (isMiniLeft && this.isMiniSidebarRight ? 'size3' : 'size2'));
-  }
-
-  // "Panel stream info"
+  // Section: "Panel stream info"
 
   public doActionSubscribe(isSubscribe: boolean): void {
     this.actionSubscribe.emit(isSubscribe);
   }
 
-  // "Panel stream info Owner"
+  // Section: "app-panel-stream-admin"
 
   public getDate(starttime: StringDateTime | null | undefined): Date | null {
     return StringDateTimeUtil.toDate(starttime);
   }
-  public doActionPrepare(streamId: number): void {
-    this.toggleStreamState(streamId, StreamState.preparing);
-  }
-  public doActionStart(streamId: number): void {
-    this.toggleStreamState(streamId, StreamState.started);
-  }
-  public doActionStop(streamId: number): void {
+  // public doActionPrepare(streamId: number): void {
+  //   this.toggleStreamState(streamId, StreamState.preparing);
+  // }
+  // public doActionStart(streamId: number): void {
+  //   this.toggleStreamState(streamId, StreamState.started);
+  // }
+  // public doActionStop(streamId: number): void {
     // if (!streamId || !this.streamDto) {
     //   return;
     // }
@@ -190,18 +184,19 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
     //   .then((response) => {
     //     if (!!response) {
         //   this.changeDetectorRef.markForCheck();
-          this.toggleStreamState(streamId, StreamState.stopped);
+  //         this.toggleStreamState(streamId, StreamState.stopped);
     //     }
     //   });
-  }
-  public doActionPause(streamId: number): void {
-    this.toggleStreamState(streamId, StreamState.paused);
-  }
-  public doChangeState(streamState: StreamState): void {
-    console.log(`doChangeState(streamState: ${streamState})`); // #
+  // }
+  // public doActionPause(streamId: number): void {
+  //   this.toggleStreamState(streamId, StreamState.paused);
+  // }
+  public doChangeState(newState: StreamState): void {
+    // console.log(`doChangeState(newState: ${newState})`) // #
+    this.toggleStreamState(this.streamDto?.id || null, newState);
   }
 
-  // Chat
+  // Section: "Chat"
 
   public doSendMessage(newMessage: string): void {
     if (!!newMessage) {
@@ -229,7 +224,7 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
 
   // ** Private API **
 
-  // "Followers And Popular"
+  // Section: "Followers And Popular"
 
   private getFollowersAndPopular(): Promise<any/*ExtendedUserDTO*/[] | HttpErrorResponse> {
     return Promise.reject('Error19');
@@ -283,34 +278,29 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
 
   // Stream for Owner
 
-  private toggleStreamState(streamId: number, streamState: StreamState): void {
-    /*if (!!streamId && this.isStreamOwner) {
-      this.streamStateService.toggleStreamState(streamId, streamState)
+  private toggleStreamState(streamId: number | null, streamState: StreamState): void {
+    if (!!streamId && this.isStreamOwner) {
+      /*this.streamService.toggleStreamState(streamId, streamState)
         .then((response: StreamDto | StreamSetStateForbbidenDTO | HttpErrorResponse) => {
-
           if (response.hasOwnProperty('streamId') && response.hasOwnProperty('forbidden')) {
             const streamSetStateForbbidenDTO = (response as StreamSetStateForbbidenDTO);
             const link = this.streamService.getLinkForVisitors(streamSetStateForbbidenDTO.streamId, false);
             const name = streamSetStateForbbidenDTO.streamTitle;
+            
             const confirmationData: ConfirmationData = {
-              title: 'stream_info.cannot_start_stream',
               messageHtml: this.translateService.instant('stream_info.cannot_start_stream_message', { link, name }),
-              btnNameAccept: 'buttons.ok'
             };
-            this.dialogService.openConfirmationExt(confirmationData);
-
-            const message = this.translateService.instant('my_streams.sure_you_want_stop_stream', { title: this.streamDto.title });
-            const params = { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' };
-            this.dialogService.openConfirmation(message, '', params)
-        
-            this.dialogService.openConfirmation(null, );
+            // this.dialogService.openConfirmationExt(confirmationData);
+            const title = this.translateService.instant('stream_info.cannot_start_stream');
+            const params = { btnNameCancel: null, btnNameAccept: 'buttons.ok' };
+            this.dialogService.openConfirmation('', title, params,{ data: confirmationData })
           } else {
             this.streamDto = (response as StreamDto);
             this.updateViewByStreamStatus(this.streamDto);
           }
         })
-        .finally(() => this.changeDetectorRef.markForCheck());
-    }*/
+        .finally(() => this.changeDetectorRef.markForCheck());*/
+    }
   }
 
   // Stream for Reviewer
