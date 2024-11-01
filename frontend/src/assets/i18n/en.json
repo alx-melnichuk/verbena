@@ -345,7 +345,7 @@
   "panel-stream-admin": {
     "sure_you_want_stop_stream": "Are you sure you want to stop the stream \"{{title}}\" ?",
     "btn_settings": "Settings",
-    "prepare": "Streaming Studio",
+    "prepare_stream": "Prepare",
     "go_live_stream": "Go live",
     "pause_stream": "Pause",
     "stop_stream": "Stop",
