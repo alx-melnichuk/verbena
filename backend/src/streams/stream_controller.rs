@@ -19,7 +19,9 @@ use crate::streams::stream_orm::impls::StreamOrmApp;
 use crate::streams::stream_orm::tests::StreamOrmApp;
 use crate::streams::{
     config_strm,
-    stream_models::{self, CreateStreamInfoDto, ModifyStream, ModifyStreamInfoDto, StreamInfoDto},
+    stream_models::{
+        self, CreateStreamInfoDto, ModifyStream, ModifyStreamInfoDto, StreamInfoDto, ToggleStreamStateDto,
+    },
     stream_orm::StreamOrm,
 };
 use crate::users::user_models::UserRole;
@@ -641,6 +643,23 @@ pub async fn put_stream(
         Ok(HttpResponse::NoContent().finish()) // 204        
     }
 }
+
+// PUT /api/streams/toggle/{id}
+//#[rustfmt::skip]
+//#[put("/api/streams/toggle/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+/*pub async fn put_toggle_state(
+    authenticated: Authenticated,
+    stream_orm: web::Data<StreamOrmApp>,
+    request: actix_web::HttpRequest,
+    json_body: web::Json<ToggleStreamStateDto>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let profile = authenticated.deref();
+    let profile_id = profile.user_id;
+
+    let toggle_stream_state: ToggleStreamStateDto = json_body.into_inner();
+
+
+}*/
 
 /// delete_stream
 ///

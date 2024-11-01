@@ -494,6 +494,14 @@ impl Into<ModifyStream> for ModifyStreamInfoDto {
     }
 }
 
+// **  Section: table "streams" toggle state **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ToggleStreamStateDto {
+    pub state: StreamState,
+}
+
 // **  Section: table "stream_tags" receiving data **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable, QueryableByName)]
