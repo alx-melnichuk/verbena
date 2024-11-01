@@ -6,8 +6,8 @@ export enum StreamState {
   waiting = 'waiting',
   preparing = 'preparing',
   started = 'started',
-  stopped = 'stopped',
-  paused = 'paused'
+  paused = 'paused',
+  stopped = 'stopped'
 }
 export class StreamStateUtil {
   public static create(value: string): StreamState | null {
@@ -26,7 +26,7 @@ export class StreamStateUtil {
   }
 } 
 
-export type StreamSateType = 'waiting' | 'preparing' | 'started' | 'stopped' | 'paused';
+export type StreamSateType = 'waiting' | 'preparing' | 'started' | 'paused' | 'stopped';
 
 export interface StreamDto {
   id: number;
@@ -36,7 +36,7 @@ export interface StreamDto {
   logo: string | null;
   starttime: StringDateTime | null;
   live: boolean;
-  state: StreamState; // ['waiting', 'preparing', 'started', 'stopped', 'paused']
+  state: StreamState; // ['waiting', 'preparing', 'started', 'paused', 'stopped']
   started: StringDateTime | null; // Date | null;
   stopped: StringDateTime | null; // Date | null;
   // status: bool,
