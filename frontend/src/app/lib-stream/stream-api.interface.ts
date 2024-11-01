@@ -26,7 +26,7 @@ export class StreamStateUtil {
   }
 } 
 
-export type StreamSateType = 'waiting' | 'preparing' | 'Started' | 'Stopped' | 'Paused';
+export type StreamSateType = 'waiting' | 'preparing' | 'started' | 'stopped' | 'paused';
 
 export interface StreamDto {
   id: number;
@@ -36,7 +36,7 @@ export interface StreamDto {
   logo: string | null;
   starttime: StringDateTime | null;
   live: boolean;
-  state: StreamState; // ['waiting', 'Preparing', 'Started', 'Stopped', 'Paused']
+  state: StreamState; // ['waiting', 'preparing', 'started', 'stopped', 'paused']
   started: StringDateTime | null; // Date | null;
   stopped: StringDateTime | null; // Date | null;
   // status: bool,
@@ -48,33 +48,6 @@ export interface StreamDto {
   createdAt: StringDateTime;
   updatedAt: StringDateTime;
 } 
-
-/*pub struct StreamInfoDto {
-    pub id: i32,
-    pub user_id: i32,
-    pub title: String,
-    pub descript: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub logo: Option<String>,
-    #[serde(with = "serial_datetime")]
-    pub starttime: DateTime<Utc>,
-    pub live: bool,
-    pub state: StreamState,
-    #[rustfmt::skip]
-    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
-    pub started: Option<DateTime<Utc>>,
-    #[rustfmt::skip]
-    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
-    pub stopped: Option<DateTime<Utc>>,
-    pub status: bool,
-    pub source: String,
-    pub tags: Vec<String>,
-    pub is_my_stream: bool,
-    #[serde(with = "serial_datetime")]
-    pub created_at: DateTime<Utc>,
-    #[serde(with = "serial_datetime")]
-    pub updated_at: DateTime<Utc>,
-}*/
 
 export class StreamDtoUtil {
   public static create(streamDto?: Partial<StreamDto>): StreamDto {
@@ -113,13 +86,6 @@ export interface StreamListDto {
   page: number;
   pages: number;
 }
-/*pub struct SearchStreamInfoResponseDto {
-    pub list: Vec<StreamInfoDto, Global>,
-    pub limit: u32,
-    pub count: u32,
-    pub page: u32,
-    pub pages: u32,
-}*/
 
 export interface StreamEventDto {
   id: number;

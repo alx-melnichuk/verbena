@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 
 import { StreamApiService } from './stream-api.service';
 import {
-  SearchStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto, SearchStreamsPeriodDto, StreamsPeriodDto,UpdateStreamFileDto
+  SearchStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto, SearchStreamsPeriodDto, StreamsPeriodDto,UpdateStreamFileDto, StreamState
 } from './stream-api.interface';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Uri } from '../common/uri';
@@ -92,15 +92,14 @@ export class StreamService {
   }
 
   /** Change state stream */
-  /*public toggleStreamState(
-    streamId: string, streamState: StreamState
-  ): Promise<StreamDTO | StreamSetStateForbbidenDTO | HttpErrorResponse> {
+  public toggleStreamState(
+    streamId: number, streamState: StreamState
+  ): Promise<StreamDto /*| StreamSetStateForbbidenDto*/ | HttpErrorResponse> {
     if (streamState === StreamState.waiting) {
       return Promise.reject();
     }
-    const streamStateStr: string = streamState.toString();
-    return this.streamApiService.toggleStreamState(streamId, { state: (streamStateStr as ToggleStreamState) });
-  }*/
+    return this.streamApiService.toggleStreamState(streamId, streamState);
+  }
 
   /** Add stream * @ files logo (jpg, png and gif only, 5MB) */
   public createStream(updateStreamFileDto: UpdateStreamFileDto): Promise<StreamDto | HttpErrorResponse | undefined> {

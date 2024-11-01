@@ -5,7 +5,7 @@ import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
 import {
   SearchStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto, SearchStreamsPeriodDto,
-  UpdateStreamFileDto
+  UpdateStreamFileDto, StreamState
 } from './stream-api.interface';
 import { StringDateTime } from '../common/string-date-time';
 import { HttpObservableUtil } from '../utils/http-observable.util';
@@ -93,12 +93,12 @@ constructor(private http: HttpClient) {
    * @ required streamId
    * @ access protected
    */
-   /*public toggleStreamState(
-     streamId: string, data: ToggleStreamStateDTO
-   ): Promise<StreamDTO | StreamSetStateForbbidenDTO | HttpErrorResponse> {
+   public toggleStreamState(
+     streamId: number, state: StreamState
+   ): Promise<StreamDto /*| StreamSetStateForbbidenDTO*/ | HttpErrorResponse> {
     const url = Uri.appUri(`appApi://streams/toggle/${streamId}`);
-    return HttpObservableUtil.toPromise<StreamDto>(this.http.put<StreamDTO | HttpErrorResponse>(url, data));
-  }*/
+    return HttpObservableUtil.toPromise<StreamDto>(this.http.put<StreamDto | HttpErrorResponse>(url, { state: state }));
+  }
 
   /** Add stream
    * @ route streams
