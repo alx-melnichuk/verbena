@@ -3,7 +3,7 @@
 @use '../../../styles-dimensions.scss' as dimensions;
 
 app-panel-stream-state {
-  &[state="Paused"] {
+  &[state="paused"] {
     ---pss-bg-tr_pr: transparent;
   }
 
@@ -13,10 +13,10 @@ app-panel-stream-state {
   height: 100%;
   overflow: hidden;
 
-  &[state="Started"] {
+  &[state="started"] {
     display: none;
   }
-  &:not([state="Started"]) {
+  &:not([state="started"]) {
     align-items: center;
     display: flex;
     flex-direction: column;
