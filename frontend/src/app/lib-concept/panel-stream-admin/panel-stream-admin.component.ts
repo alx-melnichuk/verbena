@@ -89,9 +89,9 @@ export class PanelStreamAdminComponent implements OnChanges, OnInit {
     };
     this.dialogService.openComponent(SettingsComponent, dataParams);
   }*/
-  public doChangeState(newtate: StreamState): void {
+  public doChangeState(newState: StreamState): void {
     if (this.state != null) {
-      this.changeState.emit(newtate);
+      this.changeState.emit(newState);
     }
   }
   public doChangeOnStateStopped(): void {
