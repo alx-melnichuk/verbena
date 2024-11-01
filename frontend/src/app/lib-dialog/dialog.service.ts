@@ -51,9 +51,11 @@ export class DialogService {
     dialogCfg.backdropClass = 'app-modal-backdrop';
     // Whether the user can use escape or clicking on the backdrop to close the modal. disableClose?: boolean;
     dialogCfg.disableClose = false;
-    dialogCfg.data = dataParams;
+    if (dataParams != null) {
+      dialogCfg.data = dataParams;
+    }
 
-    const dialogRef = this.dialog.open(ConfirmationComponent, dialogCfg);
+    const dialogRef = this.dialog.open(component, dialogCfg);
     // const answer = new Promise((resolve, reject) => {
     //   dialogRef.afterClosed().subscribe(result => {
     //     if (!!result) { resolve(result); } else { reject(); }
