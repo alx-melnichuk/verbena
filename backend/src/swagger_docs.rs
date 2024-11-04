@@ -31,6 +31,7 @@ use crate::{
         profile_registr_controller::clear_for_expired,
         stream_controller::post_stream,
         stream_controller::put_stream,
+        stream_controller::put_toggle_state,
         stream_controller::delete_stream,
         stream_get_controller::get_stream_by_id,
         stream_get_controller::get_streams,
@@ -72,6 +73,7 @@ use crate::{
             stream_models::StreamState, 
             stream_models::CreateStreamInfoDto, // ::post_stream
             stream_models::ModifyStreamInfoDto, // ::put_stream
+            stream_models::ToggleStreamStateDto, // ::put_toggle_state
         )
     ),
     tags(
