@@ -104,7 +104,7 @@ pub enum StreamState {
     Preparing, // (is live)
     Started,   // (is live)
     Paused,    // (is live)
-    Disabled,
+    Stopped,
 }
 
 impl fmt::Display for StreamState {
