@@ -181,11 +181,11 @@ pub struct CreateUserRecovery {
     pub final_date: DateTime<Utc>,
 }
 
-#[cfg(all(test, feature = "mockdata"))]
-pub struct UserModelsTest {}
+/*#[cfg(all(test, feature = "mockdata"))]*/
+/*pub struct UserModelsTest {}*/
 
-#[cfg(all(test, feature = "mockdata"))]
-impl UserModelsTest {
+/*#[cfg(all(test, feature = "mockdata"))]*/
+/*impl UserModelsTest {
     pub fn nickname_min() -> String {
         (0..(profile_models::NICKNAME_MIN - 1)).map(|_| 'a').collect()
     }
@@ -225,4 +225,4 @@ impl UserModelsTest {
     pub fn password_wrong() -> String {
         (0..(profile_models::PASSWORD_MIN)).map(|_| 'a').collect()
     }
-}
+}*/
