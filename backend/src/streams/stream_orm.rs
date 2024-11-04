@@ -7,18 +7,24 @@ use super::stream_models::{
 pub trait StreamOrm {
     /// Get an entity (stream) by ID.
     #[rustfmt::skip]
-    fn get_stream_by_id(&self, id: i32, opt_user_id: Option<i32>) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
+    fn get_stream_by_id(
+        &self, id: i32, opt_user_id: Option<i32>, is_tags: bool
+    ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
     /// Find for an entity (stream) by SearchStreamInfo.
-    fn find_streams(&self, search_stream: SearchStream) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String>;
+    /// #[rustfmt::skip]
+    fn find_streams(
+        &self,
+        search_stream: SearchStream,
+        is_tags: bool,
+    ) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String>;
     /// Find for an entity (stream event) by SearchStreamEvent.
     fn find_stream_events(&self, search_stream_event: SearchStreamEvent) -> Result<(u32, Vec<Stream>), String>;
     /// Find for an entity (stream period) by SearchStreamPeriod.
     fn find_streams_period(&self, search_stream_period: SearchStreamPeriod) -> Result<Vec<DateTime<Utc>>, String>;
     /// Add a new entity (stream).
+    #[rustfmt::skip]
     fn create_stream(
-        &self,
-        create_stream: CreateStream,
-        tags: &[String],
+        &self, create_stream: CreateStream, tags: &[String],
     ) -> Result<(Stream, Vec<StreamTagStreamId>), String>;
     /// Get the logo file name for an entity (stream) by ID.
     fn get_stream_logo_by_id(&self, id: i32) -> Result<Option<String>, String>;
@@ -128,7 +134,9 @@ pub mod impls {
     impl StreamOrm for StreamOrmApp {
         /// Get an entity (stream) by ID.
         #[rustfmt::skip]
-        fn get_stream_by_id(&self, id: i32, opt_user_id: Option<i32>) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
+        fn get_stream_by_id(
+            &self, id: i32, opt_user_id: Option<i32>, is_tags: bool,
+        ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -147,18 +155,21 @@ pub mod impls {
                 .map_err(|e| format!("find_stream_by_id: {}", e.to_string()))?;
 
             if let Some(stream) = opt_stream {
-                let stream_tags = self
-                    .get_stream_tags(&mut conn, &[stream.id])
-                    .map_err(|e| format!("get_stream_tags: {}", e.to_string()))?;
+                let stream_tags: Vec<StreamTagStreamId> = match is_tags {
+                    true => self
+                        .get_stream_tags(&mut conn, &[stream.id])
+                        .map_err(|e| format!("get_stream_tags: {}", e.to_string()))?,
+                    false => vec![],
+                };
                 Ok(Some((stream, stream_tags)))
             } else {
                 Ok(None)
             }
         }
         /// Find for an entity (stream) by SearchStream.
+        #[rustfmt::skip]
         fn find_streams(
-            &self,
-            search_stream: SearchStream,
+            &self, search_stream: SearchStream, is_tags: bool,
         ) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
@@ -232,10 +243,10 @@ pub mod impls {
             // lead time: 679.46µs
             // Get a list of "stream" identifiers.
             let ids: Vec<i32> = streams.iter().map(|stream| stream.id).collect();
-            let stream_tags = self
-                .get_stream_tags(&mut conn, &ids)
-                .map_err(|e| format!("get_stream_tags: {}", e.to_string()))?;
-
+            let stream_tags: Vec<StreamTagStreamId> = match is_tags {
+                true => self.get_stream_tags(&mut conn, &ids).map_err(|e| format!("get_stream_tags: {}", e.to_string()))?,
+                false => vec![],
+            };
             Ok((count, streams, stream_tags))
         }
 
@@ -594,7 +605,9 @@ pub mod tests {
     impl StreamOrm for StreamOrmApp {
         /// Get an entity (stream) by ID.
         #[rustfmt::skip]
-        fn get_stream_by_id(&self, id: i32, opt_user_id: Option<i32>) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
+        fn get_stream_by_id(
+            &self, id: i32, opt_user_id: Option<i32>, is_tags: bool
+        ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             let opt_stream_info = self
                 .stream_info_vec
                 .iter()
@@ -606,16 +619,19 @@ pub mod tests {
                 .map(|stream| stream.clone());
 
             if let Some(stream_info) = opt_stream_info {
-                let stream_tags = self.get_tags(&stream_info);
+                let stream_tags: Vec<StreamTagStreamId> = match is_tags {
+                    true => self.get_tags(&stream_info),
+                    false => vec![],
+                };
                 Ok(Some((Self::to_stream(&stream_info), stream_tags)))
             } else {
                 Ok(None)
             }
         }
         /// Find for an entity (stream) by SearchStreamInfoDto.
+        #[rustfmt::skip]
         fn find_streams(
-            &self,
-            search_stream: SearchStream,
+            &self, search_stream: SearchStream, is_tags: bool,
         ) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String> {
             let mut streams_info: Vec<StreamInfoDto> = vec![];
 
@@ -685,21 +701,22 @@ pub mod tests {
             });
 
             let count: u32 = amount.try_into().unwrap();
-
             let mut streams: Vec<Stream> = vec![];
             let mut stream_tags: Vec<StreamTagStreamId> = vec![];
             let mut tag_id = 0;
             for stream in streams_info.iter() {
                 streams.push(Self::to_stream(stream));
-                for tag in stream.tags.iter() {
-                    #[rustfmt::skip]
-                    stream_tags.push(StreamTagStreamId {
-                        stream_id: stream.id, id: tag_id, user_id: stream.user_id, name: tag.to_string()
-                    });
-                    tag_id += 1;
+                if is_tags {
+                    for tag in stream.tags.iter() {
+                        #[rustfmt::skip]
+                        stream_tags.push(StreamTagStreamId {
+                            stream_id: stream.id, id: tag_id, user_id: stream.user_id, name: tag.to_string()
+                        });
+                        tag_id += 1;
+                    }
                 }
             }
-
+            
             Ok((count, streams, stream_tags))
         }
         /// Find for an entity (stream event) by SearchStreamEvent.

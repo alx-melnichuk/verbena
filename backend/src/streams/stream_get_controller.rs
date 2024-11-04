@@ -91,7 +91,7 @@ pub async fn get_stream_by_id(
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
         log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
         AppError::range_not_satisfiable416(&message) // 416
     })?;
@@ -99,7 +99,7 @@ pub async fn get_stream_by_id(
     let res_data = web::block(move || {
         // Get 'stream' by id.
         let res_data =
-            stream_orm.get_stream_by_id(id, opt_user_id).map_err(|e| {
+            stream_orm.get_stream_by_id(id, opt_user_id, true).map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
@@ -224,7 +224,7 @@ pub async fn get_streams(
     let res_data = web::block(move || {
         // A query to obtain a list of "streams" based on the specified search parameters.
         let res_data =
-            stream_orm.find_streams(search_stream).map_err(|e| {
+            stream_orm.find_streams(search_stream, true).map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             });
@@ -662,7 +662,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
         #[rustfmt::skip]
-        let msg = format!("{}: `{}` - {} ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE, stream_id_bad);
+        let msg = format!("{}; `{}` - {} ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE, stream_id_bad);
         assert_eq!(app_err.message, msg);
     }
     #[actix_web::test]
