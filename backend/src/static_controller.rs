@@ -41,7 +41,7 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
     let app_domain = format!("<script>var APP_DOMAIN='{}';</script>", &config_app.app_domain );
     let body_str = body_str.replacen("<script>var APP_DOMAIN;</script>", &app_domain, 1);
 
-    let app_backend01 = "rustc v.1.80";
+    let app_backend01 = "rustc v.1.82";
     let app_backend02: Vec<&str> = vec![
         "actix = \"0.13.5\"",
         "actix-cors = \"0.7.0\"",
@@ -69,10 +69,10 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
         "regex = \"1.10.6\"",
         "serde = { version = \"1.0.204\", features = [\"derive\"] }",
         "serde_json = \"1.0.122\"",
-        "utoipa = { version = \"4.2.3\", features = [\"chrono\", \"actix_extras\"] }",
-        "utoipa-swagger-ui = { version = \"7.1.0\", features = [\"actix-web\"] }",
-        "utoipa-redoc = { version = \"4.0.0\", features = [\"actix-web\"] }",
-        "utoipa-rapidoc = { version = \"4.0.0\", features = [\"actix-web\"] }",
+        "utoipa = { version = \"5.2.0\", features = [\"chrono\", \"actix_extras\"] }",
+        "utoipa-swagger-ui = { version = \"8.0.3\", features = [\"actix-web\"] }",
+        "utoipa-redoc = { version = \"5.0.0\", features = [\"actix-web\"] }",
+        "utoipa-rapidoc = { version = \"5кгыес -.0.0\", features = [\"actix-web\"] }",
     ];
     let app_backend03: Vec<&str> = vec!["actix-multipart-test = \"0.0.3\""];
     let app_about_s = format!(
