@@ -98,8 +98,9 @@ pub async fn get_stream_by_id(
 
     let res_data = web::block(move || {
         // Get 'stream' by id.
-        let res_data =
-            stream_orm.get_stream_by_id(id, opt_user_id, true).map_err(|e| {
+        let res_data = stream_orm
+            .find_streams_by_params(Some(id), opt_user_id, None, true, Vec::<i32>::new())
+            .map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });

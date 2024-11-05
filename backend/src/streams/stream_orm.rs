@@ -5,17 +5,15 @@ use super::stream_models::{
 };
 
 pub trait StreamOrm {
-    /// Get an entity (stream) by ID.
+    /// Find an entity (stream) by parameters.
     #[rustfmt::skip]
-    fn get_stream_by_id(
-        &self, id: i32, opt_user_id: Option<i32>, is_tags: bool
+    fn find_streams_by_params(
+        &self, opt_id: Option<i32>, opt_user_id: Option<i32>, opt_live: Option<bool>, is_tags: bool, exclude_ids: Vec<i32>,
     ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
     /// Find for an entity (stream) by SearchStreamInfo.
-    /// #[rustfmt::skip]
+    #[rustfmt::skip]
     fn find_streams(
-        &self,
-        search_stream: SearchStream,
-        is_tags: bool,
+        &self, search_stream: SearchStream, is_tags: bool,
     ) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String>;
     /// Find for an entity (stream event) by SearchStreamEvent.
     fn find_stream_events(&self, search_stream_event: SearchStreamEvent) -> Result<(u32, Vec<Stream>), String>;
@@ -29,12 +27,9 @@ pub trait StreamOrm {
     /// Get the logo file name for an entity (stream) by ID.
     fn get_stream_logo_by_id(&self, id: i32) -> Result<Option<String>, String>;
     /// Modify an entity (stream).
+    #[rustfmt::skip]
     fn modify_stream(
-        &self,
-        id: i32,
-        opt_user_id: Option<i32>,
-        modify_stream: ModifyStream,
-        opt_tags: Option<Vec<String>>,
+        &self, id: i32, opt_user_id: Option<i32>, modify_stream: ModifyStream, opt_tags: Option<Vec<String>>,
     ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
     /// Delete an entity (stream).
     fn delete_stream(
@@ -132,27 +127,38 @@ pub mod impls {
     }
 
     impl StreamOrm for StreamOrmApp {
-        /// Get an entity (stream) by ID.
+        /// Find an entity (stream) by parameters.
         #[rustfmt::skip]
-        fn get_stream_by_id(
-            &self, id: i32, opt_user_id: Option<i32>, is_tags: bool,
+        fn find_streams_by_params(
+            &self, opt_id: Option<i32>, opt_user_id: Option<i32>, opt_live: Option<bool>, is_tags: bool, exclude_ids: Vec<i32>,
         ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
             let mut query_list = schema::streams::table.into_boxed();
-            // Find stream by id.
-            query_list = query_list.filter(streams_dsl::id.eq(id));
 
+            // Add search condition for the "id" field.
+            if let Some(id) = opt_id {
+                query_list = query_list.filter(streams_dsl::id.eq(id));
+            }
+            // Add search condition for the "user_id" field.
             if let Some(user_id) = opt_user_id {
-                // Find stream by id and user_id.
                 query_list = query_list.filter(streams_dsl::user_id.eq(user_id));
             }
+            // Add search condition for the "live" field.
+            if let Some(live) = opt_live {
+                query_list = query_list.filter(streams_dsl::live.eq(live));
+            }
+            // Add an exclusion condition for the specified IDs.
+            if exclude_ids.len() > 0 {
+                query_list = query_list.filter(streams_dsl::user_id.ne_all(exclude_ids));
+            }
+            
             // Run query using Diesel to find user by id (and user_id) and return it.
             let opt_stream = query_list
                 .first::<Stream>(&mut conn)
                 .optional()
-                .map_err(|e| format!("find_stream_by_id: {}", e.to_string()))?;
+                .map_err(|e| format!("find_streams_by_params: {}", e.to_string()))?;
 
             if let Some(stream) = opt_stream {
                 let stream_tags: Vec<StreamTagStreamId> = match is_tags {
@@ -166,6 +172,7 @@ pub mod impls {
                 Ok(None)
             }
         }
+
         /// Find for an entity (stream) by SearchStream.
         #[rustfmt::skip]
         fn find_streams(
@@ -331,10 +338,9 @@ pub mod impls {
         }
 
         /// Add a new entity (stream).
+        #[rustfmt::skip]
         fn create_stream(
-            &self,
-            create_stream: CreateStream,
-            tags: &[String],
+            &self, create_stream: CreateStream, tags: &[String],
         ) -> Result<(Stream, Vec<StreamTagStreamId>), String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
@@ -399,12 +405,9 @@ pub mod impls {
             }
         }
         /// Modify an entity (stream).
+        #[rustfmt::skip]
         fn modify_stream(
-            &self,
-            id: i32,
-            opt_user_id: Option<i32>,
-            modify_stream: ModifyStream,
-            opt_tags: Option<Vec<String>>,
+            &self, id: i32, opt_user_id: Option<i32>, modify_stream: ModifyStream, opt_tags: Option<Vec<String>>,
         ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
@@ -520,7 +523,7 @@ pub mod tests {
 
     use chrono::Duration;
 
-    use crate::streams::stream_models::{self, StreamInfoDto};
+    use crate::streams::stream_models::{self, StreamInfoDto, StreamState};
 
     use super::*;
 
@@ -603,18 +606,21 @@ pub mod tests {
     }
 
     impl StreamOrm for StreamOrmApp {
-        /// Get an entity (stream) by ID.
+        /// Find an entity (stream) by parameters.
         #[rustfmt::skip]
-        fn get_stream_by_id(
-            &self, id: i32, opt_user_id: Option<i32>, is_tags: bool
+        fn find_streams_by_params(
+            &self, opt_id: Option<i32>, opt_user_id: Option<i32>, opt_live: Option<bool>, is_tags: bool, exclude_ids: Vec<i32>,
         ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             let opt_stream_info = self
                 .stream_info_vec
                 .iter()
                 .find(|stream| {
-                    #[rustfmt::skip]
-                    let val_user_id = match opt_user_id { Some(v) => v, None => stream.user_id };
-                    stream.id == id && stream.user_id == val_user_id
+                    let check_id = if let Some(id) = opt_id { stream.id == id } else { true };
+                    let check_user_id = if let Some(user_id) = opt_user_id { stream.user_id == user_id } else { true };
+                    let check_live = if let Some(live) = opt_live { stream.live == live } else { true };
+                    let check_exclude_id = if exclude_ids.len() > 0 { !exclude_ids.contains(&stream.id) } else { true } ;
+                    
+                    check_id && check_user_id && check_live && check_exclude_id
                 })
                 .map(|stream| stream.clone());
 
@@ -628,6 +634,7 @@ pub mod tests {
                 Ok(None)
             }
         }
+
         /// Find for an entity (stream) by SearchStreamInfoDto.
         #[rustfmt::skip]
         fn find_streams(
@@ -790,10 +797,9 @@ pub mod tests {
             Ok(list)
         }
         /// Add a new entity (stream).
+        #[rustfmt::skip]
         fn create_stream(
-            &self,
-            create_stream: CreateStream,
-            tags: &[String],
+            &self, create_stream: CreateStream, tags: &[String],
         ) -> Result<(Stream, Vec<StreamTagStreamId>), String> {
             let len: i32 = self.stream_info_vec.len().try_into().unwrap(); // convert usize as i32
             let stream_saved = Stream::create(create_stream, STREAM_ID + len);
@@ -816,12 +822,9 @@ pub mod tests {
             }
         }
         /// Modify an entity (stream).
+        #[rustfmt::skip]
         fn modify_stream(
-            &self,
-            id: i32,
-            opt_user_id: Option<i32>,
-            modify_stream: ModifyStream,
-            opt_tags: Option<Vec<String>>,
+            &self, id: i32, opt_user_id: Option<i32>, modify_stream: ModifyStream, opt_tags: Option<Vec<String>>,
         ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             let opt_stream_info = if let Some(user_id) = opt_user_id {
                 self.stream_info_vec
@@ -837,18 +840,24 @@ pub mod tests {
 
             if let Some(stream_info) = opt_stream_info {
                 #[rustfmt::skip]
-                let logo = match modify_stream.logo { Some(logo) => logo, None => stream_info.logo };
+                let new_logo = match modify_stream.logo {
+                    Some(logo) => logo,
+                    None => stream_info.logo
+                };
+                let new_state = modify_stream.state.unwrap_or(stream_info.state.clone());
+                let new_live = vec![StreamState::Preparing, StreamState::Started, StreamState::Paused].contains(&new_state);
+                
                 let stream_saved = Stream {
                     id: stream_info.id,
                     user_id: stream_info.user_id,
                     title: modify_stream.title.unwrap_or(stream_info.title.to_string()),
                     descript: modify_stream.descript.unwrap_or(stream_info.descript.to_string()),
-                    logo,
+                    logo: new_logo,
                     starttime: modify_stream.starttime.unwrap_or(stream_info.starttime.clone()),
-                    live: stream_info.live,
-                    state: stream_info.state.clone(),
-                    started: stream_info.started.clone(),
-                    stopped: stream_info.stopped.clone(),
+                    live: new_live,
+                    state: new_state,
+                    started: modify_stream.started.unwrap_or(stream_info.started.clone()),
+                    stopped: modify_stream.stopped.unwrap_or(stream_info.stopped.clone()),
                     source: modify_stream.source.unwrap_or(stream_info.source.to_string()),
                     created_at: stream_info.created_at,
                     updated_at: Utc::now(),
