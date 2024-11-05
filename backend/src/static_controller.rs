@@ -72,7 +72,7 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
         "utoipa = { version = \"5.2.0\", features = [\"chrono\", \"actix_extras\"] }",
         "utoipa-swagger-ui = { version = \"8.0.3\", features = [\"actix-web\"] }",
         "utoipa-redoc = { version = \"5.0.0\", features = [\"actix-web\"] }",
-        "utoipa-rapidoc = { version = \"5кгыес -.0.0\", features = [\"actix-web\"] }",
+        "utoipa-rapidoc = { version = \"5.0.0\", features = [\"actix-web\"] }",
     ];
     let app_backend03: Vec<&str> = vec!["actix-multipart-test = \"0.0.3\""];
     let app_about_s = format!(
