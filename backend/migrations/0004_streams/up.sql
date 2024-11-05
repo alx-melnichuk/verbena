@@ -51,9 +51,16 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   NEW.live := NEW."state" IN ('preparing', 'started', 'paused');
+  IF NEW."state" = 'started' THEN
+    NEW.started := CURRENT_TIMESTAMP;
+  END IF;
+  IF NEW."state" = 'stopped' THEN
+    NEW.stopped := CURRENT_TIMESTAMP;
+  END IF;
   RETURN NEW;
 END;
 $$;
+
 /* Create trigger for table "streams". */
 CREATE OR REPLACE TRIGGER tr_before_insert_stream_set_live
 BEFORE INSERT ON streams
