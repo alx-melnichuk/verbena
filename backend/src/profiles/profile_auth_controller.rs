@@ -11,7 +11,7 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
-    profile_models::{self, LoginProfileDto, TokenDto},
+    profile_models::{self, LoginProfileDto, TokenDto, LoginProfileResponseDto, ProfileTokensDto},
     profile_err as p_err,
     profile_orm::ProfileOrm,
 };
