@@ -29,8 +29,6 @@ use crate::utils::parser;
 use crate::validators::{self, msg_validation, ValidationChecks, Validator};
 
 pub const ALIAS_LOGO_FILES_DIR: &str = "/logo";
-// 404 Not Found - Stream record not found.
-pub const MSG_STREAM_NOT_FOUND: &str = "stream_not_found";
 // 406 Not acceptable - Error deserializing field tag.
 pub const MSG_INVALID_FIELD_TAG: &str = "invalid_field_tag";
 // 406 Not acceptable - Not acceptable to go from old_state to new_state.
@@ -43,10 +41,10 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
         // POST /api/streams
         config
             .service(post_stream)
-            // PUT /api/streams/{id}
-            .service(put_stream)
             // PUT /api/streams/toggle/{id}
             .service(put_toggle_state)
+            // PUT /api/streams/{id}
+            .service(put_stream)
             // DELETE /api/streams/{id}
             .service(delete_stream);
     }
@@ -396,6 +394,208 @@ impl ModifyStreamForm {
     }
 }
 
+/// put_toggle_state
+///
+/// Update the stream state.
+///
+/// Request structure:
+/// ```text
+/// {
+///   state: StreamState,
+/// }
+/// ```
+/// The "StreamState" type accepts the following values: "waiting", "preparing", "started", "paused", "stopped".
+/// 
+/// The new "state" value must be different from the old value.
+/// 
+/// By default, the stream has the "waiting" state.
+/// In the "waiting" state, the stream is waiting for the broadcast start date and time.
+/// 
+/// From "waiting", the stream can be switched to the "preparing" state.
+/// In the "preparing" state, you can prepare for the start of the broadcast: select web cameras,
+/// microphone, check other settings.
+/// 
+/// From "preparing", the stream can be switched to the "started" state.
+/// In the "started" state, the stream is broadcast.
+/// 
+/// From "preparing", the stream can be switched to the "stopped" state.
+/// In the "stopped" state, the stream broadcast is stopped.
+/// 
+/// From "started", the stream can be switched to the "paused" state.
+/// In the "paused" state, the stream broadcast is temporarily stopped.
+/// 
+/// From "paused", the stream can be switched to the "started" state.
+/// 
+/// From "paused", the stream can be switched to the "stopped" state.
+/// 
+/// From "started" a stream can be moved to the "stopped" state.
+/// 
+/// One could call with following curl.
+/// ```text
+/// curl -i -X PUT http://localhost:8080/api/streams/toggle/1  -d '{"state": "started"}'
+/// ```
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Update the stream with new data.", body = StreamInfoDto),
+        (status = 204, description = "The stream with the specified ID was not found."),
+        (status = 406, description = "Unacceptable stream state.", body = AppError,
+            examples(
+            ("old_equals_new" = (summary = "old state equals new", description = "Unacceptable transition: old flow state equals new.",
+                value = json!(AppError::not_acceptable406(&format!("{}; {}", MSG_INVALID_STREAM_STATE
+                    , &msg_invalid_new_stream_state(StreamState::Preparing, StreamState::Preparing))) ) )
+            ),
+            ("unacceptable" = (
+                summary = "unacceptable state", description = "An unacceptable transition from an old state of flow to a new one.",
+                value = json!(AppError::not_acceptable406(&format!("{}; {}", MSG_INVALID_STREAM_STATE
+                    , &msg_invalid_new_stream_state(StreamState::Preparing, StreamState::Started))) ) )
+            ) ),
+        ),
+        (status = 409, description = "There is already an active stream.", body = AppError,
+            example = json!(AppError::conflict409(&format!("{}; id: {}, title:\"{}\"", MSG_EXIST_IS_ACTIVE_STREAM, 123, "title2")))),
+        (status = 416, description = "Error parsing input parameter. `curl -i -X PUT http://localhost:8080/api/streams/toggle/2a 
+            -d '{\"state\": \"started\"}'`", body = AppError,
+            example = json!(AppError::range_not_satisfiable416(
+                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
+// PUT /api/streams/toggle/{id}
+#[rustfmt::skip]
+#[put("/api/streams/toggle/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn put_toggle_state(
+    authenticated: Authenticated,
+    stream_orm: web::Data<StreamOrmApp>,
+    request: actix_web::HttpRequest,
+    json_body: web::Json<ToggleStreamStateDto>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let profile = authenticated.deref();
+    let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
+
+    // Get data from request.
+    let id_str = request.match_info().query("id").to_string();
+    let id = parser::parse_i32(&id_str).map_err(|e| {
+        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        AppError::range_not_satisfiable416(&message) // 416
+    })?;
+
+    let new_state: StreamState = json_body.into_inner().state;
+    let stream_orm2 = stream_orm.clone();
+
+    let res_stream_tags = web::block(move || {
+        // Find a stream by ID.
+        let res_stream_tags = stream_orm2
+            .find_streams_by_params(Some(id), opt_user_id, None, false, Vec::<i32>::new())
+            .map_err(|e| {
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            });
+        res_stream_tags
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
+
+    let opt_stream_tags = match res_stream_tags { Ok(v) => v, Err(e) => return Err(e) };
+
+    if opt_stream_tags.is_none() {
+        // If a stream with the specified ID is not found for the current user, then return status 204.
+        return Ok(HttpResponse::NoContent().finish()) // 204
+    }
+    let (stream, _tags) = opt_stream_tags.unwrap();
+
+    if stream.state == new_state {
+        let message = format!("{}; {}", MSG_INVALID_STREAM_STATE, &msg_invalid_new_stream_state(stream.state, new_state));
+        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
+        return Err(AppError::not_acceptable406(&message));
+    }
+
+    let is_not_acceptable = match new_state {
+        StreamState::Preparing => vec![StreamState::Started, StreamState::Paused].contains(&stream.state),
+        StreamState::Started => vec![StreamState::Waiting, StreamState::Stopped].contains(&stream.state),
+        StreamState::Paused => vec![StreamState::Waiting, StreamState::Stopped, StreamState::Preparing].contains(&stream.state),
+        StreamState::Stopped => vec![StreamState::Waiting].contains(&stream.state),
+        _ => false,
+    };
+    if is_not_acceptable {
+        let message = format!("{}; {}", MSG_INVALID_STREAM_STATE, &msg_invalid_new_stream_state(stream.state, new_state));
+        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
+        return Err(AppError::not_acceptable406(&message));
+    }
+    // If the stream goes into active state, then
+    if vec![StreamState::Preparing, StreamState::Started, StreamState::Paused].contains(&new_state) {
+        let stream_orm2 = stream_orm.clone();
+        // find any stream in active state.
+        let res_stream2_tags = web::block(move || {
+            let res_stream2_tags = stream_orm2
+                .find_streams_by_params(None, opt_user_id, Some(true), false, vec![id])
+                .map_err(|e| {
+                    log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                    AppError::database507(&e)
+                });
+            res_stream2_tags
+        })
+        .await
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            AppError::blocking506(&e.to_string())
+        })?;
+        
+        let opt_stream2_tags = match res_stream2_tags { Ok(v) => v, Err(e) => return Err(e) };
+
+        if let Some((stream2, _tags)) = opt_stream2_tags {
+            let message = format!("{}; id: {}, title:\"{}\"", MSG_EXIST_IS_ACTIVE_STREAM, stream2.id, &stream2.title);
+            log::error!("{}: {}", err::CD_CONFLICT, &message);
+            return Err(AppError::conflict409(&message)); // 409    
+        }
+    }
+
+    let modify_stream: ModifyStream = ModifyStream {
+        title: None,
+        descript: None,
+        logo: None,
+        starttime: None,
+        state: Some(new_state),
+        started: None,
+        stopped: None,
+        source: None,
+    };
+
+    let res_stream_tags = web::block(move || {
+        // Modify an entity (stream).
+        let res_stream_tags = stream_orm.modify_stream(id, opt_user_id, modify_stream, None)
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        });
+        res_stream_tags
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
+
+    let opt_stream_tags = match res_stream_tags { Ok(v) => v, Err(e) => return Err(e) };
+
+    if opt_stream_tags.is_none() {
+        // If a stream with the specified ID is not found for the current user, then return status 204.
+        return Ok(HttpResponse::NoContent().finish()) // 204
+    }
+    let (stream, tags) = opt_stream_tags.unwrap();
+
+    // Merge a "stream" and a corresponding list of "tags".
+    let list = StreamInfoDto::merge_streams_and_tags(&[stream], &tags, profile.user_id);
+    let stream_info_dto: StreamInfoDto = list[0].clone();
+    Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
+}
+
 /// put_stream
 ///
 /// Update the stream with new data.
@@ -655,202 +855,6 @@ pub async fn put_stream(
         remove_file_and_log(&path_new_logo_file, &"put_stream()");
         Ok(HttpResponse::NoContent().finish()) // 204        
     }
-}
-
-/// put_toggle_state
-///
-/// Update the stream state.
-///
-/// Request structure:
-/// ```text
-/// {
-///   state: StreamState,
-/// }
-/// ```
-/// The "StreamState" type accepts the following values: "waiting", "preparing", "started", "paused", "stopped".
-/// 
-/// The new "state" value must be different from the old value.
-/// 
-/// One could call with following curl.
-/// ```text
-/// curl -i -X PUT http://localhost:8080/api/streams/toggle/1  -d '{"state": "started"}'
-/// ```
-#[utoipa::path(
-    responses(
-        // (status = 200, description = "Update the stream with new data.", body = StreamInfoDto),
-        // (status = 204, description = "The stream with the specified ID was not found."),
-        (status = 404, description = "Stream for this user not found.", body = AppError,
-            example = json!(AppError::not_found404(&format!("{}: stream_id: {}", MSG_STREAM_NOT_FOUND, 123)))),
-        (status = 406, description = "Unacceptable stream state.", body = AppError,
-            examples(
-            ("old_equals_new" = (summary = "old state equals new", description = "Unacceptable transition: old flow state equals new.",
-                value = json!(AppError::not_acceptable406(&format!("{}; {}", MSG_INVALID_STREAM_STATE
-                    , &msg_invalid_new_stream_state(StreamState::Preparing, StreamState::Preparing))) ) )
-            ),
-            ("unacceptable" = (
-                summary = "unacceptable state", description = "An unacceptable transition from an old state of flow to a new one.",
-                value = json!(AppError::not_acceptable406(&format!("{}; {}", MSG_INVALID_STREAM_STATE
-                    , &msg_invalid_new_stream_state(StreamState::Preparing, StreamState::Started))) ) )
-            ) ),
-        ),
-        (status = 409, description = "There is already an active stream.", body = AppError,
-            example = json!(AppError::conflict409(&format!("{}; id: {}, title:\"{}\"", MSG_EXIST_IS_ACTIVE_STREAM, 123, "title2")))),
-        (status = 416, description = "Error parsing input parameter. `curl -i -X PUT http://localhost:8080/api/streams/toggle/2a 
-            -d '{\"state\": \"started\"}'`", body = AppError,
-            example = json!(AppError::range_not_satisfiable416(
-                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
-    ),
-    security(("bearer_auth" = [])),
-)]
-// PUT /api/streams/toggle/{id}
-#[rustfmt::skip]
-#[put("/api/streams/toggle/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn put_toggle_state(
-    authenticated: Authenticated,
-    stream_orm: web::Data<StreamOrmApp>,
-    request: actix_web::HttpRequest,
-    json_body: web::Json<ToggleStreamStateDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
-    let profile = authenticated.deref();
-    let profile_id = profile.user_id;
-
-    // Get data from request.
-    let id_str = request.match_info().query("id").to_string();
-    let id = parser::parse_i32(&id_str).map_err(|e| {
-        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
-        AppError::range_not_satisfiable416(&message) // 416
-    })?;
-
-    let new_state: StreamState = json_body.into_inner().state;
-    let stream_orm2 = stream_orm.clone();
-
-    let res_stream_tags = web::block(move || {
-        // Find a stream by ID.
-        let res_stream_tags = stream_orm2.get_stream_by_id(id, Some(profile_id), false)
-        .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
-        });
-        res_stream_tags
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
-    })?;
-
-    let opt_stream_tags = match res_stream_tags { Ok(v) => v, Err(e) => return Err(e) };
-
-
-    let (stream, _tags) = opt_stream_tags.ok_or_else(|| {
-        // If no such entry exists, then exit with code 404.
-        let message = format!("{}: stream_id: {}", MSG_STREAM_NOT_FOUND, id);
-        log::error!("{}: {}", err::CD_NOT_FOUND, &message);
-        AppError::not_found404(&message) // 404
-    })?;
-    
-    if stream.state == new_state {
-        let message = format!("{}; {}", MSG_INVALID_STREAM_STATE, &msg_invalid_new_stream_state(stream.state, new_state));
-        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
-        return Err(AppError::not_acceptable406(&message));
-    }
-
-    let is_error = match new_state {
-        StreamState::Preparing => vec![StreamState::Started, StreamState::Paused].contains(&stream.state),
-        StreamState::Started => vec![StreamState::Waiting, StreamState::Stopped].contains(&stream.state),
-        StreamState::Paused => vec![StreamState::Waiting, StreamState::Stopped, StreamState::Preparing].contains(&stream.state),
-        StreamState::Stopped => vec![StreamState::Waiting].contains(&stream.state),
-        _ => false,
-    };
-    if is_error {
-        let message = format!("{}; {}", MSG_INVALID_STREAM_STATE, &msg_invalid_new_stream_state(stream.state, new_state));
-        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
-        return Err(AppError::not_acceptable406(&message));
-    }
-    
-    if vec![StreamState::Preparing, StreamState::Started, StreamState::Paused].contains(&new_state) {
-        let stream_orm2 = stream_orm.clone();
-        let res_stream2_tags = web::block(move || {
-            let search_stream = stream_models::SearchStream {
-                user_id: profile_id,
-                live: Some(true),
-                is_future: None,
-                order_column: None,
-                order_direction: None,
-                page: Some(1),
-                limit: Some(1),
-            };
-            // If the stream goes into active state, then find any stream in active state.
-            let res_stream2_tags = stream_orm2.find_streams(search_stream, false)
-            .map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
-            });
-            res_stream2_tags
-        })
-        .await
-        .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-            AppError::blocking506(&e.to_string())
-        })?;
-        
-        let (_count, stream_vec, _tags_vec) = match res_stream2_tags {
-            Ok(v) => v,
-            Err(e) => return Err(e)
-        };
-        let opt_stream2 = stream_vec.get(0);
-        
-        if let Some(stream2) = opt_stream2 {
-            let message = format!("{}; id: {}, title:\"{}\"", MSG_EXIST_IS_ACTIVE_STREAM, stream2.id, &stream2.title);
-            log::error!("{}: {}", err::CD_CONFLICT, &message);
-            return Err(AppError::conflict409(&message)); // 409    
-        }
-    }
-
-    let modify_stream: ModifyStream = ModifyStream {
-        title: None,
-        descript: None,
-        logo: None,
-        starttime: None,
-        state: Some(new_state),
-        started: None,
-        stopped: None,
-        source: None,
-    };
-
-    let res_stream_tags = web::block(move || {
-        // Modify an entity (stream).
-        let res_stream_tags = stream_orm.modify_stream(id, Some(profile_id), modify_stream, None)
-        .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
-        });
-        res_stream_tags
-    })
-    .await
-    .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
-    })?;
-
-    let opt_stream_tags = match res_stream_tags { Ok(v) => v, Err(e) => return Err(e) };
-
-    let (stream, tags) = opt_stream_tags.ok_or_else(|| {
-        // If no such entry exists, then exit with code 404.
-        let message = format!("{}: stream_id: {}", MSG_STREAM_NOT_FOUND, id);
-        log::error!("{}: {}", err::CD_NOT_FOUND, &message);
-        AppError::not_found404(&message) // 404
-    })?;
-
-    // Merge a "stream" and a corresponding list of "tags".
-    let list = StreamInfoDto::merge_streams_and_tags(&[stream], &tags, profile_id);
-    let stream_info_dto: StreamInfoDto = list[0].clone();
-    Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
 }
 
 /// delete_stream
@@ -1761,6 +1765,224 @@ mod tests {
         let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
         let now_s = Utc::now().format(date_format).to_string(); // : 2024-02-06 09:55:41
         assert_eq!(now_s, date_time2_s);
+    }
+
+    // ** put_toggle_state **
+
+    #[actix_web::test]
+    async fn test_put_toggle_state_no_data() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/1"))
+            .insert_header(header_auth(&token))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let body_str = String::from_utf8_lossy(&body);
+        assert!(body_str.contains("Content type error"));
+    }
+    #[actix_web::test]
+    async fn test_put_toggle_state_empty_json_object() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/1"))
+            .insert_header(header_auth(&token))
+            .set_json(json!({}))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let body_str = String::from_utf8_lossy(&body);
+        assert!(body_str.contains("Json deserialize error: missing field"));
+    }
+    #[actix_web::test]
+    async fn test_put_toggle_state_invalid_id() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let stream_id = data_c.2.get(0).unwrap().id;
+        let stream_id_bad = format!("{}a", stream_id);
+        let new_state = data_c.2.get(0).unwrap().state.clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream_id_bad))
+            .insert_header(header_auth(&token))
+            .set_json(ToggleStreamStateDto{ state: new_state })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::RANGE_NOT_SATISFIABLE); // 416
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
+        #[rustfmt::skip]
+        let msg = format!("{}; `{}` - {} ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE, stream_id_bad);
+        assert_eq!(app_err.message, msg);
+    }
+    #[actix_web::test]
+    async fn test_put_toggle_state_non_existent_id() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let stream_id2 = data_c.2.get(0).unwrap().id + 1;
+        let new_state = data_c.2.get(0).unwrap().state.clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream_id2))
+            .insert_header(header_auth(&token))
+            .set_json(ToggleStreamStateDto{ state: new_state })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::NO_CONTENT); // 204
+    }
+    #[actix_web::test]
+    async fn test_put_toggle_state_invalid_state() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let stream_id = data_c.2.get(0).unwrap().id;
+        let new_state = data_c.2.get(0).unwrap().state.clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream_id))
+            .insert_header(header_auth(&token))
+            .set_json(ToggleStreamStateDto{ state: new_state })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::NOT_ACCEPTABLE); // 406
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        #[rustfmt::skip]
+        let message = format!("{}; {}", MSG_INVALID_STREAM_STATE, &msg_invalid_new_stream_state(new_state, new_state));
+        assert_eq!(&app_err.message, &message);
+    }
+    #[actix_web::test]
+    async fn test_put_toggle_state_not_acceptable() {
+        let buff = [
+            // [Started, Paused] -> Preparing
+            (StreamState::Started, StreamState::Preparing),
+            (StreamState::Paused, StreamState::Preparing),
+            // [Waiting, Stopped] -> Started
+            (StreamState::Waiting, StreamState::Started),
+            (StreamState::Stopped, StreamState::Started),
+            // [Waiting, Stopped, Preparing] -> Paused
+            (StreamState::Waiting, StreamState::Paused),
+            (StreamState::Stopped, StreamState::Paused),
+            (StreamState::Preparing, StreamState::Paused),
+            // Waiting -> Stopped
+            (StreamState::Waiting, StreamState::Stopped),
+        ];
+        for (old_state, new_state) in buff {
+            let (cfg_c, mut data_c, token) = get_cfg_data();
+            let stream = data_c.2.get_mut(0).unwrap();
+            stream.state = old_state;
+            let stream_id = stream.id;
+            #[rustfmt::skip]
+            let app = test::init_service(
+                App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
+            #[rustfmt::skip]
+            let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream_id))
+                .insert_header(header_auth(&token))
+                .set_json(ToggleStreamStateDto{ state: new_state })
+                .to_request();
+            let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+            assert_eq!(resp.status(), http::StatusCode::NOT_ACCEPTABLE); // 406
+            #[rustfmt::skip]
+            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+            let body = body::to_bytes(resp.into_body()).await.unwrap();
+            let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+            assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+            #[rustfmt::skip]
+            let message = format!("{}; {}", MSG_INVALID_STREAM_STATE, &msg_invalid_new_stream_state(old_state, new_state));
+            assert_eq!(&app_err.message, &message);
+        }
+    }
+    #[actix_web::test]
+    async fn test_put_toggle_state_conflict() {
+        let old_state = StreamState::Waiting;
+        let new_state = StreamState::Preparing;
+        let (cfg_c, mut data_c, token) = get_cfg_data();
+        let user_id = data_c.0.get(0).unwrap().user_id;
+        let stream1 = data_c.2.get_mut(0).unwrap();
+        stream1.state = old_state;
+        let stream1_id = stream1.id;
+        let stream2_title = "title_2";
+        let mut stream2 = create_stream(1, user_id, stream2_title, "tag01,tag02", Utc::now());
+        stream2.state = StreamState::Preparing;
+        stream2.live = true;
+        let stream2_id = stream2.id;
+        data_c.2.push(stream2);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream1_id))
+            .insert_header(header_auth(&token))
+            .set_json(ToggleStreamStateDto{ state: new_state })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_CONFLICT);
+        #[rustfmt::skip]
+        let message = format!("{}; id: {}, title:\"{}\"", MSG_EXIST_IS_ACTIVE_STREAM, stream2_id, stream2_title);
+        assert_eq!(&app_err.message, &message);
+    }
+    #[actix_web::test]
+    async fn test_put_toggle_state_ok() {
+        let buff = [
+            (StreamState::Preparing, StreamState::Started),
+            (StreamState::Started, StreamState::Paused),
+            (StreamState::Paused, StreamState::Started),
+            (StreamState::Started, StreamState::Stopped),
+            (StreamState::Paused, StreamState::Stopped),
+        ];
+        for (old_state, new_state) in buff {
+            let (cfg_c, mut data_c, token) = get_cfg_data();
+            let stream = data_c.2.get_mut(0).unwrap();
+            stream.state = old_state;
+            let stream_id = stream.id;
+            let stream_user_id = stream.user_id;
+            // let mut stream2 = stream1.clone();
+            // stream2.state = new_state;
+            let new_live = vec![StreamState::Preparing, StreamState::Started, StreamState::Paused].contains(&new_state);
+            #[rustfmt::skip]
+            let app = test::init_service(
+                App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
+            #[rustfmt::skip]
+            let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream_id))
+                .insert_header(header_auth(&token))
+                .set_json(ToggleStreamStateDto{ state: new_state })
+                .to_request();
+            let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+            assert_eq!(resp.status(), StatusCode::OK); // 200
+            #[rustfmt::skip]
+            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+            let body = body::to_bytes(resp.into_body()).await.unwrap();
+            let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+            assert_eq!(stream_dto_res.id, stream_id);
+            assert_eq!(stream_dto_res.user_id, stream_user_id);
+            assert_eq!(stream_dto_res.state, new_state);
+            assert_eq!(stream_dto_res.live, new_live);
+        }
     }
 
     // ** put_stream **
@@ -2698,194 +2920,6 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert!(stream_dto_res.logo.is_none());
-    }
-
-    // ** put_toggle_state **
-
-    #[actix_web::test]
-    async fn test_put_toggle_state_no_data() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/1"))
-            .insert_header(header_auth(&token))
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let body_str = String::from_utf8_lossy(&body);
-        assert!(body_str.contains("Content type error"));
-    }
-    #[actix_web::test]
-    async fn test_put_toggle_state_empty_json_object() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/1"))
-            .insert_header(header_auth(&token))
-            .set_json(json!({}))
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let body_str = String::from_utf8_lossy(&body);
-        assert!(body_str.contains("Json deserialize error: missing field"));
-    }
-    #[actix_web::test]
-    async fn test_put_toggle_state_invalid_id() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        let stream_id = data_c.2.get(0).unwrap().id;
-        let stream_id_bad = format!("{}a", stream_id);
-        let new_state = data_c.2.get(0).unwrap().state.clone();
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream_id_bad))
-            .insert_header(header_auth(&token))
-            .set_json(ToggleStreamStateDto{ state: new_state })
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::RANGE_NOT_SATISFIABLE); // 416
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
-        #[rustfmt::skip]
-        let msg = format!("{}; `{}` - {} ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE, stream_id_bad);
-        assert_eq!(app_err.message, msg);
-    }
-    #[actix_web::test]
-    async fn test_put_toggle_state_non_existent_id() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        let stream_id2 = data_c.2.get(0).unwrap().id + 1;
-        let new_state = data_c.2.get(0).unwrap().state.clone();
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream_id2))
-            .insert_header(header_auth(&token))
-            .set_json(ToggleStreamStateDto{ state: new_state })
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND); // 404
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_FOUND);
-        #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: stream_id: {}", MSG_STREAM_NOT_FOUND, stream_id2));
-    }
-    #[actix_web::test]
-    async fn test_put_toggle_state_invalid_state() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        let stream_id = data_c.2.get(0).unwrap().id;
-        let new_state = data_c.2.get(0).unwrap().state.clone();
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream_id))
-            .insert_header(header_auth(&token))
-            .set_json(ToggleStreamStateDto{ state: new_state })
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::NOT_ACCEPTABLE); // 406
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
-        #[rustfmt::skip]
-        let message = format!("{}; {}", MSG_INVALID_STREAM_STATE, &msg_invalid_new_stream_state(new_state, new_state));
-        assert_eq!(&app_err.message, &message);
-    }
-    #[actix_web::test]
-    async fn test_put_toggle_state_not_acceptable() {
-        let buff = [
-            // [Started, Paused] -> Preparing
-            (StreamState::Started, StreamState::Preparing),
-            (StreamState::Paused, StreamState::Preparing),
-            // [Waiting, Stopped] -> Started
-            (StreamState::Waiting, StreamState::Started),
-            (StreamState::Stopped, StreamState::Started),
-            // [Waiting, Stopped, Preparing] -> Paused
-            (StreamState::Waiting, StreamState::Paused),
-            (StreamState::Stopped, StreamState::Paused),
-            (StreamState::Preparing, StreamState::Paused),
-            // Waiting -> Stopped
-            (StreamState::Waiting, StreamState::Stopped),
-        ];
-        for (old_state, new_state) in buff {
-            let (cfg_c, mut data_c, token) = get_cfg_data();
-            let stream = data_c.2.get_mut(0).unwrap();
-            stream.state = old_state;
-            let stream_id = stream.id;
-            #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
-            #[rustfmt::skip]
-            let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream_id))
-                .insert_header(header_auth(&token))
-                .set_json(ToggleStreamStateDto{ state: new_state })
-                .to_request();
-            let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-            assert_eq!(resp.status(), http::StatusCode::NOT_ACCEPTABLE); // 406
-            #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-            let body = body::to_bytes(resp.into_body()).await.unwrap();
-            let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-            assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
-            #[rustfmt::skip]
-            let message = format!("{}; {}", MSG_INVALID_STREAM_STATE, &msg_invalid_new_stream_state(old_state, new_state));
-            assert_eq!(&app_err.message, &message);
-        }
-    }
-
-    #[actix_web::test]
-    async fn test_put_toggle_state_conflict() {
-        let old_state = StreamState::Waiting;
-        let new_state = StreamState::Preparing;
-        let (cfg_c, mut data_c, token) = get_cfg_data();
-        let user_id = data_c.0.get(0).unwrap().user_id;
-        let stream1 = data_c.2.get_mut(0).unwrap();
-        stream1.state = old_state;
-        let stream1_id = stream1.id;
-        let stream2_title = "title_2";
-        let mut stream2 = create_stream(1, user_id, stream2_title, "tag01,tag02", Utc::now());
-        stream2.state = StreamState::Preparing;
-        stream2.live = true;
-        let stream2_id = stream2.id;
-        data_c.2.push(stream2);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/streams/toggle/{}", stream1_id))
-            .insert_header(header_auth(&token))
-            .set_json(ToggleStreamStateDto{ state: new_state })
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::CONFLICT); // 409
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_CONFLICT);
-        #[rustfmt::skip]
-        let message = format!("{}; id: {}, title:\"{}\"", MSG_EXIST_IS_ACTIVE_STREAM, stream2_id, stream2_title);
-        assert_eq!(&app_err.message, &message);
     }
 
     // ** delete_stream **
