@@ -52,7 +52,7 @@ export class DialogService {
     // Whether the user can use escape or clicking on the backdrop to close the modal. disableClose?: boolean;
     dialogCfg.disableClose = false;
     if (dataParams != null) {
-      dialogCfg.data = dataParams;
+      dialogCfg.data = { ...(dialogCfg.data || {}), ...dataParams };
     }
 
     const dialogRef = this.dialog.open(component, dialogCfg);
