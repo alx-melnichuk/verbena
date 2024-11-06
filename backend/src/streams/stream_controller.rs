@@ -1961,8 +1961,6 @@ mod tests {
             stream.state = old_state;
             let stream_id = stream.id;
             let stream_user_id = stream.user_id;
-            // let mut stream2 = stream1.clone();
-            // stream2.state = new_state;
             let new_live = vec![StreamState::Preparing, StreamState::Started, StreamState::Paused].contains(&new_state);
             #[rustfmt::skip]
             let app = test::init_service(
