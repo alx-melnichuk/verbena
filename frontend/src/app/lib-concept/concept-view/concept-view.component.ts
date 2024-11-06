@@ -10,12 +10,14 @@ import { InitializationService } from 'src/app/common/initialization.service';
 import { StringDateTime        } from 'src/app/common/string-date-time';
 import { SidebarComponent      } from 'src/app/components/sidebar/sidebar.component';
 import { SpinnerComponent      } from 'src/app/components/spinner/spinner.component';
+import { AlertService          } from 'src/app/lib-dialog/alert.service';
 import { ConfirmationData      } from 'src/app/lib-dialog/confirmation/confirmation.component';
 import { DialogService         } from 'src/app/lib-dialog/dialog.service';
 import { ProfileService        } from 'src/app/lib-profile/profile.service';
 import { StreamService         } from 'src/app/lib-stream/stream.service';
 import { StreamDto, StreamState } from 'src/app/lib-stream/stream-api.interface';
-import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
+import { HttpErrorUtil         } from 'src/app/utils/http-error.util';
+import { StringDateTimeUtil    } from 'src/app/utils/string-date-time.util';
 
 import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-state.component';
 import { PanelStreamAdminComponent } from '../panel-stream-admin/panel-stream-admin.component';
@@ -93,6 +95,7 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
     private translateService: TranslateService,
     public initializationService: InitializationService,
     private dialogService: DialogService,
+    private alertService: AlertService,
     private streamService: StreamService,
     // public socketService: SocketService,
     // public firebaseService: FirebaseService,
@@ -280,26 +283,30 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
 
   private toggleStreamState(streamId: number | null, streamState: StreamState): void {
     if (!!streamId && this.isStreamOwner) {
-      /*this.streamService.toggleStreamState(streamId, streamState)
-        .then((response: StreamDto | StreamSetStateForbbidenDTO | HttpErrorResponse) => {
-          if (response.hasOwnProperty('streamId') && response.hasOwnProperty('forbidden')) {
-            const streamSetStateForbbidenDTO = (response as StreamSetStateForbbidenDTO);
-            const link = this.streamService.getLinkForVisitors(streamSetStateForbbidenDTO.streamId, false);
-            const name = streamSetStateForbbidenDTO.streamTitle;
-            
-            const confirmationData: ConfirmationData = {
-              messageHtml: this.translateService.instant('stream_info.cannot_start_stream_message', { link, name }),
-            };
-            // this.dialogService.openConfirmationExt(confirmationData);
-            const title = this.translateService.instant('stream_info.cannot_start_stream');
-            const params = { btnNameCancel: null, btnNameAccept: 'buttons.ok' };
-            this.dialogService.openConfirmation('', title, params,{ data: confirmationData })
-          } else {
-            this.streamDto = (response as StreamDto);
-            this.updateViewByStreamStatus(this.streamDto);
-          }
+      this.streamService.toggleStreamState(streamId, streamState)
+        .then((response: StreamDto | HttpErrorResponse) => {
+          this.streamDto = (response as StreamDto);
+          this.updateViewByStreamStatus(this.streamDto);
         })
-        .finally(() => this.changeDetectorRef.markForCheck());*/
+        .catch((error: HttpErrorResponse) => {
+          const appError = (typeof (error?.error || '') == 'object' ? error.error : {});
+          const title = 'concept-view.error_update_stream';
+
+          if (error.status == 409 && appError['code'] == 'Conflict' && appError['message'] == 'exist_is_active_stream') {
+            const errParams = appError['params'] || {};
+            const link = this.streamService.getLinkForVisitors(errParams['activeStream']['id'] || -1, false);
+            const name = errParams['activeStream']['title'] || '';
+            const confirmData: ConfirmationData = {
+              messageHtml: this.translateService.instant('concept-view.exist_is_active_stream', { link, name }),
+            };
+            this.dialogService.openConfirmation('', title, { btnNameCancel: null, btnNameAccept: 'buttons.ok' }, { data: confirmData })
+          } else {
+            this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], title);
+          }
+          throw error;
+        })
+        .finally(() =>
+          this.changeDetectorRef.markForCheck());
     }
   }
 

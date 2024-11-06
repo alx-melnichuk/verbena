@@ -63,7 +63,8 @@
     "finish_date_less_start_date" : "The finish date \"{{ invalidPeriod.streamPeriodFinish }}\" is less than the start date \"{{ invalidPeriod.streamPeriodStart }}\".",
     "invalid_field_tag" : "Error deserializing field tag.",
     "session_not_exist" : "There is no session for this user.",
-    "params_not_specified": "Parameters not specified"
+    "params_not_specified": "Parameters not specified",
+    "invalid_stream_state": "Invalid stream state transition from \"{{ invalidState.oldState }}\" to \"{{ invalidState.newState }}\"."
   },
   "Conflict": {
     "status": 409,
@@ -354,8 +355,10 @@
     "_error_get_user_profile": "Error getting user profile",
     "_error_get_profile_contact": "Error getting profile contact",
     "_error_subscription": "Error while a subscription",
-    "_error_unsubscription": "Error while a unsubscription",
-    "_cannot_start_stream": "Cannot start the stream",
-    "_cannot_start_stream_message": "You already have the active stream running <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
+    "_error_unsubscription": "Error while a unsubscription"
+  },
+  "concept-view": {
+    "error_update_stream": "Error updating stream state",
+    "exist_is_active_stream": "You already have the active stream running <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
   }
 }
