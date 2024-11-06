@@ -114,11 +114,6 @@ fn convert_logo_file(path_logo_file: &str, config_strm: config_strm::ConfigStrm,
     }
 }
 
-// Error, invalid new stream state.
-fn msg_invalid_new_stream_state(old_state: StreamState, new_state: StreamState) -> String {
-    format!("Not acceptable to go from \"{}\" to \"{}\"", old_state, new_state)
-}
-
 #[derive(Debug, MultipartForm)]
 pub struct CreateStreamForm {
     pub title: Text<String>,
@@ -441,17 +436,19 @@ impl ModifyStreamForm {
         (status = 406, description = "Unacceptable stream state.", body = AppError,
             examples(
             ("old_equals_new" = (summary = "old state equals new", description = "Unacceptable transition: old flow state equals new.",
-                value = json!(AppError::not_acceptable406(&format!("{}; {}", MSG_INVALID_STREAM_STATE
-                    , &msg_invalid_new_stream_state(StreamState::Preparing, StreamState::Preparing))) ) )
+                value = json!(AppError::not_acceptable406(MSG_INVALID_STREAM_STATE).add_param(Cow::Borrowed("invalidState"),
+                        &json!({ "oldState": StreamState::Preparing, "newState": StreamState::Preparing })) ) )
             ),
             ("unacceptable" = (
                 summary = "unacceptable state", description = "An unacceptable transition from an old state of flow to a new one.",
-                value = json!(AppError::not_acceptable406(&format!("{}; {}", MSG_INVALID_STREAM_STATE
-                    , &msg_invalid_new_stream_state(StreamState::Preparing, StreamState::Started))) ) )
+                value = json!(AppError::not_acceptable406(MSG_INVALID_STREAM_STATE).add_param(Cow::Borrowed("invalidState"),
+                        &json!({ "oldState": StreamState::Started, "newState": StreamState::Preparing })) ) )
             ) ),
         ),
         (status = 409, description = "There is already an active stream.", body = AppError,
-            example = json!(AppError::conflict409(&format!("{}; id: {}, title:\"{}\"", MSG_EXIST_IS_ACTIVE_STREAM, 123, "title2")))),
+            example = json!(AppError::conflict409(MSG_EXIST_IS_ACTIVE_STREAM)
+                    .add_param(Cow::Borrowed("activeStream"), &json!({ "id": 123, "title": Cow::Borrowed("Trip to Greece.") })) )
+        ),
         (status = 416, description = "Error parsing input parameter. `curl -i -X PUT http://localhost:8080/api/streams/toggle/2a 
             -d '{\"state\": \"started\"}'`", body = AppError,
             example = json!(AppError::range_not_satisfiable416(
@@ -511,9 +508,10 @@ pub async fn put_toggle_state(
     let (stream, _tags) = opt_stream_tags.unwrap();
 
     if stream.state == new_state {
-        let message = format!("{}; {}", MSG_INVALID_STREAM_STATE, &msg_invalid_new_stream_state(stream.state, new_state));
-        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
-        return Err(AppError::not_acceptable406(&message));
+        let json = json!({ "oldState": &stream.state, "newState": &new_state });
+        log::error!("{}: {}; {}", err::CD_NOT_ACCEPTABLE, MSG_INVALID_STREAM_STATE, json.to_string());
+        return Err(AppError::not_acceptable406(MSG_INVALID_STREAM_STATE) // 406
+            .add_param(Cow::Borrowed("invalidState"), &json));
     }
 
     let is_not_acceptable = match new_state {
@@ -524,9 +522,10 @@ pub async fn put_toggle_state(
         _ => false,
     };
     if is_not_acceptable {
-        let message = format!("{}; {}", MSG_INVALID_STREAM_STATE, &msg_invalid_new_stream_state(stream.state, new_state));
-        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
-        return Err(AppError::not_acceptable406(&message));
+        let json = json!({ "oldState": &stream.state.to_string(), "newState": &new_state });
+        log::error!("{}: {}; {}", err::CD_NOT_ACCEPTABLE, MSG_INVALID_STREAM_STATE, json.to_string());
+        return Err(AppError::not_acceptable406(MSG_INVALID_STREAM_STATE) // 406
+            .add_param(Cow::Borrowed("invalidState"), &json));
     }
     // If the stream goes into active state, then
     if vec![StreamState::Preparing, StreamState::Started, StreamState::Paused].contains(&new_state) {
@@ -550,9 +549,10 @@ pub async fn put_toggle_state(
         let opt_stream2_tags = match res_stream2_tags { Ok(v) => v, Err(e) => return Err(e) };
 
         if let Some((stream2, _tags)) = opt_stream2_tags {
-            let message = format!("{}; id: {}, title:\"{}\"", MSG_EXIST_IS_ACTIVE_STREAM, stream2.id, &stream2.title);
-            log::error!("{}: {}", err::CD_CONFLICT, &message);
-            return Err(AppError::conflict409(&message)); // 409    
+            let json = json!({ "id": stream2.id, "title": &stream2.title });
+            log::error!("{}: {}; {}", err::CD_CONFLICT, MSG_EXIST_IS_ACTIVE_STREAM, json.to_string());
+            return Err(AppError::conflict409(MSG_EXIST_IS_ACTIVE_STREAM) // 409
+                .add_param(Cow::Borrowed("activeStream"), &json));
         }
     }
 
@@ -1852,6 +1852,7 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data();
         let stream_id = data_c.2.get(0).unwrap().id;
         let new_state = data_c.2.get(0).unwrap().state.clone();
+        let old_state = new_state;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_toggle_state).configure(configure_stream(cfg_c, data_c))).await;
@@ -1867,9 +1868,10 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        assert_eq!(&app_err.message, MSG_INVALID_STREAM_STATE);
         #[rustfmt::skip]
-        let message = format!("{}; {}", MSG_INVALID_STREAM_STATE, &msg_invalid_new_stream_state(new_state, new_state));
-        assert_eq!(&app_err.message, &message);
+        let json = serde_json::json!({ "oldState": &old_state, "newState": &new_state });
+        assert_eq!(*app_err.params.get("invalidState").unwrap(), json);
     }
     #[actix_web::test]
     async fn test_put_toggle_state_not_acceptable() {
@@ -1907,9 +1909,10 @@ mod tests {
             let body = body::to_bytes(resp.into_body()).await.unwrap();
             let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
             assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+            assert_eq!(&app_err.message, MSG_INVALID_STREAM_STATE);
             #[rustfmt::skip]
-            let message = format!("{}; {}", MSG_INVALID_STREAM_STATE, &msg_invalid_new_stream_state(old_state, new_state));
-            assert_eq!(&app_err.message, &message);
+            let json = serde_json::json!({ "oldState": &old_state, "newState": &new_state });
+            assert_eq!(*app_err.params.get("invalidState").unwrap(), json);
         }
     }
     #[actix_web::test]
@@ -1942,9 +1945,10 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_CONFLICT);
+        assert_eq!(&app_err.message, MSG_EXIST_IS_ACTIVE_STREAM);
         #[rustfmt::skip]
-        let message = format!("{}; id: {}, title:\"{}\"", MSG_EXIST_IS_ACTIVE_STREAM, stream2_id, stream2_title);
-        assert_eq!(&app_err.message, &message);
+        let json = serde_json::json!({ "id": stream2_id, "title": &stream2_title });
+        assert_eq!(*app_err.params.get("activeStream").unwrap(), json);
     }
     #[actix_web::test]
     async fn test_put_toggle_state_ok() {
