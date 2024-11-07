@@ -1,7 +1,0 @@
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="96px" height="96px" viewBox="0 0 96 96"
-  fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="5">
-<path d="M19,15 C12,15 12,5 19,5 H78 C85,5 85,15 78,15 H19 Z" />
-<path d="M22,15 V22 C22,25 23,40 42,46 V49 C23,55 22,71 22,73 V80" />
-<path d="M75,15 V22 C75,25 74,40 55,46 V49 C74,55 75,71 75,73 V80" />
-<path d="M19,90 C12,90 12,80 19,80 H78 C85,80 85,90 78,90 H19 Z" />
-</svg>
