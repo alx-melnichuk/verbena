@@ -46,7 +46,7 @@ constructor(private http: HttpClient) {
   }
   /** Get streams
    * @ route streams
-   * @ example streams?groupBy=date&userId=385e0469-7143-4915-88d0-f23f5b27ed28/9/2022&orderColumn=title&orderDirection=desc&live=true
+   * @ example streams?groupBy=date&userId=385e0469/9/2022&orderColumn=title&orderDirection=desc&live=true
    * @ type get
    * @ query pagination (optional):
    * - userId (only for groupBy "date")
@@ -86,7 +86,6 @@ constructor(private http: HttpClient) {
 
   /** Change state stream
    * @ route streams/toggle/:streamId
-   * @ example streams/toggle/385e0469-7143-4915-88d0-f23f5b27ed36
    * @ type put
    * @ params streamId
    * @ body state ['preparing' | 'started' | 'stopped' | 'paused']
