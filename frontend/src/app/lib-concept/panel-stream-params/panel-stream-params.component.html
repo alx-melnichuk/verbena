@@ -1,0 +1,24 @@
+<div class="psp-title">
+  Title: {{ title }}
+</div>
+<div class="psp-tags">
+  <span>Tags:</span>
+  <span class="psp-tag" *ngFor="let tag of tags">{{ tag }}</span>
+</div>
+<div>
+  <span>Start:</span> <span>{{ innStartDate }}</span>
+</div>
+<div>
+  <span>Timer:</span> <span></span>
+</div>
+  
+<!-- <div class="psp-icon-people"></div> -->
+<!-- <div class="psp-info-text">{{ countOfViewer || 0 }}</div> -->
+
+<!-- <div class="psp-author">
+  <img class="psp-author-avatar" [src]="avatar || '/assets/images/icon_man.png'" alt="image" />
+</div> -->
+<!-- <div class="hd-profile-avatar">
+  <span>{{ profileDto.nickname }}</span>
+  <img class="hd-avatar" [src]="profileDto.avatar || '/assets/images/icon_man.png'" alt="image" />
+</div> -->
