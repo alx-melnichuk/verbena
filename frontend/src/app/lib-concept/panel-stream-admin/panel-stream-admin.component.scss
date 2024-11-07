@@ -1,7 +1,6 @@
 /*# sourceURL=panel-stream-admin.component.scss */
 
 app-panel-stream-admin {
-  --mdc-typography-button-font-size: 1em; // Font size for buttons.
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -45,37 +44,6 @@ app-panel-stream-admin {
     width: 18ch;
   }
 
-  // Block "Actions"
-  .psa-actions {
-    display: flex;
-    justify-content: space-between;
-  }
-  .psa-vert {
-    vertical-align: middle;  
-  }
-  .psa-icon {
-    background-color: currentColor;
-    color: var(--psa-icon-cl);
-    display: inline-block;
-    mask-size: cover;
-    vertical-align: middle;
-    height: var(--psa-icon-wd, 2em);
-    width: var(--psa-icon-wd, 2em);
-  }
-  .psa-icon.prepare { mask-image: url('/assets/icons/panel-stream-admin/prepare-bin.svg'); }
-  .psa-icon.pause { mask-image: url('/assets/icons/panel-stream-admin/pause-bin.svg'); }
-  .psa-icon.play { mask-image: url('/assets/icons/panel-stream-admin/play-bin.svg'); }
-  .psa-icon.stop { mask-image: url('/assets/icons/panel-stream-admin/stop-bin.svg'); }
-  .psa-icon.settings { mask-image: url('/assets/icons/panel-stream-admin/settings-bin.svg'); }
-
-  .psa-icon.prepare {
-    --psa-icon-wd: 1.5em;
-    margin-left: 0.15em;
-    margin-right: 0.25em;
-  }
-  .mat-mdc-outlined-button {
-    --mdc-outlined-button-outline-color: rgba(0, 0, 0, 0.25);
-  }
 }
   
   

@@ -28,41 +28,5 @@
     </button>
   </div>
 
-  <div class="psa-box-middle">
-  </div>
-
-  <div class="psa-box-right">
-    <ng-container *ngIf="isShowBntPrepare(state)">
-      <button type="button" mat-stroked-button (click)="doChangeState(statePreparing)"
-        class="psa-pd-lf-0_25">
-        <span class="psa-icon prepare"></span>
-        <span class="psa-vert">{{ 'panel-stream-admin.prepare_stream' | translate }}</span>
-      </button>
-    </ng-container>
-
-    <ng-container *ngIf="isShowBntStart(state)">
-      <button type="button" mat-stroked-button (click)="doChangeState(stateStarted)"
-        class="psa-pd-lf-0_25">
-        <span class="psa-icon play"></span>
-        <span class="psa-vert">{{ 'panel-stream-admin.go_live_stream' | translate }}</span>
-      </button>
-    </ng-container>
-
-    <ng-container *ngIf="isShowBntPause(state)">
-      <button type="button" mat-stroked-button color="warn" (click)="doChangeState(statePaused)"
-        class="psa-pd-lf-0_25">
-        <span class="psa-icon pause"></span>
-        <span class="psa-vert">{{ 'panel-stream-admin.pause_stream' | translate }}</span>
-      </button>
-    </ng-container>
-
-    <ng-container *ngIf="isBtnStop(state)">
-      <button type="button" mat-stroked-button color="warn" (click)="doChangeOnStateStopped()"
-        class="psa-mr-lf-0_5 psa-pd-lf-0_25">
-        <span class="psa-icon stop"></span>
-        <span class="psa-vert">{{ 'panel-stream-admin.stop_stream' | translate }}</span>
-      </button>
-    </ng-container>
-  </div>
 
 </div>
