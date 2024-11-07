@@ -19,8 +19,8 @@ app-concept-view {
   display: flex;
   height: 100%;
   
-  &>.cv-side-bar { flex: 0 0 auto; }
-  &>.cv-center { flex: 1 1 auto; }
+  & > .cv-side-bar { flex: 0 0 auto; }
+  & > .cv-center { flex: 1 1 auto; }
 
   .cv-side-bar {
     --sb-mn-wd: var(---cv-sb-mn-wd);
@@ -44,39 +44,35 @@ app-concept-view {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    &>.cv-stream-video { flex: 1 1 auto; }
-    &>.cv-stream-info { flex: 0 0 10em; }
-    &>.user-portfolio { flex: 0 0 auto; } 
   }
+  // ** stream-video **
   .cv-stream-video {
+    flex-grow: 1;
     position: relative;
   }
-//   .cv-box-video {
-//     &.size1 { height: 54vh; }
-//     &.size2 { height: 64vh; }
-//     &.size3 { height: 81vh; }
-//     transition-property: height;
-//     transition-duration: var(---cv-sb-durt);
-//     position: relative;
-//   }
   .cv-stream-state {
     --pss-panel-bg: var(---cv-pn-bg);
   //   --pss-icon-cl: var(---cv-pn-low-bg);
     --pss-icon-cl: green;
-    position: absolute;
-    top: 0;
-    right: 0;
     bottom: 0;
     left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
   }
   .cv-hg100 { height: 100%; }
 
-  .cv-stream-info {
-    outline: 1px dashed orange;
-    margin-top: 20px;
-    min-height: 50px;
-    position: relative;
+  // ** cv-stream-panel ** 
+  .cv-stream-panel {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-top: 0.75em;
   }
+  
+  .cv-stream-tools {    outline: 1px dashed orange;  }
+  .cv-stream-actions {    outline: 1px dashed blueviolet;  }
 
   // ** sidebar **
   .cv-aside {

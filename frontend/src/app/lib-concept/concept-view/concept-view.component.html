@@ -32,6 +32,25 @@
     <!-- </div> -->
   </div>
 
+  <div class="cv-stream-panel">
+    
+    <app-panel-stream-params style="outline: 1px dashed darkblue;"
+      [title]="streamDto?.title"
+      [tags]="streamDto?.tags || []"
+      [startDate]="getDate(streamDto?.starttime)">
+    </app-panel-stream-params>
+    
+    <div class="cv-stream-tools">
+      stream-tools
+    </div>
+    <div class="cv-stream-actions">
+      <app-panel-stream-actions *ngIf="isStreamOwner"
+        [state]="streamDto?.state"
+        [title]="streamDto?.title"
+        (changeState)="doChangeState($event)">
+      </app-panel-stream-actions>
+    </div>
+  </div>
   <ng-container *ngIf="!isStreamOwner; else templateIsOwner">
     Is not Stream Owner
     <!-- <app-spinner *ngIf="subscribeLoading" [isFullOwner]="true" [diameter]="60"></app-spinner>
@@ -45,7 +64,7 @@
     ></app-panel-stream-info> -->
   </ng-container>
   <ng-template #templateIsOwner>
-    <div class="cv-stream-info">
+    <!-- <div class="cv-stream-info">
       <app-panel-stream-admin
         countOfViewer9="socketService.countOfViewer$ | async"
         [countOfViewer]="0"
@@ -54,7 +73,7 @@
         [title]="streamDto?.title"
         (changeState)="doChangeState($event)">
       </app-panel-stream-admin>
-    </div>    
+    </div>     -->
   </ng-template>
 
   <!-- <div class="user-portfolio">

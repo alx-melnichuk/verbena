@@ -19,15 +19,16 @@ import { StreamDto, StreamState } from 'src/app/lib-stream/stream-api.interface'
 import { HttpErrorUtil         } from 'src/app/utils/http-error.util';
 import { StringDateTimeUtil    } from 'src/app/utils/string-date-time.util';
 
-import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-state.component';
-import { PanelStreamAdminComponent } from '../panel-stream-admin/panel-stream-admin.component';
+import { PanelStreamActionsComponent } from '../panel-stream-actions/panel-stream-actions.component';
+import { PanelStreamParamsComponent  } from '../panel-stream-params/panel-stream-params.component';
+import { PanelStreamStateComponent   } from '../panel-stream-state/panel-stream-state.component';
 
 @Component({
   selector: 'app-concept-view',
   exportAs: 'appConceptView',
   standalone: true,
   imports: [CommonModule, TranslateModule, SpinnerComponent, SidebarComponent, 
-    PanelStreamStateComponent, PanelStreamAdminComponent],
+    PanelStreamStateComponent, PanelStreamParamsComponent, PanelStreamActionsComponent],
   templateUrl: './concept-view.component.html',
   styleUrls: ['./concept-view.component.scss'],
   encapsulation: ViewEncapsulation.None,
