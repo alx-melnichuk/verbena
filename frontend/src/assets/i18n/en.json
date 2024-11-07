@@ -343,13 +343,15 @@
     "error_when_stopping_the_stream": "Error stopping broadcast",
     "error_while_pause_stream"      : "Error pausing broadcast"
   },
-  "panel-stream-admin": {
+  "panel-stream-actions": {
     "sure_you_want_stop_stream": "Are you sure you want to stop the stream \"{{title}}\" ?",
-    "btn_settings": "Settings",
     "prepare_stream": "Prepare",
     "go_live_stream": "Go live",
     "pause_stream": "Pause",
-    "stop_stream": "Stop",
+    "stop_stream": "Stop"
+  },
+  "panel-stream-admin": {
+    "btn_settings": "Settings",
     "_followers": "Followers",
     "_error_get_stream": "Error getting stream",
     "_error_get_user_profile": "Error getting user profile",
