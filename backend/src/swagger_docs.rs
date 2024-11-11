@@ -6,7 +6,7 @@ use utoipa::{
 use crate::{
     errors, 
     profiles::{profile_auth_controller, profile_controller, profile_get_controller, profile_models, profile_registr_controller}, 
-    streams::{stream_controller, stream_get_controller, stream_models}, 
+    streams::{stream_controller, stream_models}, 
     users::user_models
 };
 
@@ -29,14 +29,15 @@ use crate::{
         profile_registr_controller::recovery,
         profile_registr_controller::confirm_recovery,
         profile_registr_controller::clear_for_expired,
+        stream_controller::get_streams,
+        stream_controller::get_stream_by_id,
+        stream_controller::get_stream_config,
+        stream_controller::get_streams_events,
+        stream_controller::get_streams_period,
         stream_controller::post_stream,
         stream_controller::put_stream,
         stream_controller::put_toggle_state,
         stream_controller::delete_stream,
-        stream_get_controller::get_stream_by_id,
-        stream_get_controller::get_streams,
-        stream_get_controller::get_streams_events,
-        stream_get_controller::get_streams_period,
     ),
     components(
         schemas(
@@ -61,9 +62,8 @@ use crate::{
             profile_models::RecoveryProfileDto, profile_models::RecoveryProfileResponseDto, // ::recovery
             profile_models::RecoveryDataDto, // profile_models::ProfileDto // ::confirm_recovery
             profile_models::ClearForExpiredResponseDto, // ::clear_for_expired
-            // stream_controller, stream_get_controller
+            // stream_controller
             stream_models::StreamInfoDto,
-            // stream_get_controller
             stream_models::SearchStreamInfoDto, // ::get_streams
             stream_models::StreamInfoPageDto, // ::get_streams
             stream_models::SearchStreamEventDto, // ::get_streams_events
@@ -81,8 +81,7 @@ use crate::{
         (name = "profile_controller", description = "Managing user profile information (Endpoints)."),
         (name = "profile_auth_controller", description = "User authorization management (endpoints)."),
         (name = "profile_registr_controller", description = "User registration management (endpoints)."),
-        (name = "stream_get_controller", description = "Find user \"stream\" information (Endpoints)."),
-        (name = "stream_controller", description = "Manage user \"stream\" information (Endpoints)."),
+        (name = "stream_controller", description = "Stream management. (Endpoints)."),
     ),
     modifiers(&SecurityAddon)
 )]
