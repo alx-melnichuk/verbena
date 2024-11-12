@@ -5,7 +5,7 @@ use utoipa::{
 
 use crate::{
     errors, 
-    profiles::{profile_auth_controller, profile_controller, profile_get_controller, profile_models, profile_registr_controller}, 
+    profiles::{profile_auth_controller, profile_controller, profile_models, profile_registr_controller}, 
     streams::{stream_controller, stream_models}, 
     users::user_models
 };
@@ -13,10 +13,10 @@ use crate::{
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        profile_get_controller::uniqueness_check,
-        profile_get_controller::get_profile_by_id,
-        profile_get_controller::get_profile_current,
-        profile_get_controller::get_profile_config,
+        profile_controller::uniqueness_check,
+        profile_controller::get_profile_by_id,
+        profile_controller::get_profile_current,
+        profile_controller::get_profile_config,
         profile_controller::put_profile,
         profile_controller::put_profile_new_password,
         profile_controller::delete_profile,
@@ -44,11 +44,11 @@ use crate::{
             errors::AppError,
             // user model
             user_models::UserRole,
-            // profile_get_controller
+            // profile_controller
             profile_models::UniquenessProfileDto, // ::uniqueness_check
             profile_models::UniquenessProfileResponseDto, // ::uniqueness_check
             profile_models::ProfileConfigDto, // ::get_profile_config
-            // profile_controller, profile_get_controller
+            // profile_controller
             profile_models::ProfileDto, // ::put_profile
             profile_models::ModifyProfileDto, // ::put_stream
             profile_models::NewPasswordProfileDto, // ::put_profile_new_password,
@@ -77,7 +77,6 @@ use crate::{
         )
     ),
     tags(
-        (name = "profile_get_controller", description = "Find user profile information (Endpoints)."),
         (name = "profile_controller", description = "Managing user profile information (Endpoints)."),
         (name = "profile_auth_controller", description = "User authorization management (endpoints)."),
         (name = "profile_registr_controller", description = "User registration management (endpoints)."),
