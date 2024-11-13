@@ -142,6 +142,21 @@
     "error_when_starting_the_stream": "Помилка запуску потоку",
     "error_when_stopping_the_stream": "Помилка зупинки трансляції",
     "error_while_pause_stream"      : "Помилка призупинення трансляції"
-
+  },
+  "panel-stream-actions": {
+    "sure_you_want_stop_stream": "Ви впевнені, що хочете зупинити потік \"{{title}}\"?",
+    "prepare_stream": "Підготовка",
+    "go_live_stream": "Транслювати",
+    "pause_stream": "Пауза",
+    "stop_stream": "Зупинити"
+  },
+  "concept-view": {
+    "error_update_stream": "Помилка оновлення стану потоку",
+    "exist_is_active_stream": "Ви вже запустили активний потік <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
+  },
+  "panel-stream-params": {
+    "title": "Назва:",
+    "tags": "Теги:",
+    "start": "Початок:"
   }
 }

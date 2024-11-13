@@ -142,5 +142,21 @@
     "error_when_starting_the_stream": "Fehler beim Starten des Streams",
     "error_when_stopping_the_stream": "Fehler beim Stoppen des Streams",
     "error_while_pause_stream"      : "Fehler beim Anhalten des Streams"
+  },
+  "panel-stream-actions": {
+    "sure_you_want_stop_stream": "Möchten Sie den Stream \"{{title}}\" wirklich stoppen?",
+    "prepare_stream": "Vorbereiten",
+    "go_live_stream": "Live gehen",
+    "pause_stream": "Pause",
+    "stop_stream": "Stoppen"
+  },
+  "concept-view": {
+    "error_update_stream": "Fehler beim Aktualisieren des Streamstatus",
+    "exist_is_active_stream": "Der aktive Stream wird bereits ausgeführt <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
+  },
+  "panel-stream-params": {
+    "title": "Titel:",
+    "tags": "Schlagwörter:",
+    "start": "Start:"
   }
 }

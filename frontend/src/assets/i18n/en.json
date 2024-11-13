@@ -350,6 +350,15 @@
     "pause_stream": "Pause",
     "stop_stream": "Stop"
   },
+  "concept-view": {
+    "error_update_stream": "Error updating stream state",
+    "exist_is_active_stream": "You already have the active stream running <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
+  },
+  "panel-stream-params": {
+    "title": "Title:",
+    "tags": "Tags:",
+    "start": "Start:"
+  },
   "panel-stream-admin": {
     "btn_settings": "Settings",
     "_followers": "Followers",
@@ -358,9 +367,5 @@
     "_error_get_profile_contact": "Error getting profile contact",
     "_error_subscription": "Error while a subscription",
     "_error_unsubscription": "Error while a unsubscription"
-  },
-  "concept-view": {
-    "error_update_stream": "Error updating stream state",
-    "exist_is_active_stream": "You already have the active stream running <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
   }
 }
