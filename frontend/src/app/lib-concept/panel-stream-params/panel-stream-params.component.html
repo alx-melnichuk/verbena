@@ -1,25 +1,24 @@
 <div class="psp-title">
-  Title: {{ title }}
+  {{ 'panel-stream-params.title' | translate }} {{ title }}
 </div>
 <div class="psp-tags">
-  <span>Tags:</span>
+  <span>{{ 'panel-stream-params.tags' | translate }}</span>
   <span class="psp-tag" *ngFor="let tag of tags">{{ tag }}</span>
 </div>
-<div>
-  <span>Start:</span>
-  <span class="psp-mr-lf-1">{{ innStartDate }}</span>
-  <span class="psp-mr-lf-1">{{ innStartTime }}</span>
-  <span class="psp-mr-lf-1">innTimer</span>
+<div class="psp-start-date-time">
+  <span>{{ 'panel-stream-params.start' | translate }}</span>
+  <span psp-mr-lf-1>{{ innStartDate }}</span>
+  <span psp-mr-lf-1>{{ innStartTime }}</span>
 </div>
-<!-- <div class="psp-test1">
-  Text1 <span class="psp-test2">span</span> text 3
-</div> -->
-<div style="outline: 1px dashed green;">
-  <span class="psp-mr-lf-1 psp-icon psp-users-group"></span>
-  <span class="psp-mr-lf-1">{{ countOfViewer || 0 }}</span>
-</div>  
-<!-- <div class="psp-icon-people"></div> -->
-<!-- <div class="psp-info-text">{{ countOfViewer || 0 }}</div> -->
+<div class="psp-props">
+  <span psp-mr-lf-1 class="psp-icon psp-users-group"></span>
+  <span psp-mr-lf-1 class="psp-count">{{ countOfViewer || 0 }}</span>
+  <span psp-mr-lf-1 class="psp-icon psp-clock"></span>
+  <span psp-mr-lf-1 class="psp-timer">
+    <app-date-time-timer [isActive]="true" [startDate]="innStartDateTime">
+    </app-date-time-timer>
+  </span>
+</div>
 
 <!-- <div class="psp-author">
   <img class="psp-author-avatar" [src]="avatar || '/assets/images/icon_man.png'" alt="image" />

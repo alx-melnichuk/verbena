@@ -1,12 +1,15 @@
 import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
+import { TranslateModule } from '@ngx-translate/core';
+
+import { DateTimeTimerComponent } from 'src/app/components/date-time-timer/date-time-timer.component';
+
 
 @Component({
   selector: 'app-panel-stream-params',
   exportAs: 'appPanelStreamParams',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslateModule, DateTimeTimerComponent],
   templateUrl: './panel-stream-params.component.html',
   styleUrls: ['./panel-stream-params.component.scss'],
   encapsulation: ViewEncapsulation.None,
@@ -24,9 +27,11 @@ export class PanelStreamParamsComponent implements OnChanges {
 
   public innStartDate: string | null = null;
   public innStartTime: string | null = null;
+  public innStartDateTime: Date | null | undefined;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['startDateTime']) {
+      this.innStartDateTime = this.startDateTime;
       this.innStartDate = '';
       this.innStartTime = '';
       if (this.startDateTime != null) {

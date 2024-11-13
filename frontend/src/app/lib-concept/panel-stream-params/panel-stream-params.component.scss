@@ -6,7 +6,7 @@ app-panel-stream-params {
   line-height: 1.7;
   min-width: 18em;
 
-  .psp-mr-lf-1 {
+  [psp-mr-lf-1] {
     margin-left: 1em;
   }
 
@@ -14,9 +14,6 @@ app-panel-stream-params {
     max-width: 400px;
   }
 
-  .psp-tags {
-
-  }
   .psp-tag {
     background-color: rgb(224, 224, 224);
     border-bottom-left-radius: 16px;
@@ -27,7 +24,14 @@ app-panel-stream-params {
     margin-left: 0.5em;
     padding: 0.25em 0.75em;
   }
-
+  .psp-count {
+    vertical-align: middle;
+  }
+  .psp-timer {
+    display: inline-block;
+    width: 18ch;
+    vertical-align: middle;
+  }
   // ** icon **
   .psp-icon {
     // color: var(--psp-icon-cl);
@@ -40,6 +44,9 @@ app-panel-stream-params {
   }
   .psp-icon.psp-users-group {
     mask-image: url('/assets/icons/panel-stream-params/users-group-bin.svg');
+  }
+  .psp-icon.psp-clock {
+    mask-image: url('/assets/icons/panel-stream-params/clock-bin.svg');
   }
 
   // ** author **
