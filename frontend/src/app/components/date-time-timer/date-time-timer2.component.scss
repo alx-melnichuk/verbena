@@ -1,0 +1,69 @@
+/*# sourceURL=date-time-timer2.component.scss */
+
+app-date-time-timer {
+  &:not([is-custom-animat]) {
+    @keyframes anm-dtt-seconds { // 60s
+        0%     {  }
+        2.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min( 1, var(---m-sec))); }
+        3.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min( 2, var(---m-sec))); }
+        5.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min( 3, var(---m-sec))); }
+        7.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min( 4, var(---m-sec))); }
+        8.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min( 5, var(---m-sec))); }
+       10.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min( 6, var(---m-sec))); }
+       12.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min( 7, var(---m-sec))); }
+       13.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min( 8, var(---m-sec))); }
+       15.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min( 9, var(---m-sec))); }
+       17.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(10, var(---m-sec))); }
+       18.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(11, var(---m-sec))); }
+       20.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(12, var(---m-sec))); }
+       22.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(13, var(---m-sec))); }
+       23.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(14, var(---m-sec))); }
+       25.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(15, var(---m-sec))); }
+       27.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(16, var(---m-sec))); }
+       28.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(17, var(---m-sec))); }
+       30.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(18, var(---m-sec))); }
+       32.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(19, var(---m-sec))); }
+       33.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(20, var(---m-sec))); }
+       35.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(21, var(---m-sec))); }
+       37.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(22, var(---m-sec))); }
+       38.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(23, var(---m-sec))); }
+       40.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(24, var(---m-sec))); }
+       42.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(25, var(---m-sec))); }
+       43.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(26, var(---m-sec))); }
+       45.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(27, var(---m-sec))); }
+       47.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(28, var(---m-sec))); }
+       48.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(29, var(---m-sec))); }
+       50.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(30, var(---m-sec))); }
+       52.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(31, var(---m-sec))); }
+       53.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(32, var(---m-sec))); }
+       55.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(33, var(---m-sec))); }
+       57.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(34, var(---m-sec))); }
+       58.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(35, var(---m-sec))); }
+       60.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(36, var(---m-sec))); }
+       62.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(37, var(---m-sec))); }
+       63.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(38, var(---m-sec))); }
+       65.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(39, var(---m-sec))); }
+       67.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(40, var(---m-sec))); }
+       68.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(41, var(---m-sec))); }
+       70.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(42, var(---m-sec))); }
+       72.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(43, var(---m-sec))); }
+       73.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(44, var(---m-sec))); }
+       75.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(45, var(---m-sec))); }
+       77.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(46, var(---m-sec))); }
+       78.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(47, var(---m-sec))); }
+       80.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(48, var(---m-sec))); }
+       82.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(49, var(---m-sec))); }
+       83.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(50, var(---m-sec))); }
+       85.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(51, var(---m-sec))); }
+       87.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(52, var(---m-sec))); }
+       88.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(53, var(---m-sec))); }
+       90.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(54, var(---m-sec))); }
+       92.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(55, var(---m-sec))); }
+       93.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(56, var(---m-sec))); }
+       95.500% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(57, var(---m-sec))); }
+       97.167% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(58, var(---m-sec))); }
+       98.833% { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(59, var(---m-sec))); }
+      100%     { counter-set: dtt-s-cnr calc(var(---sec) + var(---inc) * min(59, var(---m-sec))); }
+    }
+  }
+}

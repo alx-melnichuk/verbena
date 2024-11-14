@@ -9,12 +9,12 @@ const ATTR_IS_ACTIVE = 'is-active';
 const CSS_BOX_JUSTIFY_CONTENT = '--dtt-box-justify-content';
 const CSS_LEADING_ZERO = '--dtt-leading-zero';
 const CSS_LETTER_SPACING = '--dtt-letter-spacing';
-const CSS_INCREMENT = '--dtt-increment';
-const CCS_MAX_SECONDS = '--dtt-max-seconds'
+const CSS_INCREMENT = '---inc';
+const CCS_MAX_SECONDS = '---m-sec'
 const CSS_DAYS = '--dtt-days';
 const CSS_HOURS = '--dtt-hours';
 const CSS_MINUTES = '--dtt-minutes';
-const CSS_SECONDS = '--dtt-seconds';
+const CSS_SECONDS = '---sec';
 
 export type LabelDaysType = { [key: number]: string };
 
@@ -47,7 +47,7 @@ export type LabelDaysType = { [key: number]: string };
   standalone: true,
   imports: [CommonModule],
   templateUrl: './date-time-timer.component.html',
-  styleUrls: ['./date-time-timer.component.scss'],
+  styleUrls: ['./date-time-timer.component.scss', './date-time-timer2.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
