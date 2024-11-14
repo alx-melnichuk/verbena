@@ -16,12 +16,12 @@ export class StreamListService {
   // "Future Streams"
   public futureStreamLoading = false;
   public futureStreamsDto: StreamDto[] = [];
-  public futurePageInfo: PageInfo = this.createPageInfo();
+  public futurePageInfo: PageInfo = this.createFuturePageInfo();
 
   // "Past Streams"
   public pastStreamLoading = false;
   public pastStreamsDto: StreamDto[] = [];
-  public pastPageInfo: PageInfo = this.createPageInfo();
+  public pastPageInfo: PageInfo = this.createPastPageInfo();
 
   constructor(
     private alertService: AlertService,
@@ -34,7 +34,7 @@ export class StreamListService {
   /** Clear array of "Future Stream". */
   public clearFutureStream(): void {
     this.futureStreamsDto = [];
-    this.futurePageInfo = this.createPageInfo();
+    this.futurePageInfo = this.createFuturePageInfo();
   }
   /** Search for the next page of the "Future Stream". */
   public searchNextFutureStream(userId?: number | undefined): Promise<StreamListDto | HttpErrorResponse | undefined> {
@@ -72,7 +72,7 @@ export class StreamListService {
   /** Clear array of "Past Stream". */
   public clearPastStream(): void {
     this.pastStreamsDto = [];
-    this.pastPageInfo = this.createPageInfo();
+    this.pastPageInfo = this.createPastPageInfo();
   }
   /** Search for the next page of the "Past Stream". */
   public searchNextPastStream(userId?: number | undefined): Promise<StreamListDto | HttpErrorResponse | undefined> {
@@ -82,9 +82,13 @@ export class StreamListService {
     if (!isNextPage) {
       return Promise.resolve(undefined);
     }
+    const oldOrderDir = this.pastPageInfo.orderDirection;
+    const orderDirection: 'asc' | 'desc' | undefined = (oldOrderDir == 'asc'? 'asc': (oldOrderDir == 'desc' ? 'desc': undefined));
+
     let searchStream: SearchStreamDto = {
       userId,
       isFuture: false,
+      orderDirection,
       page: this.pastPageInfo.page + 1,
       limit: this.pastPageInfo.limit
     };
@@ -107,7 +111,11 @@ export class StreamListService {
 
   // ** Private API **
 
-  private createPageInfo(): PageInfo {
+  private createFuturePageInfo(): PageInfo {
     return PageInfoUtil.create({ page: 0, limit: CN_DEFAULT_LIMIT });
+  }
+
+  private createPastPageInfo(): PageInfo {
+    return PageInfoUtil.create({ page: 0, limit: CN_DEFAULT_LIMIT, orderDirection: 'desc' });
   }
 }
