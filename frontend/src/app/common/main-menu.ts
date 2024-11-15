@@ -15,8 +15,8 @@ export const mainMenuList = [
   { name: 'main_menu.profile', link: ROUTE_PROFILE },
   { name: 'main_menu.my_streams', link: ROUTE_STREAM_LIST },
   { name: 'main_menu.create_stream', link: ROUTE_STREAM_CREATE },
-//   { name: 'concept list', link: ROUTE_CONCEPT_LIST },
-//   { name: 'concept view', link: ROUTE_CONCEPT_VIEW + '/876' },
+  { name: 'concept list', link: ROUTE_CONCEPT_LIST },
+  { name: 'concept view', link: ROUTE_CONCEPT_VIEW + '/876' },
 ];
 
 export class MainMenuUtil {
