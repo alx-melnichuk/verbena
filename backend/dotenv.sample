@@ -39,7 +39,7 @@ APP_NAME=Verbéna
 # SSL private key (for the "https" protocol)
 # The presence of a private key leads to encryption of the parameters: DATABASE_URL, JWT_SECRET_KEY, SMTP_HOST_PORT, SMTP_USER_PASS.
 # APP_PRIVATE_KEY=example.key.pem
-# Cors permissions "allowed_origin" (array of values, comma delimited). There should be no spaces.
+# Cors permissions "allowed_origin" (array of values, comma delimited). There should be no spaces. ("https://fonts.googleapis.com")
 # APP_ALLOWED_ORIGIN=
 # Directory for temporary files when uploading user files.
 APP_DIR_TMP=./tmp

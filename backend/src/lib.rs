@@ -118,7 +118,8 @@ pub fn create_cors(config_app: settings::config_app::ConfigApp) -> Cors {
     let app_max_age = config_app.app_max_age;
 
     let mut cors = Cors::default()
-        .allowed_origin(&app_domain.to_string())
+        // Add primary domain.
+        .allowed_origin(&app_domain)
         // .allowed_origin("https://fonts.googleapis.com")
         .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
         .allowed_headers(vec![
@@ -129,7 +130,7 @@ pub fn create_cors(config_app: settings::config_app::ConfigApp) -> Cors {
         .allowed_header(http::header::CONTENT_TYPE)
         .max_age(app_max_age);
 
-    cors = cors.allowed_origin(&app_domain.clone());
+    // Add additional domains.
     let cors_allowed_origin: Vec<&str> = config_app.app_allowed_origin.split(',').collect();
     if cors_allowed_origin.len() > 0 {
         for allowed_origin in cors_allowed_origin.into_iter() {
