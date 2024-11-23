@@ -14,6 +14,7 @@
     --infix-button-ordinary-bg: hsl(var(--app-ordinary-h), var(--app-ordinary-s), calc(var(--app-ordinary-l) + 37%));
     --infix-form-field-hint-cl: hsl(210, 8%, 35%);
 
+    // Field:
     .mdc-text-field:not(.mdc-text-field--disabled) .mdc-text-field__input {
       color: inherit;
     }
@@ -32,11 +33,15 @@
     --infix-button-ordinary-bg: hsl(var(--app-ordinary-h), var(--app-ordinary-s), calc(var(--app-ordinary-l) - 28%));
     --infix-form-field-hint-cl: hsla(0, 0%, 100%, 0.6);
 
+    // Field:
     .mdc-text-field:not(.mdc-text-field--disabled) .mdc-text-field__input {
       color: inherit;
     }
     .mdc-text-field:not(.mdc-text-field--disabled) .mdc-floating-label {
       color: rgba(256, 256, 256, 0.75);
+    }
+    .mdc-text-field--outlined:not(.mdc-text-field--disabled):not(.mdc-text-field--focused):hover .mdc-notched-outline div {
+      border-color: #FFFFFF;
     }
 
     // ** mat-select **
