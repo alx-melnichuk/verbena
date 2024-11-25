@@ -3,14 +3,76 @@
 
 .stl-mdc-infix {
   --demo-button-bg: #797979;
+  // ** mat-error **
+  .mat-mdc-form-field-subscript-wrapper {
+    --mdc-typography-caption-line-height: 1.1; //1.25;
+    --mdc-typography-caption-font-size: calc(1em - 3px); // 13px
+    // &::before { height: calc(2em + 2px); }
+    mat-hint, mat-error {
+      display: flex;
+    //   margin-top: 1px;
+    }
+  }
+  .infix-err-hg-bg .ng-invalid.ng-touched .mat-mdc-form-field-subscript-wrapper {
+    height: 2.25em;
+  }
+
+   //  cdk-overlay-container
+  .cdk-overlay-container {
+    .mat-mdc-menu-item, // Mat-Menu
+    .mat-mdc-option {   // Mat-Select
+      min-height: 40px;
+    }
+    // Mat-Select
+    .mat-mdc-option .mat-pseudo-checkbox-minimal {
+      margin-left: 0.5em;
+    }
+  }
+
+  // **
+  // ** Color palette (light-theme/dark-theme) for "Material Design" components. **
+  // **
+
+
+  // Light
+  &.light-theme {
+    .mat-mdc-form-field.app-infix-tm {
+      --nfx-tm-text-field-border: hsla(var(--app-default-cl-h), var(--app-default-cl-s), var(--app-default-cl-l), 0.23);
+    }
+  }
+  &.dark-theme {
+    .mat-mdc-form-field.app-infix-tm {
+      --nfx-tm-text-field-border: hsla(var(--app-default-cl-h), var(--app-default-cl-s), var(--app-default-cl-l), 0.3);
+    }
+  }  
+
+  
+  .mat-mdc-form-field.app-infix-tm {
+    --mdc-theme-error: var(--app-warn); // .mat-form-field-invalid
+    --mdc-theme-primary: var(--app-primary);
+    --nfx-tm-text-field-disabled: hsla(var(--app-default-cl-h), var(--app-default-cl-s), var(--app-default-cl-l), 0.36);
+    // --mdc-filled-text-field-container-color: hsl(0, 0%, 96%);
+    // --mdc-filled-text-field-container-color: hsl(var(--app-default-bg-h), var(--app-default-bg-s), calc(var(--app-default-bg-l) - 2%));
+
+    .mdc-text-field--focused:not(.mdc-text-field--disabled):not(.mdc-text-field--invalid) .mdc-floating-label {
+      color: var(--app-primary);
+    } 
+
+    .mdc-text-field--disabled {
+      color: var(--nfx-tm-text-field-disabled);
+      .mdc-floating-label { color: inherit; }
+    }
+    .mdc-text-field--disabled .mdc-notched-outline > div {
+      border-color: var(--nfx-tm-text-field-border);
+    }
+  }
+    
 
   &.light-theme {
     --infix-button-ordinary-brd: var(--app-ordinary-high);
-    // --demo--button-ordinary-text-cl: hsl(0, 0%, 0%); // #000000
-    --app-default-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
-    --infix-button-ordinary-text-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
-    --infix-button-ordinary-text-dis-cl: hsla(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l),0.50);
-    // --demo-button-ordinary-bg : hsl(0, 0%, 84%);
+    --infix-button-ordinary-text-cl: var(--app-default-cl);
+    --infix-button-ordinary-text-dis-cl: hsla(var(--app-default-cl-h), var(--app-default-cl-s), var(--app-default-cl-l), 0.50);
+
     --infix-button-ordinary-bg: hsl(var(--app-ordinary-h), var(--app-ordinary-s), calc(var(--app-ordinary-l) + 37%));
     --infix-form-field-hint-cl: hsl(210, 8%, 35%);
 
@@ -20,16 +82,14 @@
     }
     .mdc-text-field:not(.mdc-text-field--disabled) .mdc-floating-label {
       color: rgba(0, 0, 0, 0.75);
-    }
+    }      
 
   }
 
   &.dark-theme {
-    --infix-button-ordinary-brd: var(--app-ordinary-low); // high
-    // --demo--button-ordinary-text-cl: hsl(0, 0%, 100%); // #ffffff
-    --infix-button-ordinary-text-cl: hsl(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l));
-    --infix-button-ordinary-text-dis-cl: hsla(var(--app-default-cl-h),var(--app-default-cl-s),var(--app-default-cl-l),0.50);
-    // --demo--button-ordinary-bg : hsl(0, 0%, 19%);
+    --infix-button-ordinary-brd: var(--app-ordinary-low);
+    --infix-button-ordinary-text-cl: var(--app-default-cl);
+    --infix-button-ordinary-text-dis-cl: hsla(var(--app-default-cl-h), var(--app-default-cl-s), var(--app-default-cl-l), 0.50);
     --infix-button-ordinary-bg: hsl(var(--app-ordinary-h), var(--app-ordinary-s), calc(var(--app-ordinary-l) - 28%));
     --infix-form-field-hint-cl: hsla(0, 0%, 100%, 0.6);
 
@@ -87,36 +147,18 @@
     --mdc-protected-button-container-color: var(--infix-button-ordinary-bg);
   }
 
+  //.mat-mdc-raised-button.mat-unthemed {
+  //  --mdc-protected-button-container-color: #424242;
+  //  --mdc-protected-button-label-text-color: #fff;
+  //}
 
   // ** mat-form-field **
   .mat-mdc-form-field-hint {
     color: var(--infix-form-field-hint-cl);
   }
 
-  // ** mat-error **
-  .mat-mdc-form-field-subscript-wrapper {
-    --mdc-typography-caption-line-height: 1.1; //1.25;
-    --mdc-typography-caption-font-size: calc(1em - 3px); // 13px
-    // &::before { height: calc(2em + 2px); }
-    mat-hint, mat-error {
-      display: flex;
-    //   margin-top: 1px;
-    }
-  }
-  .infix-err-hg-bg .ng-invalid.ng-touched .mat-mdc-form-field-subscript-wrapper {
-    height: 2.25em;
-  }
+ 
+  
 
-   //  cdk-overlay-container
-  .cdk-overlay-container {
-    .mat-mdc-menu-item, // Mat-Menu
-    .mat-mdc-option {   // Mat-Select
-      min-height: 40px;
-    }
-    // Mat-Select
-    .mat-mdc-option .mat-pseudo-checkbox-minimal {
-      margin-left: 0.5em;
-    }
-  }
   
 }
