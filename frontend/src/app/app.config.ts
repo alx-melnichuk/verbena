@@ -1,6 +1,6 @@
 import { HTTP_INTERCEPTORS, HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
-import { APP_INITIALIZER, ApplicationConfig, ErrorHandler, importProvidersFrom } from '@angular/core';
-import { provideAnimations } from '@angular/platform-browser/animations';
+import { APP_INITIALIZER, ApplicationConfig, ErrorHandler, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
@@ -15,7 +15,7 @@ import { InitializationService } from './common/initialization.service';
 import { AppErrorHandler } from './app-error-handler';
 
 // AoT requires an exported function for factories
-export const HTTP_LOADER_FACTORY = (httpClient: HttpClient): TranslateHttpLoader => {
+export const TRANSLATE_LOADER_FACTORY = (httpClient: HttpClient): TranslateHttpLoader => {
   console.log(`HTTP_LOADER_FACTORY()`); // #
   return new TranslateHttpLoader(httpClient, './assets/i18n/', '.json');
 };
@@ -32,23 +32,24 @@ export const INITIALIZE_AUTHENTICATION_USER_FACTORY = (initializationService: In
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(APP_ROUTES),
-    provideAnimations(),
+    provideAnimationsAsync(),
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideHttpClient(withInterceptorsFromDi()),
+    importProvidersFrom([
+      TranslateModule.forRoot({
+        loader: {
+          provide: TranslateLoader,
+          useFactory: TRANSLATE_LOADER_FACTORY,
+          deps: [HttpClient],
+        },
+      })
+    ]),
     InitializationService,
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthorizationInterceptor,
       multi: true,
     },
-    provideHttpClient(withInterceptorsFromDi()),
-    importProvidersFrom(
-      TranslateModule.forRoot({
-        loader: {
-          provide: TranslateLoader,
-          deps: [HttpClient],
-          useFactory: HTTP_LOADER_FACTORY,
-        },
-      })
-    ),
     importProvidersFrom(MatDialogModule, MatSnackBarModule, MatNativeDateModule),
     {
       provide: DateAdapter,
@@ -74,5 +75,5 @@ export const appConfig: ApplicationConfig = {
       provide: ErrorHandler,
       useClass: AppErrorHandler
     },
-  ],
+  ]
 };
