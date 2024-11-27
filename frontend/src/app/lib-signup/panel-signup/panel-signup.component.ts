@@ -28,7 +28,7 @@ export const SG_DEBOUNCE_DELAY = 900;
   imports: [ CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslateModule,
     FieldEmailComponent, FieldNicknameComponent, FieldPasswordComponent, UniquenessCheckComponent],
   templateUrl: './panel-signup.component.html',
-  styleUrls: ['./panel-signup.component.scss'],
+  styleUrl: './panel-signup.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

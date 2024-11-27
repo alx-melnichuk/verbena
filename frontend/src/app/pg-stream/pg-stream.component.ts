@@ -7,7 +7,7 @@ import { RouterOutlet } from '@angular/router';
   standalone: true,
   imports: [CommonModule, RouterOutlet],
   templateUrl: './pg-stream.component.html',
-  styleUrls: ['./pg-stream.component.scss'],
+  styleUrl: './pg-stream.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

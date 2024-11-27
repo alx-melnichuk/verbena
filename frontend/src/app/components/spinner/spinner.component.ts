@@ -21,7 +21,7 @@ const DEAULT_DIAMETER = 100;
   standalone: true,
   imports: [CommonModule, MatProgressSpinnerModule],
   templateUrl: './spinner.component.html',
-  styleUrls: ['./spinner.component.scss'],
+  styleUrl: './spinner.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

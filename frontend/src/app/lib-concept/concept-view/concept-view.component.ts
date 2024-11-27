@@ -30,7 +30,7 @@ import { PanelStreamStateComponent   } from '../panel-stream-state/panel-stream-
   imports: [CommonModule, TranslateModule, SpinnerComponent, SidebarComponent, 
     PanelStreamStateComponent, PanelStreamParamsComponent, PanelStreamActionsComponent],
   templateUrl: './concept-view.component.html',
-  styleUrls: ['./concept-view.component.scss'],
+  styleUrl: './concept-view.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

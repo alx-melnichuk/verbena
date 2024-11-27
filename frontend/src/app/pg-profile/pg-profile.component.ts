@@ -21,7 +21,7 @@ import { InitializationService } from '../common/initialization.service';
   standalone: true,
   imports: [CommonModule, PanelProfileComponent, SpinnerComponent],
   templateUrl: './pg-profile.component.html',
-  styleUrls: ['./pg-profile.component.scss'],
+  styleUrl: './pg-profile.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

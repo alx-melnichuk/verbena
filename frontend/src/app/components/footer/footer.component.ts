@@ -11,7 +11,7 @@ import { ROUTE_LOGIN } from 'src/app/common/routes';
   standalone: true,
   imports: [CommonModule, RouterLink, TranslateModule],
   templateUrl: './footer.component.html',
-  styleUrls: ['./footer.component.scss'],
+  styleUrl: './footer.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

@@ -22,7 +22,7 @@ export const DESCRIPT_ROWS = 6;
   standalone: true,
   imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule],
   templateUrl: './field-descript.component.html',
-  styleUrls: ['./field-descript.component.scss'],
+  styleUrl: './field-descript.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [

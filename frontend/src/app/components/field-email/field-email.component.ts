@@ -25,7 +25,7 @@ export const CUSTOM_ERROR = 'customError';
   standalone: true,
   imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule],
   templateUrl: './field-email.component.html',
-  styleUrls: ['./field-email.component.scss'],
+  styleUrl: './field-email.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [

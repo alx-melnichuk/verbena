@@ -18,7 +18,7 @@ export interface ConfirmationData {
   standalone: true,
   imports: [CommonModule, MatDialogModule, MatButtonModule],
   templateUrl: './confirmation.component.html',
-  styleUrls: ['./confirmation.component.scss'],
+  styleUrl: './confirmation.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

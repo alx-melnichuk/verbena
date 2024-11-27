@@ -22,7 +22,7 @@ export const CUSTOM_ERROR = 'customError';
   standalone: true,
   imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule],
   templateUrl: './field-title.component.html',
-  styleUrls: ['./field-title.component.scss'],
+  styleUrl: './field-title.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [

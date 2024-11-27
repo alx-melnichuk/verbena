@@ -19,7 +19,7 @@ import { LOCALE_DE_DE, LOCALE_EN_US, LOCALE_NOTHING, LOCALE_UK } from 'src/app/c
   standalone: true,
   imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, MatSelectModule],
   templateUrl: './field-locale.component.html',
-  styleUrls: ['./field-locale.component.scss'],
+  styleUrl: './field-locale.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [

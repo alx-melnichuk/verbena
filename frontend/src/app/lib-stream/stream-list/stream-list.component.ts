@@ -24,7 +24,7 @@ import { StreamService } from '../stream.service';
   imports: [CommonModule, TranslateModule, SpinnerComponent, PanelStreamEventComponent, PanelStreamInfoComponent,
     PanelStreamCalendarComponent],
   templateUrl: './stream-list.component.html',
-  styleUrls: ['./stream-list.component.scss'],
+  styleUrl: './stream-list.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

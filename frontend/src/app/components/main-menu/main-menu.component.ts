@@ -20,7 +20,7 @@ import { LOCALE_DE_DE, LOCALE_EN_US, LOCALE_NOTHING, LOCALE_UK, THEME_DARK, THEM
   standalone: true,
   imports: [CommonModule, FormsModule, MatMenuModule, MatButtonModule, MatSlideToggleModule, TranslateModule,  RouterLink],
   templateUrl: './main-menu.component.html',
-  styleUrls: ['./main-menu.component.scss'],
+  styleUrl: './main-menu.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

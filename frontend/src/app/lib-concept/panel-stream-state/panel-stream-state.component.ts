@@ -15,7 +15,7 @@ const ATTR_STATE = 'state';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './panel-stream-state.component.html',
-  styleUrls: ['./panel-stream-state.component.scss'],
+  styleUrl: './panel-stream-state.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

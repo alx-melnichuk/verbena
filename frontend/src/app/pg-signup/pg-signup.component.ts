@@ -16,7 +16,7 @@ import { HttpErrorUtil } from '../utils/http-error.util';
   standalone: true,
   imports: [CommonModule, TranslateModule, PanelSignupComponent],
   templateUrl: './pg-signup.component.html',
-  styleUrls: ['./pg-signup.component.scss'],
+  styleUrl: './pg-signup.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [DialogService],

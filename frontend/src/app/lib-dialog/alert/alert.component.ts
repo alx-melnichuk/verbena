@@ -9,7 +9,7 @@ import { AlertMode } from './alert.interface';
   standalone: true,
   imports: [CommonModule, TranslateModule],
   templateUrl: './alert.component.html',
-  styleUrls: ['./alert.component.scss'],
+  styleUrl: './alert.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

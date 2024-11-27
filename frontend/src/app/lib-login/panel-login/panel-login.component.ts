@@ -24,7 +24,7 @@ import { FieldPasswordComponent } from 'src/app/components/field-password/field-
   imports: [ CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslateModule,
     FieldNicknameComponent, FieldPasswordComponent,],
   templateUrl: './panel-login.component.html',
-  styleUrls: ['./panel-login.component.scss'],
+  styleUrl: './panel-login.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

@@ -19,7 +19,7 @@ import { THEME_DARK, THEME_LIGHT, THEME_NOTHING } from 'src/app/common/constants
   standalone: true,
   imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, MatSelectModule],
   templateUrl: './field-theme.component.html',
-  styleUrls: ['./field-theme.component.scss'],
+  styleUrl: './field-theme.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [

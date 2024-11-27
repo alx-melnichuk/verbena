@@ -23,7 +23,7 @@ export type CheckUniquenessFnType = (value: string | null | undefined) => Promis
   standalone: true,
   imports: [CommonModule, SpinnerComponent],
   templateUrl: './uniqueness-check.component.html',
-  styleUrls: ['./uniqueness-check.component.scss'],
+  styleUrl: './uniqueness-check.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

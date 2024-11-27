@@ -43,7 +43,7 @@ export const PSE_LOGO_MX_WD = '---pse-logo-mx-wd';
     FieldImageAndUploadComponent, FieldTimeComponent, FieldTitleComponent, FieldDateComponent,
   ],
   templateUrl: './panel-stream-editor.component.html',
-  styleUrls: ['./panel-stream-editor.component.scss'],
+  styleUrl: './panel-stream-editor.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

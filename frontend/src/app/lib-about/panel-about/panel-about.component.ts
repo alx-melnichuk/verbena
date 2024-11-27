@@ -9,7 +9,7 @@ declare var APP_ABOUT: any;
   standalone: true,
   imports: [CommonModule, TranslateModule,],
   templateUrl: './panel-about.component.html',
-  styleUrls: ['./panel-about.component.scss'],
+  styleUrl: './panel-about.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

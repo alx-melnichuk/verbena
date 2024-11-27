@@ -17,7 +17,7 @@ import { StreamState } from 'src/app/lib-stream/stream-api.interface';
     DateTimeTimerComponent
   ],
   templateUrl: './panel-stream-admin.component.html',
-  styleUrls: ['./panel-stream-admin.component.scss'],
+  styleUrl: './panel-stream-admin.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

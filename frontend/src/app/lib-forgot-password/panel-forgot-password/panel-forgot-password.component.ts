@@ -21,7 +21,7 @@ import { StrParams } from 'src/app/common/str-params';
   imports: [ CommonModule, RouterLink, TranslateModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule,
     MatInputModule, FieldEmailComponent,],
   templateUrl: './panel-forgot-password.component.html',
-  styleUrls: ['./panel-forgot-password.component.scss'],
+  styleUrl: './panel-forgot-password.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

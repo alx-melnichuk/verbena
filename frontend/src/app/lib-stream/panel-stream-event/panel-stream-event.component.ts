@@ -15,7 +15,7 @@ import { StreamDtoUtil, StreamEventDto } from '../stream-api.interface';
   standalone: true,
   imports: [CommonModule, TranslateModule, LogotypeComponent],
   templateUrl: './panel-stream-event.component.html',
-  styleUrls: ['./panel-stream-event.component.scss'],
+  styleUrl: './panel-stream-event.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

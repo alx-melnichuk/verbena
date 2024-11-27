@@ -14,7 +14,7 @@ import { ACCESS_TOKEN, ProfileService } from './lib-profile/profile.service';
   standalone: true,
   imports: [CommonModule, RouterLink, RouterOutlet, TranslateModule, HeaderComponent, FooterComponent],
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss'],
+  styleUrl: './app.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

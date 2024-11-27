@@ -18,7 +18,7 @@ const CN_ScrollPanelTimeout = 200; // milliseconds
   standalone: true,
   imports: [CommonModule, MatButtonModule, MatCardModule, TranslateModule, LogotypeComponent],
   templateUrl: './panel-stream-info.component.html',
-  styleUrls: ['./panel-stream-info.component.scss'],
+  styleUrl: './panel-stream-info.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

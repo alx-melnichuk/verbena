@@ -12,7 +12,7 @@ import { StreamState } from 'src/app/lib-stream/stream-api.interface';
   standalone: true,
   imports: [CommonModule, MatButtonModule, TranslateModule],
   templateUrl: './panel-stream-actions.component.html',
-  styleUrls: ['./panel-stream-actions.component.scss'],
+  styleUrl: './panel-stream-actions.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

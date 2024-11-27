@@ -18,7 +18,7 @@ import { StreamConfigDto } from '../stream-config.interface';
   standalone: true,
   imports: [CommonModule, SpinnerComponent, PanelStreamEditorComponent],
   templateUrl: './stream-edit.component.html',
-  styleUrls: ['./stream-edit.component.scss'],
+  styleUrl: './stream-edit.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

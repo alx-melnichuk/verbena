@@ -8,7 +8,7 @@ import { TranslateModule } from '@ngx-translate/core';
   standalone: true,
   imports: [CommonModule, TranslateModule],
   templateUrl: './logotype.component.html',
-  styleUrls: ['./logotype.component.scss'],
+  styleUrl: './logotype.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

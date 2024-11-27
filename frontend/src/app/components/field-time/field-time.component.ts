@@ -21,7 +21,7 @@ export const FT_LENGTH_MIN = 5;
   standalone: true,
   imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule],
   templateUrl: './field-time.component.html',
-  styleUrls: ['./field-time.component.scss'],
+  styleUrl: './field-time.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [

@@ -8,7 +8,7 @@ import { PanelAboutComponent } from '../lib-about/panel-about/panel-about.compon
   standalone: true,
   imports: [CommonModule, PanelAboutComponent],
   templateUrl: './pg-about.component.html',
-  styleUrls: ['./pg-about.component.scss'],
+  styleUrl: './pg-about.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

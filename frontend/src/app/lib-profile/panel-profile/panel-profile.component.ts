@@ -37,7 +37,7 @@ export const PPI_AVATAR_MX_WD = '---pp-avatar-mx-wd';
     UniquenessCheckComponent, FieldNicknameComponent, FieldEmailComponent, FieldPasswordComponent,
     FieldDescriptComponent, FieldFileUploadComponent, FieldImageAndUploadComponent, FieldThemeComponent, FieldLocaleComponent],
   templateUrl: './panel-profile.component.html',
-  styleUrls: ['./panel-profile.component.scss'],
+  styleUrl: './panel-profile.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

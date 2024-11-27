@@ -17,7 +17,7 @@ import { TranslateModule } from '@ngx-translate/core';
   standalone: true,
   imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, MatDatepickerModule],
   templateUrl: './field-date.component.html',
-  styleUrls: ['./field-date.component.scss'],
+  styleUrl: './field-date.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [

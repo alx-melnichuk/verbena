@@ -23,7 +23,7 @@ export const CUSTOM_ERROR = 'customError';
   standalone: true,
   imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule],
   templateUrl: './field-nickname.component.html',
-  styleUrls: ['./field-nickname.component.scss'],
+  styleUrl: './field-nickname.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [

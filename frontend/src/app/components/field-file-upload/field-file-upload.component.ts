@@ -15,7 +15,7 @@ let idx = 0;
   standalone: true,
   imports: [CommonModule, FieldDragAndDropDirective, TranslateModule],
   templateUrl: './field-file-upload.component.html',
-  styleUrls: ['./field-file-upload.component.scss'],
+  styleUrl: './field-file-upload.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

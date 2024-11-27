@@ -11,7 +11,7 @@ import { AlertInterface } from '../alert/alert.interface';
   standalone: true,
   imports: [CommonModule, MatSnackBarModule, AlertComponent],
   templateUrl: './alert-wrap.component.html',
-  styleUrls: ['./alert-wrap.component.scss'],
+  styleUrl: './alert-wrap.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

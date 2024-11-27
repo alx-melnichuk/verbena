@@ -16,7 +16,7 @@ import { HttpErrorUtil } from '../utils/http-error.util';
   standalone: true,
   imports: [CommonModule, TranslateModule, PanelForgotPasswordComponent],
   templateUrl: './pg-forgot-password.component.html',
-  styleUrls: ['./pg-forgot-password.component.scss'],
+  styleUrl: './pg-forgot-password.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

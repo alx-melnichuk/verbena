@@ -11,7 +11,7 @@ import { DateTimeTimerComponent } from 'src/app/components/date-time-timer/date-
   standalone: true,
   imports: [CommonModule, TranslateModule, DateTimeTimerComponent],
   templateUrl: './panel-stream-params.component.html',
-  styleUrls: ['./panel-stream-params.component.scss'],
+  styleUrl: './panel-stream-params.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

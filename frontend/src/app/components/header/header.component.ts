@@ -20,7 +20,7 @@ import { THEME_DARK, THEME_LIGHT } from 'src/app/common/constants';
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive, TranslateModule, MainMenuComponent],
   templateUrl: './header.component.html',
-  styleUrls: ['./header.component.scss'],
+  styleUrl: './header.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

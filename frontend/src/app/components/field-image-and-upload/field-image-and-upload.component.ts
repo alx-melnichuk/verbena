@@ -78,7 +78,7 @@ export const CUSTOM_ERROR = 'customError';
   imports: [CommonModule,  ReactiveFormsModule, MatButtonModule, MatInputModule, MatFormFieldModule, MatTooltipModule, TranslateModule,
     FieldFileUploadComponent],
   templateUrl: './field-image-and-upload.component.html',
-  styleUrls: ['./field-image-and-upload.component.scss'],
+  styleUrl: './field-image-and-upload.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [

@@ -14,7 +14,7 @@ import { HttpErrorUtil } from '../utils/http-error.util';
   standalone: true,
   imports: [CommonModule, PanelLoginComponent],
   templateUrl: './pg-login.component.html',
-  styleUrls: ['./pg-login.component.scss'],
+  styleUrl: './pg-login.component.scss',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
