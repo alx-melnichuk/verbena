@@ -2,14 +2,13 @@
 
 :root {
 
-
   // OLD variant
   // --app-theme-input-border: darkgray;
 
   .dark-theme {
     // @include angular-material-theme($dark-theme);
     // @include app-theme-color($dark-theme);
-    --app-theme-primary: var(--blue-500);
+    --app-theme-primary: hsl(206, 100%, 52%); // --blue -500: hsl(206, 100%, 52%);
     --app-theme-accent: #999999;
     --app-theme-green100: #26A69A;
     --app-theme-blue-grey-500: #1E3046;
@@ -23,7 +22,7 @@
   .light-theme {
     // @include angular-material-theme($light-theme);
     // @include app-theme-color($light-theme);
-    --app-theme-primary: var(--blue-800);
+    --app-theme-primary: hsl(209, 100%, 32%); //  --blue -800: hsl(209, 100%, 32%);
     --app-theme-accent: #999999;
     --app-theme-green100: #26A69A;
     --app-theme-blue-grey-500: #1E3046;
@@ -39,14 +38,10 @@
     --app-input-brd-hov: rgba(0, 0, 0, 0.87);
     --app-input-brd-dis: rgba(0, 0, 0, 0.06);
   
-  
-    // --app-site-off-header-bg: var(--orange-100);
-    // --app-site-off-footer-bg: var(--orange-100);
-  
-    --app-site-footer-bg: var(--green-050);
-    --app-site-header-bg: var(--green-050);
-    --app-site-border-cl: var(--green-500);
-    --app-site-border-warn-cl: var(--red-500);
+    --app-site-footer-bg: hsl(140, 40%, 90%); // var(--green -050);  --green -050: hsl(140, 40%, 90%);
+    --app-site-header-bg: hsl(140, 40%, 90%); // var(--green -050);
+    --app-site-border-cl: hsl(140, 40%, 90%); // var(--green -500);
+    --app-site-border-warn-cl: hsl(358, 62%, 52%); /// var(--red -500);
   }
 
 }
