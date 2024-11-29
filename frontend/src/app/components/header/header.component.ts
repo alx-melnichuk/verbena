@@ -12,7 +12,6 @@ import { ROUTE_LOGIN } from 'src/app/common/routes';
 import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 
 import { MainMenuComponent } from '../main-menu/main-menu.component';
-import { THEME_DARK, THEME_LIGHT } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-header',
