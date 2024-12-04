@@ -21,7 +21,7 @@
     "my_streams": "My streams",
     "create_stream": "Create stream",
     "my_follows_": "My follows",
-    "dark_theme": "Dark Theme",
+    "theme": "Theme",
     "locale": "Locale",
     "log_out": "Log Out"
   },
@@ -36,8 +36,12 @@
   },
   "theme": {
     "": "nothing",
-    "light": "Light theme",
-    "dark": "Dark theme"
+    "light-azure_blue": "Light Azure & Blue",
+    "light-rose_red": "Light Rose & Red",
+    "light-cyan_orange": "Light Cyan & Orange",
+    "dark-azure_blue": "Dark Azure & Blue",
+    "dark-rose_red": "Dark Rose & Red",
+    "dark-cyan_orange": "Dark Cyan & Orange"
   },
   "Forbidden": {
     "status": 403,

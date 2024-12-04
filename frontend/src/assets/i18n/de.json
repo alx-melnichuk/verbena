@@ -21,7 +21,8 @@
     "my_streams": "Meine streams",
     "create_stream": "Stream erstellen",
     "my_follows_": "Meine follower",
-    "dark_theme": "Dunkles design",
+    "theme": "Thema",
+    "locale": "Gebietsschema",
     "log_out": "Abmelden"
   },
   "dialog": {
@@ -35,8 +36,12 @@
   },
   "theme": {
     "": "nichts",
-    "light": "Helles thema",
-    "dark": "Dunkles thema"
+    "light-azure_blue": "Licht Azurblau & Blau",
+    "light-rose_red": "Licht Rose & Rot",
+    "light-cyan_orange": "Licht Cyan & Orange",
+    "dark-azure_blue": "Dunkel Azurblau & Blau",
+    "dark-rose_red": "Dunkel Rose & Rot",
+    "dark-cyan_orange": "Dunkel Cyan & Orange"
   },
 
   "field-locale": {
