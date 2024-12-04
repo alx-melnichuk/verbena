@@ -56,10 +56,10 @@ app-panel-stream-params {
   .psp-author > img {
     border-radius: var(--hd-image-brd-rd, 0.3em);
     box-sizing: border-box;
-    height: calc(var(--header-hg, 62px) - 4px);
+    height: calc(var(--app-header-hg, 62px) - 4px);
     margin-left: 0.75em;
     object-fit: cover;
-    width: calc(var(--header-hg, 62px) - 4px);
+    width: calc(var(--app-header-hg, 62px) - 4px);
   }
 
   //.hd-profile-avatar {
@@ -69,10 +69,10 @@ app-panel-stream-params {
   img.hd-avatar {
     border-radius: var(--hd-image-brd-rd, 0.3em);
     box-sizing: border-box;
-    height: calc(var(--header-hg, 62px) - 4px);
+    height: calc(var(--app-header-hg, 62px) - 4px);
     margin-left: 0.75em;
     object-fit: cover;
-    width: calc(var(--header-hg, 62px) - 4px);
+    width: calc(var(--app-header-hg, 62px) - 4px);
   }
 
 }

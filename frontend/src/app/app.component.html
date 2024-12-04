@@ -1,17 +1,14 @@
-<header>
-  <app-header
-    [currentRoute]="currentRoute"
-    [locale]="locale"
-    [profileDto]="profileService.profileDto"
-    [theme]="theme"
-    (logout)="doLogout()"
-    (setLocale)="doSetLocale($event)"
-    (setTheme)="doSetTheme($event)">
-  </app-header>
-</header>
+<app-header
+  [currentRoute]="currentRoute"
+  [locale]="locale"
+  [profileDto]="profileService.profileDto"
+  [theme]="theme"
+  (logout)="doLogout()"
+  (setLocale)="doSetLocale($event)"
+  (setTheme)="doSetTheme($event)">
+</app-header>
 <main>
   <router-outlet></router-outlet>
 </main>
-<footer>
-  <app-footer [isAuthorized]="!!profileService.profileDto"></app-footer>
-</footer>
+<app-footer [isAuthorized]="!!profileService.profileDto">
+</app-footer>

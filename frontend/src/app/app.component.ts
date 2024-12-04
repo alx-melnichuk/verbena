@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
+import { THEME_LIST } from './common/constants';
+import { InitializationService } from './common/initialization.service';
+import { AUTHORIZATION_DENIED, ROUTE_LOGIN } from './common/routes';
 import { FooterComponent } from './components/footer/footer.component';
 import { HeaderComponent } from './components/header/header.component';
-import { AUTHORIZATION_DENIED, ROUTE_LOGIN } from './common/routes';
-import { InitializationService } from './common/initialization.service';
 import { ACCESS_TOKEN, ProfileService } from './lib-profile/profile.service';
 
 @Component({
@@ -50,7 +51,8 @@ export class AppComponent implements OnInit {
     private router: Router,
     private initializationService: InitializationService,
   ) {
-    this.initializationService.setTheme(this.profileService.profileDto?.theme, this.renderer);
+    const theme = this.profileService.profileDto?.theme || THEME_LIST[0];
+    this.initializationService.setTheme(theme, this.renderer);
   }
 
   async ngOnInit(): Promise<void> {
