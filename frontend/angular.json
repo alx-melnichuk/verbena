@@ -46,8 +46,7 @@
               { "glob": "favicon.ico", "input": "src/", "output": "/" }
             ],
             "styles": [
-              "src/styles.scss",
-              "src/styles_sys_colors.css"
+              "src/styles.scss"
             ],
             "scripts": []
           },
@@ -109,8 +108,7 @@
               { "glob": "favicon.ico", "input": "src/", "output": "/" }
             ],
             "styles": [
-              "src/styles.scss",
-              "src/styles_sys_colors.css"
+              "src/styles.scss"
             ],
             "scripts": []
           }
