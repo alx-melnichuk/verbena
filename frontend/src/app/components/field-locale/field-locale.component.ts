@@ -11,7 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { LOCALE_DE_DE, LOCALE_EN_US, LOCALE_NOTHING, LOCALE_UK } from 'src/app/common/constants';
+import { LOCALE_LIST } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-field-locale',
@@ -51,8 +51,7 @@ export class FieldLocaleComponent implements OnChanges, ControlValueAccessor, Va
   public formGroup: FormGroup = new FormGroup({ locale: this.formControl });
   public errMessage: string = '';
 
-  public nothing = LOCALE_NOTHING;
-  public localeList: string[] = ['', LOCALE_EN_US, LOCALE_DE_DE, LOCALE_UK];
+  public localeList: string[] = ['', ...LOCALE_LIST];
 
   constructor() {
   }
