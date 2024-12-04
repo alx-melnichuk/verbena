@@ -14,7 +14,7 @@
 $verbena-theme: mat.define-theme((
   color: (
     theme-type: light,
-    primary: mat.$azure-palette,
+    primary : mat.$azure-palette,
     tertiary: mat.$blue-palette,
     use-system-variables: true, // Added
   ),
@@ -45,10 +45,10 @@ $verbena-theme: mat.define-theme((
 
 
 // @import './styles-colors-list.scss';
-@import './styles-colors.scss';
+// @import './styles-colors.scss';
 @import './styles-theme.scss';
-@import './styles-mdc-infix.scss';
-
+// @import './styles-mdc-infix.scss';
+  
 html {
   --scrollbarBG: rgb(207 216 220 / 20%);
   --thumbBG: #90a4ae;
@@ -64,19 +64,14 @@ body {
   -webkit-text-size-adjust: 100% !important;
   -ms-text-size-adjust: 100% !important;
   -webkit-font-smoothing: antialiased !important;
+  // Define the default background color and text color.
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
 }
-h1, h2, h3, h4, h5, h6 {
-  margin: 8px 0;
-}
-p {
-  margin: 0;
-}
+h1, h2, h3, h4, h5, h6 { margin: 8px 0; }
+p { margin: 0; }
 
-a[no-decor],
-a:visited[no-decor],
-a:hover[no-decor] {
-  text-decoration: none;
-}
+a[no-decor], a:visited[no-decor], a:hover[no-decor] { text-decoration: none; }
 
 .global-scroll {
   scrollbar-width: thin;
@@ -93,31 +88,4 @@ a:hover[no-decor] {
     border-radius: 6px;
     border: 3px solid var(--scrollbarBG);
   }
-}
-
-body {
-  --mat-menu-item-label-text-size: none;
-}
-// old
-// .spacer {
-//   flex: 1;
-// }
-
-
-.cdk-overlay-pane.app-modal-panel {
-
-  .mdc-dialog__container {
-    // --mdc-dialog-container-color: white;
-    --mdc-dialog-container-color: var(--app-default-bg-high); // background-color: var(--mdc-dialog-container-color, white);
-
-    // --mdc-dialog-subhead-color: rgba(0, 0, 0, 0.87);
-
-    --mdc-dialog-supporting-text-color: var(--app-default-cl); // rgba(0, 0, 0, 0.6);
-    
-    --mdc-dialog-container-shape: 1em; //  border-radius: var(--mdc-dialog-container-shape); // 4px
-
-    --mdc-dialog-container-elevation:
-      0px 11px 15px -7px rgba(0, 0, 0, 0.2), 0px 24px 38px 3px rgba(0, 0, 0, 0.14), 0px 9px 46px 8px rgba(0, 0, 0, 0.12);
-  }
-
 }
