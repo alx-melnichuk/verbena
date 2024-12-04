@@ -1,14 +1,15 @@
-import { Injectable, Renderer2 } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Inject, Injectable, Renderer2 } from '@angular/core';
 import { Router } from '@angular/router';
-import { TranslateService } from '@ngx-translate/core';
 import { DateAdapter } from '@angular/material/core';
+import { TranslateService } from '@ngx-translate/core';
 import { first } from 'rxjs/operators';
 
 import { ProfileService } from '../lib-profile/profile.service';
 import { AuthorizationUtil } from '../utils/authorization.util';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
-import { THEME_DARK, THEME_LIGHT, THEME_SUFFIX } from './constants';
+import { THEME_DARK, THEME_LIGHT, THEME_LIST, THEME_SUFFIX } from './constants';
 import { ROUTE_LOGIN } from './routes';
 
 export const LOCALE_EN = 'en';
@@ -30,6 +31,7 @@ export class InitializationService {
   }
 
   constructor(
+    @Inject(DOCUMENT) private document: Document,
     private router: Router,
     private dateAdapter: DateAdapter<any>,
     private translate: TranslateService,
@@ -75,13 +77,14 @@ export class InitializationService {
   }
   
   public setTheme(value: string | null | undefined, renderer: Renderer2): void {
-    const theme = value || THEME_LIGHT;
-    if ([THEME_DARK, THEME_LIGHT].indexOf(theme) > -1 && this.currTheme != theme) {
-      const oldClassName = `${this.currTheme}-${THEME_SUFFIX}`;
-      renderer.removeClass(document.body, oldClassName);
+    const index = THEME_LIST.indexOf(value || '');
+    const theme = THEME_LIST[index > -1 ? index : 0];
+    if (this.currTheme != theme) {
+      if (!!this.currTheme) {
+        renderer.removeClass(this.document.documentElement, this.currTheme);
+      }
       this.currTheme = theme;
-      const newClassName = `${theme}-${THEME_SUFFIX}`;
-      renderer.addClass(document.body, newClassName);
+      renderer.addClass(this.document.documentElement, theme);
     }
   }
   // ** Locale ** 
