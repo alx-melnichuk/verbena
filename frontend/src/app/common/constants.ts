@@ -19,6 +19,20 @@ export const THEME_DARK = 'dark';
 export const THEME_SUFFIX = 'theme';
 
 export const LOCALE_NOTHING = 'nothing';
+export const THEME_LIGHT_AZURE_BLUE = 'light-azure_blue';
+export const THEME_LIGHT_ROSE_RED = 'light-rose_red';
+export const THEME_LIGHT_CYAN_ORANGE = 'light-cyan_orange';
+
+export const THEME_DARK_AZURE_BLUE = 'dark-azure_blue';
+export const THEME_DARK_ROSE_RED = 'dark-rose_red';
+export const THEME_DARK_CYAN_ORANGE = 'dark-cyan_orange';
+
+export const THEME_LIST = [
+  THEME_LIGHT_AZURE_BLUE, THEME_LIGHT_ROSE_RED, THEME_LIGHT_CYAN_ORANGE,
+  THEME_DARK_AZURE_BLUE , THEME_DARK_ROSE_RED , THEME_DARK_CYAN_ORANGE,
+];
+
 export const LOCALE_EN_US = 'en-US';  // 'English - United States'
 export const LOCALE_DE_DE = 'de-DE'; // 'German - Germany'
 export const LOCALE_UK = 'uk'; // 'Ukrainian'
+export const LOCALE_LIST = [LOCALE_EN_US, LOCALE_DE_DE, LOCALE_UK];
