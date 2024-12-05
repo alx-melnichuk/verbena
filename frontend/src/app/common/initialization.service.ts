@@ -17,6 +17,8 @@ export const LOCALE_DE = 'de';
 export const LOCALE_UK = 'uk';
 export const LANGUAGES = [LOCALE_EN, LOCALE_DE, LOCALE_UK];
 
+const COLOR_SCHEME = 'color-scheme';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -81,10 +83,15 @@ export class InitializationService {
     const theme = THEME_LIST[index > -1 ? index : 0];
     if (this.currTheme != theme) {
       if (!!this.currTheme) {
+        this.document.documentElement.style.setProperty(COLOR_SCHEME, null);
         renderer.removeClass(this.document.documentElement, this.currTheme);
       }
       this.currTheme = theme;
       renderer.addClass(this.document.documentElement, theme);
+      const scheme = this.currTheme.split('-')[0];
+      if (['light', 'dark'].includes(scheme)) {
+        this.document.documentElement.style.setProperty(COLOR_SCHEME, scheme);
+      }
     }
   }
   // ** Locale ** 
