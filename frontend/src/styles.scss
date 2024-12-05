@@ -65,8 +65,8 @@ body {
   -ms-text-size-adjust: 100% !important;
   -webkit-font-smoothing: antialiased !important;
   // Define the default background color and text color.
-  background: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
+  background: var(--sys-surface);
+  color: var(--sys-on-surface);
 }
 h1, h2, h3, h4, h5, h6 { margin: 8px 0; }
 p { margin: 0; }
