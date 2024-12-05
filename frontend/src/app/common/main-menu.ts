@@ -20,7 +20,7 @@ export const mainMenuList = [
 ];
 
 export class MainMenuUtil {
-  public static getList(currentRoute: string, isAuth: boolean, list?: MainMenu[] | undefined): MainMenu[] {
+  public static getList(isAuth: boolean, list?: MainMenu[] | undefined): MainMenu[] {
     const result: MainMenu[] = [];
     const list2 = list || mainMenuList;
     for (let index = 0; index < list2.length; index++) {

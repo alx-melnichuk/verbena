@@ -73,7 +73,7 @@ export class HeaderComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['profileDto'] || !!changes['currentRoute']) {
-      this.pageMenuList = MainMenuUtil.getList(this.currentRoute || '', this.profileDto != null);
+      this.pageMenuList = MainMenuUtil.getList(this.profileDto != null);
     }
   }
 
