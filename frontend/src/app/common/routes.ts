@@ -58,6 +58,7 @@ export const ROUTE_CONCEPT_VIEW = '/' + R_CONCEPT_VIEW;         // '/ind/concept
 export const REDIRECT_AFTER_LOGIN = ROUTE_STREAM_LIST;
 
 export const AUTHORIZATION_REQUIRED = [
+  ROUTE_ABOUT,
   ROUTE_PROFILE,
   ROUTE_STREAM,
   ROUTE_CONCEPT,
