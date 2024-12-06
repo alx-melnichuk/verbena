@@ -71,10 +71,6 @@ app-header {
     object-fit: cover;
     width: calc(var(---hdr-hg) - 4px);
   }
-  /*
-  background-color: hsl(var(---hd-bg-h), var(---hd-bg-s), var(---hd-bg-l));
-  --app-link-cl: var(--app-default-cl);
-  */
 }
 
 .cdk-overlay-container .mat-mdc-menu-panel {
