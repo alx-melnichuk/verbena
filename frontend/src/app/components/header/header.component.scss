@@ -34,7 +34,10 @@ app-header {
     --mdc-text-button-label-text-color: var(--sys-primary);
   }
   @container cnt-header style(--color-scheme: dark) {
-    .h-page-menu { ---hdr-dark-mn-sel: 5%; }
+    .h-page-menu {
+      ---hdr-dark-mn-sel: 7%;
+      --mat-text-button-hover-state-layer-opacity: 0.14;
+    }
   }
   .h-page-menu-selected {
     background-color: color-mix(in srgb, var(--sys-primary) calc(15% + var(---hdr-dark-mn-sel, 0%)), rgba(0, 0, 0, 0));
