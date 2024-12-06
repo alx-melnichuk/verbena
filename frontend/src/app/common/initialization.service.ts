@@ -9,13 +9,8 @@ import { ProfileService } from '../lib-profile/profile.service';
 import { AuthorizationUtil } from '../utils/authorization.util';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
-import { COLOR_SCHEME_LIST, SCHEME_DARK, SCHEME_LIGHT } from './constants';
+import { COLOR_SCHEME_LIST, LOCALE_EN, LOCALE_LIST, SCHEME_DARK, SCHEME_LIGHT } from './constants';
 import { ROUTE_LOGIN } from './routes';
-
-export const LOCALE_EN = 'en';
-export const LOCALE_DE = 'de';
-export const LOCALE_UK = 'uk';
-export const LANGUAGES = [LOCALE_EN, LOCALE_DE, LOCALE_UK];
 
 const COLOR_SCHEME = 'color-scheme';
 
@@ -44,11 +39,11 @@ export class InitializationService {
 
   public initTranslate(): Promise<void | unknown> {
     // Download translations before starting the application.
-    this.translate.addLangs(LANGUAGES);
+    this.translate.addLangs(LOCALE_LIST);
     this.translate.setDefaultLang(LOCALE_EN);
 
     const locale = this.currLocale || this.getBrowserLanguage(LOCALE_EN).slice(0, 2);
-    const language = (LANGUAGES.indexOf(locale) > -1 ? locale : LOCALE_EN);
+    const language = (LOCALE_LIST.indexOf(locale) > -1 ? locale : LOCALE_EN);
     
     return this.setLocale(language);
   }
@@ -104,7 +99,7 @@ export class InitializationService {
   public setLocale(value: string | null): Promise<void> {
     const locale: string = value || LOCALE_EN;
     const language: string = locale.slice(0, 2);
-    if (!language || LANGUAGES.indexOf(language) == -1) {
+    if (!language || LOCALE_LIST.indexOf(language) == -1) {
       return Promise.reject();
     }
     if (this.currLocale == locale) {

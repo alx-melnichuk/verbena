@@ -31,7 +31,7 @@ export const COLOR_SCHEME_LIST = [
 ];
 
 // Locale
-export const LOCALE_EN_US = 'en-US';  // 'English - United States'
-export const LOCALE_DE_DE = 'de-DE'; // 'German - Germany'
-export const LOCALE_UK = 'uk'; // 'Ukrainian'
-export const LOCALE_LIST = [LOCALE_EN_US, LOCALE_DE_DE, LOCALE_UK];
+export const LOCALE_EN = 'en';
+export const LOCALE_DE = 'de';
+export const LOCALE_UK = 'uk';
+export const LOCALE_LIST = [LOCALE_EN, LOCALE_DE, LOCALE_UK];
