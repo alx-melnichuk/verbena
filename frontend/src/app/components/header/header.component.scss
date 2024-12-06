@@ -10,6 +10,14 @@ app-header {
   container-name: cnt-header;
   display: block;
 
+  &.h-is-authorized {
+    ---hdr-auth-bg: var(--app-site-auth);
+  }
+  &:not(.h-is-authorized) {
+    ---hdr-auth-bg: var(--app-site-unauth);
+  }
+  --mat-toolbar-container-background-color: color-mix(in srgb, var(---hdr-auth-bg) 20%, var(--sys-surface));
+
   [h-mr-lf-0_5] { margin-left: 0.5em; }
 
   // ** logo **
@@ -49,9 +57,7 @@ app-header {
   
   // ** menu avatar **
   .h-menu-avatar {
-    // --mdc-text-button-label-text-size: 1rem; // 16px
     --mdc-text-button-container-height: 2.75rem; // 44px
-    // --mdc-text-button-container-shape: 0.75rem; // 12px
   }
   .h-avatar-wrap {
     display: flex;
@@ -66,33 +72,6 @@ app-header {
     width: calc(var(---hdr-hg) - 4px);
   }
   /*
-  .hd-menu {
-    border-radius: 0.3em;
-    // font-size: calc(1em + 1px);
-    font-weight: 500;
-    padding: 0.3em 0.5em;
-    &.active {
-      ---hd-bg-delta: var(---hd-bg-act);
-    }
-    &:hover {
-      ---hd-bg-delta: var(---hd-bg-hov);
-    }
-    background-color: hsl(var(---hd-bg-h), var(---hd-bg-s), calc(var(---hd-bg-l) + var(---hd-bg-delta)));
-  }
-
-  &:not(.hd-is-authorized) {
-    ---hd-bg-h: var(--app-site-unauth-h);
-    ---hd-bg-s: var(--app-site-unauth-s);
-    ---hd-bg-l: var(--app-site-unauth-l);
-  }
-  &.hd-is-authorized {
-    ---hd-bg-h: var(--app-site-auth-h);
-    ---hd-bg-s: var(--app-site-auth-s);
-    ---hd-bg-l: var(--app-site-auth-l);
-  }
-  ---hd-bg-act: -10%;
-  ---hd-bg-hov: -7%;
-
   background-color: hsl(var(---hd-bg-h), var(---hd-bg-s), var(---hd-bg-l));
   --app-link-cl: var(--app-default-cl);
   */

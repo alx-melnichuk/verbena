@@ -26,7 +26,7 @@ export const HM_SET_COLOR_SCHEME = 'setColorScheme';
   exportAs: 'appHeader',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive,
-    MatButtonModule, MatMenuModule, MatSlideToggleModule, MatToolbarModule,  
+    MatButtonModule, MatMenuModule, MatSlideToggleModule, MatToolbarModule, 
     TranslateModule],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
@@ -49,7 +49,7 @@ export class HeaderComponent implements OnChanges {
   public pageMenuList: MainMenu[] = [];
   public localeList: string[] = ['', ...LOCALE_LIST];
   public colorSchemeList: string[] = ['', ...COLOR_SCHEME_LIST];
-
+  
   public linkLogin = ROUTE_LOGIN;
   public linkMyStreams = ROUTE_STREAM_LIST;
   public linkCreateStream = ROUTE_STREAM_CREATE;
@@ -60,7 +60,7 @@ export class HeaderComponent implements OnChanges {
   public isShowLocale: boolean = true;
   public isShowLogout: boolean = true;
 
-  @HostBinding('class.hd-is-authorized')
+  @HostBinding('class.h-is-authorized')
   get isAuthorizedVal(): boolean {
     return !!this.profileDto;
   }
