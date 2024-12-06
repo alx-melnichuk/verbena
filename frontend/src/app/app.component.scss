@@ -65,7 +65,9 @@ app-root {
     // height: 100%;
     height: calc(100% - var(--app-header-hg) - var(--app-footer-hg) - 2px);
   }
-  // ** **
 
-  
+  // ** header, footer **
+  --app-site-unauth: hsl(27, 50%, 50%);
+  --app-site-auth: hsl(120, 50%, 50%);
+    
 }
