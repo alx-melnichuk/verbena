@@ -154,7 +154,7 @@ html {
     --sys-tertiary-fixed-dim: #ffb787;
   }
   &.dark-azure_blue {
-    --sys-background: hsl(225, 10%, 12%); //#121316;
+    --sys-background: hsl(225, 10%, 7%); //#121316 - hsl(225, 10%, 8%);
     --sys-error: #ffb4ab;
     --sys-error-container: #93000a;
     --sys-inverse-on-surface: #2f3033;
@@ -189,14 +189,14 @@ html {
     --sys-secondary-fixed: #dae2f9;
     --sys-secondary-fixed-dim: #bec6dc;
     --sys-shadow: #000000;
-    --sys-surface: hsl(225, 10%, 12%); //#121316;
+    --sys-surface: hsl(225, 10%, 7%); //#121316 - hsl(225, 10%, 8%);
     --sys-surface-bright: #38393c;
     --sys-surface-container: #1f2022;
     --sys-surface-container-high: #292a2c;
     --sys-surface-container-highest: #38393c;
     --sys-surface-container-low: #1a1b1f;
     --sys-surface-container-lowest: #0d0e11;
-    --sys-surface-dim: hsl(225, 10%, 12%); //#121316;
+    --sys-surface-dim: hsl(225, 10%, 7%); //#121316 - hsl(225, 10%, 8%);
     --sys-surface-tint: #abc7ff;
     --sys-surface-variant: #44474e;
     --sys-tertiary: #bec2ff;
@@ -205,7 +205,7 @@ html {
     --sys-tertiary-fixed-dim: #bec2ff;
   }
   &.dark-rose_red {
-    --sys-background: hsl(348, 12%, 12%); //#171213;
+    --sys-background: hsl(348, 12%, 7%); //#171213 - hsl(348, 12%, 8%);
     --sys-error: #ffb4ab;
     --sys-error-container: #93000a;
     --sys-inverse-on-surface: #352f30;
@@ -240,14 +240,14 @@ html {
     --sys-secondary-fixed: #ffd9e1;
     --sys-secondary-fixed-dim: #e3bdc5;
     --sys-shadow: #000000;
-    --sys-surface: hsl(348, 12%, 12%); //#171213;
+    --sys-surface: hsl(348, 12%, 7%); //#171213 - hsl(348, 12%, 8%);
     --sys-surface-bright: #3e3738;
     --sys-surface-container: #241e1f;
     --sys-surface-container-high: #2f2829;
     --sys-surface-container-highest: #3e3738;
     --sys-surface-container-low: #201a1b;
     --sys-surface-container-lowest: #120d0e;
-    --sys-surface-dim: hsl(348, 12%, 12%); //#171213;
+    --sys-surface-dim: hsl(348, 12%, 7%); //#171213 - hsl(348, 12%, 8%);
     --sys-surface-tint: #ffb1c5;
     --sys-surface-variant: #514346;
     --sys-tertiary: #ffb4a8;
@@ -256,7 +256,7 @@ html {
     --sys-tertiary-fixed-dim: #ffb4a8;    
   }
   &.dark-cyan_orange {
-    --sys-background: hsl(180, 11%, 12%); //#101414;
+    --sys-background: hsl(180, 11%, 7%); //#101414 - hsl(180, 11%, 7%);
     --sys-error: #ffb4ab;
     --sys-error-container: #93000a;
     --sys-inverse-on-surface: #2d3131;
@@ -291,14 +291,14 @@ html {
     --sys-secondary-fixed: #cce8e7;
     --sys-secondary-fixed-dim: #b0cccb;
     --sys-shadow: #000000;
-    --sys-surface: hsl(180, 11%, 12%); //#101414;
+    --sys-surface: hsl(180, 11%, 7%); //#101414 - hsl(180, 11%, 7%);
     --sys-surface-bright: #363a39;
     --sys-surface-container: #1c2020;
     --sys-surface-container-high: #272b2a;
     --sys-surface-container-highest: #363a39;
     --sys-surface-container-low: #191c1c;
     --sys-surface-container-lowest: #0b0f0e;
-    --sys-surface-dim: hsl(180, 11%, 12%); //#101414;
+    --sys-surface-dim: hsl(180, 11%, 7%); //#101414 - hsl(180, 11%, 7%);
     --sys-surface-tint: #00dddd;
     --sys-surface-variant: #3f4948;
     --sys-tertiary: #ffb787;
@@ -306,9 +306,8 @@ html {
     --sys-tertiary-fixed: #ffdcc7;
     --sys-tertiary-fixed-dim: #ffb787;
   }
-
   &.dark-magenta_violet {
-    --sys-background: hsl(315, 10%, 12%); //#161215;
+    --sys-background: hsl(315, 10%, 7%); //#161215 - hsl(315, 10%, 8%);
     --sys-error: #ffb4ab;
     --sys-error-container: #93000a;
     --sys-inverse-on-surface: #342f32;
@@ -343,14 +342,14 @@ html {
     --sys-secondary-fixed: #f7daef;
     --sys-secondary-fixed-dim: #dabfd2;
     --sys-shadow: #000000;
-    --sys-surface: hsl(315, 10%, 12%); //#161215;
+    --sys-surface: hsl(315, 10%, 7%); //#161215 - hsl(315, 10%, 8%);
     --sys-surface-bright: #3d383b;
     --sys-surface-container: #231e22;
     --sys-surface-container-high: #2d292c;
     --sys-surface-container-highest: #3d383b;
     --sys-surface-container-low: #1e1a1d;
     --sys-surface-container-lowest: #110d10;
-    --sys-surface-dim: hsl(315, 10%, 12%); //#161215;
+    --sys-surface-dim: hsl(315, 10%, 7%); //#161215 - hsl(315, 10%, 8%);
     --sys-surface-tint: #ffabf3;
     --sys-surface-variant: #4e444b;
     --sys-tertiary: #d5baff;
@@ -374,14 +373,6 @@ html {
                               --app-default-cl-h: 0;   --app-default-cl-s: 0%;  --app-default-cl-l: 0%;
     --app-default-cl: hsl(var(--app-default-cl-h), var(--app-default-cl-s), var(--app-default-cl-l));
     --dem-default-cl: hsl(0, 0%, 0%); // #000000  // Old hsl(0, 5%, 10%); #1b1818
-    // "site-unauth"
-                               --app-site-unauth-h: 27;  --app-site-unauth-s: 95%; --app-site-unauth-l: 90%;
-    --app-site-unauth: hsl(var(--app-site-unauth-h), var(--app-site-unauth-s), var(--app-site-unauth-l));
-    --dem-site-unauth: hsl(27, 95%, 90%); // #
-    // "site-auth"
-                             --app-site-auth-h: 140; --app-site-auth-s: 40%; --app-site-auth-l: 90%;
-    --app-site-auth: hsl(var(--app-site-auth-h), var(--app-site-auth-s), var(--app-site-auth-l));
-    --dem-site-auth: hsl(140, 40%, 90%); // #
   }
   .dark-theme {
     color-scheme: dark;
@@ -395,13 +386,6 @@ html {
     --dem-default-cl: hsl(0, 0%, 100%); // #ffffff
     // "site-unauth"
                                --app-site-unauth-h: 24;  --app-site-unauth-s: 70%; --app-site-unauth-l: 60%;
-    --app-site-unauth: hsl(var(--app-site-unauth-h), var(--app-site-unauth-s), var(--app-site-unauth-l));
-    --dem-site-unauth: hsl( 24, 70%, 60%); // #
-    // "site-auth"
-                             --app-site-auth-h: 140; --app-site-auth-s: 14%; --app-site-auth-l: 40%;
-    --app-site-auth: hsl(var(--app-site-auth-h), var(--app-site-auth-s), var(--app-site-auth-l));
-    --dem-site-auth: hsl(140, 14%, 40%); // #
-
   }
 */
 /*
