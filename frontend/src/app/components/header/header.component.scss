@@ -87,4 +87,35 @@ app-header {
   .mm-mr-lf-0_5 {
     margin-left: 0.5em;
   }
+  .mm-menu-btn {
+
+    &.mm-curr {
+      background-color: var(--mat-option-selected-state-layer-color);
+    }
+    .mat-mdc-menu-item-text {
+      display: flex;
+      justify-content: space-between;
+    }
+    .mm-menu-item.mm-minimal {
+      flex-shrink: 0;
+      height: 18px;
+      margin-left: 10px;
+      position: relative;
+      width: 18px;
+    }
+    .mm-menu-item.mm-check::after {
+      border-bottom: 2px solid currentColor;
+      border-left: 2px solid currentColor; 
+      bottom: 0;
+      content: "";
+      height: 6px;
+      left: 0;
+      margin: auto;
+      position: absolute;
+      right: 0;
+      top: -4.24px;
+      transform: rotate(-45deg);
+      width: 14px;
+    }
+  }
 }

@@ -55,21 +55,21 @@
 
 <mat-menu #themes="matMenu">
     <button mat-menu-item *ngFor="let colorSchemeItem of colorSchemeList"
-    [ngClass]="['mm-menu-item', (colorSchemeItem == '' ? 'mm-item-fn-it' : '')]"
+    [ngClass]="['mm-menu-btn', (colorScheme == colorSchemeItem ? 'mm-curr' : ''), (colorSchemeItem == '' ? 'mm-item-fn-it' : '')]"
     [value]="colorSchemeItem"
     (click)="doSetColorScheme(colorSchemeItem)">
-    {{ ('theme.' + colorSchemeItem) | translate }}
-    <span [ngClass]="['mm-mr-lf-0_5_', (colorScheme == colorSchemeItem ? 'mm-item-check' : '')]"></span>
+    <span>{{ ('theme.' + colorSchemeItem) | translate }}</span>
+    <span [ngClass]="['mm-menu-item', 'mm-minimal', (colorScheme == colorSchemeItem ? 'mm-check' : '')]"></span>
   </button>
 </mat-menu>
 
 <mat-menu #locales="matMenu">
   <button mat-menu-item *ngFor="let localeItem of localeList"
-    [ngClass]="['mm-menu-item', (localeItem == '' ? 'mm-item-fn-it' : '')]"
+    [ngClass]="['mm-menu-btn', (locale == localeItem ? 'mm-curr' : ''), (localeItem == '' ? 'mm-item-fn-it' : '')]"
     [value]="localeItem"
     (click)="doSetLocale(localeItem)">
     <span>{{ ('locale.' + localeItem) | translate }}</span>
-    <span [ngClass]="['mm-mr-lf-0_5_', (locale == localeItem ? 'mm-menu-item-check' : '')]"></span>
+    <span [ngClass]="['mm-menu-item', 'mm-minimal', (locale == localeItem ? 'mm-check' : '')]"></span>
   </button>
 </mat-menu>
 <!--
