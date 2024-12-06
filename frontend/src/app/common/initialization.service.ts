@@ -84,6 +84,7 @@ export class InitializationService {
     if (this.currTheme != theme) {
       if (!!this.currTheme) {
         this.document.documentElement.style.setProperty(COLOR_SCHEME, null);
+        this.document.documentElement.style.setProperty('--' + COLOR_SCHEME, null);
         renderer.removeClass(this.document.documentElement, this.currTheme);
       }
       this.currTheme = theme;
@@ -91,6 +92,7 @@ export class InitializationService {
       const scheme = this.currTheme.split('-')[0];
       if (['light', 'dark'].includes(scheme)) {
         this.document.documentElement.style.setProperty(COLOR_SCHEME, scheme);
+        this.document.documentElement.style.setProperty('--' + COLOR_SCHEME, scheme);
       }
     }
   }

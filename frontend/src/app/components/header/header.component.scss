@@ -7,6 +7,7 @@ app-header {
   --mdc-text-button-container-shape: 0.75rem; // 12px
   ---hdr-hg: var(--app-header-hg, 62px);
 
+  container-name: cnt-header;
   display: block;
 
   [h-mr-lf-0_5] { margin-left: 0.5em; }
@@ -32,8 +33,11 @@ app-header {
   .mat-toolbar .h-page-menu.mat-mdc-button-base.mat-mdc-button-base.mat-unthemed {
     --mdc-text-button-label-text-color: var(--sys-primary);
   }
+  @container cnt-header style(--color-scheme: dark) {
+    .h-page-menu { ---hdr-dark-mn-sel: 5%; }
+  }
   .h-page-menu-selected {
-    background: #005cbb1a;
+    background-color: color-mix(in srgb, var(--sys-primary) calc(15% + var(---hdr-dark-mn-sel, 0%)), rgba(0, 0, 0, 0));
   }
 
   .h-spacer {
