@@ -30,8 +30,8 @@
   },
   "locale": {
     "": "nothing",
-    "en-US": "English [en]",
-    "de-DE": "Deutsch [de]",
+    "en": "English [en]",
+    "de": "Deutsch [de]",
     "uk": "Українська [uk]"
   },
   "theme": {
