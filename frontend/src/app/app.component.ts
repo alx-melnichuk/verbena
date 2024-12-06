@@ -3,11 +3,11 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
-import { THEME_LIST } from './common/constants';
+import { COLOR_SCHEME_LIST } from './common/constants';
 import { InitializationService } from './common/initialization.service';
 import { AUTHORIZATION_DENIED, ROUTE_LOGIN } from './common/routes';
 import { FooterComponent } from './components/footer/footer.component';
-import { HeaderComponent } from './components/header/header.component';
+import { HeaderComponent, HM_LOGOUT, HM_SET_COLOR_SCHEME, HM_SET_LOCALE } from './components/header/header.component';
 import { ACCESS_TOKEN, ProfileService } from './lib-profile/profile.service';
 
 @Component({
@@ -23,7 +23,7 @@ export class AppComponent implements OnInit {
   public title = 'verbena';
   public linkLogin = ROUTE_LOGIN;
   public locale: string | null = null;
-  public theme: string | null = null;
+  public colorScheme: string | null = null;
 
   @HostListener('window:storage', ['$event'])
   public windowStorage(event: StorageEvent): void {
@@ -51,18 +51,30 @@ export class AppComponent implements OnInit {
     private router: Router,
     private initializationService: InitializationService,
   ) {
-    const theme = this.profileService.profileDto?.theme || THEME_LIST[0];
-    this.initializationService.setTheme(theme, this.renderer);
+    const theme = this.profileService.profileDto?.theme || COLOR_SCHEME_LIST[0];
+    this.initializationService.setColorScheme(theme, this.renderer);
   }
 
   async ngOnInit(): Promise<void> {
     this.locale = this.initializationService.getLocale();
-    this.theme = this.initializationService.getTheme();
+    this.colorScheme = this.initializationService.getColorScheme();
   }
 
   // ** Public API **
 
-  public async doLogout(): Promise<void> {
+  public doCommand(event: Record<string, string>): void {
+    const key = Object.keys(event)[0];
+    const value = event[key];
+    switch (key) {
+      case HM_LOGOUT: this.doLogout(); break;
+      case HM_SET_LOCALE: this.doSetLocale(value); break;
+      case HM_SET_COLOR_SCHEME: this.doSetColorScheme(value); break;
+    }
+  }
+
+  // ** Private API **
+
+  private async doLogout(): Promise<void> {
     await this.profileService.logout();
     let currentRoute = window.location.pathname;
     const idx = AUTHORIZATION_DENIED.findIndex((item) => currentRoute.startsWith(item));
@@ -72,18 +84,16 @@ export class AppComponent implements OnInit {
     return Promise.resolve();
   }
 
-  public doSetLocale(value: string): void {
+  private doSetLocale(value: string): void {
     this.initializationService.setLocale(value)
       .finally(() => {
         this.locale = this.initializationService.getLocale();
       });
   }
 
-  public doSetTheme(value: string): void {
-    this.initializationService.setTheme(value, this.renderer);
-    this.theme = this.initializationService.getTheme();
+  private doSetColorScheme(value: string): void {
+    this.initializationService.setColorScheme(value, this.renderer);
+    this.colorScheme = this.initializationService.getColorScheme();
   }
-
-  // ** Private API **
 
 }

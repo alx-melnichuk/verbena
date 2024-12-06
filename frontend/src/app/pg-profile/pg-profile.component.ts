@@ -64,7 +64,7 @@ export class PgProfileComponent {
         } else {
           this.profileDto = response as ProfileDto;
           this.profileService.setProfileDto({...this.profileDto});
-          this.initializationService.setTheme(this.profileService.profileDto?.theme, this.renderer);
+          this.initializationService.setColorScheme(this.profileService.profileDto?.theme, this.renderer);
           this.initializationService.setLocale(this.profileDto.locale)
           .finally(() => {
             const title = this.translate.instant('pg-profile.dialog_title_editing');

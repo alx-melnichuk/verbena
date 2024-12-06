@@ -13,9 +13,13 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { InitializationService } from 'src/app/common/initialization.service';
 import { MainMenu, MainMenuUtil } from 'src/app/common/main-menu';
-import { LOCALE_LIST, THEME_LIST } from 'src/app/common/constants';
+import { LOCALE_LIST, COLOR_SCHEME_LIST } from 'src/app/common/constants';
 import { ROUTE_LOGIN, ROUTE_STREAM_CREATE, ROUTE_STREAM_LIST } from 'src/app/common/routes';
 import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
+
+export const HM_LOGOUT = 'logout';
+export const HM_SET_LOCALE = 'setLocale';
+export const HM_SET_COLOR_SCHEME = 'setColorScheme';
 
 @Component({
   selector: 'app-header',
@@ -37,23 +41,18 @@ export class HeaderComponent implements OnChanges {
   @Input()
   public profileDto: ProfileDto | null = null;
   @Input()
-  public theme: string | null = null;
+  public colorScheme: string | null = null;
 
   @Output()
-  readonly logout: EventEmitter<void> = new EventEmitter();
-  @Output()
-  readonly setLocale: EventEmitter<string> = new EventEmitter();
-  @Output()
-  readonly setTheme: EventEmitter<string> = new EventEmitter();
+  readonly command: EventEmitter<Record<string, string>> = new EventEmitter();
 
   public pageMenuList: MainMenu[] = [];
   public localeList: string[] = ['', ...LOCALE_LIST];
-  public themeList: string[] = ['', ...THEME_LIST];
+  public colorSchemeList: string[] = ['', ...COLOR_SCHEME_LIST];
 
   public linkLogin = ROUTE_LOGIN;
   public linkMyStreams = ROUTE_STREAM_LIST;
   public linkCreateStream = ROUTE_STREAM_CREATE;
-  public isDarkTheme: boolean = false;
 
   public isShowMyStreams: boolean = true;
   public isShowCreateStream: boolean = true;
@@ -78,17 +77,21 @@ export class HeaderComponent implements OnChanges {
   // ** Public API **
 
   public doLogout(): void {
-    this.logout.emit();
+    this.doCommand(HM_LOGOUT, '');
   }
 
   public doSetLocale(value: string): void {
-    this.setLocale.emit(value);
+    this.doCommand(HM_SET_LOCALE, value);
   }
 
-  public doSetTheme(value: string): void {
-    this.setTheme.emit(value);
+  public doSetColorScheme(value: string): void {
+    this.doCommand(HM_SET_COLOR_SCHEME, value);
   }
 
   // ** Private API **
+
+  private doCommand(commandName: string, commandValue: string): void {
+    this.command.emit({[commandName]: commandValue});
+  }
 
 }

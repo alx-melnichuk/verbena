@@ -11,7 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { THEME_LIST } from 'src/app/common/constants';
+import { COLOR_SCHEME_LIST } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-field-theme',
@@ -51,7 +51,7 @@ export class FieldThemeComponent implements OnChanges, ControlValueAccessor, Val
   public formGroup: FormGroup = new FormGroup({ theme: this.formControl });
   public errMessage: string = '';
 
-  public themeList: string[] = ['', ...THEME_LIST];
+  public themeList: string[] = ['', ...COLOR_SCHEME_LIST];
 
   constructor() {
   }

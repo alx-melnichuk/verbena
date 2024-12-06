@@ -9,7 +9,7 @@ import { ProfileService } from '../lib-profile/profile.service';
 import { AuthorizationUtil } from '../utils/authorization.util';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
-import { THEME_DARK, THEME_LIGHT, THEME_LIST, THEME_SUFFIX } from './constants';
+import { COLOR_SCHEME_LIST, SCHEME_DARK, SCHEME_LIGHT } from './constants';
 import { ROUTE_LOGIN } from './routes';
 
 export const LOCALE_EN = 'en';
@@ -23,11 +23,11 @@ const COLOR_SCHEME = 'color-scheme';
   providedIn: 'root',
 })
 export class InitializationService {
-  private currTheme: string | null = null;
+  private currColorScheme: string | null = null;
   private currLocale: string | null = null;
 
   get theme(): string | null {
-    return this.currTheme;
+    return this.currColorScheme;
   }
   set theme(value: string | null) {
   }
@@ -74,23 +74,23 @@ export class InitializationService {
   }
 
   // ** Theme **
-  public getTheme(): string | null {
-    return this.currTheme;
+  public getColorScheme(): string | null {
+    return this.currColorScheme;
   }
   
-  public setTheme(value: string | null | undefined, renderer: Renderer2): void {
-    const index = THEME_LIST.indexOf(value || '');
-    const theme = THEME_LIST[index > -1 ? index : 0];
-    if (this.currTheme != theme) {
-      if (!!this.currTheme) {
+  public setColorScheme(value: string | null | undefined, renderer: Renderer2): void {
+    const index = COLOR_SCHEME_LIST.indexOf(value || '');
+    const theme = COLOR_SCHEME_LIST[index > -1 ? index : 0];
+    if (this.currColorScheme != theme) {
+      if (!!this.currColorScheme) {
         this.document.documentElement.style.setProperty(COLOR_SCHEME, null);
         this.document.documentElement.style.setProperty('--' + COLOR_SCHEME, null);
-        renderer.removeClass(this.document.documentElement, this.currTheme);
+        renderer.removeClass(this.document.documentElement, this.currColorScheme);
       }
-      this.currTheme = theme;
+      this.currColorScheme = theme;
       renderer.addClass(this.document.documentElement, theme);
-      const scheme = this.currTheme.split('-')[0];
-      if (['light', 'dark'].includes(scheme)) {
+      const scheme = this.currColorScheme.split('-')[0];
+      if ([SCHEME_LIGHT, SCHEME_DARK].includes(scheme)) {
         this.document.documentElement.style.setProperty(COLOR_SCHEME, scheme);
         this.document.documentElement.style.setProperty('--' + COLOR_SCHEME, scheme);
       }

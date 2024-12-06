@@ -2,10 +2,8 @@
   [currentRoute]="currentRoute"
   [locale]="locale"
   [profileDto]="profileService.profileDto"
-  [theme]="theme"
-  (logout)="doLogout()"
-  (setLocale)="doSetLocale($event)"
-  (setTheme)="doSetTheme($event)">
+  [colorScheme]="colorScheme"
+  (command)="doCommand($event)">
 </app-header>
 <main>
   <router-outlet></router-outlet>

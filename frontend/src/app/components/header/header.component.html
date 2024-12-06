@@ -36,11 +36,6 @@
     <span class="mm-mr-lf-1_">{{ 'main_menu.create_stream' | translate }}</span>
   </button>
 
-  <!-- <button mat-menu-item *ngIf="isShowTheme" class="pn-main-menu-item" (click)="doSetTheme(!isDarkTheme)">
-    <span class="mm-icon mm-dark-theme"></span>
-    <span class="mm-mr-lf-1_">{{ 'main_menu.dark_theme' | translate }}</span>
-    <mat-slide-toggle class="mm-mr-lf-1" color="primary" [ngModel]="isDarkTheme"></mat-slide-toggle>
-  </button> -->
   <button mat-menu-item *ngIf="isShowTheme" class="pn-main-menu-item" [matMenuTriggerFor]="themes">
     <span class="mm-icon mm-locale"></span>
     <span class="mm-mr-lf-1_">{{ 'main_menu.theme' | translate }}</span>
@@ -59,12 +54,12 @@
 </mat-menu>
 
 <mat-menu #themes="matMenu">
-    <button mat-menu-item *ngFor="let themeItem of themeList"
-    [ngClass]="(themeItem == '' ? 'mm-item-fn-it' : '')"
-    [value]="themeItem"
-    (click)="doSetTheme(themeItem)">
-    {{ ('theme.' + themeItem) | translate }}
-    <span [ngClass]="['mm-mr-lf-0_5', (theme == themeItem ? 'mm-item-check' : '')]"></span>
+    <button mat-menu-item *ngFor="let colorSchemeItem of colorSchemeList"
+    [ngClass]="(colorSchemeItem == '' ? 'mm-item-fn-it' : '')"
+    [value]="colorSchemeItem"
+    (click)="doSetColorScheme(colorSchemeItem)">
+    {{ ('theme.' + colorSchemeItem) | translate }}
+    <span [ngClass]="['mm-mr-lf-0_5', (colorScheme == colorSchemeItem ? 'mm-item-check' : '')]"></span>
   </button>
 </mat-menu>
 
