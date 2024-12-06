@@ -17,15 +17,13 @@ import { LOCALE_LIST, THEME_LIST } from 'src/app/common/constants';
 import { ROUTE_LOGIN, ROUTE_STREAM_CREATE, ROUTE_STREAM_LIST } from 'src/app/common/routes';
 import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 
-import { MainMenuComponent } from '../main-menu/main-menu.component';
-
 @Component({
   selector: 'app-header',
   exportAs: 'appHeader',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive,
     MatButtonModule, MatMenuModule, MatSlideToggleModule, MatToolbarModule,  
-    TranslateModule, MainMenuComponent],
+    TranslateModule],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
   encapsulation: ViewEncapsulation.None,
