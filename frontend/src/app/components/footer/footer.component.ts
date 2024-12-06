@@ -19,7 +19,7 @@ export class FooterComponent {
   @Input()
   public isAuthorized: boolean | null | undefined;
   
-  @HostBinding('class.ft-is-authorized')
+  @HostBinding('class.f-is-authorized')
   get isAuthorizedVal(): boolean {
     return !!this.isAuthorized;
   }
