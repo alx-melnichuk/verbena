@@ -47,7 +47,7 @@ $verbena-theme: mat.define-theme((
 // @import './styles-colors-list.scss';
 // @import './styles-colors.scss';
 @import './styles-theme.scss';
-// @import './styles-mdc-infix.scss';
+@import './styles-mdc.scss';
   
 html {
   --scrollbarBG: rgb(207 216 220 / 20%);

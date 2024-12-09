@@ -1,0 +1,15 @@
+/*# sourceURL=styles-mdc.scss */
+/* Complements the "Material Design" style library. */
+
+.stl-mdc {
+
+   // ** mat-error **
+  .mat-mdc-form-field-subscript-wrapper {
+    --mat-form-field-subscript-text-line-height: 0.9rem; // 15.2px
+    --mat-form-field-subscript-text-size: calc(0.75rem + 1px); // 13px
+    mat-hint, mat-error {
+      display: flex;
+    }
+  }
+
+}
