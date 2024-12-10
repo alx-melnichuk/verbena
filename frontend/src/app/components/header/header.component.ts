@@ -14,7 +14,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { InitializationService } from 'src/app/common/initialization.service';
 import { MainMenu, MainMenuUtil } from 'src/app/common/main-menu';
 import { LOCALE_LIST, COLOR_SCHEME_LIST } from 'src/app/common/constants';
-import { ROUTE_LOGIN, ROUTE_STREAM_CREATE, ROUTE_STREAM_LIST } from 'src/app/common/routes';
+import { MAIN_MENU_LIST, ROUTE_LOGIN, ROUTE_STREAM_CREATE, ROUTE_STREAM_LIST } from 'src/app/common/routes';
 import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 
 export const HM_LOGOUT = 'logout';
@@ -70,7 +70,7 @@ export class HeaderComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['profileDto'] || !!changes['currentRoute']) {
-      this.pageMenuList = MainMenuUtil.getList(this.profileDto != null);
+      this.pageMenuList = MainMenuUtil.getList(this.profileDto != null, MAIN_MENU_LIST);
     }
   }
 

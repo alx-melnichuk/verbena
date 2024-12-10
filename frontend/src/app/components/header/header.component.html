@@ -32,12 +32,12 @@
 
   <button mat-menu-item *ngIf="isShowMyStreams" class="app-main-menu-item" [routerLink]="[linkMyStreams]">
     <span class="mm-icon mm-my-streams"></span>
-    <span class="mm-mr-lf-1_">{{ 'main_menu.my_streams' | translate }}</span>
+    <span class="mm-mr-lf-1_">{{ 'main_menu.stream_list' | translate }}</span>
   </button>
   
   <button mat-menu-item *ngIf="isShowCreateStream" class="app-main-menu-item" [routerLink]="[linkCreateStream]">
     <span class="mm-icon mm-my-streams"></span>
-    <span class="mm-mr-lf-1_">{{ 'main_menu.create_stream' | translate }}</span>
+    <span class="mm-mr-lf-1_">{{ 'main_menu.stream_create' | translate }}</span>
   </button>
 
   <button mat-menu-item *ngIf="isShowTheme" class="pn-main-menu-item" [matMenuTriggerFor]="themes">

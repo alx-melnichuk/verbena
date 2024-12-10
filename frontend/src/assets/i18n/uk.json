@@ -18,9 +18,10 @@
     "login": "Увійти",
     "signup": "Реєстрація",
     "profile": "Профіль",
-    "my_streams": "Мої потоки",
-    "create_stream": "Створити потік",
+    "stream_list": "Мої потоки",
+    "stream_create": "Створити потік",
     "my_follows_": "Мої підписники",
+    "concept_list": "Перегляд",
     "theme": "Тема",
     "locale": "Локаль",
     "log_out": "Вийти"
