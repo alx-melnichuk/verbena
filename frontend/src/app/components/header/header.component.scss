@@ -27,7 +27,7 @@ app-header {
     --mat-toolbar-title-text-size: 1.125rem;
   }
   .h-logo-mini {
-    background-image: url('../../../assets/images/logo_mini.png');
+    background-image: url('/assets/icons/components/header/logo-bin.svg');
     height: var(---hdr-hg);
     width: var(---hdr-hg);
   }
@@ -35,6 +35,19 @@ app-header {
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
+  }
+
+  .h-mask {
+    background-color: currentColor;
+    color: var(--sys-on-surface-variant);
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: cover;
+  }
+  .h-more-vert {
+    height: 24px;
+    width: 24px;
+    mask-image: url('/assets/icons/components/header/more-vert-bin.svg');
   }
 
   // ** page-menu **
@@ -57,18 +70,24 @@ app-header {
   
   // ** menu avatar **
   .h-menu-avatar {
-    --mdc-text-button-container-height: 2.75rem; // 44px
+    min-width: var(--mdc-text-button-container-height);
+
+    &.h-menu-btn {
+      ---hdr-menu-hg: 40px;
+      --mdc-text-button-container-shape: 50%;
+      --mat-text-button-horizontal-padding: 0px;
+      --mat-text-button-state-layer-color: var(--sys-on-surface-variant);
+    }
+    --mdc-text-button-container-height: var(---hdr-menu-hg, 2.75rem); // 44px
+    padding-right: 0px;
   }
-  .h-avatar-wrap {
-    display: flex;
-    align-items: center;
-  }
-  .h-avatar {
+  .h-avatar-img {
     border-radius: 0.3rem;
     box-sizing: border-box;
     height: calc(var(---hdr-hg) - 4px);
     margin-left: 0.5em;
     object-fit: cover;
+    vertical-align: middle;
     width: calc(var(---hdr-hg) - 4px);
   }
 }

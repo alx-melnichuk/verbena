@@ -14,12 +14,16 @@
   </ng-container>
 
   <span class="h-spacer"></span>
-
-  <button mat-button [matMenuTriggerFor]="mainMenu" class="h-menu-avatar">
-    <div class="h-avatar-wrap" *ngIf="!!profileDto">
-      <span>{{ profileDto.nickname }}</span>
-      <img class="h-avatar" [src]="profileDto.avatar || '/assets/images/icon_man.png'" alt="avatar image" />
-    </div>
+  
+  <button mat-button [matMenuTriggerFor]="mainMenu" 
+    [ngClass]="['h-menu-avatar', (!profileDto ? 'h-menu-btn' : '')]">
+    <span>{{ profileDto?.nickname }}</span>
+    <ng-container *ngIf="!!profileDto; else templateMenuVert">
+      <img class="h-avatar-img" [src]="profileDto.avatar || '/assets/images/icon_man.png'" alt="avatar image" />
+    </ng-container>
+    <ng-template #templateMenuVert>
+      <div class="h-mask h-more-vert"></div>
+    </ng-template>    
   </button>
 
 </mat-toolbar>
