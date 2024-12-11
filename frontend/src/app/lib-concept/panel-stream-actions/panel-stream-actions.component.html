@@ -1,26 +1,26 @@
 <ng-container *ngIf="isShowBntPrepare(state)">
-  <button type="button" mat-stroked-button class="psa-prepare" (click)="doChangeState(statePreparing)">
+  <button mat-stroked-button class="psa-prepare" (click)="doChangeState(statePreparing)">
     <span class="psa-icon prepare"></span>
     <span class="psa-vert">{{ 'panel-stream-actions.prepare_stream' | translate }}</span>
   </button>
 </ng-container>
 
 <ng-container *ngIf="isShowBntStart(state)">
-  <button type="button" mat-stroked-button class="psa-play" (click)="doChangeState(stateStarted)">
+  <button mat-stroked-button class="psa-play" (click)="doChangeState(stateStarted)">
     <span class="psa-icon play"></span>
     <span class="psa-vert">{{ 'panel-stream-actions.go_live_stream' | translate }}</span>
   </button>
 </ng-container>
 
 <ng-container *ngIf="isShowBntPause(state)">
-  <button type="button" mat-stroked-button color="warn" class="psa-pause" (click)="doChangeState(statePaused)">
+  <button mat-stroked-button color="warn" class="psa-pause" (click)="doChangeState(statePaused)">
     <span class="psa-icon pause"></span>
     <span class="psa-vert">{{ 'panel-stream-actions.pause_stream' | translate }}</span>
   </button>
 </ng-container>
 
 <ng-container *ngIf="isShowBtnStop(state)">
-  <button type="button" mat-stroked-button color="warn" class="psa-stop" (click)="doChangeState(stateStopped)">
+  <button mat-stroked-button color="warn" class="psa-stop" (click)="doChangeState(stateStopped)">
     <span class="psa-icon stop"></span>
     <span class="psa-vert">{{ 'panel-stream-actions.stop_stream' | translate }}</span>
   </button>
