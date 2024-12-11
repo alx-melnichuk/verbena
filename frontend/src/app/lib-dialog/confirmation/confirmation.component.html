@@ -1,6 +1,4 @@
-<button class="dc-close" (click)="cancel()">
-  &#215;
-</button>
+<button class="dc-close" (click)="cancel()">&#215;</button>
 <div class="dc-title">{{ title }}</div>
 <div mat-dialog-content class="dc-content">
   <ng-container *ngIf="!!message">
@@ -11,7 +9,6 @@
   </ng-container>
 </div>
 <div mat-dialog-actions class="dc-actions">
-
   <button mat-stroked-button
     *ngIf="!!btnNameCancel"
     class="app-infix app-ordinary mat-elevation-z3"
