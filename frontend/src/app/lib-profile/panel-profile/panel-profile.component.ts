@@ -193,7 +193,7 @@ export class PanelProfileComponent implements OnInit, OnChanges {
         locale: (this.origProfileDto.locale != locale ? locale : undefined),
     };
     const is_all_empty = Object.values(modifyProfile).findIndex((value) => value !== undefined) == -1;
-    if (!is_all_empty || !!this.avatarFile) {
+    if (!is_all_empty || this.avatarFile !== undefined) {
       this.updateProfile.emit({ modifyProfile, avatarFile: this.avatarFile });
     }
   }
