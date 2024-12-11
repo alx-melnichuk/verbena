@@ -33,7 +33,8 @@ export class DialogService {
     // Whether the dialog has a backdrop.
     dialogConfig.hasBackdrop = true;
     // Custom class for the backdrop.
-    dialogConfig.backdropClass = 'app-modal-backdrop';
+    // Note: Adding "backdropClass" overrides the default background style "cdk-overlay-dark-backdrop".
+    // dialogConfig.backdropClass = 'app-modal-backdrop';
     // Whether the user can use escape or clicking on the backdrop to close the modal. disableClose?: boolean;
     dialogConfig.disableClose = false;
     dialogConfig.data = dataParams;
@@ -48,7 +49,8 @@ export class DialogService {
     // Whether the dialog has a backdrop.
     dialogCfg.hasBackdrop = true;
     // Custom class for the backdrop.
-    dialogCfg.backdropClass = 'app-modal-backdrop';
+    // Note: Adding "backdropClass" overrides the default background style "cdk-overlay-dark-backdrop".
+    // dialogCfg.backdropClass = 'app-modal-backdrop';
     // Whether the user can use escape or clicking on the backdrop to close the modal. disableClose?: boolean;
     dialogCfg.disableClose = false;
     if (dataParams != null) {
