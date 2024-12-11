@@ -67,7 +67,7 @@
       </app-field-descript>
         
       <div pp-mr-tp-1 class="pp-actions">
-        <button mat-raised-button color="primary"
+        <button mat-stroked-button color="primary"
           class="app-infix app-ordinary"
           [disabled]="formGroupProfile.pristine || formGroupProfile.invalid || isDisabledSubmit"
           (click)="saveProfile(formGroupProfile)">
@@ -109,7 +109,7 @@
       </app-field-password>
 
       <div pp-mr-tp-1 class="pp-actions">
-        <button mat-raised-button color="primary"
+        <button mat-stroked-button color="primary"
           class="app-infix app-ordinary"
           [disabled]="formGroupPassword.pristine || formGroupPassword.invalid || isDisabledSubmit"
           (click)="setNewPassword(formGroupPassword)">
@@ -134,7 +134,7 @@
       </div>
 
       <div pp-mr-tp-1 class="pp-actions">
-        <button mat-raised-button color="primary"
+        <button mat-stroked-button color="primary"
           class="app-infix app-ordinary"
           [disabled]="isDisabledSubmit"
           (click)="removeAccount()">
