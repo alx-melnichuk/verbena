@@ -12,4 +12,11 @@
     }
   }
 
+  // ** mat-dialog **
+  .cdk-overlay-pane.app-modal-panel {
+    // Adding a border to the modal window panel.
+    .mat-mdc-dialog-surface::before {
+      border-color: var(--mdc-outlined-button-outline-color); // --sys-outline
+    }
+  }
 }
