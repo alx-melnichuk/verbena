@@ -20,8 +20,8 @@
 <div class="psa-actions">
 
   <div class="psa-box-left">
-    <button *ngIf="isShowSettings()"
-      type="button" mat-stroked-button click9="doSettings(streamDto?.credentials || null)"
+    <button mat-stroked-button *ngIf="isShowSettings()"
+      click9="doSettings(streamDto?.credentials || null)"
       class="psa-pd-lf-0_25">
       <span class="psa-icon settings"></span>
       <span class="psa-vert psa-pd-lf-0_25">{{ 'panel-stream-admin.btn_settings' | translate }}</span>
