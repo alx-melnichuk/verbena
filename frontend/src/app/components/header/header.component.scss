@@ -20,36 +20,25 @@ app-header {
 
   [h-mr-lf-0_5] { margin-left: 0.5em; }
 
-  // ** logo **
-  .h-logo-text {
-    margin-left: 0.5em;
-    --mat-toolbar-title-text-weight: 500;
-    --mat-toolbar-title-text-size: 1.125rem;
+  // ** logo image **
+  .h-icon-bg {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
   }
   .h-logo-mini {
     background-image: url('/assets/icons/components/header/logo-bin.svg');
     height: var(---hdr-hg);
     width: var(---hdr-hg);
   }
-  .h-icon {
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-  }
 
-  .h-mask {
-    background-color: currentColor;
-    color: var(--sys-on-surface-variant);
-    mask-repeat: no-repeat;
-    mask-position: center;
-    mask-size: cover;
+  // ** logo text **
+  .h-logo-text {
+    margin-left: 0.5em;
+    --mat-toolbar-title-text-weight: 500;
+    --mat-toolbar-title-text-size: 1.125rem;
   }
-  .h-more-vert {
-    height: 24px;
-    width: 24px;
-    mask-image: url('/assets/icons/components/header/more-vert-bin.svg');
-  }
-
+  
   // ** page-menu **
   .mat-toolbar .h-page-menu.mat-mdc-button-base.mat-mdc-button-base.mat-unthemed {
     --mdc-text-button-label-text-color: var(--sys-primary);
@@ -64,10 +53,11 @@ app-header {
     background-color: color-mix(in srgb, var(--sys-primary) calc(15% + var(---hdr-dark-mn-sel, 0%)), rgba(0, 0, 0, 0));
   }
 
+  // ** separator **
   .h-spacer {
     flex: 1 1 auto;
   }
-  
+
   // ** menu avatar **
   .h-menu-avatar {
     min-width: var(--mdc-text-button-container-height);
@@ -81,7 +71,8 @@ app-header {
     --mdc-text-button-container-height: var(---hdr-menu-hg, 2.75rem); // 44px
     padding-right: 0px;
   }
-  .h-avatar-img {
+  // * avatar image *
+  .h-img-avatar {
     border-radius: 0.3rem;
     box-sizing: border-box;
     height: calc(var(---hdr-hg) - 4px);
@@ -89,6 +80,19 @@ app-header {
     object-fit: cover;
     vertical-align: middle;
     width: calc(var(---hdr-hg) - 4px);
+  }
+  .h-svg-avatar {
+    color: var(--app-svg-icon-cl);
+    height: var(---hdr-hg);
+    width: var(---hdr-hg);
+    vertical-align: middle;
+  }
+  // * menu "more-vert" *
+  .h-svg-more-vert {
+    color: var(--sys-on-surface-variant);
+    height: 1.5rem;
+    width: 1.5rem;
+    vertical-align: middle;
   }
 }
 
@@ -99,9 +103,6 @@ app-header {
   .mm-item-fn-it {
     font-style: italic;
   }
-  .mm-mr-lf-0_5 {
-    margin-left: 0.5em;
-  }
   .mm-menu-btn {
 
     &.mm-curr {
@@ -111,14 +112,14 @@ app-header {
       display: flex;
       justify-content: space-between;
     }
-    .mm-menu-item.mm-minimal {
+    .mm-menu-item-min {
       flex-shrink: 0;
       height: 18px;
       margin-left: 10px;
       position: relative;
       width: 18px;
     }
-    .mm-menu-item.mm-check::after {
+    .mm-menu-item-min.mm-check::after {
       border-bottom: 2px solid currentColor;
       border-left: 2px solid currentColor; 
       bottom: 0;
