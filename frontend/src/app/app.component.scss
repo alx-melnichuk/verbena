@@ -70,4 +70,6 @@ app-root {
   --app-site-unauth: hsl(27, 50%, 50%);
   --app-site-auth: hsl(120, 50%, 50%);
     
+  // ** color of SVG icons **
+  --app-svg-icon-cl: var(--sys-outline);
 }
