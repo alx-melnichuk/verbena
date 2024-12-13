@@ -1,27 +1,28 @@
-<div class="pse-stream" *ngFor="let streamShort of streamShortDtoList">
+@for (streamShort of streamShortDtoList; track streamShort.id) {
+  <div class="pse-stream">
 
-  <a class="pse-logo" (click)="doViewStream(streamShort.id)">
-    <app-logotype *ngIf="!isFuture(streamShort.starttime); else elseBlockIsFuture"
-       [logo]="streamShort.logo">
-    </app-logotype>
-    <ng-template #elseBlockIsFuture>
-      <div class="pse-logo-future"></div>
-    </ng-template>
-  </a>
+    <a class="pse-logo" (click)="doViewStream(streamShort.id)">
+      @if (!isFuture(streamShort.starttime)) {
+        <app-logotype [logo]="streamShort.logo"></app-logotype>
+      } @else {
+        <div class="pse-logo-future"></div>
+      }
+    </a>
 
-  <div class="pse-details-wrap">
-    <div class="pse-details">
-      <div class="pse-starttime pse-ellipsis">
-        {{ streamShort.starttime | date: formatDateTime }}
+    <div class="pse-details-wrap">
+      <div class="pse-details">
+        <div class="pse-starttime pse-ellipsis">
+          {{ streamShort.starttime | date: formatDateTime }}
+        </div>
+        @if (canEdit && isFuture(streamShort.starttime)) {
+          <button class="pse-edit-btn" (click)="doEditStream(streamShort.id)">
+            {{ 'panel-stream-event.buttons.edit' | translate }}
+          </button>
+        }
       </div>
-    
-      <button class="pse-edit-btn" *ngIf="canEdit && isFuture(streamShort.starttime)"
-        (click)="doEditStream(streamShort.id)">
-        {{ 'panel-stream-event.buttons.edit' | translate }}
-      </button>
+
+      <div class="pse-ellipsis">{{ streamShort.title }}</div>
     </div>
 
-    <div class="pse-ellipsis">{{ streamShort.title }}</div>
   </div>
-
-</div>
+}

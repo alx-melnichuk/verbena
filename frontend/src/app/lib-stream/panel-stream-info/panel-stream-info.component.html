@@ -1,55 +1,57 @@
-<div class="psi-stream-card" *ngFor="let stream of streamList; trackBy: trackByIdFn">
+@for (stream of streamList; track stream.id) {
+  <div class="psi-stream-card">
 
-  <a class="psi-logo" (click)="doRedirectToStream(stream.id)">
-    <app-logotype *ngIf="!isFuture; else elseBlockIsFuture"
-      [logo]="stream.logo">
-    </app-logotype>
-    <ng-template #elseBlockIsFuture>
-      <div class="psi-logo-future"></div>
-    </ng-template>
-  </a>
+    <a class="psi-logo" (click)="doRedirectToStream(stream.id)">
+      @if (!isFuture) {
+        <app-logotype [logo]="stream.logo"></app-logotype>
+      } @else {
+        <div class="psi-logo-future"></div>
+      }
+    </a>
 
-  <div class="psi-details">
-    <div class="psi-date text">
-      {{ stream.starttime | date: (!isFuture ? formatDate : formatDateTime) }}
+    <div class="psi-details">
+      <div class="psi-date text">
+        {{ stream.starttime | date: (!isFuture ? formatDate : formatDateTime) }}
+      </div>
+      <div class="psi-title">
+        <a dr2 (click)="doRedirectToStream(stream.id)">
+          {{ stream.title }}
+        </a>
+      </div>
+      <div class="psi-descript">{{ stream.descript }}</div>
     </div>
-    <div class="psi-title">
-      <a dr2 (click)="doRedirectToStream(stream.id)">
-        {{ stream.title }}
-      </a>
+
+    <div class="psi-actions">
+      @if (canDuplicate) {
+        <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mr psi-btn-dpl"
+          (click)="doActionDuplicate(stream.id)">
+          <span class="psi-action-label">
+            <i class="psi-duplicate-accent"></i>
+            {{ 'panel-stream-mini.buttons.duplicate' | translate }}
+          </span>
+        </button>
+      }
+      <div class="psi-actions-both">
+        @if (canEdit) {
+          <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mr psi-btn-edt"
+            (click)="doActionEdit(stream.id)">
+            <span class="psi-action-label">
+              <i class="psi-edit-accent"></i>
+              {{ 'panel-stream-mini.buttons.edit' | translate }}
+            </span>
+          </button>
+        }
+        @if (canDelete) {
+          <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mr psi-btn-del"
+            (click)="doActionDelete(stream)">
+            <span class="psi-action-label">
+              <i class="psi-delete-accent"></i>
+              {{ 'panel-stream-mini.buttons.delete' | translate }}
+            </span>
+          </button>
+        }
+      </div>
     </div>
-    <div class="psi-descript">{{ stream.descript }}</div>
+
   </div>
-
-  <div class="psi-actions">
-    <button mat-stroked-button *ngIf="canDuplicate"
-      class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mr psi-btn-dpl"
-      (click)="doActionDuplicate(stream.id)">
-      <span class="psi-action-label">
-        <i class="psi-duplicate-accent"></i>
-        {{ 'panel-stream-mini.buttons.duplicate' | translate }}
-      </span>
-    </button>
-
-    <div class="psi-actions-both">
-      <button mat-stroked-button *ngIf="canEdit"
-        class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mr psi-btn-edt"
-        (click)="doActionEdit(stream.id)">
-        <span class="psi-action-label">
-          <i class="psi-edit-accent"></i>
-          {{ 'panel-stream-mini.buttons.edit' | translate }}
-        </span>
-      </button>
-    
-      <button mat-stroked-button *ngIf="canDelete"
-        class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mr psi-btn-del"
-        (click)="doActionDelete(stream)">
-        <span class="psi-action-label">
-          <i class="psi-delete-accent"></i>
-          {{ 'panel-stream-mini.buttons.delete' | translate }}
-        </span>
-      </button>
-    </div>
-  </div>
-
-</div>
+}

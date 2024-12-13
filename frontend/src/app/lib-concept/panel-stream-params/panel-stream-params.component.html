@@ -3,7 +3,9 @@
 </div>
 <div class="psp-tags">
   <span>{{ 'panel-stream-params.tags' | translate }}</span>
-  <span class="psp-tag" *ngFor="let tag of tags">{{ tag }}</span>
+  @for (tag of tags; track tag) {
+    <span class="psp-tag">{{ tag }}</span>
+  }
 </div>
 <div class="psp-start-date-time">
   <span>{{ 'panel-stream-params.start' | translate }}</span>

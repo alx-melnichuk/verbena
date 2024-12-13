@@ -12,11 +12,11 @@
       <mat-select-trigger [ngClass]="(!formControl.value ? 'fl-fn-it' : '')">
         {{ ('locale.' + formControl.value) | translate }}
       </mat-select-trigger>
-      <mat-option *ngFor="let localeItem of localeList"
-        [ngClass]="(localeItem == '' ? 'fl-opt-fn-it' : '')"
-        [value]="localeItem">
-        {{ ('locale.' + localeItem) | translate }}
-      </mat-option>
+      @for (localeItem of localeList; track localeItem) {
+        <mat-option [ngClass]="(localeItem == '' ? 'fl-opt-fn-it' : '')" [value]="localeItem">
+          {{ ('locale.' + localeItem) | translate }}
+        </mat-option>
+      }
     </mat-select>
     <mat-hint>{{ hint | translate }}</mat-hint>
     <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>

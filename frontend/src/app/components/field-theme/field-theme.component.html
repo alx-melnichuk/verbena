@@ -12,11 +12,11 @@
       <mat-select-trigger [ngClass]="(!formControl.value ? 'ft-fn-it' : '')">
         {{ ('theme.' + formControl.value) | translate }}
       </mat-select-trigger>
-      <mat-option *ngFor="let themeItem of themeList"
-        [ngClass]="(themeItem == '' ? 'ft-opt-fn-it' : '')"
-        [value]="themeItem">
-        {{ ('theme.' + themeItem) | translate }}
-      </mat-option>
+      @for (themeItem of themeList; track themeItem) {
+        <mat-option [ngClass]="(themeItem == '' ? 'ft-opt-fn-it' : '')" [value]="themeItem">
+          {{ ('theme.' + themeItem) | translate }}
+        </mat-option>
+      }
     </mat-select>
     <mat-hint>{{ hint | translate }}</mat-hint>
     <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>

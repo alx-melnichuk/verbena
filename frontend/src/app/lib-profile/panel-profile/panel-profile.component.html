@@ -77,9 +77,9 @@
     </form>
 
     <div class="mat-mdc-form-field-subscript-wrapper">
-      <ng-container *ngFor="let errMsg of errMsgsProfile">
+      @for (errMsg of errMsgsProfile; track errMsg) {
         <mat-error>{{ errMsg | translate }}</mat-error>
-      </ng-container>
+      }   
     </div>
   </div>
       
@@ -119,9 +119,9 @@
     </form>
 
     <div class="mat-mdc-form-field-subscript-wrapper">
-      <ng-container *ngFor="let errMsg of errMsgsPassword">
+      @for (errMsg of errMsgsPassword; track errMsg) {
         <mat-error>{{ errMsg | translate }}</mat-error>
-      </ng-container>
+      }   
     </div>
   </div>
 
@@ -144,9 +144,9 @@
     </div>
 
     <div class="mat-mdc-form-field-subscript-wrapper">
-      <ng-container *ngFor="let errMsg of errMsgsAccount">
+      @for (errMsg of errMsgsAccount; track errMsg) {
         <mat-error>{{ errMsg | translate }}</mat-error>
-      </ng-container>
+      }   
     </div>
   </div>
 

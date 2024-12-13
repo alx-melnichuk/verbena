@@ -37,8 +37,8 @@
   </form>
 
   <div class="mat-mdc-form-field-subscript-wrapper">
-    <ng-container *ngFor="let errMsg of errMsgs">
+    @for (errMsg of errMsgs; track errMsg) {
       <mat-error>{{ errMsg | translate }}</mat-error>
-    </ng-container>
+    }
   </div>
 </div>
