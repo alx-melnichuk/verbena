@@ -4,135 +4,89 @@
   <h4 class="h-logo-text">{{ 'app.name' | translate }}</h4>
   <span h-mr-lf-0_5></span>
 
-  <ng-container *ngFor="let pageMenu of pageMenuList">
+  @for (pageMenu of pageMenuList; track pageMenu) {
     <a no-decor no-color mat-button class="h-page-menu"
       routerLink="{{ pageMenu.link }}"
       routerLinkActive="h-page-menu-selected"
       ariaCurrentWhenActive="page">
       {{ pageMenu.name | translate }}
     </a>
-  </ng-container>
+  }
 
   <span class="h-spacer"></span>
 
   <button mat-button [matMenuTriggerFor]="mainMenu" 
     [ngClass]="['h-menu-avatar', (!profileDto ? 'h-menu-btn' : '')]">
     <span>{{ profileDto?.nickname }}</span>
-
-    <img class="h-img-avatar" *ngIf="!!profileDto?.avatar" [src]="profileDto?.avatar" />
-    <svg class="h-svg-avatar" *ngIf="!!profileDto && !profileDto.avatar">
-      <use href="assets/icons/components/header/user-man.svg#user-man"></use>
-    </svg>
-    
-    <svg class="h-svg-more-vert" *ngIf="!profileDto">
-      <use href="assets/icons/components/header/more-vert.svg#more-vert"></use>
-    </svg>
+    @if (!!profileDto) {
+      @if (!!profileDto.avatar) {
+        <img class="h-img-avatar" [src]="profileDto.avatar" />
+      } @else {
+        <svg class="h-svg-avatar">
+          <use href="assets/icons/components/header/user-man.svg#user-man"></use>
+        </svg>  
+      }
+    } @else {
+      <svg class="h-svg-more-vert">
+        <use href="assets/icons/components/header/more-vert.svg#more-vert"></use>
+      </svg>
+    }
   </button>
 
 </mat-toolbar>
 
 <mat-menu #mainMenu="matMenu" xPosition="before">
 
-  <button mat-menu-item *ngIf="isShowMyStreams" class="app-main-menu-item" [routerLink]="[linkMyStreams]">
-    <span class="mm-icon mm-my-streams"></span>
-    <span class="mm-mr-lf-1_">{{ 'main_menu.stream_list' | translate }}</span>
-  </button>
-  
-  <button mat-menu-item *ngIf="isShowCreateStream" class="app-main-menu-item" [routerLink]="[linkCreateStream]">
-    <span class="mm-icon mm-my-streams"></span>
-    <span class="mm-mr-lf-1_">{{ 'main_menu.stream_create' | translate }}</span>
-  </button>
-
-  <button mat-menu-item *ngIf="isShowTheme" class="pn-main-menu-item" [matMenuTriggerFor]="themes">
-    <span class="mm-icon mm-locale"></span>
-    <span class="mm-mr-lf-1_">{{ 'main_menu.theme' | translate }}</span>
-  </button>
-
-  <button mat-menu-item *ngIf="isShowLocale" class="pn-main-menu-item" [matMenuTriggerFor]="locales">
-    <span class="mm-icon mm-locale"></span>
-    <span class="mm-mr-lf-1_">{{ 'main_menu.locale' | translate }}</span>
-  </button>
-
-  <button mat-menu-item *ngIf="isShowLogout" class="app-main-menu-item" (click)="doLogout()">
-    <span class="mm-icon mm-log-out"></span>
-    <span class="mm-mr-lf-1_">{{ 'main_menu.log_out' | translate }}</span>
-  </button>
-
+  @if (isShowMyStreams) {
+    <button mat-menu-item class="app-main-menu-item" [routerLink]="[linkMyStreams]">
+      <span class="mm-icon mm-my-streams"></span>
+      <span class="mm-mr-lf-1_">{{ 'main_menu.stream_list' | translate }}</span>
+    </button>
+  }
+  @if (isShowCreateStream) {
+    <button mat-menu-item class="app-main-menu-item" [routerLink]="[linkCreateStream]">
+      <span class="mm-icon mm-my-streams"></span>
+      <span class="mm-mr-lf-1_">{{ 'main_menu.stream_create' | translate }}</span>
+    </button>
+  }
+  @if (isShowTheme) {
+    <button mat-menu-item class="pn-main-menu-item" [matMenuTriggerFor]="themes">
+      <span class="mm-icon mm-locale"></span>
+      <span class="mm-mr-lf-1_">{{ 'main_menu.theme' | translate }}</span>
+    </button>
+  }
+  @if (isShowLocale) {
+    <button mat-menu-item class="pn-main-menu-item" [matMenuTriggerFor]="locales">
+      <span class="mm-icon mm-locale"></span>
+      <span class="mm-mr-lf-1_">{{ 'main_menu.locale' | translate }}</span>
+    </button>
+  }
+  @if (isShowLogout) {
+    <button mat-menu-item class="app-main-menu-item" (click)="doLogout()">
+      <span class="mm-icon mm-log-out"></span>
+      <span class="mm-mr-lf-1_">{{ 'main_menu.log_out' | translate }}</span>
+    </button>
+  }
 </mat-menu>
 
 <mat-menu #themes="matMenu">
-    <button mat-menu-item *ngFor="let colorSchemeItem of colorSchemeList"
-    [ngClass]="['mm-menu-btn', (colorScheme == colorSchemeItem ? 'mm-curr' : ''), (colorSchemeItem == '' ? 'mm-item-fn-it' : '')]"
-    [value]="colorSchemeItem"
-    (click)="doSetColorScheme(colorSchemeItem)">
-    <span>{{ ('theme.' + colorSchemeItem) | translate }}</span>
-    <span [ngClass]="['mm-menu-item-min', (colorScheme == colorSchemeItem ? 'mm-check' : '')]"></span>
-  </button>
+  @for (colorSchemeItem of colorSchemeList; track colorSchemeItem) {
+    <button mat-menu-item [value]="colorSchemeItem"
+      [ngClass]="['mm-menu-btn', (colorScheme == colorSchemeItem ? 'mm-curr' : ''), (colorSchemeItem == '' ? 'mm-item-fn-it' : '')]"
+      (click)="doSetColorScheme(colorSchemeItem)">
+      <span>{{ ('theme.' + colorSchemeItem) | translate }}</span>
+      <span [ngClass]="['mm-menu-item-min', (colorScheme == colorSchemeItem ? 'mm-check' : '')]"></span>
+    </button>
+  }
 </mat-menu>
 
 <mat-menu #locales="matMenu">
-  <button mat-menu-item *ngFor="let localeItem of localeList"
-    [ngClass]="['mm-menu-btn', (locale == localeItem ? 'mm-curr' : ''), (localeItem == '' ? 'mm-item-fn-it' : '')]"
-    [value]="localeItem"
-    (click)="doSetLocale(localeItem)">
-    <span>{{ ('locale.' + localeItem) | translate }}</span>
-    <span [ngClass]="['mm-menu-item-min', (locale == localeItem ? 'mm-check' : '')]"></span>
-  </button>
+  @for (localeItem of localeList; track localeItem) {
+    <button mat-menu-item [ngClass]="['mm-menu-btn', (locale == localeItem ? 'mm-curr' : ''), (localeItem == '' ? 'mm-item-fn-it' : '')]"
+      [value]="localeItem"
+      (click)="doSetLocale(localeItem)">
+      <span>{{ ('locale.' + localeItem) | translate }}</span>
+      <span [ngClass]="['mm-menu-item-min', (locale == localeItem ? 'mm-check' : '')]"></span>
+    </button>
+  }
 </mat-menu>
-<!--
-<div class="hd-box-logo">
-  <i class="hd-icon hd-logo-mini"></i>
-  <span class="hd-logo-text">{{ 'app.name' | translate }}</span>
-</div>
-
-< !-- <div class="hd-box-search" style="display: none;">
-  <span>box-search</span>
-</div> -- >
-
-<div class="hd-box-actions">
-  < !-- <span>box-actions</span> -- >
-  <nav>
-    <ul>
-      <li *ngFor="let item of menuList">
-        <a no-decor class="hd-menu" routerLink="{{ item.link }}" routerLinkActive="active" ariaCurrentWhenActive="page">
-          {{ item.name | translate }}
-        </a>
-      </li>
-    </ul>
-  </nav>
-</div>
--->
-<!--
-<div class="hd-box-user">
-  < !-- <span>box-user</span> -- >
-
-  <ng-container *ngIf="!!profileDto; else templateMenu">
-    <app-main-menu
-      [isShowMyStreams]="true"
-      [isShowCreateStream]="true"
-      [isShowLocale]="true"
-      [isShowTheme]="true"
-      [isShowLogout]="true"
-      [locale]="locale"
-      [theme]="theme"
-      (logout)="doLogout()"
-      (setLocale)="doSetLocale($event)"
-      (setTheme)="doSetTheme($event)">
-      <div class="hd-profile-avatar">
-        <span>{{ profileDto.nickname }}</span>
-        <img class="hd-avatar" [src]="profileDto.avatar || '/assets/images/icon_man.png'" alt="image" />
-      </div>
-    </app-main-menu>
-  </ng-container>
-  <ng-template #templateMenu>
-    <app-main-menu
-      [isShowTheme]="true"
-      [isShowLocale]="true"
-      [locale]="locale"
-      [theme]="theme"
-      (setLocale)="doSetLocale($event)"
-      (setTheme)="doSetTheme($event)">
-    </app-main-menu>
-  </ng-template>
-</div>
--->

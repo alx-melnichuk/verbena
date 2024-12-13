@@ -5,7 +5,7 @@ app-header {
   --mat-toolbar-mobile-height: var(--app-header-hg);
   --mdc-text-button-label-text-size: 1rem; // 16px
   --mdc-text-button-container-shape: 0.75rem; // 12px
-  ---hdr-hg: var(--app-header-hg, 62px);
+  ---hdr-hg: calc(var(--app-header-hg, 62px) - 8px);
 
   container-name: cnt-header;
   display: block;
