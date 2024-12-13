@@ -1,20 +1,18 @@
-<button
-  *ngIf="closeable"
-  type="button"
-  class="btn-close"
-  (click)="doClose()"
->
-  <span>&#215;</span>
-</button>
-
+@if (closeable) {
+  <button type="button" class="btn-close" (click)="doClose()">
+    <span>&#215;</span>
+  </button>
+}
 <strong class="title">{{ title }}</strong>
 
-<ng-container *ngIf="title != null && (!!message || messageHtml != null)">
+@if (title != null && (!!message || messageHtml != null)) {
   <span class="title">: </span>
-  <br *ngIf="!isOneLine" />
-</ng-container>
+  @if (!isOneLine) {
+    <br/>
+  }
+}
 <span>{{ message }}</span>
 
-<ng-container *ngIf="messageHtml != null">
+@if (messageHtml != null) {
   <span [innerHTML]="messageHtml"></span>
-</ng-container>
+}

@@ -1,10 +1,8 @@
-<ng-container *ngIf="isFillParent == '' || isFillParent == 'true'; else elseBlock">
-  <div class="sp-back">
-  </div>
+@if (isFillParent == '' || isFillParent == 'true') {
+  <div class="sp-back"></div>
   <div class="sp-front">
     <mat-spinner [color]="color" [diameter]="diameter"></mat-spinner>
   </div>
-</ng-container>
-<ng-template #elseBlock>
+} @else {
   <mat-spinner [color]="color" [diameter]="diameter"></mat-spinner>
-</ng-template>
+}

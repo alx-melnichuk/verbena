@@ -1,5 +1,6 @@
-<app-spinner isFillParent *ngIf="isLoadData">
-</app-spinner>
+@if (isLoadData) {
+  <app-spinner isFillParent></app-spinner>
+}
 <app-panel-profile
   [profileDto]="profileDto"
   [profileConfigDto]="profileConfigDto"

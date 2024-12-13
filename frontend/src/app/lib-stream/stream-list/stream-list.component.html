@@ -5,8 +5,9 @@
       {{ 'stream_list.my_calendar' | translate }}
     </div>
     
-    <app-spinner isFillParent *ngIf="streamCalendarService.calendarLoading">
-    </app-spinner>
+    @if (streamCalendarService.calendarLoading) {
+      <app-spinner isFillParent></app-spinner>
+    }
     <app-panel-stream-calendar class="sl-pn-calendar"
       [selected]="streamCalendarService.eventsOfDaySelected"
       [markedDates]="streamCalendarService.calendarMarkedDates"
@@ -27,8 +28,9 @@
       </span>
     </div>
     <div class="sl-event-list">
-      <app-spinner isFillParent *ngIf="streamCalendarService.eventsOfDayLoading">
-      </app-spinner>
+      @if (streamCalendarService.eventsOfDayLoading) {
+        <app-spinner isFillParent></app-spinner>
+      }
       <app-panel-stream-event
         [canEdit]="true"
         [streamShortDtoList]="streamCalendarService.eventsOfDay"
@@ -46,9 +48,9 @@
     <div class="sl-title">
       {{ 'stream_list.my_future_streams' | translate }}
     </div>
-
-    <app-spinner isFillParent *ngIf="streamListService.futureStreamLoading">
-    </app-spinner>
+    @if (streamListService.futureStreamLoading) {
+      <app-spinner isFillParent></app-spinner>
+    }
     <app-panel-stream-info
       [canDuplicate]="true"
       [canEdit]="true"
@@ -69,9 +71,9 @@
     <div class="sl-title">
       {{ 'stream_list.my_past_streams' | translate }}
     </div>
-
-    <app-spinner isFillParent *ngIf="streamListService.pastStreamLoading">
-    </app-spinner>
+    @if (streamListService.pastStreamLoading) {
+      <app-spinner isFillParent></app-spinner>
+    }
     <app-panel-stream-info
       [canDuplicate]="true"
       [canDelete]="true"

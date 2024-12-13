@@ -72,7 +72,7 @@
       </app-field-time>
     </div>
 
-    <ng-container *ngIf="!isCreate">
+    @if (!isCreate) {
       <mat-form-field pse-mr-tp-0_5
         appearance="outline"
         color="primary">
@@ -88,7 +88,7 @@
           matTooltipPosition="above">
         </mat-icon>
       </mat-form-field>
-    </ng-container>
+    }
 
     <div class="pse-actions">
       <button mat-stroked-button color="primary"
@@ -104,8 +104,8 @@
   </form>
 
   <div class="mat-mdc-form-field-subscript-wrapper">
-    <ng-container *ngFor="let errMsg of errMsgs">
+    @for (errMsg of errMsgs; track errMsg) {        
       <mat-error>{{ errMsg | translate }}</mat-error>
-    </ng-container>
+    }
   </div>
 </div>

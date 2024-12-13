@@ -1,6 +1,8 @@
 <!-- <p>concept-view works!</p> -->
 
-<!-- <app-spinner *ngIf="streamStateService.changeOfState" [isFullOwner]="true"></app-spinner> -->
+<!-- @if (streamStateService.changeOfState) {
+  <app-spinner [isFullOwner]="true"></app-spinner>
+} -->
 
 <app-sidebar class="cv-side-bar cv-brd-rg" [isOpen]="isSidebarLeftOpen">
   <button class="cv-btn-arrow cv-left" (click)="isSidebarLeftOpen = !isSidebarLeftOpen;">
@@ -44,26 +46,29 @@
       stream-tools
     </div>
     <div class="cv-stream-actions">
-      <app-panel-stream-actions *ngIf="isStreamOwner"
-        [state]="streamDto?.state"
-        [title]="streamDto?.title"
-        (changeState)="doChangeState($event)">
-      </app-panel-stream-actions>
+      @if (isStreamOwner) {
+        <app-panel-stream-actions
+          [state]="streamDto?.state"
+          [title]="streamDto?.title"
+          (changeState)="doChangeState($event)">
+        </app-panel-stream-actions>
+      }
     </div>
   </div>
-  <ng-container *ngIf="!isStreamOwner; else templateIsOwner">
+  @if (!isStreamOwner) {
     Is not Stream Owner
-    <!-- <app-spinner *ngIf="subscribeLoading" [isFullOwner]="true" [diameter]="60"></app-spinner>
+    <!-- @if (subscribeLoading) {
+    <app-spinner [isFullOwner]="true" [diameter]="60"></app-spinner>
+    }
     <app-panel-stream-info
       [streamDTO]="streamDTO"
       [extendedUserDTO]="extendedUserDTO"
       [hasSubscribe]="hasSubscriptionToAuthor"
       [countOfViewer]="socketService.countOfViewer$ | async"
       [broadcastDuration]="broadcastDuration"
-      (actionSubscribe)="doActionSubscribe($event)"
-    ></app-panel-stream-info> -->
-  </ng-container>
-  <ng-template #templateIsOwner>
+      (actionSubscribe)="doActionSubscribe($event)">
+    </app-panel-stream-info> -->
+  } @else {
     <!-- <div class="cv-stream-info">
       <app-panel-stream-admin
         countOfViewer9="socketService.countOfViewer$ | async"
@@ -73,8 +78,8 @@
         [title]="streamDto?.title"
         (changeState)="doChangeState($event)">
       </app-panel-stream-admin>
-    </div>     -->
-  </ng-template>
+    </div> -->
+  }
 
   <!-- <div class="user-portfolio">
     <app-panel-portfolio-schedule class="details"

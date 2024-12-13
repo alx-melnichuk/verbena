@@ -5,7 +5,7 @@
   <mat-label>{{ label | translate }}</mat-label>
   <input matInput type="text" class="fiau-hide" formControlName="image" />
 
-  <ng-container *ngIf="!imageView; else templateImage">
+  @if (!imageView) {
     <app-field-file-upload hg100 wd100 is-border
       [accepts]="accepts"
       [isDisabled]="isDisabledVal"
@@ -14,20 +14,20 @@
       (addFile)="addImage($event)"
       (readFile)="readImage($event)">
     </app-field-file-upload>
-  </ng-container>
-  <ng-template #templateImage>
+  } @else {
     <img class="fiau-image" [src]="imageView" alt="image" />
     <span class="fiau-remove-wrap">
-      <button mat-icon-button
-        class="fiau-remove"
-        *ngIf="!isDisabledVal && !isReadonly"
-        (click)="deleteImage()"
-        [matTooltip]="'field-image-and-upload.remove_image' | translate"
-        matTooltipPosition="above">
-        <span class="fiau-remove-icon"></span>
-      </button>
+      @if (!isDisabledVal && !isReadonly) {
+        <button mat-icon-button
+          class="fiau-remove"
+          (click)="deleteImage()"
+          [matTooltip]="'field-image-and-upload.remove_image' | translate"
+          matTooltipPosition="above">
+          <span class="fiau-remove-icon"></span>
+        </button>
+      }
     </span>
-  </ng-template>
+  }
   <mat-hint>{{ hint | translate }}</mat-hint>
   <mat-error>{{ (errorMsg || getErrorMsg(formControl.errors)) | translate : formControl.errors }}</mat-error>
 </mat-form-field>

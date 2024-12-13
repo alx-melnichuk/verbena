@@ -1,5 +1,6 @@
-<app-spinner isFillParent *ngIf="isLoadDataStream">
-</app-spinner>
+@if (isLoadDataStream) {
+  <app-spinner isFillParent></app-spinner>
+}
 <app-panel-stream-editor
   [isDisabledSubmit]="isLoadDataStream"
   [streamDto]="streamDto"
