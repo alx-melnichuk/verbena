@@ -1,13 +1,13 @@
 /*# sourceURL=field-file-upload.component.scss */
 
 .light-theme app-field-file-upload {
-  ---ffu-label-cl: var(--app-theme-primary);
-  ---ffu-text-cl: hsl(210, 8%, 45%); // black500
+//   ---ffu-label-cl: var(--app-theme-primary);
+//   ---ffu-text-cl: hsl(210, 8%, 45%); // black500
   ---ffu-brd-cl: hsl(210, 8%, 50%);
 }
 .dark-theme app-field-file-upload {
-  ---ffu-label-cl: hsl(206, 100%, 70%);
-  ---ffu-text-cl: hsl(210, 8%, 60%); // black350
+//   ---ffu-label-cl: hsl(206, 100%, 70%);
+//   ---ffu-text-cl: hsl(210, 8%, 60%); // black350
   ---ffu-brd-cl: hsl(210, 8%, 65%);
 }
   
@@ -39,12 +39,8 @@ app-field-file-upload {
 
   // ** **
 
-  label:not([is-disabled]) {
+  label {
     cursor: pointer;
-    ---ffu-cl: var(--ffu-label-cl, var(---ffu-label-cl));
-  }
-  .ffu-label {
-    color: var(---ffu-cl, var(--ffu-text-cl, var(---ffu-text-cl)));
   }
 
   .ffu-container {
@@ -58,14 +54,11 @@ app-field-file-upload {
     display: none;
   }
 
-  .ffu-file-add-plus {
-    background: transparent none no-repeat center center;
-    background-image: url('/assets/icons/file-add-plus.svg');
-    display: inline-block;
-    height: 48px;
-    padding: var(--ffu-image-pg, 0.5em);
-    width: 48px;
-    background-size: cover;
+  .ffu-svg-file-circle-plus {
+    color: var(--sys-on-surface-variant);
+    display: block;
+    height: 4rem;
+    width: 4rem;
   }
 
   .ffu-msg {

@@ -8,7 +8,11 @@
     [attr.readonly]="isReadonly ? '': undefined"
     (change)="fileHandler(getFileList($event.target), accepts, maxFileSize)"
   />
-  <label [attr.for]="id" [attr.is-disabled]="isDisabled || isReadonly ? '': undefined" class="ffu-file-add-plus"></label>
+  <label [attr.for]="id" [attr.is-disabled]="isDisabled || isReadonly ? '': undefined">
+    <svg class="ffu-svg-file-circle-plus">
+      <use href="assets/icons/components/field-file-upload/file-circle-plus.svg#file-circle-plus"></use>
+    </svg>
+  </label>
   <label [attr.for]="id" [attr.is-disabled]="isDisabled || isReadonly ? '': undefined" class="ffu-msg">
     <div class="ffu-label">{{ 'field-file-upload.drag_files_or_browse' | translate }}</div>
     <div class="ffu-text">{{ textAccepts }}</div>

@@ -71,6 +71,9 @@ export class FieldFileUploadComponent implements OnChanges {
   // on file drop handler => fileHandler($event, accepts, maxFileSize) 
   // handle file from browsing => fileHandler(target.files, accepts, maxFileSize)
   public fileHandler(files: FileList, accepts: string | null | undefined, maxFileSize: number): void {
+    if (this.isDisabled || this.isReadonly) {
+      return;
+    }
     const acceptsSort: string = ValidFileTypesUtil.sorting(accepts || '').join(',');
     const maxFileSizeShort = this.formatBytes(maxFileSize, 1);
 
