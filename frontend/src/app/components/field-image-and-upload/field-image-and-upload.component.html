@@ -23,7 +23,9 @@
           (click)="deleteImage()"
           [matTooltip]="'field-image-and-upload.remove_image' | translate"
           matTooltipPosition="above">
-          <span class="fiau-remove-icon"></span>
+          <svg class="fiau-svg-trash-bin">
+            <use href="assets/icons/components/field-image-and-upload/trash-bin.svg#trash-bin"></use>
+          </svg>
         </button>
       }
     </span>

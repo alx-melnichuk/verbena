@@ -47,11 +47,10 @@ app-field-image-and-upload {
     display: none;
   }
 
-  .fiau-remove-icon {
-    background-color: currentColor;
-    display: inline-block;
-    height: 24px;
-    mask: url('/assets/icons/trash-bin.svg');
-    width: 24px;
+  .fiau-svg-trash-bin {
+    color: var(--sys-on-surface-variant);
+    display: block;
+    height: 1.5rem;
+    width: 1.5rem;
   }
 }
