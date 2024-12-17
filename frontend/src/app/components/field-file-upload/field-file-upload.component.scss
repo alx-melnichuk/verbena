@@ -57,7 +57,7 @@ app-field-file-upload {
     padding: var(--ffu-msg-pg, 0.5em);
   }
   .ffu-text {
-    color: var(--ffu-text-cl, var(--sys-outline));
+    color: var(--ffu-text-cl, var(--sys-secondary));
     font-size: var(--ffu-text-fn-sz, calc(1em - 3px));
     line-height: 1.3;
   }
