@@ -20,8 +20,8 @@
     <div pse-mr-tp-1 class="pse-logo">
       <app-field-image-and-upload hg100
         formControlName="logo"
-        [hint]="'demo text hint1, demo text hint2, demo text hint3'"
-        [errorMsg]="'demo text error1, demo text error2, demo text error3'"
+        [hint]="('field-file-upload.supported_file_types' | translate : { 'validTypes': availableFileTypes })
+          + ' ' + ('field-file-upload.upload_up_to' | translate : { 'maxFileSize': availableMaxFileSize })"
         [accepts]="accepts"
         label="panel-stream-editor.thumbnail"
         [maxSize]="maxSize"

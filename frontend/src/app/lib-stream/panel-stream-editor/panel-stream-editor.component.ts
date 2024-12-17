@@ -14,21 +14,23 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { MAX_FILE_SIZE, IMAGE_VALID_FILE_TYPES } from 'src/app/common/constants';
-import { FieldChipGridComponent } from 'src/app/components/field-chip-grid/field-chip-grid.component';
-import { FieldDateComponent } from 'src/app/components/field-date/field-date.component';
-import { FieldDescriptComponent } from 'src/app/components/field-descript/field-descript.component';
+import { StringDateTime               } from 'src/app/common/string-date-time';
+import { FieldChipGridComponent       } from 'src/app/components/field-chip-grid/field-chip-grid.component';
+import { FieldDateComponent           } from 'src/app/components/field-date/field-date.component';
+import { FieldDescriptComponent       } from 'src/app/components/field-descript/field-descript.component';
 import { FieldImageAndUploadComponent } from 'src/app/components/field-image-and-upload/field-image-and-upload.component';
-import { FieldTimeComponent } from 'src/app/components/field-time/field-time.component';
-import { FieldTitleComponent } from 'src/app/components/field-title/field-title.component';
-import { StringDateTime } from 'src/app/common/string-date-time';
-import { AlertService } from 'src/app/lib-dialog/alert.service';
-import { CopyToClipboardUtil } from 'src/app/utils/copy-to-clipboard.util';
-import { TimeUtil } from 'src/app/utils/time.util';
+import { FieldTimeComponent           } from 'src/app/components/field-time/field-time.component';
+import { FieldTitleComponent          } from 'src/app/components/field-title/field-title.component';
+import { AlertService                 } from 'src/app/lib-dialog/alert.service';
+import { CopyToClipboardUtil          } from 'src/app/utils/copy-to-clipboard.util';
+import { FileSizeUtil                 } from 'src/app/utils/file_size.util';
+import { HtmlElemUtil                 } from 'src/app/utils/html-elem.util';
+import { ValidFileTypesUtil           } from 'src/app/utils/valid_file_types.util';
+import { TimeUtil                     } from 'src/app/utils/time.util';
 
 import { StreamService } from '../stream.service';
 import { StreamDto, StreamDtoUtil, UpdateStreamFileDto } from '../stream-api.interface';
 import { StreamConfigDto } from '../stream-config.interface';
-import { HtmlElemUtil } from 'src/app/utils/html-elem.util';
 
 export const PSE_LOGO_MX_HG = '---pse-logo-mx-hg';
 export const PSE_LOGO_MX_WD = '---pse-logo-mx-wd';
@@ -69,6 +71,9 @@ export class PanelStreamEditorComponent implements OnChanges {
   // FieldImageAndUpload parameters
   public accepts = IMAGE_VALID_FILE_TYPES;
   public maxSize = MAX_FILE_SIZE;
+  public availableFileTypes: string = '';
+  public availableMaxFileSize: string = '';
+
   // FieldImageAndUpload FormControl
   public logoFile: File | null | undefined;
   public initIsLogo: boolean = false; // original has an logo.
@@ -243,6 +248,8 @@ export class PanelStreamEditorComponent implements OnChanges {
     // Set FieldImageAndUpload parameters
     this.maxSize = streamConfigDto?.logoMaxSize || MAX_FILE_SIZE;
     this.accepts = (streamConfigDto?.logoValidTypes || []).join(',');
+    this.availableFileTypes = ValidFileTypesUtil.text(this.accepts).join(', ').toUpperCase();
+    this.availableMaxFileSize = FileSizeUtil.formatBytes(this.maxSize, 1);
   }
   private settingProperties(elem: ElementRef<HTMLElement> | null, streamConfigDto: StreamConfigDto | null): void {
     const avatarMaxWidth = streamConfigDto?.logoMaxWidth;
