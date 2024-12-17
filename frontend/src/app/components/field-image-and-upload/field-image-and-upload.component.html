@@ -6,9 +6,10 @@
   <input matInput type="text" class="fiau-hide" formControlName="image" />
 
   @if (!imageView) {
-    <app-field-file-upload hg100 wd100 is-border
+    <app-field-file-upload hg100 wd100 
       [accepts]="accepts"
       [isDisabled]="isDisabledVal"
+      [isBorder]="true"
       [isReadonly]="isReadonly"
       [maxFileSize]="maxSize"
       (addFile)="addImage($event)"

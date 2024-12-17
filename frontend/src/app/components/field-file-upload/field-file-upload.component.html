@@ -14,8 +14,10 @@
     </svg>
   </label>
   <label [attr.for]="id" [attr.is-disabled]="isDisabled || isReadonly ? '': undefined" class="ffu-msg">
-    <div class="ffu-label">{{ 'field-file-upload.drag_files_or_browse' | translate }}</div>
-    <div class="ffu-text">{{ textAccepts }}</div>
-    <div class="ffu-text">{{ textMaxFileSize }}</div>
+    <a href="javascript:void(0);">{{ 'field-file-upload.drag_files_or_browse' | translate }}</a>
+    <div class="ffu-text">
+      <span>{{ textAccepts }}</span><br/>
+      <span>{{ textMaxFileSize }}</span>
+    </div>
   </label>
 </div>

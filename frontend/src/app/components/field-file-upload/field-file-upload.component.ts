@@ -26,6 +26,8 @@ export class FieldFileUploadComponent implements OnChanges {
   @Input()
   public isDisabled: boolean = false;
   @Input()
+  public isBorder: boolean = false;
+  @Input()
   public isReadonly: boolean = false;
   @Input()
   public isMultiple = false;
@@ -39,7 +41,11 @@ export class FieldFileUploadComponent implements OnChanges {
 
   @HostBinding('class.is-disabled')
   public get classIsDisabledVal(): boolean {
-    return this.isDisabled
+    return this.isDisabled;
+  }
+  @HostBinding('class.is-border')
+  public get classIsBorderVal(): boolean {
+    return this.isBorder;
   }
   @HostBinding('class.is-non-event')
   public get isNonEvent(): boolean {
