@@ -37,12 +37,58 @@
   },
   "theme": {
     "": "nichts",
-    "light-azure_blue": "Licht Azurblau & Blau",
-    "light-rose_red": "Licht Rose & Rot",
-    "light-cyan_orange": "Licht Cyan & Orange",
-    "dark-azure_blue": "Dunkel Azurblau & Blau",
-    "dark-rose_red": "Dunkel Rose & Rot",
-    "dark-cyan_orange": "Dunkel Cyan & Orange"
+    "light-azure_blue": "Licht - (Azurblau & Blau)",
+    "light-rose_red": "Licht - (Rose & Rot)",
+    "light-cyan_orange": "Licht - (Cyan & Orange)",
+    "dark-azure_blue": "Dunkel - (Azurblau & Blau)",
+    "dark-rose_red": "Dunkel - (Rose & Rot)",
+    "dark-cyan_orange": "Dunkel - (Cyan & Orange)"
+  },
+  "Forbidden": {
+    "status": 403,
+    "access_denied" : "Der Zugriff wird verweigert."
+  },
+  "Unauthorized": {
+    "status": 401,
+    "token_missing" : "Autorisierungstoken fehlt.",
+    "invalid_or_expired_token" : "Ungültiges oder abgelaufenes token.",
+    "unacceptable_token_num" : "Unzulässige token nummer",
+    "unacceptable_token_id" : "Unakzeptable token id",
+    "nickname_or_email_incorrect" : "Der spitzname oder die e-mail adresse ist falsch.",
+    "password_incorrect" : "Das angegebene passwort ist falsch."
+  },
+  "NotFound": {
+    "status": 404,
+    "registration_not_found" : "Es wurde kein datensatz zur registrierung eines neuen benutzers gefunden.",
+    "user_not_found" : "Benutzer nicht gefunden.",
+    "recovery_not_found" : "Es wurde kein datensatz zum wiederherstellen des benutzerkennworts gefunden."
+  },
+  "NotAcceptable": {
+    "status": 406,
+    "finish_date_less_start_date" : "Das enddatum \"{{ invalidPeriod.streamPeriodFinish }}\" ist später als das startdatum \"{{ invalidPeriod.streamPeriodStart }}\".",
+    "invalid_field_tag" : "Fehler beim deserialisieren des felds \"tag\".",
+    "session_not_exist" : "Für diesen benutzer gibt es keine sitzung.",
+    "params_not_specified": "Parameter nicht angegeben",
+    "invalid_stream_state": "Ungültiger Stream-Statusübergang von \"{{ invalidState.oldState }}\" nach \"{{ invalidState.newState }}\"."
+  },
+  "Conflict": {
+    "status": 409,
+    "invalid_hash" : "Ungültiger passwort hashwert.",
+    "email_already_use" : "Diese e-mail wird bereits verwendet oder registriert.",
+    "nickname_already_use" : "Dieser spitzname wird bereits verwendet oder wird registriert."
+  },
+  "ContentTooLarge": {
+    "status": 413,
+    "finish_date_exceeds_limit" : "Das enddatum \"{{ periodTooLong.actualPeriodFinish }}\" des suchzeitraums überschreitet den grenzwert \"{{ periodTooLong.periodMaxNumberDays }}\".",
+    "invalid_file_size" : "Die dateigröße ({{ invalidFileSize.actualFileSize }}) überschreitet das maximum ({{ invalidFileSize.maxFileSize }})."
+  },
+  "UnsupportedType": {
+    "status": 415,
+    "invalid_file_type" : "Der dateityp MIME-upload ({{ invalidFileType.actualFileType }}) ist nicht in der liste der verfügbaren ({{ invalidFileType.validFileType }})."
+  },
+  "RangeNotSatisfiable": {
+    "status": 416,
+    "parsing_type_not_supported" : "Der datentyp wird beim parsen nicht unterstützt."
   },
 
   "field-locale": {

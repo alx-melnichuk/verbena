@@ -37,12 +37,58 @@
   },
   "theme": {
     "": "нічого",
-    "light-azure_blue": "Світла Лазурний & Синій",
-    "light-rose_red": "Світла Троянда & Червоний",
-    "light-cyan_orange": "Світла Блакитний & Помаранчевий",
-    "dark-azure_blue": "Темна Лазурний & Синій",
-    "dark-rose_red": "Темна Троянда & Червоний",
-    "dark-cyan_orange": "Темна Блакитний & Помаранчевий"
+    "light-azure_blue": "Світла - (Лазурний & Синій)",
+    "light-rose_red": "Світла - (Рожевий & Червоний)",
+    "light-cyan_orange": "Світла - (Блакитний & Помаранчевий)",
+    "dark-azure_blue": "Темна - (Лазурний & Синій)",
+    "dark-rose_red": "Темна - (Рожевий & Червоний)",
+    "dark-cyan_orange": "Темна - (Блакитний & Помаранчевий)"
+  },
+  "Forbidden": {
+    "status": 403,
+    "access_denied" : "Доступ заборонено."
+  },
+  "Unauthorized": {
+    "status": 401,
+    "token_missing" : "Маркер авторизації відсутній.",
+    "invalid_or_expired_token" : "Недійсний або прострочений маркер.",
+    "unacceptable_token_num" : "Неприйнятний номер маркера",
+    "unacceptable_token_id" : "Неприйнятний ідентифікатор маркера",
+    "nickname_or_email_incorrect" : "Псевдонім або адреса електронної пошти некоректні.",
+    "password_incorrect" : "Вказаний пароль некоректний."
+  },
+  "NotFound": {
+    "status": 404,
+    "registration_not_found" : "Запис для реєстрації нового користувача не знайдено.",
+    "user_not_found" : "Користувача не знайдено.",
+    "recovery_not_found" : "Запис для відновлення пароля користувача не знайдено."
+  },
+  "NotAcceptable": {
+    "status": 406,
+    "finish_date_less_start_date" : "Кінцева дата \"{{ invalidPeriod.streamPeriodFinish }}\" менша за дату початку \"{{ invalidPeriod.streamPeriodStart }}\".",
+    "invalid_field_tag" : "Помилка десеріалізації поля \"tag\".",
+    "session_not_exist" : "Для цього користувача немає сесії.",
+    "params_not_specified": "Параметри не вказані",
+    "invalid_stream_state": "Недійсний перехід стану потоку з \"{{ invalidState.oldState }}\" до \"{{ invalidState.newState }}\"."
+  },
+  "Conflict": {
+    "status": 409,
+    "invalid_hash" : "Недійсне хеш-значення пароля.",
+    "email_already_use" : "Ця електронна адреса вже використовується або знаходиться на стадії реєстрації.",
+    "nickname_already_use" : "Цей псевдонім уже використовується або на стадії реєстрації."
+  },
+  "ContentTooLarge": {
+    "status": 413,
+    "finish_date_exceeds_limit" : "Кінцева дата \"{{ periodTooLong.actualPeriodFinish }}\" періоду пошуку перевищує обмеження \"{{ periodTooLong.periodMaxNumberDays }}\".",
+    "invalid_file_size" : "Розмір файлу ({{ invalidFileSize.actualFileSize }}) перевищує максимальний ({{ invalidFileSize.maxFileSize }})."
+  },
+  "UnsupportedType": {
+    "status": 415,
+    "invalid_file_type" : "Тип файлу завантаження MIME ({{ invalidFileType.actualFileType }}) відсутній у списку доступних ({{ invalidFileType.validFileType }})."
+  },
+  "RangeNotSatisfiable": {
+    "status": 416,
+    "parsing_type_not_supported" : "Тип даних не підтримується під час аналізу."
   },
 
   "field-locale": {

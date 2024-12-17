@@ -37,12 +37,12 @@
   },
   "theme": {
     "": "nothing",
-    "light-azure_blue": "Light Azure & Blue",
-    "light-rose_red": "Light Rose & Red",
-    "light-cyan_orange": "Light Cyan & Orange",
-    "dark-azure_blue": "Dark Azure & Blue",
-    "dark-rose_red": "Dark Rose & Red",
-    "dark-cyan_orange": "Dark Cyan & Orange"
+    "light-azure_blue": "Light - (Azure & Blue)",
+    "light-rose_red": "Light - (Pink & Red)",
+    "light-cyan_orange": "Light - (Cyan & Orange)",
+    "dark-azure_blue": "Dark - (Azure & Blue)",
+    "dark-rose_red": "Dark - (Pink & Red)",
+    "dark-cyan_orange": "Dark - (Cyan & Orange)"
   },
   "Forbidden": {
     "status": 403,
@@ -66,7 +66,7 @@
   "NotAcceptable": {
     "status": 406,
     "finish_date_less_start_date" : "The finish date \"{{ invalidPeriod.streamPeriodFinish }}\" is less than the start date \"{{ invalidPeriod.streamPeriodStart }}\".",
-    "invalid_field_tag" : "Error deserializing field tag.",
+    "invalid_field_tag" : "Error deserializing field \"tag\".",
     "session_not_exist" : "There is no session for this user.",
     "params_not_specified": "Parameters not specified",
     "invalid_stream_state": "Invalid stream state transition from \"{{ invalidState.oldState }}\" to \"{{ invalidState.newState }}\"."
