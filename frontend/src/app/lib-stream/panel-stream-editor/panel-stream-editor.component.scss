@@ -1,7 +1,5 @@
 /*# sourceURL=panel-stream-editor.component.scss */
 
-@use '../../../styles-dimensions.scss' as dimensions;
-
 app-panel-stream-editor {
   ---pse-width: calc(100% - 1vw + 1vw); // width in "px".
   ---pse-pn-bg: var(--app-stream-pn);
@@ -97,13 +95,16 @@ app-panel-stream-editor {
     --mdc-protected-button-label-text-color: #000;
   }
 
-  .pse-save {
-    width: 25px;
-    height: 25px;
-    display: inline-block;
-    background: transparent none no-repeat center center;
-    background-image: url('../../../assets/icons/file-save.svg');
-    margin-right: 0.5em;
+  .pse-btn-save[disabled] {
+    ---pp-svg-save-op: 0.8;
+  }
+  .pse-svg-diskette-bin {
+    color: var(--app-svg-icon-cl);
+    display: block;
+    height: 1.75rem;
+    margin-right: 0.75em;
+    opacity: var(---pp-svg-save-op, 1);
+    width: 1.75rem;
   }
 
 }

@@ -92,12 +92,14 @@
 
     <div class="pse-actions">
       <button mat-stroked-button color="primary"
-        class="app-infix app-ordinary"
+        class="app-infix app-ordinary pse-btn-save"
         [disabled]="formGroup.pristine || formGroup.invalid"
         (click)="saveStream(formGroup)">
         <span class="pse-actions-label">
-          <i class="pse-save"></i>
-          {{ (isCreate ? 'panel-stream-editor.go_public' : 'panel-stream-editor.save') | translate }}
+          <svg class="pse-svg-diskette-bin">
+            <use href="assets/icons/lib-stream/panel-stream-editor/diskette-bin.svg#diskette-bin"></use>
+          </svg>
+          <span>{{ (isCreate ? 'panel-stream-editor.go_public' : 'panel-stream-editor.save') | translate }}</span>
         </span>
       </button>
     </div>
