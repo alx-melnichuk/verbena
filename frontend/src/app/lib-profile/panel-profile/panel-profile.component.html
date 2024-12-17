@@ -8,6 +8,8 @@
       <div pp-mr-tp-0_5 class="pp-avatar">
         <app-field-image-and-upload hg100
             formControlName="avatar"
+            [hint]="('field-file-upload.supported_file_types' | translate : { 'validTypes': availableFileTypes })
+              + ' ' + ('field-file-upload.upload_up_to' | translate : { 'maxFileSize': availableMaxFileSize })"
             [accepts]="accepts"
             label="panel-profile.label_avatar"
             [maxSize]="maxSize"

@@ -9,17 +9,19 @@ import { MatInputModule } from '@angular/material/input';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { IMAGE_VALID_FILE_TYPES, MAX_FILE_SIZE } from 'src/app/common/constants';
-import { FieldDescriptComponent } from 'src/app/components/field-descript/field-descript.component';
-import { FieldEmailComponent } from 'src/app/components/field-email/field-email.component';
-import { FieldFileUploadComponent } from 'src/app/components/field-file-upload/field-file-upload.component';
+import { FieldDescriptComponent       } from 'src/app/components/field-descript/field-descript.component';
+import { FieldEmailComponent          } from 'src/app/components/field-email/field-email.component';
+import { FieldFileUploadComponent     } from 'src/app/components/field-file-upload/field-file-upload.component';
 import { FieldImageAndUploadComponent } from 'src/app/components/field-image-and-upload/field-image-and-upload.component';
-import { FieldLocaleComponent } from 'src/app/components/field-locale/field-locale.component';
-import { FieldNicknameComponent } from 'src/app/components/field-nickname/field-nickname.component';
-import { FieldPasswordComponent } from 'src/app/components/field-password/field-password.component';
-import { FieldThemeComponent } from 'src/app/components/field-theme/field-theme.component';
-import { UniquenessCheckComponent } from 'src/app/components/uniqueness-check/uniqueness-check.component';
-import { DialogService } from 'src/app/lib-dialog/dialog.service';
-import { HtmlElemUtil } from 'src/app/utils/html-elem.util';
+import { FieldLocaleComponent         } from 'src/app/components/field-locale/field-locale.component';
+import { FieldNicknameComponent       } from 'src/app/components/field-nickname/field-nickname.component';
+import { FieldPasswordComponent       } from 'src/app/components/field-password/field-password.component';
+import { FieldThemeComponent          } from 'src/app/components/field-theme/field-theme.component';
+import { UniquenessCheckComponent     } from 'src/app/components/uniqueness-check/uniqueness-check.component';
+import { DialogService                } from 'src/app/lib-dialog/dialog.service';
+import { FileSizeUtil                 } from 'src/app/utils/file_size.util';
+import { HtmlElemUtil                 } from 'src/app/utils/html-elem.util';
+import { ValidFileTypesUtil           } from 'src/app/utils/valid_file_types.util';
 
 import { ProfileService } from '../profile.service';
 import { ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, UniquenessDto } from '../profile-api.interface';
@@ -91,9 +93,13 @@ export class PanelProfileComponent implements OnInit, OnChanges {
   public isRequiredPassword: boolean = false;
 
   public debounceDelay: number = PPI_DEBOUNCE_DELAY;
+
   // FieldImageAndUpload parameters
   public accepts = IMAGE_VALID_FILE_TYPES;
   public maxSize = MAX_FILE_SIZE;
+  public availableFileTypes: string = '';
+  public availableMaxFileSize: string = '';
+
   // FieldImageAndUpload FormControl
   public avatarFile: File | null | undefined;
   public initIsAvatar: boolean = false; // original has an avatar.
@@ -301,6 +307,8 @@ export class PanelProfileComponent implements OnInit, OnChanges {
     // Set FieldImageAndUpload parameters
     this.maxSize = profileConfigDto?.avatarMaxSize || MAX_FILE_SIZE;
     this.accepts = (profileConfigDto?.avatarValidTypes || []).join(',');
+    this.availableFileTypes = ValidFileTypesUtil.text(this.accepts).join(', ').toUpperCase();
+    this.availableMaxFileSize = FileSizeUtil.formatBytes(this.maxSize, 1);
   }
   private settingProperties(elem: ElementRef<HTMLElement> | null, profileConfigDto: ProfileConfigDto | null): void {
     const avatarMaxWidth = profileConfigDto?.avatarMaxWidth;
