@@ -17,9 +17,14 @@
     <a href="javascript:void(0);">
       <label [attr.for]="id">{{ 'field-file-upload.drag_files_or_browse' | translate }}</label>
     </a>
-    <label [attr.for]="id" class="ffu-msg">
-      <span>{{ textAccepts }}</span><br/>
-      <span>{{ textMaxFileSize }}</span>
+    <label [attr.for]="id" [ngClass]="['ffu-msg', (isShowMsgFileTypes || isShowMsgFileSize ? 'ffu-block' : '')]">
+      @if (isShowMsgFileTypes) {
+        <span>{{ 'field-file-upload.supported_file_types' | translate : { 'validTypes': availableFileTypes } }}</span>
+        <br/>
+      }
+      @if (isShowMsgFileSize) {
+        <span>{{ 'field-file-upload.upload_up_to' | translate : { 'maxFileSize': availableMaxFileSize } }}</span>
+      }
     </label>
   </div>
 </div>

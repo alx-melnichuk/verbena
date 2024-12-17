@@ -6,6 +6,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { FieldDragAndDropDirective } from 'src/app/directives/field-drag-and-drop.directive';
 import { ValidFileTypesUtil } from 'src/app/utils/valid_file_types.util';
+import { FileSizeUtil } from 'src/app/utils/file_size.util';
 
 let idx = 0;
 
@@ -32,6 +33,10 @@ export class FieldFileUploadComponent implements OnChanges {
   @Input()
   public isMultiple = false;
   @Input()
+  public isShowMsgFileSize: boolean = false;
+  @Input()
+  public isShowMsgFileTypes: boolean = false;
+  @Input()
   public maxFileSize: number = -1;
 
   @Output()
@@ -54,18 +59,18 @@ export class FieldFileUploadComponent implements OnChanges {
 
   public files: File[] = [];
   public id = 'fileDropId_' + (++idx);
-  public textAccepts: string | undefined;
-  public textMaxFileSize: string | undefined;
+  public availableFileTypes: string = '';
+  public availableMaxFileSize: string = '';
 
   constructor(private translate: TranslateService) {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['accepts']) {
-      this.textAccepts = this.prepareAccepts(ValidFileTypesUtil.text(this.accepts).join(', ').toUpperCase());
+      this.availableFileTypes = ValidFileTypesUtil.text(this.accepts).join(', ').toUpperCase();
     }
     if (!!changes['maxFileSize']) {
-      this.textMaxFileSize = this.prepareMaxFileSize(this.maxFileSize);
+      this.availableMaxFileSize = FileSizeUtil.formatBytes(this.maxFileSize, 1);
     }
   }
 
@@ -81,7 +86,7 @@ export class FieldFileUploadComponent implements OnChanges {
       return;
     }
     const acceptsSort: string = ValidFileTypesUtil.sorting(accepts || '').join(',');
-    const maxFileSizeShort = this.formatBytes(maxFileSize, 1);
+    const maxFileSizeShort = FileSizeUtil.formatBytes(maxFileSize, 1);
 
     for (let idx = 0, len = files.length; idx < len; idx++) {
       const file: File = files[idx];
@@ -106,17 +111,6 @@ export class FieldFileUploadComponent implements OnChanges {
   public deleteFile(index: number): void {
     this.files.splice(index, 1);
   }
-  // format bytes
-  public formatBytes(bytes: number, decimals: number): string {
-    if (bytes === 0) {
-      return '0 Bytes';
-    }
-    const k = 1024;
-    const dm = decimals <= 0 ? 0 : decimals || 2;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return '' + parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-  }
 
   // ** Private API **
 
@@ -127,16 +121,5 @@ export class FieldFileUploadComponent implements OnChanges {
       this.readFile.emit([file.name, result]);
     };
     reader.readAsDataURL(file); // convert to base64 string and render as a preview
-  }
-  private prepareMaxFileSize(maxFileSize: number | null | undefined): string {
-    let result: string = '';
-    if (maxFileSize != null && maxFileSize > 0) {
-      const maxSizeStr = this.formatBytes(maxFileSize, 1);
-      result = this.translate.instant('field-file-upload.upload_up_to', { 'maxFileSize': maxSizeStr });
-    }
-    return result;
-  }
-  private prepareAccepts(accepts: string): string {
-    return (accepts.length > 0 ? this.translate.instant('field-file-upload.supported_file_types', { 'validTypes': accepts }) : '');
   }
 }
