@@ -52,12 +52,10 @@ app-field-file-upload {
   }
 
   .ffu-msg {
-    padding-left: var(--ffu-msg-pg-lf, 1.5em);
-    padding: var(--ffu-msg-pg, 0.5em);
-  }
-  .ffu-text {
     color: var(--ffu-text-cl, var(--sys-secondary));
+    display: block;
     font-size: var(--ffu-text-fn-sz, calc(1em - 3px));
     line-height: 1.3;
+    padding: var(--ffu-msg-pg, 0.5em);
   }
 }
