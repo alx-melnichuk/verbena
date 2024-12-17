@@ -1,7 +1,5 @@
 /*# sourceURL=panel-profile.component.scss */
 
-@use '../../../styles-dimensions.scss' as dimensions;
-
 app-panel-profile {
   ---pp-width: 100vw; // width in "px".
   ---pp-pd: calc(0.0297 * min(var(---pp-width), 1536px));  // 1024px: 30.41px; 1280px: 38.016px; 1536px: 456192px;
@@ -92,13 +90,16 @@ app-panel-profile {
       align-items: center;    
     }
   }
-  .pp-save {
-    width: 25px;
-    height: 25px;
-    display: inline-block;
-    background: transparent none no-repeat center center;
-    background-image: url('/assets/icons/file-save.svg');
-    margin-right: 0.5em;
+  .pp-btn-save[disabled] {
+    ---pp-svg-save-op: 0.8;
+  }
+  .pp-svg-diskette-bin {
+    color: var(--app-svg-icon-cl);
+    display: block;
+    height: 1.75rem;
+    margin-right: 0.75em;
+    opacity: var(---pp-svg-save-op, 1);
+    width: 1.75rem;
   }
 }
 

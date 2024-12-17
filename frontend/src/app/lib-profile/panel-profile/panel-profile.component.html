@@ -68,10 +68,13 @@
         
       <div pp-mr-tp-1 class="pp-actions">
         <button mat-stroked-button color="primary"
-          class="app-infix app-ordinary"
+          class="app-infix app-ordinary pp-btn-save"
           [disabled]="formGroupProfile.pristine || formGroupProfile.invalid || isDisabledSubmit"
           (click)="saveProfile(formGroupProfile)">
-          <i class="pp-save"></i>{{ 'panel-profile.btn_save_profile' | translate }}
+          <svg class="pp-svg-diskette-bin">
+            <use href="assets/icons/lib-profile/panel-profile/diskette-bin.svg#diskette-bin"></use>
+          </svg>
+          <span>{{ 'panel-profile.btn_save_profile' | translate }}</span>
         </button>
       </div>
     </form>
@@ -113,7 +116,7 @@
           class="app-infix app-ordinary"
           [disabled]="formGroupPassword.pristine || formGroupPassword.invalid || isDisabledSubmit"
           (click)="setNewPassword(formGroupPassword)">
-          <i class="pp-save"></i>{{ 'panel-profile.btn_set_password' | translate }}
+          <span>{{ 'panel-profile.btn_set_password' | translate }}</span>
         </button>
       </div>
     </form>
@@ -138,7 +141,7 @@
           class="app-infix app-ordinary"
           [disabled]="isDisabledSubmit"
           (click)="removeAccount()">
-          <i class="pp-save"></i>{{ 'panel-profile.btn_delete_account' | translate }}
+          <span>{{ 'panel-profile.btn_delete_account' | translate }}</span>
         </button>
       </div>
     </div>
@@ -151,5 +154,4 @@
   </div>
 
 </div>
-<!-- <span>&nbsp;</span> -->
 
