@@ -44,7 +44,9 @@ app-root {
   @media screen and (dimensions.$desktop-1280 < width) {
     --app-header-hg: 64px;
   }
-    
+  ---brd-wd: 1px;
+  ---brd-cl: color-mix(in srgb, var(--sys-outline-variant) 70%, transparent);
+
   display: block;
   flex-direction: column;
   height: 100%;
@@ -53,23 +55,30 @@ app-root {
   position: relative;
 
   & > app-header {
-    border-bottom: 1px solid hsl(0, 0%, 85%);
+    border-bottom: var(---brd-wd) solid var(---brd-cl);
     height: var(--app-header-hg);
   }
   & > app-footer {
-    border-top: 1px solid hsl(0, 0%, 85%);
+    border-top: var(---brd-wd) solid var(---brd-cl);
     height: var(--app-footer-hg);
   }
   & > main {
-    // height: calc(100% - var(--app-header-hg) - var(--app-footer-hg) - 1px);
-    // height: 100%;
-    height: calc(100% - var(--app-header-hg) - var(--app-footer-hg) - 2px);
+    height: calc(100% - var(--app-header-hg) - var(--app-footer-hg) - 2 * var(---brd-wd));
   }
 
   // ** header, footer **
   --app-site-unauth: hsl(27, 50%, 50%);
   --app-site-auth: hsl(120, 50%, 50%);
-    
+
+  // ** panel-about **
+  --app-pn-about         : hsl( 40, 50%, 50%);
+
+
   // ** color of SVG icons **
   --app-svg-icon-cl: var(--sys-outline);
+
+  // ** panel properties **
+  --app-panel-shadow: 0px 3px 5px -1px rgba(0, 0, 0, .2), 0px 6px 10px 0px rgba(0, 0, 0, .14), 0px 1px 18px 0px rgba(0, 0, 0, .12);
+
+
 }

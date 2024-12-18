@@ -4,8 +4,8 @@
 
 app-panel-about {
   ---pa-width: calc(100% - 1vw + 1vw); // width in "px".
-  ---pa-pn-bg: var(--app-about-pn);
-  ---pa-pn-brd: var(--app-about-pn-low);
+  ---pa-pn-bg: color-mix(in srgb, var(--app-pn-about) 10%, var(--sys-surface));
+  ---pa-pn-brd: color-mix(in srgb, var(--app-pn-about) 22%, var(--sys-surface));
   
   // 512.22px: 18.767px;  640px: 23.976px;  767.78px: 28.767px;  896.67px: 33.611px;  1024.44px: 38.403px;  1280px: 47.986px;
   ---pa-pd: calc(0.0375 * min(var(---pa-width), 1280px) - 0.0115px);  
@@ -25,7 +25,7 @@ app-panel-about {
     border-style: solid;
     border-width: 2px;
     border-radius: var(--pa-pn-brd-rd, var(---pa-pd));
-    box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px;
+    box-shadow: var(--app-panel-shadow, rgba(0, 0, 0, 0.2) 0px 3px 10px);
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
