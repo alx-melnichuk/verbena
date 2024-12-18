@@ -295,9 +295,9 @@
     "label_rapidoc": "\"rapidoc\" documentation",
     "frontend_used": "On the Frontend we used:",
     "frontend_items": [
-        "angular v.16",
+        "angular v.18",
         "ngx-translate v.15",
-        "angular/material v.16",
+        "angular/material v.18",
         "angular/mat-datepicker",
         "input components with ControlValueAccessor implementation",
         "component for outputting an image file",

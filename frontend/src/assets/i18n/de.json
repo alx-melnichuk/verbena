@@ -141,9 +141,9 @@
     "label_rapidoc": "\"rapidoc\" dokumentation",
     "frontend_used": "Auf dem Frontend haben wir verwendet:",
     "frontend_items": [
-        "angular v.16",
+        "angular v.18",
         "ngx-translate v.15",
-        "angular/material v.16",
+        "angular/material v.18",
         "angular/mat-datepicker",
         "Eingabekomponenten mit ControlValueAccessor-Implementierung",
         "Komponente zur Ausgabe einer Bilddatei",
