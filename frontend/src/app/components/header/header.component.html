@@ -72,7 +72,7 @@
 <mat-menu #themes="matMenu">
   @for (colorSchemeItem of colorSchemeList; track colorSchemeItem) {
     <button mat-menu-item [value]="colorSchemeItem"
-      [ngClass]="['mm-menu-btn', (colorScheme == colorSchemeItem ? 'mm-curr' : ''), (colorSchemeItem == '' ? 'mm-item-fn-it' : '')]"
+      [ngClass]="['mm-menu-btn', (colorScheme == colorSchemeItem ? 'mm-curr' : '')]"
       (click)="doSetColorScheme(colorSchemeItem)">
       <span>{{ ('theme.' + colorSchemeItem) | translate }}</span>
       <span [ngClass]="['mm-menu-item-min', (colorScheme == colorSchemeItem ? 'mm-check' : '')]"></span>
@@ -82,7 +82,7 @@
 
 <mat-menu #locales="matMenu">
   @for (localeItem of localeList; track localeItem) {
-    <button mat-menu-item [ngClass]="['mm-menu-btn', (locale == localeItem ? 'mm-curr' : ''), (localeItem == '' ? 'mm-item-fn-it' : '')]"
+    <button mat-menu-item [ngClass]="['mm-menu-btn', (locale == localeItem ? 'mm-curr' : '')]"
       [value]="localeItem"
       (click)="doSetLocale(localeItem)">
       <span>{{ ('locale.' + localeItem) | translate }}</span>

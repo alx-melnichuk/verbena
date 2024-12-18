@@ -47,8 +47,8 @@ export class HeaderComponent implements OnChanges {
   readonly command: EventEmitter<Record<string, string>> = new EventEmitter();
 
   public pageMenuList: MainMenu[] = [];
-  public localeList: string[] = ['', ...LOCALE_LIST];
-  public colorSchemeList: string[] = ['', ...COLOR_SCHEME_LIST];
+  public localeList: string[] = [...LOCALE_LIST];
+  public colorSchemeList: string[] = [...COLOR_SCHEME_LIST];
   
   public linkLogin = ROUTE_LOGIN;
   public linkMyStreams = ROUTE_STREAM_LIST;
