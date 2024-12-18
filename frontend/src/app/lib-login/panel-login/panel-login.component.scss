@@ -1,15 +1,10 @@
 /*# sourceURL=panel-login.component.scss */
 
-@use '../../../styles-dimensions.scss' as dimensions;
-
 app-panel-login {
-  ---pl-width: calc(100% - 1vw + 1vw); // width in "px".
-  ---pl-pn-bg: var(--app-login-pn);
-  ---pl-pn-brd: var(--app-login-pn-low);
-
-  // 512.22px: 18.767px;  640px: 23.976px;  767.78px: 28.767px;  896.67px: 33.611px;  1024.44px: 38.403px;  1280px: 47.986px;
-  ---pl-pd: calc(0.0375 * min(var(---pl-width), 1280px) - 0.0115px);  
-  ---pl-wd: min(100vw, calc((26px + var(---pl-width) / 128) * 16));
+  ---pl-pn-bg: color-mix(in srgb, var(--app-pn-login) 10%, var(--sys-surface));
+  ---pl-pn-brd: color-mix(in srgb, var(--app-pn-login) 22%, var(--sys-surface));
+  ---pl-pd: calc(0.03125 * min(100vw, 1280px) - 2px);  // 512.22px: 14px;  1024.44px: 30px;
+  ---pl-wd: min(100vw, calc((26px + 100vw / 128) * 16));
 
   [pl-mr-tp-0_5] { margin-top: 0.5em; }
   [pl-mr-tp-1] { margin-top: 1.1em; }
@@ -25,7 +20,7 @@ app-panel-login {
     border-style: solid;
     border-width: 2px;
     border-radius: var(--pl-pn-brd-rd, var(---pl-pd));
-    box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px;
+    box-shadow: var(--pl-pn-sh, rgba(0, 0, 0, 0.35) 0px 4px 11px);
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -37,7 +32,7 @@ app-panel-login {
   .pl-form {
     display: flex;
     flex-direction: column;
-    padding-bottom: 0.5em;
+    padding-bottom: calc(var(---pl-pd) / 2);
   }
 
   .pl-title {
