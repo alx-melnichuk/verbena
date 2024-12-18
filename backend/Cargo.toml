@@ -18,28 +18,28 @@ actix = "0.13.5"
 actix-cors = "0.7.0"
 actix-files = "0.6.6"
 actix-multipart = "0.7.2"
-actix-web = { version = "4.8.0", features = ["openssl"] }
+actix-web = { version = "4.9.0", features = ["openssl"] }
 argon2 = "0.5.3"
-chrono = { version = "0.4.38", features = ["serde"] }
-diesel = { version = "2.2.2", features = ["postgres", "r2d2", "chrono"] }
+chrono = { version = "0.4.39", features = ["serde"] }
+diesel = { version = "2.2.6", features = ["postgres", "r2d2", "chrono"] }
 diesel-derive-enum = { version = "2.1.0", features = ["postgres"] }
 diesel_migrations = "2.2.0"
 dotenv = "0.15.0"
 email_address = "0.2.9"
 env_logger = "0.11.5"
-futures-util = "0.3.30"
-handlebars = "6.0.0"
+futures-util = "0.3.31"
+handlebars = "6.2.0"
 image = "0.24.9" # this is a working version. 0.25.1, 0.25.2 - bad
 jsonwebtoken = "9.3.0"
-lettre = { version = "0.11.7", features = ["tokio1", "tokio1-native-tls"] }
+lettre = { version = "0.11.11", features = ["tokio1", "tokio1-native-tls"] }
 log = "0.4.22"
 mime = "0.3.17"
-openssl = "0.10.66"
+openssl = "0.10.68"
 r2d2 = "0.8.10"
 rand = "0.8.5"
-regex = "1.10.6"
-serde = { version = "1.0.204", features = ["derive"] }
-serde_json = "1.0.122"
+regex = "1.11.1"
+serde = { version = "1.0.216", features = ["derive"] }
+serde_json = "1.0.133"
 utoipa = { version = "5.2.0", features = ["chrono", "actix_extras"] }
 utoipa-swagger-ui = { version = "8.0.3", features = ["actix-web"] }
 utoipa-redoc = { version = "5.0.0", features = ["actix-web"] }
