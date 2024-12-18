@@ -25,7 +25,7 @@ app-panel-about {
     border-style: solid;
     border-width: 2px;
     border-radius: var(--pa-pn-brd-rd, var(---pa-pd));
-    box-shadow: var(--app-panel-shadow, rgba(0, 0, 0, 0.2) 0px 3px 10px);
+    box-shadow: var(--pa-pn-sh, rgba(0, 0, 0, 0.35) 0px 4px 11px);
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
