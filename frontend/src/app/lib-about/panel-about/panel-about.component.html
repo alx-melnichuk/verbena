@@ -1,7 +1,7 @@
 <div class="pa-content">
   <div class="pa-form">
 
-    <div pa-mr-tp-0_5 class="pa-title">{{ 'panel-about.title' | translate : { appName: ('app.name' | translate) } }}</div>
+    <div class="pa-title">{{ 'panel-about.title' | translate : { appName: ('app.name' | translate) } }}</div>
 
     <div pa-mr-tp-0_5>{{ 'panel-about.label' | translate : { appName: ('app.name' | translate) } }}</div>
     
@@ -23,7 +23,7 @@
         }
       </ul>
       <span>{{ 'panel-about.backend_used' | translate }}</span>
-      <ul>
+      <ul pa-mr-bt-0>
         <li>{{ backendItem01 }}</li>
         <li>[dependencies]
           <ul>

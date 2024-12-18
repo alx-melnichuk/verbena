@@ -1,16 +1,14 @@
 /*# sourceURL=panel-about.component.scss */
 
 app-panel-about {
-  ---pa-width: calc(100% - 1vw + 1vw); // width in "px".
   ---pa-pn-bg: color-mix(in srgb, var(--app-pn-about) 10%, var(--sys-surface));
   ---pa-pn-brd: color-mix(in srgb, var(--app-pn-about) 22%, var(--sys-surface));
-  
-  // 512.22px: 18.767px;  640px: 23.976px;  767.78px: 28.767px;  896.67px: 33.611px;  1024.44px: 38.403px;  1280px: 47.986px;
-  ---pa-pd: calc(0.0375 * min(var(---pa-width), 1280px) - 0.0115px);  
-  ---pa-wd: min(100vw, calc((28px + var(---pa-width) / 128) * 18));
+  ---pa-pd: calc(0.03125 * min(100vw, 1280px) - 2px);  // 512.22px: 14px;  1024.44px: 30px;
+  ---pa-wd: min(100vw, calc((28px + 100vw / 128) * 18));
 
   [pa-mr-tp-0_5] { margin-top: 0.5em; }
   [pa-mr-tp-1] { margin-top: 1em; }
+  [pa-mr-bt-0] { margin-bottom: 0px; }
 
   display: flex;
   flex-direction: column;
@@ -28,14 +26,13 @@ app-panel-about {
     display: flex;
     flex-direction: column;
     margin: auto;
-    padding: calc(var(---pa-pd) / 2) var(---pa-pd);
+    padding: var(---pa-pd) var(---pa-pd);
     width: var(---pa-wd);
   }
   
   .pa-form {
     display: flex;
     flex-direction: column;
-    padding-bottom: 0.5em;
   }
 
   .pa-title {
