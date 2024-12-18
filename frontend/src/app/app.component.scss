@@ -70,15 +70,14 @@ app-root {
   --app-site-unauth: hsl(27, 50%, 50%);
   --app-site-auth: hsl(120, 50%, 50%);
 
-  // ** panel-about **
+  // ** List of background colors for main panels **
   --app-pn-about         : hsl( 40, 50%, 50%);
-
+  --app-pn-login         : hsl( 85, 50%, 50%);
+  --app-pn-signup        : hsl( 70, 50%, 50%);
+  --app-pn-forgot        : hsl( 55, 50%, 50%);
 
   // ** color of SVG icons **
   --app-svg-icon-cl: var(--sys-outline);
-
-  // ** panel properties **
-  --app-panel-shadow: 0px 3px 5px -1px rgba(0, 0, 0, .2), 0px 6px 10px 0px rgba(0, 0, 0, .14), 0px 1px 18px 0px rgba(0, 0, 0, .12);
 
 
 }
