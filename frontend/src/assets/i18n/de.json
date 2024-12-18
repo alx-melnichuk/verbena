@@ -90,14 +90,124 @@
     "status": 416,
     "parsing_type_not_supported" : "Der datentyp wird beim parsen nicht unterstützt."
   },
-
+  "Validation": {
+    "status": 417,
+    "new_password:required" : "Das feld \"newPassword\" ist erforderlich.",
+    "new_password:min_length" : "Das feld \"newPassword\" muss mindestens {{ minlength.requiredLength }} zeichen haben.",
+    "new_password:max_length" : "Das feld \"newPassword\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben.",
+    "new_password:regex" : "Das feld \"newPassword\" muss enthalten: einen kleinbuchstaben, einen großbuchstaben und eine zahl.",
+    "new_password:equal_to_old_value": "Das feld \"newPassword\" muss sich vom alten wert unterscheiden.",
+    "nickname:required" : "Das feld \"nickname\" ist erforderlich.",
+    "nickname:min_length" : "Das \"nickname\" feld muss mindestens {{ minlength.requiredLength }} zeichen haben.",
+    "nickname:max_length" : "Das \"nickname\" feld darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben.",
+    "nickname:regex" : "Verfügbar in \"nickname\": klein- und großbuchstaben, zahlen und unterstriche.",
+    "email:required" : "Das feld \"email\" ist erforderlich.",
+    "email:min_length" : "Das feld \"email\" muss mindestens {{ minlength.requiredLength }} zeichen haben.",
+    "email:max_length" : "Das feld \"email\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben.",
+    "email:email_type" : "Die feld \"email\" muss dem standard entsprechen (john.smith@example.com).",
+    "password:required" : "Das feld \"password\" ist erforderlich.",
+    "password:min_length" : "Das feld \"password\" muss mindestens {{ minlength.requiredLength }} zeichen haben.",
+    "password:max_length" : "Das feld \"password\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben.",
+    "password:regex" : "Das feld \"password\" muss enthalten: einen kleinbuchstaben, einen großbuchstaben und eine zahl.",
+    "title:required" : "Das feld \"title\" ist erforderlich.",
+    "title:min_length" : "Das feld \"title\" muss mindestens {{ minlength.requiredLength }} zeichen haben.",
+    "title:max_length" : "Das feld \"title\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben.",
+    "descript:min_length" : "Das feld \"description\" muss mindestens {{ minlength.requiredLength }} zeichen haben.",
+    "descript:max_length" : "Das feld \"description\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben.",
+    "starttime:min_valid_date" : "Das feld \"date\" \"{{ minValidDateTime.actualDateTime }}\" ist kleiner als der mindestwert \"{{ minValidDateTime.minDateTime }}\".",
+    "source:min_length" : "Das feld \"source\" muss mindestens {{ minlength.requiredLength }} zeichen haben.",
+    "source:max_length" : "Das feld \"source\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben.",
+    "tag:required" : "Das feld \"tags\" ist erforderlich.",
+    "tag:min_amount" : "Die anzahl der \"tag\"-elemente ({{ minAmount.actualAmount }}) ist kleiner als der mindestwert ({{ minAmount.requiredAmount }}).",
+    "tag:max_amount" : "Die anzahl der \"tag\"-elemente ({{ maxAmount.actualAmount }}) ist größer als der maximalwert ({{ maxAmount.requiredAmount }}).",
+    "tag:min_length": "Das feld \"tag\" muss mindestens {{ minlength.requiredLength }} zeichen ({{ minlength.actualValue }}) enthalten.",
+    "tag:max_length":"Das feld \"tag\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen ({{ maxlength.actualValue }}) enthalten.",
+    "date:required": "Das feld \"date\" ist erforderlich.",
+    "date:invalid_format": "Ungültiges datumsformat.",
+    "date:minDate": "Das \"date\"-feld \"{{matDatepickerMin.actual_s}}\" ist kleiner als der mindestwert \"{{matDatepickerMin.min_s}}\".",
+    "date:maxDate": "Das \"date\"-feld \"{{matDatepickerMax.actual_s}}\" ist größer als der Maximalwert \"{{matDatepickerMax.max_s}}\".",
+    "time:required": "Das feld \"time\" ist erforderlich.",
+    "time:min": "Das feld \"time\" muss größer als {{ min.requiredMin }} sein.",
+    "time:max": "Das feld \"time\" muss kleiner sein als {{ max.requiredMax }}.",
+    "theme:required": "Das feld \"theme\" ist erforderlich.",
+    "theme:min_length" : "Das feld \"theme\" muss mindestens {{ minlength.requiredLength }} zeichen haben.",
+    "theme:max_length" : "Das feld \"theme\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben.",
+    "locale:required": "Das feld \"locale\" ist erforderlich.",
+    "locale:min_length" : "Das feld \"locale\" muss mindestens {{ minlength.requiredLength }} zeichen haben.",
+    "locale:max_length" : "Das feld \"locale\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben.",
+    "user_role:invalid_value": "Ungültiger wert für \"user role\" ({{ invalid.actualValue }}).",
+    "no_fields_to_update": "Es sind keine felder zum aktualisieren vorhanden. Gültige Namen: {{ noRequiredFields.validNames }}."
+  } ,
+  "UnprocessableEntity": {
+    "status": 422,
+    "json_web_token_encode" : "Fehler beim kodieren des web-tokens."
+  },
+  "InternalServerError": {
+    "status": 500,
+    "internal_error_accessing_server_api" : "Interner fehler beim zugriff auf die server-API.",
+    "user_not_received_from_request" : "Authentifizierung – die entität \"user\" wurde aus der anfrage nicht empfangen.",
+    "error_upload_file" : "Fehler beim hochladen der datei",
+    "error_hashing_password" : "Fehler beim hashen des passworts"
+  },
+  "Blocking": {
+    "status": 506,
+    "error_waiting_for_operations" : "Beim warten auf den abschluss des vorgangs ist ein fehler aufgetreten."
+  },
+  "Database": {
+    "status": 507,
+    "database_query_error" : "Fehler beim ausführen der datenbankabfrage."
+  },
+  "NotExtended": {
+    "status": 510,
+    "error_convert_file" : "Fehler beim konvertieren der datei.",
+    "error_sending_email" : "Fehler beim senden der E-Mail."
+  },
+  "field-chip-grid": {
+    "label": "Feldwert hinzufügen",
+    "hint": "trennzeichen: Eingabe und leerzeichen"
+  },
+  "field-date": {
+    "label": "Date "
+  },
+  "field-descript": {
+    "label": "Beschreibung"
+  },
+  "field-email": {
+    "err_minlength_symbol_search": "Die symbolsuche sollte {{value}} zeichen oder mehr enthalten.",
+    "err_maxlength_symbol_search": "Die symbolsuche sollte weniger als {{value}} zeichen umfassen.",
+    "label": "E-Mail "
+  },
+  "field-file-upload": {
+    "drag_files_or_browse": "Wählen sie eine datei aus oder ziehen sie sie hierher.",
+    "supported_file_types": "Unterstützte dateitypen: {{validTypes}}.",
+    "upload_up_to": "Laden Sie bis zu {{maxFileSize}} hoch.",
+    "err_upload_images_use_valid_types": "Bitte laden sie bilder im gültigen format hoch: {{validTypes}}.",
+    "err_file_size_must_not_exceed_max": "Die dateigröße darf das maximum von {{maxFileSize}} B ({{maxFileSizeShort}}) nicht überschreiten."
+  },
+  "field-image-and-upload": {
+    "label": "Bilddatei",
+    "remove_image": "Dieses Bild entfernen"
+  },
+  "field-nickname": {
+    "label": "Spitzname ",
+    "nickname_hint": "Verwendet: kleinbuchstaben, großbuchstaben, zahlen und unterstriche. Mindestens 3 zeichen."
+  },
+  "field-password": {
+    "label": "Passwort ",
+    "password_hint": "Verwenden sie mindestens 6 zeichen, darunter einen kleinbuchstaben, einen großbuchstaben und eine zahl."
+  },
   "field-locale": {
     "label": "Gebietsschema "
   },
   "field-theme": {
     "label": "Farbthema "
   },
-
+  "field-time": {
+    "label": "Zeit "
+  },
+  "field-title": {
+    "label": "Titel "
+  },
   "panel-login": {
     "title": "Genehmigung",
     "email_or_nickname": "E-Mail oder Spitzname ",
@@ -126,13 +236,47 @@
     "dialog_title": "Willkommen bei {{appName}} !",
     "dialog_message": "Wir haben ihnen einen link zum ändern ihres passworts in \"{{value}}\" gesendet."
   },
-
+  "logotype": {
+    "no_logo": "kein logo!"
+  },
   "stream_list": {
     "my_calendar": "Mein kalender",
     "my_future_streams": "Meine zukünftigen streams",
     "my_past_streams": "Meine vergangenen streams"
   },
-
+  "demo": {
+  },
+  "panel-stream-mini": {
+    "buttons": {
+      "duplicate": "Duplikat",
+      "edit": "Bearbeiten",
+      "delete": "Löschen"
+    }
+  },
+  "panel-stream-event": {
+    "buttons": {
+      "edit": "Bearbeiten"
+    }
+  },
+  "panel-stream-editor": {
+    "stream_details": "Stream-Details",
+    "title": "Titel",
+    "save": "Speichern",
+    "create": "Erstellen",
+    "descript": "Beschreibung",
+    "thumbnail": "Miniaturansicht",
+    "tags": "Schlagwörter",
+    "add_tags": "Tags hinzufügen",
+    "tags_hint": "Es sollten mindestens 1 und höchstens 4 tags vorhanden sein.",
+    "set_date_and_time_or_now": "Jetzt beginnen oder Stream planen",
+    "start_date": "Startdatum",
+    "start_time": "Zeit Ereignis",
+    "link_for_visitors": "Link für Besucher",
+    "error_creating_stream": "Fehler beim erstellen des streams",
+    "error_editing_stream": "Fehler beim bearbeiten des streams",
+    "copy_stream_link_to_clipboard": "Stream-link in die zwischenablage kopieren",
+    "stream_link_copied_to_clipboard": "Stream-link in die zwischenablage kopiert"
+  },
   "panel-about": {
     "title": "Über die {{appName}}-Website.",
     "label": "Die {{appName}}-Site ist eine Demo-Site. Sie dient keinem kommerziellen Zweck.",
@@ -155,7 +299,6 @@
     ],
     "backend_used": "Auf dem Backend haben wir verwendet:"
   },
-
   "panel-profile": {
     "title_profile": "Persönliche informationen",
     "label_avatar": "Avatar",
@@ -210,5 +353,8 @@
     "title": "Titel:",
     "tags": "Schlagwörter:",
     "start": "Start:"
+  },
+  "panel-stream-admin": {
+    "btn_settings": "Einstellungen"
   }
 }

@@ -90,14 +90,124 @@
     "status": 416,
     "parsing_type_not_supported" : "Тип даних не підтримується під час аналізу."
   },
-
+  "Validation": {
+    "status": 417,
+    "new_password:required" : "Поле \"newPassword\" обов'язкове.",
+    "new_password:min_length" : "Поле \"newPassword\" має містити принаймні {{ minlength.requiredLength }} символів.",
+    "new_password:max_length" : "Поле \"newPassword\" не може містити більше {{ maxlength.requiredLength }} символів.",
+    "new_password:regex" : "Поле \"newPassword\" має містити: малу літеру, велику літеру та цифру.",
+    "new_password:equal_to_old_value": "Поле \"newPassword\" має відрізнятися від старого значення.",
+    "nickname:required" : "Поле \"nickname\" обов'язкове.",
+    "nickname:min_length" : "Поле \"nickname\" має містити принаймні {{ minlength.requiredLength }} символів.",
+    "nickname:max_length" : "Поле \"nickname\" не може містити більше {{ maxlength.requiredLength }} символів.",
+    "nickname:regex" : "В полі \"nickname\" доступні: малі та великі літери, цифри та підкреслення.",
+    "email:required" : "Поле \"email\" обов'язкове.",
+    "email:min_length" : "Поле \"email\" має містити принаймні {{ minlength.requiredLength }} символів.",
+    "email:max_length" : "Поле \"email\" не може містити більше {{ maxlength.requiredLength }} символів.",
+    "email:email_type" : "Поле \"email\" має відповідати стандарту (john.smith@example.com).",
+    "password:required" : "Поле \"password\" обов'язкове.",
+    "password:min_length" : "Поле \"password\" має містити принаймні {{ minlength.requiredLength }} символів.",
+    "password:max_length" : "Поле \"password\" не може містити більше {{ maxlength.requiredLength }} символів.",
+    "password:regex" : "Поле \"password\" має містити: малу літеру, велику літеру та цифру.",
+    "title:required" : "Поле \"title\" обов'язкове.",
+    "title:min_length" : "Поле \"title\" має містити принаймні {{ minlength.requiredLength }} символів.",
+    "title:max_length" : "Поле \"title\" не може містити більше {{ maxlength.requiredLength }} символів.",
+    "descript:min_length" : "Поле \"description\" має містити принаймні {{ minlength.requiredLength }} символів.",
+    "descript:max_length" : "Поле \"description\" не може містити більше {{ maxlength.requiredLength }} символів.",
+    "starttime:min_valid_date" : "Поле \"date\" \"{{ minValidDateTime.actualDateTime }}\" менше мінімального значення \"{{ minValidDateTime.minDateTime }}\".",
+    "source:min_length" : "Поле \"source\" має містити принаймні {{ minlength.requiredLength }} символів.",
+    "source:max_length" : "Поле \"source\" не може містити більше {{ maxlength.requiredLength }} символів.",
+    "tag:required" : "Поле \"tags\" обов'язкове.",
+    "tag:min_amount" : "Кількість елементів \"tag\" ({{ minAmount.actualAmount }}) менша за мінімальне значення ({{ minAmount.requiredAmount }}).",
+    "tag:max_amount" : "Кількість елементів \"tag\" ({{ maxAmount.actualAmount }}) перевищує максимальне значення ({{ maxAmount.requiredAmount }}).",
+    "tag:min_length" : "Поле \"tag\" має містити принаймні {{ minlength.requiredLength }} символів ({{ minlength.actualValue }}).",
+    "tag:max_length" : "У полі \"tag\" більше не повинно бути {{ maxlength.requiredLength }} символів ({{ maxlength.actualValue }}).",
+    "date:required": "Поле \"date\" обов'язкове.",
+    "date:invalid_format": "Недійсний формат дати.",
+    "date:minDate": "Поле \"date\" \"{{matDatepickerMin.actual_s}}\" менше мінімального значення \"{{matDatepickerMin.min_s}}\".",
+    "date:maxDate": "Поле \"date\" \"{{matDatepickerMax.actual_s}}\" перевищує максимальне значення \"{{matDatepickerMax.max_s}}\".",
+    "time:required": "Поле \"time\" обов'язкове.",
+    "time:min": "Поле \"time\" має бути більше {{ min.requiredMin }}.",
+    "time:max": "Поле \"time\" має бути менше {{ max.requiredMax }}.",
+    "theme:required": "Поле \"theme\" обов'язкове.",
+    "theme:min_length" : "Поле \"theme\" має містити принаймні {{ minlength.requiredLength }} символів.",
+    "theme:max_length" : "Поле \"theme\" не може містити більше {{ maxlength.requiredLength }} символів.",
+    "locale:required": "Поле \"locale\" обов'язкове.",
+    "locale:min_length" : "Поле \"locale\" має містити принаймні {{ minlength.requiredLength }} символів.",
+    "locale:max_length" : "Поле \"locale\" не може містити більше {{ maxlength.requiredLength }} символів.",
+    "user_role:invalid_value": "Недійсне значення для \"user role\" ({{ invalid.actualValue }}).",
+    "no_fields_to_update": "Немає полів для оновлення. Дійсні імена: {{ noRequiredFields.validNames }}."
+  } ,
+  "UnprocessableEntity": {
+    "status": 422,
+    "json_web_token_encode" : "Помилка кодування веб-токена."
+  },
+  "InternalServerError": {
+    "status": 500,
+    "internal_error_accessing_server_api" : "Внутрішня помилка під час доступу до API сервера.",
+    "user_not_received_from_request" : "Автентифікація - із запиту не отримано сутність \"user\".",
+    "error_upload_file" : "Помилка завантаження файлу",
+    "error_hashing_password" : "Помилка під час хешування пароля"
+  },
+  "Blocking": {
+    "status": 506,
+    "error_waiting_for_operations" : "Під час очікування завершення операції сталася помилка."
+  },
+  "Database": {
+    "status": 507,
+    "database_query_error" : "Помилка виконання запиту до бази даних."
+  },
+  "NotExtended": {
+    "status": 510,
+    "error_convert_file" : "Помилка під час конвертації файлу.",
+    "error_sending_email" : "Помилка під час надсилання електронної пошти."
+  },
+  "field-chip-grid": {
+    "label": "Додати значення",
+    "hint": "роздільник: Enter і пробіл"
+  },
+  "field-date": {
+    "label": "Дата "
+  },
+  "field-descript": {
+    "label": "Опис"
+  },
+  "field-email": {
+    "err_minlength_symbol_search": "Пошук символів має містити {{value}} символів або більше.",
+    "err_maxlength_symbol_search": "Пошук символів має бути меншим ніж {{value}} символів.",
+    "label": "Електронна пошта "
+  },
+  "field-file-upload": {
+    "drag_files_or_browse": "Виберіть файл або перетягніть файл сюди.",
+    "supported_file_types": "Підтримувані типи файлів: {{validTypes}}.",
+    "upload_up_to": "Завантажте до {{maxFileSize}}.",
+    "err_upload_images_use_valid_types": "Завантажте зображення у правильному форматі: {{validTypes}}.",
+    "err_file_size_must_not_exceed_max": "Розмір файлу не має перевищувати максимальний {{maxFileSize}} B ({{maxFileSizeShort}})."
+  },
+  "field-image-and-upload": {
+    "label": "Файл зображення",
+    "remove_image": "Видаліть це зображення"
+  },
+  "field-nickname": {
+    "label": "Псевдонім ",
+    "nickname_hint": "Використовуються: малі літери, великі літери, цифри та підкреслення. Мінімум 3 символи."
+  },
+  "field-password": {
+    "label": "Пароль ",
+    "password_hint": "Використовуйте принаймні 6 символів, одну малу літеру, одну велику літеру та цифру."
+  },
   "field-locale": {
     "label": "Локаль "
   },
   "field-theme": {
     "label": "Кольорова тема "
   },
-
+  "field-time": {
+    "label": "Час "
+  },
+  "field-title": {
+    "label": "Назва "
+  },
   "panel-login": {
     "title": "Авторизація",
     "email_or_nickname": "Email або псевдонім ",
@@ -126,13 +236,47 @@
     "dialog_title": "Ласкаво просимо до {{appName}}!",
     "dialog_message": "Ми надіслали посилання для зміни вашого пароля на \"{{value}}\"."
   },
-
+  "logotype": {
+    "no_logo": "немає логотипу!"
+  },
   "stream_list": {
     "my_calendar": "Мій календар",
     "my_future_streams": "Мої майбутні потоки",
     "my_past_streams": "Мої минулі потоки"
   },
-
+  "demo": {
+  },
+  "panel-stream-mini": {
+    "buttons": {
+      "duplicate": "Дублікат",
+      "edit": "Редагувати",
+      "delete": "Видалити"
+    }
+  },
+  "panel-stream-event": {
+    "buttons": {
+      "edit": "Редагувати"
+    }
+  },
+  "panel-stream-editor": {
+    "stream_details": "Деталі трансляції",
+    "title": "Назва",
+    "save": "Зберегти",
+    "create": "Створити",
+    "descript": "Опис",
+    "thumbnail": "Мініатюра",
+    "tags": "Теги",
+    "add_tags": "Додати теги",
+    "tags_hint": "Тегів має бути: мінімум 1, максимум 4.",
+    "set_date_and_time_or_now": "Почніть зараз або заплануйте трансляцію",
+    "start_date": "Дата початку",
+    "start_time": "Час початку",
+    "link_for_visitors": "Посилання для відвідувачів",
+    "error_creating_stream": "Помилка створення трансляції",
+    "error_editing_stream": "Помилка редагування трансляції",
+    "copy_stream_link_to_clipboard": "Копіювати посилання на трансляцію у буфер обміну",
+    "stream_link_copied_to_clipboard": "Посилання на трансляцію скопійовано в буфер обміну"
+  },
   "panel-about": {
     "title": "Про веб-сайт {{appName}}.",
     "label": "Сайт {{appName}} є демонстраційним. І не має комерційних цілей.",
@@ -155,7 +299,6 @@
     ],
     "backend_used": "На Backend ми використовували:"
   },
-
   "panel-profile": {
     "title_profile": "Особиста інформація",
     "label_avatar": "Аватар",
@@ -210,5 +353,8 @@
     "title": "Назва:",
     "tags": "Теги:",
     "start": "Початок:"
+  },
+  "panel-stream-admin": {
+    "btn_settings": "Налаштування"
   }
 }
