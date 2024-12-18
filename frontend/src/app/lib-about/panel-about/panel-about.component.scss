@@ -9,7 +9,7 @@ app-panel-about {
   
   // 512.22px: 18.767px;  640px: 23.976px;  767.78px: 28.767px;  896.67px: 33.611px;  1024.44px: 38.403px;  1280px: 47.986px;
   ---pa-pd: calc(0.0375 * min(var(---pa-width), 1280px) - 0.0115px);  
-  ---pa-wd: min(100vw, calc((28px + var(---pa-width) / 128) * 16));
+  ---pa-wd: min(100vw, calc((28px + var(---pa-width) / 128) * 18));
 
   [pa-mr-tp-0_5] { margin-top: 0.5em; }
   [pa-mr-tp-1] { margin-top: 1em; }
