@@ -1,15 +1,10 @@
 /*# sourceURL=panel-signup.component.scss */
 
-@use '../../../styles-dimensions.scss' as dimensions;
-
 app-panel-signup {
-  ---ps-width: calc(100% - 1vw + 1vw); // width in "px".
-  ---ps-pn-bg: var(--app-signup-pn);
-  ---ps-pn-brd: var(--app-signup-pn-low);
-
-  // 512.22px: 18.767px;  640px: 23.976px;  767.78px: 28.767px;  896.67px: 33.611px;  1024.44px: 38.403px;  1280px: 47.986px;
-  ---ps-pd: calc(0.0375 * min(var(---ps-width), 1280px) - 0.0115px);  
-  ---ps-wd: min(100vw, calc((26px + var(---ps-width) / 128) * 16));
+  ---ps-pn-bg: color-mix(in srgb, var(--app-pn-signup) 10%, var(--sys-surface));
+  ---ps-pn-brd: color-mix(in srgb, var(--app-pn-signup) 22%, var(--sys-surface));
+  ---ps-pd: calc(0.03125 * min(100vw, 1280px) - 2px);  // 512.22px: 14px;  1024.44px: 30px;
+  ---ps-wd: min(100vw, calc((26px + 100vw / 128) * 16));
 
   [ps-mr-tp-0_5] { margin-top: 0.5em; }
   [ps-mr-tp-1] { margin-top: 1.1em; }
@@ -26,7 +21,7 @@ app-panel-signup {
     border-style: solid;
     border-width: 2px;
     border-radius: var(--ps-pn-brd-rd, var(---ps-pd));
-    box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px;
+    box-shadow: var(--ps-pn-sh, rgba(0, 0, 0, 0.35) 0px 4px 11px);
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -38,9 +33,7 @@ app-panel-signup {
   .ps-form {
     display: flex;
     flex-direction: column;
-    padding-bottom: 0.5em;
-    box-sizing: border-box;
-    margin-right: var(---ps-cont-hg);
+    padding-bottom: calc(var(---ps-pd) / 2);
   }
 
   .ps-title {
