@@ -549,15 +549,6 @@ body {
     --app-icon-enb-cl: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  40%); // rgba(0, 0, 0, 0.54);
     --app-icon-dsb-cl: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  60%);  // rgba(0, 0, 0, 0.38);
 
-    --app-forgot-pw-pn     : hsl( 55, 60%, 90%);
-    --app-forgot-pw-pn-low : hsl( 55, 60%, 80%);
-
-    --app-signup-pn        : hsl( 70, 60%, 90%);
-    --app-signup-pn-low    : hsl( 70, 60%, 80%);
-  
-    --app-login-pn         : hsl( 85, 60%, 90%);
-    --app-login-pn-low     : hsl( 85, 60%, 80%);
-
     --app-stream-pn        : hsl(210, 60%, 90%);  // --app-theme-background-panel-2: hsl(222, 50%, 96%);
     --app-stream-pn-low    : hsl(210, 60%, 60%);  // hsl(  0,   0%, -30%);
     --app-pn-clndr-bg      : hsl(200, 50%, 90%);  // hsl(-10, -10%,   0%);
@@ -585,15 +576,6 @@ body {
     // "icon-svg color" dark
     --app-icon-enb-cl: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  70%); // rgba(0, 0, 0, 0.54);
     --app-icon-dsb-cl: hsl(var(--app-default-cl-h), var(--app-default-cl-s),  60%);  // rgba(0, 0, 0, 0.38);
-
-    --app-forgot-pw-pn     : hsl( 55, 25%, 40%);
-    --app-forgot-pw-pn-low : hsl( 55, 25%, 50%);
-
-    --app-signup-pn        : hsl( 70, 25%, 40%);
-    --app-signup-pn-low    : hsl( 70, 25%, 50%);
-  
-    --app-login-pn         : hsl( 85, 25%, 40%);
-    --app-login-pn-low     : hsl( 85, 25%, 50%);
 
     --app-stream-pn        : hsl(210, 45%, 30%);
     --app-stream-pn-low    : hsl(210, 45%, 60%);  // hsl(  0,   0%, +30%);
