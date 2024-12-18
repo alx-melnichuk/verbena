@@ -1,7 +1,5 @@
 /*# sourceURL=panel-about.component.scss */
 
-@use '../../../styles-dimensions.scss' as dimensions;
-
 app-panel-about {
   ---pa-width: calc(100% - 1vw + 1vw); // width in "px".
   ---pa-pn-bg: color-mix(in srgb, var(--app-pn-about) 10%, var(--sys-surface));
