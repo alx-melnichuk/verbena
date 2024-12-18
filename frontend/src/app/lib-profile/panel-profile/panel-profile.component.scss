@@ -1,11 +1,9 @@
 /*# sourceURL=panel-profile.component.scss */
 
 app-panel-profile {
-  ---pp-width: 100vw; // width in "px".
-  ---pp-pd: calc(0.0297 * min(var(---pp-width), 1536px));  // 1024px: 30.41px; 1280px: 38.016px; 1536px: 456192px;
-
   ---pp-pn-bg: var(--app-profile-pn);
   ---pp-pn-brd: var(--app-profile-pn-low);
+  ---pp-pd: calc(0.03125 * min(100vw, 1280px) - 2px);  // 512.22px: 14px;  1024.44px: 30px;
 
   [pp-mr-tp-0_5] { margin-top: 0.5em; }
   [pp-mr-tp-1] { margin-top: 1em; }
@@ -19,14 +17,14 @@ app-panel-profile {
   
   @container cnt-profile (width <= 1024px) {
     .pp-container {
-      ---pp-item-wd: min(calc(0.27344 * var(---pp-width) + 420px), 100%);
+      ---pp-item-wd: min(calc(0.27344 * 100vw + 420px), 100%);
       ---pp-container-wd: var(---pp-item-wd);
     }
   }
   @container cnt-profile (1024px < width) {
     .pp-container {
       ---pp-cnt-grd-tmp-col: auto auto;
-      ---pp-item-wd: calc(min(var(---pp-width), 1450px) / 35.114 * 16);
+      ---pp-item-wd: calc(min(100vw, 1450px) / 35.114 * 16);
     }
   }
   .pp-container {
@@ -46,7 +44,7 @@ app-panel-profile {
     border-style: solid;
     border-width: 2px;
     border-radius: var(--pp-pn-brd-rd, var(---pp-pd));
-    box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px;
+    box-shadow: var(--pfp-pn-sh, rgba(0, 0, 0, 0.35) 0px 4px 11px);
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -58,7 +56,7 @@ app-panel-profile {
   .pp-form {
     display: flex;
     flex-direction: column;
-    padding-bottom: 0.5em;
+    padding-bottom: calc(var(---pp-pd) / 2);
   }
   .pp-title {
     font-size: calc(100% + 6px);
