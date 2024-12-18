@@ -41,7 +41,7 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
     let app_domain = format!("<script>var APP_DOMAIN='{}';</script>", &config_app.app_domain );
     let body_str = body_str.replacen("<script>var APP_DOMAIN;</script>", &app_domain, 1);
 
-    let app_backend01 = "rustc v.1.82";
+    let app_backend01 = "rustc v.1.83";
     let app_backend02: Vec<&str> = vec![
         "actix = \"0.13.5\"",
         "actix-cors = \"0.7.0\"",
