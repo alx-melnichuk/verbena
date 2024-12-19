@@ -14,6 +14,7 @@
       formControlName="descript"
       [isRequired]="false"
       label="panel-stream-editor.descript"
+      [numberRows]="5"
       (input)="updateErrMsgs();">
     </app-field-descript>
 
@@ -82,10 +83,11 @@
           [readonly]="true"
           autocomplete="new-password"
           autocapitalize="off" />
-        <mat-icon matSuffix
-          class="pse-icon pse-copy"
-          [matTooltip]="'panel-stream-editor.copy_stream_link_to_clipboard' | translate"
-          matTooltipPosition="above">
+        <mat-icon matSuffix matTooltipPosition="above"
+          [matTooltip]="'panel-stream-editor.copy_stream_link_to_clipboard' | translate">
+          <svg class="pse-file-copy-bin">
+            <use href="assets/icons/lib-stream/panel-stream-editor/file-copy-bin.svg#file-copy-bin"></use>
+          </svg>
         </mat-icon>
       </mat-form-field>
     }
