@@ -6,7 +6,6 @@ app-panel-about {
   ---pa-pd: calc(0.03125 * min(100vw, 1280px) - 2px);  // 512.22px: 14px;  1024.44px: 30px;
   ---pa-wd: min(100vw, calc((28px + 100vw / 128) * 18));
 
-  [pa-mr-tp-0_5] { margin-top: 0.5em; }
   [pa-mr-tp-1] { margin-top: 1em; }
   [pa-mr-bt-0] { margin-bottom: 0px; }
 
@@ -38,6 +37,7 @@ app-panel-about {
   .pa-title {
     font-size: calc(100% + 6px);
     font-weight: 500;
+    line-height: 1.3;
     text-align: center;
   }
 
