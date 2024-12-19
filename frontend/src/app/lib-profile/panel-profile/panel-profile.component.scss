@@ -1,8 +1,8 @@
 /*# sourceURL=panel-profile.component.scss */
 
 app-panel-profile {
-  ---pp-pn-bg: var(--app-profile-pn);
-  ---pp-pn-brd: var(--app-profile-pn-low);
+  ---pp-pn-bg: color-mix(in srgb, var(--app-pn-profile) 10%, var(--sys-surface));
+  ---pp-pn-brd: color-mix(in srgb, var(--app-pn-profile) 22%, var(--sys-surface));
   ---pp-pd: calc(0.03125 * min(100vw, 1280px) - 2px);  // 512.22px: 14px;  1024.44px: 30px;
 
   [pp-mr-tp-0_5] { margin-top: 0.5em; }
@@ -44,7 +44,7 @@ app-panel-profile {
     border-style: solid;
     border-width: 2px;
     border-radius: var(--pp-pn-brd-rd, var(---pp-pd));
-    box-shadow: var(--pfp-pn-sh, rgba(0, 0, 0, 0.35) 0px 4px 11px);
+    box-shadow: var(--pp-pn-sh, rgba(0, 0, 0, 0.35) 0px 4px 11px);
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
