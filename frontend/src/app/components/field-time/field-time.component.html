@@ -8,6 +8,8 @@
       type="time"
       formControlName="time"
       [required]="isRequired"
+      [attr.min]="innMinLimit || undefined"
+      [attr.max]="innMaxLimit || undefined"
       [step]="step"
       autocomplete="new-password"
       (input)="onChange(formControl.value)"

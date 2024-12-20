@@ -14,6 +14,7 @@ import { TimeUtil } from 'src/app/utils/time.util';
 
 export const FT_DEFAULT_STEP = 60;
 export const FT_LENGTH_MIN = 5;
+export const FT_TIME_REGEX = '^([01][0-9]|2[0-3]):[0-5][0-9]$';
 
 @Component({
   selector: 'app-field-time',
@@ -41,9 +42,9 @@ export class FieldTimeComponent implements OnChanges, ControlValueAccessor, Vali
   @Input()
   public isDisabled: boolean = false;
   @Input()
-  public min: string | null = null;
+  public min: string | null = null;  // Valid values: ^([01][0-9]|2[0-3]):[0-5][0-9]$
   @Input()
-  public max: string | null = null;
+  public max: string | null = null;  // Valid values: ^([01][0-9]|2[0-3]):[0-5][0-9]$
   @Input()
   public step: number = FT_DEFAULT_STEP;
   
@@ -53,12 +54,22 @@ export class FieldTimeComponent implements OnChanges, ControlValueAccessor, Vali
   public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
   public formGroup: FormGroup = new FormGroup({ time: this.formControl });
   public errMessage: string = '';
+  public innMin: string | null = null;
+  public innMax: string | null = null;
+  public innMinLimit: string | null = null;
+  public innMaxLimit: string | null = null;
 
   constructor() {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['isRequired'] || !!changes['min'] || !!changes['max']) {
-      this.prepareFormGroup();
+      const { min, minLimit } = this.getValueMin(this.min);
+      this.innMin = min;
+      this.innMinLimit = minLimit;
+      const { max, maxLimit } = this.getValueMax(this.max);
+      this.innMax = max;
+      this.innMaxLimit = maxLimit;
+      this.prepareFormGroup(this.isRequired, this.innMin, this.innMax);
     }
     if (!!changes['isDisabled']) {
       this.setDisabledState(this.isDisabled);
@@ -116,12 +127,44 @@ export class FieldTimeComponent implements OnChanges, ControlValueAccessor, Vali
 
   // ** Private API **
 
-  private prepareFormGroup(): void {
+  private getValueMin(min: string | null): { min: string | null, minLimit: string | null } {
+    let resMin: string | null = null;
+    let resMinLimit: string | null = null;
+    if (!!min && (new RegExp(FT_TIME_REGEX)).test(min)) {
+      resMin = min;
+      resMinLimit = min;
+      const dataMin = TimeUtil.parseTime(min);
+      if (!!dataMin && (dataMin.hours > 0 || dataMin.minutes > 0)) {
+        const limit = TimeUtil.addTime(min, 0, -1, 0);
+        if (!!limit) {
+          resMinLimit = ('00' + limit.hours).slice(-2) + ':' + ('00' + limit.minutes).slice(-2);
+        }
+      }
+    }
+    return { min: resMin, minLimit: resMinLimit };
+  }
+  private getValueMax(max: string | null): { max: string | null, maxLimit: string | null } {
+    let resMax: string | null = null;
+    let resMaxLimit: string | null = null;
+    if (!!max && (new RegExp(FT_TIME_REGEX)).test(max)) {
+      resMax = max;
+      resMaxLimit = max;
+      const dataMax = TimeUtil.parseTime(max);
+      if (!!dataMax && (dataMax.hours < 23 || dataMax.minutes < 59)) {
+        const limit = TimeUtil.addTime(max, 0, +1, 0);
+        if (!!limit) {
+          resMaxLimit = ('00' + limit.hours).slice(-2) + ':' + ('00' + limit.minutes).slice(-2);
+        }
+      }
+    }
+    return { max: resMax, maxLimit: resMaxLimit };
+  }
+  private prepareFormGroup(isRequired: boolean, min: string | null, max: string | null): void {
     this.formControl.clearValidators();
     const newValidator: ValidatorFn[] = [
-      ...(this.isRequired ? [Validators.required] : []),
-      ...((this.min || '').length >= FT_LENGTH_MIN ? [this.timeMinValidator] : []),
-      ...((this.max || '').length >= FT_LENGTH_MIN ? [this.timeMaxValidator] : []),
+      ...(isRequired ? [Validators.required] : []),
+      ...((min || '').length >= FT_LENGTH_MIN ? [this.timeMinValidator] : []),
+      ...((max || '').length >= FT_LENGTH_MIN ? [this.timeMaxValidator] : []),
     ];
     this.formControl.setValidators(newValidator);
   }
