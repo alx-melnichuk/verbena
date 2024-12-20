@@ -6,7 +6,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ROUTE_STREAM_EDIT, ROUTE_STREAM_LIST } from 'src/app/common/routes';
-import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 
 import { StreamService } from '../stream.service';
@@ -40,7 +39,6 @@ export class StreamEditComponent {
     private route: ActivatedRoute,
     private router: Router,
     private streamService: StreamService,
-    private alertService: AlertService,
   ) {
     this.streamDto = this.route.snapshot.data['streamDto'];
     this.streamConfigDto = this.route.snapshot.data['streamConfigDto'];
@@ -58,7 +56,6 @@ export class StreamEditComponent {
   }
 
   public doUpdateStream(updateStreamFileDto: UpdateStreamFileDto): void {
-    this.alertService.hide();
     if (!updateStreamFileDto) {
       return;
     }
@@ -79,8 +76,6 @@ export class StreamEditComponent {
           });
       })
       .catch((error: HttpErrorResponse) => {
-        const title = (isEdit ? 'stream_edit.error_editing_stream' : 'stream_edit.error_creating_stream');
-        this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], title); // # del:
         this.errMsgs = HttpErrorUtil.getMsgs(error); 
         throw error;
       })
