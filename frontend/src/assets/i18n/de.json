@@ -272,8 +272,6 @@
     "start_date": "Startdatum",
     "start_time": "Zeit Ereignis",
     "link_for_visitors": "Link für Besucher",
-    "error_creating_stream": "Fehler beim erstellen des streams",
-    "error_editing_stream": "Fehler beim bearbeiten des streams",
     "copy_stream_link_to_clipboard": "Stream-link in die zwischenablage kopieren",
     "stream_link_copied_to_clipboard": "Stream-link in die zwischenablage kopiert"
   },

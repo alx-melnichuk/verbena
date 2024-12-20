@@ -282,8 +282,6 @@
     "start_date": "Start date",
     "start_time": "Start time",
     "link_for_visitors": "Link for visitors",
-    "error_creating_stream": "Error creating stream",
-    "error_editing_stream": "Error editing stream",
     "copy_stream_link_to_clipboard": "Copy stream link to clipboard",
     "stream_link_copied_to_clipboard": "Stream link copied to clipboard"
   },

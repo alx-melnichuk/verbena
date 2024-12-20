@@ -272,8 +272,6 @@
     "start_date": "Дата початку",
     "start_time": "Час початку",
     "link_for_visitors": "Посилання для відвідувачів",
-    "error_creating_stream": "Помилка створення трансляції",
-    "error_editing_stream": "Помилка редагування трансляції",
     "copy_stream_link_to_clipboard": "Копіювати посилання на трансляцію у буфер обміну",
     "stream_link_copied_to_clipboard": "Посилання на трансляцію скопійовано в буфер обміну"
   },
