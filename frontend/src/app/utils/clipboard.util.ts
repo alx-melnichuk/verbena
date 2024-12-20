@@ -1,5 +1,5 @@
 
-export class CopyToClipboardUtil {
+export class ClipboardUtil {
   public static copyMessage(value: string): void {
     const selBox = document.createElement('textarea');
     selBox.style.position = 'fixed';
