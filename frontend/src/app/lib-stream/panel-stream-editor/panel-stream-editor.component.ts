@@ -22,7 +22,7 @@ import { FieldImageAndUploadComponent } from 'src/app/components/field-image-and
 import { FieldTimeComponent           } from 'src/app/components/field-time/field-time.component';
 import { FieldTitleComponent          } from 'src/app/components/field-title/field-title.component';
 import { AlertService                 } from 'src/app/lib-dialog/alert.service';
-import { CopyToClipboardUtil          } from 'src/app/utils/copy-to-clipboard.util';
+import { ClipboardUtil          } from 'src/app/utils/clipboard.util';
 import { FileSizeUtil                 } from 'src/app/utils/file_size.util';
 import { HtmlElemUtil                 } from 'src/app/utils/html-elem.util';
 import { ValidFileTypesUtil           } from 'src/app/utils/valid_file_types.util';
@@ -173,24 +173,30 @@ export class PanelStreamEditorComponent implements OnChanges {
     const tags: string[] = cntlTags.value || [];
 
     const updateStreamFileDto: UpdateStreamFileDto = {
-      id: (this.isCreate ? undefined : this.streamDto.id),
+      id: undefined,
       title: (this.isCreate ? title : (this.origStreamDto.title != title ? title : undefined)),
       descript: (this.isCreate ? descript : (this.origStreamDto.descript != descript ? descript : undefined)),
       starttime: (this.isCreate ? starttime : (this.origStreamDto.starttime != starttime ? starttime : undefined)),
       tags: (this.isCreate ? tags : (this.origStreamDto.tags.join(',') != tags.join(',') ? tags : undefined)),
       logoFile: this.logoFile,
     };
-
     const is_all_empty = Object.values(updateStreamFileDto).findIndex((value) => value !== undefined) == -1;
+    if (!this.isCreate) {
+      updateStreamFileDto.id = this.streamDto.id;
+    }
     if (!is_all_empty) {
+      // If there are changes, then save them.
       this.updateStream.emit(updateStreamFileDto);
+    } else {
+      // If there are no changes, then set the initial values.
+      this.prepareFormGroupByStreamDto(this.streamDto);
     }
   }
 
   public doCopyToClipboard(value: string): void {
     if (!!value) {
-      CopyToClipboardUtil.copyMessage(value);
-      this.alertService.showInfo('stream_edit.stream_link_copied_to_clipboard');
+      ClipboardUtil.copyMessage(value);
+      this.alertService.showInfo('panel-stream-editor.stream_link_copied_to_clipboard');
     }
   }
 
@@ -213,7 +219,8 @@ export class PanelStreamEditorComponent implements OnChanges {
     const startSeconds = ('00' + startDate.getSeconds()).slice(-2);
     const startTimeStr = startHours + ':' + startMinutes + ':' + startSeconds;
     const link = !this.isCreate ? this.streamService.getLinkForVisitors(streamDto.id, true) : '';
-    this.formGroup.patchValue({
+    // Marks all descendants of `FormGroup` as `pristine` and `untouched` and sets the initial values.
+    this.formGroup.reset({
       title: streamDto.title,
       descript: streamDto.descript,
       logo: streamDto.logo,

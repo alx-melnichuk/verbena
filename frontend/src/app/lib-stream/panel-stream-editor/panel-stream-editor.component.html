@@ -69,6 +69,8 @@
       <app-field-time pse-mr-tp-0_5 class="pse-start-time"
         formControlName="startTime"
         [isRequired]="true"
+        [min]="'00:00'"
+        [max]="'23:59'"
         (input)="updateErrMsgs();">
       </app-field-time>
     </div>
