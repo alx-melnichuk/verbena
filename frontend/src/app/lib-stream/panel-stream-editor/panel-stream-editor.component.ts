@@ -173,24 +173,14 @@ export class PanelStreamEditorComponent implements OnChanges {
     const tags: string[] = cntlTags.value || [];
 
     const updateStreamFileDto: UpdateStreamFileDto = {
-      id: undefined,
+      id: (this.isCreate ? undefined : this.streamDto.id),
       title: (this.isCreate ? title : (this.origStreamDto.title != title ? title : undefined)),
       descript: (this.isCreate ? descript : (this.origStreamDto.descript != descript ? descript : undefined)),
       starttime: (this.isCreate ? starttime : (this.origStreamDto.starttime != starttime ? starttime : undefined)),
       tags: (this.isCreate ? tags : (this.origStreamDto.tags.join(',') != tags.join(',') ? tags : undefined)),
       logoFile: this.logoFile,
     };
-    const is_all_empty = Object.values(updateStreamFileDto).findIndex((value) => value !== undefined) == -1;
-    if (!this.isCreate) {
-      updateStreamFileDto.id = this.streamDto.id;
-    }
-    if (!is_all_empty) {
-      // If there are changes, then save them.
-      this.updateStream.emit(updateStreamFileDto);
-    } else {
-      // If there are no changes, then set the initial values.
-      this.prepareFormGroupByStreamDto(this.streamDto);
-    }
+    this.updateStream.emit(updateStreamFileDto);
   }
 
   public doCopyToClipboard(value: string): void {

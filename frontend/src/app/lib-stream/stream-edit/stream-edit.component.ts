@@ -51,15 +51,16 @@ export class StreamEditComponent {
 
   // ** Public API **
 
-  public doCancelStream(): void {
-    this.goBack();
-  }
-
   public doUpdateStream(updateStreamFileDto: UpdateStreamFileDto): void {
     if (!updateStreamFileDto) {
       return;
     }
-    const isEdit = (!!updateStreamFileDto.id);
+    const is_all_empty = Object.entries(updateStreamFileDto).findIndex((entry) => entry[0] != 'id' && entry[1] !== undefined) == -1;
+    if (is_all_empty) { // If no fields are specified for update, exit.
+      this.goBack();
+      return;
+    }
+
     const buffPromise: Promise<unknown>[] = [];
     this.isLoadDataStream = true;
     
