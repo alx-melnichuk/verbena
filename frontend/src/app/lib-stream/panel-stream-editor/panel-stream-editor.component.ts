@@ -216,8 +216,7 @@ export class PanelStreamEditorComponent implements OnChanges {
     const startDate = (!!streamDto.starttime ? new Date(Date.parse(streamDto.starttime)) : currentTime);
     const startHours = ('00' + startDate.getHours()).slice(-2);
     const startMinutes = ('00' + startDate.getMinutes()).slice(-2);
-    const startSeconds = ('00' + startDate.getSeconds()).slice(-2);
-    const startTimeStr = startHours + ':' + startMinutes + ':' + startSeconds;
+    const startTimeStr = startHours + ':' + startMinutes;
     const link = !this.isCreate ? this.streamService.getLinkForVisitors(streamDto.id, true) : '';
     // Marks all descendants of `FormGroup` as `pristine` and `untouched` and sets the initial values.
     this.formGroup.reset({
