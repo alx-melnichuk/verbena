@@ -28,6 +28,7 @@ app-header {
   }
   .h-logo-mini {
     background-image: url('/assets/icons/components/header/logo-bin.svg');
+    flex-shrink: 0;
     height: var(---hdr-hg);
     width: var(---hdr-hg);
   }
