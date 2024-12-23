@@ -3,6 +3,8 @@
 @use '../../../styles-dimensions.scss' as dimensions;
 
 app-stream-list {
+  ---sl-pn-brd: color-mix(in srgb, var(--app-pn-stream) 35%, var(--sys-surface));
+
   @media screen and (width <= dimensions.$mobile-480) {
     --sl-pd: 0.5em;
     --wd: 100%;
@@ -60,7 +62,7 @@ app-stream-list {
     padding-top: var(--sl-pd);
   }
   .sl-brd {
-    border: 1px solid var(--app-stream-pn-low);
+    border: 1px solid var(---sl-pn-brd);
     border-radius: 1em;
     box-sizing: border-box;
     padding: var(--sl-brd-pd , 2px);
