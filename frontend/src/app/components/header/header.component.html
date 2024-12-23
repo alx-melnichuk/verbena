@@ -4,7 +4,7 @@
   <h4 class="h-logo-text">{{ 'app.name' | translate }}</h4>
   <span h-mr-lf-0_5></span>
 
-  @for (pageMenu of pageMenuList; track pageMenu) {
+  @for (pageMenu of pageMenuList; track pageMenu.name) {
     <a no-decor no-color mat-button class="h-page-menu"
       routerLink="{{ pageMenu.link }}"
       routerLinkActive="h-page-menu-selected"
