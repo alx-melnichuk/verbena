@@ -269,7 +269,8 @@
     }
   },
   "panel-stream-editor": {
-    "stream_details": "Stream details",
+    "creating_stream": "Creating a Stream",
+    "editing_stream": "Editing a Stream",
     "title": "Title",
     "save": "Save",
     "create": "Create",

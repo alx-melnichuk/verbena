@@ -259,7 +259,8 @@
     }
   },
   "panel-stream-editor": {
-    "stream_details": "Деталі трансляції",
+    "creating_stream": "Створення трансляції",
+    "editing_stream": "Редагування трансляції",
     "title": "Назва",
     "save": "Зберегти",
     "create": "Створити",
