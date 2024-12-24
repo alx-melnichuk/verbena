@@ -23,8 +23,8 @@
 
     <div class="psi-actions">
       @if (canDuplicate) {
-        <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mr psi-btn-dpl"
-          (click)="doActionDuplicate(stream.id)">
+        <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-action-btn psi-btn-dpl"
+           (click)="doActionDuplicate(stream.id)">
           <span class="psi-action-label">
             <i class="psi-duplicate-accent"></i>
             {{ 'panel-stream-mini.buttons.duplicate' | translate }}
@@ -33,7 +33,7 @@
       }
       <div class="psi-actions-both">
         @if (canEdit) {
-          <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mr psi-btn-edt"
+          <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-action-btn"
             (click)="doActionEdit(stream.id)">
             <span class="psi-action-label">
               <i class="psi-edit-accent"></i>
@@ -42,7 +42,7 @@
           </button>
         }
         @if (canDelete) {
-          <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-shrink-0 psi-mr psi-btn-del"
+          <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-action-btn"
             (click)="doActionDelete(stream)">
             <span class="psi-action-label">
               <i class="psi-delete-accent"></i>
