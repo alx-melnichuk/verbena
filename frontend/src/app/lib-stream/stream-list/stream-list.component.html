@@ -1,88 +1,82 @@
-<div class="sl-my-calendar sl-flex-col">
-
-  <div class="sl-calendar sl-relative sl-brd">
-    <div class="sl-title">
-      {{ 'stream_list.my_calendar' | translate }}
-    </div>
+<div class="sl-container global-scroll">
     
-    @if (streamCalendarService.calendarLoading) {
-      <app-spinner isFillParent></app-spinner>
-    }
-    <app-panel-stream-calendar class="sl-pn-calendar"
-      [selected]="streamCalendarService.eventsOfDaySelected"
-      [markedDates]="streamCalendarService.calendarMarkedDates"
-      [minDate]="streamCalendarService.calendarMinDate"
-      [maxDate]="streamCalendarService.calendarMaxDate"
-      (changeSelected)="getListEventsForDate($event, 1)"
-      (changeCalendar)="getCalendarInfoForPeriod($event)">
-    </app-panel-stream-calendar>
-  </div>
+  <div class="sl-my-calendar">
 
-  <div class="sl-delim"></div>
-
-  <div class="sl-events sl-relative sl-brd">
-    <div [ngClass]="{ 'sl-heavier': streamCalendarService.isShowEvents(streamCalendarService.calendarMonth) }"
-      class="sl-event-label">
-      <span>
-        {{ streamCalendarService.eventsOfDaySelected | date: formatDate }}
-      </span>
-    </div>
-    <div class="sl-event-list">
-      @if (streamCalendarService.eventsOfDayLoading) {
+    <div class="sl-calendar sl-relative sl-brd">
+      <div class="sl-title">{{ 'stream_list.my_calendar' | translate }}</div>
+      @if (streamCalendarService.calendarLoading) {
         <app-spinner isFillParent></app-spinner>
       }
-      <app-panel-stream-event
+      <app-panel-stream-calendar class="sl-pn-calendar"
+        [selected]="streamCalendarService.eventsOfDaySelected"
+        [markedDates]="streamCalendarService.calendarMarkedDates"
+        [minDate]="streamCalendarService.calendarMinDate"
+        [maxDate]="streamCalendarService.calendarMaxDate"
+        (changeSelected)="getListEventsForDate($event, 1)"
+        (changeCalendar)="getCalendarInfoForPeriod($event)">
+      </app-panel-stream-calendar>
+    </div>
+
+    <div class="sl-delim"></div>
+
+    <div class="sl-events sl-relative sl-brd">
+      <div [ngClass]="{ 'sl-heavier': streamCalendarService.isShowEvents(streamCalendarService.calendarMonth) }"
+        class="sl-event-label">
+        <span>{{ streamCalendarService.eventsOfDaySelected | date: formatDate }}</span>
+      </div>
+      <div class="sl-event-list">
+        @if (streamCalendarService.eventsOfDayLoading) {
+          <app-spinner isFillParent></app-spinner>
+        }
+        <app-panel-stream-event
+          [canEdit]="true"
+          [streamShortDtoList]="streamCalendarService.eventsOfDay"
+          (requestNextPage)="getListEventsForDate(streamCalendarService.eventsOfDaySelected, -1)"
+          (editStream)="actionEdit($event)">
+        </app-panel-stream-event>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="sl-my-streams sl-flex-col">
+
+    <div class="sl-stream-box sl-relative sl-brd">
+      <div class="sl-title">{{ 'stream_list.my_future_streams' | translate }}</div>
+      @if (streamListService.futureStreamLoading) {
+        <app-spinner isFillParent></app-spinner>
+      }
+      <app-panel-stream-info
+        [canDuplicate]="true"
         [canEdit]="true"
-        [streamShortDtoList]="streamCalendarService.eventsOfDay"
-        (requestNextPage)="getListEventsForDate(streamCalendarService.eventsOfDaySelected, -1)"
-        (editStream)="actionEdit($event)">
-      </app-panel-stream-event>
+        [canDelete]="true"
+        [isFuture]="true"
+        [streamList]="streamListService.futureStreamsDto"
+        (requestNextPage)="searchNextFutureStream()"
+        (redirectToStream)="redirectToStreamView($event)"
+        (actionDuplicate)="actionDuplicate($event)"
+        (actionEdit)="actionEdit($event)"
+        (actionDelete)="actionDelete($event)">
+      </app-panel-stream-info>
     </div>
-  </div>
 
-</div>
+    <div class="sl-delim"></div>
 
-<div class="sl-my-streams sl-flex-col">
-
-  <div class="sl-stream-box sl-relative sl-brd">
-    <div class="sl-title">
-      {{ 'stream_list.my_future_streams' | translate }}
+    <div class="sl-stream-box sl-relative sl-brd">
+      <div class="sl-title">{{ 'stream_list.my_past_streams' | translate }}</div>
+      @if (streamListService.pastStreamLoading) {
+        <app-spinner isFillParent></app-spinner>
+      }
+      <app-panel-stream-info
+        [canDuplicate]="true"
+        [canDelete]="true"
+        [streamList]="streamListService.pastStreamsDto"
+        (requestNextPage)="searchNextPastStream()"
+        (redirectToStream)="redirectToStreamView($event)"
+        (actionDuplicate)="actionDuplicate($event)"
+        (actionDelete)="actionDelete($event)">
+      </app-panel-stream-info>
     </div>
-    @if (streamListService.futureStreamLoading) {
-      <app-spinner isFillParent></app-spinner>
-    }
-    <app-panel-stream-info
-      [canDuplicate]="true"
-      [canEdit]="true"
-      [canDelete]="true"
-      [isFuture]="true"
-      [streamList]="streamListService.futureStreamsDto"
-      (requestNextPage)="searchNextFutureStream()"
-      (redirectToStream)="redirectToStreamView($event)"
-      (actionDuplicate)="actionDuplicate($event)"
-      (actionEdit)="actionEdit($event)"
-      (actionDelete)="actionDelete($event)">
-    </app-panel-stream-info>
+
   </div>
-
-  <div class="sl-delim"></div>
-
-  <div class="sl-stream-box sl-relative sl-brd">
-    <div class="sl-title">
-      {{ 'stream_list.my_past_streams' | translate }}
-    </div>
-    @if (streamListService.pastStreamLoading) {
-      <app-spinner isFillParent></app-spinner>
-    }
-    <app-panel-stream-info
-      [canDuplicate]="true"
-      [canDelete]="true"
-      [streamList]="streamListService.pastStreamsDto"
-      (requestNextPage)="searchNextPastStream()"
-      (redirectToStream)="redirectToStreamView($event)"
-      (actionDuplicate)="actionDuplicate($event)"
-      (actionDelete)="actionDelete($event)">
-    </app-panel-stream-info>
-  </div>
-
 </div>
