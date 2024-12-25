@@ -1,7 +1,5 @@
 /*# sourceURL=panel-stream-info.component.scss */
 
-@use '../../../styles-dimensions.scss' as dimensions;
-
 app-panel-stream-info {
   ---psi-pn-bg: color-mix(in srgb, var(--app-pn-stream) 10%, var(--sys-surface));
   ---psi-pn-brd: color-mix(in srgb, var(--app-pn-stream) 30%, var(--sys-surface));
@@ -33,22 +31,22 @@ app-panel-stream-info {
   }
   @container cnt-stream-card (width < 43rem) { // width < 688px
     .psi-actions {
-      ---psi-actn3-fl-dr: column;
-      ---psi-actn3-mn-wd: calc(100% - 0.5rem);
-      ---psi-actn3-b-fl-dr: column;
-      ---psi-actn3-b-mn-wd: 100%;
+      ---psi-actn-fl-dr: column;
+      ---psi-actn-mn-wd: calc(100% - 0.5rem);
+      ---psi-actn-b-fl-dr: column;
+      ---psi-actn-b-mn-wd: 100%;
     }
   }
   @container cnt-stream-card (43rem <= width < 53rem) { // 688px <= width < 848px
     .psi-actions {
-      ---psi-actn3-fl-dr: row;
-      ---psi-actn3-b-fl-dr: column;
+      ---psi-actn-fl-dr: row;
+      ---psi-actn-b-fl-dr: column;
     }
   }
   @container cnt-stream-card (53rem <= width) { // 848px <= width
     .psi-actions {
-      ---psi-actn3-fl-dr: row;
-      ---psi-actn3-b-fl-dr: row;
+      ---psi-actn-fl-dr: row;
+      ---psi-actn-b-fl-dr: row;
     }
   }
 
@@ -87,7 +85,7 @@ app-panel-stream-info {
   .psi-actions {
     align-items: center;
     display: flex;
-    flex-direction: var(---psi-actn3-fl-dr);
+    flex-direction: var(---psi-actn-fl-dr);
     height: 100%;
     justify-content: center;
     --mdc-outlined-button-container-height: 2rem;
@@ -95,8 +93,8 @@ app-panel-stream-info {
   }
   .psi-actions-both {
     display: flex;
-    flex-direction: var(---psi-actn3-b-fl-dr);
-    min-width: var(---psi-actn3-b-mn-wd, unset);
+    flex-direction: var(---psi-actn-b-fl-dr);
+    min-width: var(---psi-actn-b-mn-wd, unset);
   }
 
   .psi-action-label {
@@ -112,7 +110,7 @@ app-panel-stream-info {
     margin-bottom: 0.25rem;
   }
   .psi-btn-dpl {
-    min-width: var(---psi-actn3-mn-wd, unset);
+    min-width: var(---psi-actn-mn-wd, unset);
   }
 
   .psi-logo-future {
