@@ -5,7 +5,9 @@
       @if (!isFuture(streamShort.starttime)) {
         <app-logotype [logo]="streamShort.logo"></app-logotype>
       } @else {
-        <div class="pse-logo-future"></div>
+        <svg class="pse-logo-future">
+          <use href="assets/icons/lib-stream/panel-stream-event/logo-future.svg#logo-future"></use>
+        </svg>
       }
     </a>
 
