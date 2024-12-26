@@ -23,7 +23,7 @@ type PeriodMapType = {[key: string]: number};
   standalone: true,
   imports: [CommonModule, MatNativeDateModule, MatDatepickerModule],
   templateUrl: './panel-stream-calendar.component.html',
-  styleUrl: './panel-stream-calendar.component.scss',
+  styleUrls: ['./panel-stream-calendar.component.scss', 'panel-stream-calendar-emblem.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
