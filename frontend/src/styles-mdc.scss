@@ -12,6 +12,10 @@
     }
   }
 
+  // ** mat-button **
+  // Buttons with "semi-circle" edges have been changed to buttons with "oval" edges.
+  --mdc-outlined-button-container-shape: 4rem / 8rem;
+
   // ** mat-dialog **
   .cdk-overlay-pane.app-modal-panel {
     // Adding a border to the modal window panel.
