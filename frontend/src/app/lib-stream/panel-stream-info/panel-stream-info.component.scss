@@ -1,8 +1,8 @@
 /*# sourceURL=panel-stream-info.component.scss */
 
 app-panel-stream-info {
-  ---psi-pn-bg: color-mix(in srgb, var(--app-pn-stream) 10%, var(--sys-surface));
-  ---psi-pn-brd: color-mix(in srgb, var(--app-pn-stream) 30%, var(--sys-surface));
+  ---psi-pn-bg: color-mix(in srgb, var(--app-pn-stream) 20%, var(--sys-surface));
+  ---psi-pn-brd: color-mix(in srgb, var(--app-pn-stream) 45%, var(--sys-surface));
   ---psi-title-cl: color-mix(in srgb, var(--sys-tertiary) 40%, var(--sys-on-surface));
 
   display: flex;
@@ -89,7 +89,7 @@ app-panel-stream-info {
     height: 100%;
     justify-content: center;
     --mdc-outlined-button-container-height: 2rem;
-    --mat-outlined-button-horizontal-padding: 0.6rem;
+    --mat-outlined-button-horizontal-padding: 0.5rem;
   }
   .psi-actions-both {
     display: flex;
@@ -114,31 +114,30 @@ app-panel-stream-info {
   }
 
   .psi-logo-future {
-    background: transparent none no-repeat center center;
-    background-image: url('../../../assets/icons/logo-future.svg');
-    display: inline-block;
-    height: 58px;
-    width: 58px;
+    color: var(--app-svg-icon-cl);
+    height: 4.25em;
+    width: 4.25em;
+    vertical-align: middle;
   }
   .psi-duplicate-accent {
-    background: transparent none no-repeat center center;
-    background-image: url('../../../assets/icons/duplicate-accent.svg');
+    color: var(--app-svg-icon-cl);
     display: inline-block;
-    height: 24px;
-    width: 24px;
+    height: 2em;
+    margin-right: 0.25em;
+    width: 2em;
   }
   .psi-edit-accent {
-    background: transparent none no-repeat center center;
-    background-image: url('../../../assets/icons/edit-accent.svg');
+    color: var(--app-svg-icon-cl);
     display: inline-block;
-    height: 20px;
-    width: 20px;
+    height: 2.2em;
+    margin-right: 0.25em;
+    width: 2.2em;
   }
   .psi-delete-accent {
-    background: transparent none no-repeat center center;
-    background-image: url('../../../assets/icons/delete-accent.svg');
+    color: var(--app-svg-icon-cl);
     display: inline-block;
-    height: 24px;
-    width: 24px;
+    height: 2.2em;
+    margin-right: 0.25em;
+    width: 2.2em;
   }
 }
