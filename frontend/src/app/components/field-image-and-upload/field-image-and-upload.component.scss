@@ -36,21 +36,16 @@ app-field-image-and-upload {
     vertical-align: top;
   }
   .fiau-remove {
-    &:not(:disabled) { color: var(--app-icon-enb-cl); }
-    &:disabled { color: var(--app-icon-dsb-cl); }
+    --mdc-icon-button-icon-size: 1.75rem;
     position: absolute;
-    right: calc(-36px - var(---fiau-rmv-dl, 0px));
-    top: -27px;
+    right: -2rem;
+    top: -1.5rem;
     z-index: 1;
   }
   .mat-mdc-text-field-wrapper.mdc-text-field--outlined .mdc-text-field__input.fiau-hide {
     display: none;
   }
-
-  .fiau-svg-trash-bin {
-    color: var(--sys-on-surface-variant);
-    display: block;
-    height: 1.5rem;
-    width: 1.5rem;
+  .fiau-file-circle-cross {
+    color: var(--app-svg-icon-cl);
   }
 }
