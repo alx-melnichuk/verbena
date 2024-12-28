@@ -16,6 +16,10 @@
   // Buttons with "semi-circle" edges have been changed to buttons with "oval" edges.
   --mdc-outlined-button-container-shape: 4rem / 8rem;
 
+  // ** mat-form-field **
+  // Changed the input field frame radius from 4px to 8px.
+  --mdc-outlined-text-field-container-shape: 0.5rem;
+
   // ** mat-dialog **
   .cdk-overlay-pane.app-modal-panel {
     // Adding a border to the modal window panel.
