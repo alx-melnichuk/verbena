@@ -55,6 +55,7 @@ export class StreamCalendarService {
     }
     this.calendarMonth = startMonth;
     const endMonth: Date = DateUtil.dateLastDayOfMonth(startMonth);
+    endMonth.setHours(23, 59, 59, 0);
     this.calendarLoading = true;
     return this.streamService.getStreamsCalendar({
       start: StringDateTimeUtil.toISO(startMonth),
