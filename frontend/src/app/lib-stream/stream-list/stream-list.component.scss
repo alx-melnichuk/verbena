@@ -5,6 +5,7 @@
 app-stream-list {
   ---sl-pn-brd: color-mix(in srgb, var(--app-pn-stream) 45%, var(--sys-surface));
   ---sl-pd: calc(0.03125 * min(100vw, 1280px) - 2px);  // 512.22px: 14px;  1024.44px: 30px;
+  ---sl-clnd-wd: calc(0.3333 * min(100vw, 1280px) - 67.965px);  // 1050px: 283.50px; 1080px: 291.59px; 
 
   @media screen and (width <= dimensions.$mobile-480) {
     // ---sl-pd: 0.5em;
@@ -37,7 +38,8 @@ app-stream-list {
       overflow-y: auto;
       ---pp-item-wd: min(calc(0.27344 * 100vw + 420px), 100%);
       ---sl-my-strm-ord: 1;
-      ---sl-my-clnd-ord: 2;
+      ---sl-indent-ord: 2;
+      ---sl-my-clnd-ord: 3;
       ---sl-my-clnd-fl-dr: row;
     }
     .sl-calendar {
@@ -47,7 +49,8 @@ app-stream-list {
   @container cnt-stream-list (48rem < width) { // 48rem - 768px
     .sl-container {
       ---sl-my-clnd-ord: 1;
-      ---sl-my-strm-ord: 2;
+      ---sl-indent-ord: 2;
+      ---sl-my-strm-ord: 3;
       ---pp-item-wd: calc(min(100vw, 1450px) / 35.114 * 16);
     }
   }
@@ -58,13 +61,74 @@ app-stream-list {
     height: 100%;
     padding: var(---sl-pd);
     &>.sl-my-calendar { flex: 0 0 min(27vw, 25rem); }
+    // &>.sl-my-calendar { flex: 0 0 var(---sl-clnd-wd); }
     &>.sl-my-streams { flex: 0 0 calc(99.9vw - min(27vw, 25rem) - var(---sl-pd) - var(---sl-pd));}
+    // &>.sl-my-streams { flex: 0 0 calc(100% - 0.01vw - var(---sl-clnd-wd) - 3 * var(---sl-pd)); }
   }
 
+  // ** "indent" **
+  .sl-indent {
+    padding-left: var(---sl-pd);
+    padding-top: var(---sl-pd);
+  }
+
+  // ** "My Calendar" **
+  .sl-my-calendar {
+    display: flex;
+    flex-direction: var(---sl-my-clnd-fl-dr, column);
+    height: 100%;
+    order: var(---sl-my-clnd-ord);
+  }
+  .sl-calendar {
+    border: 1px solid var(---sl-pn-brd);
+    border-radius: 1rem;
+    box-sizing: border-box;
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    padding: 2px;
+    position: relative;
+  }
+  .sl-pn-calendar {
+    margin-bottom: 1px;
+  }
+  .sl-events {
+    border: 1px solid var(---sl-pn-brd);
+    border-radius: 1rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+    padding: 2px;
+    position: relative;
+    overflow-y: hidden;
+  }
+  .sl-event-label {
+    font-weight: var(--sl-fn-wg, lighter);
+    height: 4em;
+    line-height: 4em;
+    padding-left: 25%;
+  }
+  &.sl-heavier {
+    --sl-fn-wg: 500;
+  }
+  .sl-event-list {
+    height: calc(100% - 4em);
+  }
+
+  // ** "indent" **
+//   .sl-indent-ord {
+//     order: var(---sl-indent-ord);
+//   }
+
+  // ** "My Streams" **
   .sl-my-streams {
     box-sizing: border-box;
-    padding-left: var(---sl-pd);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
     order: var(---sl-my-strm-ord);
+    padding-left: var(---sl-pd);
   }
   .sl-title {
     align-items: center;
@@ -79,65 +143,15 @@ app-stream-list {
       font-weight: bold;
     }
   }
-  .sl-flex-col {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
-  .sl-relative {
-    position: relative;
-  }
-  .sl-delim {
-    padding-top: var(---sl-pd);
-  }
-  .sl-brd {
+  .sl-stream-box {
     border: 1px solid var(---sl-pn-brd);
     border-radius: 1rem;
     box-sizing: border-box;
-    padding: var(--sl-brd-pd , 2px);
-  }
-
-  // ** "My Calendar" **
-  .sl-my-calendar {
-    display: flex;
-    flex-direction: var(---sl-my-clnd-fl-dr, column);
-    height: 100%;
-    order: var(---sl-my-clnd-ord);
-
-    &>.sl-calendar { flex: 0 0 auto; }
-    &>.sl-events { flex-grow: 1; overflow-y: hidden; }
-  }
-
-  .sl-calendar {
-    display: flex;
-    flex-direction: column;
-  }
-  .sl-pn-calendar {
-    margin-bottom: 1px;
-  }
-  .sl-events {
-    display: flex;
-    flex-direction: column;
-  }
-  .sl-event-label {
-    &.sl-heavier {
-      --sl-fn-wg: 500;
-    }
-    font-weight: var(--sl-fn-wg, lighter);
-    height: 4em;
-    line-height: 4em;
-    padding-left: 25%;
-  }
-  .sl-event-list {
-    height: calc(100% - 4em);
-  }
-  .sl-stream-box {
     display: flex;
     flex-direction: column;
     flex: 0 0 calc((100% - var(---sl-pd)) / 2);
     overflow-y: hidden;
+    position: relative;
   }
-  .sl-hidden {
-    visibility: hidden;
-  }
+
 }
