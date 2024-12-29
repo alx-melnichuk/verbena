@@ -26,8 +26,20 @@ app-panel-stream-calendar {
     background-color: var(---psc-sel-bg);
     border-radius: 100%;
   }
-
+  .mat-calendar-header {
+    padding: 0 8px;
+  }
+  .mat-calendar-controls {
+    margin-top: 2.5%;
+    margin-bottom: 2.5%;
+  }
   .mat-calendar-body-label {
     visibility: hidden;
+  }
+  .mat-calendar {
+    min-height: 19em;
+  }
+  .mat-calendar-table-header-divider {
+    display: none;
   }
 }

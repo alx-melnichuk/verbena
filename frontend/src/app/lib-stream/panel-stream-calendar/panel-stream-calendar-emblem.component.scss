@@ -2,7 +2,7 @@
 
 app-panel-stream-calendar {
   .psc-day-with-streams::after {
-    ---psc-wd: calc(100% / 2);
+    ---psc-wd: calc(100% * 0.55);
     align-items: center;
     background-color: var(---psc-emblem-bg);
     border-radius: 50%;
@@ -11,7 +11,7 @@ app-panel-stream-calendar {
     font-size: calc(1em - 1px);
     height: var(---psc-wd, 2em);
     justify-content: center;
-    left: calc(var(---psc-wd) * 1.1);
+    left: calc(var(---psc-wd) * 1.2);
     overflow: hidden;
     pointer-events: none;
     top: calc(var(---psc-wd) * -0.5);
