@@ -5,6 +5,9 @@ app-panel-stream-info {
   ---psi-pn-brd: color-mix(in srgb, var(--app-pn-stream) 45%, var(--sys-surface));
   ---psi-title-cl: color-mix(in srgb, var(--sys-tertiary) 40%, var(--sys-on-surface));
 
+  [psi-mr-rg-0_5] { margin-right: 0.5rem; }
+  [psi-mr-rg-0_25] { margin-right: 0.25rem; }
+
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -32,21 +35,26 @@ app-panel-stream-info {
   @container cnt-stream-card (width < 43rem) { // width < 688px
     .psi-actions {
       ---psi-actn-fl-dr: column;
-      ---psi-actn-mn-wd: calc(100% - 0.5rem);
-      ---psi-actn-b-fl-dr: column;
-      ---psi-actn-b-mn-wd: 100%;
+      ---psi-actn-mn-wd: 7.5rem;
+      ---psi-actn-both-fl-dr: column;
+      ---psi-actn-both-mn-wd: 100%;
+      ---psi-actn-btn-mr-tp: 0;
+      ---psi-actn-btn-mr-bt: 0;
+    }
+    .psi-actions-both {
+      ---psi-actn-btn-mr-tp: 0.1rem;
     }
   }
   @container cnt-stream-card (43rem <= width < 53rem) { // 688px <= width < 848px
     .psi-actions {
       ---psi-actn-fl-dr: row;
-      ---psi-actn-b-fl-dr: column;
+      ---psi-actn-both-fl-dr: column;
     }
   }
   @container cnt-stream-card (53rem <= width) { // 848px <= width
     .psi-actions {
       ---psi-actn-fl-dr: row;
-      ---psi-actn-b-fl-dr: row;
+      ---psi-actn-both-fl-dr: row;
     }
   }
 
@@ -81,63 +89,54 @@ app-panel-stream-info {
   }
 
   // ** Actions **
-
   .psi-actions {
+    --mdc-outlined-button-container-height: 2rem;
+    --mat-outlined-button-horizontal-padding: 0.5rem;
     align-items: center;
     display: flex;
     flex-direction: var(---psi-actn-fl-dr);
     height: 100%;
     justify-content: center;
-    --mdc-outlined-button-container-height: 2rem;
-    --mat-outlined-button-horizontal-padding: 0.5rem;
+    min-width: var(---psi-actn-mn-wd, unset);
   }
   .psi-actions-both {
     display: flex;
-    flex-direction: var(---psi-actn-b-fl-dr);
-    min-width: var(---psi-actn-b-mn-wd, unset);
+    flex-direction: var(---psi-actn-both-fl-dr);
+    min-width: var(---psi-actn-both-mn-wd, unset);
   }
-
   .psi-action-label {
     align-items: center;
     display: flex;
-    &>i { margin-right: 0.5rem; }
   }
   .psi-action-btn {
     flex-shrink: 0;
     justify-content: space-between;
-    margin-right: 0.5rem;
-    margin-top: 0.25rem;
-    margin-bottom: 0.25rem;
-  }
-  .psi-btn-dpl {
-    min-width: var(---psi-actn-mn-wd, unset);
+    margin-top: var(---psi-actn-btn-mr-tp, 0.25rem);
+    margin-bottom: var(---psi-actn-btn-mr-bt, 0.25rem);
   }
 
   .psi-logo-future {
     color: var(--app-svg-icon-cl);
-    height: 4.25em;
-    width: 4.25em;
+    height: 4.25rem;
+    width: 4.25rem;
     vertical-align: middle;
   }
   .psi-duplicate-accent {
     color: var(--app-svg-icon-cl);
     display: inline-block;
-    height: 2em;
-    margin-right: 0.25em;
-    width: 2em;
+    height: 1.75rem;
+    width: 1.75rem;
   }
   .psi-edit-accent {
     color: var(--app-svg-icon-cl);
     display: inline-block;
-    height: 2.2em;
-    margin-right: 0.25em;
-    width: 2.2em;
+    height: 1.875rem;
+    width: 1.875rem;
   }
   .psi-delete-accent {
     color: var(--app-svg-icon-cl);
     display: inline-block;
-    height: 2.2em;
-    margin-right: 0.25em;
-    width: 2.2em;
+    height: 1.875rem;
+    width: 1.875rem;
   }
 }

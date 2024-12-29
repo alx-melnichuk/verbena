@@ -25,11 +25,10 @@
 
     <div class="psi-actions">
       @if (canDuplicate) {
-        <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-action-btn psi-btn-dpl"
-           (click)="doActionDuplicate(stream.id)">
+        <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-action-btn"
+           (click)="doActionDuplicate(stream.id)" psi-mr-rg-0_5>
           <span class="psi-action-label">
-            <!-- <i class="psi-duplicate-accent"></i> -->
-            <svg class="psi-duplicate-accent">
+            <svg class="psi-duplicate-accent" psi-mr-rg-0_25>
               <use href="assets/icons/lib-stream/panel-stream-info/file-copy-bin.svg#file-copy-bin"></use>
             </svg>
             <span>{{ 'panel-stream-mini.buttons.duplicate' | translate }}</span>
@@ -39,10 +38,9 @@
       <div class="psi-actions-both">
         @if (canEdit) {
           <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-action-btn"
-            (click)="doActionEdit(stream.id)">
+            (click)="doActionEdit(stream.id)" psi-mr-rg-0_5>
             <span class="psi-action-label">
-              <!-- <i class="psi-edit-accent"></i> -->
-              <svg class="psi-edit-accent">
+              <svg class="psi-edit-accent" psi-mr-rg-0_25>
                 <use href="assets/icons/lib-stream/panel-stream-info/file-circle-pen-bin.svg#file-circle-pen-bin"></use>
               </svg>
               <span>{{ 'panel-stream-mini.buttons.edit' | translate }}</span>
@@ -51,10 +49,9 @@
         }
         @if (canDelete) {
           <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-action-btn"
-            (click)="doActionDelete(stream)">
+            (click)="doActionDelete(stream)" psi-mr-rg-0_5>
             <span class="psi-action-label">
-              <!-- <i class="psi-delete-accent"></i> -->
-              <svg class="psi-delete-accent">
+              <svg class="psi-delete-accent" psi-mr-rg-0_25>
                 <use href="assets/icons/lib-stream/panel-stream-info/file-circle-cross-bin.svg#file-circle-cross-bin"></use>
               </svg>
               <span>{{ 'panel-stream-mini.buttons.delete' | translate }}</span>
