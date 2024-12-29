@@ -2,12 +2,14 @@
     
   <div class="sl-my-calendar">
 
-    <div class="sl-calendar">
-      <div class="sl-title">{{ 'stream_list.my_calendar' | translate }}</div>
+    <div class="sl-calendar-box sl-border">
+      <div class="sl-title">
+        <span>{{ 'stream_list.my_calendar' | translate }}</span>
+      </div>
       @if (streamCalendarService.calendarLoading) {
         <app-spinner isFillParent></app-spinner>
       }
-      <app-panel-stream-calendar class="sl-pn-calendar"
+      <app-panel-stream-calendar
         [selected]="streamCalendarService.eventsOfDaySelected"
         [markedDates]="streamCalendarService.calendarMarkedDates"
         [minDate]="streamCalendarService.calendarMinDate"
@@ -19,9 +21,9 @@
 
     <div class="sl-indent"></div>
 
-    <div class="sl-events">
-      <div class="sl-event-label"
-       [ngClass]="{ 'sl-heavier': streamCalendarService.isShowEvents(streamCalendarService.calendarMonth) }">
+    <div class="sl-events-box sl-border">
+      <div [ngClass]="{ 'sl-heavier': streamCalendarService.isShowEvents(streamCalendarService.calendarMonth) }"
+        class="sl-event-label">
         <span>{{ streamCalendarService.eventsOfDaySelected | date: formatDate }}</span>
       </div>
       <div class="sl-event-list">
@@ -39,11 +41,11 @@
 
   </div>
 
-  <!-- <div class="sl-indent sl-indent-ord"></div> -->
+  <div class="sl-indent"></div>
 
   <div class="sl-my-streams">
 
-    <div class="sl-stream-box">
+    <div class="sl-stream-box sl-border">
       <div class="sl-title">{{ 'stream_list.my_future_streams' | translate }}</div>
       @if (streamListService.futureStreamLoading) {
         <app-spinner isFillParent></app-spinner>
@@ -64,7 +66,7 @@
 
     <div class="sl-indent"></div>
 
-    <div class="sl-stream-box">
+    <div class="sl-stream-box sl-border">
       <div class="sl-title">{{ 'stream_list.my_past_streams' | translate }}</div>
       @if (streamListService.pastStreamLoading) {
         <app-spinner isFillParent></app-spinner>
