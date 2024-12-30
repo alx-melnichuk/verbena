@@ -16,7 +16,7 @@
       (blur)="onTouched()"
     />
     <mat-datepicker-toggle matSuffix [for]="datepickerItem"></mat-datepicker-toggle>
-    <mat-datepicker #datepickerItem></mat-datepicker>
+    <mat-datepicker #datepickerItem panelClass="cstm-calendar"></mat-datepicker>
     <mat-hint>{{ hint | translate }}</mat-hint>
     <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
   </mat-form-field>

@@ -28,4 +28,17 @@
       border-color: var(--mdc-outlined-button-outline-color); // --sys-outline
     }
   }
+
+  // ** mat-calendar **
+  // Customize the calendar view.
+  .cstm-calendar.mat-calendar {
+    .mat-calendar-spacer { flex-grow: 0; }
+    .mat-calendar-period-button { order: 2; flex-grow: 1; }
+    .mat-calendar-previous-button { order: 1; }
+    .mat-calendar-next-button { order: 3; }
+    .mat-calendar-header { padding: 0 8px; }
+    .mat-calendar-table-header-divider { display: none; }
+    .mat-calendar-controls { margin-top: 2.5%; margin-bottom: 2.5%; }
+    .mat-calendar-body-label { visibility: hidden; }
+  } 
 }
