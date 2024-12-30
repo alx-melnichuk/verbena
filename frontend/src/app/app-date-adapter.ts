@@ -21,7 +21,7 @@ export const APP_DATE_FORMATS = {
 export class AppDateAdapter extends NativeDateAdapter {
   override format(date: Date, displayFormat: Object): string {
     if (displayFormat === 'app-input') {
-      return formatDate(date,'dd-MM-yyyy', this.locale);;
+      return formatDate(date,'dd-MM-yyyy', this.locale);
     } else {
       return super.format(date, displayFormat);
     }
