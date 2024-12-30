@@ -4,10 +4,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
-import { PIPE_DATE } from 'src/app/common/constants';
+import { PIPE_DATE     } from 'src/app/common/constants';
+import { LocaleService } from 'src/app/common/locale.service';
 import { ROUTE_STREAM_CREATE, ROUTE_STREAM_EDIT } from 'src/app/common/routes';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
-import { AlertService } from 'src/app/lib-dialog/alert.service';
+import { AlertService  } from 'src/app/lib-dialog/alert.service';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 
@@ -41,6 +42,7 @@ export class StreamListComponent {
     private dialogService: DialogService,
     private streamService: StreamService,
     private alertService: AlertService,
+    public localeService: LocaleService,
     public streamListService: StreamListService,
     public streamCalendarService: StreamCalendarService,
   ) {

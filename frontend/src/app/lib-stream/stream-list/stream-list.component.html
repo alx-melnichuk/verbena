@@ -10,10 +10,11 @@
         <app-spinner isFillParent></app-spinner>
       }
       <app-panel-stream-calendar
-        [selected]="streamCalendarService.eventsOfDaySelected"
+        [locale]="localeService.getLocale()"
         [markedDates]="streamCalendarService.calendarMarkedDates"
         [minDate]="streamCalendarService.calendarMinDate"
         [maxDate]="streamCalendarService.calendarMaxDate"
+        [selected]="streamCalendarService.eventsOfDaySelected"
         (changeSelected)="getListEventsForDate($event, 1)"
         (changeCalendar)="getCalendarInfoForPeriod($event)">
       </app-panel-stream-calendar>

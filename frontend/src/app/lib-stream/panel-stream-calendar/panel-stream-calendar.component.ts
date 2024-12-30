@@ -29,13 +29,15 @@ type PeriodMapType = {[key: string]: number};
 export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
 
   @Input()
-  public selected: Date | null = null;
+  public locale: string | null = null;
   @Input()
   public markedDates: StreamsPeriodDto[] = [];
   @Input()
   public minDate: Date | null = null;
   @Input()
   public maxDate: Date | null = null;
+  @Input()
+  public selected: Date | null = null;
 
   @Output()
   readonly changeSelected: EventEmitter<Date | null> = new EventEmitter();
@@ -62,6 +64,9 @@ export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterVie
   }
   
   public ngOnChanges(changes: SimpleChanges): void {
+    if (!!changes['locale'] && !!this.calendar) {
+      this.calendar.updateTodaysDate();
+    }
     if (!!changes['markedDates'] && !!this.markedDates && !!this.calendar) {
       this.settingPropertiesByPeriodDate(this.hostRef, this.markedPeriodMap, false);
       this.markedPeriodMap = this.preparePeriodDate(this.markedDates);
