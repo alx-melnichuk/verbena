@@ -9,6 +9,7 @@ import { AUTHORIZATION_DENIED, ROUTE_LOGIN } from './common/routes';
 import { FooterComponent } from './components/footer/footer.component';
 import { HeaderComponent, HM_LOGOUT, HM_SET_COLOR_SCHEME, HM_SET_LOCALE } from './components/header/header.component';
 import { ACCESS_TOKEN, ProfileService } from './lib-profile/profile.service';
+import { LocaleService } from './common/locale.service';
 
 @Component({
   selector: 'app-root',
@@ -49,6 +50,7 @@ export class AppComponent implements OnInit {
     public profileService: ProfileService,
     public renderer: Renderer2,
     private router: Router,
+    private localeService: LocaleService,
     private initializationService: InitializationService,
   ) {
     const theme = this.profileService.profileDto?.theme || COLOR_SCHEME_LIST[0];
@@ -56,7 +58,7 @@ export class AppComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    this.locale = this.initializationService.getLocale();
+    this.locale = this.localeService.getLocale();
     this.colorScheme = this.initializationService.getColorScheme();
   }
 
@@ -85,9 +87,9 @@ export class AppComponent implements OnInit {
   }
 
   private doSetLocale(value: string): void {
-    this.initializationService.setLocale(value)
+    this.localeService.setLocale(value)
       .finally(() => {
-        this.locale = this.initializationService.getLocale();
+        this.locale = this.localeService.getLocale();
       });
   }
 

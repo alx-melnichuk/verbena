@@ -4,15 +4,16 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { provideRouter } from '@angular/router';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { DateAdapter, MAT_DATE_FORMATS, MatNativeDateModule } from '@angular/material/core';
+import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 
 import { APP_DATE_FORMATS, AppDateAdapter } from './app-date-adapter';
+import { AppErrorHandler } from './app-error-handler';
 import { APP_ROUTES } from './app.routes';
 import { AuthorizationInterceptor } from './common/authorization.interceptor';
 import { InitializationService } from './common/initialization.service';
-import { AppErrorHandler } from './app-error-handler';
+import { LocaleService } from './common/locale.service';
 
 // AoT requires an exported function for factories
 export const TRANSLATE_LOADER_FACTORY = (httpClient: HttpClient): TranslateHttpLoader => {
@@ -44,16 +45,22 @@ export const appConfig: ApplicationConfig = {
         },
       })
     ]),
+    LocaleService,
     InitializationService,
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthorizationInterceptor,
       multi: true,
     },
-    importProvidersFrom(MatDialogModule, MatSnackBarModule, MatNativeDateModule),
+    importProvidersFrom(MatDialogModule, MatSnackBarModule),
+    {
+      provide: MAT_DATE_LOCALE,
+      useValue: 'en'
+    },
     {
       provide: DateAdapter,
-      useClass: AppDateAdapter
+      useClass: AppDateAdapter,
+      deps: [MAT_DATE_LOCALE]
     },
     {
       provide: MAT_DATE_FORMATS,

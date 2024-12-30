@@ -15,6 +15,7 @@ import { ProfileConfigDto } from '../lib-profile/profile-config.interface';
 import { ProfileService } from '../lib-profile/profile.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
 import { InitializationService } from '../common/initialization.service';
+import { LocaleService } from '../common/locale.service';
 
 @Component({
   selector: 'app-pg-profile',
@@ -39,6 +40,7 @@ export class PgProfileComponent {
     private route: ActivatedRoute,
     private router: Router,
     private renderer: Renderer2,
+    private localeService: LocaleService,
     private initializationService: InitializationService,
     private translate: TranslateService,
     private dialogService: DialogService,
@@ -65,7 +67,7 @@ export class PgProfileComponent {
           this.profileDto = response as ProfileDto;
           this.profileService.setProfileDto({...this.profileDto});
           this.initializationService.setColorScheme(this.profileService.profileDto?.theme, this.renderer);
-          this.initializationService.setLocale(this.profileDto.locale)
+          this.localeService.setLocale(this.profileDto.locale)
           .finally(() => {
             const title = this.translate.instant('pg-profile.dialog_title_editing');
             const message = this.translate.instant('pg-profile.dialog_message_editing');
