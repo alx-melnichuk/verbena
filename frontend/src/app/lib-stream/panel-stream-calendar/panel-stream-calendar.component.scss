@@ -42,4 +42,17 @@ app-panel-stream-calendar {
   .mat-calendar-table-header-divider {
     display: none;
   }
+  .mat-calendar-spacer {
+    flex-grow: 0;
+  }
+  .mat-calendar-period-button {
+    order: 2;
+    flex-grow: 1;
+  }
+  .mat-calendar-previous-button {
+    order: 1;
+  }
+  .mat-calendar-next-button {
+    order: 3;
+  }
 }

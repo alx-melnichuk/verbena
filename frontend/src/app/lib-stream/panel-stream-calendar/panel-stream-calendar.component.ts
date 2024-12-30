@@ -1,10 +1,9 @@
 import {
-  AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output,
-  SimpleChanges, ViewChild, ViewEncapsulation
+  AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, 
+  OnInit, Output, SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
 import { Subscription } from 'rxjs';
 
 import { StringDateTime } from 'src/app/common/string-date-time';
@@ -21,11 +20,11 @@ type PeriodMapType = {[key: string]: number};
 @Component({
   selector: 'app-panel-stream-calendar',
   standalone: true,
-  imports: [CommonModule, MatNativeDateModule, MatDatepickerModule],
+  imports: [CommonModule, MatDatepickerModule],
   templateUrl: './panel-stream-calendar.component.html',
   styleUrls: ['./panel-stream-calendar.component.scss', 'panel-stream-calendar-emblem.component.scss'],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
 
