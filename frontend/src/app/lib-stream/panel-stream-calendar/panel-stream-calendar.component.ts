@@ -6,8 +6,8 @@ import { CommonModule } from '@angular/common';
 import { MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule } from '@angular/material/datepicker';
 import { Subscription } from 'rxjs';
 
-import { StringDateTime } from 'src/app/common/string-date-time';
-import { HtmlElemUtil } from 'src/app/utils/html-elem.util';
+import { StringDateTime     } from 'src/app/common/string-date-time';
+import { HtmlElemUtil       } from 'src/app/utils/html-elem.util';
 import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
 
 import { StreamsPeriodDto } from '../stream-api.interface';
@@ -65,7 +65,8 @@ export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterVie
   
   public ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['locale'] && !!this.calendar) {
-      this.calendar.updateTodaysDate();
+      // Note! This operation allows you to update the value of "periodButtonText" with the new locale.
+      this.calendar.activeDate = new Date(this.calendar.activeDate);
     }
     if (!!changes['markedDates'] && !!this.markedDates && !!this.calendar) {
       this.settingPropertiesByPeriodDate(this.hostRef, this.markedPeriodMap, false);
