@@ -8,7 +8,7 @@ export const APP_DATE_FORMATS = {
   },
   display: {
     // Property in display section is the date format in which displays the date in input box.
-    dateInput: 'app-input',
+    dateInput: 'date_format_for_input',
     // Property in display section is the date format in which calendar displays the month-year label.
     monthYearLabel: {year: 'numeric', month: 'short'},
     // Related to Accessibility (a11y)
@@ -20,7 +20,7 @@ export const APP_DATE_FORMATS = {
 @Injectable()
 export class AppDateAdapter extends NativeDateAdapter {
   override format(date: Date, displayFormat: Object): string {
-    if (displayFormat === 'app-input') {
+    if (displayFormat === 'date_format_for_input') {
       return formatDate(date,'dd-MM-yyyy', this.locale);
     } else {
       return super.format(date, displayFormat);
