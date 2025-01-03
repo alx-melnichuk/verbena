@@ -31,8 +31,8 @@
   },
   "locale": {
     "": "nichts",
-    "en": "English [en]",
-    "de": "Deutsch [de]",
+    "en-us": "English [en-US]",
+    "de-de": "Deutsch [de-DE]",
     "uk": "Українська [uk]"
   },
   "theme": {
