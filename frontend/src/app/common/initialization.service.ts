@@ -40,7 +40,7 @@ export class InitializationService {
     this.translate.addLangs(LOCALE_LIST);
     this.translate.setDefaultLang(LOCALE_EN);
 
-    const locale = this.currLocale || this.getBrowserLanguage(LOCALE_EN).slice(0, 2);
+    const locale = this.currLocale || this.getBrowserLanguage(LOCALE_EN).toLowerCase();
     const language = (LOCALE_LIST.indexOf(locale) > -1 ? locale : LOCALE_EN);
     
     return this.localeService.setLocale(language);
@@ -97,8 +97,8 @@ export class InitializationService {
       return defaultValue;
     }
     const wn = window.navigator as any;
-    let lang = wn.languages ? wn.languages[0] : defaultValue;
-    lang = lang || wn.language || wn.browserLanguage || wn.userLanguage;
+    const firstOnList = Array.isArray(wn.languages) ? wn.languages[0] : undefined;
+    const lang = wn.language || firstOnList || wn.browserLanguage || wn.userLanguage || defaultValue;
     return lang;
   }
 }

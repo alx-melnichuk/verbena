@@ -25,16 +25,15 @@ export class LocaleService {
   }
   
   public setLocale(value: string | null): Promise<void> {
-    const locale: string = value || LOCALE_EN;
-    const language: string = locale.slice(0, 2);
-    if (!language || LOCALE_LIST.indexOf(language) == -1) {
+    const locale: string = (!!value ? value.toLowerCase() : LOCALE_EN);
+    if (!locale || LOCALE_LIST.indexOf(locale) == -1) {
       return Promise.reject();
     }
     if (this.currLocale == locale) {
       Promise.resolve();
     }
     return new Promise<void>((resolve: () => void, reject: (reason: unknown) => void) => {
-      this.translate.use(language).pipe(first())
+      this.translate.use(locale).pipe(first())
         .subscribe({
           next: () => {
             this.currLocale = locale;
