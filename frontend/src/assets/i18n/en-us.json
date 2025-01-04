@@ -297,7 +297,7 @@
       "angular v.18",
       "ngx-translate v.15",
       "angular/material v.18",
-      "angular/mat-datepicker",
+      "angular/mat-datepicker, mat-calendar + Internationalization",
       "input components with ControlValueAccessor implementation",
       "component for outputting an image file",
       "\"DragAndDrop\" directive",
