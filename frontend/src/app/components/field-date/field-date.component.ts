@@ -1,11 +1,13 @@
 import {
-  ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation, forwardRef
+  ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation, 
+  forwardRef, inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule, 
   ValidationErrors, Validator, ValidatorFn, Validators
 } from '@angular/forms';
+import { DateAdapter } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
@@ -53,6 +55,8 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
 
   public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
   public formGroup: FormGroup = new FormGroup({ date: this.formControl });
+
+  private readonly dateAdapter: DateAdapter<Date> | null = inject(DateAdapter, {optional: true});
 
   constructor() {}
 
@@ -142,17 +146,17 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
     if (errors != null) {
       const minDate = errors['matDatepickerMin'];
       if (minDate?.min != null && minDate?.min_s == null) {
-        minDate['min_s'] = minDate.min.toISOString().slice(0,10);
+        minDate['min_s'] = this.dateAdapter?.format(minDate.min, null) || minDate.min.toLocaleString().slice(0,10);
       }
       if (minDate?.actual != null && minDate?.actual_s == null) {
-        minDate['actual_s'] = minDate.actual.toISOString().slice(0,10);
+        minDate['actual_s'] = this.dateAdapter?.format(minDate.actual, null) || minDate.actual.toLocaleString().slice(0,10);
       }
       const maxDate = errors['matDatepickerMax'];
       if (maxDate?.max != null && maxDate?.max_s == null) {
-        maxDate['max_s'] = maxDate.max.toISOString().slice(0,10);
+        maxDate['max_s'] = this.dateAdapter?.format(maxDate.max, null) || maxDate.max.toLocaleString().slice(0,10);
       }
       if (maxDate?.actual != null && maxDate?.actual_s == null) {
-        maxDate['actual_s'] = maxDate.actual.toISOString().slice(0,10);
+        maxDate['actual_s'] = this.dateAdapter?.format(maxDate.actual, null) || maxDate.actual.toLocaleString().slice(0,10);
       }
     }
     return errors;
