@@ -18,7 +18,12 @@ export class DateUtil {
   public static formatDateTime(d: Date, options: Intl.DateTimeFormatOptions | undefined, locales?: string | string[] | undefined): string {
     return new Intl.DateTimeFormat(locales || 'default', options).format(d);
   }
-
+  // const date: Date | null = DateUtil.toDate(value);
+  // const res = (date != null ? DateUtil.formatDateTime(date, options) : '');
+  public static toDate(value: string | Date | number | null | undefined): Date | null {
+    return typeof value == 'number' ? (!isNaN(value) ? new Date(value) : null)
+      : (typeof value == 'string' ? new Date(value) : ((value as Date) || null));
+  }
   /** Add "delta" years for the specified date. */
   public static addYear(d: Date, delta: number = 1): Date {
     return new Date(d.getFullYear() + delta, d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds());
