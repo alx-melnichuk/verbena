@@ -13,7 +13,7 @@
 
     <div class="psi-details">
       <div class="psi-date">
-        {{ stream.starttime | date: (!isFuture ? formatDate : formatDateTime) }}
+        {{ stream.starttime | dateTimeFormat: locale:(!isFuture ? formatDate : formatDateTime) }}       
       </div>
       <div class="psi-title">
         <a href9="javascript:void(0);" (click)="doRedirectToStream(stream.id)">

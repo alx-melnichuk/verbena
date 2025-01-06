@@ -75,7 +75,7 @@ import {InjectionToken} from '@angular/core';
   (e.g. weekday, hour, month, etc.).
 */
 
-interface DateTimeFormatConfigOptions {
+export interface DateTimeFormatConfigOptions {
   dateStyle?: 'full' | 'long' | 'medium' | 'short';
   year?: 'numeric' | '2-digit';
   month?: 'numeric' | '2-digit' | 'long' | 'short';

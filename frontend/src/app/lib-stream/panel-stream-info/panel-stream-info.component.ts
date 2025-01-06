@@ -6,17 +6,18 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { PIPE_DATE, PIPE_DATE_TIME } from 'src/app/common/constants';
-import { LogotypeComponent } from 'src/app/components/logotype/logotype.component';
+import { DateTimeFormatConfigOptions, DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
+import { LogotypeComponent  } from 'src/app/components/logotype/logotype.component';
+import { ScrollHasMaxUtil   } from 'src/app/utils/scroll-has-max.util';
+
 import { StreamDto } from '../stream-api.interface';
-import { ScrollHasMaxUtil } from 'src/app/utils/scroll-has-max.util';
 
 const CN_ScrollPanelTimeout = 200; // milliseconds
 
 @Component({
   selector: 'app-panel-stream-info',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatCardModule, TranslateModule, LogotypeComponent],
+  imports: [CommonModule, MatButtonModule, MatCardModule, TranslateModule, LogotypeComponent, DateTimeFormatPipe],
   templateUrl: './panel-stream-info.component.html',
   styleUrl: './panel-stream-info.component.scss',
   encapsulation: ViewEncapsulation.None,
@@ -31,6 +32,8 @@ export class PanelStreamInfoComponent {
   public canDelete = false;
   @Input()
   public isFuture = false;
+  @Input()
+  public locale: string | null = null;
   @Input()
   public streamList: StreamDto[] = [];
   @Input()
@@ -54,8 +57,8 @@ export class PanelStreamInfoComponent {
   @Output()
   readonly actionDelete: EventEmitter<{ id: number, title: string }> = new EventEmitter();
 
-  readonly formatDate = PIPE_DATE;
-  readonly formatDateTime = PIPE_DATE_TIME;
+  readonly formatDate: DateTimeFormatConfigOptions = { dateStyle: 'long' };
+  readonly formatDateTime: DateTimeFormatConfigOptions = { dateStyle: 'long', timeStyle: 'short' };
 
   @HostBinding('class.global-scroll')
   public get isGlobalScroll(): boolean { return true; }

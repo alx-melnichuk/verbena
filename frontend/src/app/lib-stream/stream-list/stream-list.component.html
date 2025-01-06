@@ -57,6 +57,7 @@
         [canEdit]="true"
         [canDelete]="true"
         [isFuture]="true"
+        [locale]="localeService.getLocale()"
         [streamList]="streamListService.futureStreamsDto"
         (requestNextPage)="searchNextFutureStream()"
         (redirectToStream)="redirectToStreamView($event)"
@@ -76,6 +77,7 @@
       <app-panel-stream-info
         [canDuplicate]="true"
         [canDelete]="true"
+        [locale]="localeService.getLocale()"
         [streamList]="streamListService.pastStreamsDto"
         (requestNextPage)="searchNextPastStream()"
         (redirectToStream)="redirectToStreamView($event)"
