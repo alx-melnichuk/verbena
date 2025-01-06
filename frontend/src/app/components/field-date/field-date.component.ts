@@ -56,7 +56,7 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
   public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
   public formGroup: FormGroup = new FormGroup({ date: this.formControl });
 
-  private readonly dateAdapter: DateAdapter<Date> | null = inject(DateAdapter, {optional: true});
+  private readonly dateAdapter: DateAdapter<Date> = inject(DateAdapter);
 
   constructor() {}
 
@@ -146,17 +146,17 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
     if (errors != null) {
       const minDate = errors['matDatepickerMin'];
       if (minDate?.min != null && minDate?.min_s == null) {
-        minDate['min_s'] = this.dateAdapter?.format(minDate.min, null) || minDate.min.toLocaleString().slice(0,10);
+        minDate['min_s'] = this.dateAdapter.format(minDate.min, null);
       }
       if (minDate?.actual != null && minDate?.actual_s == null) {
-        minDate['actual_s'] = this.dateAdapter?.format(minDate.actual, null) || minDate.actual.toLocaleString().slice(0,10);
+        minDate['actual_s'] = this.dateAdapter.format(minDate.actual, null);
       }
       const maxDate = errors['matDatepickerMax'];
       if (maxDate?.max != null && maxDate?.max_s == null) {
-        maxDate['max_s'] = this.dateAdapter?.format(maxDate.max, null) || maxDate.max.toLocaleString().slice(0,10);
+        maxDate['max_s'] = this.dateAdapter.format(maxDate.max, null);
       }
       if (maxDate?.actual != null && maxDate?.actual_s == null) {
-        maxDate['actual_s'] = this.dateAdapter?.format(maxDate.actual, null) || maxDate.actual.toLocaleString().slice(0,10);
+        maxDate['actual_s'] = this.dateAdapter.format(maxDate.actual, null);
       }
     }
     return errors;
