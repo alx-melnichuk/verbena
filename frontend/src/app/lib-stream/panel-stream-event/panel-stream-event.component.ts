@@ -4,24 +4,26 @@ import {
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { LogotypeComponent } from 'src/app/components/logotype/logotype.component';
-import { PIPE_DATE_TIME } from 'src/app/common/constants';
-import { ScrollHasMaxUtil } from 'src/app/utils/scroll-has-max.util';
+import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
+import { LogotypeComponent  } from 'src/app/components/logotype/logotype.component';
+import { ScrollHasMaxUtil   } from 'src/app/utils/scroll-has-max.util';
 
 import { StreamDtoUtil, StreamEventDto } from '../stream-api.interface';
 
 @Component({
   selector: 'app-panel-stream-event',
   standalone: true,
-  imports: [CommonModule, TranslateModule, LogotypeComponent],
+  imports: [CommonModule, TranslateModule, LogotypeComponent, DateTimeFormatPipe],
   templateUrl: './panel-stream-event.component.html',
   styleUrl: './panel-stream-event.component.scss',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PanelStreamEventComponent {
   @Input()
   public canEdit = false;
+  @Input()
+  public locale: string | null = null;
   @Input()
   public streamShortDtoList: StreamEventDto[] = [];
 
@@ -31,8 +33,6 @@ export class PanelStreamEventComponent {
   readonly viewStream: EventEmitter<number> = new EventEmitter();
   @Output()
   readonly editStream: EventEmitter<number> = new EventEmitter();
-
-  readonly formatDateTime = PIPE_DATE_TIME;
 
   @HostBinding('class.global-scroll')
   public get isGlobalScroll(): boolean { return true; }

@@ -33,6 +33,7 @@
         }
         <app-panel-stream-event
           [canEdit]="true"
+          [locale]="localeService.getLocale()"
           [streamShortDtoList]="streamCalendarService.eventsOfDay"
           (requestNextPage)="getListEventsForDate(streamCalendarService.eventsOfDaySelected, -1)"
           (editStream)="actionEdit($event)">
