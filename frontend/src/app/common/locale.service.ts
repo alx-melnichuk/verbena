@@ -13,7 +13,7 @@ export class LocaleService {
   private currLocale: string | null = null;
 
   constructor(
-    private dateAdapter: DateAdapter<any>,
+    private dateAdapter: DateAdapter<Date>,
     private translate: TranslateService,
   ) {
     console.log(`#1-LocaleService();`); // #
