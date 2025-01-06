@@ -14,6 +14,7 @@ import { APP_ROUTES } from './app.routes';
 import { AuthorizationInterceptor } from './common/authorization.interceptor';
 import { InitializationService } from './common/initialization.service';
 import { LocaleService } from './common/locale.service';
+import { APP_DATE_TIME_FORMAT_CONFIG } from './common/date-time-format.pipe';
 
 // AoT requires an exported function for factories
 export const TRANSLATE_LOADER_FACTORY = (httpClient: HttpClient): TranslateHttpLoader => {
@@ -52,7 +53,6 @@ export const appConfig: ApplicationConfig = {
       useClass: AuthorizationInterceptor,
       multi: true,
     },
-    importProvidersFrom(MatDialogModule, MatSnackBarModule),
     {
       provide: MAT_DATE_LOCALE,
       useValue: 'en'
@@ -66,6 +66,11 @@ export const appConfig: ApplicationConfig = {
       provide: MAT_DATE_FORMATS,
       useValue: APP_DATE_FORMATS
     },
+    {
+      provide: APP_DATE_TIME_FORMAT_CONFIG,
+      useValue: { options: { dateStyle: 'short', timeStyle: 'short' }}
+    },
+    importProvidersFrom(MatDialogModule, MatSnackBarModule),
     {
       provide: APP_INITIALIZER,
       deps: [InitializationService],
