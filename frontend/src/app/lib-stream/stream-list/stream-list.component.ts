@@ -4,13 +4,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
-import { PIPE_DATE     } from 'src/app/common/constants';
-import { LocaleService } from 'src/app/common/locale.service';
+import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
+import { LocaleService      } from 'src/app/common/locale.service';
 import { ROUTE_STREAM_CREATE, ROUTE_STREAM_EDIT } from 'src/app/common/routes';
-import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
-import { AlertService  } from 'src/app/lib-dialog/alert.service';
-import { DialogService } from 'src/app/lib-dialog/dialog.service';
-import { HttpErrorUtil } from 'src/app/utils/http-error.util';
+import { SpinnerComponent   } from 'src/app/components/spinner/spinner.component';
+import { AlertService       } from 'src/app/lib-dialog/alert.service';
+import { DialogService      } from 'src/app/lib-dialog/dialog.service';
+import { HttpErrorUtil      } from 'src/app/utils/http-error.util';
 
 import { PanelStreamCalendarComponent } from '../panel-stream-calendar/panel-stream-calendar.component';
 import { PanelStreamEventComponent } from '../panel-stream-event/panel-stream-event.component';
@@ -23,7 +23,7 @@ import { StreamService } from '../stream.service';
   selector: 'app-stream-list',
   standalone: true,
   imports: [CommonModule, TranslateModule, SpinnerComponent, PanelStreamEventComponent, PanelStreamInfoComponent,
-    PanelStreamCalendarComponent],
+    PanelStreamCalendarComponent, DateTimeFormatPipe],
   templateUrl: './stream-list.component.html',
   styleUrl: './stream-list.component.scss',
   encapsulation: ViewEncapsulation.None,
@@ -32,7 +32,7 @@ import { StreamService } from '../stream.service';
 export class StreamListComponent {
   public userId: number;
 
-  readonly formatDate = PIPE_DATE;
+  readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'long' };
 
   constructor(
     private changeDetector: ChangeDetectorRef,

@@ -25,7 +25,9 @@
     <div class="sl-events-box sl-border">
       <div [ngClass]="{ 'sl-heavier': streamCalendarService.isShowEvents(streamCalendarService.calendarMonth) }"
         class="sl-event-label">
-        <span>{{ streamCalendarService.eventsOfDaySelected | date: formatDate }}</span>
+        <span>
+          {{ streamCalendarService.eventsOfDaySelected | dateTimeFormat:localeService.getLocale():formatDate }}
+        </span>
       </div>
       <div class="sl-event-list">
         @if (streamCalendarService.eventsOfDayLoading) {
