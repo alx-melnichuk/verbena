@@ -4,7 +4,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
+import { DateTimeFormatConfigOptions, DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { LogotypeComponent  } from 'src/app/components/logotype/logotype.component';
 import { ScrollHasMaxUtil   } from 'src/app/utils/scroll-has-max.util';
 
@@ -33,6 +33,9 @@ export class PanelStreamEventComponent {
   readonly viewStream: EventEmitter<number> = new EventEmitter();
   @Output()
   readonly editStream: EventEmitter<number> = new EventEmitter();
+
+  readonly formatDate: DateTimeFormatConfigOptions = { dateStyle: 'short' };
+  readonly formatDateTime: DateTimeFormatConfigOptions = { dateStyle: 'short', timeStyle: 'short' };
 
   @HostBinding('class.global-scroll')
   public get isGlobalScroll(): boolean { return true; }
