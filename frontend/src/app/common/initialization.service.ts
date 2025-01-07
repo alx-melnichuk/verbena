@@ -40,8 +40,9 @@ export class InitializationService {
     this.translate.addLangs(LOCALE_LIST);
     this.translate.setDefaultLang(LOCALE_EN);
 
-    const locale = this.currLocale || this.getBrowserLanguage(LOCALE_EN).toLowerCase();
-    const language = (LOCALE_LIST.indexOf(locale) > -1 ? locale : LOCALE_EN);
+    const locale = this.currLocale || this.getBrowserLanguage(LOCALE_EN);
+    const index = LOCALE_LIST.findIndex((item: string) => item.toLowerCase() == locale.toLowerCase());
+    const language = (index != 1 ? LOCALE_LIST[index] : LOCALE_EN);
     
     return this.localeService.setLocale(language);
   }

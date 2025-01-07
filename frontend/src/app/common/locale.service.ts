@@ -25,8 +25,9 @@ export class LocaleService {
   }
   
   public setLocale(value: string | null): Promise<void> {
-    const locale: string = (!!value ? value.toLowerCase() : LOCALE_EN);
+    const locale = !!value ? LOCALE_LIST.find((item: string) => item.toLowerCase() == value.toLowerCase()) : LOCALE_EN;
     if (!locale || LOCALE_LIST.indexOf(locale) == -1) {
+      console.error(`Invalid locale value "${locale}" (available: "${LOCALE_LIST.join('","')}").`);
       return Promise.reject();
     }
     if (this.currLocale == locale) {
