@@ -11,9 +11,11 @@ import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { APP_DATE_FORMATS, AppDateAdapter } from './app-date-adapter';
 import { AppErrorHandler } from './app-error-handler';
 import { APP_ROUTES } from './app.routes';
-import { AuthorizationInterceptor } from './common/authorization.interceptor';
-import { InitializationService } from './common/initialization.service';
-import { LocaleService } from './common/locale.service';
+import { AuthorizationInterceptor    } from './common/authorization.interceptor';
+import { APP_DATE_TIME_FORMAT_CONFIG } from './common/date-time-format.pipe';
+import { InitializationService       } from './common/initialization.service';
+import { LocaleService               } from './common/locale.service';
+import { DateUtil } from './utils/date.utils';
 
 // AoT requires an exported function for factories
 export const TRANSLATE_LOADER_FACTORY = (httpClient: HttpClient): TranslateHttpLoader => {
@@ -65,6 +67,10 @@ export const appConfig: ApplicationConfig = {
       provide: MAT_DATE_FORMATS,
       useValue: APP_DATE_FORMATS
     },
+    {
+      provide: APP_DATE_TIME_FORMAT_CONFIG,
+      useValue: { afterFormat: DateUtil.afterFormat }
+    },  
     importProvidersFrom(MatDialogModule, MatSnackBarModule),
     {
       provide: APP_INITIALIZER,

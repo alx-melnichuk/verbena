@@ -6,7 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { DateTimeFormatConfigOptions, DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
+import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { LogotypeComponent  } from 'src/app/components/logotype/logotype.component';
 import { ScrollHasMaxUtil   } from 'src/app/utils/scroll-has-max.util';
 
@@ -57,8 +57,8 @@ export class PanelStreamInfoComponent {
   @Output()
   readonly actionDelete: EventEmitter<{ id: number, title: string }> = new EventEmitter();
 
-  readonly formatDate: DateTimeFormatConfigOptions = { dateStyle: 'long' };
-  readonly formatDateTime: DateTimeFormatConfigOptions = { dateStyle: 'long', timeStyle: 'short' };
+  readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'long' };
+  readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: 'long', timeStyle: 'short' };
 
   @HostBinding('class.global-scroll')
   public get isGlobalScroll(): boolean { return true; }

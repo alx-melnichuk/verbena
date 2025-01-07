@@ -3,6 +3,11 @@ import { inject, Pipe, PipeTransform } from '@angular/core';
 import {InjectionToken} from '@angular/core';
 
 /*
+  The Intl.DateTimeFormat object enables language-sensitive date and time formatting.
+
+  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat/DateTimeFormat
+  Intl.DateTimeFormatOptions
+
   dateStyle?: 'full' | 'long' | 'medium' | 'short';
     The date formatting style to use. Possible values are:
     //                   (en-us)             |  (de-de)
@@ -75,24 +80,16 @@ import {InjectionToken} from '@angular/core';
   (e.g. weekday, hour, month, etc.).
 */
 
-export interface DateTimeFormatConfigOptions {
-  dateStyle?: 'full' | 'long' | 'medium' | 'short';
-  year?: 'numeric' | '2-digit';
-  month?: 'numeric' | '2-digit' | 'long' | 'short';
-  day?: 'numeric' | '2-digit';
-  timeStyle?: 'full' | 'long' | 'medium' | 'short';
-  hour12?: boolean;
-  hour?: 'numeric' | '2-digit';
-  minute?: 'numeric' | '2-digit';
-  second?: 'numeric' | '2-digit';
-  fractionalSecondDigits?: 1 | 2 | 3;
-  timeZone?: string;
-  timeZoneName?: 'long' | 'short' | 'shortOffset' | 'longOffset' | 'shortGeneric' | 'longGeneric';
-};
+export declare type DateTimeAfterFormatFn = (
+  value: string | null | undefined,
+  locale?: string | null | undefined,
+  options?: Intl.DateTimeFormatOptions | null | undefined
+) => string | null;
 
 export type DateTimeFormatConfig = {
-  locales?: string;
-  options?: DateTimeFormatConfigOptions;
+  locale?: string | null | undefined,
+  options?: Intl.DateTimeFormatOptions | null | undefined,
+  afterFormat?: DateTimeAfterFormatFn | null | undefined,
 };
 
 export const APP_DATE_TIME_FORMAT_CONFIG = new InjectionToken<DateTimeFormatConfig>('app-date-time-format-config');
@@ -115,7 +112,7 @@ export class DateTimeFormatPipe implements PipeTransform {
   transform(
     value: string | Date | number | null | undefined,
     locale?: string | null | undefined,
-    options?: DateTimeFormatConfigOptions | null | undefined,
+    options?: Intl.DateTimeFormatOptions | null | undefined,
   ): string | null {
     let result: string | null = null;
     const valueDate: Date | null = typeof value == 'number'
@@ -128,8 +125,11 @@ export class DateTimeFormatPipe implements PipeTransform {
         : this.dtfc?.options != null && !!Object.keys(this.dtfc?.options).length ? this.dtfc?.options
           : undefined;
         
-      const dtf = new Intl.DateTimeFormat(locale || this.dtfc?.locales || undefined, opts);
+      const dtf = new Intl.DateTimeFormat(locale || this.dtfc?.locale || undefined, opts);
       result = dtf.format(valueDate);
+      if (!!this.dtfc?.afterFormat) {
+        result = this.dtfc.afterFormat(result, locale || window.navigator.language, options);
+      }
     }
     return result;
   }
