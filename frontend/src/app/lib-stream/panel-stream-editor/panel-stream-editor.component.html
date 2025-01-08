@@ -60,6 +60,7 @@
       <app-field-date pse-mr-tp-0_5 class="pse-start-date"
         formControlName="startDate"
         [isRequired]="true"
+        [locale]="locale"
         [minDate]="minDate"
         [maxDate]="maxDate"
         (dateInput)="updateErrMsgs();"

@@ -53,6 +53,8 @@ export class PanelStreamEditorComponent implements OnChanges {
   @Input()
   public isDisabledSubmit = false;
   @Input()
+  public locale: string | null = null;
+  @Input()
   public streamDto: StreamDto = StreamDtoUtil.create();
   @Input()
   public streamConfigDto: StreamConfigDto | null = null;
