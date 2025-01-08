@@ -1,6 +1,8 @@
 import { Injectable } from "@angular/core";
 import { NativeDateAdapter } from "@angular/material/core";
 
+import { DateUtil } from "./utils/date.utils";
+
 export const APP_DATE_FORMATS = {
   parse: {
     dateInput: null,
@@ -9,7 +11,7 @@ export const APP_DATE_FORMATS = {
     // Property in display section is the date format in which displays the date in input box.
     dateInput: {year: 'numeric', month: 'numeric', day: 'numeric'},
     // Property in display section is the date format in which calendar displays the month-year label.
-    monthYearLabel: {year: 'numeric', month: 'short'},
+    monthYearLabel: {year: 'numeric', month: 'long'},
     // Related to Accessibility (a11y)
     dateA11yLabel: {year: 'numeric', month: 'long', day: 'numeric'},
     monthYearA11yLabel: {year: 'numeric', month: 'long'},
@@ -28,6 +30,14 @@ export class AppDateAdapter extends NativeDateAdapter {
       result = new Date(value);
     } else if (value_type == 'string') {
       result = this.parseFromStringWithLocale(value, this.formatParts);
+    }
+    return result;
+  }
+
+  override format(date: Date, displayFormat: Object): string {
+    let result = super.format(date, displayFormat);
+    if (!!result) {
+      result = DateUtil.afterFormat(result, this.locale || window.navigator.language, displayFormat) as string;
     }
     return result;
   }

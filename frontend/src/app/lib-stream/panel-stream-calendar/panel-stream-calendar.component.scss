@@ -27,6 +27,11 @@ app-panel-stream-calendar {
     border-radius: 100%;
   }
   .mat-calendar {
+    --mat-text-button-horizontal-padding: 0px;
     min-height: 19em;
+    .mat-calendar-period-button {
+      margin-left: 0px;
+      margin-right: 0px;
+    }
   }
 }
