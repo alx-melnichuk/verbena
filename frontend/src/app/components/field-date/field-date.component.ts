@@ -11,8 +11,8 @@ import { DateAdapter } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
-import { TranslateModule } from '@ngx-translate/core';
-  
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+
 @Component({
   selector: 'app-field-date',
   exportAs: 'appFieldDate',
@@ -39,6 +39,8 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
   @Input()
   public label: string = 'field-date.label';
   @Input()
+  public locale: string | null = null;
+  @Input()
   public maxDate: Date | null | undefined;
   @Input()
   public minDate: Date | null | undefined;
@@ -57,8 +59,9 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
   public formGroup: FormGroup = new FormGroup({ date: this.formControl });
 
   private readonly dateAdapter: DateAdapter<Date> = inject(DateAdapter);
+  private localeError: string | null = null;
 
-  constructor() {}
+  constructor(private translate: TranslateService) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['isRequired']) {
@@ -66,6 +69,9 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
     }
     if (!!changes['isDisabled']) {
       this.setDisabledState(this.isDisabled);
+    }
+    if (!!changes['locale'] && !!this.formControl.errors) {
+      this.validate(this.formControl);
     }
   }
 
@@ -95,7 +101,23 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
   // ** Validator - start ** createFieldTimeMinValidator()
 
   public validate(control: AbstractControl): ValidationErrors | null {
-    return this.addDateStringToError(this.formControl.errors);
+    const isLocaleShift = this.localeError != this.locale;
+    const errors = this.formControl.errors;
+    if (errors != null) {
+      // Add extended tags. (min_s, max_s, actual_s)
+      const minDate = errors['matDatepickerMin'];
+      this.checkDateAndMapStr(minDate, 'min', isLocaleShift);
+      this.checkDateAndMapStr(minDate, 'actual', isLocaleShift);
+  
+      const maxDate = errors['matDatepickerMax'];
+      this.checkDateAndMapStr(maxDate, 'max', isLocaleShift);
+      this.checkDateAndMapStr(maxDate, 'actual', isLocaleShift);
+
+      if (isLocaleShift) {
+        this.localeError = this.locale;
+      }
+    }
+    return errors;
   }
 
   // ** Validator - finish **
@@ -108,12 +130,11 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
 
   public getErrorMsg(errors: ValidationErrors | null): string {
     let result: string = '';
-    const errors2 = this.addDateStringToError(errors);
-    const errorsList: string[] = errors2 != null ? Object.keys(errors2) : [];
-    const idxRequired = errorsList.indexOf('required');
-    const errorProps = (idxRequired > -1 ? errorsList.splice(idxRequired, 1) : errorsList);
-    for (let index = 0; index < errorProps.length && !result; index++) {
-      const error: string = errorProps[index];
+    const errorList: string[] = Object.keys(errors || {});
+    const idxRequired = errorList.indexOf('required');
+    const errorList2 = (idxRequired > -1 ? errorList.splice(idxRequired, 1) : errorList);
+    for (let index = 0; index < errorList2.length && !result; index++) {
+      const error: string = errorList2[index];
       result = !result && 'matDatepickerParse' === error ? 'Validation.date:invalid_format' : result;
       result = !result && 'matDatepickerMin' === error ? 'Validation.date:minDate' : result;
       result = !result && 'matDatepickerMax' === error ? 'Validation.date:maxDate' : result;
@@ -125,12 +146,18 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
   }
 
   public doDateInput(e: any): void {
+    // Add extended tags. (min_s, max_s, actual_s)
+    this.validate(this.formControl);
     this.dateInput.emit(this.formControl.value);
   }
   
   public doDateChange(e: any): void {
     this.dateChange.emit(this.formControl.value);
     this.onChange(this.formControl.value);
+  }
+
+  public doTranslate(value: string, errors: ValidationErrors | null): string {
+    return !!value ? this.translate.instant(value, (errors as Object)) : '';
   }
 
   // ** Private API **
@@ -142,23 +169,12 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
     ];
     this.formControl.setValidators(newValidator);
   }
-  private addDateStringToError(errors: ValidationErrors | null): ValidationErrors | null {
-    if (errors != null) {
-      const minDate = errors['matDatepickerMin'];
-      if (minDate?.min != null && minDate?.min_s == null) {
-        minDate['min_s'] = this.dateAdapter.format(minDate.min, null);
-      }
-      if (minDate?.actual != null && minDate?.actual_s == null) {
-        minDate['actual_s'] = this.dateAdapter.format(minDate.actual, null);
-      }
-      const maxDate = errors['matDatepickerMax'];
-      if (maxDate?.max != null && maxDate?.max_s == null) {
-        maxDate['max_s'] = this.dateAdapter.format(maxDate.max, null);
-      }
-      if (maxDate?.actual != null && maxDate?.actual_s == null) {
-        maxDate['actual_s'] = this.dateAdapter.format(maxDate.actual, null);
-      }
+  // Add extended tags. (min_s, max_s, actual_s)
+  private checkDateAndMapStr(error_item: ValidationErrors | null, key: string, isLocaleShift: boolean): ValidationErrors | null {
+    const key2 = key + '_s';
+    if (error_item != null && !!key && error_item[key] != null && (error_item[key2] == null || isLocaleShift)) {
+      error_item[key2] = this.dateAdapter.format(error_item[key], null);
     }
-    return errors;
+    return error_item;
   }
 }
