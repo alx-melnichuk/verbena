@@ -115,10 +115,8 @@ export class DateTimeFormatPipe implements PipeTransform {
     options?: Intl.DateTimeFormatOptions | null | undefined,
   ): string | null {
     let result: string | null = null;
-    const valueDate: Date | null = typeof value == 'number'
-      ? (!isNaN(value) ? new Date(value) : null)
-      : (typeof value == 'string' ? new Date(value) 
-        : (value as Date));
+    const valueDate: Date | null = typeof value == 'number' ? (!isNaN(value) ? new Date(value) : null)
+      : (typeof value == 'string' ? new Date(value) : (value as Date));
     
     if (valueDate != null) {
       const opts = options != null && !!Object.keys(options).length ? options 
@@ -127,7 +125,7 @@ export class DateTimeFormatPipe implements PipeTransform {
         
       const dtf = new Intl.DateTimeFormat(locale || this.dtfc?.locale || undefined, opts);
       result = dtf.format(valueDate);
-      if (!!this.dtfc?.afterFormat) {
+      if (!!result && !!this.dtfc?.afterFormat) {
         result = this.dtfc.afterFormat(result, locale || window.navigator.language, options);
       }
     }
