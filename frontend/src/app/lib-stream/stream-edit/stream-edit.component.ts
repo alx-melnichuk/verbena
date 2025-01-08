@@ -5,10 +5,10 @@ import { PanelStreamEditorComponent } from '../panel-stream-editor/panel-stream-
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { LocaleService   } from 'src/app/common/locale.service';
 import { ROUTE_STREAM_EDIT, ROUTE_STREAM_LIST } from 'src/app/common/routes';
-import { HttpErrorUtil } from 'src/app/utils/http-error.util';
-
-import { StreamService } from '../stream.service';
+import { HttpErrorUtil   } from 'src/app/utils/http-error.util';
+import { StreamService   } from '../stream.service';
 import { StreamDto, UpdateStreamFileDto } from '../stream-api.interface';
 import { StreamConfigDto } from '../stream-config.interface';
 
@@ -38,6 +38,7 @@ export class StreamEditComponent {
     private changeDetectorRef: ChangeDetectorRef,
     private route: ActivatedRoute,
     private router: Router,
+    public localeService: LocaleService,
     private streamService: StreamService,
   ) {
     this.streamDto = this.route.snapshot.data['streamDto'];
