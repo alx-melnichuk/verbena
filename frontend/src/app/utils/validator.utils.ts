@@ -32,9 +32,9 @@ export class ValidatorUtils {
   // Get an error template based on the specified parameters.
   public static getErrorMsg(errors: ValidationErrors | null, name: string): string {
     let result: string = '';
-    const errorsProps: string[] = errors != null ? Object.keys(errors) : [];
-    for (let index = 0; index < errorsProps.length && !result; index++) {
-      const error: string = errorsProps[index];
+    const errorList: string[] = Object.keys(errors || {});
+    for (let index = 0; index < errorList.length && !result; index++) {
+      const error: string = errorList[index];
       result = !result && 'required' === error ? `Validation.${name}:required` : result;
       result = !result && 'minlength' === error ? `Validation.${name}:min_length` : result;
       result = !result && 'maxlength' === error ? `Validation.${name}:max_length` : result;
