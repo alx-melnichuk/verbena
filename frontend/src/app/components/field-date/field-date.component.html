@@ -18,6 +18,6 @@
     <mat-datepicker-toggle matSuffix [for]="datepickerItem"></mat-datepicker-toggle>
     <mat-datepicker #datepickerItem panelClass="cstm-calendar"></mat-datepicker>
     <mat-hint>{{ hint | translate }}</mat-hint>
-    <mat-error>{{ doTranslate(getErrorMsg(formControl.errors), formControl.errors) }}</mat-error>
+    <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
   </mat-form-field>
 </ng-container>
