@@ -23,6 +23,16 @@ export class AppDateAdapter extends NativeDateAdapter {
   
   protected formatParts: Intl.DateTimeFormatPart[] = [];
 
+  override getDayOfWeekNames(style: 'long' | 'short' | 'narrow'): string[] {
+    const style_value = (style == 'narrow' ? 'short' : style);
+    const list = super.getDayOfWeekNames(style_value);
+    const result: string[] = [];
+    for (let idx = 0; idx < list.length; idx++) {
+      result[idx] = this.capitalizeFirstLetter(list[idx], this.locale) || '';
+    }
+    return result;
+  }
+
   override parse(value: any, parseFormat: any): Date | null {
     let result: Date | null = null;
     const value_type = typeof value;
@@ -77,4 +87,7 @@ export class AppDateAdapter extends NativeDateAdapter {
     }
     return result;
   }
+  private capitalizeFirstLetter(value: string | null | undefined, locale: string | null | undefined): string | null | undefined {
+    return !!value ? value.charAt(0).toLocaleUpperCase(locale || undefined) + value.slice(1) : value;
+  } 
 }
