@@ -13,10 +13,14 @@
   <span psp-mr-lf-1>{{ innStartTime }}</span>
 </div>
 <div class="psp-props">
-  <span psp-mr-lf-1 class="psp-icon psp-users-group"></span>
-  <span psp-mr-lf-1 class="psp-count">{{ countOfViewer || 0 }}</span>
-  <span psp-mr-lf-1 class="psp-icon psp-clock"></span>
-  <span psp-mr-lf-1 class="psp-timer">
+  <svg psp-mr-lf-1 class="psp-users-group psp-ver-md">
+    <use href="assets/icons/lib-concept/panel-stream-params/users-group-bin.svg#users-group-bin"></use>
+  </svg>
+  <span psp-mr-lf-1 class="psp-count psp-ver-md">{{ countOfViewer || 0 }}</span>
+  <svg psp-mr-lf-1 class="psp-clock-5hours psp-ver-md">
+    <use href="assets/icons/lib-concept/panel-stream-params/clock-5hours-bin.svg#clock-5hours-bin"></use>
+  </svg>
+  <span psp-mr-lf-1 class="psp-timer psp-ver-md">
     <app-date-time-timer [isActive]="true" [startDate]="innStartDateTime">
     </app-date-time-timer>
   </span>
