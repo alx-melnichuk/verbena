@@ -23,6 +23,12 @@ export class PanelStreamStateComponent implements OnChanges, OnInit {
   @Input()
   public streamState: StreamState | null | undefined = null;
 
+  public strmStWaiting: StreamState = StreamState.waiting;
+  public strmStPreparing: StreamState = StreamState.preparing;
+  public strmStStarted: StreamState = StreamState.started;
+  public strmStPaused: StreamState = StreamState.paused;
+  public strmStStopped: StreamState = StreamState.stopped;
+
   public valueText: string | null = null;
   
   constructor(

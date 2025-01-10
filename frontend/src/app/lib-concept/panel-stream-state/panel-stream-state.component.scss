@@ -24,39 +24,45 @@ app-panel-stream-state {
     justify-content: center;
   } 
    
-  .pss-icon {
-    color: var(--pss-icon-cl);
-    background-color: currentColor;
-    display: inline-block;
-    height: var(---pss-icon-wd);
-    mask-size: cover;
-    width: var(---pss-icon-wd);
+  @container cnt-state (width <= 768px) {
+    .pss-svg-sz {
+      ---pss-svg-wd: min(30vh, 30vw);
+    }
+    .pss-text {
+      ---pss-svg-wd: min(30vh, 30vw);
+      ---pss-text-fn-sz: min(2.5rem, min(11vh, 11vw)); // min(40px, 36.8px)
+    }
   }
-  
-  &[state="stopped"] .pss-icon { mask-image: url('/assets/icons/panel-stream-state/has-ended-bin.svg'); }
-  &[state="waiting" ] .pss-icon { mask-image: url('/assets/icons/panel-stream-state/has-not-started-bin.svg'); }
-  &[state="preparing" ] .pss-icon { mask-image: url('/assets/icons/panel-stream-state/has-not-started-bin.svg'); }
-  &[state="paused" ] .pss-icon { mask-image: url('/assets/icons/panel-stream-state/has-paused-bin.svg'); }
-  
+  @container cnt-state (768px < width <= 1024px) {
+    .pss-svg-sz {
+      ---pss-svg-wd: min(25vh, 25vw);
+    }
+    .pss-text {
+      ---pss-svg-wd: min(25vh, 25vw);
+      ---pss-text-fn-sz: 3.5rem; // 56px
+    }
+  }
+  @container cnt-state (1024px < width) {
+    .pss-svg-sz {
+      ---pss-svg-wd: min(23vh, 23vw);
+    }
+    .pss-text {
+      ---pss-svg-wd: min(23vh, 23vw);
+      ---pss-text-fn-sz: 4rem; // 64px
+    }
+  }
+
   .pss-text {
     font-size: var(---pss-text-fn-sz);
     font-style: normal;
-    font-weight: 700;
+    font-weight: 500;
     margin-top: 1em;
-    max-width: 95%;
+    max-width: calc(100% - var(---pss-svg-wd));
     text-align: center;
   }
-
-  @container cnt-state (width <= 768px) {
-    .pss-icon { ---pss-icon-wd: min(30vh, 30vw); }
-    .pss-text { ---pss-text-fn-sz: min(2.5em, 11vh); } // 36.8px
-  }
-  @container cnt-state (768px < width <= 1024px) {
-    .pss-icon { ---pss-icon-wd: min(25vh, 25vw); }
-    .pss-text { ---pss-text-fn-sz: 3.5em; } // 56px
-  }
-  @container cnt-state (1024px < width) {
-    .pss-icon { ---pss-icon-wd: min(23vh, 23vw); }
-    .pss-text { ---pss-text-fn-sz: 4em; } // 64px
+  // ** icon **
+  .pss-svg-sz {
+    height: var(---pss-svg-wd);
+    width: var(---pss-svg-wd);
   }
 }
