@@ -1,27 +1,35 @@
 @if (isShowBntPrepare(state)) {
-  <button mat-stroked-button class="psa-prepare" (click)="doChangeState(statePreparing)">
-    <span class="psa-icon prepare"></span>
-    <span class="psa-vert">{{ 'panel-stream-actions.prepare_stream' | translate }}</span>
+  <button mat-stroked-button psa-pd-lf-0_5 (click)="doChangeState(statePreparing)">
+    <svg psa-mr-rg-0_25 class="psa-svg-sz psa-ver-md">
+      <use href="assets/icons/lib-concept/panel-stream-actions/prepare-bin.svg#prepare-bin"></use>
+    </svg>
+    <span class="psa-ver-md">{{ 'panel-stream-actions.prepare_stream' | translate }}</span>
   </button>
 }
 
 @if (isShowBntStart(state)) {
-  <button mat-stroked-button class="psa-play" (click)="doChangeState(stateStarted)">
-    <span class="psa-icon play"></span>
-    <span class="psa-vert">{{ 'panel-stream-actions.go_live_stream' | translate }}</span>
+  <button mat-stroked-button psa-pd-lf-0_25 (click)="doChangeState(stateStarted)">
+    <svg class="psa-svg-sz psa-ver-md">
+      <use href="assets/icons/lib-concept/panel-stream-actions/play-bin.svg#play-bin"></use>
+    </svg>
+    <span class="psa-ver-md">{{ 'panel-stream-actions.go_live_stream' | translate }}</span>
   </button>
 }
 
 @if (isShowBntPause(state)) {
-  <button mat-stroked-button color="warn" class="psa-pause" (click)="doChangeState(statePaused)">
-    <span class="psa-icon pause"></span>
-    <span class="psa-vert">{{ 'panel-stream-actions.pause_stream' | translate }}</span>
+  <button mat-stroked-button psa-pd-lf-0_25 (click)="doChangeState(statePaused)">
+    <svg class="psa-svg-sz psa-ver-md">
+      <use href="assets/icons/lib-concept/panel-stream-actions/pause-bin.svg#pause-bin"></use>
+    </svg>
+    <span class="psa-ver-md">{{ 'panel-stream-actions.pause_stream' | translate }}</span>
   </button>
 }
 
 @if (isShowBtnStop(state)) {
-  <button mat-stroked-button color="warn" class="psa-stop" (click)="doChangeState(stateStopped)">
-    <span class="psa-icon stop"></span>
-    <span class="psa-vert">{{ 'panel-stream-actions.stop_stream' | translate }}</span>
+  <button mat-stroked-button psa-mr-lf-0_5 psa-pd-lf-0_25 (click)="doChangeState(stateStopped)">
+    <svg class="psa-svg-sz psa-ver-md">
+      <use href="assets/icons/lib-concept/panel-stream-actions/stop-bin.svg#stop-bin"></use>
+    </svg>
+    <span class="psa-ver-md">{{ 'panel-stream-actions.stop_stream' | translate }}</span>
   </button>
 }
