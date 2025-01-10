@@ -10,16 +10,17 @@ import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 
 import { APP_DATE_FORMATS, AppDateAdapter } from './app-date-adapter';
 import { AppErrorHandler } from './app-error-handler';
-import { APP_ROUTES } from './app.routes';
+import { APP_ROUTES      } from './app.routes';
 import { AuthorizationInterceptor    } from './common/authorization.interceptor';
+import { ENV_IS_PROD                 } from './common/constants';
 import { APP_DATE_TIME_FORMAT_CONFIG } from './common/date-time-format.pipe';
 import { InitializationService       } from './common/initialization.service';
 import { LocaleService               } from './common/locale.service';
-import { DateUtil } from './utils/date.utils';
+import { DateUtil        } from './utils/date.utils';
 
 // AoT requires an exported function for factories
 export const TRANSLATE_LOADER_FACTORY = (httpClient: HttpClient): TranslateHttpLoader => {
-  console.log(`HTTP_LOADER_FACTORY()`); // #
+  if (!ENV_IS_PROD) { console.log(`HTTP_LOADER_FACTORY()`); }
   return new TranslateHttpLoader(httpClient, './assets/i18n/', '.json');
 };
 

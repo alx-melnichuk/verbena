@@ -3,8 +3,9 @@ import { DateAdapter } from "@angular/material/core";
 import { TranslateService } from "@ngx-translate/core";
 import { first } from 'rxjs/operators';
 
-import { LOCALE_EN, LOCALE_LIST } from './constants';
 import { HttpErrorUtil } from "../utils/http-error.util";
+
+import { ENV_IS_PROD, LOCALE_EN, LOCALE_LIST } from './constants';
 
 @Injectable({
   providedIn: "root"
@@ -16,7 +17,7 @@ export class LocaleService {
     private dateAdapter: DateAdapter<Date>,
     private translate: TranslateService,
   ) {
-    console.log(`#1-LocaleService();`); // #
+    if (!ENV_IS_PROD) { console.log(`#1-LocaleService();`); }
   }
 
   // ** Locale ** 

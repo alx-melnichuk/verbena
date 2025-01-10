@@ -1,3 +1,4 @@
+import { environment } from 'src/environments/environment';
 
 // maximum file size for upload
 export const MAX_FILE_SIZE = (5 * 1024 * 1024); // 5MB
@@ -30,3 +31,6 @@ export const LOCALE_EN = 'en-US';
 export const LOCALE_DE = 'de-DE';
 export const LOCALE_UK = 'uk-UA';
 export const LOCALE_LIST = [LOCALE_EN, LOCALE_DE, LOCALE_UK];
+
+// Sign of the "production" mode.
+export const ENV_IS_PROD = environment.production;

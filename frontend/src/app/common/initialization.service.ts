@@ -6,7 +6,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { ProfileService } from '../lib-profile/profile.service';
 import { AuthorizationUtil } from '../utils/authorization.util';
 
-import { COLOR_SCHEME_LIST, LOCALE_EN, LOCALE_LIST, SCHEME_DARK, SCHEME_LIGHT } from './constants';
+import { COLOR_SCHEME_LIST, ENV_IS_PROD, LOCALE_EN, LOCALE_LIST, SCHEME_DARK, SCHEME_LIGHT } from './constants';
 import { LocaleService } from './locale.service';
 import { ROUTE_LOGIN } from './routes';
 
@@ -32,7 +32,7 @@ export class InitializationService {
     private localeService: LocaleService,
     private profileService: ProfileService,
   ) {
-    console.log(`#2-InitializationService();`); // #
+    if (!ENV_IS_PROD) { console.log(`#2-InitializationService();`); }
   }
 
   public initTranslate(): Promise<void | unknown> {

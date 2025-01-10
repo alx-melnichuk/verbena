@@ -4,12 +4,13 @@ import { Router } from '@angular/router';
 import { Observable, throwError, Subject } from 'rxjs';
 import { catchError, switchMap, take } from 'rxjs/operators';
 
-import { Uri } from './uri';
-import { LIST_PUBLIC_METHODS } from './public-methods';
-import { ROUTE_LOGIN } from './routes';
-
 import { ProfileService } from '../lib-profile/profile.service';
 import { TokenUpdate } from '../lib-profile/profile-api.interface';
+
+import { ENV_IS_PROD } from './constants';
+import { LIST_PUBLIC_METHODS } from './public-methods';
+import { ROUTE_LOGIN } from './routes';
+import { Uri } from './uri';
 
 const CN_BEARER = 'Bearer ';
 
@@ -28,7 +29,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
     private router: Router,
     private profileService: ProfileService,
   ) {
-    console.log(`#3-AuthorizationInterceptor();`); // #-
+    if (!ENV_IS_PROD) { console.log(`#3-AuthorizationInterceptor();`); }
     this.tokenUpdateSrv = this.profileService;
   }
 
