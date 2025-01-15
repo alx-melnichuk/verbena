@@ -1,0 +1,32 @@
+<div class="ch-header">
+  <div class="ch-controls">
+
+    <button mat-icon-button type="button" class="mat-calendar-previous-button" (click)="previousClicked()"
+      [disabled]="!previousEnabled()" [attr.aria-label]="prevButtonLabel">
+      <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+        <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+       </svg>
+    </button>
+
+    <div class="ch-spacer"></div>
+    
+    <button mat-button type="button" class="ch-period-button" (click)="currentPeriodClicked()" 
+      [attr.aria-label]="periodButtonLabel" [attr.aria-describedby]="_periodButtonLabelId">
+      <span aria-hidden="true">{{ periodButtonText }}</span>
+      <svg class="ch-arrow" [class.ch-invert]="calendar.currentView !== 'month'"
+        viewBox="0 0 10 5" focusable="false" aria-hidden="true">
+        <polygon points="0,0 5,5 10,0"/>
+      </svg>
+    </button>
+
+    <div class="ch-spacer"></div>
+
+    <button mat-icon-button type="button" class="mat-calendar-next-button" (click)="nextClicked()"
+      [disabled]="!nextEnabled()" [attr.aria-label]="nextButtonLabel">
+      <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+        <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+      </svg>
+    </button>
+
+  </div>
+</div>
