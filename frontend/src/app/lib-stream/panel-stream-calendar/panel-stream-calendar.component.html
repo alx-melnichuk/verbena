@@ -1,9 +1,11 @@
 <mat-calendar #calendar class="cstm-calendar"
-  [startView]="'month'"
-  [selected]="selected"
-  [startAt]="selected || startAtDate"
-  [minDate]="minDate"
-  [maxDate]="maxDate"
   [dateClass]="dateClassFn"
-  (selectedChange)="doChangeSelected($event)">
+  [headerComponent]="calendarHeader"
+  [maxDate]="maxDate"
+  [minDate]="minDate"
+  [startAt]="selected || startAtDate"
+  [selected]="selected"
+  [startView]="'month'"
+  (selectedChange)="doChangeSelected($event)"
+  (viewChanged)="doViewChanged($event)">
 </mat-calendar>

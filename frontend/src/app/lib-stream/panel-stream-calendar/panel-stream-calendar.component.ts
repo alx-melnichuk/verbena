@@ -1,32 +1,31 @@
-import {
-  AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, 
-  OnInit, Output, SimpleChanges, ViewChild, ViewEncapsulation
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnChanges, Output, SimpleChanges,
+  ViewChild, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule } from '@angular/material/datepicker';
-import { Subscription } from 'rxjs';
 
-import { StringDateTime     } from 'src/app/common/string-date-time';
+import { APP_CALENDAR_HEADER_EVENT, CalendarHeaderComponent } from 'src/app/components/calendar-header/calendar-header.component';
 import { HtmlElemUtil       } from 'src/app/utils/html-elem.util';
-import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
 
 import { StreamsPeriodDto } from '../stream-api.interface';
 
 export const PSC_DAY_WITH_STREAMS = 'psc-day-with-streams';
 export const PSC_DAY = '---psc-day-';
 
-type PeriodMapType = {[key: string]: number};
+type MarkedDatesMapTp = {[key: string]: number};
 
 @Component({
   selector: 'app-panel-stream-calendar',
   standalone: true,
-  imports: [CommonModule, MatDatepickerModule],
+  imports: [CommonModule, MatDatepickerModule, CalendarHeaderComponent],
   templateUrl: './panel-stream-calendar.component.html',
   styleUrls: ['./panel-stream-calendar.component.scss', 'panel-stream-calendar-emblem.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [
+    { provide: APP_CALENDAR_HEADER_EVENT, useExisting: PanelStreamCalendarComponent }
+  ],
 })
-export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
+export class PanelStreamCalendarComponent implements OnChanges {
 
   @Input()
   public locale: string | null = null;
@@ -47,20 +46,15 @@ export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterVie
   @ViewChild('calendar')
   public calendar: MatCalendar<Date> | null = null;
 
-  public startAtDate: Date;
-  public activeDate: Date;
+  public startAtDate: Date = new Date(new Date(Date.now()).setHours(0, 0, 0, 0));
 
-  private stateChangesSub: Subscription | undefined;
-  private markedDatesStr: string[] = [];
-  private markedPeriodMap: PeriodMapType = {};
+  readonly calendarHeader = CalendarHeaderComponent;
+
+  private markedPeriodMap: MarkedDatesMapTp = {};
 
   constructor(
     public hostRef: ElementRef<HTMLElement>,
   ) {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    this.startAtDate = now;
-    this.activeDate = now;
   }
   
   public ngOnChanges(changes: SimpleChanges): void {
@@ -69,94 +63,78 @@ export class PanelStreamCalendarComponent implements OnInit, OnChanges, AfterVie
       this.calendar.activeDate = new Date(this.calendar.activeDate);
     }
     if (!!changes['markedDates'] && !!this.markedDates && !!this.calendar) {
-      this.settingPropertiesByPeriodDate(this.hostRef, this.markedPeriodMap, false);
-      this.markedPeriodMap = this.preparePeriodDate(this.markedDates);
+      this.settingPropsByMarkedPeriodMap(this.hostRef, this.markedPeriodMap, false);
+      this.markedPeriodMap = this.getMarkedPeriodMap(this.markedDates);
       this.calendar.updateTodaysDate();
-      this.settingPropertiesByPeriodDate(this.hostRef, this.markedPeriodMap, true);
+      this.settingPropsByMarkedPeriodMap(this.hostRef, this.markedPeriodMap, true);
     }
   }
   
-  public ngOnInit(): void {
-  }
-
-  public ngAfterViewInit(): void {
-    if (!!this.calendar) {
-      this.activeDate = new Date(this.calendar.activeDate);
-      this.stateChangesSub = this.calendar.stateChanges
-        .subscribe(() => this.changeSateCalendar());
+  // ** type: APP_CALENDAR_HEADER_EVENT **
+  public activeMonthChanged = (): void => {
+    if (this.calendar != null) {
+      this.changeCalendarEmit(this.firstDayOfMonth(this.calendar.activeDate));
     }
   }
 
-  public ngOnDestroy(): void {
-    this.stateChangesSub?.unsubscribe();
-  }
-  
   // ** Public API **
 
-  public doChangeSelected(value: Date | null): void {
-    if (!!value) {
-      this.changeSelected.emit(value);
+  public doViewChanged(calendarView: string): void {
+    if (this.calendar != null && 'month' === calendarView) {
+      this.changeCalendarEmit(this.firstDayOfMonth(this.calendar.activeDate));
     }
   }
-  // Function that can be used to add custom CSS classes to dates.
+
+  public doChangeSelected(value: Date | null): void {
+    this.changeSelected.emit(value);
+  }
+  // A function that adds additional CSS classes to date cells.
   public dateClassFn: MatCalendarCellClassFunction<Date> = (date: Date, view: 'month' | 'year' | 'multi-year'): string[] => {
     let result: string[] = [];
-    // Only highlight dates inside the month view.
+    // Only highlight dates inside the "month" view.
     if (view === 'month') {
-      const value = this.getInfoDate(date);
-      if (this.markedDatesStr.includes(value)) {
-        result.push(PSC_DAY_WITH_STREAMS);
-      }
-      const itemLocal: StringDateTime = StringDateTimeUtil.toISOLocal(date);
-      const itemCount = this.markedPeriodMap[itemLocal];
+      const itemLocal = this.getOnlyDate(date);
+      const itemCount = itemLocal != null ? this.markedPeriodMap[itemLocal] : null;
       if (itemCount != null) {
-        result = [PSC_DAY_WITH_STREAMS];
-        result.push('psc-day-' + ('00' + date.getDate()).slice(-2));
+        result = [PSC_DAY_WITH_STREAMS, 'psc-day-' + ('00' + date.getDate()).slice(-2)];
       }
     }
     return result;
   };
 
-  public changeSateCalendar = (): void => {
-    if (!this.calendar) {
-      return;
-    }
-    const newActiveDate: Date = new Date(this.calendar.activeDate);
-    const newActiveDateYearMonth = this.getInfoDate(newActiveDate).slice(0, 7);
-
-    const currActiveDateYearMonth = this.getInfoDate(this.activeDate).slice(0, 7);
-    if (!!newActiveDate && currActiveDateYearMonth != newActiveDateYearMonth) {
-      const activeDate = new Date(newActiveDate.getFullYear(), newActiveDate.getMonth(), 1, 0, 0, 0, 0);
-      this.activeDate = activeDate;
-      this.changeCalendar.emit(new Date(activeDate));
-    }
-  }
-
   // ** Private API **
 
-  private getInfoDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = ('00' + (date.getMonth() + 1)).slice(-2);
-    const day = ('00' + date.getDate()).slice(-2);
-    return `${year}-${month}-${day}`;
+  private getOnlyDate(value: Date | null): string | null {
+    return value == null ? null
+      : value.getFullYear() + '-' + ('00' + (value.getMonth() + 1)).slice(-2) + '-' + ('00' + value.getDate()).slice(-2);
   }
-
-  private preparePeriodDate(list: StreamsPeriodDto[]): PeriodMapType {
-    const result: PeriodMapType = {};
+  private getMarkedPeriodMap(list: StreamsPeriodDto[]): MarkedDatesMapTp {
+    const result: MarkedDatesMapTp = {};
     for (let idx = 0; idx < list.length; idx++) {
-      const itemDate: Date | null = new Date(list[idx].date);
-      if (!itemDate) continue;
-      itemDate.setHours(0, 0, 0, 0);
-      const itemLocal: StringDateTime = StringDateTimeUtil.toISOLocal(itemDate);
+      const item: Date | null = new Date(list[idx].date);
+      if (!item) continue;
+      item.setHours(0, 0, 0, 0);
+      const itemLocal = this.getOnlyDate(item);
+      if (!itemLocal) continue;
       result[itemLocal] = (result[itemLocal] || 0) + list[idx].count;
     }
     return result;
   }
-  private settingPropertiesByPeriodDate(elem: ElementRef<HTMLElement> | null, periodMap: PeriodMapType, isSetValue: boolean): void {
-    const list: string[] = Object.keys(periodMap);
+  private settingPropsByMarkedPeriodMap(el: ElementRef<HTMLElement> | null, markedDatesMap: MarkedDatesMapTp, isSetValue: boolean): void {
+    const list: string[] = Object.keys(markedDatesMap);
     for (let idx = 0; idx < list.length; idx++) {
-      const value = isSetValue ? periodMap[list[idx]].toString() : null;
-      HtmlElemUtil.setProperty(elem, PSC_DAY + list[idx].slice(8,10), value);
+      const value = isSetValue ? markedDatesMap[list[idx]].toString() : null;
+      HtmlElemUtil.setProperty(el, PSC_DAY + list[idx].slice(8,10), value);
     }
+  }
+  private firstDayOfMonth(value: Date | null): Date | null {
+    return value != null ? new Date(value.getFullYear(), value.getMonth(), 1, 0, 0, 0, 0) : null;
+  }
+  private async changeCalendarEmit(newMonthDate: Date | null): Promise<any> {
+    return newMonthDate == null 
+      ? Promise.resolve() 
+      : Promise.resolve().then(() => {
+          this.changeCalendar.emit(newMonthDate);
+        });
   }
 }
