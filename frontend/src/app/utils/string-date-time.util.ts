@@ -38,15 +38,5 @@ export class StringDateTimeUtil {
       }
       return new Date(val);
     }
-    /** Converts to ISO 8601 format and displays time zone 'yyyy-MM-ddThh:mm:ss[+-]hh:mm' */
-    public static toISOLocal(val: Date): StringDateTime {
-      const options: Intl.DateTimeFormatOptions = {
-        hour: "2-digit", minute: "2-digit", second:"2-digit", hourCycle:"h23", timeZoneName: 'longOffset'
-      };
-      const str = (new Intl.DateTimeFormat('default', options)).format(val);  // '00:00:00 GMT+02:00'
-      // 'yyyy-MM-ddThh:mm:ss[+-]hh:mm'
-      const date = `${val.getFullYear()}-${('00' + (val.getMonth() + 1)).slice(-2)}-${('00' + val.getDate()).slice(-2)}`;
-      return `${date}T${str.slice(0,8)}${str.slice(12,18)}`;
-    }
   }
   
