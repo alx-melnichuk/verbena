@@ -27,10 +27,9 @@ app-panel-stream-info {
     margin-bottom: 1px;
     margin-left: 1px;
     margin-right: 1px;
+    min-width: 25rem;
     &:first-of-type { margin-top: 1px; }
     &:not(:first-of-type) { margin-top: 0.75rem; }
-    &>.psi-logo { flex: 0 0 8rem; }
-    &>.psi-details { flex-grow: 1; }
   }
   @container cnt-stream-card (width < 43rem) { // width < 688px
     .psi-actions {
@@ -66,6 +65,7 @@ app-panel-stream-info {
     border-radius: 0.75rem;
     cursor: pointer;
     display: flex;
+    flex: 0 0 8rem;
     height: 6rem;
     justify-content: center;
   }
@@ -73,6 +73,8 @@ app-panel-stream-info {
   // ** Details **
   .psi-details {
     box-sizing: border-box;
+    flex-grow: 1;
+    min-width: 9rem;
     padding: 0.25rem 0.5rem;
   }
   .psi-date {
