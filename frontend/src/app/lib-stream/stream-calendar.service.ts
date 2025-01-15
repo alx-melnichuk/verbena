@@ -73,24 +73,6 @@ export class StreamCalendarService {
     .finally(() => this.calendarLoading = false);
   }
 
-  private convertStringDateTimeToStreamsPeriodDto(response: StringDateTime[]): StreamsPeriodDto[] {
-    const result: StreamsPeriodDto[] = [];
-    if (Array.isArray(response)) {
-      const obj: {[key: string]: number} = {};
-      for (let idx = 0; idx < response.length; idx++) {
-        const itemDate: Date | null = StringDateTimeUtil.toDate(response[idx]);
-        if (!itemDate) continue;
-        itemDate.setHours(0, 0, 0, 0);
-        const itemLocal = StringDateTimeUtil.toISOLocal(itemDate);
-        obj[itemLocal] = (obj[itemLocal] || 0) + 1;
-      }
-      const keys = Object.keys(obj);
-      for (let i = 0; i < keys.length; i++) {
-        result.push({ date: keys[i], count: obj[keys[i]] });
-      }
-    }
-    return result;
-  }
   // ** "Streams Event" **
 
   /** Clear array of "Streams Event". */
@@ -146,4 +128,28 @@ export class StreamCalendarService {
     const daysInMonth = DateUtil.daysInMonth(maxDateValue);
     this.calendarMaxDate = DateUtil.addDay(maxDateValue, daysInMonth - maxDateValue.getDate());
   }
+  private getOnlyDate(value: Date | null): string | null {
+    return value == null ? null
+      : value.getFullYear() + '-' + ('00' + (value.getMonth() + 1)).slice(-2) + '-' + ('00' + value.getDate()).slice(-2);
+  }
+  private convertStringDateTimeToStreamsPeriodDto(response: StringDateTime[]): StreamsPeriodDto[] {
+    const result: StreamsPeriodDto[] = [];
+    if (Array.isArray(response)) {
+      const obj: {[key: string]: number} = {};
+      for (let idx = 0; idx < response.length; idx++) {
+        const itemDate: Date | null = StringDateTimeUtil.toDate(response[idx]);
+        if (!itemDate) continue;
+        itemDate.setHours(0, 0, 0, 0);
+        const itemLocal = this.getOnlyDate(itemDate);
+        if (!itemLocal) continue;
+        obj[itemLocal] = (obj[itemLocal] || 0) + 1;
+      }
+      const keys = Object.keys(obj);
+      for (let i = 0; i < keys.length; i++) {
+        result.push({ date: keys[i], count: obj[keys[i]] });
+      }
+    }
+    return result;
+  }
+
 }
