@@ -114,8 +114,7 @@ app-stream-list {
     display: flex;
     flex-direction: column;
     flex: 0 0 auto;
-    height: calc((100% - var(---sl-pd)) / 2);
+    height: max(calc((100% - var(---sl-pd)) / 2), 17rem);
     overflow-y: hidden;
   }
-
 }
