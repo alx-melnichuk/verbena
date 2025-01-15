@@ -1,17 +1,15 @@
-import {
-  ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation, 
-  forwardRef, inject
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation, 
+  forwardRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-  AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule, 
-  ValidationErrors, Validator, ValidatorFn, Validators
-} from '@angular/forms';
+import { AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule, 
+  ValidationErrors, Validator, ValidatorFn, Validators } from '@angular/forms';
 import { DateAdapter } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { TranslateModule } from '@ngx-translate/core';
+
+import { CalendarHeaderComponent } from '../calendar-header/calendar-header.component';
 
 @Component({
   selector: 'app-field-date',
@@ -58,6 +56,7 @@ export class FieldDateComponent implements OnChanges, ControlValueAccessor, Vali
   public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
   public formGroup: FormGroup = new FormGroup({ date: this.formControl });
 
+  readonly calendarHeader = CalendarHeaderComponent;
   private readonly dateAdapter: DateAdapter<Date> = inject(DateAdapter);
   private localeError: string | null = null;
 
