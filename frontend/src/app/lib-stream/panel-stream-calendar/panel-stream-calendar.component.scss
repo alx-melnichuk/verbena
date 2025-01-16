@@ -1,7 +1,9 @@
 /*# sourceURL=panel-stream-calendar.component.scss */
 
 app-panel-stream-calendar {
-  container-name: cnt-stream-calendar;
+  container: cnt-stream-calendar / normal;
+  // Default value. The element is not a query container for any container size queries, 
+  // but remains a query container for container style queries.
   display: block;
 
   @container cnt-stream-calendar style(--color-scheme: dark) {
