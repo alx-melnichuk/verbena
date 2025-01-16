@@ -20,18 +20,15 @@ app-panel-stream-calendar {
     border: 1px solid var(---psc-pn-brd);
     border-radius: 1em;
     box-sizing: border-box;
-    min-height: 24em;
+    height: 100%;
+    min-height: 19em;
     min-width: 17em;
+
+    .mat-calendar-table-header-divider { display: none; }
+    .mat-calendar-body-label { visibility: hidden; }
   }
   button.psc-day-with-streams {
     background-color: var(---psc-sel-bg);
     border-radius: 100%;
-  }
-  .mat-calendar {
-    min-height: 19em;
-    .mat-calendar-period-button {
-      margin-left: 0px;
-      margin-right: 0px;
-    }
   }
 }
