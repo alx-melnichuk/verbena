@@ -16,7 +16,7 @@ export class MainMenuUtil {
       const isAuthRequired = AuthorizationUtil.isAuthorizationRequired(menuLink);
       const isAuthDenied = AuthorizationUtil.isAuthorizationDenied(menuLink);
       const name = menuLink.slice(prefix.length);
-      const menuName = 'main_menu.' + name.replaceAll('/','_');
+      const menuName = name.replaceAll('/','_');
       if ((isAuth && isAuthRequired) || (!isAuth && isAuthDenied) || (!isAuthRequired && !isAuthDenied)) {
         result.push({ name: menuName, link: menuLink });
       }

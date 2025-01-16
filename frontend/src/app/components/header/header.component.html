@@ -9,20 +9,22 @@
       routerLink="{{ pageMenu.link }}"
       routerLinkActive="h-page-menu-selected"
       ariaCurrentWhenActive="page">
-      {{ pageMenu.name | translate }}
+      {{ ('main_menu.' + pageMenu.name) | translate }}
     </a>
   }
 
   <span class="h-spacer"></span>
 
   <button mat-button [matMenuTriggerFor]="mainMenu" 
-    [ngClass]="['h-menu-avatar', (!profileDto ? 'h-menu-btn' : '')]">
-    <span>{{ profileDto?.nickname }}</span>
+    [ngClass]="['h-btn-avatar', (!profileDto ? 'h-menu-btn' : '')]">
+
+    <span class="h-nickname">{{ profileDto?.nickname }}</span>
+
     @if (!!profileDto) {
       @if (!!profileDto.avatar) {
-        <img class="h-img-avatar" [src]="profileDto.avatar" />
+        <img class="h-box-avatar" [src]="profileDto.avatar" />
       } @else {
-        <svg class="h-svg-avatar">
+        <svg class="h-box-avatar">
           <use href="assets/icons/components/header/user-man-bin.svg#user-man-bin"></use>
         </svg>
       }
@@ -36,35 +38,29 @@
 </mat-toolbar>
 
 <mat-menu #mainMenu="matMenu" xPosition="before">
+  @for (pageMenu of pageMenuList; track pageMenu.name) {
+    <button mat-menu-item class="pn-main-menu" routerLink="{{pageMenu.link}}">
+      <span [ngClass]="['mm-icon', ('mm-' + pageMenu.name) ]"></span>
+      <span class="mm-mr-lf-0_5">{{ ('main_menu.' + pageMenu.name) | translate }}</span>
+    </button>
+  }
 
-  @if (isShowMyStreams) {
-    <button mat-menu-item class="app-main-menu-item" [routerLink]="[linkMyStreams]">
-      <span class="mm-icon mm-my-streams"></span>
-      <span class="mm-mr-lf-1_">{{ 'main_menu.stream_list' | translate }}</span>
-    </button>
-  }
-  @if (isShowCreateStream) {
-    <button mat-menu-item class="app-main-menu-item" [routerLink]="[linkCreateStream]">
-      <span class="mm-icon mm-my-streams"></span>
-      <span class="mm-mr-lf-1_">{{ 'main_menu.stream_create' | translate }}</span>
-    </button>
-  }
   @if (isShowTheme) {
-    <button mat-menu-item class="pn-main-menu-item" [matMenuTriggerFor]="themes">
-      <span class="mm-icon mm-locale"></span>
-      <span class="mm-mr-lf-1_">{{ 'main_menu.theme' | translate }}</span>
+    <button mat-menu-item class="pn-item-menu" [matMenuTriggerFor]="themes">
+      <span class="mm-icon mm-theme"></span>
+      <span class="mm-mr-lf-0_5">{{ 'main_menu.theme' | translate }}</span>
     </button>
   }
   @if (isShowLocale) {
-    <button mat-menu-item class="pn-main-menu-item" [matMenuTriggerFor]="locales">
+    <button mat-menu-item class="pn-item-menu" [matMenuTriggerFor]="locales">
       <span class="mm-icon mm-locale"></span>
-      <span class="mm-mr-lf-1_">{{ 'main_menu.locale' | translate }}</span>
+      <span class="mm-mr-lf-0_5">{{ 'main_menu.locale' | translate }}</span>
     </button>
   }
-  @if (isShowLogout) {
-    <button mat-menu-item class="app-main-menu-item" (click)="doLogout()">
+  @if (isShowLogout && !!profileDto) {
+    <button mat-menu-item class="pn-item-menu" (click)="doLogout()">
       <span class="mm-icon mm-log-out"></span>
-      <span class="mm-mr-lf-1_">{{ 'main_menu.log_out' | translate }}</span>
+      <span class="mm-mr-lf-0_5">{{ 'main_menu.log_out' | translate }}</span>
     </button>
   }
 </mat-menu>

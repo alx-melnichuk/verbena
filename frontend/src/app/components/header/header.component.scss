@@ -7,7 +7,7 @@ app-header {
   --mdc-text-button-container-shape: 0.75rem; // 12px
   ---hdr-hg: calc(var(--app-header-hg, 62px) - 8px);
 
-  container-name: cnt-header;
+  container: cnt-header / inline-size;
   display: block;
 
   &.h-is-authorized {
@@ -34,6 +34,9 @@ app-header {
   }
 
   // ** logo text **
+  @container cnt-header (width <= 380px) {
+    .h-logo-text { display: none; }
+  }
   .h-logo-text {
     margin-left: 0.5em;
     --mat-toolbar-title-text-weight: 500;
@@ -59,33 +62,59 @@ app-header {
     flex: 1 1 auto;
   }
 
+  .h-btn-avatar2 { outline: 1px dashed green;
+    .mdc-button__label { outline: 1px dashed blue;
+      max-width: 100%;
+    }
+  }
+  // ** OLD **
   // ** menu avatar **
-  .h-menu-avatar {
-    min-width: var(--mdc-text-button-container-height);
+  @container cnt-header (width <= 768px) {
+    .h-btn-avatar {
+      ---hdr-img-avt-pd: 0px;
+    }
+    .h-page-menu {
+      display: none;
+    }
+  }
 
+  .h-btn-avatar {
+    ---hdr-img-avt-wd: var(---hdr-hg);
+    ---hdr-img-avt-mr-lf: 0.25rem;
+    --mat-text-button-horizontal-padding: 0px;
     &.h-menu-btn {
       ---hdr-menu-hg: 40px;
       --mdc-text-button-container-shape: 50%;
-      --mat-text-button-horizontal-padding: 0px;
       --mat-text-button-state-layer-color: var(--sys-on-surface-variant);
     }
     --mdc-text-button-container-height: var(---hdr-menu-hg, 2.75rem); // 44px
-    padding-right: 0px;
+
+    min-height: var(--mdc-text-button-container-height);
+    min-width: var(--mdc-text-button-container-height);  // To create a square shape. Because for a button the minimum is 64px.
+    padding-left: 0.5rem;
+
+    .mdc-button__label {
+      max-width: 100%;
+    }
+  }
+  .h-nickname {
+    display: inline-block;
+    box-sizing: border-box;
+    inline-size: calc(100% - var(---hdr-img-avt-wd) - var(---hdr-img-avt-mr-lf));
+    line-height: normal;
+    overflow-wrap: break-word;
+    text-wrap: auto;
+    vertical-align: middle;
   }
   // * avatar image *
-  .h-img-avatar {
+  .h-box-avatar {
     border-radius: 0.3rem;
     box-sizing: border-box;
-    height: calc(var(---hdr-hg) - 4px);
-    margin-left: 0.5em;
-    object-fit: cover;
-    vertical-align: middle;
-    width: calc(var(---hdr-hg) - 4px);
-  }
-  .h-svg-avatar {
     color: var(--app-svg-icon-cl);
-    height: var(---hdr-hg);
-    width: var(---hdr-hg);
+    object-fit: cover;
+    height: var(---hdr-img-avt-wd);
+    margin-left: var(---hdr-img-avt-mr-lf);
+    width: var(---hdr-img-avt-wd);
     vertical-align: middle;
   }
   // * menu "more-vert" *
@@ -98,8 +127,14 @@ app-header {
 }
 
 .cdk-overlay-container .mat-mdc-menu-panel {
-  .mm-mr-lf-1 {
-    margin-left: 1em;
+
+  @media (768px < width) {
+    .pn-main-menu {
+      display: none;
+    }
+  }    
+  .mm-mr-lf-0_5 {
+    margin-left: 0.5em;
   }
   .mm-menu-btn {
 

@@ -11,11 +11,11 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { InitializationService } from 'src/app/common/initialization.service';
-import { MainMenu, MainMenuUtil } from 'src/app/common/main-menu';
 import { LOCALE_LIST, COLOR_SCHEME_LIST } from 'src/app/common/constants';
-import { MAIN_MENU_LIST, ROUTE_LOGIN, ROUTE_STREAM_CREATE, ROUTE_STREAM_LIST } from 'src/app/common/routes';
-import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
+import { InitializationService  } from 'src/app/common/initialization.service';
+import { MainMenu, MainMenuUtil } from 'src/app/common/main-menu';
+import { MAIN_MENU_LIST         } from 'src/app/common/routes';
+import { ProfileDto             } from 'src/app/lib-profile/profile-api.interface';
 
 export const HM_LOGOUT = 'logout';
 export const HM_SET_LOCALE = 'setLocale';
@@ -50,12 +50,6 @@ export class HeaderComponent implements OnChanges {
   public localeList: string[] = [...LOCALE_LIST];
   public colorSchemeList: string[] = [...COLOR_SCHEME_LIST];
   
-  public linkLogin = ROUTE_LOGIN;
-  public linkMyStreams = ROUTE_STREAM_LIST;
-  public linkCreateStream = ROUTE_STREAM_CREATE;
-
-  public isShowMyStreams: boolean = true;
-  public isShowCreateStream: boolean = true;
   public isShowTheme: boolean = true;
   public isShowLocale: boolean = true;
   public isShowLogout: boolean = true;
@@ -93,5 +87,4 @@ export class HeaderComponent implements OnChanges {
   private doCommand(commandName: string, commandValue: string): void {
     this.command.emit({[commandName]: commandValue});
   }
-
 }
