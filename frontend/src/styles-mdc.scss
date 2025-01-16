@@ -28,11 +28,5 @@
       border-color: var(--mdc-outlined-button-outline-color); // --sys-outline
     }
   }
-
-  // ** mat-calendar **
-  // Customize the calendar view.
-  .cstm-calendar.mat-calendar {
-    .mat-calendar-table-header-divider { display: none; }
-    .mat-calendar-body-label { visibility: hidden; }
-  } 
+ 
 }
