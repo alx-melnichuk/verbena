@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
-  ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, OnChanges, Output, Renderer2, SimpleChanges, 
-  ViewEncapsulation
+  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, HostListener, Input, OnChanges, 
+  Output, Renderer2, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
@@ -20,6 +20,9 @@ import { ProfileDto             } from 'src/app/lib-profile/profile-api.interfac
 export const HM_LOGOUT = 'logout';
 export const HM_SET_LOCALE = 'setLocale';
 export const HM_SET_COLOR_SCHEME = 'setColorScheme';
+
+const CN_MIN_WINDOW_WIDTH = 768; // Minimum window width for displaying the main menu.
+const CN_ResizeEventTimeout = 150; // milliseconds
 
 @Component({
   selector: 'app-header',
@@ -46,7 +49,9 @@ export class HeaderComponent implements OnChanges {
   @Output()
   readonly command: EventEmitter<Record<string, string>> = new EventEmitter();
 
-  public pageMenuList: MainMenu[] = [];
+  public nickname: string = '';
+  public mainMenuItems: MainMenu[] = [];
+  public panelMenuItems: MainMenu[] = [];
   public localeList: string[] = [...LOCALE_LIST];
   public colorSchemeList: string[] = [...COLOR_SCHEME_LIST];
   
@@ -59,12 +64,34 @@ export class HeaderComponent implements OnChanges {
     return !!this.profileDto;
   }
 
-  constructor(public renderer: Renderer2, public initializationService: InitializationService) {
+  private timerResizeEvent: any = null;
+
+  @HostListener('window:resize', ['$event'])
+  public doScrollPanel(event:Event):void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (this.timerResizeEvent !== null) {
+      clearTimeout(this.timerResizeEvent);
+    }
+    this.timerResizeEvent = setTimeout(() => {
+      this.timerResizeEvent = null;
+
+      this.prepareMenuItems(this.profileDto, MAIN_MENU_LIST, CN_MIN_WINDOW_WIDTH < this.getWidth());
+      this.changeDetectorRef.markForCheck();
+    }, CN_ResizeEventTimeout);
+  }
+
+  constructor(
+    public renderer: Renderer2,
+    public initializationService: InitializationService,
+    private changeDetectorRef: ChangeDetectorRef,
+  ) {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes['profileDto'] || !!changes['currentRoute']) {
-      this.pageMenuList = MainMenuUtil.getList(this.profileDto != null, MAIN_MENU_LIST);
+      this.prepareMenuItems(this.profileDto, MAIN_MENU_LIST, CN_MIN_WINDOW_WIDTH < this.getWidth());
     }
   }
 
@@ -82,7 +109,32 @@ export class HeaderComponent implements OnChanges {
     this.doCommand(HM_SET_COLOR_SCHEME, value);
   }
 
+  public nicknameWithSeparateSpaces(nickname: string | null | undefined): string {
+    let result: string = nickname || '';
+    if (!!result) {
+      const ch1 = String.fromCharCode(0x200B); // "empty space" character for line breaks.
+      if (result.indexOf('_') > -1) {
+        result = result.replaceAll('_', '_' + ch1);
+      } else {
+        const idx = Math.round(result.length / 2);
+        result = result.slice(0, idx) + ch1 + result.slice(idx);
+      }
+    }
+    return result;
+  }
+
+  public prepareMenuItems(profileDto: ProfileDto | null, mainMenuList: string[], isShowMainMenu: boolean): void {
+    this.nickname = this.nicknameWithSeparateSpaces(profileDto?.nickname);
+    const items = MainMenuUtil.getList(profileDto != null, mainMenuList);
+    this.mainMenuItems = isShowMainMenu ? items : [];
+    this.panelMenuItems = isShowMainMenu ? [] : items;
+  }
+
   // ** Private API **
+
+  private getWidth(): number {
+    return window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+  }
 
   private doCommand(commandName: string, commandValue: string): void {
     this.command.emit({[commandName]: commandValue});

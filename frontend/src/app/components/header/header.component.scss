@@ -42,18 +42,18 @@ app-header {
     --mat-toolbar-title-text-weight: 500;
     --mat-toolbar-title-text-size: 1.125rem;
   }
-  
+
   // ** page-menu **
-  .mat-toolbar .h-page-menu.mat-mdc-button-base.mat-mdc-button-base.mat-unthemed {
+  .mat-toolbar .h-elem-menu.mat-mdc-button-base.mat-mdc-button-base.mat-unthemed {
     --mdc-text-button-label-text-color: var(--sys-primary);
   }
   @container cnt-header style(--color-scheme: dark) {
-    .h-page-menu {
+    .h-elem-menu {
       ---hdr-dark-mn-sel: 7%;
       --mat-text-button-hover-state-layer-opacity: 0.14;
     }
   }
-  .h-page-menu-selected {
+  .h-elem-menu.h-selected {
     background-color: color-mix(in srgb, var(--sys-primary) calc(15% + var(---hdr-dark-mn-sel, 0%)), rgba(0, 0, 0, 0));
   }
 
@@ -61,83 +61,45 @@ app-header {
   .h-spacer {
     flex: 1 1 auto;
   }
-
-  .h-btn-avatar2 { outline: 1px dashed green;
-    .mdc-button__label { outline: 1px dashed blue;
-      max-width: 100%;
-    }
-  }
-  // ** OLD **
-  // ** menu avatar **
-  @container cnt-header (width <= 768px) {
-    .h-btn-avatar {
-      ---hdr-img-avt-pd: 0px;
-    }
-    .h-page-menu {
-      display: none;
-    }
-  }
-
-  .h-btn-avatar {
-    ---hdr-img-avt-wd: var(---hdr-hg);
-    ---hdr-img-avt-mr-lf: 0.25rem;
-    --mat-text-button-horizontal-padding: 0px;
-    &.h-menu-btn {
-      ---hdr-menu-hg: 40px;
-      --mdc-text-button-container-shape: 50%;
-      --mat-text-button-state-layer-color: var(--sys-on-surface-variant);
-    }
-    --mdc-text-button-container-height: var(---hdr-menu-hg, 2.75rem); // 44px
-
-    min-height: var(--mdc-text-button-container-height);
-    min-width: var(--mdc-text-button-container-height);  // To create a square shape. Because for a button the minimum is 64px.
-    padding-left: 0.5rem;
-
+  // ** menu button "nickname" **
+  .h-nickname-btn {
+    --mat-text-button-horizontal-padding: 0.5rem;
     .mdc-button__label {
       max-width: 100%;
     }
   }
   .h-nickname {
     display: inline-block;
-    box-sizing: border-box;
-    inline-size: calc(100% - var(---hdr-img-avt-wd) - var(---hdr-img-avt-mr-lf));
     line-height: normal;
-    overflow-wrap: break-word;
     text-wrap: auto;
-    vertical-align: middle;
   }
-  // * avatar image *
-  .h-box-avatar {
-    border-radius: 0.3rem;
-    box-sizing: border-box;
-    color: var(--app-svg-icon-cl);
-    object-fit: cover;
-    height: var(---hdr-img-avt-wd);
-    margin-left: var(---hdr-img-avt-mr-lf);
-    width: var(---hdr-img-avt-wd);
-    vertical-align: middle;
+  // ** menu button "avatar" **
+  .h-avatar-btn {
+    --mdc-text-button-container-height: var(---hdr-hg);
+    --mdc-text-button-container-shape: calc(0.16 * var(---hdr-hg));  // border-radius for "mat-button"
+    --mat-text-button-horizontal-padding: 0px;
+    min-width: var(---hdr-hg);
   }
-  // * menu "more-vert" *
+  // -- image or svg for logged in user --
+  .h-avatar-box {
+    border-radius: var(--mdc-text-button-container-shape);
+    color: var(--app-svg-icon-cl); // for "svg"
+    display: block;
+    height: var(---hdr-hg);
+    object-fit: cover; // for "img"
+    width: var(---hdr-hg);
+  }
+  // -- svg "more-vert" for unlogged in user --
   .h-svg-more-vert {
     color: var(--sys-on-surface-variant);
-    height: 1.5rem;
-    width: 1.5rem;
-    vertical-align: middle;
   }
 }
 
 .cdk-overlay-container .mat-mdc-menu-panel {
-
-  @media (768px < width) {
-    .pn-main-menu {
-      display: none;
-    }
-  }    
   .mm-mr-lf-0_5 {
     margin-left: 0.5em;
   }
   .mm-menu-btn {
-
     &.mm-curr {
       background-color: var(--mat-option-selected-state-layer-color);
     }
