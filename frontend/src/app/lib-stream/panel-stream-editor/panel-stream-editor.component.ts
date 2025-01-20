@@ -11,7 +11,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { MAX_FILE_SIZE, IMAGE_VALID_FILE_TYPES } from 'src/app/common/constants';
 import { StringDateTime               } from 'src/app/common/string-date-time';
@@ -40,9 +40,9 @@ export const PSE_LOGO_MX_WD = '---pse-logo-mx-wd';
   exportAs: 'appPanelStreamEditor',
   standalone: true,
   imports: [
-    CommonModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule,  MatSlideToggleModule,
-    MatTooltipModule, TranslateModule, ReactiveFormsModule, FieldDescriptComponent, FieldChipGridComponent,
-    FieldImageAndUploadComponent, FieldTimeComponent, FieldTitleComponent, FieldDateComponent,
+    CommonModule, ReactiveFormsModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSlideToggleModule,
+    MatTooltipModule, TranslatePipe, FieldDescriptComponent, FieldChipGridComponent, FieldImageAndUploadComponent,
+    FieldTimeComponent, FieldTitleComponent, FieldDateComponent,
   ],
   templateUrl: './panel-stream-editor.component.html',
   styleUrl: './panel-stream-editor.component.scss',

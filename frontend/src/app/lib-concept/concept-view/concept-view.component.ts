@@ -4,7 +4,7 @@ import {
 import { CommonModule, KeyValue } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { InitializationService } from 'src/app/common/initialization.service';
 import { StringDateTime        } from 'src/app/common/string-date-time';
@@ -27,7 +27,7 @@ import { PanelStreamStateComponent   } from '../panel-stream-state/panel-stream-
   selector: 'app-concept-view',
   exportAs: 'appConceptView',
   standalone: true,
-  imports: [CommonModule, TranslateModule, SpinnerComponent, SidebarComponent, 
+  imports: [CommonModule, SpinnerComponent, SidebarComponent, TranslatePipe,
     PanelStreamStateComponent, PanelStreamParamsComponent, PanelStreamActionsComponent],
   templateUrl: './concept-view.component.html',
   styleUrl: './concept-view.component.scss',

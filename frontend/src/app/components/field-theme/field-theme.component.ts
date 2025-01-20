@@ -9,7 +9,7 @@ import {
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { COLOR_SCHEME_LIST } from 'src/app/common/constants';
 
@@ -17,7 +17,7 @@ import { COLOR_SCHEME_LIST } from 'src/app/common/constants';
   selector: 'app-field-theme',
   exportAs: 'appFieldTheme',
   standalone: true,
-  imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, MatSelectModule],
+  imports: [CommonModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, MatSelectModule, TranslatePipe],
   templateUrl: './field-theme.component.html',
   styleUrl: './field-theme.component.scss',
   encapsulation: ViewEncapsulation.None,

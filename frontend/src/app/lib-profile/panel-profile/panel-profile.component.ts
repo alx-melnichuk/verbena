@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { IMAGE_VALID_FILE_TYPES, MAX_FILE_SIZE } from 'src/app/common/constants';
 import { FieldDescriptComponent       } from 'src/app/components/field-descript/field-descript.component';
@@ -35,7 +35,7 @@ export const PPI_AVATAR_MX_WD = '---pp-avatar-mx-wd';
   selector: 'app-panel-profile',
   exportAs: 'appPanelProfile',
   standalone: true,
-  imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatButtonModule, MatInputModule, 
+  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, TranslatePipe,
     UniquenessCheckComponent, FieldNicknameComponent, FieldEmailComponent, FieldPasswordComponent,
     FieldDescriptComponent, FieldFileUploadComponent, FieldImageAndUploadComponent, FieldThemeComponent, FieldLocaleComponent],
   templateUrl: './panel-profile.component.html',

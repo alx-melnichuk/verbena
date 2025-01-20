@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, HostBinding, Input, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { ROUTE_LOGIN } from 'src/app/common/routes';
 
@@ -9,7 +9,7 @@ import { ROUTE_LOGIN } from 'src/app/common/routes';
   selector: 'app-footer',
   exportAs: 'appFooter',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule],
+  imports: [CommonModule, RouterLink, TranslatePipe],
   templateUrl: './footer.component.html',
   styleUrl: './footer.component.scss',
   encapsulation: ViewEncapsulation.None,

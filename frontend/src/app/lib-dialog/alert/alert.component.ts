@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, OnInit, Output, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AlertMode } from './alert.interface';
 
 @Component({
   selector: 'app-alert',
   exportAs: 'appAlert',
   standalone: true,
-  imports: [CommonModule, TranslateModule],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './alert.component.html',
   styleUrl: './alert.component.scss',
   encapsulation: ViewEncapsulation.None,

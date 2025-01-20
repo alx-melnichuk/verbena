@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy, Component, EventEmitter, HostBinding, HostListener, Input, Output, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { LogotypeComponent  } from 'src/app/components/logotype/logotype.component';
@@ -13,7 +13,7 @@ import { StreamDtoUtil, StreamEventDto } from '../stream-api.interface';
 @Component({
   selector: 'app-panel-stream-event',
   standalone: true,
-  imports: [CommonModule, TranslateModule, LogotypeComponent, DateTimeFormatPipe],
+  imports: [CommonModule, TranslatePipe, LogotypeComponent, DateTimeFormatPipe],
   templateUrl: './panel-stream-event.component.html',
   styleUrl: './panel-stream-event.component.scss',
   encapsulation: ViewEncapsulation.None,

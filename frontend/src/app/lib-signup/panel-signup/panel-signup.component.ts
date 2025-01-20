@@ -8,7 +8,7 @@ import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { FieldEmailComponent } from 'src/app/components/field-email/field-email.component';
 import { FieldNicknameComponent } from 'src/app/components/field-nickname/field-nickname.component';
@@ -25,7 +25,7 @@ export const SG_DEBOUNCE_DELAY = 900;
   selector: 'app-panel-signup',
   exportAs: 'appPanelSignup',
   standalone: true,
-  imports: [ CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslateModule,
+  imports: [ CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe,
     FieldEmailComponent, FieldNicknameComponent, FieldPasswordComponent, UniquenessCheckComponent],
   templateUrl: './panel-signup.component.html',
   styleUrl: './panel-signup.component.scss',

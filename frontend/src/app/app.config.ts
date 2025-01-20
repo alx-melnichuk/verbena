@@ -6,7 +6,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
-import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
+import { provideTranslateService, TranslateLoader } from '@ngx-translate/core';
 
 import { APP_DATE_FORMATS, AppDateAdapter } from './app-date-adapter';
 import { AppErrorHandler } from './app-error-handler';
@@ -39,15 +39,13 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideHttpClient(withInterceptorsFromDi()),
-    importProvidersFrom([
-      TranslateModule.forRoot({
+    provideTranslateService({
         loader: {
           provide: TranslateLoader,
           useFactory: TRANSLATE_LOADER_FACTORY,
           deps: [HttpClient],
         },
-      })
-    ]),
+    }),
     LocaleService,
     InitializationService,
     {

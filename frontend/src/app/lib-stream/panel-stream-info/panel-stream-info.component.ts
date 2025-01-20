@@ -4,7 +4,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { LogotypeComponent  } from 'src/app/components/logotype/logotype.component';
@@ -17,7 +17,7 @@ const CN_ScrollPanelTimeout = 200; // milliseconds
 @Component({
   selector: 'app-panel-stream-info',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatCardModule, TranslateModule, LogotypeComponent, DateTimeFormatPipe],
+  imports: [CommonModule, MatButtonModule, MatCardModule, TranslatePipe, LogotypeComponent, DateTimeFormatPipe],
   templateUrl: './panel-stream-info.component.html',
   styleUrl: './panel-stream-info.component.scss',
   encapsulation: ViewEncapsulation.None,

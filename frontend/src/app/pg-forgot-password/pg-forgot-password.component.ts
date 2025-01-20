@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 
 import { StrParams } from '../common/str-params';
@@ -14,7 +14,7 @@ import { HttpErrorUtil } from '../utils/http-error.util';
 @Component({
   selector: 'app-pg-forgot-password',
   standalone: true,
-  imports: [CommonModule, TranslateModule, PanelForgotPasswordComponent],
+  imports: [CommonModule, TranslatePipe, PanelForgotPasswordComponent],
   templateUrl: './pg-forgot-password.component.html',
   styleUrl: './pg-forgot-password.component.scss',
   encapsulation: ViewEncapsulation.None,

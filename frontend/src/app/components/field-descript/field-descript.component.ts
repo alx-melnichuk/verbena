@@ -8,7 +8,7 @@ import {
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ValidatorUtils } from 'src/app/utils/validator.utils';
 
 export const DESCRIPT = 'descript';
@@ -20,7 +20,7 @@ export const DESCRIPT_ROWS = 6;
   selector: 'app-field-descript',
   exportAs: 'appFieldDescript',
   standalone: true,
-  imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule],
+  imports: [CommonModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, TranslatePipe],
   templateUrl: './field-descript.component.html',
   styleUrl: './field-descript.component.scss',
   encapsulation: ViewEncapsulation.None,

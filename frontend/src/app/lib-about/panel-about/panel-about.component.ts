@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, HostBinding, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 declare var APP_ABOUT: any;
 
 @Component({
   selector: 'app-panel-about',
   standalone: true,
-  imports: [CommonModule, TranslateModule,],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './panel-about.component.html',
   styleUrl: './panel-about.component.scss',
   encapsulation: ViewEncapsulation.None,

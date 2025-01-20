@@ -8,7 +8,7 @@ import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { StrParams } from 'src/app/common/str-params';
 import { ROUTE_FORGOT_PASSWORD, ROUTE_SIGNUP } from 'src/app/common/routes';
@@ -21,7 +21,7 @@ import { FieldPasswordComponent } from 'src/app/components/field-password/field-
   selector: 'app-panel-login',
   exportAs: 'appPanelLogin',
   standalone: true,
-  imports: [ CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslateModule,
+  imports: [ CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe,
     FieldNicknameComponent, FieldPasswordComponent,],
   templateUrl: './panel-login.component.html',
   styleUrl: './panel-login.component.scss',

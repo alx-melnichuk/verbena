@@ -9,14 +9,14 @@ import {
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ENTER } from '@angular/cdk/keycodes';
 
 @Component({
   selector: 'app-field-chip-grid',
   exportAs: 'appFieldChipGrid',
   standalone: true,
-  imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, MatChipsModule],
+  imports: [CommonModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, MatChipsModule, TranslatePipe],
   templateUrl: './field-chip-grid.component.html',
   styleUrls: ['./field-chip-grid.component.scss'],
   encapsulation: ViewEncapsulation.None,

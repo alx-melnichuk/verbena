@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { FieldDragAndDropDirective } from 'src/app/directives/field-drag-and-drop.directive';
 import { ValidFileTypesUtil } from 'src/app/utils/valid_file_types.util';
@@ -14,7 +14,7 @@ let idx = 0;
   selector: 'app-field-file-upload',
   exportAs: 'appFieldFileUpload',
   standalone: true,
-  imports: [CommonModule, FieldDragAndDropDirective, TranslateModule],
+  imports: [CommonModule, FieldDragAndDropDirective, TranslatePipe],
   templateUrl: './field-file-upload.component.html',
   styleUrl: './field-file-upload.component.scss',
   encapsulation: ViewEncapsulation.None,

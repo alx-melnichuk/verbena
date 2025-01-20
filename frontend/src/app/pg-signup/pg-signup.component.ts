@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 
 import { StrParams } from '../common/str-params';
@@ -14,7 +14,7 @@ import { HttpErrorUtil } from '../utils/http-error.util';
 @Component({
   selector: 'app-pg-signup',
   standalone: true,
-  imports: [CommonModule, TranslateModule, PanelSignupComponent],
+  imports: [CommonModule, TranslatePipe, PanelSignupComponent],
   templateUrl: './pg-signup.component.html',
   styleUrl: './pg-signup.component.scss',
   encapsulation: ViewEncapsulation.None,

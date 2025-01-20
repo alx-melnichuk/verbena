@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulatio
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { LocaleService      } from 'src/app/common/locale.service';
@@ -22,7 +22,7 @@ import { StreamService } from '../stream.service';
 @Component({
   selector: 'app-stream-list',
   standalone: true,
-  imports: [CommonModule, TranslateModule, SpinnerComponent, PanelStreamEventComponent, PanelStreamInfoComponent,
+  imports: [CommonModule, TranslatePipe, SpinnerComponent, PanelStreamEventComponent, PanelStreamInfoComponent,
     PanelStreamCalendarComponent, DateTimeFormatPipe],
   templateUrl: './stream-list.component.html',
   styleUrl: './stream-list.component.scss',

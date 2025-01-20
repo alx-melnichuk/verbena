@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { StreamState } from 'src/app/lib-stream/stream-api.interface';
@@ -10,7 +10,7 @@ import { StreamState } from 'src/app/lib-stream/stream-api.interface';
   selector: 'app-panel-stream-actions',
   exportAs: 'appPanelStreamActions',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, TranslateModule],
+  imports: [CommonModule, MatButtonModule, TranslatePipe],
   templateUrl: './panel-stream-actions.component.html',
   styleUrl: './panel-stream-actions.component.scss',
   encapsulation: ViewEncapsulation.None,

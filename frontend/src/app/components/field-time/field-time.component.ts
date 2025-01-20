@@ -8,7 +8,7 @@ import {
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { TimeUtil } from 'src/app/utils/time.util';
 
@@ -20,7 +20,7 @@ export const FT_TIME_REGEX = '^([01][0-9]|2[0-3]):[0-5][0-9]$';
   selector: 'app-field-time',
   exportAs: 'appFieldTime',
   standalone: true,
-  imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule],
+  imports: [CommonModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, TranslatePipe],
   templateUrl: './field-time.component.html',
   styleUrl: './field-time.component.scss',
   encapsulation: ViewEncapsulation.None,

@@ -9,7 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { LOCALE_LIST, COLOR_SCHEME_LIST } from 'src/app/common/constants';
 import { InitializationService  } from 'src/app/common/initialization.service';
@@ -28,9 +28,8 @@ const CN_ResizeEventTimeout = 150; // milliseconds
   selector: 'app-header',
   exportAs: 'appHeader',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive,
-    MatButtonModule, MatMenuModule, MatSlideToggleModule, MatToolbarModule, 
-    TranslateModule],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, MatButtonModule, MatMenuModule, MatSlideToggleModule,
+    MatToolbarModule, TranslatePipe],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
   encapsulation: ViewEncapsulation.None,

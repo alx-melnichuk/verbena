@@ -11,7 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ValidatorUtils } from 'src/app/utils/validator.utils';
 
 import { FieldFileUploadComponent } from '../field-file-upload/field-file-upload.component';
@@ -75,7 +75,7 @@ export const CUSTOM_ERROR = 'customError';
   selector: 'app-field-image-and-upload',
   standalone: true,
   exportAs: 'appFieldImageAndUpload',
-  imports: [CommonModule,  ReactiveFormsModule, MatButtonModule, MatInputModule, MatFormFieldModule, MatTooltipModule, TranslateModule,
+  imports: [CommonModule,  ReactiveFormsModule, MatButtonModule, MatInputModule, MatFormFieldModule, MatTooltipModule, TranslatePipe,
     FieldFileUploadComponent],
   templateUrl: './field-image-and-upload.component.html',
   styleUrl: './field-image-and-upload.component.scss',

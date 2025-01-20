@@ -8,7 +8,7 @@ import {
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ValidatorUtils } from 'src/app/utils/validator.utils';
   
 export const TITLE = 'nickname';
@@ -20,7 +20,7 @@ export const CUSTOM_ERROR = 'customError';
   selector: 'app-field-title',
   exportAs: 'appFieldTitle',
   standalone: true,
-  imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule],
+  imports: [CommonModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, TranslatePipe],
   templateUrl: './field-title.component.html',
   styleUrl: './field-title.component.scss',
   encapsulation: ViewEncapsulation.None,

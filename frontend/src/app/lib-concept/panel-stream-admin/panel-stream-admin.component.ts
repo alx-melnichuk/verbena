@@ -3,7 +3,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { DateTimeTimerComponent } from 'src/app/components/date-time-timer/date-time-timer.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
@@ -13,9 +13,7 @@ import { StreamState } from 'src/app/lib-stream/stream-api.interface';
   selector: 'app-panel-stream-admin',
   exportAs: 'appPanelStreamAdmin',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, TranslateModule, 
-    DateTimeTimerComponent
-  ],
+  imports: [CommonModule, MatButtonModule, TranslatePipe, DateTimeTimerComponent],
   templateUrl: './panel-stream-admin.component.html',
   styleUrl: './panel-stream-admin.component.scss',
   encapsulation: ViewEncapsulation.None,

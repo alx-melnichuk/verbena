@@ -7,7 +7,7 @@ import { DateAdapter } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { CalendarHeaderComponent } from '../calendar-header/calendar-header.component';
 
@@ -15,7 +15,7 @@ import { CalendarHeaderComponent } from '../calendar-header/calendar-header.comp
   selector: 'app-field-date',
   exportAs: 'appFieldDate',
   standalone: true,
-  imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, MatDatepickerModule],
+  imports: [CommonModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, MatDatepickerModule, TranslatePipe],
   templateUrl: './field-date.component.html',
   styleUrl: './field-date.component.scss',
   encapsulation: ViewEncapsulation.None,

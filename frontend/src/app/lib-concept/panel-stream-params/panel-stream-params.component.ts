@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { DateTimeTimerComponent } from 'src/app/components/date-time-timer/date-time-timer.component';
 
@@ -9,7 +9,7 @@ import { DateTimeTimerComponent } from 'src/app/components/date-time-timer/date-
   selector: 'app-panel-stream-params',
   exportAs: 'appPanelStreamParams',
   standalone: true,
-  imports: [CommonModule, TranslateModule, DateTimeTimerComponent],
+  imports: [CommonModule, TranslatePipe, DateTimeTimerComponent],
   templateUrl: './panel-stream-params.component.html',
   styleUrl: './panel-stream-params.component.scss',
   encapsulation: ViewEncapsulation.None,

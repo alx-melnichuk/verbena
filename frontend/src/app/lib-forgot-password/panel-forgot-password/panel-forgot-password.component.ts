@@ -8,7 +8,7 @@ import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { FieldEmailComponent } from 'src/app/components/field-email/field-email.component';
 import { ROUTE_LOGIN } from 'src/app/common/routes';
@@ -18,8 +18,8 @@ import { StrParams } from 'src/app/common/str-params';
   selector: 'app-panel-forgot-password',
   exportAs: 'appPanelForgotPassword',
   standalone: true,
-  imports: [ CommonModule, RouterLink, TranslateModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule,
-    MatInputModule, FieldEmailComponent,],
+  imports: [ CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe,
+    FieldEmailComponent],
   templateUrl: './panel-forgot-password.component.html',
   styleUrl: './panel-forgot-password.component.scss',
   encapsulation: ViewEncapsulation.None,
