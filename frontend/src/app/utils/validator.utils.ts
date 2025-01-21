@@ -2,30 +2,30 @@ import { ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 
 export class ValidatorUtils {
   // Create an array of check rules based on the specified parameters.
-  public static prepare(params: { [key: string]: any; }): ValidatorFn[] {
+  public static prepare(params: { [key: string]: null | undefined | number | string | boolean; }): ValidatorFn[] {
     const resultValidator: ValidatorFn[] = [];
-    if (params["min"] > -1) {
-      resultValidator.push(Validators.min(params["min"]));
+    if (typeof params['min'] == 'number' && params['min'] > -1) {
+      resultValidator.push(Validators.min(params['min']));
     }
-    if (params["max"] > -1) {
-      resultValidator.push(Validators.max(params["max"]));
+    if (typeof params['max'] == 'number' && params['max'] > -1) {
+      resultValidator.push(Validators.max(params['max']));
     }
-    if (!!params["required"]) {
+    if (!!params['required']) {
       resultValidator.push(Validators.required);
     }
-    if (!!params["email"]) {
+    if (!!params['email']) {
       resultValidator.push(Validators.email);
     }
-    const minLength = 0 + (params["minLength"] || -1);
+    const minLength = typeof params['minLength'] == 'number' ? params['minLength'] : -1;
     if (minLength > -1) {
       resultValidator.push(Validators.minLength(minLength));
     }
-    const maxLength = 0 + (params["maxLength"] || -1);
+    const maxLength = typeof params['maxLength'] == 'number' ? params['maxLength'] : -1;
     if (maxLength > -1) {
       resultValidator.push(Validators.maxLength(maxLength));
     }
-    if (!!params["pattern"]) {
-      resultValidator.push(Validators.pattern(params["pattern"]));
+    if (typeof params['pattern'] == 'string' && !!params['pattern']) {
+      resultValidator.push(Validators.pattern(params['pattern']));
     }
     return resultValidator;
   }
