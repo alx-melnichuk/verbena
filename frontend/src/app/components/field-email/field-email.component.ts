@@ -9,6 +9,7 @@ import {
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { TranslatePipe } from '@ngx-translate/core';
+
 import { ValidatorUtils } from 'src/app/utils/validator.utils';
 
 export const EMAIL = "email";
@@ -37,6 +38,8 @@ export class FieldEmailComponent implements OnChanges, ControlValueAccessor, Val
   @Input()
   public gist: string = EMAIL;
   @Input()
+  public errorMsg: string | null | undefined;
+  @Input()
   public hint: string = '';
   @Input()
   public isDisabled: boolean = false;
@@ -56,8 +59,6 @@ export class FieldEmailComponent implements OnChanges, ControlValueAccessor, Val
   public pattern: string = "";
   @Input()
   public type: string = "email";
-  @Input()
-  public errorMsg: string | null | undefined;
 
   @ViewChild(MatInput, { static: false })
   public matInput: MatInput | null = null;
@@ -75,7 +76,8 @@ export class FieldEmailComponent implements OnChanges, ControlValueAccessor, Val
       this.setDisabledState(this.isDisabled);
     }
     if (!!changes['errorMsg']) {
-      this.prepareErrMsg(this.errorMsg);
+      this.formControl.updateValueAndValidity();
+      this.onChange(this.formControl.value);
     }
   }
 
@@ -126,6 +128,10 @@ export class FieldEmailComponent implements OnChanges, ControlValueAccessor, Val
 
   // ** Private API **
 
+  private errorMsgValidator = (control: AbstractControl): ValidationErrors | null => {
+    const result = !!control && !!this.errorMsg ? { [CUSTOM_ERROR]: true } : null;
+    return result;
+  };
   private prepareFormGroup(): void {
     this.formControl.clearValidators();
     const paramsObj = {
@@ -135,27 +141,7 @@ export class FieldEmailComponent implements OnChanges, ControlValueAccessor, Val
       ...(this.pattern ? { "pattern": this.pattern } : {}),
       ...(this.type == "email" ? { "email": true } : {})
     };
-    const newValidator: ValidatorFn[] = ValidatorUtils.prepare(paramsObj);
-    this.formControl.setValidators(newValidator);
+    this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj), this.errorMsgValidator]);
     this.formControl.updateValueAndValidity();
-  }
-
-  private prepareErrMsg(errMsg: string | null | undefined): void {
-    let result: ValidationErrors | null = null;
-    const errorsObj = {...this.formControl.errors};
-    if (!!errMsg) {
-      result = {...errorsObj, ...{ [CUSTOM_ERROR]: true } };
-    } else {
-      const list = Object.keys(errorsObj);
-      let res: ValidationErrors = {};
-      for (let index = 0; index < list.length; index++) {
-        const key = list[index];
-        if (key !== CUSTOM_ERROR) {
-          res[key] = errorsObj[key];
-        }
-      }
-      result = (Object.keys(res).length > 0 ? res : null);
-    }
-    this.formControl.setErrors(result, { emitEvent: true });
   }
 }

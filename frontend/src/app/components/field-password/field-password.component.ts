@@ -9,12 +9,14 @@ import {
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { TranslatePipe } from '@ngx-translate/core';
+
 import { ValidatorUtils } from 'src/app/utils/validator.utils';
 
 export const PASSWORD = "password";
 export const PASSWORD_MIN_LENGTH = 6;
 export const PASSWORD_MAX_LENGTH = 64;
 export const PASSWORD_PATTERN = '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d\\W_]{6,}$';
+export const CUSTOM_ERROR = 'customError';
 
 @Component({
   selector: 'app-field-password',
@@ -33,6 +35,8 @@ export const PASSWORD_PATTERN = '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d\\W_]
 export class FieldPasswordComponent implements OnChanges, ControlValueAccessor, Validator {
   @Input()
   public gist: string = PASSWORD;
+  @Input()
+  public errorMsg: string | null | undefined;
   @Input()
   public hint: string = '';
   @Input()
@@ -70,6 +74,10 @@ export class FieldPasswordComponent implements OnChanges, ControlValueAccessor, 
     }
     if (!!changes['isDisabled']) {
       this.setDisabledState(this.isDisabled);
+    }
+    if (!!changes['errorMsg']) {
+      this.formControl.updateValueAndValidity();
+      this.onChange(this.formControl.value);
     }
   }
 
@@ -129,6 +137,10 @@ export class FieldPasswordComponent implements OnChanges, ControlValueAccessor, 
 
   // ** Private API **
 
+  private errorMsgValidator = (control: AbstractControl): ValidationErrors | null => {
+    const result = !!control && !!this.errorMsg ? { [CUSTOM_ERROR]: true } : null;
+    return result;
+  };
   private prepareFormGroup(): void {
     this.formControl.clearValidators();
     const paramsObj = {
@@ -138,8 +150,7 @@ export class FieldPasswordComponent implements OnChanges, ControlValueAccessor, 
       ...(this.pattern ? { "pattern": this.pattern } : {}),
       ...(this.type == "email" ? { "email": true } : {})
     };
-    const newValidator: ValidatorFn[] = ValidatorUtils.prepare(paramsObj);
-    this.formControl.setValidators(newValidator);
+    this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj), this.errorMsgValidator]);
     this.formControl.updateValueAndValidity();
   }
 }

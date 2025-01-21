@@ -9,12 +9,14 @@ import {
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { TranslatePipe } from '@ngx-translate/core';
+
 import { ValidatorUtils } from 'src/app/utils/validator.utils';
 
 export const DESCRIPT = 'descript';
 export const DESCRIPT_MIN_LENGTH = 2;
 export const DESCRIPT_MAX_LENGTH = 2048; // 2*1024
 export const DESCRIPT_ROWS = 6;
+export const CUSTOM_ERROR = 'customError';
 
 @Component({
   selector: 'app-field-descript',
@@ -33,6 +35,8 @@ export const DESCRIPT_ROWS = 6;
 export class FieldDescriptComponent  implements OnChanges, ControlValueAccessor, Validator {
   @Input()
   public gist: string = DESCRIPT;
+  @Input()
+  public errorMsg: string | null | undefined;
   @Input()
   public hint: string = '';
   @Input()
@@ -67,6 +71,10 @@ export class FieldDescriptComponent  implements OnChanges, ControlValueAccessor,
     }
     if (!!changes['isDisabled']) {
       this.setDisabledState(this.isDisabled);
+    }
+    if (!!changes['errorMsg']) {
+      this.formControl.updateValueAndValidity();
+      this.onChange(this.formControl.value);
     }
   }
 
@@ -113,6 +121,10 @@ export class FieldDescriptComponent  implements OnChanges, ControlValueAccessor,
 
   // ** Private API **
 
+  private errorMsgValidator = (control: AbstractControl): ValidationErrors | null => {
+    const result = !!control && !!this.errorMsg ? { [CUSTOM_ERROR]: true } : null;
+    return result;
+  };
   private prepareFormGroup(): void {
     this.formControl.clearValidators();
     const paramsObj = {
@@ -120,8 +132,7 @@ export class FieldDescriptComponent  implements OnChanges, ControlValueAccessor,
       ...(this.minLen > 0 ? { "minLength": this.minLen } : {}),
       ...(this.maxLen > 0 ? { "maxLength": this.maxLen } : {}),
     };
-    const newValidator: ValidatorFn[] = ValidatorUtils.prepare(paramsObj);
-    this.formControl.setValidators(newValidator);
+    this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj), this.errorMsgValidator]);
     this.formControl.updateValueAndValidity();
   }
 }

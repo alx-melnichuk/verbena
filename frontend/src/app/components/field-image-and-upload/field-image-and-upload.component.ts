@@ -93,6 +93,8 @@ export class FieldImageAndUploadComponent implements OnChanges, ControlValueAcce
   // ".doc,.docx,.xls,.xlsx"; ".bmp,.gif"; "image/png,image/jpeg"; "audio/*,video/*,image/*";
   public accepts: string | null | undefined; // Define the file types (separated by commas) available for upload.
   @Input()
+  public errorMsg: string | null | undefined;
+  @Input()
   public hint: string = '';
   @Input()
   public isDisabled: boolean = false;
@@ -104,8 +106,6 @@ export class FieldImageAndUploadComponent implements OnChanges, ControlValueAcce
   public label: string = 'field-image-and-upload.label';
   @Input()
   public maxSize = -1;
-  @Input()
-  public errorMsg: string | null | undefined;
   
   @Output()
   readonly addFile: EventEmitter<File> = new EventEmitter();
@@ -141,7 +141,8 @@ export class FieldImageAndUploadComponent implements OnChanges, ControlValueAcce
       this.setDisabledState(this.isDisabled);
     }
     if (!!changes['errorMsg']) {
-      this.prepareErrMsg(this.errorMsg);
+      this.formControl.updateValueAndValidity();
+      this.onChange(this.formControl.value);
     }
   }
 
@@ -227,33 +228,16 @@ export class FieldImageAndUploadComponent implements OnChanges, ControlValueAcce
 
   // ** Private API **
 
+  private errorMsgValidator = (control: AbstractControl): ValidationErrors | null => {
+    const result = !!control && !!this.errorMsg ? { [CUSTOM_ERROR]: true } : null;
+    return result;
+  };
   private prepareFormGroup(): void {
     this.formControl.clearValidators();
     const paramsObj = {
       ...(this.isRequired ? { "required": true } : {}),
     };
-    const newValidator: ValidatorFn[] = ValidatorUtils.prepare(paramsObj);
-    this.formControl.setValidators(newValidator);
+    this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj), this.errorMsgValidator]);
     this.formControl.updateValueAndValidity();
   }
-
-  private prepareErrMsg(errMsg: string | null | undefined): void {
-    let result: ValidationErrors | null = null;
-    const errorsObj = {...this.formControl.errors};
-    if (!!errMsg) {
-      result = {...errorsObj, ...{ [CUSTOM_ERROR]: true } };
-    } else {
-      const list = Object.keys(errorsObj);
-      let res: ValidationErrors = {};
-      for (let index = 0; index < list.length; index++) {
-        const key = list[index];
-        if (key !== CUSTOM_ERROR) {
-          res[key] = errorsObj[key];
-        }
-      }
-      result = (Object.keys(res).length > 0 ? res : null);
-    }
-    this.formControl.setErrors(result, { emitEvent: true });
-  }
-
 }
