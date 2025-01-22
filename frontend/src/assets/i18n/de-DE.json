@@ -242,7 +242,13 @@
   "stream_list": {
     "my_calendar": "Mein kalender",
     "my_future_streams": "Meine zukünftigen streams",
-    "my_past_streams": "Meine vergangenen streams"
+    "my_past_streams": "Meine vergangenen streams",
+    "sure_you_want_delete_stream": "Möchten sie den stream \"{{title}}\" wirklich löschen?",
+    "error_get_streams_for_selected_day": "Fehler beim abrufen der streams für den ausgewählten tag",
+    "error_get_streams_for_active_period": "Fehler beim Abrufen der Streams für den aktiven Zeitraum",
+    "error_delete_stream": "Fehler beim löschen des streams",
+    "error_get_future_streams": "Fehler beim abrufen zukünftiger streams",
+    "error_get_past_streams": "Fehler beim abrufen vergangener streams"
   },
   "demo": {
   },

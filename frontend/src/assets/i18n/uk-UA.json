@@ -242,7 +242,13 @@
   "stream_list": {
     "my_calendar": "Мій календар",
     "my_future_streams": "Мої майбутні потоки",
-    "my_past_streams": "Мої минулі потоки"
+    "my_past_streams": "Мої минулі потоки",
+    "sure_you_want_delete_stream": "Ви впевнені, що бажаєте видалити потік \"{{title}}\"?",
+    "error_get_streams_for_selected_day": "Помилка отримання потоків для вибраного дня",
+    "error_get_streams_for_active_period": "Помилка отримання потоків за активний період",
+    "error_delete_stream": "Помилка під час видалення потоку",
+    "error_get_future_streams": "Помилка під час отримання майбутніх потоків",
+    "error_get_past_streams": "Помилка під час отримання минулих потоків"
   },
   "demo": {
   },

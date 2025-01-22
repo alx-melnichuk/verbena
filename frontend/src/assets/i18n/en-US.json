@@ -242,19 +242,19 @@
   "stream_list": {
     "my_calendar": "My calendar",
     "my_future_streams": "My future streams",
-    "my_past_streams": "My past streams"
-  },
-  "demo": {
+    "my_past_streams": "My past streams",
     "sure_you_want_delete_stream": "Are you sure you want to delete the stream \"{{title}}\" ?",
     "error_get_streams_for_selected_day": "Error getting streams for the selected day",
     "error_get_streams_for_active_period": "Error getting streams for the active period",
     "error_delete_stream": "Error while deleting stream",
+    "error_get_future_streams": "Error while getting future streams",
+    "error_get_past_streams": "Error while getting past streams"
+  },
+  "demo": {
     "_error_get_streams": "Error getting the list of streams",
     "_error_get_user_stock_list": "Error getting user stock list",
     "_error_add_user_stock": "Error while add user stock",
-    "_error_delete_user_stock": "Error while deleting user stock",
-    "error_get_future_streams": "Error while getting future streams",
-    "error_get_past_streams": "Error while getting past streams"
+    "_error_delete_user_stock": "Error while deleting user stock"
   },
   "panel-stream-mini": {
     "buttons": {
