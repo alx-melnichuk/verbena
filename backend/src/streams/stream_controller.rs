@@ -86,6 +86,109 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
+pub fn remove_image_files<'a>(
+    path_file_img_list: &[&'a str],
+    alias_file_img: &'a str,
+    img_file_dir: &'a str,
+    err_msg: &'a str,
+) {
+    for path_file_img in path_file_img_list {
+        // If the image file name starts with the specified alias, then delete the file.
+        if path_file_img.len() > 0 && (alias_file_img.len() == 0 || path_file_img.starts_with(alias_file_img)) {
+            let avatar_name_full_path = path_file_img.replace(alias_file_img, img_file_dir);
+            remove_file_and_log(&avatar_name_full_path, err_msg);
+        }
+    }
+}
+pub fn remove_image_file(path_file_img: &str, alias_file_img: &str, img_file_dir: &str, err_msg: &str) {
+    // If the image file name starts with the specified alias, then delete the file.
+    if path_file_img.len() > 0 && (alias_file_img.len() == 0 || path_file_img.starts_with(alias_file_img)) {
+        let avatar_name_full_path = path_file_img.replace(alias_file_img, img_file_dir);
+        remove_file_and_log(&avatar_name_full_path, err_msg);
+    }
+}
+pub fn remove_file_and_log(file_name: &str, msg: &str) {
+    if file_name.len() > 0 {
+        let res_remove = std::fs::remove_file(file_name);
+        if let Err(err) = res_remove {
+            log::error!("{} remove_file({}): error: {:?}", msg, file_name, err);
+        }
+    }
+}
+pub fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
+    format!("{}_{}", user_id, coding::encode(date_time, 1))
+}
+/** Filter (get a list) of streams by specified parameters. */
+pub async fn filter_streams_by_params(
+    stream_orm: web::Data<StreamOrmApp>,
+    opt_id: Option<i32>,
+    opt_user_id: Option<i32>,
+    opt_is_logo: Option<bool>,
+    opt_live: Option<bool>,
+    is_tags: bool,
+    exclude_ids: Vec<i32>,
+) -> Result<(Vec<stream_models::Stream>, Vec<stream_models::StreamTagStreamId>), AppError> {
+    let result_data = web::block(move || {
+        // Filter entities (streams) by specified parameters.
+        let res_data = stream_orm
+            .filter_streams_by_params(opt_id, opt_user_id, opt_is_logo, opt_live, is_tags, &exclude_ids)
+            .map_err(|e| {
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            });
+        res_data
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
+    let (streams, stream_tags) = match result_data {
+        Ok(v) => v,
+        Err(e) => return Err(e),
+    };
+    /*
+    let streams: Vec<stream_models::Stream> = vec![stream];
+    // Merge a "stream" and a corresponding list of "tags".
+    let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, profile.user_id);
+    */
+    Ok((streams, stream_tags))
+}
+/** Remove logo file for all streams of user with user_id. */
+pub async fn remove_logos_for_streams(
+    stream_orm: web::Data<StreamOrmApp>,
+    user_id: i32,
+    config_strm: config_strm::ConfigStrm,
+) -> Result<(), AppError> {
+    let opt_user_id: Option<i32> = Some(user_id);
+    let opt_is_logo: Option<bool> = Some(true);
+    // Get a list of streams for a user (user_id) that have logo files (is_logo = true).
+    let result_data = filter_streams_by_params(stream_orm, None, opt_user_id, opt_is_logo, None, false, vec![]).await;
+
+    let (streams, _stream_tags) = match result_data {
+        Ok(v) => v,
+        Err(e) => return Err(e),
+    };
+    // Get a list of logo file names from a list of streams.
+    let path_file_img_list: Vec<String> = streams
+        .iter()
+        .filter(|stream| stream.logo.is_some() && stream.logo.clone().unwrap_or(String::new()).len() > 0)
+        .map(|stream| stream.logo.clone().unwrap_or(String::new()))
+        .collect();
+    let path_file_img_list2: Vec<&str> = path_file_img_list.iter().map(|x| &**x).collect();
+    //
+    //remove_image_files(&path_file_img_list, alias_file_img: &str, img_file_dir: &str, err_msg: &str)
+    let img_file_dir = config_strm.strm_logo_files_dir;
+    remove_image_files(
+        &path_file_img_list2,
+        ALIAS_LOGO_FILES_DIR,
+        &img_file_dir,
+        &"remove_logos_for_streams()",
+    );
+
+    Ok(())
+}
+
 // ** Section: Stream Get **
 
 /// get_stream_by_id
@@ -137,7 +240,7 @@ pub async fn get_stream_by_id(
     let res_data = web::block(move || {
         // Get 'stream' by id.
         let res_data = stream_orm
-            .find_streams_by_params(Some(id), opt_user_id, None, true, Vec::<i32>::new())
+            .find_stream_by_params(Some(id), opt_user_id, None, true, &[])
             .map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
@@ -593,24 +696,6 @@ pub async fn get_streams_period(
 
 // ** Section: Stream Post **
 
-pub fn remove_image_file(path_file_img: &str, alias_file_img: &str, img_file_dir: &str, err_msg: &str) {
-    // If the image file name starts with the specified alias, then delete the file.
-    if path_file_img.len() > 0 && (alias_file_img.len() == 0 || path_file_img.starts_with(alias_file_img)) {
-        let avatar_name_full_path = path_file_img.replace(alias_file_img, img_file_dir);
-        remove_file_and_log(&avatar_name_full_path, err_msg);
-    }
-}
-pub fn remove_file_and_log(file_name: &str, msg: &str) {
-    if file_name.len() > 0 {
-        let res_remove = std::fs::remove_file(file_name);
-        if let Err(err) = res_remove {
-            log::error!("{} remove_file({}): error: {:?}", msg, file_name, err);
-        }
-    }
-}
-pub fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
-    format!("{}_{}", user_id, coding::encode(date_time, 1))
-}
 // Convert the file to another mime type.
 #[rustfmt::skip]
 pub fn convert_logo_file(path_logo_file: &str, config_strm: config_strm::ConfigStrm, name: &str) -> Result<Option<String>, String> {
@@ -1295,7 +1380,7 @@ pub async fn put_toggle_state(
     let res_stream_tags = web::block(move || {
         // Find a stream by ID.
         let res_stream_tags = stream_orm2
-            .find_streams_by_params(Some(id), opt_user_id, None, false, Vec::<i32>::new())
+            .find_stream_by_params(Some(id), opt_user_id, None, false, &[])
             .map_err(|e| {
                 log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
@@ -1342,7 +1427,7 @@ pub async fn put_toggle_state(
         // find any stream in active state.
         let res_stream2_tags = web::block(move || {
             let res_stream2_tags = stream_orm2
-                .find_streams_by_params(None, opt_user_id, Some(true), false, vec![id])
+                .find_stream_by_params(None, opt_user_id, Some(true), false, &[id])
                 .map_err(|e| {
                     log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                     AppError::database507(&e)
