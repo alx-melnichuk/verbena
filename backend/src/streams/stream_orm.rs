@@ -17,10 +17,10 @@ pub trait StreamOrm {
     ) -> Result<(Vec<Stream>, Vec<StreamTagStreamId>), String>;
     /// Find for an entity (stream) by SearchStreamInfo.
     #[rustfmt::skip]
-    fn find_streams(&self, search_stream: SearchStream, is_tags: bool,
+    fn find_streams_by_pages(&self, search_stream: SearchStream, is_tags: bool,
     ) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String>;
     /// Find for an entity (stream event) by SearchStreamEvent.
-    fn find_stream_events(&self, search_stream_event: SearchStreamEvent) -> Result<(u32, Vec<Stream>), String>;
+    fn find_stream_events_by_pages(&self, search_stream_event: SearchStreamEvent) -> Result<(u32, Vec<Stream>), String>;
     /// Find for an entity (stream period) by SearchStreamPeriod.
     fn find_streams_period(&self, search_stream_period: SearchStreamPeriod) -> Result<Vec<DateTime<Utc>>, String>;
     /// Add a new entity (stream).
@@ -159,7 +159,7 @@ pub mod impls {
             let opt_stream = query_list
                 .first::<Stream>(&mut conn)
                 .optional()
-                .map_err(|e| format!("find_streams_by_params: {}", e.to_string()))?;
+                .map_err(|e| format!("find_stream_by_params: {}", e.to_string()))?;
 
             if let Some(stream) = opt_stream {
                 let stream_tags: Vec<StreamTagStreamId> = match is_tags {
@@ -235,7 +235,7 @@ pub mod impls {
 
         /// Find for an entity (stream) by SearchStream.
         #[rustfmt::skip]
-        fn find_streams(&self, search_stream: SearchStream, is_tags: bool,
+        fn find_streams_by_pages(&self, search_stream: SearchStream, is_tags: bool,
         ) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
@@ -298,14 +298,14 @@ pub mod impls {
             let amount_res = query_count.count().get_result::<i64>(&mut conn);
             // lead time: 476.06µs
             if let Err(err) = amount_res {
-                return Err(format!("find_streams: (query_count) {}", err));
+                return Err(format!("find_streams_by_pages: (query_count) {}", err));
             }
             let amount: i64 = amount_res.unwrap();
             let count: u32 = amount.try_into().unwrap();
 
             let streams: Vec<Stream> = query_list
                 .load(&mut conn)
-                .map_err(|e| format!("find_streams: (query_list) {}", e.to_string()))?;
+                .map_err(|e| format!("find_streams_by_pages: (query_list) {}", e.to_string()))?;
             // lead time: 679.46µs
             // Get a list of "stream" identifiers.
             let ids: Vec<i32> = streams.iter().map(|stream| stream.id).collect();
@@ -317,7 +317,7 @@ pub mod impls {
         }
 
         /// Find for an entity (stream event) by SearchStreamEvent.
-        fn find_stream_events(&self, search_event: SearchStreamEvent) -> Result<(u32, Vec<Stream>), String> {
+        fn find_stream_events_by_pages(&self, search_event: SearchStreamEvent) -> Result<(u32, Vec<Stream>), String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -355,14 +355,14 @@ pub mod impls {
             let amount_res = query_count.count().get_result::<i64>(&mut conn);
             // lead time: 1.14ms
             if let Err(err) = amount_res {
-                return Err(format!("find_stream_events: (query_count) {}", err));
+                return Err(format!("find_stream_events_by_pages: (query_count) {}", err));
             }
             let amount: i64 = amount_res.unwrap();
             let count: u32 = amount.try_into().unwrap();
 
             let streams: Vec<Stream> = query_list
                 .load(&mut conn)
-                .map_err(|e| format!("find_streams: (query_list) {}", e.to_string()))?;
+                .map_err(|e| format!("find_stream_events_by_pages: (query_list) {}", e.to_string()))?;
             // lead time: 699.49µs
 
             // lead time: 2.14ms
@@ -455,7 +455,7 @@ pub mod impls {
                 .filter(streams_dsl::id.eq(id))
                 .first::<Stream>(&mut conn)
                 .optional()
-                .map_err(|e| format!("find_stream_by_id: {}", e.to_string()))?;
+                .map_err(|e| format!("get_stream_logo_by_id: {}", e.to_string()))?;
 
             if let Some(stream) = opt_stream {
                 Ok(stream.logo)
@@ -734,7 +734,7 @@ pub mod tests {
 
         /// Find for an entity (stream) by SearchStreamInfoDto.
         #[rustfmt::skip]
-        fn find_streams(&self, search_stream: SearchStream, is_tags: bool,
+        fn find_streams_by_pages(&self, search_stream: SearchStream, is_tags: bool,
         ) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String> {
             let mut streams_info: Vec<StreamInfoDto> = vec![];
 
@@ -823,7 +823,7 @@ pub mod tests {
             Ok((count, streams, stream_tags))
         }
         /// Find for an entity (stream event) by SearchStreamEvent.
-        fn find_stream_events(&self, search_stream_event: SearchStreamEvent) -> Result<(u32, Vec<Stream>), String> {
+        fn find_stream_events_by_pages(&self, search_stream_event: SearchStreamEvent) -> Result<(u32, Vec<Stream>), String> {
             let mut streams_info: Vec<StreamInfoDto> = vec![];
 
             let start = search_stream_event.starttime;
