@@ -63,9 +63,9 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let config_strm = Data::new(config_strm::ConfigStrm::init_by_env());
         //
         let config_smtp0 = config_smtp::ConfigSmtp::init_by_env();
-        // used: stream_controller
+        // used: stream_controller, profile_controller
         let config_smtp = Data::new(config_smtp0.clone());
-        // used: Profile_controller
+        // used: profile_controller
         let config_prfl = Data::new(config_prfl::ConfigPrfl::init_by_env());
 
         // Adding various entities.
@@ -77,7 +77,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let user_recovery_orm = Data::new(get_user_recovery_orm_app(pool.clone()));
         // used: profile_auth_controller, profile_registr_controller
         let session_orm = Data::new(get_session_orm_app(pool.clone()));
-        // used: stream_controller
+        // used: stream_controller, profile_controller
         let stream_orm = Data::new(get_stream_orm_app(pool.clone()));
         // used: profile_controller
         let profile_orm = Data::new(get_profile_orm_app(pool.clone()));
