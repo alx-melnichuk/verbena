@@ -26,6 +26,11 @@ use crate::profiles::{
     profile_orm::ProfileOrm,
 };
 use crate::settings::err;
+use crate::streams::{config_strm, stream_extra::{get_stream_logo_files, remove_stream_logo_files}};
+#[cfg(not(feature = "mockdata"))]
+use crate::streams::stream_orm::impls::StreamOrmApp;
+#[cfg(feature = "mockdata")]
+use crate::streams::stream_orm::tests::StreamOrmApp;
 use crate::users::user_models::UserRole;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
@@ -807,6 +812,7 @@ pub async fn put_profile_new_password(
 /// ```
 ///
 /// Return the deleted user's profile (`ProfileDto`) with status 200 or 204 (no content) if the user's profile is not found.
+/// This will delete the user's image file. All user streams are also deleted, including stream logo files.
 ///
 #[utoipa::path(
     responses(
@@ -843,7 +849,9 @@ pub async fn put_profile_new_password(
 #[delete("/api/profiles/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn delete_profile(
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
+    config_strm: web::Data<config_strm::ConfigStrm>,
     profile_orm: web::Data<ProfileOrmApp>,
+    stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get data from request.
@@ -853,6 +861,9 @@ pub async fn delete_profile(
         log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
         AppError::range_not_satisfiable416(&message) // 416
     })?;
+
+    // Get a list of logo file names for streams of the user with the specified user_id.
+    let path_file_img_list: Vec<String> = get_stream_logo_files(stream_orm, id).await?;
 
     let opt_profile = web::block(move || {
         // Delete an entity (profile).
@@ -875,7 +886,9 @@ pub async fn delete_profile(
         let path_file_img = profile.avatar.clone().unwrap_or("".to_string());
         // If the image file name starts with the specified alias, then delete the file.
         remove_image_file(&path_file_img, ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"delete_profile()");
-        
+        // Delete all specified logo files in the given list.
+        remove_stream_logo_files(path_file_img_list, config_strm.get_ref().clone());
+
         Ok(HttpResponse::Ok().json(ProfileDto::from(profile))) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
@@ -894,6 +907,7 @@ pub async fn delete_profile(
 /// ```
 ///
 /// Return the deleted current user's profile (`ProfileDto`) with status 200 or 204 (no content) if the current user's profile is not found.
+/// This will delete the user's image file. All user streams are also deleted, including stream logo files.
 /// 
 #[utoipa::path(
     responses(
@@ -925,11 +939,16 @@ pub async fn delete_profile(
 pub async fn delete_profile_current(
     authenticated: Authenticated,
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
+    config_strm: web::Data<config_strm::ConfigStrm>,
     profile_orm: web::Data<ProfileOrmApp>,
+    stream_orm: web::Data<StreamOrmApp>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get current user details.
     let profile = authenticated.deref();
     let id = profile.user_id;
+    
+    // Get a list of logo file names for streams of the user with the specified user_id.
+    let path_file_img_list: Vec<String> = get_stream_logo_files(stream_orm, id).await?;
 
     let opt_profile = web::block(move || {
         // Delete an entity (profile).
@@ -952,6 +971,8 @@ pub async fn delete_profile_current(
         let path_file_img = profile.avatar.clone().unwrap_or("".to_string());
         // If the image file name starts with the specified alias, then delete the file.
         remove_image_file(&path_file_img, ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"delete_profile_current()");
+        // Delete all specified logo files in the given list.
+        remove_stream_logo_files(path_file_img_list, config_strm.get_ref().clone());
 
         Ok(HttpResponse::Ok().json(ProfileDto::from(profile))) // 200
     } else {
