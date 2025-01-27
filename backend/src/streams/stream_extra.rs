@@ -58,3 +58,64 @@ pub fn remove_stream_logo_files(path_file_img_list: Vec<String>, config_strm: co
         remove_image_file(&path_file_img, ALIAS_LOGO_FILES_DIR, &img_file_dir, &"remove_stream_logo_files()");
     }
 }
+
+#[cfg(all(test, feature = "mockdata"))]
+pub mod tests {
+    use actix_web::web;
+    use chrono::Utc;
+
+    use crate::streams::{
+        stream_controller::{tests::create_stream, ALIAS_LOGO_FILES_DIR},
+        stream_orm::tests::StreamOrmApp,
+    };
+
+    use super::get_stream_logo_files;
+
+    // ** get_stream_logo_files **
+
+    #[actix_web::test]
+    async fn test_get_stream_logo_files_another_user() {
+        let name0_file = "test_get_stream_logo_files_another_user.png";
+        let profile0_id = 0;
+        let mut stream = create_stream(0, profile0_id, "title0", "tag01,tag02", Utc::now());
+        stream.logo = Some(format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file));
+
+        let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&[stream]));
+        let result = get_stream_logo_files(data_stream_orm, profile0_id + 1).await;
+
+        assert!(result.is_ok());
+        let path_files = result.unwrap();
+        assert_eq!(path_files.len(), 0);
+    }
+
+    #[actix_web::test]
+    async fn test_get_stream_logo_files_without_files() {
+        let profile0_id = 0;
+        let stream = create_stream(0, profile0_id, "title0", "tag01,tag02", Utc::now());
+
+        let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&[stream]));
+        let result = get_stream_logo_files(data_stream_orm, profile0_id).await;
+
+        assert!(result.is_ok());
+        let path_files = result.unwrap();
+        assert_eq!(path_files.len(), 0);
+    }
+    #[actix_web::test]
+    async fn test_get_stream_logo_files_with_files() {
+        let name0_file = "test_get_stream_logo_files_with_files.png";
+        let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
+
+        let profile0_id = 0;
+
+        let mut stream = create_stream(0, profile0_id, "title0", "tag01,tag02", Utc::now());
+        stream.logo = Some(path_name0_alias.clone());
+
+        let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&[stream]));
+        let result = get_stream_logo_files(data_stream_orm, profile0_id).await;
+
+        assert!(result.is_ok());
+        let path_files = result.unwrap();
+        assert_eq!(path_files.len(), 1);
+        assert_eq!(path_files.get(0), Some(&path_name0_alias));
+    }
+}
