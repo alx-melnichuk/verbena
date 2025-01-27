@@ -934,7 +934,7 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::OK); // 200
         assert!(!is_exists_img_old);
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert!(stream_dto_res.logo.is_none());
