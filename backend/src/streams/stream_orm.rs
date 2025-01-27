@@ -725,7 +725,7 @@ pub mod tests {
                         stream_tags.push(strm_tag.clone());
                     }
                 }
-                Self::to_stream(stream_info)
+                Self::to_stream(&stream_info)
             })
             .collect();
             
