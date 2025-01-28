@@ -887,7 +887,7 @@ pub async fn delete_profile(
         // If the image file name starts with the specified alias, then delete the file.
         remove_image_file(&path_file_img, ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"delete_profile()");
         // Delete all specified logo files in the given list.
-        remove_stream_logo_files(path_file_img_list, config_strm.get_ref().clone());
+        let _ = remove_stream_logo_files(path_file_img_list, config_strm.get_ref().clone());
 
         Ok(HttpResponse::Ok().json(ProfileDto::from(profile))) // 200
     } else {
@@ -972,7 +972,7 @@ pub async fn delete_profile_current(
         // If the image file name starts with the specified alias, then delete the file.
         remove_image_file(&path_file_img, ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"delete_profile_current()");
         // Delete all specified logo files in the given list.
-        remove_stream_logo_files(path_file_img_list, config_strm.get_ref().clone());
+        let _ = remove_stream_logo_files(path_file_img_list, config_strm.get_ref().clone());
 
         Ok(HttpResponse::Ok().json(ProfileDto::from(profile))) // 200
     } else {
