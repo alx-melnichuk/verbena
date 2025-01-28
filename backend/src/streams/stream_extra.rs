@@ -3,12 +3,15 @@ use log;
 
 use crate::errors::AppError;
 use crate::settings::err;
-use crate::stream_controller::{remove_image_file, ALIAS_LOGO_FILES_DIR};
 #[cfg(not(feature = "mockdata"))]
 use crate::streams::stream_orm::impls::StreamOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::streams::stream_orm::tests::StreamOrmApp;
-use crate::streams::{config_strm, stream_orm::StreamOrm};
+use crate::streams::{
+    config_strm,
+    stream_controller::{remove_image_file, ALIAS_LOGO_FILES_DIR},
+    stream_orm::StreamOrm,
+};
 
 /** Get a list of logo file names for streams of the user with the specified user_id. */
 pub async fn get_stream_logo_files(stream_orm: web::Data<StreamOrmApp>, user_id: i32) -> Result<Vec<String>, AppError> {
@@ -49,7 +52,8 @@ pub async fn get_stream_logo_files(stream_orm: web::Data<StreamOrmApp>, user_id:
 }
 
 /** Delete all specified logo files in the given list. */
-pub fn remove_stream_logo_files(path_file_img_list: Vec<String>, config_strm: config_strm::ConfigStrm) {
+pub fn remove_stream_logo_files(path_file_img_list: Vec<String>, config_strm: config_strm::ConfigStrm) -> usize {
+    let result = path_file_img_list.len();
     let img_file_dir = config_strm.strm_logo_files_dir;
     // Remove files from the resulting list of stream logo files.
     for path_file_img in path_file_img_list {
@@ -57,19 +61,28 @@ pub fn remove_stream_logo_files(path_file_img_list: Vec<String>, config_strm: co
         #[rustfmt::skip]
         remove_image_file(&path_file_img, ALIAS_LOGO_FILES_DIR, &img_file_dir, &"remove_stream_logo_files()");
     }
+    result
 }
 
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
+    use std::{fs, path};
+
     use actix_web::web;
     use chrono::Utc;
 
     use crate::streams::{
+        config_strm,
         stream_controller::{tests::create_stream, ALIAS_LOGO_FILES_DIR},
         stream_orm::tests::StreamOrmApp,
     };
 
-    use super::get_stream_logo_files;
+    use super::{get_stream_logo_files, remove_stream_logo_files};
+
+    pub fn save_empty_file(path_file: &str) -> Result<String, String> {
+        let _ = fs::File::create(path_file).map_err(|e| e.to_string())?;
+        Ok(path_file.to_string())
+    }
 
     // ** get_stream_logo_files **
 
@@ -87,7 +100,6 @@ pub mod tests {
         let path_files = result.unwrap();
         assert_eq!(path_files.len(), 0);
     }
-
     #[actix_web::test]
     async fn test_get_stream_logo_files_without_files() {
         let profile0_id = 0;
@@ -117,5 +129,33 @@ pub mod tests {
         let path_files = result.unwrap();
         assert_eq!(path_files.len(), 1);
         assert_eq!(path_files.get(0), Some(&path_name0_alias));
+    }
+
+    // ** remove_stream_logo_files **
+
+    #[actix_web::test]
+    async fn test_remove_stream_logo_files_empty_list() {
+        let config_strm = config_strm::get_test_config();
+        let path_file_img_list: Vec<String> = vec![];
+
+        let res = remove_stream_logo_files(path_file_img_list, config_strm);
+        assert_eq!(res, 0);
+    }
+    #[actix_web::test]
+    async fn test_remove_stream_logo_files_not_empty_list() {
+        let config_strm = config_strm::get_test_config();
+
+        let name0_file = "test_remove_stream_logo_files_not_empty_list.png";
+        let path_name0_file = format!("{}/{}", &config_strm.strm_logo_files_dir, name0_file);
+        save_empty_file(&path_name0_file).unwrap();
+
+        let path_name0_alias = path_name0_file.replace(&config_strm.strm_logo_files_dir, ALIAS_LOGO_FILES_DIR);
+
+        let path_file_img_list: Vec<String> = vec![path_name0_alias];
+
+        let res = remove_stream_logo_files(path_file_img_list, config_strm);
+        assert_eq!(res, 1);
+        let is_exists_logo_file = path::Path::new(&path_name0_file).exists();
+        assert!(!is_exists_logo_file);
     }
 }
