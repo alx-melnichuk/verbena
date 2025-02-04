@@ -423,17 +423,21 @@ mod tests {
     async fn test_get_streams_search_by_is_future() {
         let (cfg_c, data_c, token) = get_cfg_data();
         let profile1_id = data_c.0.get(0).unwrap().user_id;
-        let tomorrow = Utc::now() + Duration::days(1);
-        let yesterday = Utc::now() - Duration::days(1);
+        let now = Utc::now();
+        let tomorrow = now + Duration::days(1);
+        let yesterday = now - Duration::days(1);
+        let one_min = Duration::minutes(1);
         let mut streams: Vec<StreamInfoDto> = Vec::new();
-        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", yesterday));
-        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", yesterday));
-        streams.push(create_stream(2, profile1_id, "demo21", "tag21,tag22", Utc::now()));
-        streams.push(create_stream(3, profile1_id, "demo22", "tag24,tag25", tomorrow));
+        streams.push(create_stream(0, profile1_id, "demo11", "tag10,tag11", yesterday));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag10,tag12", now - one_min));
+        streams.push(create_stream(2, profile1_id, "demo13", "tag10,tag13", now));
+        streams.push(create_stream(3, profile1_id, "demo14", "tag10,tag14", now + one_min));
+        streams.push(create_stream(4, profile1_id, "demo15", "tag10,tag15", tomorrow));
+
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
-        let stream_vec = &(stream_orm_vec.clone())[2..4];
 
+        let stream_vec = &(stream_orm_vec.clone())[3..5];
         let data_c = (data_c.0, data_c.1, stream_orm_vec);
         let limit = 2;
         let page = 1;
@@ -465,19 +469,23 @@ mod tests {
     async fn test_get_streams_search_by_is_not_future() {
         let (cfg_c, data_c, token) = get_cfg_data();
         let profile1_id = data_c.0.get(0).unwrap().user_id;
-        let tomorrow = Utc::now() + Duration::days(1);
-        let yesterday = Utc::now() - Duration::days(1);
+        let now = Utc::now();
+        let tomorrow = now + Duration::days(1);
+        let yesterday = now - Duration::days(1);
+        let one_min = Duration::minutes(1);
         let mut streams: Vec<StreamInfoDto> = Vec::new();
-        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", Utc::now()));
-        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", tomorrow));
-        streams.push(create_stream(2, profile1_id, "demo21", "tag21,tag22", yesterday));
-        streams.push(create_stream(3, profile1_id, "demo22", "tag24,tag25", yesterday));
+        streams.push(create_stream(0, profile1_id, "demo11", "tag10,tag11", yesterday));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag10,tag12", now - one_min));
+        streams.push(create_stream(2, profile1_id, "demo13", "tag10,tag13", now));
+        streams.push(create_stream(3, profile1_id, "demo14", "tag10,tag14", now + one_min));
+        streams.push(create_stream(4, profile1_id, "demo15", "tag10,tag15", tomorrow));
+
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
-        let stream_vec = &(stream_orm_vec.clone())[2..4];
+        let stream_vec = &(stream_orm_vec.clone())[0..3];
 
         let data_c = (data_c.0, data_c.1, stream_orm_vec);
-        let limit = 2;
+        let limit = 3;
         let page = 1;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -496,7 +504,6 @@ mod tests {
         let count = stream_vec.len() as u32;
         let json = serde_json::json!(stream_vec).to_string();
         let stream_vec_ser: Vec<StreamInfoDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-
         assert_eq!(response.list, stream_vec_ser);
         assert_eq!(response.limit, limit);
         assert_eq!(response.count, count);
@@ -507,15 +514,14 @@ mod tests {
     async fn test_get_streams_search_by_user_id_and_order_starttime_asc() {
         let (cfg_c, data_c, token) = get_cfg_data();
         let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let now = Utc::now();
+        let one_day = Duration::days(1);
+        let two_days = Duration::days(2);
         let mut streams: Vec<StreamInfoDto> = Vec::new();
-        #[rustfmt::skip]
-        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", Utc::now() + Duration::days(2)));
-        #[rustfmt::skip]
-        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", Utc::now() + Duration::days(1)));
-        #[rustfmt::skip]
-        streams.push(create_stream(2, profile1_id, "demo21", "tag21,tag22", Utc::now() - Duration::days(1)));
-        #[rustfmt::skip]
-        streams.push(create_stream(3, profile1_id, "demo22", "tag24,tag25", Utc::now() - Duration::days(2)));
+        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", now + two_days));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", now + one_day));
+        streams.push(create_stream(2, profile1_id, "demo21", "tag21,tag22", now - one_day));
+        streams.push(create_stream(3, profile1_id, "demo22", "tag24,tag25", now - two_days));
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
         let stream_vec = vec![
@@ -559,15 +565,14 @@ mod tests {
     async fn test_get_streams_search_by_user_id_and_order_starttime_desc() {
         let (cfg_c, data_c, token) = get_cfg_data();
         let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let now = Utc::now();
+        let one_day = Duration::days(1);
+        let two_days = Duration::days(2);
         let mut streams: Vec<StreamInfoDto> = Vec::new();
-        #[rustfmt::skip]
-        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", Utc::now() - Duration::days(2)));
-        #[rustfmt::skip]
-        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", Utc::now() - Duration::days(1)));
-        #[rustfmt::skip]
-        streams.push(create_stream(2, profile1_id, "demo21", "tag21,tag22", Utc::now() + Duration::days(1)));
-        #[rustfmt::skip]
-        streams.push(create_stream(3, profile1_id, "demo22", "tag24,tag25", Utc::now() + Duration::days(2)));
+        streams.push(create_stream(0, profile1_id, "demo11", "tag11,tag12", now - two_days));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag14,tag15", now - one_day));
+        streams.push(create_stream(2, profile1_id, "demo21", "tag21,tag22", now + one_day));
+        streams.push(create_stream(3, profile1_id, "demo22", "tag24,tag25", now + two_days));
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
         let stream_vec = vec![
