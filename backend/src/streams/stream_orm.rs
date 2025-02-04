@@ -60,7 +60,7 @@ pub mod cfg {
 
 #[cfg(not(feature = "mockdata"))]
 pub mod impls {
-    use chrono::Duration;
+    use chrono::{Duration, FixedOffset, Local, TimeZone};
     use diesel::{self, prelude::*, sql_types};
     use schema::streams::dsl as streams_dsl;
 
@@ -268,7 +268,15 @@ pub mod impls {
             }
 
             if let Some(is_future) = search_stream.is_future {
-                let now_date = Utc::now().date_naive().and_hms_opt(0, 0, 0).unwrap();
+                // Fixed offset of the user's time zone. (in minutes). Differs from the time zone in winter.
+                let opt_offset_mins: Option<i32> = search_stream.tz_offset;
+                let offset_local = Local::now().offset().local_minus_utc();
+                // Get the "offset" value in seconds from "offset_mins" or the current value.
+                let tz_offset_secs: i32 = if let Some(offset_mins) = opt_offset_mins { offset_mins * 60 } else { offset_local };
+                let now = Utc::now().naive_utc(); 
+                // Convert the current date and time (in Utc format) to the date and time in the client's time zone.
+                let now_date: DateTime<Utc> = FixedOffset::east_opt(tz_offset_secs).unwrap().from_utc_datetime(&now).to_utc();
+        
                 if !is_future {
                     // starttime < now_date
                     query_list = query_list.filter(streams_dsl::starttime.lt(now_date));
@@ -577,7 +585,7 @@ pub mod impls {
 pub mod tests {
     use std::cmp::Ordering;
 
-    use chrono::Duration;
+    use chrono::{Duration, FixedOffset, Local, TimeZone};
 
     use crate::streams::stream_models::{self, StreamInfoDto, StreamState};
 
@@ -742,8 +750,14 @@ pub mod tests {
             #[rustfmt::skip]
             let is_future_val = if is_future { search_stream.is_future.unwrap() } else { false };
 
-            let now = Utc::now();
-            let now_date = now.date_naive();
+            // Fixed offset of the user's time zone. (in minutes). Differs from the time zone in winter.
+            let opt_offset_mins: Option<i32> = search_stream.tz_offset;
+            let offset_local = Local::now().offset().local_minus_utc();
+            // Get the "offset" value in seconds from "offset_mins" or the current value.
+            let tz_offset_secs: i32 = if let Some(offset_mins) = opt_offset_mins { offset_mins * 60 } else { offset_local };
+            let now = Utc::now().naive_utc(); 
+            // Convert the current date and time (in Utc format) to the date and time in the client's time zone.
+            let now_date: DateTime<Utc> = FixedOffset::east_opt(tz_offset_secs).unwrap().from_utc_datetime(&now).to_utc();
 
             for stream in self.stream_info_vec.iter() {
                 let mut is_add_value = true;
@@ -754,7 +768,7 @@ pub mod tests {
                 if stream.live != search_stream.live.unwrap_or(stream.live) {
                     is_add_value = false;
                 }
-                let starttime_date = stream.starttime.date_naive();
+                let starttime_date = stream.starttime;
 
                 if is_future && !is_future_val && starttime_date >= now_date {
                     is_add_value = false;

@@ -197,6 +197,7 @@ pub async fn get_stream_by_id(
 ///   userId?: number,          // optional
 ///   live?: boolean,           // optional
 ///   isFuture?: boolean,       // optional
+///   tzOffset?: number,        // optional
 ///   orderColumn?: ["starttime", "title"], // optional
 ///   orderDirection?: ["asc", "desc"],  // optional
 ///   page?: number,            // optional
@@ -206,6 +207,7 @@ pub async fn get_stream_by_id(
 /// "userId" - user identifier (current default user);
 /// "live" - sign of a "live" stream ("state" = ["preparing", "started", "paused"]);
 /// "isFuture" - a sign that the stream will start in the future;
+/// "tzOffset" - fixed offset of the user's time zone. (in minutes). (js: new Date().getTimezoneOffset() );
 /// "orderColumn" - sorting column ["starttime" - (default), "title"];
 /// "orderDirection" - sort order ["asc" - ascending (default), "desc" - descending];
 /// "page" - page number, stratified from 1 (1 by default);

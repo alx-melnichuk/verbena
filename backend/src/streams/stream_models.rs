@@ -573,7 +573,10 @@ pub const SEARCH_STREAM_ORDER_DIRECTION: OrderDirection = OrderDirection::Asc;
 pub struct SearchStream {
     pub user_id: i32,
     pub live: Option<bool>,
+    // true - (starttime >= now), false - (starttime < now)
     pub is_future: Option<bool>,
+    // Fixed offset of the user's time zone. (in minutes). Differs from the time zone in winter.
+    pub tz_offset: Option<i32>,
     pub order_column: Option<OrderColumn>,
     pub order_direction: Option<OrderDirection>,
     pub page: Option<u32>,
@@ -586,6 +589,7 @@ impl SearchStream {
             user_id: search_stream_info.user_id.unwrap_or(user_id),
             live: search_stream_info.live.clone(),
             is_future: search_stream_info.is_future.clone(),
+            tz_offset: search_stream_info.tz_offset.clone(),
             order_column: search_stream_info.order_column.clone(),
             order_direction: search_stream_info.order_direction.clone(),
             page: search_stream_info.page.clone(),
@@ -606,6 +610,9 @@ pub struct SearchStreamInfoDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     // true - (starttime >= now), false - (starttime < now)
     pub is_future: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    // Fixed offset of the user's time zone. (in minutes). Differs from the time zone in winter.
+    pub tz_offset: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub order_column: Option<OrderColumn>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
