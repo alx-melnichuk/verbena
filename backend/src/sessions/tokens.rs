@@ -117,8 +117,8 @@ pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<(i32, i3
 }
 
 pub fn generate_num_token() -> i32 {
-    let mut rng = rand::thread_rng();
-    let result = rng.gen_range(CD_NUM_TOKEN_MIN..CD_NUM_TOKEN_MAX);
+    let mut rng = rand::rng();
+    let result = rng.random_range(CD_NUM_TOKEN_MIN..CD_NUM_TOKEN_MAX);
     result as i32
 }
 
