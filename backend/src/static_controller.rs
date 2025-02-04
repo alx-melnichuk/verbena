@@ -65,7 +65,7 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
         "mime = \"0.3.17\"",
         "openssl = \"0.10.68\"",
         "r2d2 = \"0.8.10\"",
-        "rand = \"0.8.5\"",
+        "rand = \"0.9.0\"",
         "regex = \"1.11.1\"",
         "serde = { version = \"1.0.216\", features = [\"derive\"] }",
         "serde_json = \"1.0.133\"",
