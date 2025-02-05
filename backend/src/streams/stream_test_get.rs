@@ -8,7 +8,7 @@ mod tests {
         },
         test, App,
     };
-    use chrono::{DateTime, Datelike, Duration, Local, SecondsFormat, TimeZone, Utc};
+    use chrono::{DateTime, Datelike, Duration, Local, SecondsFormat, TimeZone, Timelike, Utc};
     use serde_json;
 
     use crate::errors::AppError;
@@ -423,23 +423,23 @@ mod tests {
     async fn test_get_streams_search_by_is_future() {
         let (cfg_c, data_c, token) = get_cfg_data();
         let profile1_id = data_c.0.get(0).unwrap().user_id;
-        let now = Utc::now();
+        let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
         let tomorrow = now + Duration::days(1);
         let yesterday = now - Duration::days(1);
-        let one_min = Duration::minutes(1);
+        let sec = Duration::seconds(1);
         let mut streams: Vec<StreamInfoDto> = Vec::new();
         streams.push(create_stream(0, profile1_id, "demo11", "tag10,tag11", yesterday));
-        streams.push(create_stream(1, profile1_id, "demo12", "tag10,tag12", now - one_min));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag10,tag12", now - sec));
         streams.push(create_stream(2, profile1_id, "demo13", "tag10,tag13", now));
-        streams.push(create_stream(3, profile1_id, "demo14", "tag10,tag14", now + one_min));
+        streams.push(create_stream(3, profile1_id, "demo14", "tag10,tag14", now + sec));
         streams.push(create_stream(4, profile1_id, "demo15", "tag10,tag15", tomorrow));
 
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
 
-        let stream_vec = &(stream_orm_vec.clone())[3..5];
+        let stream_vec = &(stream_orm_vec.clone())[2..5];
         let data_c = (data_c.0, data_c.1, stream_orm_vec);
-        let limit = 2;
+        let limit = 3;
         let page = 1;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -469,20 +469,20 @@ mod tests {
     async fn test_get_streams_search_by_is_not_future() {
         let (cfg_c, data_c, token) = get_cfg_data();
         let profile1_id = data_c.0.get(0).unwrap().user_id;
-        let now = Utc::now();
+        let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
         let tomorrow = now + Duration::days(1);
         let yesterday = now - Duration::days(1);
-        let one_min = Duration::minutes(1);
+        let sec = Duration::seconds(1);
         let mut streams: Vec<StreamInfoDto> = Vec::new();
         streams.push(create_stream(0, profile1_id, "demo11", "tag10,tag11", yesterday));
-        streams.push(create_stream(1, profile1_id, "demo12", "tag10,tag12", now - one_min));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag10,tag12", now - sec));
         streams.push(create_stream(2, profile1_id, "demo13", "tag10,tag13", now));
-        streams.push(create_stream(3, profile1_id, "demo14", "tag10,tag14", now + one_min));
+        streams.push(create_stream(3, profile1_id, "demo14", "tag10,tag14", now + sec));
         streams.push(create_stream(4, profile1_id, "demo15", "tag10,tag15", tomorrow));
 
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
-        let stream_vec = &(stream_orm_vec.clone())[0..3];
+        let stream_vec = &(stream_orm_vec.clone())[0..2];
 
         let data_c = (data_c.0, data_c.1, stream_orm_vec);
         let limit = 3;
@@ -504,6 +504,59 @@ mod tests {
         let count = stream_vec.len() as u32;
         let json = serde_json::json!(stream_vec).to_string();
         let stream_vec_ser: Vec<StreamInfoDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+
+        assert_eq!(response.list, stream_vec_ser);
+        assert_eq!(response.limit, limit);
+        assert_eq!(response.count, count);
+        assert_eq!(response.page, page);
+        assert_eq!(response.pages, 1);
+    }
+    #[actix_web::test]
+    async fn test_get_streams_search_by_is_future_and_tz_offset() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
+        let tomorrow = now + Duration::days(1);
+        let yesterday = now - Duration::days(1);
+        let sec = Duration::seconds(1);
+        let hour = Duration::hours(1);
+        let mut streams: Vec<StreamInfoDto> = Vec::new();
+        streams.push(create_stream(0, profile1_id, "demo11", "tag10,tag11", yesterday));
+        streams.push(create_stream(1, profile1_id, "demo12", "tag10,tag12", now - hour - sec));
+        streams.push(create_stream(2, profile1_id, "demo13", "tag10,tag13", now - hour));
+        streams.push(create_stream(3, profile1_id, "demo14", "tag10,tag14", now));
+        streams.push(create_stream(4, profile1_id, "demo15", "tag10,tag15", now + hour));
+        streams.push(create_stream(5, profile1_id, "demo16", "tag10,tag16", tomorrow));
+
+        let stream_orm = StreamOrmApp::create(&streams);
+        let stream_orm_vec = stream_orm.stream_info_vec.clone();
+
+        let stream_vec = &(stream_orm_vec.clone())[2..6];
+        let data_c = (data_c.0, data_c.1, stream_orm_vec);
+        // Set the client's time zone offset back one hour.
+        let tz_offset = -60;
+        // Then streams with a date greater than "now - one_hour" should be returned.
+        let limit = 4;
+        let page = 1;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(get_streams).configure(configure_stream(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::get()
+            .uri(&format!("/api/streams?isFuture={}&tzOffset={}&page={}&limit={}", true, tz_offset, page, limit))
+            .insert_header(header_auth(&token)).to_request();
+
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let count = stream_vec.len() as u32;
+        let json = serde_json::json!(stream_vec).to_string();
+        let stream_vec_ser: Vec<StreamInfoDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+
         assert_eq!(response.list, stream_vec_ser);
         assert_eq!(response.limit, limit);
         assert_eq!(response.count, count);
