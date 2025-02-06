@@ -575,7 +575,7 @@ pub struct SearchStream {
     pub live: Option<bool>,
     // true - (starttime >= now), false - (starttime < now)
     pub is_future: Option<bool>,
-    // Fixed offset of the user's time zone. (in minutes). Differs from the time zone in winter.
+    // Fixed offset of the user's time zone. (in minutes). Different from the time zone in winter time.
     pub tz_offset: Option<i32>,
     pub order_column: Option<OrderColumn>,
     pub order_direction: Option<OrderDirection>,
@@ -611,7 +611,7 @@ pub struct SearchStreamInfoDto {
     // true - (starttime >= now), false - (starttime < now)
     pub is_future: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    // Fixed offset of the user's time zone. (in minutes). Differs from the time zone in winter.
+    // Fixed offset of the user's time zone. (in minutes). Different from the time zone in winter time.
     pub tz_offset: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub order_column: Option<OrderColumn>,
