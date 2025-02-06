@@ -26,10 +26,10 @@ mod tests {
         let date = Local.with_ymd_and_hms(2020, 1, 1, 18, 0, 0).unwrap();
         let date_utc = date.to_utc();
         // "2020-01-01T16:00:00Z"
-        let offset = date.offset().fix().local_minus_utc() / 60;
-        let delta = -offset; // -120
+        let offset = date.offset().fix().local_minus_utc() / 60; // -120 minutes
+        let client_mins_utc = -offset; // -120 minutes
 
-        let res_utc = get_datetime_for_offset(date, delta);
+        let res_utc = get_datetime_for_offset(date, client_mins_utc);
         // "2020-01-01T16:00:00Z"
         assert_eq!(date_utc.year(), res_utc.year());
         assert_eq!(date_utc.month(), res_utc.month());
@@ -43,7 +43,7 @@ mod tests {
         let date = Local.with_ymd_and_hms(2020, 1, 1, 18, 0, 0).unwrap();
         let date_utc = date.to_utc();
         // "2020-01-01T16:00:00Z"
-        let offset = date.offset().fix().local_minus_utc() / 60;
+        let offset = date.offset().fix().local_minus_utc() / 60; // -120
         let delta_hours = offset / 60;
         // let delta_minutes = offset - delta_hours * 60;
 
@@ -61,11 +61,10 @@ mod tests {
         let date = Local.with_ymd_and_hms(2020, 1, 1, 18, 0, 0).unwrap();
         let date_utc = date.to_utc();
         // "2020-01-01T16:00:00Z"
+        let offset = date.offset().fix().local_minus_utc() / 60; // -120
+        let client_mins_utc = -(offset - 30); // -90 minutes
 
-        let offset = date.offset().fix().local_minus_utc() / 60;
-        let delta = -(offset - 30); // -90
-
-        let res_utc = get_datetime_for_offset(date, delta);
+        let res_utc = get_datetime_for_offset(date, client_mins_utc);
         // "2020-01-01T15:30:00Z"
         assert_eq!(date_utc.year(), res_utc.year());
         assert_eq!(date_utc.month(), res_utc.month());
@@ -79,10 +78,10 @@ mod tests {
         let date = Local.with_ymd_and_hms(2020, 1, 1, 18, 0, 0).unwrap();
         let date_utc = date.to_utc();
         // "2020-01-01T16:00:00Z"
-        let offset = date.offset().fix().local_minus_utc() / 60;
-        let delta = -(offset + 30); // -150
+        let offset = date.offset().fix().local_minus_utc() / 60; // -120
+        let client_mins_utc = -(offset + 30); // -150 minutes
 
-        let res_utc = get_datetime_for_offset(date, delta);
+        let res_utc = get_datetime_for_offset(date, client_mins_utc);
         // "2020-01-01T16:30:00Z"
         assert_eq!(date_utc.year(), res_utc.year());
         assert_eq!(date_utc.month(), res_utc.month());
@@ -91,16 +90,15 @@ mod tests {
         assert_eq!(date_utc.minute() + 30, res_utc.minute());
         assert_eq!(date_utc.second(), res_utc.second());
     }
-
     #[test]
     fn test_get_datetime_for_offset_with_offset_back_one_hour() {
         let date = Local.with_ymd_and_hms(2020, 1, 1, 18, 0, 0).unwrap();
         let date_utc = date.to_utc();
         // "2020-01-01T16:00:00Z"
-        let offset = date.offset().fix().local_minus_utc() / 60;
-        let delta = -(offset - 60); // -60
+        let offset = date.offset().fix().local_minus_utc() / 60; // -120
+        let client_mins_utc = -(offset - 60); // -60 minutes
 
-        let res_utc = get_datetime_for_offset(date, delta);
+        let res_utc = get_datetime_for_offset(date, client_mins_utc);
         // "2020-01-01T15:00:00Z"
         assert_eq!(date_utc.year(), res_utc.year());
         assert_eq!(date_utc.month(), res_utc.month());
@@ -114,10 +112,10 @@ mod tests {
         let date = Local.with_ymd_and_hms(2020, 1, 1, 18, 0, 0).unwrap();
         let date_utc = date.to_utc();
         // "2020-01-01T16:00:00Z"
-        let offset = date.offset().fix().local_minus_utc() / 60;
-        let delta = -(offset + 60); // -180
+        let offset = date.offset().fix().local_minus_utc() / 60; // -120
+        let client_mins_utc = -(offset + 60); // -180 minutes
 
-        let res_utc = get_datetime_for_offset(date, delta);
+        let res_utc = get_datetime_for_offset(date, client_mins_utc);
         // "2020-01-01T17:00:00Z"
         assert_eq!(date_utc.year(), res_utc.year());
         assert_eq!(date_utc.month(), res_utc.month());
@@ -131,10 +129,10 @@ mod tests {
         let date = Local.with_ymd_and_hms(2020, 1, 1, 18, 0, 0).unwrap();
         let date_utc = date.to_utc();
         // "2020-01-01T16:00:00Z"
-        let offset = date.offset().fix().local_minus_utc() / 60;
-        let delta = -(offset - 120); // 0
+        let offset = date.offset().fix().local_minus_utc() / 60; // -120
+        let client_mins_utc = -(offset - 120); // 0 minutes
 
-        let res_utc = get_datetime_for_offset(date, delta);
+        let res_utc = get_datetime_for_offset(date, client_mins_utc);
         // "2020-01-01T14:00:00Z"
         assert_eq!(date_utc.year(), res_utc.year());
         assert_eq!(date_utc.month(), res_utc.month());
@@ -148,10 +146,10 @@ mod tests {
         let date = Local.with_ymd_and_hms(2020, 1, 1, 18, 0, 0).unwrap();
         let date_utc = date.to_utc();
         // "2020-01-01T16:00:00Z"
-        let offset = date.offset().fix().local_minus_utc() / 60;
-        let delta = -(offset + 120); // -240
+        let offset = date.offset().fix().local_minus_utc() / 60; // -120
+        let client_mins_utc = -(offset + 120); // -240 minutes
 
-        let res_utc = get_datetime_for_offset(date, delta);
+        let res_utc = get_datetime_for_offset(date, client_mins_utc);
         // "2020-01-01T18:00:00Z"
         assert_eq!(date_utc.year(), res_utc.year());
         assert_eq!(date_utc.month(), res_utc.month());
