@@ -47,6 +47,7 @@ export class StreamListService {
     let searchStream: SearchStreamDto = {
       userId,
       isFuture: true,
+      tzOffset: new Date().getTimezoneOffset(),
       page: this.futurePageInfo.page + 1,
       limit: this.futurePageInfo.limit
     };
@@ -88,6 +89,7 @@ export class StreamListService {
     let searchStream: SearchStreamDto = {
       userId,
       isFuture: false,
+      tzOffset: new Date().getTimezoneOffset(),
       orderDirection,
       page: this.pastPageInfo.page + 1,
       limit: this.pastPageInfo.limit
