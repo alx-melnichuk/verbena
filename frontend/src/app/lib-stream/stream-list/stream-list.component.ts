@@ -79,14 +79,14 @@ export class StreamListComponent {
 
   // ** "Future Stream" and "Past Stream" panel-stream-info **
 
-  public async searchNextFutureStream(): Promise<null | HttpErrorResponse> {
+  public async searchInfoNextFutureStream(): Promise<null | HttpErrorResponse> {
     // Get the next page of the "Future Stream".
     await this.streamListService.searchNextFutureStream();
     this.changeDetector.markForCheck();
     return null;
   }
 
-  public async searchNextPastStream(): Promise<null | HttpErrorResponse> {
+  public async searchInfoNextPastStream(): Promise<null | HttpErrorResponse> {
     // Get the next page of "Past Stream".
     await this.streamListService.searchNextPastStream();
     this.changeDetector.markForCheck();

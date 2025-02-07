@@ -61,7 +61,7 @@
         [isFuture]="true"
         [locale]="localeService.getLocale()"
         [streamList]="streamListService.futureStreamsDto"
-        (requestNextPage)="searchNextFutureStream()"
+        (requestNextPage)="searchInfoNextFutureStream()"
         (redirectToStream)="redirectToStreamView($event)"
         (actionDuplicate)="actionDuplicate($event)"
         (actionEdit)="actionEdit($event)"
@@ -81,7 +81,7 @@
         [canDelete]="true"
         [locale]="localeService.getLocale()"
         [streamList]="streamListService.pastStreamsDto"
-        (requestNextPage)="searchNextPastStream()"
+        (requestNextPage)="searchInfoNextPastStream()"
         (redirectToStream)="redirectToStreamView($event)"
         (actionDuplicate)="actionDuplicate($event)"
         (actionDelete)="actionDelete($event)">
