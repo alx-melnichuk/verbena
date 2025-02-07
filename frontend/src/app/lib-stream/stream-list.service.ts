@@ -8,6 +8,7 @@ import { StreamService } from './stream.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
 const CN_DEFAULT_LIMIT = 7; // 10;
+const CN_LIMIT_RECEIVING_PAGES = 59;
 
 @Injectable({
   providedIn: 'root'
@@ -22,6 +23,8 @@ export class StreamListService {
   public pastStreamLoading = false;
   public pastStreamsDto: StreamDto[] = [];
   public pastPageInfo: PageInfo = this.createPastPageInfo();
+
+  private datetimeLastUpdate: Date | null = null;
 
   constructor(
     private alertService: AlertService,
@@ -38,34 +41,15 @@ export class StreamListService {
   }
   /** Search for the next page of the "Future Stream". */
   public searchNextFutureStream(userId?: number | undefined): Promise<StreamListDto | HttpErrorResponse | undefined> {
-    const pages = this.futurePageInfo.pages;
-    const nextPage = this.futurePageInfo.page + 1;
-    const isNextPage = ((pages === -1) || (this.futurePageInfo.page !== nextPage && nextPage <= pages));
-    if (!isNextPage) {
-      return Promise.resolve(undefined);
+    if (this.datetimeLastUpdate != null) {
+      const delta = Math.abs(this.dateDifferenceInSeconds(new Date(), this.datetimeLastUpdate));
+      if (delta > CN_LIMIT_RECEIVING_PAGES) {
+        // Need to reset existing data and get new data for 1st page.
+        this.clearFutureStream();
+        this.clearAndSearchDataNextPastStream(userId);
+      }
     }
-    let searchStream: SearchStreamDto = {
-      userId,
-      isFuture: true,
-      tzOffset: new Date().getTimezoneOffset(),
-      page: this.futurePageInfo.page + 1,
-      limit: this.futurePageInfo.limit
-    };
-    this.futureStreamLoading = true;
-    return this.streamService.getStreams(searchStream)
-      .then((response: StreamListDto | HttpErrorResponse | undefined) => {
-        const futureStreamListDto = (response as StreamListDto);
-        this.futurePageInfo = PageInfoUtil.create(futureStreamListDto);
-        this.futureStreamsDto = this.futureStreamsDto.concat(futureStreamListDto.list);
-        return response;
-      })
-      .catch((error: HttpErrorResponse) => {
-        this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], 'stream_list.error_get_future_streams');
-        throw error;
-      })
-      .finally(() => {
-        this.futureStreamLoading = false;
-      });      
+    return this.searchDataNextFutureStream(userId);
   }
 
   // "Past Streams"
@@ -77,38 +61,15 @@ export class StreamListService {
   }
   /** Search for the next page of the "Past Stream". */
   public searchNextPastStream(userId?: number | undefined): Promise<StreamListDto | HttpErrorResponse | undefined> {
-    const pages = this.pastPageInfo.pages;
-    const nextPage = this.pastPageInfo.page + 1;
-    const isNextPage = ((pages === -1) || (this.pastPageInfo.page !== nextPage && nextPage <= pages));
-    if (!isNextPage) {
-      return Promise.resolve(undefined);
+    if (this.datetimeLastUpdate != null) {
+      const delta = Math.abs(this.dateDifferenceInSeconds(new Date(), this.datetimeLastUpdate));
+      if (delta > CN_LIMIT_RECEIVING_PAGES) {
+        // Need to reset existing data and get new data for 1st page.
+        this.clearPastStream();
+        this.clearAndSearchDataNextFutureStream(userId);
+      }
     }
-    const oldOrderDir = this.pastPageInfo.orderDirection;
-    const orderDirection: 'asc' | 'desc' | undefined = (oldOrderDir == 'asc'? 'asc': (oldOrderDir == 'desc' ? 'desc': undefined));
-
-    let searchStream: SearchStreamDto = {
-      userId,
-      isFuture: false,
-      tzOffset: new Date().getTimezoneOffset(),
-      orderDirection,
-      page: this.pastPageInfo.page + 1,
-      limit: this.pastPageInfo.limit
-    };
-    this.pastStreamLoading = true;
-    return this.streamService.getStreams(searchStream)
-      .then((response: StreamListDto | HttpErrorResponse | undefined) => {
-        const pastStreamListDto = (response as StreamListDto);
-        this.pastPageInfo = PageInfoUtil.create(pastStreamListDto);
-        this.pastStreamsDto = this.pastStreamsDto.concat(pastStreamListDto.list);
-        return response;
-      })
-      .catch((error: HttpErrorResponse) => {
-        this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], 'stream_list.error_get_past_streams');
-        throw error;
-      })
-      .finally(() => {
-        this.pastStreamLoading = false;
-      });
+    return this.searchDataNextPastStream(userId);
   }
 
   // ** Private API **
@@ -116,8 +77,81 @@ export class StreamListService {
   private createFuturePageInfo(): PageInfo {
     return PageInfoUtil.create({ page: 0, limit: CN_DEFAULT_LIMIT });
   }
-
   private createPastPageInfo(): PageInfo {
     return PageInfoUtil.create({ page: 0, limit: CN_DEFAULT_LIMIT, orderDirection: 'desc' });
+  }
+  private dateDifferenceInSeconds(datetimeA: Date, datetimeB: Date): number {
+    // This will give difference in milliseconds
+    const difference = datetimeA.getTime() - datetimeB.getTime();
+    return Math.round(difference / 1000);
+  }
+  private getNextPageStreams(pageInfo: PageInfo, isFuture: boolean, titleErr?: string, userId?: number | undefined
+  ): Promise<StreamListDto | HttpErrorResponse | undefined> {
+    const pages = pageInfo.pages;
+    const nextPage = pageInfo.page + 1;
+    const isNextPage = ((pages === -1) || (pageInfo.page !== nextPage && nextPage <= pages));
+    if (!isNextPage) {
+      return Promise.resolve(undefined);
+    }
+    const oldOrderDir = pageInfo.orderDirection;
+    const orderDirection: 'asc' | 'desc' | undefined = (oldOrderDir == 'asc'? 'asc': (oldOrderDir == 'desc' ? 'desc': undefined));
+
+    let searchStream: SearchStreamDto = {
+      userId,
+      isFuture,
+      tzOffset: new Date().getTimezoneOffset(),
+      orderDirection,
+      page: pageInfo.page + 1,
+      limit: pageInfo.limit
+    };
+    return this.streamService.getStreams(searchStream)
+      .catch((error: HttpErrorResponse) => {
+        this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], titleErr);
+        throw error;
+      });
+  }
+  // "Future Streams"
+  private async clearAndSearchDataNextFutureStream(userId?: number | undefined) {
+    this.clearFutureStream();
+    this.searchDataNextFutureStream(userId);
+  }
+  /* Execute a query to retrieve data from the next page of the "Future Stream". */
+  private searchDataNextFutureStream(userId?: number | undefined): Promise<StreamListDto | HttpErrorResponse | undefined> {
+    this.futureStreamLoading = true;
+    return this.getNextPageStreams(this.futurePageInfo, true, 'stream_list.error_get_future_streams', userId)
+      .then((response: StreamListDto | HttpErrorResponse | undefined) => {
+        const futureStreamListDto = (response as StreamListDto);
+        this.futurePageInfo = PageInfoUtil.create(futureStreamListDto);
+        if (this.futureStreamsDto.length == 0) {
+          this.datetimeLastUpdate = new Date();
+        }
+        this.futureStreamsDto = this.futureStreamsDto.concat(futureStreamListDto.list);
+        return response;
+      })
+      .finally(() => {
+        this.futureStreamLoading = false;
+      });
+  }
+  // "Past Streams"
+  private async clearAndSearchDataNextPastStream(userId?: number | undefined) {
+    this.clearPastStream();
+    this.searchDataNextPastStream(userId);
+  }
+  /* Execute a query to retrieve data from the next page of the "Past Stream". */
+  private searchDataNextPastStream(userId?: number | undefined): Promise<StreamListDto | HttpErrorResponse | undefined> {
+    this.pastStreamLoading = true;
+    return this.getNextPageStreams(this.pastPageInfo, false, 'stream_list.error_get_past_streams', userId)
+      .then((response: StreamListDto | HttpErrorResponse | undefined) => {
+        const pastStreamListDto = (response as StreamListDto);
+        this.pastPageInfo = PageInfoUtil.create(pastStreamListDto);
+        if (this.pastStreamsDto.length == 0) {
+          this.datetimeLastUpdate = new Date();
+        }
+        this.pastStreamsDto = this.pastStreamsDto.concat(pastStreamListDto.list);
+        return response;
+      })
+      .finally(() => {
+        this.pastStreamLoading = false;
+      });
   }
 }
