@@ -60,14 +60,13 @@ pub mod cfg {
 
 #[cfg(not(feature = "mockdata"))]
 pub mod impls {
-    use chrono::{Duration, Local, Offset, Timelike};
+    use chrono::{Duration, Timelike};
     use diesel::{self, prelude::*, sql_types};
     use schema::streams::dsl as streams_dsl;
 
     use crate::dbase;
     use crate::schema;
     use crate::streams::stream_models::{self, CreateStream, SearchStreamPeriod};
-    use crate::utils::datetime_offset;
 
     use super::*;
 
@@ -268,25 +267,18 @@ pub mod impls {
                 query_count = query_count.filter(streams_dsl::live.eq(live));
             }
 
-            if let Some(is_future) = search_stream.is_future {
-                let local_now = Local::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
-                // Get the server-side time offset (in minutes).
-                let offset_local = local_now.offset().fix().local_minus_utc() / 60; // -120
-                // Get the client-side time offset (in minutes).
-                let opt_offset_mins: Option<i32> = search_stream.tz_offset;
-                let client_mins_utc = if let Some(offset_mins) = opt_offset_mins { offset_mins } else { -offset_local };
-                // Convert date and time with new time offset value relative to Utc.
-                let now_date: DateTime<Utc> = datetime_offset::get_datetime_for_offset(local_now, client_mins_utc);
-
-                if !is_future {
-                    // starttime < now_date
-                    query_list = query_list.filter(streams_dsl::starttime.lt(now_date));
-                    query_count = query_count.filter(streams_dsl::starttime.lt(now_date));
-                } else {
-                    // starttime >= now_date
-                    query_list = query_list.filter(streams_dsl::starttime.ge(now_date));
-                    query_count = query_count.filter(streams_dsl::starttime.ge(now_date));
-                }
+            if let Some(future_starttime) = search_stream.future_starttime {
+                // Future streams with a "starttime" greater than or equal to the specified one.
+                let future_starttime2 = future_starttime.with_second(0).unwrap().with_nanosecond(0).unwrap();
+                // starttime >= future_starttime2   (future_starttime2 <= starttime)
+                query_list = query_list.filter(streams_dsl::starttime.ge(future_starttime2));
+                query_count = query_count.filter(streams_dsl::starttime.ge(future_starttime2));
+            } else if let Some(past_starttime) = search_stream.past_starttime {
+                // Past streams with a "starttime" greater than or equal to the specified one.
+                let past_starttime2 = past_starttime.with_second(0).unwrap().with_nanosecond(0).unwrap();
+                // starttime < past_starttime2      (past_starttime2 > starttime)
+                query_list = query_list.filter(streams_dsl::starttime.lt(past_starttime2));
+                query_count = query_count.filter(streams_dsl::starttime.lt(past_starttime2));
             }
 
             if order_column == stream_models::OrderColumn::Starttime {
@@ -586,10 +578,9 @@ pub mod impls {
 pub mod tests {
     use std::cmp::Ordering;
 
-    use chrono::{Duration, Local, Offset, Timelike};
+    use chrono::{Duration, Timelike};
 
     use crate::streams::stream_models::{self, StreamInfoDto, StreamState};
-    use crate::utils::datetime_offset;
     use super::*;
 
     pub const STREAM_ID: i32 = 1400;
@@ -747,18 +738,14 @@ pub mod tests {
         ) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String> {
             let mut streams_info: Vec<StreamInfoDto> = vec![];
 
-            let is_future = search_stream.is_future.is_some();
-            #[rustfmt::skip]
-            let is_future_val = if is_future { search_stream.is_future.unwrap() } else { false };
-            
-            let local_now = Local::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
-            // Get the server-side time offset (in minutes).
-            let offset_local = local_now.offset().fix().local_minus_utc() / 60; // -120
-            // Get the client-side time offset (in minutes).
-            let opt_offset_mins: Option<i32> = search_stream.tz_offset;
-            let client_mins_utc = if let Some(offset_mins) = opt_offset_mins { offset_mins } else { -offset_local };
-            // Convert date and time with new time offset value relative to Utc.
-            let now_date: DateTime<Utc> = datetime_offset::get_datetime_for_offset(local_now, client_mins_utc);
+            let future_starttime2 = match search_stream.future_starttime {
+                Some(f_starttime) => Some(f_starttime.with_second(0).unwrap().with_nanosecond(0).unwrap()),
+                None => None,
+            };
+            let past_starttime2 = match search_stream.past_starttime {
+                Some(p_starttime) => Some(p_starttime.with_second(0).unwrap().with_nanosecond(0).unwrap()),
+                None => None,
+            };
 
             for stream in self.stream_info_vec.iter() {
                 let mut is_add_value = true;
@@ -771,11 +758,18 @@ pub mod tests {
                 }
                 let starttime_date = stream.starttime;
 
-                if is_future && !is_future_val && starttime_date >= now_date {
-                    is_add_value = false;
-                }
-                if is_future && is_future_val && starttime_date < now_date {
-                    is_add_value = false;
+                if let Some(future_starttime) = future_starttime2 {
+                    // Future streams with a "starttime" greater than or equal to the specified one.
+                    if starttime_date < future_starttime {
+                        // starttime >= future_starttime2   (future_starttime2 <= starttime)
+                        is_add_value = false;
+                    }
+                } else if let Some(past_starttime) = past_starttime2 {
+                    // Past streams with a "starttime" greater than or equal to the specified one.
+                    if starttime_date >= past_starttime {
+                        // starttime < past_starttime2      (past_starttime2 > starttime)
+                        is_add_value = false;
+                    }
                 }
 
                 if is_add_value {
