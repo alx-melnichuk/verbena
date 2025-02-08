@@ -98,8 +98,7 @@ export class StreamListService {
 
     let searchStream: SearchStreamDto = {
       userId,
-      isFuture,
-      tzOffset: new Date().getTimezoneOffset(),
+      [(isFuture ? 'futureStarttime' : 'pastStarttime')]: (new Date()).toISOString(),
       orderDirection,
       page: pageInfo.page + 1,
       limit: pageInfo.limit

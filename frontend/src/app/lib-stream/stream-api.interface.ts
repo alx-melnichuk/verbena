@@ -118,10 +118,10 @@ export interface UpdateStreamFileDto {
 export interface SearchStreamDto {
   userId?: number;
   live?: boolean;
-  // true - (starttime >= now), false - (starttime < now)
-  isFuture?: boolean; // true-'future', false-'past'
-  // Fixed offset of the user's time zone. (in minutes). Different from the time zone in winter time.
-  tzOffset?: number,
+  // Future streams with a "starttime" greater than or equal to the specified one.
+  futureStarttime?: StringDateTime | null | undefined; // DateTime<Utc>,
+  // Past streams with a "starttime" greater than or equal to the specified one.
+  pastStarttime?: StringDateTime | null | undefined; // DateTime<Utc>,
   orderColumn?: 'starttime' | 'title'; // default 'starttime';
   orderDirection?: 'asc' | 'desc'; // default 'asc';
   page?: number; // default 1;
