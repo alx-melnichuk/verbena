@@ -194,34 +194,51 @@ pub async fn get_stream_by_id(
 /// Request structure:
 /// ```text
 /// {
-///   userId?: number,          // optional
-///   live?: boolean,           // optional
-///   isFuture?: boolean,       // optional
-///   tzOffset?: number,        // optional
+///   userId?: number,                      // optional
+///   live?: boolean,                       // optional
+///   futureStarttime?: DateTime<Utc>,      // optional
+///   pastStarttime?: DateTime<Utc>,        // optional
 ///   orderColumn?: ["starttime", "title"], // optional
-///   orderDirection?: ["asc", "desc"],  // optional
-///   page?: number,            // optional
-///   limit?: number,           // optional
+///   orderDirection?: ["asc", "desc"],     // optional
+///   page?: number,                        // optional
+///   limit?: number,                       // optional
 /// }
 /// Where:
 /// "userId" - user identifier (current default user);
 /// "live" - sign of a "live" stream ("state" = ["preparing", "started", "paused"]);
-/// "isFuture" - a sign that the stream will start in the future;
-/// "tzOffset" - fixed offset of the user's time zone. (in minutes). (js: new Date().getTimezoneOffset() );
+/// "futureStarttime" - get future streams with a "starttime" greater than or equal to the specified one (in Utc-format);
+/// "pastStarttime" - get past streams with a "starttime" greater than or equal to the specified one (in Utc-format);
 /// "orderColumn" - sorting column ["starttime" - (default), "title"];
 /// "orderDirection" - sort order ["asc" - ascending (default), "desc" - descending];
 /// "page" - page number, stratified from 1 (1 by default);
 /// "limit" - number of records on the page (5 by default);
 /// ```
+/// It is recommended to enter the date and time in ISO8601 format.
+/// ```text
+/// var d1 = new Date();
+/// { futureStarttime: d1.toISOString() } // "2020-01-20T20:10:57.000Z"
+/// ```
+/// It is allowed to specify the date and time with a time zone value.
+/// ```text
+/// { "futureStarttime": "2020-01-20T22:10:57+02:00" }
+/// ```
+/// 
 /// One could call with following curl.
 /// ```text
-/// curl -i -X GET http://localhost:8080/api/streams?page=1&limit=5
+/// curl -i -X GET http://localhost:8080/api/streams?orderColumn=starttime&orderDirection=asc&page=1&limit=5
 /// ```
 /// Could be called with all fields with the next curl.
+/// Request future streams that start on or after a specified date (specify current date and time in Utc).
 /// ```text
-/// curl -i -X GET http://localhost:8080/api/streams?userId=1&live=false \
-///     &isFuture=true&orderColumn=starttime&orderDirection=asc&page=1&limit=5
+/// curl -i -X GET http://localhost:8080/api/streams?userId=1&futureStarttime=2020-02-02T08:00:00.000Z&page=1&limit=5
 /// ```
+/// 
+/// Could be called with all fields with the next curl.
+/// Request past streams that started before the specified date (specify the current date and time in Utc).
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/streams?userId=1&pastStarttime=2020-02-02T08:00:00.000Z&page=1&limit=5
+/// ```
+/// 
 /// Response structure:
 /// ```text
 /// {
