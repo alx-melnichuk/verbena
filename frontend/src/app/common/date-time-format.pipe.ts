@@ -1,6 +1,6 @@
 import { inject, Pipe, PipeTransform } from '@angular/core';
 
-import {InjectionToken} from '@angular/core';
+import { InjectionToken } from '@angular/core';
 
 /*
   The Intl.DateTimeFormat object enables language-sensitive date and time formatting.
@@ -81,15 +81,15 @@ import {InjectionToken} from '@angular/core';
 */
 
 export declare type DateTimeAfterFormatFn = (
-  value: string | null | undefined,
-  locale?: string | null | undefined,
-  options?: Intl.DateTimeFormatOptions | null | undefined
+    value: string | null | undefined,
+    locale?: string | null | undefined,
+    options?: Intl.DateTimeFormatOptions | null | undefined
 ) => string | null;
 
 export type DateTimeFormatConfig = {
-  locale?: string | null | undefined,
-  options?: Intl.DateTimeFormatOptions | null | undefined,
-  afterFormat?: DateTimeAfterFormatFn | null | undefined,
+    locale?: string | null | undefined,
+    options?: Intl.DateTimeFormatOptions | null | undefined,
+    afterFormat?: DateTimeAfterFormatFn | null | undefined,
 };
 
 export const APP_DATE_TIME_FORMAT_CONFIG = new InjectionToken<DateTimeFormatConfig>('app-date-time-format-config');
@@ -102,33 +102,33 @@ export const APP_DATE_TIME_FORMAT_CONFIG = new InjectionToken<DateTimeFormatConf
  *  For "string" or "number", the date value is defined as new Date(value).
  */
 @Pipe({
-  name: 'dateTimeFormat',
-  standalone: true
+    name: 'dateTimeFormat',
+    standalone: true
 })
 export class DateTimeFormatPipe implements PipeTransform {
 
-  private readonly dtfc: DateTimeFormatConfig | null = inject(APP_DATE_TIME_FORMAT_CONFIG, { optional: true });
+    private readonly dtfc: DateTimeFormatConfig | null = inject(APP_DATE_TIME_FORMAT_CONFIG, { optional: true });
 
-  transform(
-    value: string | Date | number | null | undefined,
-    locale?: string | null | undefined,
-    options?: Intl.DateTimeFormatOptions | null | undefined,
-  ): string | null {
-    let result: string | null = null;
-    const valueDate: Date | null = typeof value == 'number' ? (!isNaN(value) ? new Date(value) : null)
-      : (typeof value == 'string' ? new Date(value) : (value as Date));
-    
-    if (valueDate != null) {
-      const opts = options != null && !!Object.keys(options).length ? options 
-        : this.dtfc?.options != null && !!Object.keys(this.dtfc?.options).length ? this.dtfc?.options
-          : undefined;
-        
-      const dtf = new Intl.DateTimeFormat(locale || this.dtfc?.locale || undefined, opts);
-      result = dtf.format(valueDate);
-      if (!!result && !!this.dtfc?.afterFormat) {
-        result = this.dtfc.afterFormat(result, locale || window.navigator.language, options);
-      }
+    transform(
+        value: string | Date | number | null | undefined,
+        locale?: string | null | undefined,
+        options?: Intl.DateTimeFormatOptions | null | undefined,
+    ): string | null {
+        let result: string | null = null;
+        const valueDate: Date | null = typeof value == 'number' ? (!isNaN(value) ? new Date(value) : null)
+            : (typeof value == 'string' ? new Date(value) : (value as Date));
+
+        if (valueDate != null) {
+            const opts = options != null && !!Object.keys(options).length ? options
+                : this.dtfc?.options != null && !!Object.keys(this.dtfc?.options).length ? this.dtfc?.options
+                    : undefined;
+
+            const dtf = new Intl.DateTimeFormat(locale || this.dtfc?.locale || undefined, opts);
+            result = dtf.format(valueDate);
+            if (!!result && !!this.dtfc?.afterFormat) {
+                result = this.dtfc.afterFormat(result, locale || window.navigator.language, options);
+            }
+        }
+        return result;
     }
-    return result;
-  }
 }
