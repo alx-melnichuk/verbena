@@ -1,119 +1,140 @@
 /*# sourceURL=stream-list.component.scss */
 
 app-stream-list {
-  ---sl-pn-brd: color-mix(in srgb, var(--app-pn-stream) 45%, var(--sys-surface));
-  ---sl-pd: calc(0.03125 * min(100vw, 1280px) - 2px);  // 512.22px: 14px;  1024.44px: 30px;
-  ---sl-brd-pd: 2px;
-  ---sl-clnd-mn-wd: calc(17 * var(--mat-datepicker-calendar-text-size) + 2 * var(---sl-brd-pd));
-  
-  container: cnt-stream-list / inline-size;
-  display: block;
-  height: 100%;
-  overflow-y: auto;
-  
-  @container cnt-stream-list (width < 37.5rem) { // width < 600px
-    .sl-container {
-      ---sl-cont-fl-dr: column;
-      ---sl-my-clndr-wd: 100%;
-      ---sl-my-strms-wd: 100%;
-      ---sl-evnt-ls-hg: 22rem;
-    }
-  }
-  @container cnt-stream-list (37.5rem <= width < 56rem) { // width < 896px
-    .sl-container {
-      ---sl-cont-fl-dr: column;
-      ---sl-my-clndr-wd: 100%;
-      ---sl-my-strms-wd: 100%;
-      ---sl-my-clndr-fl-dr: row;
-    }
-    .sl-my-calendar {
-      max-height: 27rem;
-    }
-  }
-  @container cnt-stream-list (56rem <= width) { // 896px <= width
-    .sl-container {
-      ---sl-my-clndr-wd: calc(0.3333 * min(100vw, 1280px) - 67.965px);  // 1050px: 283.50px; 1080px: 291.59px;
-      ---sl-my-strms-wd: calc(100vw - max(var(---sl-my-clndr-wd), var(---sl-clnd-mn-wd)) - 3 * var(---sl-pd));
-    }
-    .sl-my-calendar {
-      height: 100%;
-    }
-  }
+    ---sl-pn-brd: color-mix(in srgb, var(--app-pn-stream) 45%, var(--sys-surface));
+    ---sl-pd: calc(0.03125 * min(100vw, 1280px) - 2px); // 512.22px: 14px;  1024.44px: 30px;
+    ---sl-brd-pd: 2px;
+    ---sl-clnd-mn-wd: calc(17 * var(--mat-datepicker-calendar-text-size) + 2 * var(---sl-brd-pd));
 
-  .sl-container {
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: var(---sl-cont-fl-dr, row);
+    container: cnt-stream-list / inline-size;
+    display: block;
     height: 100%;
-    padding: var(---sl-pd);
-  }
-  // ** "indent" **
-  .sl-indent {
-    flex-shrink: 0;
-    height: var(---sl-pd);
-    width: var(---sl-pd);
-  }
-  // ** border **
-  .sl-border {
-    border: 1px solid var(---sl-pn-brd);
-    border-radius: 1rem;
-    box-sizing: border-box;
-  }
-  // ** title **
-  .sl-title {
-    font-weight: 500;
-    font-size: calc(1rem + 1px);
-    line-height: 3rem;
-    margin-left: 1.25rem;
-  }
+    overflow-y: auto;
 
-  // ** "My Calendar" **
-  .sl-my-calendar {
-    display: flex;
-    flex-shrink: 0;
-    flex-direction: var(---sl-my-clndr-fl-dr, column);
-    min-width: var(---sl-clnd-mn-wd);
-    width: var(---sl-my-clndr-wd);
-  }
-  .sl-calendar-box {
-    display: flex;
-    // flex: 0 0 auto;
-    flex-direction: column; // option!
-    padding: var(---sl-brd-pd);
-  }
-  // ** event list **  
-  .sl-events-box {
-    display: flex;
-    flex-grow: 1;
-    flex-direction: column;
-    padding: var(---sl-brd-pd);
-    overflow-y: hidden;
-  }
-  .sl-event-label {
-    font-size: 1rem;
-    line-height: 3rem;
-    text-align: center;
-    font-weight: var(--sl-fn-wg, lighter);
-    &.sl-heavier { --sl-fn-wg: 500; }
-  }
-  .sl-event-list {
-    height: var(---sl-evnt-ls-hg, calc(100% - 3rem));
-  }
+    @container cnt-stream-list (width < 37.5rem) {
 
-  // ** "My Streams" **
-  .sl-my-streams {
-    box-sizing: border-box;
-    display: flex;
-    flex-grow: 1;
-    width: var(---sl-my-strms-wd); 
-    flex-direction: column;
-    height: 100%;
-  }
-  .sl-stream-box {
-    display: flex;
-    flex-direction: column;
-    flex: 0 0 auto;
-    height: max(calc((100% - var(---sl-pd)) / 2), 17rem);
-    overflow-y: hidden;
-  }
+        // width < 600px
+        .sl-container {
+            ---sl-cont-fl-dr: column;
+            ---sl-my-clndr-wd: 100%;
+            ---sl-my-strms-wd: 100%;
+            ---sl-evnt-ls-hg: 22rem;
+        }
+    }
+
+    @container cnt-stream-list (37.5rem <=width < 56rem) {
+
+        // width < 896px
+        .sl-container {
+            ---sl-cont-fl-dr: column;
+            ---sl-my-clndr-wd: 100%;
+            ---sl-my-strms-wd: 100%;
+            ---sl-my-clndr-fl-dr: row;
+        }
+
+        .sl-my-calendar {
+            max-height: 27rem;
+        }
+    }
+
+    @container cnt-stream-list (56rem <=width) {
+
+        // 896px <= width
+        .sl-container {
+            ---sl-my-clndr-wd: calc(0.3333 * min(100vw, 1280px) - 67.965px); // 1050px: 283.50px; 1080px: 291.59px;
+            ---sl-my-strms-wd: calc(100vw - max(var(---sl-my-clndr-wd), var(---sl-clnd-mn-wd)) - 3 * var(---sl-pd));
+        }
+
+        .sl-my-calendar {
+            height: 100%;
+        }
+    }
+
+    .sl-container {
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: var(---sl-cont-fl-dr, row);
+        height: 100%;
+        padding: var(---sl-pd);
+    }
+
+    // ** "indent" **
+    .sl-indent {
+        flex-shrink: 0;
+        height: var(---sl-pd);
+        width: var(---sl-pd);
+    }
+
+    // ** border **
+    .sl-border {
+        border: 1px solid var(---sl-pn-brd);
+        border-radius: 1rem;
+        box-sizing: border-box;
+    }
+
+    // ** title **
+    .sl-title {
+        font-weight: 500;
+        font-size: calc(1rem + 1px);
+        line-height: 3rem;
+        margin-left: 1.25rem;
+    }
+
+    // ** "My Calendar" **
+    .sl-my-calendar {
+        display: flex;
+        flex-shrink: 0;
+        flex-direction: var(---sl-my-clndr-fl-dr, column);
+        min-width: var(---sl-clnd-mn-wd);
+        width: var(---sl-my-clndr-wd);
+    }
+
+    .sl-calendar-box {
+        display: flex;
+        // flex: 0 0 auto;
+        flex-direction: column; // option!
+        padding: var(---sl-brd-pd);
+    }
+
+    // ** event list **  
+    .sl-events-box {
+        display: flex;
+        flex-grow: 1;
+        flex-direction: column;
+        padding: var(---sl-brd-pd);
+        overflow-y: hidden;
+    }
+
+    .sl-event-label {
+        font-size: 1rem;
+        line-height: 3rem;
+        text-align: center;
+        font-weight: var(--sl-fn-wg, lighter);
+
+        &.sl-heavier {
+            --sl-fn-wg: 500;
+        }
+    }
+
+    .sl-event-list {
+        height: var(---sl-evnt-ls-hg, calc(100% - 3rem));
+    }
+
+    // ** "My Streams" **
+    .sl-my-streams {
+        box-sizing: border-box;
+        display: flex;
+        flex-grow: 1;
+        width: var(---sl-my-strms-wd);
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .sl-stream-box {
+        display: flex;
+        flex-direction: column;
+        flex: 0 0 auto;
+        height: max(calc((100% - var(---sl-pd)) / 2), 17rem);
+        overflow-y: hidden;
+    }
 }

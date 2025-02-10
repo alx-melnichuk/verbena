@@ -35,6 +35,7 @@
         }
         <app-panel-stream-event
           [canEdit]="true"
+          [isRefresh]="isRefreshPanelStreamEvent"
           [locale]="localeService.getLocale()"
           [streamShortDtoList]="streamCalendarService.eventsOfDay"
           (requestNextPage)="getListEventsForDate(streamCalendarService.eventsOfDaySelected, -1)"
