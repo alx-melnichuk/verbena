@@ -288,22 +288,22 @@
     "label_swagger": "\"swagger\" візуальний інтерфейс",
     "label_redoc": "\"redoc\" документація",
     "label_rapidoc": "\"rapidoc\" документація",
-    "frontend_used": "У Frontend ми використовували:",
+    "frontend_used": "У Frontend я використовував:",
     "frontend_items": [
       "angular v.18",
       "ngx-translate v.15",
       "angular/material v.18",
       "angular/mat-datepicker, mat-calendar + Интернационализация",
-      "компоненти введення з реалізацією ControlValueAccessor",
+      "компоненти вводу з реалізацією ControlValueAccessor",
       "компонент для виведення файлу зображення",
-      "\"DragAndDrop\" директива",
+      "директива \"DragAndDrop\"",
       "сервіс і компонент для відображення модальних вікон",
       "Перехоплювач для оновлення маркера авторизації",
       "Охоронець для контролю доступу до пунктів меню",
       "\"нескінченна прокрутка\" для посторінкового завантаження даних",
       "на основі css-змінних підготовлено 3 світлі та 3 темні колірні схеми"
     ],
-    "backend_used": "На Backend ми використовували:"
+    "backend_used": "На Backend я використовував:"
   },
   "panel-profile": {
     "title_profile": "Особиста інформація",
