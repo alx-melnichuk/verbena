@@ -3,84 +3,97 @@
 @use '../styles-dimensions.scss' as dimensions;
 
 app-root {
-  @media screen and (width <= dimensions.$mobile-480) {
-    --app-display-size: 480;
-    --app-display-480: 1;
-  }
-  @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
-    --app-display-size: 768;
-    --app-display-768: 1;
-  }
-  @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
-    --app-display-size: 1024;
-    --app-display-1024: 1;
-  }
-  @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
-    --app-display-size: 1280;
-    --app-display-1280: 1;
-  }
-  @media screen and (dimensions.$desktop-1280 < width <= dimensions.$extra-wide-1536) {
-    --app-display-size: 1536;
-    --app-display-1536: 1;
-  }
-  @media screen and (dimensions.$extra-wide-1536 < width) { // super-wide-1792
-    --app-display-size: 1792;
-    --app-display-1792: 1;
-  }
+    @media screen and (width <=dimensions.$mobile-480) {
+        --app-display-size: 480;
+        --app-display-480: 1;
+    }
 
-  --app-footer-hg: 1.75em;
-  @media screen and (width <= dimensions.$mobile-480) {
-    --app-header-hg: min(18vh, 74px);
-  }
-  @media screen and (dimensions.$mobile-480 < width <= dimensions.$tablet-768) {
-    --app-header-hg: 68px;
-  }
-  @media screen and (dimensions.$tablet-768 < width <= dimensions.$laptop-1024) {
-    --app-header-hg: 66px;
-  }
-  @media screen and (dimensions.$laptop-1024 < width <= dimensions.$desktop-1280) {
-    --app-header-hg: 64px;
-  }
-  @media screen and (dimensions.$desktop-1280 < width) {
-    --app-header-hg: 64px;
-  }
-  ---brd-wd: 1px;
-  ---brd-cl: color-mix(in srgb, var(--sys-outline-variant) 70%, transparent);
+    @media screen and (dimensions.$mobile-480 < width <=dimensions.$tablet-768) {
+        --app-display-size: 768;
+        --app-display-768: 1;
+    }
 
-  display: block;
-  flex-direction: column;
-  height: 100%;
-  overflow-y: hidden;
-  // If the app-spinner is expanded to full screen, then "position: relative;" should only be present on the root element.
-  position: relative;
+    @media screen and (dimensions.$tablet-768 < width <=dimensions.$laptop-1024) {
+        --app-display-size: 1024;
+        --app-display-1024: 1;
+    }
 
-  & > app-header {
-    border-bottom: var(---brd-wd) solid var(---brd-cl);
-    height: var(--app-header-hg);
-  }
-  & > app-footer {
-    border-top: var(---brd-wd) solid var(---brd-cl);
-    height: var(--app-footer-hg);
-  }
-  & > main {
-    height: calc(100% - var(--app-header-hg) - var(--app-footer-hg) - 2 * var(---brd-wd));
-  }
+    @media screen and (dimensions.$laptop-1024 < width <=dimensions.$desktop-1280) {
+        --app-display-size: 1280;
+        --app-display-1280: 1;
+    }
 
-  // ** header, footer **
-  --app-site-unauth: hsl(27, 50%, 50%);
-  --app-site-auth  : hsl(120, 50%, 50%);
+    @media screen and (dimensions.$desktop-1280 < width <=dimensions.$extra-wide-1536) {
+        --app-display-size: 1536;
+        --app-display-1536: 1;
+    }
 
-  // ** List of background colors for main panels **
-  --app-pn-about         : hsl( 40, 50%, 50%);
-  --app-pn-login         : hsl( 85, 50%, 50%);
-  --app-pn-signup        : hsl( 70, 50%, 50%);
-  --app-pn-forgot        : hsl( 55, 50%, 50%);
-  --app-pn-profile       : hsl(180, 50%, 50%);
-  --app-pn-stream        : hsl(210, 50%, 50%);
-  --app-pn-strm-calendr  : hsl(190, 50%, 50%);
+    @media screen and (dimensions.$extra-wide-1536 < width) {
+        // super-wide-1792
+        --app-display-size: 1792;
+        --app-display-1792: 1;
+    }
 
-  // ** color of SVG icons **
-  --app-svg-icon-cl: var(--sys-outline);
+    --app-footer-hg: 1.75em;
 
+    @media screen and (width <=dimensions.$mobile-480) {
+        --app-header-hg: min(18vh, 74px);
+    }
+
+    @media screen and (dimensions.$mobile-480 < width <=dimensions.$tablet-768) {
+        --app-header-hg: 68px;
+    }
+
+    @media screen and (dimensions.$tablet-768 < width <=dimensions.$laptop-1024) {
+        --app-header-hg: 66px;
+    }
+
+    @media screen and (dimensions.$laptop-1024 < width <=dimensions.$desktop-1280) {
+        --app-header-hg: 64px;
+    }
+
+    @media screen and (dimensions.$desktop-1280 < width) {
+        --app-header-hg: 64px;
+    }
+
+    ---brd-wd: 1px;
+    ---brd-cl: color-mix(in srgb, var(--sys-outline-variant) 70%, transparent);
+
+    display: block;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: hidden;
+    // If the app-spinner is expanded to full screen, then "position: relative;" should only be present on the root element.
+    position: relative;
+
+    &>app-header {
+        border-bottom: var(---brd-wd) solid var(---brd-cl);
+        height: var(--app-header-hg);
+    }
+
+    &>app-footer {
+        border-top: var(---brd-wd) solid var(---brd-cl);
+        height: var(--app-footer-hg);
+    }
+
+    &>main {
+        height: calc(100% - var(--app-header-hg) - var(--app-footer-hg) - 2 * var(---brd-wd));
+    }
+
+    // ** header, footer **
+    --app-site-unauth: hsl(27, 50%, 50%);
+    --app-site-auth : hsl(120, 50%, 50%);
+
+    // ** List of background colors for main panels **
+    --app-pn-about : hsl(40, 50%, 50%);
+    --app-pn-login : hsl(85, 50%, 50%);
+    --app-pn-signup : hsl(70, 50%, 50%);
+    --app-pn-forgot : hsl(55, 50%, 50%);
+    --app-pn-profile : hsl(180, 50%, 50%);
+    --app-pn-stream : hsl(210, 50%, 50%);
+    --app-pn-strm-calendr : hsl(190, 50%, 50%);
+
+    // ** color of SVG icons **
+    --app-svg-icon-cl: var(--sys-outline);
 
 }
