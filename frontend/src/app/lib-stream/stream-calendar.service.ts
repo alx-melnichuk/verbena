@@ -57,11 +57,7 @@ export class StreamCalendarService {
         const endMonth: Date = DateUtil.dateLastDayOfMonth(startMonth);
         endMonth.setHours(23, 59, 59, 0);
         this.calendarLoading = true;
-        return this.streamService.getStreamsCalendar({
-            start: StringDateTimeUtil.toISO(startMonth),
-            finish: StringDateTimeUtil.toISO(endMonth),
-            userId
-        })
+        return this.streamService.getStreamsCalendar({ start: startMonth.toISOString(), finish: endMonth.toISOString(), userId })
             .then((response: StringDateTime[] | HttpErrorResponse | undefined) => {
                 this.calendarMarkedDates = this.convertStringDateTimeToStreamsPeriodDto(response as StringDateTime[]);
                 return this.calendarMarkedDates;
@@ -90,7 +86,7 @@ export class StreamCalendarService {
             return Promise.resolve(undefined);
         }
         this.eventsOfDaySelected = start;
-        const starttime = StringDateTimeUtil.toISO(start);
+        const starttime = start.toISOString();
         const searchStreamEventDto: SearchStreamEventDto = { userId, starttime, page, limit: SC_DEFAULT_LIMIT };
         this.eventsOfDayLoading = true;
         return this.streamService.getStreamsEvent(searchStreamEventDto)
