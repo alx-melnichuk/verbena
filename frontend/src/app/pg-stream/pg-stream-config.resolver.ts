@@ -6,7 +6,7 @@ import { StreamConfigDto } from '../lib-stream/stream-config.interface';
 import { StreamConfigService } from '../lib-stream/stream-config.service';
 
 export const pgStreamConfigResolver: ResolveFn<StreamConfigDto | HttpErrorResponse | undefined> =
-(_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) => {
-  const streamConfigService: StreamConfigService = inject(StreamConfigService);
-  return streamConfigService.getConfig();
-};
+    (_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) => {
+        const streamConfigService: StreamConfigService = inject(StreamConfigService);
+        return streamConfigService.getConfig();
+    };

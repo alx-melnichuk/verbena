@@ -12,58 +12,58 @@ import { ProfileService } from '../lib-profile/profile.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
 @Component({
-  selector: 'app-pg-forgot-password',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe, PanelForgotPasswordComponent],
-  templateUrl: './pg-forgot-password.component.html',
-  styleUrl: './pg-forgot-password.component.scss',
-  encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-pg-forgot-password',
+    standalone: true,
+    imports: [CommonModule, TranslatePipe, PanelForgotPasswordComponent],
+    templateUrl: './pg-forgot-password.component.html',
+    styleUrl: './pg-forgot-password.component.scss',
+    encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PgForgotPasswordComponent {
-  public isDisabledSubmit = false;
-  public errMsgs: string[] = [];
+    public isDisabledSubmit = false;
+    public errMsgs: string[] = [];
 
-  constructor(
-    private changeDetector: ChangeDetectorRef,
-    private router: Router,
-    private translate: TranslateService,
-    private dialogService: DialogService,
-    private profileService: ProfileService
-  ) {
-  }
-  
-  // ** Public API **
-
-  public doResend(params: StrParams): void {
-    if (!params) {
-      return;
-    }
-    const email: string = params['email'] || "";
-
-    if (!email) {
-      return;
+    constructor(
+        private changeDetector: ChangeDetectorRef,
+        private router: Router,
+        private translate: TranslateService,
+        private dialogService: DialogService,
+        private profileService: ProfileService
+    ) {
     }
 
-    this.isDisabledSubmit = true;
-    this.errMsgs = [];
-    this.profileService.recovery(email)
-      .then(() => {
-        const appName = this.translate.instant('app.name');
-        const title = this.translate.instant('pg-forgot-password.dialog_title', { appName: appName });
-        const message = this.translate.instant('pg-forgot-password.dialog_message', { value: email });
-        this.dialogService.openConfirmation(message, title, { btnNameAccept: 'buttons.ok' }).then(() => {
-          this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
-        });
-      })
-      .catch((error: HttpErrorResponse) => {
-        this.errMsgs = HttpErrorUtil.getMsgs(error);
-      })
-      .finally(() => {
-        this.isDisabledSubmit = false;
-        this.changeDetector.markForCheck();
-      });
-  }
+    // ** Public API **
 
-  // ** Private API **
+    public doResend(params: StrParams): void {
+        if (!params) {
+            return;
+        }
+        const email: string = params['email'] || "";
+
+        if (!email) {
+            return;
+        }
+
+        this.isDisabledSubmit = true;
+        this.errMsgs = [];
+        this.profileService.recovery(email)
+            .then(() => {
+                const appName = this.translate.instant('app.name');
+                const title = this.translate.instant('pg-forgot-password.dialog_title', { appName: appName });
+                const message = this.translate.instant('pg-forgot-password.dialog_message', { value: email });
+                this.dialogService.openConfirmation(message, title, { btnNameAccept: 'buttons.ok' }).then(() => {
+                    this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
+                });
+            })
+            .catch((error: HttpErrorResponse) => {
+                this.errMsgs = HttpErrorUtil.getMsgs(error);
+            })
+            .finally(() => {
+                this.isDisabledSubmit = false;
+                this.changeDetector.markForCheck();
+            });
+    }
+
+    // ** Private API **
 }

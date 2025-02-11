@@ -10,55 +10,55 @@ import { ProfileService } from '../lib-profile/profile.service';
 import { HttpErrorUtil } from '../utils/http-error.util';
 
 @Component({
-  selector: 'app-pg-login',
-  standalone: true,
-  imports: [CommonModule, PanelLoginComponent],
-  templateUrl: './pg-login.component.html',
-  styleUrl: './pg-login.component.scss',
-  encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-pg-login',
+    standalone: true,
+    imports: [CommonModule, PanelLoginComponent],
+    templateUrl: './pg-login.component.html',
+    styleUrl: './pg-login.component.scss',
+    encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PgLoginComponent {
-  public isLogin = true;
-  public isDisabledSubmit = false;
-  public errMsgs: string[] = [];
+    public isLogin = true;
+    public isDisabledSubmit = false;
+    public errMsgs: string[] = [];
 
-  constructor(
-    private changeDetector: ChangeDetectorRef,
-    private router: Router,
-    private profileService: ProfileService,
-  ) {
-  }
-
-  // ** Public API **
-
-  public async doLogin(params: StrParams): Promise<void> {
-    if (!params) {
-      return;
-    }
-    const nickname: string = params['nickname'] || "";
-    const password: string = params['password'] || "";
-
-    if (!nickname || !password) {
-      return;
+    constructor(
+        private changeDetector: ChangeDetectorRef,
+        private router: Router,
+        private profileService: ProfileService,
+    ) {
     }
 
-    this.isDisabledSubmit = true;
-    this.errMsgs = [];
-    try {
-      await this.profileService.login(nickname, password);
-      this.router.navigateByUrl(REDIRECT_AFTER_LOGIN);
-    } catch (error) {
-      if (error instanceof HttpErrorResponse) {
-        this.errMsgs = HttpErrorUtil.getMsgs(error);
-      } else {
-        throw error;
-      }
-    } finally {
-      this.isDisabledSubmit = false;
-      this.changeDetector.markForCheck();
-    }
-  }
+    // ** Public API **
 
-  // ** Private API **
+    public async doLogin(params: StrParams): Promise<void> {
+        if (!params) {
+            return;
+        }
+        const nickname: string = params['nickname'] || "";
+        const password: string = params['password'] || "";
+
+        if (!nickname || !password) {
+            return;
+        }
+
+        this.isDisabledSubmit = true;
+        this.errMsgs = [];
+        try {
+            await this.profileService.login(nickname, password);
+            this.router.navigateByUrl(REDIRECT_AFTER_LOGIN);
+        } catch (error) {
+            if (error instanceof HttpErrorResponse) {
+                this.errMsgs = HttpErrorUtil.getMsgs(error);
+            } else {
+                throw error;
+            }
+        } finally {
+            this.isDisabledSubmit = false;
+            this.changeDetector.markForCheck();
+        }
+    }
+
+    // ** Private API **
 }

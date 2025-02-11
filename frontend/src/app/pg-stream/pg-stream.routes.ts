@@ -10,31 +10,31 @@ import { pgProfileResolver } from './pg-profile.resolver';
 import { pgStreamConfigResolver } from './pg-stream-config.resolver';
 
 export const PG_STREAM_ROUTES: Routes = [
-  {
-    path: '',
-    component: PgStreamComponent,
-    children: [
-      {
-        path: E_STREAM_LIST, // 'ind/stream/list'
-        component: StreamListComponent,
-        resolve: { userDto: pgProfileResolver }
-      },
-      {
-        path: E_STREAM_EDIT + '/:' + P_STREAM_ID, // 'ind/stream/edit/:streamId'
-        component: StreamEditComponent,
-        resolve: {
-          streamDto: pgStreamResolver,
-          streamConfigDto: pgStreamConfigResolver,
-        }
-      },
-      {
-        path: E_STREAM_CREATE, // 'ind/stream/create'
-        component: StreamEditComponent,
-        resolve: {
-          streamDto: pgStreamResolver,
-          streamConfigDto: pgStreamConfigResolver,
-        }
-      },
-    ]
-  },
+    {
+        path: '',
+        component: PgStreamComponent,
+        children: [
+            {
+                path: E_STREAM_LIST, // 'ind/stream/list'
+                component: StreamListComponent,
+                resolve: { userDto: pgProfileResolver }
+            },
+            {
+                path: E_STREAM_EDIT + '/:' + P_STREAM_ID, // 'ind/stream/edit/:streamId'
+                component: StreamEditComponent,
+                resolve: {
+                    streamDto: pgStreamResolver,
+                    streamConfigDto: pgStreamConfigResolver,
+                }
+            },
+            {
+                path: E_STREAM_CREATE, // 'ind/stream/create'
+                component: StreamEditComponent,
+                resolve: {
+                    streamDto: pgStreamResolver,
+                    streamConfigDto: pgStreamConfigResolver,
+                }
+            },
+        ]
+    },
 ];
