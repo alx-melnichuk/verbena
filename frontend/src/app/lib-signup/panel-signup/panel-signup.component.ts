@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
-  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, HostListener, Input, OnChanges, Output,
-  SimpleChanges, ViewEncapsulation
+    ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, HostListener, Input, OnChanges, Output,
+    SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -22,86 +22,86 @@ import { UniquenessDto } from 'src/app/lib-profile/profile-api.interface';
 export const SG_DEBOUNCE_DELAY = 900;
 
 @Component({
-  selector: 'app-panel-signup',
-  exportAs: 'appPanelSignup',
-  standalone: true,
-  imports: [ CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe,
-    FieldEmailComponent, FieldNicknameComponent, FieldPasswordComponent, UniquenessCheckComponent],
-  templateUrl: './panel-signup.component.html',
-  styleUrl: './panel-signup.component.scss',
-  encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-panel-signup',
+    exportAs: 'appPanelSignup',
+    standalone: true,
+    imports: [CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe,
+        FieldEmailComponent, FieldNicknameComponent, FieldPasswordComponent, UniquenessCheckComponent],
+    templateUrl: './panel-signup.component.html',
+    styleUrl: './panel-signup.component.scss',
+    encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PanelSignupComponent implements OnChanges {
-  @Input()
-  public isDisabledSubmit: boolean = false;
-  @Input()
-  public errMsgs: string[] = [];
-  @Output()
-  readonly signup: EventEmitter<StrParams> = new EventEmitter();
+    @Input()
+    public isDisabledSubmit: boolean = false;
+    @Input()
+    public errMsgs: string[] = [];
+    @Output()
+    readonly signup: EventEmitter<StrParams> = new EventEmitter();
 
-  @HostBinding('class.global-scroll')
-  public get isGlobalScroll(): boolean { return true; }
+    @HostBinding('class.global-scroll')
+    public get isGlobalScroll(): boolean { return true; }
 
-  public linkLogin = ROUTE_LOGIN;
-  public debounceDelay: number = SG_DEBOUNCE_DELAY;
+    public linkLogin = ROUTE_LOGIN;
+    public debounceDelay: number = SG_DEBOUNCE_DELAY;
 
-  public controls = {
-    nickname: new FormControl<string | null>(null, []),
-    email: new FormControl<string | null>(null, []),
-    password: new FormControl<string | null>(null, []),
-  };
-  public formGroup: FormGroup = new FormGroup(this.controls);
+    public controls = {
+        nickname: new FormControl<string | null>(null, []),
+        email: new FormControl<string | null>(null, []),
+        password: new FormControl<string | null>(null, []),
+    };
+    public formGroup: FormGroup = new FormGroup(this.controls);
 
-  constructor(
-    private changeDetector: ChangeDetectorRef,
-    private profileService: ProfileService,
-  ) {
-  }
-
-  @HostListener('document:keypress', ['$event'])
-  public keyEvent(event: KeyboardEvent): void {
-    if (event.code === 'Enter') {
-      this.doSignup();
+    constructor(
+        private changeDetector: ChangeDetectorRef,
+        private profileService: ProfileService,
+    ) {
     }
-  }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (!!changes['isDisabledSubmit']) {
-      if (this.isDisabledSubmit != this.formGroup.disabled) {
-        this.isDisabledSubmit ? this.formGroup.disable() : this.formGroup.enable();
-        this.changeDetector.markForCheck();
-      }
+    @HostListener('document:keypress', ['$event'])
+    public keyEvent(event: KeyboardEvent): void {
+        if (event.code === 'Enter') {
+            this.doSignup();
+        }
     }
-  }
 
-  // ** Public API **
-
-  public doSignup(): void {
-    if (this.formGroup.invalid || this.isDisabledSubmit) {
-      return;
+    ngOnChanges(changes: SimpleChanges): void {
+        if (!!changes['isDisabledSubmit']) {
+            if (this.isDisabledSubmit != this.formGroup.disabled) {
+                this.isDisabledSubmit ? this.formGroup.disable() : this.formGroup.enable();
+                this.changeDetector.markForCheck();
+            }
+        }
     }
-    const nickname = this.controls.nickname.value;
-    const password = this.controls.password.value;
-    const email = this.controls.email.value;
-    this.signup.emit({ nickname, email, password });
-  }
 
-  public updateErrMsg(errMsgs: string[] = []): void {
-    this.errMsgs = errMsgs;
-  }
+    // ** Public API **
 
-  public checkUniquenessNickname = (nickname: string | null | undefined): Promise<boolean> => {
-    if (!nickname) {
-      return Promise.resolve(true);
+    public doSignup(): void {
+        if (this.formGroup.invalid || this.isDisabledSubmit) {
+            return;
+        }
+        const nickname = this.controls.nickname.value;
+        const password = this.controls.password.value;
+        const email = this.controls.email.value;
+        this.signup.emit({ nickname, email, password });
     }
-    return this.profileService.uniqueness(nickname, '').then((response) => response == null || (response as UniquenessDto).uniqueness);
-  }
 
-  public checkUniquenessEmail = (email: string | null | undefined): Promise<boolean> => {
-    if (!email) {
-      return Promise.resolve(true);
+    public updateErrMsg(errMsgs: string[] = []): void {
+        this.errMsgs = errMsgs;
     }
-    return this.profileService.uniqueness('', email).then((response) => response == null || (response as UniquenessDto).uniqueness);
-  }
+
+    public checkUniquenessNickname = (nickname: string | null | undefined): Promise<boolean> => {
+        if (!nickname) {
+            return Promise.resolve(true);
+        }
+        return this.profileService.uniqueness(nickname, '').then((response) => response == null || (response as UniquenessDto).uniqueness);
+    }
+
+    public checkUniquenessEmail = (email: string | null | undefined): Promise<boolean> => {
+        if (!email) {
+            return Promise.resolve(true);
+        }
+        return this.profileService.uniqueness('', email).then((response) => response == null || (response as UniquenessDto).uniqueness);
+    }
 }

@@ -7,22 +7,22 @@ import { HttpObservableUtil } from '../utils/http-observable.util';
 import { StreamConfigDto } from './stream-config.interface';
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root'
 })
 export class StreamConfigService {
-   public streamConfigDto: StreamConfigDto | null = null;
+    public streamConfigDto: StreamConfigDto | null = null;
 
-  constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
-  public getConfig(): Promise<StreamConfigDto | HttpErrorResponse | undefined> {
-    if (this.streamConfigDto != null) {
-      return Promise.resolve({...this.streamConfigDto});
+    public getConfig(): Promise<StreamConfigDto | HttpErrorResponse | undefined> {
+        if (this.streamConfigDto != null) {
+            return Promise.resolve({ ...this.streamConfigDto });
+        }
+        const url = Uri.appUri('appApi://streams_config');
+        return HttpObservableUtil.toPromise<StreamConfigDto>(this.http.get<StreamConfigDto | HttpErrorResponse>(url))
+            .then((response: StreamConfigDto | HttpErrorResponse | undefined) => {
+                this.streamConfigDto = response as StreamConfigDto;
+                return { ...this.streamConfigDto };
+            });
     }
-    const url = Uri.appUri('appApi://streams_config');
-    return HttpObservableUtil.toPromise<StreamConfigDto>(this.http.get<StreamConfigDto | HttpErrorResponse>(url))
-      .then((response: StreamConfigDto | HttpErrorResponse | undefined) => {
-        this.streamConfigDto = response as StreamConfigDto;
-        return {...this.streamConfigDto};
-      });
-  }
 }
