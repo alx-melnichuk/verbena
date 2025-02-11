@@ -3,30 +3,33 @@
 
 .stl-mdc {
 
-   // ** mat-error **
-  .mat-mdc-form-field-subscript-wrapper {
-    --mat-form-field-subscript-text-line-height: 0.9rem; // 15.2px
-    --mat-form-field-subscript-text-size: calc(0.75rem + 1px); // 13px
-    mat-hint, mat-error {
-      display: flex;
-    }
-  }
+    // ** mat-error **
+    .mat-mdc-form-field-subscript-wrapper {
+        --mat-form-field-subscript-text-line-height: 0.9rem; // 15.2px
+        --mat-form-field-subscript-text-size: calc(0.75rem + 1px); // 13px
 
-  // ** mat-button **
-  // Buttons with "semi-circle" edges have been changed to buttons with "oval" edges.
-  --mdc-outlined-button-container-shape: 4rem / 8rem;
-  --mdc-filled-button-container-shape: 4rem / 8rem;
-  
-  // ** mat-form-field **
-  // Changed the input field frame radius from 4px to 8px.
-  --mdc-outlined-text-field-container-shape: 0.5rem;
-
-  // ** mat-dialog **
-  .cdk-overlay-pane.app-modal-panel {
-    // Adding a border to the modal window panel.
-    .mat-mdc-dialog-surface::before {
-      border-color: var(--mdc-outlined-button-outline-color); // --sys-outline
+        mat-hint,
+        mat-error {
+            display: flex;
+        }
     }
-  }
- 
+
+    // ** mat-button **
+    // Buttons with "semi-circle" edges have been changed to buttons with "oval" edges.
+    --mdc-outlined-button-container-shape: 4rem / 8rem;
+    --mdc-filled-button-container-shape: 4rem / 8rem;
+
+    // ** mat-form-field **
+    // Changed the input field frame radius from 4px to 8px.
+    --mdc-outlined-text-field-container-shape: 0.5rem;
+
+    // ** mat-dialog **
+    .cdk-overlay-pane.app-modal-panel {
+
+        // Adding a border to the modal window panel.
+        .mat-mdc-dialog-surface::before {
+            border-color: var(--mdc-outlined-button-outline-color); // --sys-outline
+        }
+    }
+
 }

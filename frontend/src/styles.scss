@@ -11,28 +11,23 @@
 @include mat.core();
 
 // Define the theme object.
-$verbena-theme: mat.define-theme((
-  color: (
-    theme-type: light,
-    primary : mat.$azure-palette,
-    tertiary: mat.$blue-palette,
-    use-system-variables: true, // Added
-  ),
-  typography: (
-    use-system-variables: true, // Added
-  ),
-  density: (
-    scale: 0,
-  )
-));
+$verbena-theme: mat.define-theme((color: (theme-type: light,
+                primary : mat.$azure-palette,
+                tertiary: mat.$blue-palette,
+                use-system-variables: true, // Added
+            ),
+            typography: (use-system-variables: true, // Added
+            ),
+            density: (scale: 0,
+            )));
 
 // Include theme styles for core and each component used in your app.
 // Alternatively, you can import and @include the theme mixins for each component
 // that you are using.
 :root {
-  @include mat.all-component-themes($verbena-theme);
-  @include mat.system-level-colors($verbena-theme); // Added
-  @include mat.system-level-typography($verbena-theme); // Added
+    @include mat.all-component-themes($verbena-theme);
+    @include mat.system-level-colors($verbena-theme); // Added
+    @include mat.system-level-typography($verbena-theme); // Added
 }
 
 // Comment out the line below if you want to use the pre-defined typography utility classes.
@@ -44,34 +39,48 @@ $verbena-theme: mat.define-theme((
 /* You can add global styles to this file, and also import other style files */
 
 
-// @import './styles-colors-list.scss';
-// @import './styles-colors.scss';
 @import './styles-theme.scss';
 @import './styles-mdc.scss';
-  
-html {
-  font-family: Roboto, 'Helvetica Neue', sans-serif;
-  height: 100%;
-  line-height: 1.5;
-  // --scrollbarBG: rgb(207 216 220 / 20%);
-  // --thumbBG: #90a4ae;
-  // scrollbar-width: thin;
-  // scrollbar-color: var(--thumbBG) var(--scrollbarBG);
-}
-body {
-  height: 100%;
-  margin: 0;
-  -webkit-text-size-adjust: 100% !important;
-  -ms-text-size-adjust: 100% !important;
-  -webkit-font-smoothing: antialiased !important;
-  // Define the default background color and text color.
-  background: var(--sys-surface);
-  color: var(--sys-on-surface);
-}
-h1, h2, h3, h4, h5, h6 { margin: 8px 0; }
-p { margin: 0; }
 
-a[no-decor], a:visited[no-decor], a:hover[no-decor] { text-decoration: none; }
+html {
+    font-family: Roboto, 'Helvetica Neue', sans-serif;
+    height: 100%;
+    line-height: 1.5;
+    // --scrollbarBG: rgb(207 216 220 / 20%);
+    // --thumbBG: #90a4ae;
+    // scrollbar-width: thin;
+    // scrollbar-color: var(--thumbBG) var(--scrollbarBG);
+}
+
+body {
+    height: 100%;
+    margin: 0;
+    -webkit-text-size-adjust: 100% !important;
+    -ms-text-size-adjust: 100% !important;
+    -webkit-font-smoothing: antialiased !important;
+    // Define the default background color and text color.
+    background: var(--sys-surface);
+    color: var(--sys-on-surface);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: 8px 0;
+}
+
+p {
+    margin: 0;
+}
+
+a[no-decor],
+a:visited[no-decor],
+a:hover[no-decor] {
+    text-decoration: none;
+}
 
 // .global-scroll {
 //   scrollbar-width: thin;

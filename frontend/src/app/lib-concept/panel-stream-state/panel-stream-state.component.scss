@@ -1,7 +1,5 @@
 /*# sourceURL=panel-stream-state.component.scss */
 
-@use '../../../styles-dimensions.scss' as dimensions;
-
 app-panel-stream-state {
     &[state="paused"] {
         ---pss-bg-tr_pr: transparent;
