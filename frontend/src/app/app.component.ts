@@ -12,90 +12,90 @@ import { ACCESS_TOKEN, ProfileService } from './lib-profile/profile.service';
 import { LocaleService } from './common/locale.service';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [CommonModule, RouterLink, RouterOutlet, HeaderComponent, FooterComponent],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
-  encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-root',
+    standalone: true,
+    imports: [CommonModule, RouterLink, RouterOutlet, HeaderComponent, FooterComponent],
+    templateUrl: './app.component.html',
+    styleUrl: './app.component.scss',
+    encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit {
-  public title = 'verbena';
-  public linkLogin = ROUTE_LOGIN;
-  public locale: string | null = null;
-  public colorScheme: string | null = null;
+    public title = 'verbena';
+    public linkLogin = ROUTE_LOGIN;
+    public locale: string | null = null;
+    public colorScheme: string | null = null;
 
-  @HostListener('window:storage', ['$event'])
-  public windowStorage(event: StorageEvent): void {
-    // Check for the presence of an authorization token.
-    if (event.key == ACCESS_TOKEN && !this.profileService.hasAccessTokenInLocalStorage()) {
-      // If there is no authorization token in the storage, then the current session is closed.
-      // Clear the authorization token value.
-      this.profileService.setProfileDto();
-      this.profileService.setProfileTokensDto();
-      // And you need to go to the "login" tab.
-      this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
+    @HostListener('window:storage', ['$event'])
+    public windowStorage(event: StorageEvent): void {
+        // Check for the presence of an authorization token.
+        if (event.key == ACCESS_TOKEN && !this.profileService.hasAccessTokenInLocalStorage()) {
+            // If there is no authorization token in the storage, then the current session is closed.
+            // Clear the authorization token value.
+            this.profileService.setProfileDto();
+            this.profileService.setProfileTokensDto();
+            // And you need to go to the "login" tab.
+            this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
+        }
     }
-  }
 
-  public get currentRoute(): string {
-    return window.location.pathname;
-  }
-  public set currentRoute(value: string) {
-  }
-  
-  constructor(
-    public translate: TranslateService,
-    public profileService: ProfileService,
-    public renderer: Renderer2,
-    private router: Router,
-    private localeService: LocaleService,
-    private initializationService: InitializationService,
-  ) {
-    const theme = this.profileService.profileDto?.theme || COLOR_SCHEME_LIST[0];
-    this.initializationService.setColorScheme(theme, this.renderer);
-  }
-
-  async ngOnInit(): Promise<void> {
-    this.locale = this.localeService.getLocale();
-    this.colorScheme = this.initializationService.getColorScheme();
-  }
-
-  // ** Public API **
-
-  public doCommand(event: Record<string, string>): void {
-    const key = Object.keys(event)[0];
-    const value = event[key];
-    switch (key) {
-      case HM_LOGOUT: this.doLogout(); break;
-      case HM_SET_LOCALE: this.doSetLocale(value); break;
-      case HM_SET_COLOR_SCHEME: this.doSetColorScheme(value); break;
+    public get currentRoute(): string {
+        return window.location.pathname;
     }
-  }
+    public set currentRoute(value: string) {
+    }
 
-  // ** Private API **
+    constructor(
+        public translate: TranslateService,
+        public profileService: ProfileService,
+        public renderer: Renderer2,
+        private router: Router,
+        private localeService: LocaleService,
+        private initializationService: InitializationService,
+    ) {
+        const theme = this.profileService.profileDto?.theme || COLOR_SCHEME_LIST[0];
+        this.initializationService.setColorScheme(theme, this.renderer);
+    }
 
-  private async doLogout(): Promise<void> {
-    await this.profileService.logout();
-    let currentRoute = window.location.pathname;
-    const idx = AUTHORIZATION_DENIED.findIndex((item) => currentRoute.startsWith(item));
-    currentRoute = (idx > -1 ? currentRoute : ROUTE_LOGIN);
-    const queryParams = this.router.routerState.snapshot.root.queryParams;
-    await this.router.navigate([currentRoute], { queryParams }); // ByUrl(currentRoute, { });
-    return Promise.resolve();
-  }
-
-  private doSetLocale(value: string): void {
-    this.localeService.setLocale(value)
-      .finally(() => {
+    async ngOnInit(): Promise<void> {
         this.locale = this.localeService.getLocale();
-      });
-  }
+        this.colorScheme = this.initializationService.getColorScheme();
+    }
 
-  private doSetColorScheme(value: string): void {
-    this.initializationService.setColorScheme(value, this.renderer);
-    this.colorScheme = this.initializationService.getColorScheme();
-  }
+    // ** Public API **
+
+    public doCommand(event: Record<string, string>): void {
+        const key = Object.keys(event)[0];
+        const value = event[key];
+        switch (key) {
+            case HM_LOGOUT: this.doLogout(); break;
+            case HM_SET_LOCALE: this.doSetLocale(value); break;
+            case HM_SET_COLOR_SCHEME: this.doSetColorScheme(value); break;
+        }
+    }
+
+    // ** Private API **
+
+    private async doLogout(): Promise<void> {
+        await this.profileService.logout();
+        let currentRoute = window.location.pathname;
+        const idx = AUTHORIZATION_DENIED.findIndex((item) => currentRoute.startsWith(item));
+        currentRoute = (idx > -1 ? currentRoute : ROUTE_LOGIN);
+        const queryParams = this.router.routerState.snapshot.root.queryParams;
+        await this.router.navigate([currentRoute], { queryParams }); // ByUrl(currentRoute, { });
+        return Promise.resolve();
+    }
+
+    private doSetLocale(value: string): void {
+        this.localeService.setLocale(value)
+            .finally(() => {
+                this.locale = this.localeService.getLocale();
+            });
+    }
+
+    private doSetColorScheme(value: string): void {
+        this.initializationService.setColorScheme(value, this.renderer);
+        this.colorScheme = this.initializationService.getColorScheme();
+    }
 
 }
