@@ -1,50 +1,53 @@
 /*# sourceURL=calendar-header.component.scss */
 
 app-calendar-header {
-  display: block;
-  
-  .ch-header {
-    align-items: center;
-    box-sizing: border-box;
-    display: flex;
-    padding: 0 0.5rem;
-  }
+    display: block;
 
-  .ch-controls {
-    --mat-text-button-horizontal-padding: 0.5rem;
-    align-items: center;
-    display: flex;
-    margin-bottom: 2.5%;
-    margin-top: 2.5%;
-    width: 100%;
-  }
-  .ch-period-button {
-    --mdc-text-button-label-text-color: var(--mat-datepicker-calendar-period-button-text-color, var(--mat-app-on-surface-variant));
-    font-size: var(--mat-datepicker-calendar-period-button-text-size, var(--mat-app-title-small-size));
-    font-weight: var(--mat-datepicker-calendar-period-button-text-weight, var(--mat-app-title-small-weight));
-    min-width: 0;
-
-    &>.mdc-button__label {
-      align-items: center;
-      display: flex;
+    .ch-header {
+        align-items: center;
+        box-sizing: border-box;
+        display: flex;
+        padding: 0 0.5rem;
     }
-  }
-  // For the classes "mat-calendar-previous-button", "mat-calendar-next-button" the color value 
-  // is specified in the styles of the "mat-calendar" component.
 
-  .ch-arrow {
-    display: inline-block;
-    fill: var(--mat-datepicker-calendar-period-button-icon-color, var(--mat-app-on-surface-variant));
-    height: 5px;
-    margin: 0 0 0 5px;
-    vertical-align: middle;
-    width: 10px;
-
-    &.ch-invert {
-      transform: rotate(180deg);
+    .ch-controls {
+        --mat-text-button-horizontal-padding: 0.5rem;
+        align-items: center;
+        display: flex;
+        margin-bottom: 2.5%;
+        margin-top: 2.5%;
+        width: 100%;
     }
-  }
-  .ch-spacer {
-    flex: 1 1 auto;
-  }
+
+    .ch-period-button {
+        --mdc-text-button-label-text-color: var(--mat-datepicker-calendar-period-button-text-color, var(--mat-app-on-surface-variant));
+        font-size: var(--mat-datepicker-calendar-period-button-text-size, var(--mat-app-title-small-size));
+        font-weight: var(--mat-datepicker-calendar-period-button-text-weight, var(--mat-app-title-small-weight));
+        min-width: 0;
+
+        &>.mdc-button__label {
+            align-items: center;
+            display: flex;
+        }
+    }
+
+    // For the classes "mat-calendar-previous-button", "mat-calendar-next-button" the color value 
+    // is specified in the styles of the "mat-calendar" component.
+
+    .ch-arrow {
+        display: inline-block;
+        fill: var(--mat-datepicker-calendar-period-button-icon-color, var(--mat-app-on-surface-variant));
+        height: 5px;
+        margin: 0 0 0 5px;
+        vertical-align: middle;
+        width: 10px;
+
+        &.ch-invert {
+            transform: rotate(180deg);
+        }
+    }
+
+    .ch-spacer {
+        flex: 1 1 auto;
+    }
 }

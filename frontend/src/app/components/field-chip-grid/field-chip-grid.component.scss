@@ -1,33 +1,35 @@
 /*# sourceURL=field-chip-grid.component.scss */
 
 app-field-chip-grid {
-  display: block;
+    display: block;
 
-  .fcg-btn-chip-remove {
-    background-color: transparent;
-    border: none;
-    font-size: large;
-    padding: 0 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 1vw;
-    height: 1.3vh;
-  }
-  &[wd100] {
-    width: 100%;
-  }
-  &[hg100] {
-    height: 100%;
-  }
+    .fcg-btn-chip-remove {
+        background-color: transparent;
+        border: none;
+        font-size: large;
+        padding: 0 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 1vw;
+        height: 1.3vh;
+    }
 
-  mat-form-field {
-    max-width: inherit;
-    width: inherit;
-  }
-  .mat-mdc-text-field-wrapper.mdc-text-field--outlined .mat-mdc-form-field-infix {
-    padding-top: 0.5em;
-    padding-bottom: 0.5em;
-  }
+    &[wd100] {
+        width: 100%;
+    }
+
+    &[hg100] {
+        height: 100%;
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
+
+    .mat-mdc-text-field-wrapper.mdc-text-field--outlined .mat-mdc-form-field-infix {
+        padding-top: 0.5em;
+        padding-bottom: 0.5em;
+    }
 }
-  

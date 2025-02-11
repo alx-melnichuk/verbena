@@ -1,17 +1,18 @@
 /*# sourceURL=field-email.component.scss */
 
 app-field-email {
-  display: block;
+    display: block;
 
-  &[wd100] {
-    width: 100%;
-  }
-  &[hg100] {
-    height: 100%;
-  }
+    &[wd100] {
+        width: 100%;
+    }
 
-  mat-form-field {
-    max-width: inherit;
-    width: inherit;
-  }
+    &[hg100] {
+        height: 100%;
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
 }

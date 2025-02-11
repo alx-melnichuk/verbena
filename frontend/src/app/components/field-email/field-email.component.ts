@@ -1,10 +1,10 @@
 import {
-  ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewChild, ViewEncapsulation, forwardRef,
+    ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewChild, ViewEncapsulation, forwardRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule,
-  ValidationErrors, Validator, ValidatorFn,
+    AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule,
+    ValidationErrors, Validator, ValidatorFn,
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
@@ -21,127 +21,127 @@ export const EMAIL_MAX_LENGTH = 254;
 export const CUSTOM_ERROR = 'customError';
 
 @Component({
-  selector: 'app-field-email',
-  exportAs: 'appFieldEmail',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, TranslatePipe],
-  templateUrl: './field-email.component.html',
-  styleUrl: './field-email.component.scss',
-  encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [
-    { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => FieldEmailComponent), multi: true },
-    { provide: NG_VALIDATORS, useExisting: forwardRef(() => FieldEmailComponent), multi: true },
-  ],
+    selector: 'app-field-email',
+    exportAs: 'appFieldEmail',
+    standalone: true,
+    imports: [CommonModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, TranslatePipe],
+    templateUrl: './field-email.component.html',
+    styleUrl: './field-email.component.scss',
+    encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [
+        { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => FieldEmailComponent), multi: true },
+        { provide: NG_VALIDATORS, useExisting: forwardRef(() => FieldEmailComponent), multi: true },
+    ],
 })
 export class FieldEmailComponent implements OnChanges, ControlValueAccessor, Validator {
-  @Input()
-  public gist: string = EMAIL;
-  @Input()
-  public errorMsg: string | null | undefined;
-  @Input()
-  public hint: string = '';
-  @Input()
-  public isDisabled: boolean = false;
-  @Input()
-  public isReadOnly: boolean = false;
-  @Input()
-  public isRequired: boolean = false;
-  @Input()
-  public isSpellcheck: boolean = false;
-  @Input()
-  public label: string = 'field-email.label';
-  @Input()
-  public maxLen: number = EMAIL_MAX_LENGTH;
-  @Input()
-  public minLen: number = EMAIL_MIN_LENGTH;
-  @Input()
-  public pattern: string = "";
-  @Input()
-  public type: string = "email";
+    @Input()
+    public gist: string = EMAIL;
+    @Input()
+    public errorMsg: string | null | undefined;
+    @Input()
+    public hint: string = '';
+    @Input()
+    public isDisabled: boolean = false;
+    @Input()
+    public isReadOnly: boolean = false;
+    @Input()
+    public isRequired: boolean = false;
+    @Input()
+    public isSpellcheck: boolean = false;
+    @Input()
+    public label: string = 'field-email.label';
+    @Input()
+    public maxLen: number = EMAIL_MAX_LENGTH;
+    @Input()
+    public minLen: number = EMAIL_MIN_LENGTH;
+    @Input()
+    public pattern: string = "";
+    @Input()
+    public type: string = "email";
 
-  @ViewChild(MatInput, { static: false })
-  public matInput: MatInput | null = null;
+    @ViewChild(MatInput, { static: false })
+    public matInput: MatInput | null = null;
 
-  public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
-  public formGroup: FormGroup = new FormGroup({ email: this.formControl });
+    public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
+    public formGroup: FormGroup = new FormGroup({ email: this.formControl });
 
-  constructor() {}
+    constructor() { }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen'] || !!changes['pattern'] || !!changes['type']) {
-      this.prepareFormGroup();
+    ngOnChanges(changes: SimpleChanges): void {
+        if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen'] || !!changes['pattern'] || !!changes['type']) {
+            this.prepareFormGroup();
+        }
+        if (!!changes['isDisabled']) {
+            this.setDisabledState(this.isDisabled);
+        }
+        if (!!changes['errorMsg']) {
+            this.formControl.updateValueAndValidity();
+            this.onChange(this.formControl.value);
+        }
     }
-    if (!!changes['isDisabled']) {
-      this.setDisabledState(this.isDisabled);
+
+    // ** ControlValueAccessor - start **
+
+    public onChange: (val: string) => void = () => { };
+    public onTouched: () => void = () => { };
+
+    public writeValue(value: any): void {
+        this.formControl.setValue(value, { emitEvent: true });
     }
-    if (!!changes['errorMsg']) {
-      this.formControl.updateValueAndValidity();
-      this.onChange(this.formControl.value);
+
+    public registerOnChange(fn: any): void {
+        this.onChange = fn;
     }
-  }
 
-  // ** ControlValueAccessor - start **
+    public registerOnTouched(fn: any): void {
+        this.onTouched = fn;
+    }
 
-  public onChange: (val: string) => void = () => {};
-  public onTouched: () => void = () => {};
+    public setDisabledState(isDisabled: boolean): void {
+        isDisabled ? this.formGroup.disable() : this.formGroup.enable();
+    }
 
-  public writeValue(value: any): void {
-    this.formControl.setValue(value, { emitEvent: true });
-  }
+    // ** ControlValueAccessor - finish **
 
-  public registerOnChange(fn: any): void {
-    this.onChange = fn;
-  }
+    // ** Validator - start **
 
-  public registerOnTouched(fn: any): void {
-    this.onTouched = fn;
-  }
+    public validate(control: AbstractControl): ValidationErrors | null {
+        return this.formControl.errors;
+    }
 
-  public setDisabledState(isDisabled: boolean): void {
-    isDisabled ? this.formGroup.disable() : this.formGroup.enable();
-  }
+    // ** Validator - finish **
 
-  // ** ControlValueAccessor - finish **
+    // ** Public API **
 
-  // ** Validator - start **
+    public focus(): void {
+        this.matInput?.focus();
+    }
 
-  public validate(control: AbstractControl): ValidationErrors | null {
-    return this.formControl.errors;
-  }
+    public getErrorMsg(errors: ValidationErrors | null): string {
+        return ValidatorUtils.getErrorMsg(errors, this.gist || EMAIL);
+    }
 
-  // ** Validator - finish **
+    public getFormControl(): FormControl {
+        return this.formControl;
+    }
 
-  // ** Public API **
+    // ** Private API **
 
-  public focus(): void {
-    this.matInput?.focus();
-  }
-
-  public getErrorMsg(errors: ValidationErrors | null): string {
-    return ValidatorUtils.getErrorMsg(errors, this.gist || EMAIL);
-  }
-
-  public getFormControl(): FormControl {
-    return this.formControl;
-  }
-
-  // ** Private API **
-
-  private errorMsgValidator = (control: AbstractControl): ValidationErrors | null => {
-    const result = !!control && !!this.errorMsg ? { [CUSTOM_ERROR]: true } : null;
-    return result;
-  };
-  private prepareFormGroup(): void {
-    this.formControl.clearValidators();
-    const paramsObj = {
-      ...(this.isRequired ? { "required": true } : {}),
-      ...(this.minLen > 0 ? { "minLength": this.minLen } : {}),
-      ...(this.maxLen > 0 ? { "maxLength": this.maxLen } : {}),
-      ...(this.pattern ? { "pattern": this.pattern } : {}),
-      ...(this.type == "email" ? { "email": true } : {})
+    private errorMsgValidator = (control: AbstractControl): ValidationErrors | null => {
+        const result = !!control && !!this.errorMsg ? { [CUSTOM_ERROR]: true } : null;
+        return result;
     };
-    this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj), this.errorMsgValidator]);
-    this.formControl.updateValueAndValidity();
-  }
+    private prepareFormGroup(): void {
+        this.formControl.clearValidators();
+        const paramsObj = {
+            ...(this.isRequired ? { "required": true } : {}),
+            ...(this.minLen > 0 ? { "minLength": this.minLen } : {}),
+            ...(this.maxLen > 0 ? { "maxLength": this.maxLen } : {}),
+            ...(this.pattern ? { "pattern": this.pattern } : {}),
+            ...(this.type == "email" ? { "email": true } : {})
+        };
+        this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj), this.errorMsgValidator]);
+        this.formControl.updateValueAndValidity();
+    }
 }

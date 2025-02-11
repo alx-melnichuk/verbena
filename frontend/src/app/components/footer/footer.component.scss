@@ -1,17 +1,19 @@
 /*# sourceURL=footer.component.scss */
 
 app-footer {
-  align-items: center;
-  display: flex;
-  height: 100%;
-  line-height: 1;
-  padding-left: 0.8em;
+    align-items: center;
+    display: flex;
+    height: 100%;
+    line-height: 1;
+    padding-left: 0.8em;
 
-  &.f-is-authorized {
-    ---ftr-auth-bg: var(--app-site-auth);
-  }
-  &:not(.f-is-authorized) {
-    ---ftr-auth-bg: var(--app-site-unauth);
-  }
-  background-color: color-mix(in srgb, var(---ftr-auth-bg) 20%, var(--sys-surface));
+    &.f-is-authorized {
+        ---ftr-auth-bg: var(--app-site-auth);
+    }
+
+    &:not(.f-is-authorized) {
+        ---ftr-auth-bg: var(--app-site-unauth);
+    }
+
+    background-color: color-mix(in srgb, var(---ftr-auth-bg) 20%, var(--sys-surface));
 }

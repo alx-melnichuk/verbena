@@ -1,35 +1,39 @@
 /*# sourceURL=field-locale.component.scss */
 
 app-field-locale {
-  display: block;
+    display: block;
 
-  &[wd100] {
-    width: 100%;
-  }
-  &[hg100] {
-    height: 100%;
-  }
+    &[wd100] {
+        width: 100%;
+    }
 
-  mat-form-field {
-    max-width: inherit;
-    width: inherit;
-  }
-  .mat-mdc-form-field-infix {
-    width: 7em;
-  }
-  .fl-readonly {
-    pointer-events: none;
-  }
-  .fl-fn-it {
-    font-style: italic;
-    color: var(--ft-text-cl, var(--app-default-dis-cl))
-  }
+    &[hg100] {
+        height: 100%;
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
+
+    .mat-mdc-form-field-infix {
+        width: 7em;
+    }
+
+    .fl-readonly {
+        pointer-events: none;
+    }
+
+    .fl-fn-it {
+        font-style: italic;
+        color: var(--ft-text-cl, var(--app-default-dis-cl))
+    }
 }
-    
+
 
 .cdk-overlay-pane {
-  .fl-opt-fn-it {
-    font-style: italic;
-    color: var(--ft-text-cl, var(--app-default-dis-cl))
-  }
+    .fl-opt-fn-it {
+        font-style: italic;
+        color: var(--ft-text-cl, var(--app-default-dis-cl))
+    }
 }

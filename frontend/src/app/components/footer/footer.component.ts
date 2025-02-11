@@ -6,29 +6,29 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { ROUTE_LOGIN } from 'src/app/common/routes';
 
 @Component({
-  selector: 'app-footer',
-  exportAs: 'appFooter',
-  standalone: true,
-  imports: [CommonModule, RouterLink, TranslatePipe],
-  templateUrl: './footer.component.html',
-  styleUrl: './footer.component.scss',
-  encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-footer',
+    exportAs: 'appFooter',
+    standalone: true,
+    imports: [CommonModule, RouterLink, TranslatePipe],
+    templateUrl: './footer.component.html',
+    styleUrl: './footer.component.scss',
+    encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FooterComponent {
-  @Input()
-  public isAuthorized: boolean | null | undefined;
-  
-  @HostBinding('class.f-is-authorized')
-  get isAuthorizedVal(): boolean {
-    return !!this.isAuthorized;
-  }
+    @Input()
+    public isAuthorized: boolean | null | undefined;
 
-  linkLogin = ROUTE_LOGIN;
-  
-  constructor() {
-  }
+    @HostBinding('class.f-is-authorized')
+    get isAuthorizedVal(): boolean {
+        return !!this.isAuthorized;
+    }
 
-  // ** Public API **
+    linkLogin = ROUTE_LOGIN;
+
+    constructor() {
+    }
+
+    // ** Public API **
 
 }

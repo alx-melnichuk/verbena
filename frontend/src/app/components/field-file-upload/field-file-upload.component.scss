@@ -1,63 +1,69 @@
 /*# sourceURL=field-file-upload.component.scss */
-  
+
 app-field-file-upload {
-  align-items: center;
-  border-radius: var(--ffu-brd-rd);
-  display: flex;
-  justify-content: center;
-
-  &[wd100] {
-    width: 100%;
-  }
-  &[hg100] {
-    height: 100%;
-  }
-  &.is-border {
-    border-color: var(--ffu-brd-cl, var(--mdc-outlined-text-field-outline-color));
-    border-style: var(--ffu-brd-st, dashed);
-    border-width: var(--ffu-brd-wd, 1px);
-    box-sizing: border-box;
-  }
-  &.is-disabled {
-    opacity: 0.6;
-  }
-  &.is-non-event {
-    pointer-events: none;
-  }
-
-  // ** **
-
-  label {
-    cursor: pointer;
-  }
-
-  .ffu-container {
-    align-content: center;
     align-items: center;
+    border-radius: var(--ffu-brd-rd);
     display: flex;
-    flex-wrap: wrap;
-    height: 100%;
     justify-content: center;
-    width: 100%;
-  }
-  input[type='file'] {
-    display: none;
-  }
 
-  .ffu-file-add {
-    color: var(--app-svg-icon-cl);
-    display: block;
-    height: 4rem;
-    width: 4rem;
-  }
+    &[wd100] {
+        width: 100%;
+    }
 
-  .ffu-msg {
-    color: var(--ffu-text-cl, var(--sys-secondary));
-    font-size: var(--ffu-text-fn-sz, calc(1em - 3px));
-    line-height: 1.3;
-    padding: var(--ffu-msg-pg, 0.5em);
-  }
-  .ffu-block {
-    display: block;
-  }
+    &[hg100] {
+        height: 100%;
+    }
+
+    &.is-border {
+        border-color: var(--ffu-brd-cl, var(--mdc-outlined-text-field-outline-color));
+        border-style: var(--ffu-brd-st, dashed);
+        border-width: var(--ffu-brd-wd, 1px);
+        box-sizing: border-box;
+    }
+
+    &.is-disabled {
+        opacity: 0.6;
+    }
+
+    &.is-non-event {
+        pointer-events: none;
+    }
+
+    // ** **
+
+    label {
+        cursor: pointer;
+    }
+
+    .ffu-container {
+        align-content: center;
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        height: 100%;
+        justify-content: center;
+        width: 100%;
+    }
+
+    input[type='file'] {
+        display: none;
+    }
+
+    .ffu-file-add {
+        color: var(--app-svg-icon-cl);
+        display: block;
+        height: 4rem;
+        width: 4rem;
+    }
+
+    .ffu-msg {
+        color: var(--ffu-text-cl, var(--sys-secondary));
+        font-size: var(--ffu-text-fn-sz, calc(1em - 3px));
+        line-height: 1.3;
+        padding: var(--ffu-msg-pg, 0.5em);
+    }
+
+    .ffu-block {
+        display: block;
+    }
 }

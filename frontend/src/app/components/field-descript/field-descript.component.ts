@@ -1,10 +1,10 @@
 import {
-  ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewChild, ViewEncapsulation, forwardRef,
+    ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewChild, ViewEncapsulation, forwardRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule,
-  ValidationErrors, Validator, ValidatorFn,
+    AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule,
+    ValidationErrors, Validator, ValidatorFn,
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
@@ -19,120 +19,120 @@ export const DESCRIPT_ROWS = 6;
 export const CUSTOM_ERROR = 'customError';
 
 @Component({
-  selector: 'app-field-descript',
-  exportAs: 'appFieldDescript',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, TranslatePipe],
-  templateUrl: './field-descript.component.html',
-  styleUrl: './field-descript.component.scss',
-  encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [
-    { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => FieldDescriptComponent), multi: true },
-    { provide: NG_VALIDATORS, useExisting: forwardRef(() => FieldDescriptComponent), multi: true },
-  ],
+    selector: 'app-field-descript',
+    exportAs: 'appFieldDescript',
+    standalone: true,
+    imports: [CommonModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, TranslatePipe],
+    templateUrl: './field-descript.component.html',
+    styleUrl: './field-descript.component.scss',
+    encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [
+        { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => FieldDescriptComponent), multi: true },
+        { provide: NG_VALIDATORS, useExisting: forwardRef(() => FieldDescriptComponent), multi: true },
+    ],
 })
-export class FieldDescriptComponent  implements OnChanges, ControlValueAccessor, Validator {
-  @Input()
-  public gist: string = DESCRIPT;
-  @Input()
-  public errorMsg: string | null | undefined;
-  @Input()
-  public hint: string = '';
-  @Input()
-  public isDisabled: boolean = false;
-  @Input()
-  public isReadOnly: boolean = false;
-  @Input()
-  public isRequired: boolean = false;
-  @Input()
-  public isSpellcheck: boolean = false;
-  @Input()
-  public label: string = 'field-descript.label';
-  @Input()
-  public maxLen: number = DESCRIPT_MAX_LENGTH;
-  @Input()
-  public minLen: number = DESCRIPT_MIN_LENGTH;
-  @Input()
-  public numberRows = DESCRIPT_ROWS;
- 
-  @ViewChild(MatInput, { static: false })
-  public matInput: MatInput | null = null;
+export class FieldDescriptComponent implements OnChanges, ControlValueAccessor, Validator {
+    @Input()
+    public gist: string = DESCRIPT;
+    @Input()
+    public errorMsg: string | null | undefined;
+    @Input()
+    public hint: string = '';
+    @Input()
+    public isDisabled: boolean = false;
+    @Input()
+    public isReadOnly: boolean = false;
+    @Input()
+    public isRequired: boolean = false;
+    @Input()
+    public isSpellcheck: boolean = false;
+    @Input()
+    public label: string = 'field-descript.label';
+    @Input()
+    public maxLen: number = DESCRIPT_MAX_LENGTH;
+    @Input()
+    public minLen: number = DESCRIPT_MIN_LENGTH;
+    @Input()
+    public numberRows = DESCRIPT_ROWS;
 
-  public formControl: FormControl = new FormControl({value: null, disabled: false}, []);
-  public formGroup: FormGroup = new FormGroup({ description: this.formControl });
+    @ViewChild(MatInput, { static: false })
+    public matInput: MatInput | null = null;
 
-  constructor() {
-  }
+    public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
+    public formGroup: FormGroup = new FormGroup({ description: this.formControl });
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen']) {
-      this.prepareFormGroup();
+    constructor() {
     }
-    if (!!changes['isDisabled']) {
-      this.setDisabledState(this.isDisabled);
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen']) {
+            this.prepareFormGroup();
+        }
+        if (!!changes['isDisabled']) {
+            this.setDisabledState(this.isDisabled);
+        }
+        if (!!changes['errorMsg']) {
+            this.formControl.updateValueAndValidity();
+            this.onChange(this.formControl.value);
+        }
     }
-    if (!!changes['errorMsg']) {
-      this.formControl.updateValueAndValidity();
-      this.onChange(this.formControl.value);
+
+    // ** ControlValueAccessor - start **
+
+    public onChange: (val: string) => void = () => { };
+    public onTouched: () => void = () => { };
+
+    public writeValue(value: any): void {
+        this.formControl.setValue(value, { emitEvent: true });
     }
-  }
 
-  // ** ControlValueAccessor - start **
+    public registerOnChange(fn: any): void {
+        this.onChange = fn;
+    }
 
-  public onChange: (val: string) => void = () => {};
-  public onTouched: () => void = () => {};
+    public registerOnTouched(fn: any): void {
+        this.onTouched = fn;
+    }
 
-  public writeValue(value: any): void {
-    this.formControl.setValue(value, { emitEvent: true });
-  }
+    public setDisabledState(isDisabled: boolean): void {
+        isDisabled ? this.formGroup.disable() : this.formGroup.enable();
+    }
 
-  public registerOnChange(fn: any): void {
-    this.onChange = fn;
-  }
+    // ** ControlValueAccessor - finish **
 
-  public registerOnTouched(fn: any): void {
-    this.onTouched = fn;
-  }
+    // ** Validator - start **
 
-  public setDisabledState(isDisabled: boolean): void {
-    isDisabled ? this.formGroup.disable() : this.formGroup.enable();
-  }
+    public validate(control: AbstractControl): ValidationErrors | null {
+        return this.formControl.errors;
+    }
 
-  // ** ControlValueAccessor - finish **
+    // ** Validator - finish **
 
-  // ** Validator - start **
+    // ** Public API **
 
-  public validate(control: AbstractControl): ValidationErrors | null {
-    return this.formControl.errors;
-  }
+    public focus(): void {
+        this.matInput?.focus();
+    }
 
-  // ** Validator - finish **
+    public getErrorMsg(errors: ValidationErrors | null): string {
+        return ValidatorUtils.getErrorMsg(errors, this.gist || DESCRIPT);
+    }
 
-  // ** Public API **
+    // ** Private API **
 
-  public focus(): void {
-    this.matInput?.focus();
-  }
-
-  public getErrorMsg(errors: ValidationErrors | null): string {
-    return ValidatorUtils.getErrorMsg(errors, this.gist || DESCRIPT);
-  }
-
-  // ** Private API **
-
-  private errorMsgValidator = (control: AbstractControl): ValidationErrors | null => {
-    const result = !!control && !!this.errorMsg ? { [CUSTOM_ERROR]: true } : null;
-    return result;
-  };
-  private prepareFormGroup(): void {
-    this.formControl.clearValidators();
-    const paramsObj = {
-      ...(this.isRequired ? { "required": true } : {}),
-      ...(this.minLen > 0 ? { "minLength": this.minLen } : {}),
-      ...(this.maxLen > 0 ? { "maxLength": this.maxLen } : {}),
+    private errorMsgValidator = (control: AbstractControl): ValidationErrors | null => {
+        const result = !!control && !!this.errorMsg ? { [CUSTOM_ERROR]: true } : null;
+        return result;
     };
-    this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj), this.errorMsgValidator]);
-    this.formControl.updateValueAndValidity();
-  }
+    private prepareFormGroup(): void {
+        this.formControl.clearValidators();
+        const paramsObj = {
+            ...(this.isRequired ? { "required": true } : {}),
+            ...(this.minLen > 0 ? { "minLength": this.minLen } : {}),
+            ...(this.maxLen > 0 ? { "maxLength": this.maxLen } : {}),
+        };
+        this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj), this.errorMsgValidator]);
+        this.formControl.updateValueAndValidity();
+    }
 }

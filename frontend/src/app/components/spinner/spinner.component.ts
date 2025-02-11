@@ -16,25 +16,25 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 const DEAULT_DIAMETER = 100;
 
 @Component({
-  selector: 'app-spinner',
-  exportAs: 'appSpinner',
-  standalone: true,
-  imports: [CommonModule, MatProgressSpinnerModule],
-  templateUrl: './spinner.component.html',
-  styleUrl: './spinner.component.scss',
-  encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-spinner',
+    exportAs: 'appSpinner',
+    standalone: true,
+    imports: [CommonModule, MatProgressSpinnerModule],
+    templateUrl: './spinner.component.html',
+    styleUrl: './spinner.component.scss',
+    encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SpinnerComponent {
-  @Input()
-  public color: ThemePalette = 'primary';
-  @Input()
-  public isFillParent: string | null | undefined;
-  @Input()
-  public diameter = DEAULT_DIAMETER;
+    @Input()
+    public color: ThemePalette = 'primary';
+    @Input()
+    public isFillParent: string | null | undefined;
+    @Input()
+    public diameter = DEAULT_DIAMETER;
 
-  @HostBinding('class.fill-parent')
-  public get isClassFillParent(): boolean {
-    return !!(this.isFillParent == '' || this.isFillParent == 'true');
-  }
+    @HostBinding('class.fill-parent')
+    public get isClassFillParent(): boolean {
+        return !!(this.isFillParent == '' || this.isFillParent == 'true');
+    }
 }
