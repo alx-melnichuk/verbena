@@ -6,20 +6,20 @@ import { AlertComponent } from '../alert/alert.component';
 import { AlertInterface } from '../alert/alert.interface';
 
 @Component({
-  selector: 'app-alert-wrap',
-  exportAs: 'appAlertWrap',
-  standalone: true,
-  imports: [CommonModule, MatSnackBarModule, AlertComponent],
-  templateUrl: './alert-wrap.component.html',
-  styleUrl: './alert-wrap.component.scss',
-  encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-alert-wrap',
+    exportAs: 'appAlertWrap',
+    standalone: true,
+    imports: [CommonModule, MatSnackBarModule, AlertComponent],
+    templateUrl: './alert-wrap.component.html',
+    styleUrl: './alert-wrap.component.scss',
+    encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AlertWrapComponent {
-  constructor(public snackBarRef: MatSnackBarRef<AlertWrapComponent>, @Inject(MAT_SNACK_BAR_DATA) public data: AlertInterface) {}
+    constructor(public snackBarRef: MatSnackBarRef<AlertWrapComponent>, @Inject(MAT_SNACK_BAR_DATA) public data: AlertInterface) { }
 
-  // Performs the close on the snack bar.
-  public doClose(): void {
-    this.snackBarRef.dismissWithAction();
-  }
+    // Performs the close on the snack bar.
+    public doClose(): void {
+        this.snackBarRef.dismissWithAction();
+    }
 }

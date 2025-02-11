@@ -1,19 +1,31 @@
 /*# sourceURL=panel-stream-actions.component.scss */
 
 app-panel-stream-actions {
-  display: flex;
+    display: flex;
 
-  [psa-mr-lf-0_5] { margin-left: 0.5rem; }
-  [psa-mr-rg-0_25] { margin-right: 0.25rem; }
-  [psa-pd-lf-0_5] { padding-left: 0.5rem; }
-  [psa-pd-lf-0_25] { padding-left: 0.25rem; }
+    [psa-mr-lf-0_5] {
+        margin-left: 0.5rem;
+    }
 
-  .psa-ver-md {
-    vertical-align: middle;  
-  }
-  // ** icon **
-  .psa-svg-sz {
-    height: 1.75rem;
-    width: 1.75rem;
-  }
+    [psa-mr-rg-0_25] {
+        margin-right: 0.25rem;
+    }
+
+    [psa-pd-lf-0_5] {
+        padding-left: 0.5rem;
+    }
+
+    [psa-pd-lf-0_25] {
+        padding-left: 0.25rem;
+    }
+
+    .psa-ver-md {
+        vertical-align: middle;
+    }
+
+    // ** icon **
+    .psa-svg-sz {
+        height: 1.75rem;
+        width: 1.75rem;
+    }
 }

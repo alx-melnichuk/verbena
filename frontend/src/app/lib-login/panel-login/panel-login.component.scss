@@ -1,48 +1,53 @@
 /*# sourceURL=panel-login.component.scss */
 
 app-panel-login {
-  ---pl-pn-bg: color-mix(in srgb, var(--app-pn-login) 10%, var(--sys-surface));
-  ---pl-pn-brd: color-mix(in srgb, var(--app-pn-login) 22%, var(--sys-surface));
-  ---pl-pd: calc(0.03125 * min(100vw, 1280px) - 2px);  // 512.22px: 14px;  1024.44px: 30px;
-  ---pl-wd: min(100vw, calc((26px + 100vw / 128) * 16));
+    ---pl-pn-bg: color-mix(in srgb, var(--app-pn-login) 10%, var(--sys-surface));
+    ---pl-pn-brd: color-mix(in srgb, var(--app-pn-login) 22%, var(--sys-surface));
+    ---pl-pd: calc(0.03125 * min(100vw, 1280px) - 2px); // 512.22px: 14px;  1024.44px: 30px;
+    ---pl-wd: min(100vw, calc((26px + 100vw / 128) * 16));
 
-  [pl-mr-tp-0_5] { margin-top: 0.5em; }
-  [pl-mr-tp-1] { margin-top: 1.1em; }
+    [pl-mr-tp-0_5] {
+        margin-top: 0.5em;
+    }
 
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: auto;
+    [pl-mr-tp-1] {
+        margin-top: 1.1em;
+    }
 
-  .pl-content {
-    background-color: var(--pl-pn-bg, var(---pl-pn-bg));
-    border-color: var(--pl-pn-brd, var(---pl-pn-brd));
-    border-style: solid;
-    border-width: 2px;
-    border-radius: var(--pl-pn-brd-rd, var(---pl-pd));
-    box-shadow: var(--pl-pn-sh, rgba(0, 0, 0, 0.35) 0px 4px 11px);
-    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    margin: auto;
-    padding: calc(var(---pl-pd) / 2) var(---pl-pd);
-    width: var(---pl-wd);
-  }
+    height: 100%;
+    overflow: auto;
 
-  .pl-form {
-    display: flex;
-    flex-direction: column;
-    padding-bottom: calc(var(---pl-pd) / 2);
-  }
+    .pl-content {
+        background-color: var(--pl-pn-bg, var(---pl-pn-bg));
+        border-color: var(--pl-pn-brd, var(---pl-pn-brd));
+        border-style: solid;
+        border-width: 2px;
+        border-radius: var(--pl-pn-brd-rd, var(---pl-pd));
+        box-shadow: var(--pl-pn-sh, rgba(0, 0, 0, 0.35) 0px 4px 11px);
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        margin: auto;
+        padding: calc(var(---pl-pd) / 2) var(---pl-pd);
+        width: var(---pl-wd);
+    }
 
-  .pl-title {
-    font-size: calc(100% + 6px);
-    font-weight: 500;
-    text-align: center;
-  }
+    .pl-form {
+        display: flex;
+        flex-direction: column;
+        padding-bottom: calc(var(---pl-pd) / 2);
+    }
 
-  .pl-note {
-    display: flex;
-    justify-content: space-between;
-  }
+    .pl-title {
+        font-size: calc(100% + 6px);
+        font-weight: 500;
+        text-align: center;
+    }
+
+    .pl-note {
+        display: flex;
+        justify-content: space-between;
+    }
 }

@@ -1,36 +1,36 @@
 /*# sourceURL=confirmation.component.scss */
 
 app-confirmation {
-  display: inline-block;
-  position: relative;
+    display: inline-block;
+    position: relative;
 
-  .dc-title {
-    background-color: color-mix(in srgb, var(--sys-primary) 20%, var(--sys-surface-container));
-    font-size: calc(1rem + 2px);
-    font-weight: 500;
-    padding: 0.75rem 2.25rem 0.75rem 1.5rem;
-  }
+    .dc-title {
+        background-color: color-mix(in srgb, var(--sys-primary) 20%, var(--sys-surface-container));
+        font-size: calc(1rem + 2px);
+        font-weight: 500;
+        padding: 0.75rem 2.25rem 0.75rem 1.5rem;
+    }
 
-  .dc-close {
-    position: absolute;
-    top: 1vh;
-    right: 1vw;
-    background-color: transparent;
-    color: var(--app-theme-color);
-    border: none;
-    font-size: x-large;
-    cursor: pointer;
-    z-index: 1;
-  }
+    .dc-close {
+        position: absolute;
+        top: 1vh;
+        right: 1vw;
+        background-color: transparent;
+        color: var(--app-theme-color);
+        border: none;
+        font-size: x-large;
+        cursor: pointer;
+        z-index: 1;
+    }
 
-  .mdc-dialog__content.dc-content {
-    padding-bottom: 0.5em;
-    padding-top: 1em;
-  }
+    .mdc-dialog__content.dc-content {
+        padding-bottom: 0.5em;
+        padding-top: 1em;
+    }
 
-  .mdc-dialog__actions.dc-actions {
-    justify-content: center;
-    padding-bottom: 1em;
-    padding-top: 0.5em;
-  }
+    .mdc-dialog__actions.dc-actions {
+        justify-content: center;
+        padding-bottom: 1em;
+        padding-top: 0.5em;
+    }
 }
