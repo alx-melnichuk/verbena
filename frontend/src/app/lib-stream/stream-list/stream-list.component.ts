@@ -49,7 +49,9 @@ export class StreamListComponent {
     ) {
         const userDto = this.route.snapshot.data['userDto'];
         this.userId = userDto.id;
-        this.loadFutureAndPastStreamsAndSchedule();
+        (async () => {
+            await this.loadFutureAndPastStreamsAndSchedule();
+        })()
     }
 
     // ** Public API **
@@ -65,37 +67,46 @@ export class StreamListComponent {
         } else {
             this.streamCalendarService.clearStreamsEvent();
         }
-        Promise.all(buffPromise).finally(() => this.changeDetector.markForCheck());
+        try {
+            Promise.all(buffPromise)
+        } finally {
+            this.changeDetector.markForCheck();
+        }
     }
 
     // ** "Streams Event" panel-stream-event **
 
     public async getListEventsForDate(selectedDate: Date | null, pageNum: number): Promise<void> {
-        // Get the next page of the list of short streams for the selected date.
-        await this.streamCalendarService.getListEventsForDate(selectedDate, pageNum)
-            .finally(() => {
-                this.changeDetector.markForCheck();
-            });
+        try {
+            // Get the next page of the list of short streams for the selected date.
+            await this.streamCalendarService.getListEventsForDate(selectedDate, pageNum)
+        } finally {
+            this.changeDetector.markForCheck();
+        }
     }
 
     // ** "Future Stream" and "Past Stream" panel-stream-info **
 
-    public async searchInfoNextFutureStream(): Promise<null | HttpErrorResponse> {
-        // Get the next page of the "Future Stream".
-        await this.streamListService.searchNextFutureStream();
-        // Refresh view for "panel-stream-event".
-        this.isRefreshPanelStreamEvent = !this.isRefreshPanelStreamEvent ? true : undefined;
-        this.changeDetector.markForCheck();
-        return null;
+    public async searchInfoNextFutureStream(): Promise<void> {
+        try {
+            // Get the next page of the "Future Stream".
+            await this.streamListService.searchNextFutureStream();
+            // Refresh view for "panel-stream-event".
+            this.isRefreshPanelStreamEvent = !this.isRefreshPanelStreamEvent ? true : undefined;
+        } finally {
+            this.changeDetector.markForCheck();
+        }
     }
 
-    public async searchInfoNextPastStream(): Promise<null | HttpErrorResponse> {
-        // Get the next page of "Past Stream".
-        await this.streamListService.searchNextPastStream();
-        // Refresh view for "panel-stream-event".
-        this.isRefreshPanelStreamEvent = !this.isRefreshPanelStreamEvent ? true : undefined;
-        this.changeDetector.markForCheck();
-        return null;
+    public async searchInfoNextPastStream(): Promise<void> {
+        try {
+            // Get the next page of "Past Stream".
+            await this.streamListService.searchNextPastStream();
+            // Refresh view for "panel-stream-event".
+            this.isRefreshPanelStreamEvent = !this.isRefreshPanelStreamEvent ? true : undefined;
+        } finally {
+            this.changeDetector.markForCheck();
+        }
     }
 
     // ** **
@@ -117,35 +128,34 @@ export class StreamListComponent {
             this.router.navigateByUrl(ROUTE_STREAM_EDIT + '/' + streamId);
         }
     }
-    public actionDelete(info: { id: number, title: string }): void {
+    public async actionDelete(info: { id: number, title: string }): Promise<void> {
         this.alertService.hide();
-        if (!!info && !!info.id) {
-            this.alertService.hide();
-            const message = this.translateService.instant('stream_list.sure_you_want_delete_stream', { title: info.title });
-            this.dialogService.openConfirmation(message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' })
-                .then((result) => {
-                    if (!!result) {
-                        this.deleteDataStream(info.id);
-                    }
-                });
+        if (!info || !info.id) {
+            return Promise.resolve();
+        }
+        const message = this.translateService.instant('stream_list.sure_you_want_delete_stream', { title: info.title });
+        const res = await this.dialogService.openConfirmation(message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
+        if (!!res) {
+            await this.deleteDataStream(info.id);
         }
     }
 
     // ** Private API **
 
-    private loadFutureAndPastStreamsAndSchedule(): void {
+    private async loadFutureAndPastStreamsAndSchedule(): Promise<void> {
         // Clear array of "Future Stream"
         this.streamListService.clearFutureStream();
         // Clear array of "Past Stream"
         this.streamListService.clearPastStream();
 
         const buffPromise: Promise<unknown>[] = [];
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+
         // Get the next page of the "Future Stream".
         buffPromise.push(this.streamListService.searchNextFutureStream());
         // Get the next page of "Past Stream".
         buffPromise.push(this.streamListService.searchNextPastStream());
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
         const selectedDate = this.streamCalendarService.eventsOfDaySelected || now;
         // Get a list of short streams for the selected date.
         buffPromise.push(this.streamCalendarService.getListEventsForDate(selectedDate, 1));
@@ -153,7 +163,11 @@ export class StreamListComponent {
         // Get a list of events (streams) for a specified date.
         buffPromise.push(this.streamCalendarService.getCalendarInfoForPeriod(selectedMonth, true));
 
-        Promise.all(buffPromise).finally(() => this.changeDetector.markForCheck());
+        try {
+            await Promise.all(buffPromise);
+        } finally {
+            this.changeDetector.markForCheck();
+        }
     }
 
     private async deleteDataStream(streamId: number): Promise<void> {

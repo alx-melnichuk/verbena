@@ -7,7 +7,7 @@
         <span>{{ 'stream_list.my_calendar' | translate }}</span>
       </div>
       @if (streamCalendarService.calendarLoading) {
-        <app-spinner isFillParent></app-spinner>
+        <app-spinner isFillParent9></app-spinner>
       }
       <app-panel-stream-calendar
         [locale]="localeService.getLocale()"
@@ -31,7 +31,7 @@
       </div>
       <div class="sl-event-list">
         @if (streamCalendarService.eventsOfDayLoading) {
-          <app-spinner isFillParent></app-spinner>
+          <app-spinner isFillParent9></app-spinner>
         }
         <app-panel-stream-event
           [canEdit]="true"
@@ -53,7 +53,7 @@
     <div class="sl-stream-box sl-border">
       <div class="sl-title">{{ 'stream_list.my_future_streams' | translate }}</div>
       @if (streamListService.futureStreamLoading) {
-        <app-spinner isFillParent></app-spinner>
+        <app-spinner isFillParent9></app-spinner>
       }
       <app-panel-stream-info
         [canDuplicate]="true"
@@ -75,7 +75,7 @@
     <div class="sl-stream-box sl-border">
       <div class="sl-title">{{ 'stream_list.my_past_streams' | translate }}</div>
       @if (streamListService.pastStreamLoading) {
-        <app-spinner isFillParent></app-spinner>
+        <app-spinner isFillParent9></app-spinner>
       }
       <app-panel-stream-info
         [canDuplicate]="true"
