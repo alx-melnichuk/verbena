@@ -81,7 +81,7 @@ export class StreamListService {
         const difference = datetimeA.getTime() - datetimeB.getTime();
         return Math.round(difference / 1000);
     }
-    private getNextPageStreams(pageInfo: PageInfo, isFuture: boolean, titleErr?: string, userId?: number | undefined
+    private async getNextPageStreams(pageInfo: PageInfo, isFuture: boolean, titleErr?: string, userId?: number | undefined
     ): Promise<StreamListDto | HttpErrorResponse | undefined> {
         const pages = pageInfo.pages;
         const nextPage = pageInfo.page + 1;
@@ -99,54 +99,59 @@ export class StreamListService {
             page: pageInfo.page + 1,
             limit: pageInfo.limit
         };
-        return this.streamService.getStreams(searchStream)
-            .catch((error: HttpErrorResponse) => {
+
+        try {
+            const result = await this.streamService.getStreams(searchStream);
+            return result;
+        } catch (error: unknown) {
+            if (error instanceof HttpErrorResponse) {
                 this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], titleErr);
-                throw error;
-            });
+            }
+            throw error;
+        }
     }
     // "Future Streams"
     private async clearAndSearchDataNextFutureStream(userId?: number | undefined) {
         this.clearFutureStream();
-        this.searchDataNextFutureStream(userId);
+        await this.searchDataNextFutureStream(userId);
     }
     /* Execute a query to retrieve data from the next page of the "Future Stream". */
-    private searchDataNextFutureStream(userId?: number | undefined): Promise<StreamListDto | HttpErrorResponse | undefined> {
+    private async searchDataNextFutureStream(userId?: number | undefined): Promise<StreamListDto | HttpErrorResponse | undefined> {
+        let result: StreamListDto | HttpErrorResponse | undefined;
         this.futureStreamLoading = true;
-        return this.getNextPageStreams(this.futurePageInfo, true, 'stream_list.error_get_future_streams', userId)
-            .then((response: StreamListDto | HttpErrorResponse | undefined) => {
-                const futureStreamListDto = (response as StreamListDto);
-                this.futurePageInfo = PageInfoUtil.create(futureStreamListDto);
-                if (this.futureStreamsDto.length == 0) {
-                    this.datetimeLastUpdate = new Date();
-                }
-                this.futureStreamsDto = this.futureStreamsDto.concat(futureStreamListDto.list);
-                return response;
-            })
-            .finally(() => {
-                this.futureStreamLoading = false;
-            });
+        try {
+            result = await this.getNextPageStreams(this.futurePageInfo, true, 'stream_list.error_get_future_streams', userId);
+            const futureStreamListDto = (result as StreamListDto);
+            this.futurePageInfo = PageInfoUtil.create(futureStreamListDto);
+            if (this.futureStreamsDto.length == 0) {
+                this.datetimeLastUpdate = new Date();
+            }
+            this.futureStreamsDto = this.futureStreamsDto.concat(futureStreamListDto.list);
+        } finally {
+            this.futureStreamLoading = false;
+        }
+        return result;
     }
     // "Past Streams"
     private async clearAndSearchDataNextPastStream(userId?: number | undefined) {
         this.clearPastStream();
-        this.searchDataNextPastStream(userId);
+        await this.searchDataNextPastStream(userId);
     }
     /* Execute a query to retrieve data from the next page of the "Past Stream". */
-    private searchDataNextPastStream(userId?: number | undefined): Promise<StreamListDto | HttpErrorResponse | undefined> {
+    private async searchDataNextPastStream(userId?: number | undefined): Promise<StreamListDto | HttpErrorResponse | undefined> {
+        let result: StreamListDto | HttpErrorResponse | undefined;
         this.pastStreamLoading = true;
-        return this.getNextPageStreams(this.pastPageInfo, false, 'stream_list.error_get_past_streams', userId)
-            .then((response: StreamListDto | HttpErrorResponse | undefined) => {
-                const pastStreamListDto = (response as StreamListDto);
-                this.pastPageInfo = PageInfoUtil.create(pastStreamListDto);
-                if (this.pastStreamsDto.length == 0) {
-                    this.datetimeLastUpdate = new Date();
-                }
-                this.pastStreamsDto = this.pastStreamsDto.concat(pastStreamListDto.list);
-                return response;
-            })
-            .finally(() => {
-                this.pastStreamLoading = false;
-            });
+        try {
+            result = await this.getNextPageStreams(this.pastPageInfo, false, 'stream_list.error_get_past_streams', userId);
+            const pastStreamListDto = (result as StreamListDto);
+            this.pastPageInfo = PageInfoUtil.create(pastStreamListDto);
+            if (this.pastStreamsDto.length == 0) {
+                this.datetimeLastUpdate = new Date();
+            }
+            this.pastStreamsDto = this.pastStreamsDto.concat(pastStreamListDto.list);
+        } finally {
+            this.pastStreamLoading = false;
+        }
+        return result;
     }
 }
