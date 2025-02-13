@@ -49,11 +49,8 @@ export class PgLoginComponent {
             await this.profileService.login(nickname, password);
             this.router.navigateByUrl(REDIRECT_AFTER_LOGIN);
         } catch (error) {
-            if (error instanceof HttpErrorResponse) {
-                this.errMsgs = HttpErrorUtil.getMsgs(error);
-            } else {
-                throw error;
-            }
+            this.errMsgs = HttpErrorUtil.getMsgs(error as HttpErrorResponse);
+            throw error;
         } finally {
             this.isDisabledSubmit = false;
             this.changeDetector.markForCheck();
