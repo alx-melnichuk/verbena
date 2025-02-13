@@ -129,7 +129,7 @@ export class PgProfileComponent {
                             // Closing the session.
                             this.profileService.setProfileDto(null);
                             this.profileService.setProfileTokensDto(null);
-                            this.router.navigate([ROUTE_LOGIN]);
+                            window.setTimeout(() => this.router.navigate([ROUTE_LOGIN]), 0);
                         })
                 }
             })
