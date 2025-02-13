@@ -1,10 +1,10 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { lastValueFrom } from 'rxjs';
 
 import { Uri } from 'src/app/common/uri';
 
 import { HttpParamsUtil } from '../utils/http-params.util';
-import { HttpObservableUtil } from '../utils/http-observable.util';
 
 import {
     LoginProfileDto, LoginProfileResponseDto, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileDtoUtil, ProfileTokensDto,
@@ -22,7 +22,7 @@ export class ProfileApiService {
 
     public currentProfile(): Promise<ProfileDto | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://profiles_current');
-        return HttpObservableUtil.toPromise<ProfileDto>(this.http.get<ProfileDto | HttpErrorResponse>(url))
+        return lastValueFrom(this.http.get<ProfileDto | HttpErrorResponse>(url))
             .then((response: ProfileDto | HttpErrorResponse | undefined) => {
                 return ProfileDtoUtil.new(response as ProfileDto)
             });
@@ -30,23 +30,22 @@ export class ProfileApiService {
 
     public registration(registrProfileDto: RegistrProfileDto): Promise<null | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://registration');
-        return HttpObservableUtil.toPromise<null>(this.http.post<null | HttpErrorResponse>(url, registrProfileDto));
+        return lastValueFrom(this.http.post<null | HttpErrorResponse>(url, registrProfileDto));
     }
 
     public recovery(recoveryProfileDto: RecoveryProfileDto): Promise<null | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://recovery');
-        return HttpObservableUtil.toPromise<null>(this.http.post<null | HttpErrorResponse>(url, recoveryProfileDto));
+        return lastValueFrom(this.http.post<null | HttpErrorResponse>(url, recoveryProfileDto));
     }
 
     public login(loginProfileDto: LoginProfileDto): Promise<LoginProfileResponseDto | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://login');
-        return HttpObservableUtil.toPromise<LoginProfileResponseDto>(
-            this.http.post<LoginProfileResponseDto | HttpErrorResponse>(url, loginProfileDto));
+        return lastValueFrom(this.http.post<LoginProfileResponseDto | HttpErrorResponse>(url, loginProfileDto));
     }
 
     public logout(): Promise<void | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://logout');
-        return HttpObservableUtil.toPromise<void>(this.http.post<void | HttpErrorResponse>(url, null));
+        return lastValueFrom(this.http.post<void | HttpErrorResponse>(url, null));
     }
 
     public isCheckRefreshToken(method: string, url: string): boolean {
@@ -55,7 +54,7 @@ export class ProfileApiService {
 
     public refreshToken(tokenDto: TokenDto): Promise<ProfileTokensDto | HttpErrorResponse | undefined> {
         const url = Uri.appUri('appApi://token');
-        return HttpObservableUtil.toPromise<ProfileTokensDto>(this.http.post<ProfileTokensDto | HttpErrorResponse>(url, tokenDto));
+        return lastValueFrom(this.http.post<ProfileTokensDto | HttpErrorResponse>(url, tokenDto));
     }
 
     public uniqueness(nickname: string, email: string): Promise<UniquenessDto | HttpErrorResponse | undefined> {
@@ -66,8 +65,7 @@ export class ProfileApiService {
         const params: HttpParams = HttpParamsUtil.create(search);
 
         const url = Uri.appUri("appApi://profiles_uniqueness");
-        return HttpObservableUtil.toPromise<UniquenessDto>(this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }));
-        //return this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }).toPromise();
+        return lastValueFrom(this.http.get<UniquenessDto | HttpErrorResponse>(url, { params }));
     }
 
     public modifyProfile(modifyProfileDto: ModifyProfileDto, file?: File | null): Promise<ProfileDto | HttpErrorResponse | undefined> {
@@ -103,7 +101,7 @@ export class ProfileApiService {
         } else {
             const headers = new HttpHeaders({ 'enctype': 'multipart/form-data' });
             const url = Uri.appUri(`appApi://profiles`);
-            return HttpObservableUtil.toPromise<ProfileDto>(this.http.put<ProfileDto | HttpErrorResponse>(url, formData, { headers: headers }));
+            return lastValueFrom(this.http.put<ProfileDto | HttpErrorResponse>(url, formData, { headers: headers }));
         }
     }
 
@@ -112,11 +110,11 @@ export class ProfileApiService {
             return Promise.resolve(undefined);
         }
         const url = Uri.appUri("appApi://profiles_new_password");
-        return HttpObservableUtil.toPromise<ProfileDto>(this.http.put<ProfileDto | HttpErrorResponse>(url, newPasswordProfileDto));
+        return lastValueFrom(this.http.put<ProfileDto | HttpErrorResponse>(url, newPasswordProfileDto));
     }
 
     public deleteProfileCurrent(): Promise<ProfileDto | HttpErrorResponse | undefined> {
         const url = Uri.appUri("appApi://profiles_current");
-        return HttpObservableUtil.toPromise<ProfileDto>(this.http.delete<ProfileDto | HttpErrorResponse>(url));
+        return lastValueFrom(this.http.delete<ProfileDto | HttpErrorResponse>(url));
     }
 }
