@@ -45,7 +45,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
                     this.profileService.setProfileDto();
                     this.profileService.setProfileTokensDto();
                     // And you need to go to the "login" tab.
-                    this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
+                    window.setTimeout(() => this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true }), 0);
                     return throwError(() => error);
                 }
                 // 401 Unauthorized, 403 Forbidden

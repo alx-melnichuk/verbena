@@ -35,7 +35,7 @@ export class AppComponent implements OnInit {
             this.profileService.setProfileDto();
             this.profileService.setProfileTokensDto();
             // And you need to go to the "login" tab.
-            this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
+            window.setTimeout(() => this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true }), 0);
         }
     }
 
@@ -82,8 +82,13 @@ export class AppComponent implements OnInit {
         const idx = AUTHORIZATION_DENIED.findIndex((item) => currentRoute.startsWith(item));
         currentRoute = (idx > -1 ? currentRoute : ROUTE_LOGIN);
         const queryParams = this.router.routerState.snapshot.root.queryParams;
-        await this.router.navigate([currentRoute], { queryParams }); // ByUrl(currentRoute, { });
-        return Promise.resolve();
+
+        return new Promise(resolve =>
+            window.setTimeout(() => {
+                return this.router.navigate([currentRoute], { queryParams }) // ByUrl(currentRoute, { });
+                    .finally(() => resolve);
+            }, 0)
+        );
     }
 
     private doSetLocale(value: string): void {

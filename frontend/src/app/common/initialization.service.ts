@@ -61,7 +61,7 @@ export class InitializationService {
                     await this.localeService.setLocale(locale);
                 }
             } catch {
-                this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
+                window.setTimeout(() => this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true }), 0);
             }
         }
         return Promise.resolve();

@@ -56,7 +56,7 @@ export class PgSignupComponent {
                 const title = this.translate.instant('pg-signup.dialog_title', { appName: appName });
                 const message = this.translate.instant('pg-signup.dialog_message', { value: email });
                 this.dialogService.openConfirmation(message, title, { btnNameAccept: 'buttons.ok' }).then(() => {
-                    this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
+                    window.setTimeout(() => this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true }), 0);
                 });
             })
             .catch((error: HttpErrorResponse) => {

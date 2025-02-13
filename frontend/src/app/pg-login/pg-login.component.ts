@@ -47,7 +47,7 @@ export class PgLoginComponent {
         this.errMsgs = [];
         try {
             await this.profileService.login(nickname, password);
-            this.router.navigateByUrl(REDIRECT_AFTER_LOGIN);
+            window.setTimeout(() => this.router.navigateByUrl(REDIRECT_AFTER_LOGIN), 0);
         } catch (error) {
             this.errMsgs = HttpErrorUtil.getMsgs(error as HttpErrorResponse);
             throw error;
