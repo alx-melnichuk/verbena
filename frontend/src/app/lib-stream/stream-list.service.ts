@@ -104,9 +104,7 @@ export class StreamListService {
             const result = await this.streamService.getStreams(searchStream);
             return result;
         } catch (error: unknown) {
-            if (error instanceof HttpErrorResponse) {
-                this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], titleErr);
-            }
+            this.alertService.showError(HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], titleErr);
             throw error;
         }
     }
