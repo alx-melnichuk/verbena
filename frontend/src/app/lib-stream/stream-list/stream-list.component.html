@@ -1,3 +1,7 @@
+@if (streamCalendarService.calendarLoading || streamCalendarService.eventsOfDayLoading
+    || streamListService.futureStreamLoading || streamListService.pastStreamLoading) {
+    <app-spinner isFillParent></app-spinner>
+}
 <div class="sl-container global-scroll">
     
   <div class="sl-my-calendar">
@@ -6,9 +10,6 @@
       <div class="sl-title">
         <span>{{ 'stream_list.my_calendar' | translate }}</span>
       </div>
-      @if (streamCalendarService.calendarLoading) {
-        <app-spinner isFillParent9></app-spinner>
-      }
       <app-panel-stream-calendar
         [locale]="localeService.getLocale()"
         [markedDates]="streamCalendarService.calendarMarkedDates"
@@ -30,9 +31,6 @@
         </span>
       </div>
       <div class="sl-event-list">
-        @if (streamCalendarService.eventsOfDayLoading) {
-          <app-spinner isFillParent9></app-spinner>
-        }
         <app-panel-stream-event
           [canEdit]="true"
           [isRefresh]="isRefreshPanelStreamEvent"
@@ -52,9 +50,6 @@
 
     <div class="sl-stream-box sl-border">
       <div class="sl-title">{{ 'stream_list.my_future_streams' | translate }}</div>
-      @if (streamListService.futureStreamLoading) {
-        <app-spinner isFillParent9></app-spinner>
-      }
       <app-panel-stream-info
         [canDuplicate]="true"
         [canEdit]="true"
@@ -74,9 +69,6 @@
 
     <div class="sl-stream-box sl-border">
       <div class="sl-title">{{ 'stream_list.my_past_streams' | translate }}</div>
-      @if (streamListService.pastStreamLoading) {
-        <app-spinner isFillParent9></app-spinner>
-      }
       <app-panel-stream-info
         [canDuplicate]="true"
         [canDelete]="true"

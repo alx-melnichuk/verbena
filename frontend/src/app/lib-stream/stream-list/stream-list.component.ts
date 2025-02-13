@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -29,7 +29,7 @@ import { StreamService } from '../stream.service';
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class StreamListComponent {
+export class StreamListComponent implements OnInit {
     public userId: number;
     public isRefreshPanelStreamEvent: boolean | null | undefined;
 
@@ -49,9 +49,10 @@ export class StreamListComponent {
     ) {
         const userDto = this.route.snapshot.data['userDto'];
         this.userId = userDto.id;
-        (async () => {
-            await this.loadFutureAndPastStreamsAndSchedule();
-        })()
+    }
+
+    async ngOnInit(): Promise<void> {
+        await this.loadFutureAndPastStreamsAndSchedule();
     }
 
     // ** Public API **
@@ -111,23 +112,18 @@ export class StreamListComponent {
 
     // ** **
 
-    public redirectToStreamView(streamId: number): void {
-        if (!!streamId) {
-            this.streamService.redirectToStreamViewPage(streamId);
-        }
-    }
     public actionDuplicate(streamId: number): void {
-        this.alertService.hide();
-        if (!!streamId) {
-            this.router.navigate([ROUTE_STREAM_CREATE], { queryParams: { id: streamId } });
-        }
+        this.streamService.redirectToStreamCreationPage(streamId);
     }
+
     public actionEdit(streamId: number): void {
-        this.alertService.hide();
-        if (!!streamId) {
-            this.router.navigateByUrl(ROUTE_STREAM_EDIT + '/' + streamId);
-        }
+        this.streamService.redirectToStreamEditingPage(streamId);
     }
+
+    public redirectToStreamView(streamId: number): void {
+        this.streamService.redirectToStreamViewPage(streamId);
+    }
+
     public async actionDelete(info: { id: number, title: string }): Promise<void> {
         this.alertService.hide();
         if (!info || !info.id) {
@@ -176,17 +172,17 @@ export class StreamListComponent {
             return Promise.reject();
         }
         let isRefres = false;
-        this.streamService.deleteStream(streamId)
-            .then(() => isRefres = true)
-            .catch((error: HttpErrorResponse) => {
-                this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], 'stream_list.error_delete_stream');
-                throw error;
-            })
-            .finally(() => {
-                this.changeDetector.markForCheck();
-                if (isRefres) {
-                    Promise.resolve().then(() => this.loadFutureAndPastStreamsAndSchedule());
-                }
-            });
+        try {
+            await this.streamService.deleteStream(streamId);
+            isRefres = true;
+        } catch (error) {
+            this.alertService.showError(HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_delete_stream');
+            throw error;
+        } finally {
+            this.changeDetector.markForCheck();
+            if (isRefres) {
+                setTimeout(() => this.loadFutureAndPastStreamsAndSchedule(), 0);
+            }
+        }
     }
 }
