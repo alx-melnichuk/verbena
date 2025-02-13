@@ -1,5 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { lastValueFrom } from 'rxjs';
 
 import { Uri } from 'src/app/common/uri';
 import { HttpParamsUtil } from '../utils/http-params.util';
@@ -8,7 +9,6 @@ import {
     UpdateStreamFileDto, StreamState,
 } from './stream-api.interface';
 import { StringDateTime } from '../common/string-date-time';
-import { HttpObservableUtil } from '../utils/http-observable.util';
 
 @Injectable({
     providedIn: 'root'
@@ -25,7 +25,7 @@ export class StreamApiService {
      */
     /*public getStreamsPopularTags(): Promise<StreamsPopularTagsDTO[] | HttpErrorResponse> {
       const url = Uri.appUri('appApi://streams/popular/tags');
-      return HttpObservableUtil.toPromise<StreamsPopularTagsDTO[]>(this.http.get<StreamsPopularTagsDTO[] | HttpErrorResponse>(url));
+      return lastValueFrom(this.http.get<StreamsPopularTagsDTO[] | HttpErrorResponse>(url));
     }*/
 
     /** Get streams calendar
@@ -37,12 +37,12 @@ export class StreamApiService {
      */
     /*public getStreamsCalendar(userId: string, month: number, year: number): Promise<StreamsCalendarDTO[] | HttpErrorResponse> {
       const url = Uri.appUri(`appApi://streams/calendar/${userId}/${month}/${year}`);
-      return HttpObservableUtil.toPromise<StreamsCalendarDTO[]>(this.http.get<StreamsCalendarDTO[] | HttpErrorResponse>(url));
+      return lastValueFrom(this.http.get<StreamsCalendarDTO[] | HttpErrorResponse>(url));
     }*/
     public getStreamsPeriod(search: SearchStreamsPeriodDto): Promise<StringDateTime[] | HttpErrorResponse | undefined> {
         const params: HttpParams = HttpParamsUtil.create(search);
         const url = Uri.appUri(`appApi://streams_period`);
-        return HttpObservableUtil.toPromise<StringDateTime[]>(this.http.get<StringDateTime[] | HttpErrorResponse>(url, { params }));
+        return lastValueFrom(this.http.get<StringDateTime[] | HttpErrorResponse>(url, { params }));
     }
     /** Get streams
      * @ route streams
@@ -63,13 +63,13 @@ export class StreamApiService {
     public getStreams(searchStreamDto: SearchStreamDto): Promise<StreamListDto | HttpErrorResponse | undefined> {
         const params: HttpParams = HttpParamsUtil.create(searchStreamDto);
         const url = Uri.appUri('appApi://streams');
-        return HttpObservableUtil.toPromise<StreamListDto>(this.http.get<StreamListDto | HttpErrorResponse>(url, { params }));
+        return lastValueFrom(this.http.get<StreamListDto | HttpErrorResponse>(url, { params }));
     }
 
     public getStreamsEvent(searchStreamEventDto: SearchStreamEventDto): Promise<StreamEventPageDto | HttpErrorResponse | undefined> {
         const params: HttpParams = HttpParamsUtil.create(searchStreamEventDto);
         const url = Uri.appUri('appApi://streams_events');
-        return HttpObservableUtil.toPromise<StreamEventPageDto>(this.http.get<StreamEventPageDto | HttpErrorResponse>(url, { params }));
+        return lastValueFrom(this.http.get<StreamEventPageDto | HttpErrorResponse>(url, { params }));
     }
 
     /** Get stream
@@ -81,7 +81,7 @@ export class StreamApiService {
      */
     public getStream(id: number): Promise<StreamDto | HttpErrorResponse | undefined> {
         const url = Uri.appUri(`appApi://streams/${id}`);
-        return HttpObservableUtil.toPromise<StreamDto>(this.http.get<StreamDto | HttpErrorResponse>(url));
+        return lastValueFrom(this.http.get<StreamDto | HttpErrorResponse>(url));
     }
 
     /** Change state stream
@@ -99,7 +99,7 @@ export class StreamApiService {
             return Promise.reject();
         }
         const url = Uri.appUri(`appApi://streams/toggle/${streamId}`);
-        return HttpObservableUtil.toPromise<StreamDto>(this.http.put<StreamDto | HttpErrorResponse>(url, { state: state }));
+        return lastValueFrom(this.http.put<StreamDto | HttpErrorResponse>(url, { state: state }));
     }
 
     /** Add stream
@@ -129,7 +129,7 @@ export class StreamApiService {
             formData.set('logofile', updateStreamFileDto.logoFile, updateStreamFileDto.logoFile.name);
         }
         const url = Uri.appUri(`appApi://streams`);
-        return HttpObservableUtil.toPromise<StreamDto>(this.http.post<StreamDto | HttpErrorResponse>(url, formData));
+        return lastValueFrom(this.http.post<StreamDto | HttpErrorResponse>(url, formData));
     }
 
     /** Update stream
@@ -163,7 +163,7 @@ export class StreamApiService {
         }
         const headers = new HttpHeaders({ 'enctype': 'multipart/form-data' });
         const url = Uri.appUri(`appApi://streams/${id}`);
-        return HttpObservableUtil.toPromise<StreamDto>(this.http.put<StreamDto | HttpErrorResponse>(url, formData, { headers: headers }));
+        return lastValueFrom(this.http.put<StreamDto | HttpErrorResponse>(url, formData, { headers: headers }));
     }
 
     /** Delete stream
@@ -175,6 +175,6 @@ export class StreamApiService {
      */
     public deleteStream(streamId: number): Promise<void | HttpErrorResponse | undefined> {
         const url = Uri.appUri(`appApi://streams/${streamId}`);
-        return HttpObservableUtil.toPromise<void>(this.http.delete<void | HttpErrorResponse>(url));
+        return lastValueFrom(this.http.delete<void | HttpErrorResponse>(url));
     }
 }
