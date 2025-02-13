@@ -7,7 +7,7 @@ import {
 } from './stream-api.interface';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Uri } from '../common/uri';
-import { ROUTE_CONCEPT_VIEW } from '../common/routes';
+import { ROUTE_CONCEPT_VIEW, ROUTE_STREAM_CREATE, ROUTE_STREAM_EDIT } from '../common/routes';
 import { StringDateTime } from '../common/string-date-time';
 
 @Injectable({
@@ -117,6 +117,18 @@ export class StreamService {
             prefix = prefix.slice(0, prefix.length - 1);
         }
         return (!!streamId ? prefix + ROUTE_CONCEPT_VIEW + '/' + streamId.toString() : '');
+    }
+
+    public redirectToStreamCreationPage(streamId: number): void {
+        if (!!streamId) {
+            window.setTimeout(() => this.router.navigate([ROUTE_STREAM_CREATE], { queryParams: { id: streamId } }), 0);
+        }
+    }
+
+    public redirectToStreamEditingPage(streamId: number): void {
+        if (!!streamId) {
+            window.setTimeout(() => this.router.navigateByUrl(ROUTE_STREAM_EDIT + '/' + streamId), 0);
+        }
     }
 
     public redirectToStreamViewPage(streamId: number): void {
