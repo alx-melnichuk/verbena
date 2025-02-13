@@ -122,9 +122,7 @@ export class StreamService {
     public redirectToStreamViewPage(streamId: number): void {
         // TODO Currently under development.
         // if (!!streamId) {
-        //   Promise.resolve().then(() => {
-        //     this.router.navigate([ROUTE_VIEW, streamId]);
-        //   });
+        //     window.setTimeout(() => this.router.navigate([ROUTE_VIEW, streamId]), 0);
         // }
     }
 }
