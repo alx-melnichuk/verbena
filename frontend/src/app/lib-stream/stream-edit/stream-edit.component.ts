@@ -90,8 +90,6 @@ export class StreamEditComponent {
     // ** Private API **
 
     private goBack() {
-        window.setTimeout(() => {
-            this.router.navigateByUrl(ROUTE_STREAM_LIST);
-        }, 0);
+        window.setTimeout(() => this.router.navigateByUrl(this.goBackToRoute), 0);
     }
 }
