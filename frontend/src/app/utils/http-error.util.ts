@@ -34,7 +34,8 @@ export class HttpErrorUtil {
             }
         }
         if (result.length == 0 && !!HttpErrorUtil.translate) {
-            result.push(HttpErrorUtil.translate.instant('error.server_api_call'));
+            const txt = errRes.status > 299 ? ` ${errRes.status} ${errRes.statusText}` : ``;
+            result.push(HttpErrorUtil.translate.instant('error.server_api_call') + txt);
         }
         return result;
     }
