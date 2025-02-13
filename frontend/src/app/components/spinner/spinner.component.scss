@@ -1,6 +1,7 @@
 /*# sourceURL=panel-view-list.component.scss */
 
 app-spinner {
+    ---sp-z-idx: 1100;
     align-items: center;
     display: flex;
     height: 100%;
@@ -9,18 +10,18 @@ app-spinner {
     &.fill-parent {
         inset: 0 0 0 0;
         position: absolute;
-        z-index: 1;
+        z-index: 1100;
+        ---sp-z-idx: 1;
     }
 
     .sp-back {
-        background-color: rgba(0, 0, 0, 0.32);
+        background-color: rgba(0, 0, 0, 0.1);
         bottom: 0;
         left: 0;
-        opacity: 0.1;
         position: absolute;
         right: 0;
         top: 0;
-        z-index: 1100;
+        z-index: var(---sp-z-idx);
     }
 
     .sp-front {
@@ -33,6 +34,6 @@ app-spinner {
         position: absolute;
         right: 0;
         top: 0;
-        z-index: 1101;
+        z-index: calc(var(---sp-z-idx) + 1);
     }
 }
