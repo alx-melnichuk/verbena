@@ -1,9 +1,9 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { lastValueFrom } from 'rxjs';
 
 import { Uri } from 'src/app/common/uri';
 
-import { HttpObservableUtil } from '../utils/http-observable.util';
 import { StreamConfigDto } from './stream-config.interface';
 
 @Injectable({
@@ -19,7 +19,7 @@ export class StreamConfigService {
             return Promise.resolve({ ...this.streamConfigDto });
         }
         const url = Uri.appUri('appApi://streams_config');
-        return HttpObservableUtil.toPromise<StreamConfigDto>(this.http.get<StreamConfigDto | HttpErrorResponse>(url))
+        return lastValueFrom(this.http.get<StreamConfigDto | HttpErrorResponse>(url))
             .then((response: StreamConfigDto | HttpErrorResponse | undefined) => {
                 this.streamConfigDto = response as StreamConfigDto;
                 return { ...this.streamConfigDto };
