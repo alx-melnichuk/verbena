@@ -16,9 +16,9 @@ export interface AlertInterface {
 }
 
 export const AlertDurationByMode = {
-    [AlertMode.comment]: 4000,
-    [AlertMode.info]: 4000,
-    [AlertMode.warning]: 4000,
-    [AlertMode.error]: 20000,
-    [AlertMode.success]: 4000,
+    [AlertMode.comment]: 6000,
+    [AlertMode.info]: 6000,
+    [AlertMode.warning]: 6000,
+    [AlertMode.error]: 30000,
+    [AlertMode.success]: 6000,
 };
