@@ -37,12 +37,16 @@
   },
   "theme": {
     "": "nothing",
-    "light-azure_blue": "Light - (Azure & Blue)",
-    "light-rose_red": "Light - (Pink & Red)",
-    "light-cyan_orange": "Light - (Cyan & Orange)",
-    "dark-azure_blue": "Dark - (Azure & Blue)",
-    "dark-rose_red": "Dark - (Pink & Red)",
-    "dark-cyan_orange": "Dark - (Cyan & Orange)"
+    "light-azure-magenta": "light azure",
+    "light-cyan-magenta": "light cyan",
+    "light-violet-magenta": "light violet",
+    "light-orange-magenta": "light orange",
+    "light-magenta-cyan": "light magenta",
+    "dark-azure-magenta": "dark azure",
+    "dark-cyan-magenta": "dark cyan",
+    "dark-violet-magenta": "dark violet",
+    "dark-orange-magenta": "dark orange",
+    "dark-magenta-cyan": "dark magenta"
   },
   "Forbidden": {
     "status": 403,

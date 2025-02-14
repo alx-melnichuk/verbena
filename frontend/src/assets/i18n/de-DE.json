@@ -37,12 +37,16 @@
   },
   "theme": {
     "": "nichts",
-    "light-azure_blue": "Licht - (Azurblau & Blau)",
-    "light-rose_red": "Licht - (Rose & Rot)",
-    "light-cyan_orange": "Licht - (Cyan & Orange)",
-    "dark-azure_blue": "Dunkel - (Azurblau & Blau)",
-    "dark-rose_red": "Dunkel - (Rose & Rot)",
-    "dark-cyan_orange": "Dunkel - (Cyan & Orange)"
+    "light-azure-magenta": "licht azurblau",
+    "light-cyan-magenta": "licht cyan",
+    "light-violet-magenta": "licht violett",
+    "light-orange-magenta": "licht orange",
+    "light-magenta-cyan": "licht magenta",
+    "dark-azure-magenta": "dunkles azurblau",
+    "dark-cyan-magenta": "dunkles cyan",
+    "dark-violet-magenta": "dunkles violett",
+    "dark-orange-magenta": "dunkles orange",
+    "dark-magenta-cyan": "dunkles magenta"
   },
   "Forbidden": {
     "status": 403,

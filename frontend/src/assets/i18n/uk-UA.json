@@ -37,12 +37,16 @@
   },
   "theme": {
     "": "нічого",
-    "light-azure_blue": "Світла - (Лазурний & Синій)",
-    "light-rose_red": "Світла - (Рожевий & Червоний)",
-    "light-cyan_orange": "Світла - (Блакитний & Помаранчевий)",
-    "dark-azure_blue": "Темна - (Лазурний & Синій)",
-    "dark-rose_red": "Темна - (Рожевий & Червоний)",
-    "dark-cyan_orange": "Темна - (Блакитний & Помаранчевий)"
+    "light-azure-magenta": "світло лазурний",
+    "light-cyan-magenta": "світло блакитний",
+    "light-violet-magenta": "світло фіолетовий",
+    "light-orange-magenta": "світло помаранчевий",
+    "light-magenta-cyan": "світло пурпуровий",
+    "dark-azure-magenta": "темно лазурний",
+    "dark-cyan-magenta": "темно блакитний",
+    "dark-violet-magenta": "темно фіолетовий",
+    "dark-orange-magenta": "темно помаранчевий",
+    "dark-magenta-cyan": "темно пурпуровий"        
   },
   "Forbidden": {
     "status": 403,
