@@ -11,15 +11,25 @@
 @include mat.core();
 
 // Define the theme object.
-$verbena-theme: mat.define-theme((color: (theme-type: light,
-                primary : mat.$azure-palette,
-                tertiary: mat.$blue-palette,
+$verbena-theme: mat.define-theme((color: ( // 
+                theme-type: light,
+                // theme-type: dark,
+
+                primary : mat.$azure-palette, // 1p
+                tertiary: mat.$magenta-palette, // 1t
+                // primary : mat.$cyan-palette,    // 2p
+                // tertiary: mat.$magenta-palette, // 2t
+                // primary : mat.$violet-palette, // 3p
+                // tertiary: mat.$magenta-palette, // 3t
+                // primary : mat.$orange-palette, // 4p
+                // tertiary: mat.$magenta-palette, // 4t
+                // primary : mat.$magenta-palette, // 5p
+                // tertiary: mat.$cyan-palette, // 5t
+
                 use-system-variables: true, // Added
             ),
-            typography: (use-system-variables: true, // Added
-            ),
-            density: (scale: 0,
-            )));
+            typography: (use-system-variables: true), // Added
+            density: (scale: 0)));
 
 // Include theme styles for core and each component used in your app.
 // Alternatively, you can import and @include the theme mixins for each component
