@@ -1,8 +1,8 @@
 /*# sourceURL=panel-login.component.scss */
 
 app-panel-login {
-    ---pl-pn-bg: color-mix(in srgb, var(--app-pn-login) 10%, var(--sys-surface));
-    ---pl-pn-brd: color-mix(in srgb, var(--app-pn-login) 22%, var(--sys-surface));
+    ---pl-pn-bg: var(--app-login-pn-bg);
+    ---pl-pn-brd: var(--app-login-pn-brd);
     ---pl-pd: calc(0.03125 * min(100vw, 1280px) - 2px); // 512.22px: 14px;  1024.44px: 30px;
     ---pl-wd: min(100vw, calc((26px + 100vw / 128) * 16));
 
