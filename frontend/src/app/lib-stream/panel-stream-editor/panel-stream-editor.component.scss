@@ -1,8 +1,8 @@
 /*# sourceURL=panel-stream-editor.component.scss */
 
 app-panel-stream-editor {
-    ---pse-pn-bg: color-mix(in srgb, var(--app-pn-stream) 20%, var(--sys-surface));
-    ---pse-pn-brd: color-mix(in srgb, var(--app-pn-stream) 35%, var(--sys-surface));
+    ---pse-pn-bg: var(--app-stream-pn-bg);
+    ---pse-pn-brd: var(--app-stream-pn-brd2);
     ---pse-pd: calc(0.03125 * min(100vw, 1280px) - 2px); // 512.22px: 14px;  1024.44px: 30px;
     ---pse-wd: min(100vw, calc((32px + 100vw / 128) * 16));
 
