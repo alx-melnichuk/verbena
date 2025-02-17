@@ -13,29 +13,31 @@ export const MOMENT_ISO8601_DATE = 'YYYY-MM-DD';
 export const SCHEME_LIGHT = 'light';
 export const SCHEME_DARK = 'dark';
 
-export const COLOR_SCHEME_LIGHT_AZURE_MAGENTA = 'light-azure-magenta';
-export const COLOR_SCHEME_LIGHT_CYAN_MAGENTA = 'light-cyan-magenta';
-export const COLOR_SCHEME_LIGHT_VIOLET_MAGENTA = 'light-violet-magenta';
+export const COLOR_SCHEME_LIGHT_AZURE_ORANGE = 'light-azure-orange';
+export const COLOR_SCHEME_LIGHT_CYAN_ORANGE = 'light-cyan-orange';
+export const COLOR_SCHEME_LIGHT_VIOLET_CHARTREUSE = 'light-violet-chartreuse';
 export const COLOR_SCHEME_LIGHT_ORANGE_MAGENTA = 'light-orange-magenta';
 export const COLOR_SCHEME_LIGHT_MAGENTA_CYAN = 'light-magenta-cyan';
 
-export const COLOR_SCHEME_DARK_AZURE_MAGENTA = 'dark-azure-magenta';
-export const COLOR_SCHEME_DARK_CYAN_MAGENTA = 'dark-cyan-magenta';
-export const COLOR_SCHEME_DARK_VIOLET_MAGENTA = 'dark-violet-magenta';
+export const COLOR_SCHEME_DARK_AZURE_ORANGE = 'dark-azure-orange';
+export const COLOR_SCHEME_DARK_CYAN_MAGENTA = 'dark-cyan-orange';
+export const COLOR_SCHEME_DARK_VIOLET_CHARTREUSE = 'dark-violet-chartreuse';
 export const COLOR_SCHEME_DARK_ORANGE_MAGENTA = 'dark-orange-magenta';
 export const COLOR_SCHEME_DARK_MAGENTA_CYAN = 'dark-magenta-cyan';
 
 export const COLOR_SCHEME_LIST = [
     // 'light-*'
-    COLOR_SCHEME_LIGHT_AZURE_MAGENTA,
-    COLOR_SCHEME_LIGHT_CYAN_MAGENTA,
-    COLOR_SCHEME_LIGHT_VIOLET_MAGENTA,
+    COLOR_SCHEME_LIGHT_AZURE_ORANGE,
+    COLOR_SCHEME_LIGHT_CYAN_ORANGE,
+    // COLOR_SCHEME_LIGHT_VIOLET_MAGENTA,
+    COLOR_SCHEME_LIGHT_VIOLET_CHARTREUSE,
     COLOR_SCHEME_LIGHT_ORANGE_MAGENTA,
     COLOR_SCHEME_LIGHT_MAGENTA_CYAN,
     // 'dark-*'
-    COLOR_SCHEME_DARK_AZURE_MAGENTA,
+    COLOR_SCHEME_DARK_AZURE_ORANGE,
     COLOR_SCHEME_DARK_CYAN_MAGENTA,
-    COLOR_SCHEME_DARK_VIOLET_MAGENTA,
+    // COLOR_SCHEME_DARK_VIOLET_MAGENTA,
+    COLOR_SCHEME_DARK_VIOLET_CHARTREUSE,
     COLOR_SCHEME_DARK_ORANGE_MAGENTA,
     COLOR_SCHEME_DARK_MAGENTA_CYAN,
 ];
