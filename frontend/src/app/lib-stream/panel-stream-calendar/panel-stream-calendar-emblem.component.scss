@@ -5,7 +5,7 @@ app-panel-stream-calendar {
     .psc-day-with-streams::after {
         ---psc-wd: calc(100% * 0.55);
         align-items: center;
-        background-color: var(---psc-emblem-bg);
+        background-color: var(--app-strm-clnd-emblem-bg);
         border-radius: 50%;
         content: counter(psc-day);
         display: flex;

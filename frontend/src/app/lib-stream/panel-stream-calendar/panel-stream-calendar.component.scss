@@ -1,26 +1,15 @@
 /*# sourceURL=panel-stream-calendar.component.scss */
 
 app-panel-stream-calendar {
-    container: cnt-stream-calendar / normal;
     // Default value. The element is not a query container for any container size queries, 
     // but remains a query container for container style queries.
     display: block;
 
-    @container cnt-stream-calendar style(--color-scheme: dark) {
-        .mat-calendar {
-            ---psc-pn-bg-delta: 10%;
-        }
-    }
 
     // The units are "em" because - font-size: var(--mat-datepicker-calendar-text-size, var(--mat-app-body-medium-size));
     .mat-calendar {
-        ---psc-pn-bg: color-mix(in srgb, var(--app-pn-strm-calendr) calc(10% + var(---psc-pn-bg-delta, 0%)), var(--sys-surface));
-        ---psc-pn-brd: color-mix(in srgb, var(--app-pn-strm-calendr) calc(30% + var(---psc-pn-bg-delta, 0%)), var(--sys-surface));
-        ---psc-sel-bg: color-mix(in srgb, var(--app-pn-strm-calendr) calc(10% + var(---psc-pn-bg-delta, 0%)), var(--sys-inverse-primary));
-        ---psc-emblem-bg: color-mix(in srgb, var(--app-pn-strm-calendr) calc(10% + var(---psc-pn-bg-delta, 0%)), var(--sys-tertiary-container));
-
-        background-color: var(---psc-pn-bg);
-        border: 1px solid var(---psc-pn-brd);
+        background-color: var(--app-strm-clnd-pn-bg);
+        border: 1px solid var(--app-strm-clnd-pn-brd);
         border-radius: 1em;
         box-sizing: border-box;
         height: 100%;
@@ -37,7 +26,7 @@ app-panel-stream-calendar {
     }
 
     button.psc-day-with-streams {
-        background-color: var(---psc-sel-bg);
+        background-color: var(--app-strm-clnd-sel-bg);
         border-radius: 100%;
     }
 }
