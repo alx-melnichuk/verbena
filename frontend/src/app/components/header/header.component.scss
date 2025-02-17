@@ -11,14 +11,10 @@ app-header {
     display: block;
 
     &.h-is-authorized {
-        ---hdr-auth-bg: var(--app-site-auth);
+        ---hdr-auth-pn-bg: var(--app-auth-pn-bg);
     }
 
-    &:not(.h-is-authorized) {
-        ---hdr-auth-bg: var(--app-site-unauth);
-    }
-
-    --mat-toolbar-container-background-color: color-mix(in srgb, var(---hdr-auth-bg) 20%, var(--sys-surface));
+    --mat-toolbar-container-background-color: var(---hdr-auth-pn-bg, var(--app-unauth-pn-bg));
 
     [h-mr-lf-0_5] {
         margin-left: 0.5em;
