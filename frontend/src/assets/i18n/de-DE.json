@@ -241,7 +241,7 @@
     "dialog_message": "Wir haben ihnen einen link zum ändern ihres passworts in \"{{value}}\" gesendet."
   },
   "logotype": {
-    "no_logo": "kein logo!"
+    "no_logo": "fehlt!"
   },
   "stream_list": {
     "my_calendar": "Mein kalender",
