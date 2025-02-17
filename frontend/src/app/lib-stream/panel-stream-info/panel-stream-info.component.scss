@@ -1,8 +1,6 @@
 /*# sourceURL=panel-stream-info.component.scss */
 
 app-panel-stream-info {
-    // ---psi-pn-bg: color-mix(in srgb, var(--app-pn-stream) 20%, var(--sys-surface));
-    // ---psi-pn-brd: color-mix(in srgb, var(--app-pn-stream) 45%, var(--sys-surface));
     ---psi-pn-bg: var(--app-stream-pn-bg);
     ---psi-pn-brd: var(--app-stream-pn-brd2);
     ---psi-title-cl: color-mix(in srgb, var(--sys-tertiary) 40%, var(--sys-on-surface));
