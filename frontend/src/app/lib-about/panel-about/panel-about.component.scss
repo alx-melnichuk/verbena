@@ -1,8 +1,8 @@
 /*# sourceURL=panel-about.component.scss */
 
 app-panel-about {
-    ---pa-pn-bg: color-mix(in srgb, var(--app-pn-about) 10%, var(--sys-surface));
-    ---pa-pn-brd: color-mix(in srgb, var(--app-pn-about) 22%, var(--sys-surface));
+    ---pa-pn-bg: var(--app-about-pn-bg);
+    ---pa-pn-brd: var(--app-about-pn-brd);
     ---pa-pd: calc(0.03125 * min(100vw, 1280px) - 2px); // 512.22px: 14px;  1024.44px: 30px;
     ---pa-wd: min(100vw, calc((28px + 100vw / 128) * 18));
 
