@@ -8,12 +8,9 @@ app-footer {
     padding-left: 0.8em;
 
     &.f-is-authorized {
-        ---ftr-auth-bg: var(--app-site-auth);
+        ---ftr-auth-pn-bg: var(--app-auth-pn-bg);
     }
 
-    &:not(.f-is-authorized) {
-        ---ftr-auth-bg: var(--app-site-unauth);
-    }
+    background-color: var(---ftr-auth-pn-bg, var(--app-unauth-pn-bg));
 
-    background-color: color-mix(in srgb, var(---ftr-auth-bg) 20%, var(--sys-surface));
 }
