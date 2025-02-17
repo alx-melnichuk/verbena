@@ -1,8 +1,8 @@
 /*# sourceURL=panel-stream-event.component.scss */
 
 app-panel-stream-event {
-    ---pse-pn-bg: color-mix(in srgb, var(--app-pn-stream) 20%, var(--sys-surface));
-    ---pse-pn-brd: color-mix(in srgb, var(--app-pn-stream) 45%, var(--sys-surface));
+    ---pse-pn-bg: var(--app-stream-pn-bg);
+    ---pse-pn-brd: var(--app-stream-pn-brd2);
     ---pse-logo-wd: 4.5em;
 
     display: flex;
