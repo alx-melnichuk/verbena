@@ -37,14 +37,14 @@
   },
   "theme": {
     "": "nothing",
-    "light-azure-magenta": "light azure",
-    "light-cyan-magenta": "light cyan",
-    "light-violet-magenta": "light violet",
+    "light-azure-orange": "light azure",
+    "light-cyan-orange": "light cyan",
+    "light-violet-chartreuse": "light violet",
     "light-orange-magenta": "light orange",
     "light-magenta-cyan": "light magenta",
-    "dark-azure-magenta": "dark azure",
-    "dark-cyan-magenta": "dark cyan",
-    "dark-violet-magenta": "dark violet",
+    "dark-azure-orange": "dark azure",
+    "dark-cyan-orange": "dark cyan",
+    "dark-violet-chartreuse": "dark violet",
     "dark-orange-magenta": "dark orange",
     "dark-magenta-cyan": "dark magenta"
   },
@@ -253,12 +253,6 @@
     "error_delete_stream": "Error while deleting stream",
     "error_get_future_streams": "Error while getting future streams",
     "error_get_past_streams": "Error while getting past streams"
-  },
-  "demo": {
-    "_error_get_streams": "Error getting the list of streams",
-    "_error_get_user_stock_list": "Error getting user stock list",
-    "_error_add_user_stock": "Error while add user stock",
-    "_error_delete_user_stock": "Error while deleting user stock"
   },
   "panel-stream-mini": {
     "buttons": {
