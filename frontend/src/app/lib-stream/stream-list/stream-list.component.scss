@@ -1,7 +1,7 @@
 /*# sourceURL=stream-list.component.scss */
 
 app-stream-list {
-    ---sl-pn-brd: color-mix(in srgb, var(--app-pn-stream) 45%, var(--sys-surface));
+    ---sl-pn-brd: var(--app-stream-pn-brd3);
     ---sl-pd: calc(0.03125 * min(100vw, 1280px) - 2px); // 512.22px: 14px;  1024.44px: 30px;
     ---sl-brd-pd: 2px;
     ---sl-clnd-mn-wd: calc(17 * var(--mat-datepicker-calendar-text-size) + 2 * var(---sl-brd-pd));
