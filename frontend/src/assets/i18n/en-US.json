@@ -303,7 +303,8 @@
       "Interceptor for updating the authorization token",
       "Guard to control access to menu items",
       "\"infinite scroll\" for page-by-page data loading",
-      "based on css-variables, 5 light and 5 dark color schemes have been prepared"
+      "based on css-variables, 5 light and 5 dark color schemes have been prepared",
+      "the site is adapted for the old version of Chrome 109 (Windows 7, 10)"
     ],
     "backend_used": "On the Backend we used:"
   },

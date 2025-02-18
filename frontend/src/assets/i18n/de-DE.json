@@ -305,7 +305,8 @@
       "Interceptor zum aktualisieren des autorisierungstokens",
       "Wächter zur zugriffskontrolle auf menüelemente",
       "\"unendliches scrollen\" zum seitenweisen Laden von daten",
-      "basierend auf css-variablen wurden 5 helle und 5 dunkle farbschemata vorbereitet"
+      "basierend auf css-variablen wurden 5 helle und 5 dunkle farbschemata vorbereitet",
+      "die site ist für die alte version von Chrome 109 (Windows 7, 10) angepasst"
     ],
     "backend_used": "Auf dem Backend haben wir verwendet:"
   },
