@@ -1,0 +1,55 @@
+/*# sourceURL=app-screen-size.scss */
+
+app-root {
+    @media screen and (width <=480px) {
+        --app-display-size: 480;
+        --app-display-480: 1;
+    }
+
+    @media screen and (480px < width <=768px) {
+        --app-display-size: 768;
+        --app-display-768: 1;
+    }
+
+    @media screen and (768px < width <=1024px) {
+        --app-display-size: 1024;
+        --app-display-1024: 1;
+    }
+
+    @media screen and (1024px < width <=1280px) {
+        --app-display-size: 1280;
+        --app-display-1280: 1;
+    }
+
+    @media screen and (1280px < width <=1536px) {
+        --app-display-size: 1536;
+        --app-display-1536: 1;
+    }
+
+    @media screen and (1536px < width) {
+        // super-wide-1792
+        --app-display-size: 1792;
+        --app-display-1792: 1;
+    }
+
+    @media screen and (width <=480px) {
+        --app-header-hg: min(18vh, 74px);
+    }
+
+    @media screen and (480px < width <=768px) {
+        --app-header-hg: 68px;
+    }
+
+    @media screen and (768px < width <=1024px) {
+        --app-header-hg: 66px;
+    }
+
+    @media screen and (1024px < width <=1280px) {
+        --app-header-hg: 64px;
+    }
+
+    @media screen and (1280px < width) {
+        --app-header-hg: 64px;
+    }
+
+}
