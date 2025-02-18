@@ -54,6 +54,8 @@ app-root {
         --app-header-hg: 64px;
     }
 
+    --app-is-relative-color: 1;
+    --app-is-color-mix: 1;
     ---brd-wd: 1px;
     ---brd-cl: color-mix(in srgb, var(--sys-outline-variant) 70%, transparent);
 
@@ -78,6 +80,8 @@ app-root {
     &>main {
         height: calc(100% - var(--app-header-hg) - var(--app-footer-hg) - 2 * var(---brd-wd));
     }
+
+
 
     // ** List of background colors for additional panels (tags: "app-header", "app-footer") **
 
@@ -132,7 +136,10 @@ app-root {
     // ** color of SVG icons **
     --app-svg-icon-cl: var(--sys-outline);
 
-    --app-is-color-mix: 1;
+    @supports not(color: hsl(from white h s l)) {
+        /* safe to use hsl() relative color syntax */
+        --app-is-relative-color: 0;
+    }
 
     @supports not(color: color-mix(in srgb, #ff0000 50%, #00ff00)) {
         --app-is-color-mix: 0;
@@ -189,10 +196,4 @@ app-root {
         }
     }
 
-    --app-is-relative-color: 0;
-
-    @supports (color: hsl(from white h s l)) {
-        /* safe to use hsl() relative color syntax */
-        --app-is-relative-color: 1;
-    }
 }
