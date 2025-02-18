@@ -96,6 +96,15 @@ a:hover[no-decor] {
     text-decoration: none;
 }
 
+a {
+    text-decoration: none;
+}
+
+// Underline when hovering over a link.
+a:hover {
+    text-decoration: underline;
+}
+
 // .global-scroll {
 //   scrollbar-width: thin;
 //   scrollbar-color: var(--thumbBG) var(--scrollbarBG);
