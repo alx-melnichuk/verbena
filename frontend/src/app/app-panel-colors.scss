@@ -1,0 +1,121 @@
+/*# sourceURL=app-panel-colors.scss */
+
+app-root {
+    --app-is-relative-color: 1;
+    --app-is-color-mix: 1;
+    container: cnt-app / normal;
+
+    // ** List of background colors for additional panels (tags: "app-header", "app-footer") **
+
+    // --app-site-unauth: hsl(27, 50%, 50%);
+    ---unauth-h: 27;
+    --app-unauth-pn-bg: color-mix(in srgb, hsl(var(---unauth-h), 50%, 50%) 20%, var(--sys-surface));
+
+    // --app-site-auth : hsl(120, 50%, 50%);
+    ---auth-h: 120;
+    --app-auth-pn-bg: color-mix(in srgb, hsl(var(---auth-h), 50%, 50%) 20%, var(--sys-surface));
+
+    // ** List of background colors for main panels (tag "main") **
+
+    // --app-pn-login : hsl(85, 50%, 50%);
+    ---login-h: 85;
+    --app-login-pn-bg: color-mix(in srgb, hsl(var(---login-h), 50%, 50%) 10%, var(--sys-surface));
+    --app-login-pn-brd: color-mix(in srgb, hsl(var(---login-h), 50%, 50%) 22%, var(--sys-surface));
+
+    // --app-pn-signup : hsl(70, 50%, 50%);
+    ---signup-h: 70;
+    --app-signup-pn-bg: color-mix(in srgb, hsl(var(---signup-h), 50%, 50%) 10%, var(--sys-surface));
+    --app-signup-pn-brd: color-mix(in srgb, hsl(var(---signup-h), 50%, 50%) 22%, var(--sys-surface));
+
+    // --app-pn-forgot : hsl(55, 50%, 50%);
+    ---forgot-h: 55;
+    --app-forgot-pn-bg: color-mix(in srgb, hsl(var(---forgot-h), 50%, 50%) 10%, var(--sys-surface));
+    --app-forgot-pn-brd: color-mix(in srgb, hsl(var(---forgot-h), 50%, 50%) 22%, var(--sys-surface));
+
+    // --app-pn-about : hsl(40, 50%, 50%);
+    ---about-h: 40;
+    --app-about-pn-bg: color-mix(in srgb, hsl(var(---about-h), 50%, 50%) 10%, var(--sys-surface));
+    --app-about-pn-brd: color-mix(in srgb, hsl(var(---about-h), 50%, 50%) 22%, var(--sys-surface));
+
+    // ---profile-pn : hsl(180, 50%, 50%);
+    ---profile-h: 180;
+    --app-profile-pn-bg: color-mix(in srgb, hsl(var(---profile-h), 50%, 50%) 10%, var(--sys-surface));
+    --app-profile-pn-brd: color-mix(in srgb, hsl(var(---profile-h), 50%, 50%) 22%, var(--sys-surface));
+
+    // --app-pn-stream : hsl(210, 50%, 50%);
+    ---stream-h: 210;
+    --app-stream-pn-bg: color-mix(in srgb, hsl(var(---stream-h), 50%, 50%) 10%, var(--sys-surface));
+    --app-stream-pn-brd2: color-mix(in srgb, hsl(var(---stream-h), 50%, 50%) 35%, var(--sys-surface));
+    --app-stream-pn-brd3: color-mix(in srgb, hsl(var(---stream-h), 50%, 50%) 65%, var(--sys-surface));
+
+    // --app-pn-strm-calendr : hsl(190, 50%, 50%);
+    ---strm-clnd-h: 190;
+    --app-strm-clnd-pn-bg: color-mix(in srgb, hsl(var(---strm-clnd-h), 50%, 50%) calc(13%), var(--sys-surface));
+    --app-strm-clnd-pn-brd: color-mix(in srgb, hsl(var(---strm-clnd-h), 50%, 50%) calc(40%), var(--sys-surface));
+    --app-strm-clnd-sel-bg: color-mix(in srgb, hsl(var(---strm-clnd-h), 50%, 50%) calc(10%), var(--sys-inverse-primary));
+    --app-strm-clnd-emblem-bg: color-mix(in srgb, hsl(var(---strm-clnd-h), 50%, 50%) calc(10%), var(--sys-tertiary-container));
+
+    // ** color of SVG icons **
+    --app-svg-icon-cl: var(--sys-outline);
+
+    @supports not(color: hsl(from white h s l)) {
+        /* safe to use hsl() relative color syntax */
+        --app-is-relative-color: 0;
+    }
+
+    @supports not(color: color-mix(in srgb, #ff0000 50%, #00ff00)) {
+        --app-is-color-mix: 0;
+
+        @container cnt-app style(--color-scheme: dark) {
+
+            app-header,
+            app-footer {
+                ---dr-h-s: -22%;
+                ---dr-h-l: -34%;
+            }
+
+            main {
+                ---dr-s: -25%;
+                ---dr-l: -38%;
+                ---dr2-l: 7%;
+            }
+
+        }
+
+        app-header,
+        app-footer {
+            --app-unauth-pn-bg: hsl(calc(var(---unauth-h) - 5), calc(50% + var(---dr-h-s, -10%)), calc(50% + var(---dr-h-l, 38%)));
+            --app-auth-pn-bg: hsl(calc(var(---auth-h) + 5), calc(50% + var(---dr-h-s, -10%)), calc(50% + var(---dr-h-l, 38%)));
+        }
+
+
+        main {
+            --app-login-pn-bg: hsl(calc(var(---login-h) + 10), calc(50% + var(---dr-s, 10%)), calc(50% + var(---dr-l, 45%)));
+            --app-login-pn-brd: hsl(calc(var(---login-h) + 10), calc(50% + var(---dr-s, 10%) - 10%), calc(50% + var(---dr-l, 45%) + var(---dr2-l, -8%)));
+
+            --app-signup-pn-bg: hsl(calc(var(---signup-h) + 10), calc(50% + var(---dr-s, 10%)), calc(50% + var(---dr-l, 45%)));
+            --app-signup-pn-brd: hsl(calc(var(---signup-h) + 10), calc(50% + var(---dr-s, 10%) - 10%), calc(50% + var(---dr-l, 45%) + var(---dr2-l, -8%)));
+
+            --app-forgot-pn-bg: hsl(calc(var(---forgot-h) + 10), calc(50% + var(---dr-s, 10%)), calc(50% + var(---dr-l, 45%)));
+            --app-forgot-pn-brd: hsl(calc(var(---forgot-h) + 10), calc(50% + var(---dr-s, 10%) - 10%), calc(50% + var(---dr-l, 45%) + var(---dr2-l, -8%)));
+
+            --app-about-pn-bg: hsl(calc(var(---about-h) + 10), calc(50% + var(---dr-s, 10%)), calc(50% + var(---dr-l, 45%)));
+            --app-about-pn-brd: hsl(calc(var(---about-h) + 10), calc(50% + var(---dr-s, 10%) - 10%), calc(50% + var(---dr-l, 45%) + var(---dr2-l, -8%)));
+
+            --app-profile-pn-bg: hsl(calc(var(---profile-h) + 10), calc(50% + var(---dr-s, 10%)), calc(50% + var(---dr-l, 45%)));
+            --app-profile-pn-brd: hsl(calc(var(---profile-h) + 10), calc(50% + var(---dr-s, 10%) - 10%), calc(50% + var(---dr-l, 45%) + var(---dr2-l, -8%)));
+
+            --app-stream-pn-bg: hsl(calc(var(---stream-h) + 10), calc(50% + var(---dr-s, 10%)), calc(50% + var(---dr-l, 45%)));
+            --app-stream-pn-brd2: hsl(calc(var(---stream-h) + 10), calc(50% + var(---dr-s, 10%) - 10%), calc(50% + var(---dr-l, 40%) + var(---dr2-l, -8%)));
+            --app-stream-pn-brd3: hsl(calc(var(---stream-h) + 10), calc(50% + var(---dr-s, 10%) - 10%), calc(50% + var(---dr-l, 25%) + var(---dr2-l, -8%)));
+
+            --app-strm-clnd-pn-bg: hsl(calc(var(---strm-clnd-h) + 10), calc(50% + var(---dr-s, 10%)), calc(50% + var(---dr-l, 45%)));
+            --app-strm-clnd-pn-brd: hsl(calc(var(---strm-clnd-h) + 10), calc(50% + var(---dr-s, 10%) - 10%), calc(50% + var(---dr-l, 45%) + var(---dr2-l, -8%)));
+
+            --app-strm-clnd-sel-bg: var(--sys-inverse-primary);
+            --app-strm-clnd-emblem-bg: var(--sys-tertiary-container);
+
+        }
+    }
+
+}
