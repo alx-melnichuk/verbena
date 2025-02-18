@@ -16,7 +16,7 @@ import { LocaleService } from './common/locale.service';
     standalone: true,
     imports: [CommonModule, RouterLink, RouterOutlet, HeaderComponent, FooterComponent],
     templateUrl: './app.component.html',
-    styleUrl: './app.component.scss',
+    styleUrls: ['./app.component.scss', 'app-panel-colors.component.scss', 'app-screen-size.component.scss'],
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
