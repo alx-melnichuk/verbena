@@ -3,7 +3,6 @@ import {
     SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ENTER } from '@angular/cdk/keycodes';
 import { ReactiveFormsModule, FormControl, FormGroup } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
@@ -80,7 +79,6 @@ export class PanelStreamEditorComponent implements OnChanges {
     public logoFile: File | null | undefined;
     public initIsLogo: boolean = false; // original has an logo.
 
-    readonly separatorCodes: number[] = [ENTER];
     readonly tagMaxLength: number = 255;
     readonly tagMinLength: number = 2;
     readonly tagMaxAmount: number = 4;

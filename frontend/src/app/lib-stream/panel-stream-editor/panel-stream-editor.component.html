@@ -41,7 +41,6 @@
       [maxLength]="tagMaxLength"
       [minAmount]="tagMinAmount"
       [maxAmount]="tagMaxAmount"
-      [separatorCodes]="separatorCodes"
       [hint]="'panel-stream-editor.tags_hint'"
       (input)="updateErrMsgs();"
       (removedChip)="updateErrMsgs();">
@@ -51,7 +50,7 @@
       <mat-slide-toggle
         color="primary"
         formControlName="isStartTime"
-        (change)="updateErrMsgs();changeIsStartTime();">
+        (change)="updateErrMsgs(); changeIsStartTime();">
         <span class="pse-date-toggle">{{ 'panel-stream-editor.set_date_and_time_or_now' | translate }}</span>
       </mat-slide-toggle>
     </div>
@@ -96,7 +95,7 @@
     }
 
     <div class="pse-actions">
-      <button mat-stroked-button color="primary"
+      <button type="button" mat-stroked-button color="primary"
         class="app-infix app-ordinary pse-btn-save"
         [disabled]="formGroup.pristine || formGroup.invalid"
         (click)="saveStream(formGroup)">
