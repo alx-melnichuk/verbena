@@ -18,6 +18,7 @@
         [readonly]="isReadonly"
         [required]="isRequired"
         [matChipInputFor]="chipGrid"
+        [matChipInputAddOnBlur]="true"
         [matChipInputSeparatorKeyCodes]="separatorCodes"
         (matChipInputTokenEnd)="chipAdd($event, formControl.value)"
         (blur)="onTouched()"
