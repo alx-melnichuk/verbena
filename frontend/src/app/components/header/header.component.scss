@@ -140,6 +140,31 @@ app-header {
     }
 }
 
+@supports not(color: color-mix(in srgb, #ff0000 50%, #00ff00)) {
+    html.light app-header {
+        ---hdr-selected: hsla(210, 50%, 50%, 20%);
+        ---hdr-selected-hov: hsla(210, 50%, 50%, 25%);
+
+    }
+
+    html.dark app-header {
+        ---hdr-selected: hsla(210, 50%, 50%, 25%);
+        ---hdr-selected-hov: hsla(210, 50%, 50%, 30%);
+    }
+
+    app-header {
+
+        .h-elem-menu.h-selected {
+            background-color: var(---hdr-selected);
+        }
+
+        .h-elem-menu:hover {
+            background-color: var(---hdr-selected-hov);
+        }
+    }
+}
+
+
 html.dark app-header {
     .h-elem-menu {
         ---hdr-dark-mn-sel: 7%;
