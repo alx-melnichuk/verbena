@@ -3,7 +3,6 @@
 app-root {
     --app-is-relative-color: 1;
     --app-is-color-mix: 1;
-    container: cnt-app / normal;
 
     // ** List of background colors for additional panels (tags: "app-header", "app-footer") **
 
@@ -66,22 +65,6 @@ app-root {
     @supports not(color: color-mix(in srgb, #ff0000 50%, #00ff00)) {
         --app-is-color-mix: 0;
 
-        @container cnt-app style(--color-scheme: dark) {
-
-            app-header,
-            app-footer {
-                ---dr-h-s: -22%;
-                ---dr-h-l: -34%;
-            }
-
-            main {
-                ---dr-s: -25%;
-                ---dr-l: -38%;
-                ---dr2-l: 7%;
-            }
-
-        }
-
         app-header,
         app-footer {
             --app-unauth-pn-bg: hsl(calc(var(---unauth-h) - 5), calc(50% + var(---dr-h-s, -10%)), calc(50% + var(---dr-h-l, 38%)));
@@ -118,4 +101,12 @@ app-root {
         }
     }
 
+}
+
+html.dark {
+    ---dr-h-s: -22%;
+    ---dr-h-l: -34%;
+    ---dr-s: -25%;
+    ---dr-l: -38%;
+    ---dr2-l: 7%;
 }
