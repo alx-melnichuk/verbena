@@ -31,11 +31,11 @@ mod tests {
         let user_id = data_c.0.get(0).unwrap().user_id;
         let user_id_bad = format!("{}a", user_id);
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(get_profile_by_id).configure(configure_profile(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(get_profile_by_id).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", user_id_bad))
-                .insert_header(header_auth(&token)).to_request();
+        let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", user_id_bad))
+            .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
 
