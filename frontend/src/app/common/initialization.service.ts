@@ -80,6 +80,10 @@ export class InitializationService {
                 this.document.documentElement.style.setProperty(COLOR_SCHEME, null);
                 this.document.documentElement.style.setProperty('--' + COLOR_SCHEME, null);
                 renderer.removeClass(this.document.documentElement, this.currColorScheme);
+                const scheme = this.currColorScheme.split('-')[0];
+                if ([SCHEME_LIGHT, SCHEME_DARK].includes(scheme)) {
+                    renderer.removeClass(this.document.documentElement, scheme);
+                }
             }
             this.currColorScheme = theme;
             renderer.addClass(this.document.documentElement, theme);
@@ -87,6 +91,7 @@ export class InitializationService {
             if ([SCHEME_LIGHT, SCHEME_DARK].includes(scheme)) {
                 this.document.documentElement.style.setProperty(COLOR_SCHEME, scheme);
                 this.document.documentElement.style.setProperty('--' + COLOR_SCHEME, scheme);
+                renderer.addClass(this.document.documentElement, scheme);
             }
         }
     }
