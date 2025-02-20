@@ -52,13 +52,6 @@ app-header {
         --mdc-text-button-label-text-color: var(--sys-primary);
     }
 
-    @container cnt-header style(--color-scheme: dark) {
-        .h-elem-menu {
-            ---hdr-dark-mn-sel: 7%;
-            --mat-text-button-hover-state-layer-opacity: 0.14;
-        }
-    }
-
     .h-elem-menu.h-selected {
         background-color: color-mix(in srgb, var(--sys-primary) calc(15% + var(---hdr-dark-mn-sel, 0%)), rgba(0, 0, 0, 0));
     }
@@ -144,5 +137,12 @@ app-header {
             transform: rotate(-45deg);
             width: 14px;
         }
+    }
+}
+
+html.dark app-header {
+    .h-elem-menu {
+        ---hdr-dark-mn-sel: 7%;
+        --mat-text-button-hover-state-layer-opacity: 0.14;
     }
 }
