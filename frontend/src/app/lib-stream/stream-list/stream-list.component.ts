@@ -1,12 +1,11 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { LocaleService } from 'src/app/common/locale.service';
-import { ROUTE_STREAM_CREATE, ROUTE_STREAM_EDIT } from 'src/app/common/routes';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
@@ -38,7 +37,6 @@ export class StreamListComponent implements OnInit {
     constructor(
         private changeDetector: ChangeDetectorRef,
         private route: ActivatedRoute,
-        private router: Router,
         private translateService: TranslateService,
         private dialogService: DialogService,
         private streamService: StreamService,
@@ -69,7 +67,7 @@ export class StreamListComponent implements OnInit {
             this.streamCalendarService.clearStreamsEvent();
         }
         try {
-            Promise.all(buffPromise)
+            await Promise.all(buffPromise)
         } finally {
             this.changeDetector.markForCheck();
         }
