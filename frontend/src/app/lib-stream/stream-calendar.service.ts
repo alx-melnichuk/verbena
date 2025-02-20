@@ -43,7 +43,7 @@ export class StreamCalendarService {
     // ** "Streams Calendar" **
 
     /** Get calendar information for a period. */
-    public getCalendarInfoForPeriod(
+    public async getCalendarInfoForPeriod(
         start: Date, isRequired: boolean, userId?: number
     ): Promise<StreamsPeriodDto[] | HttpErrorResponse | undefined> {
         this.alertService.hide();
@@ -57,16 +57,18 @@ export class StreamCalendarService {
         const endMonth: Date = DateUtil.dateLastDayOfMonth(startMonth);
         endMonth.setHours(23, 59, 59, 0);
         this.calendarLoading = true;
-        return this.streamService.getStreamsCalendar({ start: startMonth.toISOString(), finish: endMonth.toISOString(), userId })
-            .then((response: StringDateTime[] | HttpErrorResponse | undefined) => {
-                this.calendarMarkedDates = this.convertStringDateTimeToStreamsPeriodDto(response as StringDateTime[]);
-                return this.calendarMarkedDates;
-            })
-            .catch((error: HttpErrorResponse) => {
-                this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], 'stream_list.error_get_streams_for_active_period');
-                throw error;
-            })
-            .finally(() => this.calendarLoading = false);
+        try {
+            const response = await this.streamService.getStreamsCalendar(
+                { start: startMonth.toISOString(), finish: endMonth.toISOString(), userId });
+            this.calendarMarkedDates = this.convertStringDateTimeToStreamsPeriodDto(response as StringDateTime[]);
+            return this.calendarMarkedDates;
+        } catch (error) {
+            this.alertService.showError(
+                HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_get_streams_for_active_period');
+            throw error;
+        } finally {
+            this.calendarLoading = false;
+        }
     }
 
     // ** "Streams Event" **
@@ -77,7 +79,7 @@ export class StreamCalendarService {
     }
 
     /** Get a list of events for a date. */
-    public getListEventsForDate(
+    public async getListEventsForDate(
         start: Date | null, pageNum: number, userId?: number
     ): Promise<StreamEventPageDto | HttpErrorResponse | undefined> {
         this.alertService.hide();
@@ -89,21 +91,22 @@ export class StreamCalendarService {
         const starttime = start.toISOString();
         const searchStreamEventDto: SearchStreamEventDto = { userId, starttime, page, limit: SC_DEFAULT_LIMIT };
         this.eventsOfDayLoading = true;
-        return this.streamService.getStreamsEvent(searchStreamEventDto)
-            .then((response: StreamEventPageDto | HttpErrorResponse | undefined) => {
-                const streamEventPageDto = (response as StreamEventPageDto);
-                this.eventsOfDayPageInfo = PageInfoUtil.create(streamEventPageDto);
-                if (this.eventsOfDayPageInfo.page == 1) {
-                    this.eventsOfDay = [];
-                }
-                this.eventsOfDay = this.eventsOfDay.concat(streamEventPageDto.list);
-                return response;
-            })
-            .catch((error: HttpErrorResponse) => {
-                this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], 'stream_list.error_get_streams_for_selected_day');
-                throw error;
-            })
-            .finally(() => this.eventsOfDayLoading = false);
+        try {
+            const response = await this.streamService.getStreamsEvent(searchStreamEventDto);
+            const streamEventPageDto = (response as StreamEventPageDto);
+            this.eventsOfDayPageInfo = PageInfoUtil.create(streamEventPageDto);
+            if (this.eventsOfDayPageInfo.page == 1) {
+                this.eventsOfDay = [];
+            }
+            this.eventsOfDay = this.eventsOfDay.concat(streamEventPageDto.list);
+            return response;
+        } catch (error) {
+            this.alertService.showError(
+                HttpErrorUtil.getMsgs(error as HttpErrorResponse)[0], 'stream_list.error_get_streams_for_selected_day');
+            throw error;
+        } finally {
+            this.eventsOfDayLoading = false;
+        }
     }
 
     public isShowEvents(calendarDate: Date): boolean {
