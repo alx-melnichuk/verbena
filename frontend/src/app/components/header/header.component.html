@@ -40,7 +40,7 @@
 
 
 
-<mat-menu #mainMenu="matMenu" xPosition="before">
+<mat-menu #mainMenu="matMenu" class="h-menu-panel" xPosition="before">
   @for (panelMenuItem of panelMenuItems; track panelMenuItem.name) {
     <button mat-menu-item class="pn-menu-item" routerLink="{{ panelMenuItem.link }}">
       <span [ngClass]="['mm-icon', ('mm-' + panelMenuItem.name) ]"></span>
@@ -60,17 +60,17 @@
     </button>
   }
   @if (isShowLogout && !!profileDto) {
-    <button mat-menu-item class="pn-item-menu9" (click)="doLogout()">
+    <button mat-menu-item class="pn-item-menu" (click)="doLogout()">
       <span class="mm-icon mm-log-out"></span>
       <span class="mm-mr-lf-0_5">{{ 'main_menu.log_out' | translate }}</span>
     </button>
   }
 </mat-menu>
 
-<mat-menu #themes="matMenu">
+<mat-menu #themes="matMenu" class="h-menu-panel">
   @for (colorSchemeItem of colorSchemeList; track colorSchemeItem) {
     <button mat-menu-item [value]="colorSchemeItem"
-      [ngClass]="['mm-menu-btn', (colorScheme == colorSchemeItem ? 'mm-curr' : '')]"
+      [ngClass]="['pn-item-menu', 'mm-menu-btn', (colorScheme == colorSchemeItem ? 'mm-curr' : '')]"
       (click)="doSetColorScheme(colorSchemeItem)">
       <span>{{ ('theme.' + colorSchemeItem) | translate }}</span>
       <span [ngClass]="['mm-menu-item-min', (colorScheme == colorSchemeItem ? 'mm-check' : '')]"></span>
@@ -78,9 +78,9 @@
   }
 </mat-menu>
 
-<mat-menu #locales="matMenu">
+<mat-menu #locales="matMenu" class="h-menu-panel">
   @for (localeItem of localeList; track localeItem) {
-    <button mat-menu-item [ngClass]="['mm-menu-btn', (locale == localeItem ? 'mm-curr' : '')]"
+    <button mat-menu-item [ngClass]="['pn-item-menu', 'mm-menu-btn', (locale == localeItem ? 'mm-curr' : '')]"
       [value]="localeItem"
       (click)="doSetLocale(localeItem)">
       <span>{{ ('locale.' + localeItem) | translate }}</span>

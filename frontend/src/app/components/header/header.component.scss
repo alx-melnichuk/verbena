@@ -162,6 +162,16 @@ app-header {
             background-color: var(---hdr-selected-hov);
         }
     }
+
+    .cdk-overlay-pane .h-menu-panel {
+        .pn-item-menu:hover {
+            background-color: var(---hdr-dark-pn-mn-hov, hsla(228, 9%, 11%, 12%));
+        }
+    }
+}
+
+html.dark .h-menu-panel {
+    ---hdr-dark-pn-mn-hov: hsla(240, 10%, 80%, 12%);
 }
 
 
