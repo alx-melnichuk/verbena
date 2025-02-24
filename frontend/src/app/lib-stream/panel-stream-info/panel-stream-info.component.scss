@@ -1,0 +1,180 @@
+/*# sourceURL=panel-stream-info.component.scss */
+
+app-panel-stream-info {
+    ---psi-pn-bg: var(--app-stream-pn-bg);
+    ---psi-pn-brd: var(--app-stream-pn-brd2);
+    ---psi-title-cl: color-mix(in srgb, var(--sys-tertiary) 40%, var(--sys-on-surface));
+
+    [psi-mr-rg-0_5] {
+        margin-right: 0.5rem;
+    }
+
+    [psi-mr-rg-0_25] {
+        margin-right: 0.25rem;
+    }
+
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 7rem;
+    overflow-y: auto;
+
+    // ** Stream card **
+    .psi-stream-card {
+        align-items: center;
+        background-color: var(---psi-pn-bg);
+        border: 1px solid var(---psi-pn-brd);
+        border-radius: 0.75rem;
+        box-sizing: border-box;
+        container: cnt-stream-card / inline-size;
+        display: flex;
+        flex-shrink: 0;
+        margin-bottom: 1px;
+        margin-left: 1px;
+        margin-right: 1px;
+        min-width: 25rem;
+
+        &:first-of-type {
+            margin-top: 1px;
+        }
+
+        &:not(:first-of-type) {
+            margin-top: 0.75rem;
+        }
+    }
+
+    @container cnt-stream-card (width < 43rem) {
+
+        // width < 688px
+        .psi-actions {
+            ---psi-actn-fl-dr: column;
+            ---psi-actn-mn-wd: 7.5rem;
+            ---psi-actn-both-fl-dr: column;
+            ---psi-actn-both-mn-wd: 100%;
+            ---psi-actn-btn-mr-tp: 0;
+            ---psi-actn-btn-mr-bt: 0;
+        }
+
+        .psi-actions-both {
+            ---psi-actn-btn-mr-tp: 0.1rem;
+        }
+
+        .psi-actions-box {
+            min-width: calc(100% - 0.5rem);
+        }
+    }
+
+    @container cnt-stream-card (43rem <=width < 53rem) {
+
+        // 688px <= width < 848px
+        .psi-actions {
+            ---psi-actn-fl-dr: row;
+            ---psi-actn-both-fl-dr: column;
+        }
+    }
+
+    @container cnt-stream-card (53rem <=width) {
+
+        // 848px <= width
+        .psi-actions {
+            ---psi-actn-fl-dr: row;
+            ---psi-actn-both-fl-dr: row;
+        }
+    }
+
+    .psi-logo {
+        align-items: center;
+        border-radius: 0.75rem;
+        cursor: pointer;
+        display: flex;
+        flex: 0 0 8rem;
+        height: 6rem;
+        justify-content: center;
+    }
+
+    // ** Details **
+    .psi-details {
+        box-sizing: border-box;
+        flex-grow: 1;
+        min-width: 9rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    .psi-date {
+        font-size: calc(1rem - 1px);
+    }
+
+    .psi-title {
+        color: var(---psi-title-cl);
+        height: 1.5rem;
+        margin-bottom: 0.375rem;
+        margin-top: 0.375rem;
+        overflow: hidden;
+    }
+
+    .psi-descript {
+        font-size: calc(1rem - 1px);
+        height: 1.5rem;
+        overflow: hidden;
+    }
+
+    // ** Actions **
+    .psi-actions {
+        --mdc-outlined-button-container-height: 2rem;
+        --mat-outlined-button-horizontal-padding: 0.5rem;
+        align-items: center;
+        display: flex;
+        flex-direction: var(---psi-actn-fl-dr);
+        flex-shrink: 0;
+        height: 100%;
+        justify-content: center;
+        min-width: var(---psi-actn-mn-wd, unset);
+    }
+
+    .psi-actions-both {
+        display: flex;
+        flex-direction: var(---psi-actn-both-fl-dr);
+        min-width: var(---psi-actn-both-mn-wd, unset);
+    }
+
+    .psi-action-label {
+        align-items: center;
+        display: flex;
+        line-height: normal;
+    }
+
+    .psi-action-btn {
+        flex-shrink: 0;
+        justify-content: space-between;
+        margin-top: var(---psi-actn-btn-mr-tp, 0.25rem);
+        margin-bottom: var(---psi-actn-btn-mr-bt, 0.25rem);
+    }
+
+    .psi-logo-future {
+        color: var(--app-svg-icon-cl);
+        height: 4.25rem;
+        width: 4.25rem;
+        vertical-align: middle;
+    }
+
+    .psi-duplicate-accent {
+        color: var(--app-svg-icon-cl);
+        display: inline-block;
+        height: 1.75rem;
+        width: 1.75rem;
+    }
+
+    .psi-edit-accent {
+        color: var(--app-svg-icon-cl);
+        display: inline-block;
+        height: 1.875rem;
+        width: 1.875rem;
+    }
+
+    .psi-delete-accent {
+        color: var(--app-svg-icon-cl);
+        display: inline-block;
+        height: 1.875rem;
+        width: 1.875rem;
+    }
+}

@@ -1,15 +1,16 @@
 /*# sourceURL=footer.component.scss */
 
 app-footer {
-  display: flex;
-  height: 100%;
-  padding-left: 0.8em;
-  &:not(.ft-user-info) {
-    ---ft-bg-cl: var(--app-site-off-footer-bg);
-  }
-  &.ft-user-info {
-    ---ft-bg-cl: var(--app-site-footer-bg);
-  }
-  background-color: var(---ft-bg-cl);
+    align-items: center;
+    display: flex;
+    height: 100%;
+    line-height: 1;
+    padding-left: 0.8em;
+
+    &.f-is-authorized {
+        ---ftr-auth-pn-bg: var(--app-auth-pn-bg);
+    }
+
+    background-color: var(---ftr-auth-pn-bg, var(--app-unauth-pn-bg));
 
 }

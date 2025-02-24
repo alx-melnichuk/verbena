@@ -3,5 +3,20 @@
     "target": "http://127.0.0.1:8080/",
     "changeOrigin": true,
     "secure": false
+  },
+  "/assets": {
+    "target": "http://127.0.0.1:8080/",
+    "changeOrigin": true,
+    "secure": false
+  },
+  "/logo": {
+    "target": "http://127.0.0.1:8080/",
+    "changeOrigin": true,
+    "secure": false
+  },
+  "/avatar": {
+    "target": "http://127.0.0.1:8080/",
+    "changeOrigin": true,
+    "secure": false
   }
 }

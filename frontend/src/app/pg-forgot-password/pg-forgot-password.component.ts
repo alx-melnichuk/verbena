@@ -1,72 +1,69 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 
-import { AppErrorUtil } from '../common/app-error';
-import { ForgotPasswordComponent } from '../components/forgot-password/forgot-password.component';
 import { StrParams } from '../common/str-params';
 import { ROUTE_LOGIN } from '../common/routes';
-import { UserService } from '../entities/user/user.service';
 import { DialogService } from '../lib-dialog/dialog.service';
+import { PanelForgotPasswordComponent } from '../lib-forgot-password/panel-forgot-password/panel-forgot-password.component';
+import { ProfileService } from '../lib-profile/profile.service';
+import { HttpErrorUtil } from '../utils/http-error.util';
 
 @Component({
-  selector: 'app-pg-forgot-password',
-  standalone: true,
-  imports: [CommonModule, TranslateModule, ForgotPasswordComponent],
-  templateUrl: './pg-forgot-password.component.html',
-  styleUrls: ['./pg-forgot-password.component.scss'],
-  encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-pg-forgot-password',
+    standalone: true,
+    imports: [CommonModule, TranslatePipe, PanelForgotPasswordComponent],
+    templateUrl: './pg-forgot-password.component.html',
+    styleUrl: './pg-forgot-password.component.scss',
+    encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PgForgotPasswordComponent {
-  public isDisabledSubmit = false;
-  public errMsgList: string[] = [];
+    public isDisabledSubmit = false;
+    public errMsgs: string[] = [];
 
-  private defaultError: string;
-
-  constructor(
-    private changeDetector: ChangeDetectorRef,
-    private router: Router,
-    private translate: TranslateService,
-    private dialogService: DialogService,
-    private userService: UserService
-  ) {
-    this.defaultError = this.translate.instant('error.server_api_call');
-  }
-  
-  // ** Public API **
-
-  public doResend(params: StrParams): void {
-    if (!params) {
-      return;
-    }
-    const email: string = params['email'] || "";
-
-    if (!email) {
-      return;
+    constructor(
+        private changeDetector: ChangeDetectorRef,
+        private router: Router,
+        private translate: TranslateService,
+        private dialogService: DialogService,
+        private profileService: ProfileService
+    ) {
     }
 
-    this.isDisabledSubmit = true;
-    this.errMsgList = [];
-    this.userService.recovery(email)
-      .then(() => {
-        const appName = this.translate.instant('app_name');
-        const title = this.translate.instant('forgot-password.dialog_title', { app_name: appName });
-        const message = this.translate.instant('forgot-password.dialog_message', { value: email });
-        this.dialogService.openConfirmation(message, title, null, 'buttons.ok').then(() => {
-          this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true });
-        });
-      })
-      .catch((error: HttpErrorResponse) => {
-        this.errMsgList = AppErrorUtil.handleError(error, this.defaultError, this.translate);
-      })
-      .finally(() => {
-        this.isDisabledSubmit = false;
-        this.changeDetector.markForCheck();
-      });
-  }
+    // ** Public API **
 
-  // ** Private API **
+    public doResend(params: StrParams): void {
+        if (!params) {
+            return;
+        }
+        const email: string = params['email'] || "";
+
+        if (!email) {
+            return;
+        }
+
+        this.isDisabledSubmit = true;
+        this.errMsgs = [];
+        this.profileService.recovery(email)
+            .then(() => {
+                const appName = this.translate.instant('app.name');
+                const title = this.translate.instant('pg-forgot-password.dialog_title', { appName: appName });
+                const message = this.translate.instant('pg-forgot-password.dialog_message', { value: email });
+                this.dialogService.openConfirmation(message, title, { btnNameAccept: 'buttons.ok' }).then(() => {
+                    window.setTimeout(() => this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true }), 0);
+                });
+            })
+            .catch((error: HttpErrorResponse) => {
+                this.errMsgs = HttpErrorUtil.getMsgs(error);
+            })
+            .finally(() => {
+                this.isDisabledSubmit = false;
+                this.changeDetector.markForCheck();
+            });
+    }
+
+    // ** Private API **
 }

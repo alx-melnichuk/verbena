@@ -1,0 +1,26 @@
+/*# sourceURL=field-descript.component.scss */
+
+app-field-descript {
+    display: block;
+
+    &[wd100] {
+        width: 100%;
+    }
+
+    &[hg100] {
+        height: 100%;
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
+
+    .mat-form-field-infix {
+        line-height: 20px;
+    }
+
+    &[no-resize] textarea {
+        resize: none;
+    }
+}

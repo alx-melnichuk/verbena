@@ -1,19 +1,80 @@
 /*# sourceURL=styles.scss */
+
+// Custom Theming for Angular Material
+// For more information: https://material.angular.io/guide/theming
+@use '@angular/material' as mat;
+// Plus imports for other components in your app.
+
+// Include the common styles for Angular Material. We include this here so that you only
+// have to load a single css file for Angular Material in your app.
+// Be sure that you only ever include this mixin once!
+@include mat.core();
+
+// Define the theme object.
+$verbena-theme: mat.define-theme((color: ( // 
+                theme-type: light,
+                // theme-type: dark,
+
+                primary : mat.$azure-palette, // 1p
+                tertiary: mat.$orange-palette, // 1t
+
+                // primary : mat.$cyan-palette, // 2p
+                // tertiary: mat.$orange-palette, // 2t
+
+                // primary : mat.$violet-palette, // 3p
+                // tertiary: mat.$chartreuse-palette, // 3t
+
+                // primary : mat.$orange-palette, // 4p
+                // tertiary: mat.$magenta-palette, // 4t
+
+                // primary : mat.$magenta-palette, // 5p
+                // tertiary: mat.$cyan-palette, // 5t
+
+                use-system-variables: true, // Added
+            ),
+            typography: (use-system-variables: true), // Added
+            density: (scale: 0)));
+
+// Include theme styles for core and each component used in your app.
+// Alternatively, you can import and @include the theme mixins for each component
+// that you are using.
+:root {
+    @include mat.all-component-themes($verbena-theme);
+    @include mat.system-level-colors($verbena-theme); // Added
+    @include mat.system-level-typography($verbena-theme); // Added
+}
+
+// Comment out the line below if you want to use the pre-defined typography utility classes.
+// For more information: https://material.angular.io/guide/typography#using-typography-styles-in-your-application.
+// @include mat.typography-hierarchy($verbena-theme);
+
+// Comment out the line below if you want to use the deprecated `color` inputs.
+// @include mat.color-variants-backwards-compatibility($verbena-theme);
 /* You can add global styles to this file, and also import other style files */
 
-@import './styles-colors.scss';
-@import './styles-sme.scss';
 
-html,
+@import './styles-theme.scss';
+@import './styles-mdc.scss';
+
+html {
+    font-family: Roboto, 'Helvetica Neue', sans-serif;
+    height: 100%;
+    line-height: 1.5;
+    // --scrollbarBG: rgb(207 216 220 / 20%);
+    // --thumbBG: #90a4ae;
+    // scrollbar-width: thin;
+    // scrollbar-color: var(--thumbBG) var(--scrollbarBG);
+}
+
 body {
-  --scrollbarBG: rgb(207 216 220 / 20%);
-  --thumbBG: #90a4ae;
-  box-sizing: border-box;
-  font-family: Roboto, 'Helvetica Neue', sans-serif;
-  font-size: 14px;
-  height: 100%;
-  line-height: 1.5;
-  margin: 0;
+    height: 100%;
+    margin: 0;
+    -webkit-text-size-adjust: 100% !important;
+    -ms-text-size-adjust: 100% !important;
+    -webkit-font-smoothing: antialiased !important;
+    // Define the default background color and text color.
+    background: var(--sys-surface);
+    color: var(--sys-on-surface);
 }
 
 h1,
@@ -22,42 +83,32 @@ h3,
 h4,
 h5,
 h6 {
-  margin: 8px 0;
+    margin: 8px 0;
 }
 
 p {
-  margin: 0;
+    margin: 0;
 }
 
-a,
-a:visited,
+a[no-decor],
+a:visited[no-decor],
+a:hover[no-decor] {
+    text-decoration: none;
+}
+
+a {
+    text-decoration: none;
+}
+
+// Underline when hovering over a link.
 a:hover {
-  color: #1976d2;
-  text-decoration: none;
+    text-decoration: underline;
 }
 
-a:hover {
-  color: #125699;
-}
-
-.global-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: var(--thumbBG) var(--scrollbarBG);
-  &::-webkit-scrollbar {
-    width: 9px;
-    height: 9px;
-  }
-  &::-webkit-scrollbar-track {
-    background: var(--scrollbarBG);
-  }
-  &::-webkit-scrollbar-thumb {
-    background-color: var(--thumbBG);
-    border-radius: 6px;
-    border: 3px solid var(--scrollbarBG);
-  }
-}
-
-// old
-// .spacer {
-//   flex: 1;
+// .global-scroll {
+//   scrollbar-width: thin;
+//   scrollbar-color: var(--thumbBG) var(--scrollbarBG);
+//   &::-webkit-scrollbar { width: 9px; height: 9px; }
+//   &::-webkit-scrollbar-track { background: var(--scrollbarBG); }
+//   &::-webkit-scrollbar-thumb { background-color: var(--thumbBG); border-radius: 6px; border: 3px solid var(--scrollbarBG); }
 // }

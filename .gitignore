@@ -3,6 +3,7 @@
 backend/debug/
 backend/target/
 backend/.env
+backend/.env_test
 
 # Remove Cargo.lock from gitignore if creating an executable, leave it for libraries
 # More information here https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html
@@ -19,6 +20,12 @@ backend/static
 
 # SSL certificate and key files.
 backend/*.pem
+
+# Directory of all images (stream logos, etc.).
+backend/imgs/
+
+# temporary upload directory
+backend/tmp/
 
 
 # See http://help.github.com/ignore-files/ for more about ignoring files.

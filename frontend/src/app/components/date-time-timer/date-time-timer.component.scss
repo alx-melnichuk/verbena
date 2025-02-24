@@ -1,0 +1,61 @@
+/*# sourceURL=date-time-timer.component.scss */
+
+app-date-time-timer {
+    display: block;
+    container: cnt-d-t-timer / inline-size;
+    letter-spacing: var(--dtt-letter-spacing, 0px);
+
+    &>[dtt-box] {
+        display: inline-flex;
+        justify-content: var(--dtt-box-justify-content, flex-end);
+        overflow: hidden;
+        width: calc(2ch + 3 * var(--dtt-letter-spacing, 0px));
+    }
+
+    &>[dtt-spr] {
+        padding: 0px 0.25em;
+    }
+
+    &>[dtt-days]::after {
+        counter-reset: dtt-days-cnr var(--dtt-days);
+        content: counter(dtt-days-cnr);
+    }
+
+    &>[dtt-label-days] {
+        display: inline-block;
+        padding: 0px 0.25em;
+    }
+
+    &>[dtt-hr]::after {
+        counter-reset: dtt-hours-cnr var(--dtt-hours);
+        content: var(--dtt-leading-zero, '0') counter(dtt-hours-cnr);
+    }
+
+    &>[dtt-min]::after {
+        counter-reset: dtt-minutes-cnr var(--dtt-minutes);
+        content: var(--dtt-leading-zero, '0') counter(dtt-minutes-cnr);
+    }
+
+    &>[dtt-sec] {
+        counter-reset: dtt-s-cnr var(--dtt-sec);
+    }
+
+    &[is-active] {
+        &[animat1]>[dtt-sec]::before {
+            content: var(--dtt-leading-zero, '0') counter(dtt-s-cnr);
+            animation: anm-dtt-seconds 60s linear 0s 1;
+        }
+
+        &[animat2]>[dtt-sec]::after {
+            content: var(--dtt-leading-zero, '0') counter(dtt-s-cnr);
+            animation: anm-dtt-seconds 60s linear 0s 1;
+        }
+    }
+
+    &:not([is-active]) {
+        &>[dtt-sec]::after {
+            content: var(--dtt-leading-zero, '0') counter(dtt-s-cnr);
+        }
+    }
+
+}

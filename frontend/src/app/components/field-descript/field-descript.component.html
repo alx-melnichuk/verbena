@@ -1,0 +1,22 @@
+<ng-container [formGroup]="formGroup">
+  <mat-form-field
+    appearance="outline"
+    color="primary">
+    <mat-label>{{ label | translate }}</mat-label>
+    <textarea
+      class="global-scroll"
+      matInput
+      autocomplete="new-password"
+      autocapitalize="off"
+      formControlName="description"
+      [required]="isRequired"
+      [attr.maxlength]="maxLen > 0 ? maxLen + 1 : undefined"
+      [attr.spellcheck] ="!!isSpellcheck"
+      [rows]="numberRows"
+      (input)="onChange(formControl.value)"
+      (blur)="onTouched()">
+    </textarea>
+    <mat-hint>{{ hint | translate }}</mat-hint>
+    <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
+  </mat-form-field>
+</ng-container>

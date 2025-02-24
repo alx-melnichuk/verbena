@@ -1,0 +1,159 @@
+<div class="pp-container">
+
+  <div class="pp-content pp-first">
+    <form novalidate class="pp-form" [formGroup]="formGroupProfile">
+    
+      <div class="pp-title">{{ 'panel-profile.title_profile' | translate }}</div>
+
+      <div pp-mr-tp-0_5 class="pp-avatar">
+        <app-field-image-and-upload hg100
+            formControlName="avatar"
+            [hint]="('field-file-upload.supported_file_types' | translate : { 'validTypes': availableFileTypes })
+              + ' ' + ('field-file-upload.upload_up_to' | translate : { 'maxFileSize': availableMaxFileSize })"
+            [accepts]="accepts"
+            label="panel-profile.label_avatar"
+            [maxSize]="maxSize"
+            (addFile)="updateErrMsgsProfile();addAvatarFile($event);"
+            (deleteFile)="updateErrMsgsProfile();deleteAvatarFile();">
+        </app-field-image-and-upload>
+      </div>
+    
+      <app-uniqueness-check pp-mr-tp-1
+        #uniquenessCheckNickname="appUniquenessCheck"
+        [debounceDelay]="debounceDelay"
+        [checkUniquenessFn]="checkUniquenessNickname">
+        <app-field-nickname wd100
+          formControlName="nickname"
+          [isRequired]="true"
+          label="field-nickname.label"
+          hint="field-nickname.nickname_hint"
+          [errorMsg]="uniquenessCheckNickname.isUniquenessError ? 'Conflict.nickname_already_use' : undefined"
+          (input)="updateErrMsgsProfile();
+            uniquenessCheckNickname.checkParameter(cntlsProfile.nickname.value);">
+        </app-field-nickname>
+      </app-uniqueness-check>
+    
+      <app-uniqueness-check pp-mr-tp-1
+        #uniquenessCheckEmail="appUniquenessCheck"
+        [debounceDelay]="debounceDelay"
+        [checkUniquenessFn]="checkUniquenessEmail">
+        <app-field-email wd100 class="pp-err-pd"
+          formControlName="email"
+          [isRequired]="true"
+          label="field-email.label"
+          [errorMsg]="uniquenessCheckEmail.isUniquenessError ? 'Conflict.email_already_use' : undefined"
+          (input)="updateErrMsgsProfile();
+            uniquenessCheckEmail.checkParameter(cntlsProfile.email.value);">
+        </app-field-email>
+      </app-uniqueness-check>
+        
+      <div class="pp-theme-locale">
+        <app-field-theme wd100 class="pp-theme"
+          formControlName="theme"
+          [isRequired]="false"
+          (change)="updateErrMsgsProfile();">
+        </app-field-theme>
+        <app-field-locale wd100 class="pp-locale"
+          formControlName="locale"
+          [isRequired]="false"
+          (change)="updateErrMsgsProfile();">
+        </app-field-locale>
+      </div>
+    
+      <app-field-descript wd100 pp-mr-tp-0_5 class="pp-err-pd"
+        formControlName="descript"
+        [isRequired]="false"
+        label="panel-profile.descript"
+        [numberRows]="5"
+        (input)="updateErrMsgsProfile();">
+      </app-field-descript>
+        
+      <div class="pp-actions">
+        <button mat-stroked-button color="primary"
+          class="app-infix app-ordinary pp-btn-save"
+          [disabled]="formGroupProfile.pristine || formGroupProfile.invalid || isDisabledSubmit"
+          (click)="saveProfile(formGroupProfile)">
+          <svg class="pp-svg-diskette-bin">
+            <use href="assets/icons/lib-profile/panel-profile/diskette-bin.svg#diskette-bin"></use>
+          </svg>
+          <span>{{ 'panel-profile.btn_save_profile' | translate }}</span>
+        </button>
+      </div>
+    </form>
+
+    <div class="mat-mdc-form-field-subscript-wrapper">
+      @for (errMsg of errMsgsProfile; track errMsg) {
+        <mat-error>{{ errMsg | translate }}</mat-error>
+      }   
+    </div>
+  </div>
+      
+  <div class="pp-content">
+    <form novalidate class="pp-form" [formGroup]="formGroupPassword">
+
+      <div class="pp-title">{{ 'panel-profile.title_change_password' | translate }}</div>
+
+      <app-field-password wd100 pp-mr-tp-0_5
+        formControlName="password"
+        [isRequired]="isRequiredPassword"
+        label="panel-profile.current_password"
+        hint="field-password.password_hint"
+        (input)="updateErrMsgsPassword();
+          statePassword(cntlsPassword.password.value);
+          checkPassword(formGroupPassword);">
+      </app-field-password>
+
+      <app-field-password wd100 pp-mr-tp-1
+        formControlName="new_password"
+        [isRequired]="isRequiredPassword"
+        label="panel-profile.new_password"
+        hint="field-password.password_hint"
+        (input)="updateErrMsgsPassword();
+          statePassword(cntlsPassword.password.value || cntlsPassword.new_password.value);
+          checkPassword(formGroupPassword);">
+      </app-field-password>
+
+      <div pp-mr-tp-1 class="pp-actions">
+        <button mat-stroked-button color="primary"
+          class="app-infix app-ordinary"
+          [disabled]="formGroupPassword.pristine || formGroupPassword.invalid || isDisabledSubmit"
+          (click)="setNewPassword(formGroupPassword)">
+          <span>{{ 'panel-profile.btn_set_password' | translate }}</span>
+        </button>
+      </div>
+    </form>
+
+    <div class="mat-mdc-form-field-subscript-wrapper">
+      @for (errMsg of errMsgsPassword; track errMsg) {
+        <mat-error>{{ errMsg | translate }}</mat-error>
+      }   
+    </div>
+  </div>
+
+  <div class="pp-content">
+    <div class="pp-form">
+
+      <div class="pp-title">{{ 'panel-profile.title_delete_account' | translate }}</div>
+      <div pp-mr-tp-0_5>
+        <span>{{ 'panel-profile.note_before_deleting_account' | translate }}</span>
+      </div>
+
+      <div pp-mr-tp-1 class="pp-actions">
+        <button mat-stroked-button color="primary"
+          class="app-infix app-ordinary"
+          [disabled]="isDisabledSubmit"
+          (click)="removeAccount()">
+          <span>{{ 'panel-profile.btn_delete_account' | translate }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="mat-mdc-form-field-subscript-wrapper">
+      @for (errMsg of errMsgsAccount; track errMsg) {
+        <mat-error>{{ errMsg | translate }}</mat-error>
+      }   
+    </div>
+  </div>
+
+</div>
+

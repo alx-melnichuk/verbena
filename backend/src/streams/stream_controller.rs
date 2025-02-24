@@ -1,0 +1,1666 @@
+use std::{borrow::Cow, ops::Deref, path};
+
+use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
+use actix_web::{delete, get, post, put, web, HttpResponse};
+use chrono::{DateTime, Duration, SecondsFormat::Millis, Utc};
+use log;
+use mime::IMAGE;
+use serde_json::{self, json};
+use utoipa;
+
+use crate::cdis::coding;
+use crate::errors::AppError;
+use crate::extractors::authentication::{Authenticated, RequireAuth};
+use crate::loading::dynamic_image;
+use crate::settings::err;
+#[cfg(not(feature = "mockdata"))]
+use crate::streams::stream_orm::impls::StreamOrmApp;
+#[cfg(feature = "mockdata")]
+use crate::streams::stream_orm::tests::StreamOrmApp;
+use crate::streams::{
+    config_strm::{self, ConfigStrm},
+    stream_models::{
+        self, CreateStreamInfoDto, ModifyStream, ModifyStreamInfoDto, SearchStreamEventDto, SearchStreamInfoDto,
+        SearchStreamPeriodDto, StreamConfigDto, StreamEventPageDto, StreamInfoDto, StreamInfoPageDto, StreamState,
+        ToggleStreamStateDto,
+    },
+    stream_orm::StreamOrm,
+};
+use crate::users::user_models::UserRole;
+use crate::utils::parser;
+use crate::validators::{self, msg_validation, ValidationChecks, Validator};
+
+// Use: post_stream, put_stream, delete_stream
+pub const ALIAS_LOGO_FILES_DIR: &str = "/logo";
+
+// ** Section: Stream Get **
+
+pub const PERIOD_MAX_NUMBER_DAYS: u16 = 65;
+// 406 Not Acceptable - The finish date is less than the start date.
+pub const MSG_FINISH_LESS_START: &str = "finish_date_less_start_date";
+// 413 Content Too Large - The finish date of the search period exceeds the limit.
+pub const MSG_FINISH_EXCEEDS_LIMIT: &str = "finish_date_exceeds_limit";
+// 403 Access denied - insufficient user rights.
+pub const MSG_GET_LIST_OTHER_USER_STREAMS: &str = "get_list_other_users_streams";
+// 403 Access denied - insufficient user rights.
+pub const MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS: &str = "get_list_other_users_event_streams";
+// 403 Access denied - insufficient user rights.
+pub const MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD: &str = "get_period_other_users_streams";
+
+// ** Section: Stream Post **
+// ** Section: Stream Put **
+// 406 Not acceptable - Error deserializing field tag. // Use: post_stream, put_stream
+pub const MSG_INVALID_FIELD_TAG: &str = "invalid_field_tag";
+
+// ** Section: Stream Put state **
+
+// 406 Not acceptable - Not acceptable to go from old_state to new_state.
+pub const MSG_INVALID_STREAM_STATE: &str = "invalid_stream_state";
+// 409 Conflict - Exist is an active stream.
+pub const MSG_EXIST_IS_ACTIVE_STREAM: &str = "exist_is_active_stream";
+
+// ** Section: Stream Delete **
+// ** **
+
+pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
+    |config: &mut web::ServiceConfig| {
+        //     GET /api/streams/{id}
+        config
+            .service(get_stream_by_id)
+            // GET /api/streams
+            .service(get_streams)
+            // GET /api/streams_config
+            .service(get_stream_config)
+            // GET /api/streams_events
+            .service(get_streams_events)
+            // GET /api/streams_period
+            .service(get_streams_period)
+            // POST /api/streams
+            .service(post_stream)
+            // PUT /api/streams/toggle/{id}
+            .service(put_toggle_state)
+            // PUT /api/streams/{id}
+            .service(put_stream)
+            // DELETE /api/streams/{id}
+            .service(delete_stream);
+    }
+}
+/** Delete a file if its path starts with the specified alias. */
+pub fn remove_image_file(path_file_img: &str, alias_file_img: &str, img_file_dir: &str, err_msg: &str) {
+    // If the image file name starts with the specified alias, then delete the file.
+    if path_file_img.len() > 0 && (alias_file_img.len() == 0 || path_file_img.starts_with(alias_file_img)) {
+        let avatar_name_full_path = path_file_img.replace(alias_file_img, img_file_dir);
+        remove_file_and_log(&avatar_name_full_path, err_msg);
+    }
+}
+pub fn remove_file_and_log(file_name: &str, msg: &str) {
+    if file_name.len() > 0 {
+        let res_remove = std::fs::remove_file(file_name);
+        if let Err(err) = res_remove {
+            log::error!("{} remove_file({}): error: {:?}", msg, file_name, err);
+        }
+    }
+}
+pub fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
+    format!("{}_{}", user_id, coding::encode(date_time, 1))
+}
+
+// ** Section: Stream Get **
+
+/// get_stream_by_id
+///
+/// Search for a stream by his ID.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/streams/1
+/// ```
+///
+/// Return the found specified stream (`StreamInfoDto`) with status 200 or 204 (no content) if the stream is not found.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "A stream with the specified ID was found.", body = StreamInfoDto),
+        (status = 204, description = "The stream with the specified ID was not found."),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/streams/2a`", 
+            body = AppError, example = json!(AppError::range_not_satisfiable416(
+                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    params(("id", description = "Unique stream ID.")),
+    security(("bearer_auth" = [])),
+)]#[rustfmt::skip]
+#[get("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn get_stream_by_id(
+    authenticated: Authenticated,
+    stream_orm: web::Data<StreamOrmApp>,
+    request: actix_web::HttpRequest,
+) -> actix_web::Result<HttpResponse, AppError> {
+    // Get current user details.
+    let profile = authenticated.deref();
+    let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
+
+    // Get data from request.
+    let id_str = request.match_info().query("id").to_string();
+    let id = parser::parse_i32(&id_str).map_err(|e| {
+        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        AppError::range_not_satisfiable416(&message) // 416
+    })?;
+
+    let res_data = web::block(move || {
+        // Get 'stream' by id.
+        let res_data = stream_orm
+            .find_stream_by_params(Some(id), opt_user_id, None, true, &[])
+            .map_err(|e| {
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e) // 507
+            });
+        res_data
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string()) // 506
+    })?;
+
+    let opt_data = match res_data { Ok(v) => v, Err(e) => return Err(e) };
+
+    let opt_stream_tag_dto = if let Some((stream, stream_tags)) = opt_data {
+        let streams: Vec<stream_models::Stream> = vec![stream];
+        // Merge a "stream" and a corresponding list of "tags".
+        let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, profile.user_id);
+        list.into_iter().nth(0)
+    } else {
+        None
+    };
+
+    if let Some(stream_tag_dto) = opt_stream_tag_dto {
+        Ok(HttpResponse::Ok().json(stream_tag_dto)) // 200
+    } else {
+        Ok(HttpResponse::NoContent().finish()) // 204
+    }
+}
+
+/// get_streams
+///
+/// Get a list of your streams (page by page).
+///
+/// Request structure:
+/// ```text
+/// {
+///   userId?: number,                      // optional
+///   live?: boolean,                       // optional
+///   futureStarttime?: DateTime<Utc>,      // optional
+///   pastStarttime?: DateTime<Utc>,        // optional
+///   orderColumn?: ["starttime", "title"], // optional
+///   orderDirection?: ["asc", "desc"],     // optional
+///   page?: number,                        // optional
+///   limit?: number,                       // optional
+/// }
+/// Where:
+/// "userId" - user identifier (current default user);
+/// "live" - sign of a "live" stream ("state" = ["preparing", "started", "paused"]);
+/// "futureStarttime" - get future streams with a "starttime" greater than or equal to the specified one (in Utc-format);
+/// "pastStarttime" - get past streams with a "starttime" greater than or equal to the specified one (in Utc-format);
+/// "orderColumn" - sorting column ["starttime" - (default), "title"];
+/// "orderDirection" - sort order ["asc" - ascending (default), "desc" - descending];
+/// "page" - page number, stratified from 1 (1 by default);
+/// "limit" - number of records on the page (5 by default);
+/// ```
+/// It is recommended to enter the date and time in ISO8601 format.
+/// ```text
+/// var d1 = new Date();
+/// { futureStarttime: d1.toISOString() } // "2020-01-20T20:10:57.000Z"
+/// ```
+/// It is allowed to specify the date and time with a time zone value.
+/// ```text
+/// { "futureStarttime": "2020-01-20T22:10:57+02:00" }
+/// ```
+/// 
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/streams?orderColumn=starttime&orderDirection=asc&page=1&limit=5
+/// ```
+/// Could be called with all fields with the next curl.
+/// Request future streams that start on or after a specified date (specify current date and time in Utc).
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/streams?userId=1&futureStarttime=2020-02-02T08:00:00.000Z&page=1&limit=5
+/// ```
+/// 
+/// Could be called with all fields with the next curl.
+/// Request past streams that started before the specified date (specify the current date and time in Utc).
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/streams?userId=1&pastStarttime=2020-02-02T08:00:00.000Z&page=1&limit=5
+/// ```
+/// 
+/// Response structure:
+/// ```text
+/// {
+///   list: [StreamInfoDto],
+///   limit: number,
+///   count: number,
+///   page: number,
+///   pages: number,
+/// }
+/// Where:
+/// "list"  - array of streams;
+/// "limit" - number of records on the page;
+/// "count" - total number of records;
+/// "page"  - current page number (stratified from 1);
+/// "pages" - total pages with a given number of records on the page;
+/// ```
+/// 
+/// Return found data on streams (`StreamInfoPageDto`) with status 200.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Result of the stream request.", body = StreamInfoPageDto),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED,
+                MSG_GET_LIST_OTHER_USER_STREAMS, "curr_user_id: 1, user_id: 2")))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
+#[rustfmt::skip]
+#[get("/api/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn get_streams(
+    authenticated: Authenticated,
+    stream_orm: web::Data<StreamOrmApp>,
+    query_params: web::Query<SearchStreamInfoDto>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    // Get current user details.
+    let profile = authenticated.deref();
+
+    // Get search parameters.
+    let search_stream_info_dto: SearchStreamInfoDto = query_params.into_inner();
+
+    let page: u32 = search_stream_info_dto.page.unwrap_or(stream_models::SEARCH_STREAM_PAGE);
+    let limit: u32 = search_stream_info_dto.limit.unwrap_or(stream_models::SEARCH_STREAM_LIMIT);
+    let search_stream = stream_models::SearchStream::convert(search_stream_info_dto, profile.user_id);
+
+    if search_stream.user_id != profile.user_id && profile.role != UserRole::Admin {
+        let text = format!("curr_user_id: {}, user_id: {}", profile.user_id, search_stream.user_id);
+        #[rustfmt::skip]
+        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS, &text);
+        log::error!("{}: {}", err::CD_FORBIDDEN, &message);
+        return Err(AppError::forbidden403(&message)); // 403
+    }
+
+    let res_data = web::block(move || {
+        // A query to obtain a list of "streams" based on the specified search parameters.
+        let res_data =
+            stream_orm.find_streams_by_pages(search_stream, true).map_err(|e| {
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            });
+        res_data
+        })
+        .await
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            AppError::blocking506(&e.to_string())
+        })?;
+        
+    let (count, streams, stream_tags) = match res_data { Ok(v) => v, Err(e) => return Err(e) };
+
+    // Merge a "stream" and a corresponding list of "tags".
+    let list = StreamInfoDto::merge_streams_and_tags(&streams, &stream_tags, profile.user_id);
+
+    let pages: u32 = count / limit + if (count % limit) > 0 { 1 } else { 0 };
+
+    let result = StreamInfoPageDto { list, limit, count, page, pages };
+
+    Ok(HttpResponse::Ok().json(result)) // 200
+}
+
+/// get_streams_config
+///
+/// Get information about the image configuration settings in the stream (`StreamConfigDto`).
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/streams_config
+/// ```
+///
+/// Returns the configuration settings for the stream image (`StreamConfigDto`) with status 200.
+///
+/// The structure is returned:
+/// ```text
+/// {
+///   logo_max_size?: Number,      // optional - Maximum size for logo files;
+///   logo_valid_types: String[],  //          - List of valid input mime types for logo files;
+/// //                                         ["image/bmp", "image/gif", "image/jpeg", "image/png"]
+///   logo_ext?: String,           // optional - Logo files will be converted to this MIME type;
+/// //                                  Valid values: "image/bmp", "image/gif", "image/jpeg", "image/png"
+///   logo_max_width?: Number,     // optional - Maximum width of logo image after saving;
+///   logo_max_height?: Number,    // optional - Maximum height of logo image after saving;
+/// }
+/// ```
+///
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Get information about the image configuration settings in the stream",
+            body = StreamConfigDto,
+            examples(
+            ("max_config" = (summary = "maximum configuration", description = "Maximum configuration for logo image.",
+                value = json!(StreamConfigDto::new(
+                    Some(2*1024*1024), ConfigStrm::image_types(), Some(ConfigStrm::image_types()[0].clone()), Some(512), Some(512)))
+            )),
+            ("min_config" = (summary = "minimum configuration", description = "Minimum configuration for logo image.",
+                value = json!(StreamConfigDto::new(None, ConfigStrm::image_types(), None, None, None))
+            )), ),
+        ),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[get("/api/streams_config", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[rustfmt::skip]
+pub async fn get_stream_config(config_strm: web::Data<ConfigStrm>) -> actix_web::Result<HttpResponse, AppError> {
+    let cfg_strm = config_strm;
+    let max_size = if cfg_strm.strm_logo_max_size > 0 { Some(cfg_strm.strm_logo_max_size) } else { None };
+    let valid_types = cfg_strm.strm_logo_valid_types.clone();
+    let ext = cfg_strm.strm_logo_ext.clone();
+    let max_width = if cfg_strm.strm_logo_max_width > 0 { Some(cfg_strm.strm_logo_max_width) } else { None };
+    let max_height = if cfg_strm.strm_logo_max_height > 0 { Some(cfg_strm.strm_logo_max_height) } else { None };
+    // Get configuration data.
+    let stream_config_dto = StreamConfigDto::new(max_size, valid_types, ext, max_width, max_height);
+
+    Ok(HttpResponse::Ok().json(stream_config_dto)) // 200
+}
+
+/// get_streams_events
+///
+/// Get a list with a brief description of your streams (page by page).
+///
+/// Request structure:
+/// ```text
+/// {
+///   userId?: number,           // optional
+///   starttime?: DateTime<Utc>, // optional
+///   page?: number,             // optional
+///   limit?: number,            // optional
+/// }
+/// Where:
+/// "userId" - user identifier (current default user);
+/// "starttime" - "starttime" - date and time (in Utc-format) to search for streams for this date;
+/// "page" - page number, stratified from 1 (1 by default);
+/// "limit" - number of records on the page (10 by default);
+/// 
+/// It is recommended to enter the date and time in ISO8601 format.
+/// ```text
+/// var d1 = new Date();
+/// { starttime: d1.toISOString() } // "2020-01-20T20:10:57.000Z"
+/// ```
+/// It is allowed to specify the date and time with a time zone value.
+/// ```text
+/// { "starttime": "2020-01-20T22:10:57+02:00" }
+/// ```
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/streams_events? \
+///     starttime=2030-02-02T08:00:00.000Z&page=1
+/// ```
+/// Could be called with all fields with the next curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/streams_events?userId=1 \
+///     &starttime=2030-02-02T08:00:00.000Z&page=1&limit=5
+/// ```
+/// Response structure:
+/// ```text
+/// {
+///   list: [StreamEventDto],
+///   limit: number,
+///   count: number,
+///   page: number,
+///   pages: number,
+/// }
+/// Where:
+/// "list"  - array of short streams;
+/// "limit" - number of records on the page;
+/// "count" - total number of records;
+/// "page"  - current page number (stratified from 1);
+/// "pages" - total pages with a given number of records on the page;
+/// 
+/// Return found data with short streams (`StreamEventPageDto`) with status 200.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Result of the short stream request.", body = StreamEventPageDto),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED,
+                MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, "curr_user_id: 1, user_id: 2")))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
+#[rustfmt::skip]
+#[get("/api/streams_events", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn get_streams_events(
+    authenticated: Authenticated,
+    stream_orm: web::Data<StreamOrmApp>,
+    query_params: web::Query<SearchStreamEventDto>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    // Get current user details.
+    let profile = authenticated.deref();
+
+    // Get search parameters.
+    let search_stream_event_dto: SearchStreamEventDto = query_params.into_inner();
+
+    let page: u32 = search_stream_event_dto.page.unwrap_or(stream_models::SEARCH_STREAM_EVENT_PAGE);
+    let limit: u32 = search_stream_event_dto.limit.unwrap_or(stream_models::SEARCH_STREAM_EVENT_LIMIT);
+    let search_event = stream_models::SearchStreamEvent::convert(search_stream_event_dto, profile.user_id);
+
+    if search_event.user_id != profile.user_id && profile.role != UserRole::Admin {
+        let text = format!("curr_user_id: {}, user_id: {}", profile.user_id, search_event.user_id);
+        #[rustfmt::skip]
+        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
+        log::error!("{}: {}", err::CD_FORBIDDEN, &message);
+        return Err(AppError::forbidden403(&message)); // 403
+    }
+    
+    let res_data = web::block(move || {
+        // Find for an entity (stream event) by SearchStreamEvent.
+        let res_data =
+            stream_orm.find_stream_events_by_pages(search_event).map_err(|e| {
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            });
+        res_data
+        })
+        .await
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            AppError::blocking506(&e.to_string())
+        })?;
+
+    let (count, streams) = match res_data { Ok(v) => v, Err(e) => return Err(e) };
+
+    let list = streams.into_iter().map(|v| stream_models::StreamEventDto::from(v)).collect();
+
+    let pages: u32 = count / limit + if (count % limit) > 0 { 1 } else { 0 };
+
+    let result = StreamEventPageDto { list, limit, count, page, pages };
+
+    Ok(HttpResponse::Ok().json(result)) // 200
+}
+
+/// get_streams_period
+///
+/// Request structure:
+/// ```text
+/// {
+///   userId?: number,       // optional
+///   start: DateTime<Utc>,  // optional
+///   finish: DateTime<Utc>, // optional
+/// }
+/// Where:
+/// "userId" - user identifier (current default user);
+/// "start" start date of the period (in Utc-format);
+/// "finish" end date of the period (in Utc-format);
+/// 
+/// It is recommended to enter the date and time in ISO8601 format.
+/// ```text
+/// var d1 = new Date();
+/// { start: d1.toISOString() } // "2020-01-20T20:10:57.000Z"
+/// ```
+/// It is allowed to specify the date and time with a time zone value.
+/// ```text
+/// { "start": "2020-01-20T22:10:57+02:00" }
+/// 
+/// The maximum period value (the difference between the "finish" date and the "start" date) is 65 days.
+/// 
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/streams_period? \
+///     start=2030-03-01T08:00:00.000Z&finish=2030-03-31T08:00:00.000Z
+/// ```
+/// Could be called with all fields with the next curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/streams_period?userId=1 \
+///     &start=2030-03-01T08:00:00.000Z&finish=2030-03-31T08:00:00.000Z
+/// ```
+/// Return found dates that contain streams ([DateTime<Utc>]) with status 200.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Result is an array with dates containing streams.", body = Vec<DateTime<Utc>>, example = 
+            json!([ "2030-04-01T08:00:00.000Z", "2030-04-04T08:00:00.000Z", "2030-04-10T08:00:00.000Z", "2030-04-0T08:00:00.000Z" ])),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
+            example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED, 
+                MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, "curr_user_id: 1, user_id: 2")))),
+        (status = 406, description = "The finish date is less than the start date.", body = AppError,
+            example = json!(AppError::not_acceptable406(MSG_FINISH_LESS_START).add_param(Cow::Borrowed("invalidPeriod"), &serde_json::json!(
+                { "streamPeriodStart": "2030-03-02T08:00:00.000Z", "streamPeriodFinish": "2030-03-01T08:00:00.000Z" })))),
+        (status = 413, description = "The finish date of the search period exceeds the limit.", body = AppError,
+            example = json!(AppError::content_large413(MSG_FINISH_EXCEEDS_LIMIT).add_param(Cow::Borrowed("periodTooLong"), &serde_json::json!(
+                { "actualPeriodFinish": "2030-04-01T08:00:00.000Z", "maxPeriodFinish": "2030-03-10T08:00:00.000Z" 
+                , "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS })))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
+#[rustfmt::skip]
+#[get("/api/streams_period", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn get_streams_period(
+    authenticated: Authenticated,
+    stream_orm: web::Data<StreamOrmApp>,
+    query_params: web::Query<SearchStreamPeriodDto>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    // Get current user details.
+    let profile = authenticated.deref();
+
+    // Get search parameters.
+    let search_period_dto: SearchStreamPeriodDto = query_params.into_inner();
+
+    let search_period = stream_models::SearchStreamPeriod::convert(search_period_dto, profile.user_id);
+    let start = search_period.start.clone();
+    let finish = search_period.finish.clone();
+
+    if search_period.user_id != profile.user_id && profile.role != UserRole::Admin {
+        let text = format!("curr_user_id: {}, user_id: {}", profile.user_id, search_period.user_id);
+        #[rustfmt::skip]
+        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
+        log::error!("{}: {}", err::CD_FORBIDDEN, &message);
+        return Err(AppError::forbidden403(&message)); // 403
+    }
+    if finish < start {
+        let json = serde_json::json!({ "streamPeriodStart": start.to_rfc3339_opts(Millis, true)
+            , "streamPeriodFinish": finish.to_rfc3339_opts(Millis, true) });
+        log::error!("{}: {}: {}", err::CD_NOT_ACCEPTABLE, MSG_FINISH_LESS_START, json.to_string());
+        return Err(AppError::not_acceptable406(MSG_FINISH_LESS_START) // 406
+            .add_param(Cow::Borrowed("invalidPeriod"), &json));
+    }
+    let max_finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
+    if max_finish <= finish {
+        let json = serde_json::json!({ "actualPeriodFinish": finish.to_rfc3339_opts(Millis, true)
+            , "maxPeriodFinish": max_finish.to_rfc3339_opts(Millis, true), "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS });
+        log::error!("{}: {}: {}", err::CD_CONTENT_TOO_LARGE, MSG_FINISH_EXCEEDS_LIMIT, json.to_string());
+        return Err(AppError::content_large413(MSG_FINISH_EXCEEDS_LIMIT) // 413
+            .add_param(Cow::Borrowed("periodTooLong"), &json));
+    }
+
+    let res_data = web::block(move || {
+        // Find for an entity (stream period) by SearchStreamEvent.
+        let res_data =
+            stream_orm.find_streams_period(search_period).map_err(|e| {
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)    
+            });
+        res_data
+        })
+        .await
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            AppError::blocking506(&e.to_string())
+        })?;
+
+    let list: Vec<String> = match res_data {
+        Ok(v) => v.iter().map(|d| d.to_rfc3339_opts(Millis, true)).collect(),
+        Err(e) => return Err(e)
+    };
+
+    Ok(HttpResponse::Ok().json(list)) // 200
+
+}
+
+// ** Section: Stream Post **
+
+// Convert the file to another mime type.
+#[rustfmt::skip]
+pub fn convert_logo_file(path_logo_file: &str, config_strm: config_strm::ConfigStrm, name: &str) -> Result<Option<String>, String> {
+    let path: path::PathBuf = path::PathBuf::from(&path_logo_file);
+    let file_source_ext = path.extension().map(|s| s.to_str().unwrap().to_string()).unwrap();
+    let strm_logo_ext = config_strm.strm_logo_ext.clone().unwrap_or(file_source_ext);
+    // If you need to save in the specified format (img_ext.is_some()) or convert
+    // to the specified size (img_max_width > 0 || img_max_height > 0), then do the following.
+    if config_strm.strm_logo_ext.is_some()
+        || config_strm.strm_logo_max_width > 0
+        || config_strm.strm_logo_max_height > 0
+    {
+        // Convert the file to another mime type.
+        let path_file = dynamic_image::convert_file(
+            &path_logo_file,
+            &strm_logo_ext,
+            config_strm.strm_logo_max_width,
+            config_strm.strm_logo_max_height,
+        )?;
+        if !path_file.eq(&path_logo_file) {
+            remove_file_and_log(&path_logo_file, name);
+        }
+        Ok(Some(path_file))
+    } else {
+        Ok(None)
+    }
+}
+
+fn new_stream_dto(title: &str, descript: &str, starttime: &str, tag_list: &str) -> CreateStreamInfoDto {
+    #[rustfmt::skip]
+    let descript = if descript.len() > 0 { Some(descript.to_string()) } else { None };
+    // let starttime1 = if starttime.len() > 0 { Some(DateTime::parse_from_rfc3339(starttime).unwrap().with_timezone(&Utc)) } else {None};
+
+    let start = if starttime.len() > 0 { Some(starttime) } else { None };
+    let starttime = start.map(|val| DateTime::parse_from_rfc3339(val).unwrap().with_timezone(&Utc));
+
+    let tags: Vec<String> = tag_list.split(',').map(|val| val.to_string()).collect();
+
+    CreateStreamInfoDto {
+        title: title.to_string(),
+        descript,
+        starttime,
+        source: None,
+        tags,
+    }
+}
+
+#[derive(Debug, MultipartForm)]
+pub struct CreateStreamForm {
+    pub title: Text<String>,
+    pub descript: Option<Text<String>>,
+    pub starttime: Option<Text<DateTime<Utc>>>,
+    pub source: Option<Text<String>>,
+    pub tags: Text<String>,
+    pub logofile: Option<TempFile>,
+}
+
+impl CreateStreamForm {
+    pub fn convert(create_stream_form: CreateStreamForm) -> Result<(CreateStreamInfoDto, Option<TempFile>), String> {
+        let val = create_stream_form.tags.into_inner();
+        let res_tags: Result<Vec<String>, serde_json::error::Error> = serde_json::from_str(&val);
+        if let Err(err) = res_tags {
+            return Err(err.to_string());
+        }
+        let tags: Vec<String> = res_tags.unwrap();
+
+        Ok((
+            CreateStreamInfoDto {
+                title: create_stream_form.title.to_string(),
+                descript: create_stream_form.descript.map(|v| v.to_string()),
+                starttime: create_stream_form.starttime.map(|v| v.into_inner()),
+                source: create_stream_form.source.map(|v| v.to_string()),
+                tags,
+            },
+            create_stream_form.logofile,
+        ))
+    }
+}
+
+/// post_stream
+/// 
+/// Create a new stream.
+/// 
+/// Multipart/form-data is used to transfer data.
+/// 
+/// Request structure:
+/// ```text
+/// {
+///   title: String,             // required
+///   descript?: String,         // optional
+///   starttime?: DateTime<Utc>, // optional
+///   source?: String,           // optional
+///   tags: String,              // required
+///   logofile?: TempFile,       // optional
+/// }
+/// ```
+/// Where:
+/// "title" - stream title;
+/// "descript" - description of the stream;
+/// "starttime" - date and time (in Utc-format "2020-01-20T20:10:57.000Z") of the start of the stream;
+/// "source" - source value ("obs" by default) of the stream;
+/// "tags" - serialized array of string values of stream tags("['tag1','tag2']");
+/// "logofile" - attached stream image file (jpeg,gif,png,bmp);
+/// 
+/// The "starttime" field indicates the date of the future stream.
+/// And cannot contain a past period (date and time).
+/// 
+/// It is recommended to enter the date and time in ISO 8601 format.
+/// ```text
+/// var d1 = new Date();
+/// { starttime: d1.toISOString() } // "2020-01-20T20:10:57.000Z"
+/// ```
+/// It is allowed to specify the date and time with a time zone value.
+/// ```text
+/// { "starttime": "2020-01-20T22:10:57+02:00" }
+/// ```
+/// The "tags" field represents a serialized array of string values.
+/// ```text
+/// { 'tags': JSON.stringify(["tag1", "tag2"]) } // "['tag1', 'tag2']"
+/// ```
+/// One could call with following curl.
+/// ```text
+/// curl -i -X POST http://localhost:8080/api/streams -F "title=title1" -F "tags=['tag1','tag2']"
+/// ```
+/// Could be called with all fields with the next curl.
+/// ```text
+/// curl -i -X POST http://localhost:8080/api/streams -F "title=title2" -F "descript=descript2" \
+/// -F "starttime=2020-01-20T20:10:57.000Z" -F "tags=['tag1','tag2']"
+/// ```
+/// Additionally, you can specify the name of the image file.
+/// ```text
+/// curl -i -X POST http://localhost:8080/api/streams -F "title=title2" -F "descript=descript2" \
+/// -F "starttime=2020-01-20T20:10:57.000Z" -F "tags=['tag1','tag2']" -F "logofile=@image.jpg"
+/// ```
+///  
+/// Return a new stream (`StreamInfoDto`) with status 201.
+/// 
+#[utoipa::path(
+    responses(
+        (status = 201, description = "Create a new stream.", body = StreamInfoDto,
+            example = json!(new_stream_dto("Stream title", "Description of the stream.", "2020-01-20T20:10:57.000Z", "tag1,tag2")) ),
+        (status = 406, description = "Error deserializing field \"tags\". `curl -X POST http://localhost:8080/api/streams
+            -F 'title=title' -F 'tags=[\"tag\"'`",
+            body = AppError, example = json!(AppError::not_acceptable406(
+                &format!("{}; {}", MSG_INVALID_FIELD_TAG, "EOF while parsing a list at line 1 column 6")))),
+        (status = 413, description = "Invalid image file size. `curl -i -X POST http://localhost:8080/api/streams
+            -F 'title=title2'  -F 'tags=[\"tag1\"]' -F 'logofile=@image.jpg'`", body = AppError,
+            example = json!(AppError::content_large413(err::MSG_INVALID_FILE_SIZE).add_param(Cow::Borrowed("invalidFileSize"),
+                &json!({ "actualFileSize": 186, "maxFileSize": 160 })))),
+        (status = 415, description = "Uploading a file with an invalid type `svg`. `curl -i -X POST http://localhost:8080/api/streams
+            -F 'title=title3'  -F 'tags=[\"tag3\"]' -F 'logofile=@image.svg'`", body = AppError,
+            example = json!(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE).add_param(Cow::Borrowed("invalidFileType"),
+                &json!({ "actualFileType": "image/svg+xml", "validFileType": "image/jpeg,image/png" })))),
+        (status = 417, description = "Validation error. `curl -X POST http://localhost:8080/api/streams
+            -F 'title=t' -F 'descript=d' -F 'starttime=2020-01-20T20:10:57.000Z' -F 'tags=[]'`", body = [AppError],
+            example = json!(AppError::validations((new_stream_dto("u", "d", "2020-01-20T20:10:57.000Z", "")).validate().err().unwrap()))
+        ),
+        (status = 500, description = "Error loading file.", body = AppError, example = json!(
+            AppError::internal_err500(&format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, "/tmp/demo.jpg", "File not found.")))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+        (status = 510, description = "Error while converting file.", body = AppError,
+            example = json!(AppError::not_extended510(
+                &format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, "Invalid source file image type \"svg\"")))),
+    ),
+    security(("bearer_auth" = [])),
+)]
+#[rustfmt::skip]
+#[post("/api/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn post_stream(
+    authenticated: Authenticated,
+    config_strm: web::Data<config_strm::ConfigStrm>,
+    stream_orm: web::Data<StreamOrmApp>,
+    MultipartForm(create_stream_form): MultipartForm<CreateStreamForm>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    // Get current user details.
+    let profile = authenticated.deref();
+    let curr_user_id = profile.user_id;
+
+    // Get data from MultipartForm.
+    let (create_stream_info_dto, logo_file) = CreateStreamForm::convert(create_stream_form)
+        .map_err(|e| {
+            let message = format!("{}; {}", MSG_INVALID_FIELD_TAG, e);
+            log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
+            AppError::not_acceptable406(&message) // 406
+        })?;
+
+    // Checking the validity of the data model.
+    let validation_res = create_stream_info_dto.validate();
+    if let Err(validation_errors) = validation_res {
+        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors)); // 417
+        return Ok(AppError::to_response(&AppError::validations(validation_errors)));
+    }
+
+    let config_strm = config_strm.get_ref().clone();
+    let mut path_new_logo_file = "".to_string();
+
+    while let Some(temp_file) = logo_file {
+        // If the size of the new file is zero, then we are not adding any file.
+        if temp_file.size == 0 {
+            break;
+        }
+        // Check file size for maximum value.
+        let logo_max_size = usize::try_from(config_strm.strm_logo_max_size).unwrap();
+        if logo_max_size > 0 && temp_file.size > logo_max_size {
+            let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": logo_max_size });
+            log::error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
+            return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
+                .add_param(Cow::Borrowed("invalidFileSize"), &json));
+        }
+        // Checking the mime type file for valid mime types.
+        #[rustfmt::skip]
+        let file_mime_type = match temp_file.content_type { Some(v) => v.to_string(), None => "".to_string() };
+        let valid_file_mime_types = config_strm.strm_logo_valid_types.clone();
+        if !valid_file_mime_types.contains(&file_mime_type) {
+            let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
+            log::error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
+            return Err(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE) // 415
+                .add_param(Cow::Borrowed("invalidFileType"), &json));
+        }
+        // Get the file stem and extension for the new file.
+        #[rustfmt::skip]
+        let name = format!("{}.{}", get_file_name(curr_user_id, Utc::now()), file_mime_type.replace(&format!("{}/", IMAGE), ""));
+        // Add 'file path' + 'file name'.'file extension'.
+        let path: path::PathBuf = [&config_strm.strm_logo_files_dir, &name].iter().collect();
+        let full_path_file = path.to_str().unwrap().to_string();
+        // Persist the temporary file at the target path.
+        // If a file exists at the target path, persist will atomically replace it.
+        let res_upload = temp_file.file.persist(&full_path_file);
+        if let Err(err) = res_upload {
+            let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &full_path_file, err.to_string());
+            log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
+            return Err(AppError::internal_err500(&message)) // 500
+        }
+        path_new_logo_file = full_path_file;
+
+        // Convert the file to another mime type.
+        let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "post_stream()")
+            .map_err(|e| {
+                let message = format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, e);
+                log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
+                AppError::not_extended510(&message) // 510
+            })?;
+        if let Some(new_path_file) = res_convert_logo_file {
+            path_new_logo_file = new_path_file;
+        }
+        
+        break;
+    }
+    let tags = create_stream_info_dto.tags.clone();
+    let mut create_stream = stream_models::CreateStream::convert(create_stream_info_dto.clone(), curr_user_id);
+    
+    if path_new_logo_file.len() > 0 {
+        let alias_logo_file = path_new_logo_file.replace(&config_strm.strm_logo_files_dir, ALIAS_LOGO_FILES_DIR);
+        create_stream.logo = Some(alias_logo_file);
+    }
+
+    let res_data = web::block(move || {
+        // Add a new entity (stream).
+        let res_data = stream_orm.create_stream(create_stream, &tags).map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        });
+        res_data
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
+
+    if res_data.is_err() {
+        remove_file_and_log(&path_new_logo_file, &"post_stream()");
+    }
+    let (stream, stream_tags) = res_data?;
+    // Merge a "stream" and a corresponding list of "tags".
+    let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
+    let stream_info_dto = list[0].clone();
+
+    Ok(HttpResponse::Created().json(stream_info_dto)) // 201
+}
+
+// ** Section: Stream Put **
+
+#[derive(Debug, MultipartForm)]
+pub struct ModifyStreamForm {
+    pub title: Option<Text<String>>,
+    pub descript: Option<Text<String>>,
+    pub starttime: Option<Text<DateTime<Utc>>>,
+    pub source: Option<Text<String>>,
+    pub tags: Option<Text<String>>,
+    pub logofile: Option<TempFile>,
+}
+
+impl ModifyStreamForm {
+    pub fn convert(
+        modify_stream_form: ModifyStreamForm,
+    ) -> Result<(stream_models::ModifyStreamInfoDto, Option<TempFile>), String> {
+        let tags: Option<Vec<String>> = match modify_stream_form.tags {
+            Some(v) => {
+                let val = v.into_inner();
+                let res_tags: Result<Vec<String>, serde_json::error::Error> = serde_json::from_str(&val);
+                if let Err(err) = res_tags {
+                    return Err(err.to_string());
+                }
+                Some(res_tags.unwrap())
+            }
+            None => None,
+        };
+        Ok((
+            stream_models::ModifyStreamInfoDto {
+                title: modify_stream_form.title.map(|v| v.into_inner()),
+                descript: modify_stream_form.descript.map(|v| v.into_inner()),
+                starttime: modify_stream_form.starttime.map(|v| v.into_inner()),
+                source: modify_stream_form.source.map(|v| v.into_inner()),
+                tags,
+            },
+            modify_stream_form.logofile,
+        ))
+    }
+}
+
+/// put_stream
+///
+/// Update the stream with new data.
+///
+/// Multipart/form-data is used to transfer data.
+///
+/// Request structure:
+/// ```text
+/// {
+///   title?: String,            // optional - stream title;
+///   descript?: String,         // optional - description of the stream;
+///   starttime?: DateTime<Utc>, // optional - date and time of the start of the stream;
+///   source?: String,           // optional - source value ("obs" by default) of the stream;
+///   tags?: String,             // optional - serialized array of string values of stream tags("['tag1','tag2']");
+///   logofile?: TempFile,       // optional - attached stream image file (jpeg,gif,png,bmp);
+/// }
+/// ```
+/// The "starttime" field is specified in the Utc format: "2020-01-20T20:10:57.000Z".
+/// 
+/// The "starttime" field indicates the date of the future stream.
+/// And cannot contain a past period (date and time).
+///
+/// It is recommended to enter the date and time in ISO 8601 format.
+/// ```text
+/// var d1 = new Date();
+/// { starttime: d1.toISOString() } // "2020-01-20T20:10:57.000Z"
+/// ```
+/// It is allowed to specify the date and time with a time zone value.
+/// ```text
+/// { "starttime": "2020-01-20T22:10:57+02:00" }
+/// ```
+/// The "tags" field represents a serialized array of string values.
+/// ```text
+/// { 'tags': JSON.stringify(["tag1", "tag2"]) } // "['tag1', 'tag2']"
+/// ```
+/// One could call with following curl.
+/// ```text
+/// curl -i -X PUT http://localhost:8080/api/streams/1 -F "title=title1" -F "tags=['tag1','tag2']"
+/// ```
+/// Could be called with all fields with the next curl.
+/// ```text
+/// curl -i -X PUT http://localhost:8080/api/streams/1 -F "title=title2" -F "descript=descript2" \
+///   -F "starttime=2020-01-20T20:10:57.000Z" -F "tags=['tag1','tag2']"
+/// ```
+/// Additionally, you can specify the name of the image file.
+/// ```text
+/// curl -i -X PUT http://localhost:8080/api/streams/1 -F "title=title2" -F "descript=descript2" \
+///   -F "starttime=2020-01-20T20:10:57.000Z" -F "tags=['tag1','tag2']" -F "logofile=@image.jpg"
+/// ```
+///  
+/// Return the stream with updated data (`StreamInfoDto`) with status 200 or 204 (no content) if the stream is not found.
+///
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Update the stream with new data.", body = StreamInfoDto),
+        (status = 204, description = "The stream with the specified ID was not found."),
+        (status = 406, description = "Error deserializing field \"tags\". `curl -X PUT http://localhost:8080/api/streams/1
+            -F 'title=title' -F 'tags=[\"tag\"'`",
+            body = AppError, example = json!(AppError::not_acceptable406(
+                &format!("{}; {}", MSG_INVALID_FIELD_TAG, "EOF while parsing a list at line 1 column 6")))),
+        (status = 413, description = "Invalid image file size. `curl -i -X PUT http://localhost:8080/api/streams/1
+            -F 'title=title2'  -F 'tags=[\"tag1\"]' -F 'logofile=@image.jpg'`", body = AppError,
+            example = json!(AppError::content_large413(err::MSG_INVALID_FILE_SIZE).add_param(Cow::Borrowed("invalidFileSize"),
+                &json!({ "actualFileSize": 186, "maxFileSize": 160 })))),
+        (status = 415, description = "Uploading a file with an invalid type `svg`. `curl -i -X PUT http://localhost:8080/api/streams/1
+            -F 'title=title3'  -F 'tags=[\"tag3\"]' -F 'logofile=@image.svg'`", body = AppError,
+            example = json!(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE).add_param(Cow::Borrowed("invalidFileType"),
+                &json!({ "actualFileType": "image/svg+xml", "validFileType": "image/jpeg,image/png" })))),
+        (status = 416, description = "Error parsing input parameter. `curl -i -X PUT http://localhost:8080/api/streams/2a
+                -F 'title=title3'  -F 'tags=[\"tag3\"]'`", body = AppError,
+            example = json!(AppError::range_not_satisfiable416(
+                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
+        (status = 417, description = "Validation error. `curl -X PUT http://localhost:8080/api/streams/1
+            -F 'title=t' -F 'descript=d' -F 'starttime=2020-01-20T20:10:57.000Z' -F 'tags=[]'`", body = [AppError],
+            example = json!(AppError::validations(
+                (ModifyStreamInfoDto {
+                    title: Some("u".to_string()),
+                    descript: Some("d".to_string()),
+                    starttime: Some(DateTime::parse_from_rfc3339("2020-01-20T20:10:57.000Z").unwrap().with_timezone(&Utc)),
+                    source: None,
+                    tags: Some(vec!()),
+                }).validate().err().unwrap()) )),
+        (status = 500, description = "Error loading file.", body = AppError, example = json!(
+            AppError::internal_err500(&format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, "/tmp/demo.jpg", "File not found.")))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+        (status = 510, description = "Error while converting file.", body = AppError,
+            example = json!(AppError::not_extended510(
+                &format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, "Invalid source file image type \"svg\"")))),
+    ),
+    security(("bearer_auth" = [])),
+)]
+// PUT /api/streams/{id}
+#[rustfmt::skip]
+#[put("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn put_stream(
+    authenticated: Authenticated,
+    config_strm: web::Data<config_strm::ConfigStrm>,
+    stream_orm: web::Data<StreamOrmApp>,
+    request: actix_web::HttpRequest,
+    MultipartForm(modify_stream_form): MultipartForm<ModifyStreamForm>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    // Get current user details.
+    let profile = authenticated.deref();
+    let curr_user_id = profile.user_id;
+
+    // Get data from request.
+    let id_str = request.match_info().query("id").to_string();
+    let id = parser::parse_i32(&id_str).map_err(|e| {
+        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        AppError::range_not_satisfiable416(&message) // 416
+    })?;
+
+    // Get data from MultipartForm.
+    let (modify_stream_info_dto, logo_file) = ModifyStreamForm::convert(modify_stream_form)
+    .map_err(|e| {
+        let message = format!("{}; {}", MSG_INVALID_FIELD_TAG, e);
+        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
+        AppError::not_acceptable406(&message)
+    })?;
+
+    // If there is not a single field in the MultipartForm, it gives an error 400 "Multipart stream is incomplete".
+
+    // Checking the validity of the data model.
+    let validation_res = modify_stream_info_dto.validate();
+    if let Err(validation_errors) = validation_res {
+        let mut is_no_fields_to_update = false;
+        let errors = validation_errors.iter().map(|err| {
+            if !is_no_fields_to_update && err.params.contains_key(validators::NM_NO_FIELDS_TO_UPDATE) {
+                is_no_fields_to_update = true;
+                let valid_names = [ModifyStreamInfoDto::valid_names(), vec!["logofile"]].concat().join(",");
+                ValidationChecks::no_fields_to_update(&[false], &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err().unwrap()
+            } else {
+                err.clone()
+            }
+        }).collect();
+        if !is_no_fields_to_update || logo_file.is_none() {
+            log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&errors));
+            return Ok(AppError::to_response(&AppError::validations(errors))); // 417
+        }
+    }
+
+    let mut logo: Option<Option<String>> = None;
+
+    let config_strm = config_strm.get_ref().clone();
+    let mut path_new_logo_file = "".to_string();
+
+    while let Some(temp_file) = logo_file {
+        // Delete the old version of the logo file.
+        if temp_file.size == 0 {
+            logo = Some(None); // Set the "logo" field to `NULL`.
+            break;
+        }
+        let logo_max_size = usize::try_from(config_strm.strm_logo_max_size).unwrap();
+        // Check file size for maximum value.
+        if logo_max_size > 0 && temp_file.size > logo_max_size {
+            let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": logo_max_size });
+            log::error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
+            return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
+                .add_param(Cow::Borrowed("invalidFileSize"), &json));
+        }
+
+        // Checking the mime type file for valid mime types.
+        #[rustfmt::skip]
+        let file_mime_type = match temp_file.content_type { Some(v) => v.to_string(), None => "".to_string() };
+        let valid_file_mime_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
+        if !valid_file_mime_types.contains(&file_mime_type) {
+            let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
+            log::error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
+            return Err(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE) // 415
+                .add_param(Cow::Borrowed("invalidFileType"), &json));
+        }
+
+        // Get the file stem and extension for the new file.
+        #[rustfmt::skip]
+        let name = format!("{}.{}", get_file_name(curr_user_id, Utc::now()), file_mime_type.replace(&format!("{}/", IMAGE), ""));
+        // Add 'file path' + 'file name'.'file extension'.
+        let path: path::PathBuf = [&config_strm.strm_logo_files_dir, &name].iter().collect();
+        let full_path_file = path.to_str().unwrap().to_string();
+        // Persist the temporary file at the target path.
+        // Note: if a file exists at the target path, persist will atomically replace it.
+        let res_upload = temp_file.file.persist(&full_path_file);
+        if let Err(err) = res_upload {
+            let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &full_path_file, err.to_string());
+            log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
+            return Err(AppError::internal_err500(&message)); // 500
+        }
+        path_new_logo_file = full_path_file;
+
+        // Convert the file to another mime type.
+        let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "put_stream()")
+            .map_err(|e| {
+                let message = format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, e);
+                log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
+                AppError::not_extended510(&message) // 510
+            })?;
+        if let Some(new_path_file) = res_convert_logo_file {
+            path_new_logo_file = new_path_file;
+        }
+
+        let alias_logo_file = path_new_logo_file.replace(&config_strm.strm_logo_files_dir, ALIAS_LOGO_FILES_DIR);
+        logo = Some(Some(alias_logo_file));
+
+        break;
+    }
+    let tags = modify_stream_info_dto.tags.clone();
+    let mut modify_stream: ModifyStream = modify_stream_info_dto.into();
+    modify_stream.logo = logo;
+    let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
+
+    let (path_old_logo_file, res_data_stream) = web::block(move || {
+        let mut old_logo_file = "".to_string();
+        if modify_stream.logo.is_some() {
+            // Get the logo file name for an entity (stream) by ID.
+            let res_get_stream_logo = stream_orm.get_stream_logo_by_id(id)
+            .map_err(|e| {
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            });
+
+            if let Ok(Some(old_logo)) = res_get_stream_logo {
+                old_logo_file = old_logo;
+            }
+        }
+        // Modify an entity (stream).
+        let res_data_stream = stream_orm.modify_stream(id, opt_user_id, modify_stream, tags)
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        });
+
+        (old_logo_file, res_data_stream)
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
+
+    let opt_data_stream = res_data_stream
+    .map_err(|err| {
+        remove_file_and_log(&path_new_logo_file, &"put_stream()");
+        err
+    })?;
+
+    if let Some((stream, stream_tags)) = opt_data_stream {
+        // Merge a "stream" and a corresponding list of "tags".
+        let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
+        let stream_info_dto: StreamInfoDto = list[0].clone();
+        // If the image file name starts with the specified alias, then delete the file.
+        remove_image_file(&path_old_logo_file, ALIAS_LOGO_FILES_DIR, &config_strm.strm_logo_files_dir, &"put_stream()");
+        Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
+    } else {
+        remove_file_and_log(&path_new_logo_file, &"put_stream()");
+        Ok(HttpResponse::NoContent().finish()) // 204        
+    }
+}
+
+// ** Section: Stream Put state **
+
+/// put_toggle_state
+///
+/// Update the stream state.
+///
+/// Request structure:
+/// ```text
+/// {
+///   state: StreamState,
+/// }
+/// ```
+/// The "StreamState" type accepts the following values: "waiting", "preparing", "started", "paused", "stopped".
+/// 
+/// The new "state" value must be different from the old value.
+/// 
+/// By default, the stream has the "waiting" state.
+/// In the "waiting" state, the stream is waiting for the broadcast start date and time.
+/// 
+/// From "waiting", the stream can be switched to the "preparing" state.
+/// In the "preparing" state, you can prepare for the start of the broadcast: select web cameras,
+/// microphone, check other settings.
+/// 
+/// From "preparing", the stream can be switched to the "started" state.
+/// In the "started" state, the stream is broadcast.
+/// 
+/// From "preparing", the stream can be switched to the "stopped" state.
+/// In the "stopped" state, the stream broadcast is stopped.
+/// 
+/// From "started", the stream can be switched to the "paused" state.
+/// In the "paused" state, the stream broadcast is temporarily stopped.
+/// 
+/// From "paused", the stream can be switched to the "started" state.
+/// 
+/// From "paused", the stream can be switched to the "stopped" state.
+/// 
+/// From "started" a stream can be moved to the "stopped" state.
+/// 
+/// One could call with following curl.
+/// ```text
+/// curl -i -X PUT http://localhost:8080/api/streams/toggle/1  -d '{"state": "started"}'
+/// ```
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Update the stream with new data.", body = StreamInfoDto),
+        (status = 204, description = "The stream with the specified ID was not found."),
+        (status = 406, description = "Unacceptable stream state.", body = AppError,
+            examples(
+            ("old_equals_new" = (summary = "old state equals new", description = "Unacceptable transition: old flow state equals new.",
+                value = json!(AppError::not_acceptable406(MSG_INVALID_STREAM_STATE).add_param(Cow::Borrowed("invalidState"),
+                        &json!({ "oldState": StreamState::Preparing, "newState": StreamState::Preparing })) ) )
+            ),
+            ("unacceptable" = (
+                summary = "unacceptable state", description = "An unacceptable transition from an old state of flow to a new one.",
+                value = json!(AppError::not_acceptable406(MSG_INVALID_STREAM_STATE).add_param(Cow::Borrowed("invalidState"),
+                        &json!({ "oldState": StreamState::Started, "newState": StreamState::Preparing })) ) )
+            ) ),
+        ),
+        (status = 409, description = "There is already an active stream.", body = AppError,
+            example = json!(AppError::conflict409(MSG_EXIST_IS_ACTIVE_STREAM)
+                    .add_param(Cow::Borrowed("activeStream"), &json!({ "id": 123, "title": Cow::Borrowed("Trip to Greece.") })) )
+        ),
+        (status = 416, description = "Error parsing input parameter. `curl -i -X PUT http://localhost:8080/api/streams/toggle/2a 
+            -d '{\"state\": \"started\"}'`", body = AppError,
+            example = json!(AppError::range_not_satisfiable416(
+                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
+// PUT /api/streams/toggle/{id}
+#[rustfmt::skip]
+#[put("/api/streams/toggle/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn put_toggle_state(
+    authenticated: Authenticated,
+    stream_orm: web::Data<StreamOrmApp>,
+    request: actix_web::HttpRequest,
+    json_body: web::Json<ToggleStreamStateDto>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let profile = authenticated.deref();
+    let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
+
+    // Get data from request.
+    let id_str = request.match_info().query("id").to_string();
+    let id = parser::parse_i32(&id_str).map_err(|e| {
+        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        AppError::range_not_satisfiable416(&message) // 416
+    })?;
+
+    let new_state: StreamState = json_body.into_inner().state;
+    let stream_orm2 = stream_orm.clone();
+
+    let res_stream_tags = web::block(move || {
+        // Find a stream by ID.
+        let res_stream_tags = stream_orm2
+            .find_stream_by_params(Some(id), opt_user_id, None, false, &[])
+            .map_err(|e| {
+                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            });
+        res_stream_tags
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
+
+    let opt_stream_tags = match res_stream_tags { Ok(v) => v, Err(e) => return Err(e) };
+
+    if opt_stream_tags.is_none() {
+        // If a stream with the specified ID is not found for the current user, then return status 204.
+        return Ok(HttpResponse::NoContent().finish()) // 204
+    }
+    let (stream, _tags) = opt_stream_tags.unwrap();
+
+    if stream.state == new_state {
+        let json = json!({ "oldState": &stream.state, "newState": &new_state });
+        log::error!("{}: {}; {}", err::CD_NOT_ACCEPTABLE, MSG_INVALID_STREAM_STATE, json.to_string());
+        return Err(AppError::not_acceptable406(MSG_INVALID_STREAM_STATE) // 406
+            .add_param(Cow::Borrowed("invalidState"), &json));
+    }
+
+    let is_not_acceptable = match new_state {
+        StreamState::Preparing => vec![StreamState::Started, StreamState::Paused].contains(&stream.state),
+        StreamState::Started => vec![StreamState::Waiting, StreamState::Stopped].contains(&stream.state),
+        StreamState::Paused => vec![StreamState::Waiting, StreamState::Stopped, StreamState::Preparing].contains(&stream.state),
+        StreamState::Stopped => vec![StreamState::Waiting].contains(&stream.state),
+        _ => false,
+    };
+    if is_not_acceptable {
+        let json = json!({ "oldState": &stream.state.to_string(), "newState": &new_state });
+        log::error!("{}: {}; {}", err::CD_NOT_ACCEPTABLE, MSG_INVALID_STREAM_STATE, json.to_string());
+        return Err(AppError::not_acceptable406(MSG_INVALID_STREAM_STATE) // 406
+            .add_param(Cow::Borrowed("invalidState"), &json));
+    }
+    // If the stream goes into active state, then
+    if vec![StreamState::Preparing, StreamState::Started, StreamState::Paused].contains(&new_state) {
+        let stream_orm2 = stream_orm.clone();
+        // find any stream in active state.
+        let res_stream2_tags = web::block(move || {
+            let res_stream2_tags = stream_orm2
+                .find_stream_by_params(None, opt_user_id, Some(true), false, &[id])
+                .map_err(|e| {
+                    log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                    AppError::database507(&e)
+                });
+            res_stream2_tags
+        })
+        .await
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            AppError::blocking506(&e.to_string())
+        })?;
+        
+        let opt_stream2_tags = match res_stream2_tags { Ok(v) => v, Err(e) => return Err(e) };
+
+        if let Some((stream2, _tags)) = opt_stream2_tags {
+            let json = json!({ "id": stream2.id, "title": &stream2.title });
+            log::error!("{}: {}; {}", err::CD_CONFLICT, MSG_EXIST_IS_ACTIVE_STREAM, json.to_string());
+            return Err(AppError::conflict409(MSG_EXIST_IS_ACTIVE_STREAM) // 409
+                .add_param(Cow::Borrowed("activeStream"), &json));
+        }
+    }
+
+    let modify_stream: ModifyStream = ModifyStream {
+        title: None,
+        descript: None,
+        logo: None,
+        starttime: None,
+        state: Some(new_state),
+        started: None,
+        stopped: None,
+        source: None,
+    };
+
+    let res_stream_tags = web::block(move || {
+        // Modify an entity (stream).
+        let res_stream_tags = stream_orm.modify_stream(id, opt_user_id, modify_stream, None)
+        .map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        });
+        res_stream_tags
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
+
+    let opt_stream_tags = match res_stream_tags { Ok(v) => v, Err(e) => return Err(e) };
+
+    if opt_stream_tags.is_none() {
+        // If a stream with the specified ID is not found for the current user, then return status 204.
+        return Ok(HttpResponse::NoContent().finish()) // 204
+    }
+    let (stream, tags) = opt_stream_tags.unwrap();
+
+    // Merge a "stream" and a corresponding list of "tags".
+    let list = StreamInfoDto::merge_streams_and_tags(&[stream], &tags, profile.user_id);
+    let stream_info_dto: StreamInfoDto = list[0].clone();
+    Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
+}
+
+// ** Section: Stream Delete **
+
+/// delete_stream
+///
+/// Delete the specified stream.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X DELETE http://localhost:8080/api/streams/1
+/// ```
+///
+/// Return the deleted stream (`StreamInfoDto`) with status 200 or 204 (no content) if the stream is not found.
+///
+#[utoipa::path(
+    responses(
+        (status = 200, description = "The specified stream was deleted successfully.", body = StreamInfoDto),
+        (status = 204, description = "The specified stream was not found."),
+        (status = 416, description = "Error parsing input parameter. `curl -i -X DELETE http://localhost:8080/api/streams/2a`",
+            body = AppError, example = json!(AppError::range_not_satisfiable416(
+            &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
+        (status = 506, description = "Blocking error.", body = AppError, 
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError, 
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    params(("id", description = "Unique stream ID.")),
+    security(("bearer_auth" = [])),
+)]
+#[rustfmt::skip]
+#[delete("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn delete_stream(
+    authenticated: Authenticated,
+    config_strm: web::Data<config_strm::ConfigStrm>,
+    stream_orm: web::Data<StreamOrmApp>,
+    request: actix_web::HttpRequest,
+) -> actix_web::Result<HttpResponse, AppError> {
+    // Get current user details.
+    let profile = authenticated.deref();
+    let curr_user_id = profile.user_id;
+
+    // Get data from request.
+    let id_str = request.match_info().query("id").to_string();
+    let id = parser::parse_i32(&id_str).map_err(|e| {
+        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        log::error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
+        AppError::range_not_satisfiable416(&message) // 416
+    })?;
+
+    let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
+    let res_stream = web::block(move || {
+        // Add a new entity (stream).
+        let res_data = stream_orm.delete_stream(id, opt_user_id).map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e) // 507
+        });
+        res_data
+    })
+    .await
+    .map_err(|e| {
+        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string()) // 506
+    })?;
+
+    let opt_stream = res_stream?;
+
+    if let Some((stream, stream_tags)) = opt_stream {
+        let config_strm = config_strm.get_ref().clone();
+        // Get the path to the "logo" file.
+        let path_file_img: String = stream.logo.clone().unwrap_or("".to_string());
+        // If the image file name starts with the specified alias, then delete the file.
+        remove_image_file(&path_file_img, ALIAS_LOGO_FILES_DIR, &config_strm.strm_logo_files_dir, &"delete_stream()");
+
+        // Merge a "stream" and a corresponding list of "tags".
+        let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
+        let stream_info_dto = list[0].clone();
+        Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
+    } else {
+        Ok(HttpResponse::NoContent().finish()) // 204
+    }
+}
+
+#[cfg(all(test, feature = "mockdata"))]
+pub mod tests {
+    use std::{fs, io::Write};
+
+    use actix_web::http;
+    use chrono::{DateTime, Utc};
+
+    use crate::errors::AppError;
+    use crate::extractors::authentication::BEARER;
+    use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp};
+    use crate::sessions::{
+        config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
+    };
+    use crate::streams::{
+        config_strm,
+        stream_models::{Stream, StreamInfoDto},
+        stream_orm::tests::{StreamOrmApp, STREAM_ID},
+    };
+    use crate::users::user_models::UserRole;
+
+    use super::*;
+
+    pub const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
+    pub const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
+    pub const MSG_MULTIPART_STREAM_INCOMPLETE: &str = "Multipart stream is incomplete";
+    pub const MSG_CONTENT_TYPE_NOT_FOUND: &str = "Could not find Content-Type header";
+
+    fn create_profile() -> Profile {
+        let nickname = "Oliver_Taylor".to_string();
+        let role = UserRole::User;
+        let profile = ProfileOrmApp::new_profile(1, &nickname, &format!("{}@gmail.com", &nickname), role);
+        profile
+    }
+    fn profile_with_id(profile: Profile) -> Profile {
+        let profile_orm = ProfileOrmApp::create(&vec![profile]);
+        profile_orm.profile_vec.get(0).unwrap().clone()
+    }
+    pub fn create_stream(idx: i32, user_id: i32, title: &str, tags: &str, starttime: DateTime<Utc>) -> StreamInfoDto {
+        let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
+        let stream = Stream::new(STREAM_ID + idx, user_id, title, starttime);
+        StreamInfoDto::convert(stream, user_id, &tags1)
+    }
+    pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
+        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (http::header::AUTHORIZATION, header_value)
+    }
+    #[rustfmt::skip]
+    pub fn get_cfg_data() -> ((config_jwt::ConfigJwt, config_strm::ConfigStrm), (Vec<Profile>, Vec<Session>, Vec<StreamInfoDto>), String) {
+        // Create profile values.
+        let profile1: Profile = profile_with_id(create_profile());
+        let num_token = 1234;
+        let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token));
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        // The "stream" value will be required for the "put_stream" method.
+        let stream = create_stream(0, profile1.user_id, "title0", "tag01,tag02", Utc::now());
+
+        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
+        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
+
+        let config_strm = config_strm::get_test_config();
+        let cfg_c = (config_jwt, config_strm);
+        let data_c = (vec![profile1], vec![session1], vec![stream_dto]);
+        (cfg_c, data_c, token)
+    }
+    pub fn configure_stream(
+        cfg_c: (config_jwt::ConfigJwt, config_strm::ConfigStrm),
+        data_c: (Vec<Profile>, Vec<Session>, Vec<StreamInfoDto>),
+    ) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_config_jwt = web::Data::new(cfg_c.0);
+            let data_config_strm = web::Data::new(cfg_c.1);
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
+            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
+            let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.2));
+
+            config
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_config_strm))
+                .app_data(web::Data::clone(&data_profile_orm))
+                .app_data(web::Data::clone(&data_session_orm))
+                .app_data(web::Data::clone(&data_stream_orm));
+        }
+    }
+    pub fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {
+        assert_eq!(app_err_vec.len(), msgs.len());
+        for (idx, msg) in msgs.iter().enumerate() {
+            let app_err = app_err_vec.get(idx).unwrap();
+            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.message, msg.to_string());
+        }
+    }
+
+    pub fn save_empty_file(path_file: &str) -> Result<String, String> {
+        let _ = fs::File::create(path_file).map_err(|e| e.to_string())?;
+        Ok(path_file.to_string())
+    }
+    pub fn save_file_png(path_file: &str, code: u8) -> Result<(u64, String), String> {
+        let header: Vec<u8> = vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+        let footer: Vec<u8> = vec![0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82];
+        #[rustfmt::skip]
+        let buf1: Vec<u8> = vec![                            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x04,  0x08, 0x06, 0x00, 0x00, 0x00, 0xA9, 0xF1, 0x9E,
+            0x7E, 0x00, 0x00, 0x00, 0x01, 0x73, 0x52, 0x47,  0x42, 0x00, 0xAE, 0xCE, 0x1C, 0xE9, 0x00, 0x00,
+            0x00, 0x4F, 0x49, 0x44, 0x41, 0x54, 0x18, 0x57,  0x01, 0x44, 0x00, 0xBB, 0xFF, 0x01, 0xF3, 0xF5,
+            0xF5, 0xFF, 0x3A, 0x98, 0x35, 0x00, 0xF2, 0xFE,  0xFD, 0x00, 0xD7, 0x6A, 0xCC, 0x00, 0x01, 0x05,
+            0x7E, 0x09, 0xFF, 0xFD, 0x75, 0xFC, 0x00, 0x02,  0xFF, 0x02, 0x00, 0xFF, 0x95, 0xFD, 0x00, 0x01,
+            0x09, 0x7B, 0x0A, 0xFF, 0xF7, 0x7B, 0xF8, 0x00,  0x00, 0x01, 0xFF, 0x00, 0x04, 0x8E, 0x03, 0x00,
+            0x01, 0xF6, 0xF5, 0xF4, 0xFF, 0x13, 0x89, 0x18,  0x00, 0x02, 0x03, 0xFF, 0x00, 0xED, 0x77, 0xED,
+            0x00, 0x78, 0x18, 0x1E, 0xE2, 0xBA, 0x4A, 0xF4,  0x76
+        ];
+        #[rustfmt::skip]
+        let buf2: Vec<u8> = vec![                            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x05,  0x08, 0x06, 0x00, 0x00, 0x00, 0x8D, 0x6F, 0x26,
+            0xE5, 0x00, 0x00, 0x00, 0x01, 0x73, 0x52, 0x47,  0x42, 0x00, 0xAE, 0xCE, 0x1C, 0xE9, 0x00, 0x00,
+            0x00, 0x74, 0x49, 0x44, 0x41, 0x54, 0x18, 0x57,  0x01, 0x69, 0x00, 0x96, 0xFF, 0x01, 0xF3, 0xF4,
+            0xF4, 0xFF, 0xFA, 0xFD, 0xF9, 0x00, 0x5A, 0xAB,  0x5A, 0x00, 0x9E, 0x54, 0x9E, 0x00, 0x10, 0x06,
+            0x0E, 0x00, 0x01, 0xEB, 0xF1, 0xE5, 0xFF, 0x17,  0x02, 0x20, 0x00, 0x5B, 0xFF, 0x5F, 0x00, 0x29,
+            0xFF, 0x19, 0x00, 0x4D, 0xF7, 0x56, 0x00, 0x01,  0x15, 0x7F, 0x15, 0xFF, 0xEB, 0x77, 0xEC, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x06, 0xFD, 0x05, 0x00,  0xFE, 0x94, 0x01, 0x00, 0x01, 0xE5, 0xF0, 0xE4,
+            0xFF, 0x1E, 0x05, 0x1C, 0x00, 0xFD, 0x02, 0x01,  0x00, 0x05, 0xFD, 0x01, 0x00, 0xC3, 0xEE, 0xC3,
+            0x00, 0x01, 0xF6, 0xF4, 0xF2, 0xFF, 0xF4, 0xFC,  0xF4, 0x00, 0x35, 0x9C, 0x3F, 0x00, 0xC1, 0x63,
+            0xBA, 0x00, 0x18, 0x09, 0x19, 0x00, 0x50, 0xDE,  0x2B, 0x56, 0xC3, 0xBD, 0xEC, 0xAA,
+        ];
+        #[rustfmt::skip]
+        let buf3: Vec<u8> = vec![                            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0x00, 0x17, 0x00, 0x00, 0x00, 0x13,  0x08, 0x06, 0x00, 0x00, 0x00, 0x7B, 0xBB, 0x96,
+            0xB6, 0x00, 0x00, 0x00, 0x04, 0x73, 0x42, 0x49,  0x54, 0x08, 0x08, 0x08, 0x08, 0x7C, 0x08, 0x64,
+            0x88, 0x00, 0x00, 0x00, 0x6C, 0x49, 0x44, 0x41,  0x54, 0x38, 0x8D, 0xED, 0x94, 0x4B, 0x0A, 0x80,
+            0x30, 0x0C, 0x05, 0x5F, 0xC5, 0x83, 0x28, 0x78,  0x3D, 0xDB, 0xDE, 0xA4, 0x1F, 0x0F, 0x3C, 0xAE,
+            0x15, 0x6B, 0xAB, 0xD0, 0x5D, 0x07, 0x02, 0x81,  0x90, 0x49, 0xC8, 0x22, 0x06, 0x40, 0x9D, 0x98,
+            0x7A, 0x89, 0x87, 0x7C, 0xC8, 0xBF, 0x31, 0x97,  0x0A, 0x31, 0x66, 0xA5, 0x7C, 0xBC, 0x36, 0x3B,
+            0xBB, 0xCB, 0x7B, 0x5B, 0xAC, 0x17, 0x37, 0xF7,  0xDE, 0xCA, 0xD9, 0xFD, 0xB7, 0x58, 0x92, 0x44,
+            0x85, 0x10, 0x12, 0xCB, 0xBA, 0x5D, 0x22, 0x84,  0x54, 0x6B, 0x03, 0xA0, 0x2A, 0xBF, 0x0F, 0x68,
+            0x15, 0x03, 0x14, 0x6F, 0x7E, 0x3F, 0xD1, 0x53,  0x5E, 0xC3, 0xC0, 0x78, 0x5C, 0x43, 0xDE, 0xC8,
+            0x09, 0xFC, 0x22, 0xB8, 0x69, 0x88, 0xAE, 0x67,  0xA8
+        ];
+
+        // if path::Path::new(&path_file).exists() {
+        //     let _ = fs::remove_file(&path_file);
+        // }
+
+        let mut file = fs::File::create(path_file).map_err(|e| e.to_string())?;
+        file.write_all(header.as_ref()).map_err(|e| e.to_string())?;
+        #[rustfmt::skip]
+        let buf: Vec<u8> = match code { 3 => buf3, 2 => buf2, _ => buf1 };
+        file.write_all(buf.as_ref()).map_err(|e| e.to_string())?;
+        file.write_all(footer.as_ref()).map_err(|e| e.to_string())?;
+
+        let size = file.metadata().unwrap().len();
+
+        Ok((size, path_file.to_string()))
+    }
+}

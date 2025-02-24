@@ -1,0 +1,40 @@
+/*# sourceURL=panel-view-list.component.scss */
+
+app-spinner {
+    ---sp-z-idx: 1100;
+    align-items: center;
+    display: flex;
+    height: 100%;
+    justify-content: center;
+
+    &.fill-parent {
+        inset: 0 0 0 0;
+        position: absolute;
+        z-index: 1100;
+        ---sp-z-idx: 1;
+    }
+
+    .sp-back {
+        background-color: rgba(0, 0, 0, 0.1);
+        bottom: 0;
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+        z-index: var(---sp-z-idx);
+    }
+
+    .sp-front {
+        align-items: center;
+        bottom: 0;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        left: 0;
+        pointer-events: all;
+        position: absolute;
+        right: 0;
+        top: 0;
+        z-index: calc(var(---sp-z-idx) + 1);
+    }
+}

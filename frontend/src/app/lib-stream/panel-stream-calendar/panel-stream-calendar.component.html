@@ -1,0 +1,11 @@
+<mat-calendar #calendar
+  [dateClass]="dateClassFn"
+  [headerComponent]="calendarHeader"
+  [maxDate]="maxDate"
+  [minDate]="minDate"
+  [startAt]="selected || startAtDate"
+  [selected]="selected"
+  [startView]="'month'"
+  (selectedChange)="doChangeSelected($event)"
+  (viewChanged)="doViewChanged($event)">
+</mat-calendar>

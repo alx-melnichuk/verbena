@@ -1,74 +1,85 @@
-// 400 Bad Request
-pub const CD_VALIDATION: &str = "Validation";
+// 200 Ok - Request processed successfully.
+// 201 Created - A new entry has been created.
+// 204 No Content - Data not found.
 
+// 401 Unauthorized (profile_auth_controller, user_registr_controller)
+pub const CD_UNAUTHORIZED: &str = "Unauthorized"; /*+*/
+// 401 Unauthorized - Authorization token is missing. (authentication, profile_auth_controller, user_controller)
+pub const MSG_MISSING_TOKEN: &str = "token_missing"; /*+*/
+// 401 Unauthorized - Error when decoding token or expired token (authentication, profile_auth_controller, user_registr_controller)
+pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token"; /*+*/
+// 401 Unauthorized - User's "num" does not match "num" from token. (authentication, profile_auth_controller)
+pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num"; /*+*/
 // 401 Unauthorized
-pub const CD_UNAUTHORIZED: &str = "Unauthorized";
-pub const CD_MISSING_TOKEN: &str = "MissingToken";
-pub const MSG_MISSING_TOKEN: &str = "Token value not provided";
+pub const MSG_WRONG_NICKNAME_EMAIL: &str = "nickname_or_email_incorrect";
+// 401 Unauthorized
+pub const MSG_PASSWORD_INCORRECT: &str = "password_incorrect";
 
-// 403 Forbidden
+// 403 Forbidden - (authentication, profile_auth_controller)
 pub const CD_FORBIDDEN: &str = "Forbidden";
-// Error when decoding token or expired token
-pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token";
-// According to "user_id" in the token, the user was not found // "The token "ID" value is unacceptable."
-pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
-// According to "num" in the token, the user was not found // "The token "NUM" value is unacceptable."
-pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num";
-//
-// User_ID from the header does not match the user_ID from the parameters
-pub const CD_UNALLOWABLE_TOKEN: &str = "UnallowableToken";
-pub const MSG_UNALLOWABLE_TOKEN: &str = "oken value is unallowable";
+// 403 Forbidden - Access denied - insufficient rights (authentication)
+pub const MSG_ACCESS_DENIED: &str = "access_denied";
 
-// pub const CD_WRONG_TOKEN: &str = "WrongToken";
-// pub const MSG_WRONG_TOKEN: &str = "Wrong token value";
-
-// pub const CD_BAD_TOKEN: &str = "Bad Token";
-// pub const MSG_BAD_TOKEN: &str = "Bad token value";
-
-pub const CD_PERMISSION_DENIED: &str = "PermissionDenied";
-pub const MSG_PERMISSION_DENIED: &str = "You are not allowed to perform this action";
-
-// 404
+// 404 Not Found (user_registr_controller)
 pub const CD_NOT_FOUND: &str = "NotFound";
-// Registration record not found
-pub const MSG_REGISTR_NOT_FOUND: &str = "registration_not_found";
-// Recovery record not found
-pub const MSG_RECOVERY_NOT_FOUND: &str = "recovery_not_found";
 
-pub const CD_NO_CONFIRM: &str = "No Confirmation";
-pub const MSG_CONFIRM_NOT_FOUND: &str = "Confirmation not found!";
+// 406 Not Acceptable (profile_auth_controller)
+pub const CD_NOT_ACCEPTABLE: &str = "NotAcceptable"; /*+*/
+// 406 Not Acceptable - There is no session for this user. (authentication, profile_auth_controller)
+pub const MSG_SESSION_NOT_FOUND: &str = "session_not_found"; /*+*/
+// 406 None of the parameters are specified.
+pub const MSG_PARAMS_NOT_SPECIFIED: &str = "params_not_specified";
 
-pub const MSG_NOT_FOUND_BY_ID: &str = "The user with the specified ID was not found.";
-pub const MSG_NOT_FOUND_BY_EMAIL: &str = "The user with the specified email was not found.";
-
-// 409
-pub const CD_CONFLICT: &str = "Conflict";
-
-// 500
-pub const CD_INTER_SRV_ERROR: &str = "InternalServerError";
-pub const MSG_INTER_SRV_ERROR: &str = "internal_server_error";
-// Error web::block for waiting for database query to complete.
-pub const CD_BLOCKING: &str = "Blocking";
-// An error occurred while executing a database query.
-pub const CD_DATABASE: &str = "Database";
-// Error checking hash value.
+// 409 Conflict (profile_auth_controller, user_registr_controller)
+pub const CD_CONFLICT: &str = "Conflict"; /*+*/
+// 409 Conflict - Error checking hash value.
 pub const MSG_INVALID_HASH: &str = "invalid_hash";
-// Error encoding web token.
-pub const MSG_JSON_WEB_TOKEN_ENCODE: &str = "json_web_token_encode";
-// Error decoding web token.
-pub const MSG_JSON_WEB_TOKEN_DECODE: &str = "json_web_token_decode";
-// There is no session for this user.
-pub const MSG_SESSION_NOT_EXIST: &str = "session_not_exist";
-// Error when sending email
-pub const MSG_ERROR_SENDING_EMAIL: &str = "error_sending_email";
-// Error creating password hash.
+// 409 Conflict - The specified "email" is already registered.
+pub const MSG_EMAIL_ALREADY_USE: &str = "email_already_use";
+// 409 Conflict - The specified "nickname" is already registered.
+pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";
+
+// 413 Content too large // The request object exceeds the limits defined by the server.
+pub const CD_CONTENT_TOO_LARGE: &str = "ContentTooLarge"; /*+*/
+// 413 Content too large - File size exceeds max.
+pub const MSG_INVALID_FILE_SIZE: &str = "invalid_file_size";
+
+// 415 Unsupported Media Type (stream_controller)
+pub const CD_UNSUPPORTED_TYPE: &str = "UnsupportedType"; /*+*/
+// 415 Unsupported Media Type - Uploading Image Files. Mime file type is not valid.
+pub const MSG_INVALID_FILE_TYPE: &str = "invalid_file_type";
+
+// 416 Requested Range Not Satisfiable
+pub const CD_RANGE_NOT_SATISFIABLE: &str = "RangeNotSatisfiable";
+// 416 Requested Range Not Satisfiable - The specified type could not be converted.
+pub const MSG_PARSING_TYPE_NOT_SUPPORTED: &str = "parsing_type_not_supported";
+
+// 417 Expectation Failed (profile_auth_controller, user_registr_controller)
+pub const CD_VALIDATION: &str = "Validation"; /*+*/
+// 417 Expectation Failed - No fields specified for update.
+pub const MSG_NO_FIELDS_TO_UPDATE: &str = "no_fields_to_update";
+
+// 422 Unprocessable Entity (profile_auth_controller, user_registr_controller)
+pub const CD_UNPROCESSABLE_ENTITY: &str = "UnprocessableEntity";
+
+// 500 Internal Server Error (user_registr_controller)
+pub const CD_INTERNAL_ERROR: &str = "InternalServerError";
+// 500 Internal Server Error - Error creating password hash. (user_registr_controller, user_registr_controller)
 pub const MSG_ERROR_HASHING_PASSWORD: &str = "error_hashing_password";
-// Authentication: The entity "user" was not received from the request.
-pub const MSG_USER_NOT_RECEIVED_FROM_REQUEST: &str = "user_not_received_from_request";
+// 500 Internal Server Error - Error uploading file
+pub const MSG_ERROR_UPLOAD_FILE: &str = "error_upload_file";
 
-// Error creating password hash.
-pub const CD_HASHING_PASSWD: &str = "HashingPassword";
-// Error creating token.
-pub const CD_JSON_WEB_TOKEN: &str = "JsonWebToken";
+// 506 Variant Also Negotiates /*+*/
+pub const CD_BLOCKING: &str = "Blocking"; /*+*/
+// 506 Variant Also Negotiates - Error web::block for waiting for synchronous operations to complete. /*+*/
+pub const MSG_BLOCKING: &str = "error_waiting_for_operations"; /*+*/
 
-// pub const MSG_SERVER_ERROR: &str = "An unexpected internal server error occurred.";
+// 507 Insufficient Storage /*+*/
+pub const CD_DATABASE: &str = "Database"; /*+*/
+// 507 Insufficient Storage - An error occurred while executing a database query. /*+*/
+pub const MSG_DATABASE: &str = "database_query_error"; /*+*/
+
+// 510 Not Extended (user_registr_controller)
+pub const CD_NOT_EXTENDED: &str = "NotExtended"; /*+*/
+// 510 Not Extended - Error while converting file.
+pub const MSG_ERROR_CONVERT_FILE: &str = "error_convert_file";

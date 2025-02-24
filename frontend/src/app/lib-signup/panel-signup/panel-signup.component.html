@@ -1,0 +1,59 @@
+<div class="ps-content">
+  <form novalidate class="ps-form"
+    [formGroup]="formGroup">
+
+    <div class="ps-title">{{ 'panel-signup.title' | translate }}</div>
+  
+    <app-uniqueness-check ps-mr-tp-0_5
+      #uniquenessCheckNickname="appUniquenessCheck"
+      [debounceDelay]="debounceDelay"
+      [checkUniquenessFn]="checkUniquenessNickname">
+      <app-field-nickname wd100
+        formControlName="nickname"
+        [isRequired]="true"
+        label="field-nickname.label"
+        hint="field-nickname.nickname_hint"
+        [errorMsg]="uniquenessCheckNickname.isUniquenessError ? 'Conflict.nickname_already_use' : undefined"
+        (input)="updateErrMsg(); uniquenessCheckNickname.checkParameter(controls.nickname.value);">
+      </app-field-nickname>
+    </app-uniqueness-check>
+  
+    <app-uniqueness-check ps-mr-tp-1
+      #uniquenessCheckEmail="appUniquenessCheck"
+      [debounceDelay]="debounceDelay"
+      [checkUniquenessFn]="checkUniquenessEmail">
+      <app-field-email wd100
+        formControlName="email"
+        [isRequired]="true"
+        label="field-email.label"
+        [errorMsg]="uniquenessCheckEmail.isUniquenessError ? 'Conflict.email_already_use' : undefined"
+        (input)="updateErrMsg(); uniquenessCheckEmail.checkParameter(controls.email.value);">
+      </app-field-email>
+    </app-uniqueness-check>
+
+    <app-field-password wd100 ps-mr-tp-1
+      formControlName="password"
+      [isRequired]="true"
+      hint="field-password.password_hint"
+      (input)="updateErrMsg()">
+    </app-field-password>
+  
+    <button mat-flat-button ps-mr-tp-1
+      class="mat-primary"
+      [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
+      (click)="doSignup()">
+      {{ 'panel-signup.button_signup' | translate }}
+    </button>
+  
+    <div ps-mr-tp-1 class="ps-note">
+      <span>{{ 'panel-signup.already_registered' | translate }}</span>
+      <a ps-mr-lf-0_5 no-decor routerLink="{{linkLogin}}">{{ 'panel-signup.go_to_login_page' | translate }}</a>
+    </div>
+  </form>
+
+  <div class="mat-mdc-form-field-subscript-wrapper">
+    @for (errMsg of errMsgs; track errMsg) {
+      <mat-error>{{ errMsg | translate }}</mat-error>
+    } 
+  </div>
+</div>

@@ -1,0 +1,65 @@
+@for (stream of streamList; track stream.id) {
+  <div class="psi-stream-card">
+
+    <a class="psi-logo" (click)="doRedirectToStream(stream.id)">
+      @if (!isFuture) {
+        <app-logotype [logo]="stream.logo"></app-logotype>
+      } @else {
+        <svg class="psi-logo-future">
+          <use href="assets/icons/lib-stream/panel-stream-info/logo-future.svg#logo-future"></use>
+        </svg>
+      }
+    </a>
+
+    <div class="psi-details">
+      <div class="psi-date">
+        {{ stream.starttime | dateTimeFormat:locale:(isFuture ? formatDateTime : formatDate)  }}
+      </div>
+      <div class="psi-title">
+        <a href9="javascript:void(0);" (click)="doRedirectToStream(stream.id)">
+          {{ stream.title }}
+        </a>
+      </div>
+      <div class="psi-descript">{{ stream.descript }}</div>
+    </div>
+
+    <div class="psi-actions">
+      @if (canDuplicate) {
+        <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-action-btn psi-actions-box"
+           (click)="doActionDuplicate(stream.id)" psi-mr-rg-0_5>
+          <span class="psi-action-label">
+            <svg class="psi-duplicate-accent" psi-mr-rg-0_25>
+              <use href="assets/icons/lib-stream/panel-stream-info/file-copy-bin.svg#file-copy-bin"></use>
+            </svg>
+            <span>{{ 'panel-stream-mini.buttons.duplicate' | translate }}</span>
+          </span>
+        </button>
+      }
+      <div class="psi-actions-both">
+        @if (canEdit) {
+          <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-action-btn"
+            (click)="doActionEdit(stream.id)" psi-mr-rg-0_5>
+            <span class="psi-action-label">
+              <svg class="psi-edit-accent" psi-mr-rg-0_25>
+                <use href="assets/icons/lib-stream/panel-stream-info/file-circle-pen-bin.svg#file-circle-pen-bin"></use>
+              </svg>
+              <span>{{ 'panel-stream-mini.buttons.edit' | translate }}</span>
+            </span>
+          </button>
+        }
+        @if (canDelete) {
+          <button mat-stroked-button class="app-infix app-ordinary mat-elevation-z3 psi-action-btn"
+            (click)="doActionDelete(stream)" psi-mr-rg-0_5>
+            <span class="psi-action-label">
+              <svg class="psi-delete-accent" psi-mr-rg-0_25>
+                <use href="assets/icons/lib-stream/panel-stream-info/file-circle-cross-bin.svg#file-circle-cross-bin"></use>
+              </svg>
+              <span>{{ 'panel-stream-mini.buttons.delete' | translate }}</span>
+            </span>
+          </button>
+        }
+      </div>
+    </div>
+
+  </div>
+}

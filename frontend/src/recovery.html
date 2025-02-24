@@ -7,9 +7,17 @@
   <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
 
     <style type="text/css">
-      html { height: 100%; }
-      body { height: 100%; line-height: 1.5; margin: 0 !important; padding: 0 !important;
-        -webkit-text-size-adjust: 100% !important; -ms-text-size-adjust: 100% !important; -webkit-font-smoothing: antialiased !important;  }
+      html {
+        font-family: Roboto, 'Helvetica Neue', sans-serif;
+        font-size: 14px;
+        height: 100%;
+        line-height: 1.5;
+      }
+      body {
+        height: 100%;
+        margin: 0;
+        -webkit-text-size-adjust: 100% !important; -ms-text-size-adjust: 100% !important; -webkit-font-smoothing: antialiased !important;
+      }
       [al-it-cen] { align-items: center; }
       [bg-sz-cov] { background-size: cover; }
       [bx-sz-brd] { box-sizing: border-box; }
@@ -33,16 +41,38 @@
       [ps-abs] { position: absolute; }
       [tx-al-cen] { text-align: center; }
       [wd-100] { width: 100%; }
+      [us-nn] { user-select: none; }
     </style>
   </head>
   <body>
-    <!-- ==A basic_layout.hbs -->
-    <!-- {{> @partial-block}} -->
 
     <style>
-      .s-desktop {  --a-hd-hg: 4.4em; --a-hd-bg: hsl(140, 40%, 90%); --a-ft-hg: 2.3em; --a-ft-bg: hsl(140, 40%, 90%);
-        font-family: sans-serif; }
-      a, a:visited, a:hover { text-decoration: none; }
+      @media (width <= 480px) {
+        .s-desktop { --a-hd-hg: min(18vh, 80px); }
+        .s-content { --pd: 0.5em; --wd: 100%; }
+      }
+      @media (480px < width <= 768px) {
+        .s-desktop { --a-hd-hg: 74px; }
+        .s-content { --pd: 1.5em; --wd: 30em; }
+      }
+      @media (768px < width <= 1024px) {
+        .s-desktop { --a-hd-hg: 68px; }
+        .s-content { --pd: 2em; --wd: 32em; }
+      }
+      @media (1024px < width <= 1280px) {
+        .s-desktop { --a-hd-hg: 64px; }
+        .s-content { --pd: 2.5em; --wd: 34em; }
+      }
+      @media (1280px < width) {
+        .s-desktop { --a-hd-hg: 62px; }
+        .s-content { --pd: 3em; --wd: 36em; }
+      }
+      .s-desktop {
+        --a-site-unauth: hsl(55, 80%, 88%);
+        --a-hd-bg: var(--a-site-unauth);
+        --a-ft-hg: 1.75em;
+        --a-ft-bg: var(--a-site-unauth);
+      }
       header { background-color: var(--a-hd-bg); border-bottom: 1px solid lightgrey; flex: 0 0 var(--a-hd-hg); }
       footer { background-color: var(--a-ft-bg); border-top: 1px solid lightgrey; flex: 0 0 var(--a-ft-hg); }
       main { flex: 1 1 auto; height: fit-content; }
@@ -50,9 +80,6 @@
       .hd-logo-mini { height: 4em; width: 4em; background-image: url("assets/images/logo_mini.png"); }
 
       .s-content {
-        @media screen and (max-width: 480px) { --pd: 0.5em; --wd: 100%; }
-        @media screen and (min-width: 480px) and (max-width: 960px) { --pd: 1.5em; --wd: calc(16 * var(--pd)); }
-        @media screen and (min-width: 960px) { --pd: 2em; --wd: calc(14 * var(--pd)); }
         background-color: honeydew;
         border-radius: var(--pd);
         box-sizing: border-box;
@@ -68,7 +95,7 @@
       .s-text { font-size: calc(100% - 2px); }
 
       .s-err { color: rgb(224,32,32); }
-      .s-field-wrap { --wd-icon: 1.5em; margin-bottom: 0.25em; }
+      .s-field-wrap { --wd-icon: 1.68em; margin-bottom: 0.25em; }
       .s-field:not(:focus) { --delta: 1px; border-width: 1px; }
       .s-field:disabled { color: rgba(0,0,0,0.38); caret-color: transparent; }
 
@@ -123,23 +150,27 @@
 
       .s-hint-wrap { margin-left: 1em; min-height: 2.111em; }
       .s-hint { line-height: 1.2; font-size: calc(100% - 4px); }
-
+      .s-hint:not(.s-err) { color: hsl(210, 8%, 35%); }
       .s-submit { background-color: #3f51b5; color: #fff; }
 
+      .s-footer {
+        height: 100%;
+        line-height: 1;
+        padding-left: 0.8em;
+      }
     </style>
 
     <div ds-fl fl-dr-col hg-100 class="s-desktop">
       <header ds-fl js-cn-bet bx-sz-brd>
-        <a ds-fl al-it-cen pd-lf-05 pd-rg-05 id="hd_ref" href="/login">
+        <div ds-fl al-it-cen pd-lf-05 pd-rg-05>
           <i bg-sz-cov class="hd-logo-mini"></i>
-          <span mr-lf-05 style="font-size: x-large; font-weight: 600;">Verbéna</span>
-        </a>
+          <span mr-lf-05 id="app_name_id1" style="font-size: x-large; font-weight: 600;"></span>
+        </div>
       </header>
 
       <main>
-        
         <div ds-fl fl-dr-col js-cn-cen al-it-cen hg-100>
-          <div id="content_id" class="s-content">
+          <div us-nn id="content_id" class="s-content">
             <form ds-fl fl-dr-col id="form_prm_id">
 
               <div mr-bt-05 tx-al-cen class="s-title" id="title_id">Change password</div>
@@ -148,12 +179,10 @@
 
               <div mr-tp-05 wd-100 ps-rel class="s-field-wrap">
                 <input type="password" fn-sz-inh wd-100 bx-sz-brd class="s-field"
-                  id="field_passwd_id" data-dirty="off" autocomplete="off"
-                  required="" minlength="6" maxlength="65"
-                  title="Required field"
-                  onchange="doInputPassword(this, true);"
-                  oninput="elementInput(this); doInputPassword(this, false); updateSubmitStatus(this);"
-                  onblur="elementBlur(this)"
+                  id="field_passwd_id" autocomplete="new-password" title=""
+                  oninput="(this.hasAttribute('d-touched') ? doInputPassword(this) : null); updateSubmitStatus(this);"
+                  onfocus="elementFocus(this)"
+                  onblur="elementBlur(this); doInputPassword(this);"
                   d-untouched
                   d-pristine
                 />
@@ -175,47 +204,13 @@
 
           </div>
         </div>
-
       </main>
 
-      <footer ds-fl al-it-cen bx-sz-brd style="padding-left: 2em;">
-        <span><a id="ft_ref" href="/login" target="_blank">Verbéna</a> demo site.</span>
+      <footer ds-fl al-it-cen bx-sz-brd class="s-footer">
+        <a href="/ind/about" id="app_name_id2"></a>&nbsp;<span id="app_demo_site_id"></span>
       </footer>
     </div>
 
-    <!-- 
- 
-<form class="container" *ngIf="!!confirmationId"
-  [formGroup]="formGroup"
-  novalidate
->
-  <p>Enter new password for Bullpit.</p>
-  < !-- Введите новый пароль для Bullpit. -- >
-  <div class="password">
-    <app-widget-password
-      formControlName="newPassword"
-      [isRequired]="true"
-      [label]=""New password""
-    ></app-widget-password>
-  </div>
-  <button mat-raised-button class="smd-button submit" color="primary"
-    [disabled]="formGroup.invalid || isDisabledSubmit"
-    (click)="doSubmit()"
-  >Submit
-  </button>
-
-  <div *ngIf="isResponseSuccessful==true">
-    <p>Your password have been changed to new one!</p>
-    < !--Ваш пароль изменен на новый!-- >
-    <p>Please follow to <a href="/login">(login form)</a> for authorization.</p>
-    < !-- Пожалуйста, перейдите по <a href="/login">(форма входа)</a> для авторизации. -- >
-  </div>
-  <div class="failed" *ngIf="isResponseSuccessful==false">
-    <p>Your confirmation have been expired!</p>
-    < !-- Срок действия вашего подтверждения истек! -- >
-  </div>
-</form>
-    -->
     <template id="tmp_eye_off_id">
       <svg class="s-eye-off s-icon">
         <g fill="#788393">
@@ -238,19 +233,28 @@
     </template>
 
     <template id="tmp_success_id">
-      <span id="succ_answ_id">Your password have been changed to new one</span>
-      <p><a href="/signup" id="signup_id"></a></p>
+      <div id="block_success_id">
+        <span id="succ_answ_id">Your password have been changed to new one</span>
+        <div mr-tp-05><a href="/ind/login" id="link_login_id"></a></div>
+      </div>
     </template>
 
     <template id="tmp_failure_id">
-      <div mr-bt-05 mr-tp-05  id="fail_answ_id">Your password has not been changed</div>
-      <div mr-bt-05 mr-tp-05 fn-sz-2 fn-st-italic id="err_msg_id" class="s-err"></div>
-      <a href="/signup" id="signup_id"></a>
+      <div id="block_failure_id">
+        <div mr-bt-05 mr-tp-05  id="fail_answer_id">Your password has not been changed</div>
+        <div mr-bt-05 mr-tp-05 fn-sz-2 fn-st-italic id="err_msg_id" class="s-err"></div>
+        <div mr-tp-05><a href="/ind/forgot-password" id="link_password_change_id"></a></div>
+      </div>
     </template>
 
 
     <script type="text/javascript" language="javascript">
-      function elementInput(element) {
+      const regexPassWord = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d\\W_]{6,}$";
+      const regexPassWordBasic = "(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)";
+      const minLengthPass = 6;
+      const maxLengthPass = 64;
+
+      function elementFocus(element) {
         element?.removeAttribute("d-pristine");
         element?.setAttribute("d-dirty", "");
       }
@@ -258,27 +262,20 @@
         element?.removeAttribute("d-untouched");
         element?.setAttribute("d-touched", "");
       }
-      function doInputPassword(inputPassword, isChanged) {
-        if (!inputPassword) { return; }
-        const value = inputPassword.value;
-        const attrTouched = inputPassword.hasAttribute("d-touched");
-        if (isChanged || attrTouched) {
-          const value = inputPassword.value;
-          const content = document.getElementById("content_id");
-          const divErrTxt = content?.querySelector("[id=err_hint_id]");
-          inputPassword.removeAttribute("d-invalid");
-          let text = checkPassword(value)
-          if (!!text) {
-            inputPassword.setAttribute("d-invalid", "");
-            divErrTxt?.classList.add("s-err");
-          } else {
-            divErrTxt?.classList.remove("s-err");
-            text = getTranslate("field-password", "password_hint");
-          }
-          divErrTxt.innerText = text;
+      function doInputPassword(element) {
+        if (!element) return;
+        element.removeAttribute("d-invalid");
+        element.removeAttribute("d-valid");
+        const divErrTxt = document.getElementById("content_id")?.querySelector("[id=err_hint_id]");
+        divErrTxt?.classList.remove("s-err");
+        const textErr = checkPassword(element.value);
+        if (!!textErr) {
+          element.setAttribute("d-invalid", "");
+          divErrTxt?.classList.add("s-err");
+        } else {
+          element.setAttribute("d-valid", "");
         }
-        if (isChanged) {
-        }
+        divErrTxt.innerText = (!!textErr ? textErr : getTranslate("field-password", "password_hint"));
       }
       function updateSubmitStatus(elementPassword) {
         const btn_submit = document.getElementById("btn_submit_id");
@@ -290,19 +287,14 @@
       }
       function checkPassword(value) {
         let result = "";
-        const minlength = 6;
-        const maxlength = 64;
-
         if (!value) {
           result = getTranslate("Validation", "password:required");
-        } else if (value.length < minlength) {
+        } else if (value.length < minLengthPass) {
           result = getTranslate("Validation", "password:min_length");
-        } else if (value.length > maxlength) {
+        } else if (value.length > maxLengthPass) {
           result = getTranslate("Validation", "password:max_length");
-        } else if (!(new RegExp("[a-z]+")).test(value)
-         || !(new RegExp("[A-Z]+")).test(value)
-         || !(new RegExp("[\\d]+")).test(value)) {
-          result = getTranslate("Validation", "password:regex");
+        } else if (!(new RegExp(regexPassWordBasic)).test(value)) {
+          result = getTranslate("Validation", "password:regex");  
         }
         return result;
       }
@@ -348,6 +340,15 @@
       }
 
       function prepareData() {
+        // Header
+        const app_name1 = document.getElementById("app_name_id1");
+        app_name1.innerText = getTranslate("app", "name");
+        // Footer
+        const app_name2 = document.getElementById("app_name_id2");
+        app_name2.innerText = getTranslate("app", "name");
+        const app_demo_site = document.getElementById("app_demo_site_id");
+        app_demo_site.innerText = getTranslate("app", "demo_site");
+
         const content = document.getElementById("content_id");
 
         const title = content.querySelector("[id=title_id]");
@@ -358,7 +359,10 @@
 
         const inputPassword = content.querySelector("[id=field_passwd_id]");
         inputPassword.setAttribute("placeholder", getTranslate("field-password", "placeholder"));
-        inputPassword.setAttribute("title", getTranslate("field-password", "title"));
+        inputPassword.setAttribute("required", "");
+        inputPassword.setAttribute("minlength", minLengthPass);
+        inputPassword.setAttribute("maxlength", maxLengthPass + 1);
+        inputPassword.setAttribute("pattern", regexPassWord);
 
         const btnPasswordShow = content.querySelector("[id=btn_toggle_id]");
         btnPasswordShow.setAttribute("title", getTranslate("field-password", "toggle_title"));
@@ -370,17 +374,29 @@
         submitLabel.innerText = getTranslate("Change_password", "submit_label");
       }
 
+      function removeChildren(elem) {
+        const childrenId = ["block_failure_id", "block_success_id"];
+        if (elem != null && Array.isArray(childrenId) && childrenId.length > 0) {
+          for (let index = 0; index < childrenId.length; ++index) {
+            const child = elem.querySelector(`[id=${childrenId[index]}]`);
+            if (!!child) {
+              elem.removeChild(child);
+            }
+          }
+        }
+      }
       function recoverySuccessful(responseText) {
-        formDisabled(false);
+        formDisabled(true);
         const content = document.getElementById("content_id");
+        removeChildren(content);
         const tmpl = document.getElementById("tmp_success_id");
         const clon = tmpl?.content.cloneNode(true);
 
         const succ_answer = clon.querySelector("[id=succ_answ_id]");
         succ_answer.innerText = getTranslate("Change_password", "change_successful");
 
-        const signup = clon.querySelector("[id=signup_id]");
-        signup.innerText = getTranslate("Change_password", "link_signup");
+        const link_login = clon.querySelector("[id=link_login_id]");
+        link_login.innerText = getTranslate("Change_password", "link_login");
 
         content?.appendChild(clon);
       }
@@ -389,17 +405,18 @@
         formDisabled(false);
         const err = JSON.parse(responseText);
         const content = document.getElementById("content_id");
+        removeChildren(content);
         const tmpl = document.getElementById("tmp_failure_id");
         const clon = tmpl?.content.cloneNode(true);
 
-        const fail_answer = clon.querySelector("[id=fail_answ_id]");
+        const fail_answer = clon.querySelector("[id=fail_answer_id]");
         fail_answer.innerText = getTranslate("Change_password", "change_failed");
 
         const errText = clon.querySelector("[id=err_msg_id]");
-        errText.innerText = getTranslate(err.errCode, err.errMsg);
+        errText.innerText = getTranslate(err.code, err.message) || (err.code + ": " + err.message);
 
-        const signup = clon.querySelector("[id=signup_id]");
-        signup.innerText = getTranslate("Change_password", "link_signup");
+        const link_password_change = clon.querySelector("[id=link_password_change_id]");
+        link_password_change.innerText = getTranslate("Change_password", "link_password_change");
 
         content?.appendChild(clon);
       }

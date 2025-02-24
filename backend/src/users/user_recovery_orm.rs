@@ -1,22 +1,19 @@
-use super::user_models::{CreateUserRecoveryDto, UserRecovery};
+use super::user_models::{CreateUserRecovery, UserRecovery};
 
 pub const DURATION_IN_DAYS: u16 = 90;
 
 pub trait UserRecoveryOrm {
-    /// Find for an entity (user_recovery) by id.
-    fn find_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String>;
+    /// Get an entity (user_recovery) by ID.
+    fn get_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String>;
     /// Find for an entity (user_recovery) by user_id.
     fn find_user_recovery_by_user_id(&self, user_id: i32) -> Result<Option<UserRecovery>, String>;
     /// Add a new entity (user_recovery).
-    fn create_user_recovery(
-        &self,
-        create_user_recovery_dto: &CreateUserRecoveryDto,
-    ) -> Result<UserRecovery, String>;
+    fn create_user_recovery(&self, create_user_recovery: CreateUserRecovery) -> Result<UserRecovery, String>;
     /// Modify an entity (user_recovery).
     fn modify_user_recovery(
         &self,
         id: i32,
-        modify_user_recovery_dto: &CreateUserRecoveryDto,
+        modify_user_recovery: CreateUserRecovery,
     ) -> Result<Option<UserRecovery>, String>;
     /// Delete an entity (user_recovery).
     fn delete_user_recovery(&self, id: i32) -> Result<usize, String>;
@@ -28,7 +25,7 @@ pub mod cfg {
     use crate::dbase::DbPool;
 
     #[cfg(not(feature = "mockdata"))]
-    use super::inst::UserRecoveryOrmApp;
+    use super::impls::UserRecoveryOrmApp;
     #[cfg(not(feature = "mockdata"))]
     pub fn get_user_recovery_orm_app(pool: DbPool) -> UserRecoveryOrmApp {
         UserRecoveryOrmApp::new(pool)
@@ -43,7 +40,7 @@ pub mod cfg {
 }
 
 #[cfg(not(feature = "mockdata"))]
-pub mod inst {
+pub mod impls {
 
     use chrono::{Duration, Utc};
     use diesel::{self, prelude::*};
@@ -51,15 +48,11 @@ pub mod inst {
 
     use crate::dbase;
     use crate::schema;
-    use crate::users::{
-        user_models::{CreateUserRecoveryDto, UserRecovery},
-        user_recovery_orm::DURATION_IN_DAYS,
-    };
+    use crate::users::{user_models::UserRecovery, user_recovery_orm::DURATION_IN_DAYS};
 
-    use super::UserRecoveryOrm;
+    use super::*;
 
     pub const CONN_POOL: &str = "ConnectionPool";
-    pub const DB_USER_RECOVERY: &str = "Db_UserRecovery";
 
     #[derive(Debug, Clone)]
     pub struct UserRecoveryOrmApp {
@@ -76,8 +69,8 @@ pub mod inst {
     }
 
     impl UserRecoveryOrm for UserRecoveryOrmApp {
-        /// Find for an entity (user_recovery) by id.
-        fn find_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String> {
+        /// Get an entity (user_recovery) by ID.
+        fn get_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to find user by id and return it.
@@ -85,16 +78,13 @@ pub mod inst {
                 .filter(dsl::id.eq(id))
                 .first::<UserRecovery>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
+                .map_err(|e| format!("find_user_recovery_by_id: {}", e.to_string()))?;
 
             Ok(result)
         }
 
         /// Find for an entity (user_recovery) by user_id.
-        fn find_user_recovery_by_user_id(
-            &self,
-            user_id: i32,
-        ) -> Result<Option<UserRecovery>, String> {
+        fn find_user_recovery_by_user_id(&self, user_id: i32) -> Result<Option<UserRecovery>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             let now = Utc::now();
@@ -103,26 +93,21 @@ pub mod inst {
                 .filter(dsl::user_id.eq(user_id).and(dsl::final_date.gt(now)))
                 .first::<UserRecovery>(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
+                .map_err(|e| format!("find_user_recovery_by_user_id: {}", e.to_string()))?;
 
             Ok(result)
         }
 
         /// Add a new entity (user_recovery).
-        fn create_user_recovery(
-            &self,
-            create_user_recovery_dto: &CreateUserRecoveryDto,
-        ) -> Result<UserRecovery, String> {
-            let create_user_recovery_dto2 = create_user_recovery_dto.clone();
-
+        fn create_user_recovery(&self, create_user_recovery: CreateUserRecovery) -> Result<UserRecovery, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to add a new user entry.
             let user_recovery: UserRecovery = diesel::insert_into(schema::user_recovery::table)
-                .values(create_user_recovery_dto2)
+                .values(create_user_recovery)
                 .returning(UserRecovery::as_returning())
                 .get_result(&mut conn)
-                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
+                .map_err(|e| format!("create_user_recovery: {}", e.to_string()))?;
 
             Ok(user_recovery)
         }
@@ -131,19 +116,17 @@ pub mod inst {
         fn modify_user_recovery(
             &self,
             id: i32,
-            create_user_recovery_dto: &CreateUserRecoveryDto,
+            create_user_recovery: CreateUserRecovery,
         ) -> Result<Option<UserRecovery>, String> {
-            let create_user_recovery_dto2 = create_user_recovery_dto.clone();
-
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to full or partially modify the user entry.
             let result = diesel::update(dsl::user_recovery.find(id))
-                .set(&create_user_recovery_dto2)
+                .set(&create_user_recovery)
                 .returning(UserRecovery::as_returning())
                 .get_result(&mut conn)
                 .optional()
-                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
+                .map_err(|e| format!("modify_user_recovery: {}", e.to_string()))?;
 
             Ok(result)
         }
@@ -155,35 +138,27 @@ pub mod inst {
             // Run query using Diesel to delete a entry (user_recovery).
             let count: usize = diesel::delete(dsl::user_recovery.find(id))
                 .execute(&mut conn)
-                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
+                .map_err(|e| format!("delete_user_recovery: {}", e.to_string()))?;
 
             Ok(count)
         }
 
         /// Delete all entities (user_recovery) with an inactive "final_date".
-        fn delete_inactive_final_date(
-            &self,
-            duration_in_days: Option<u16>,
-        ) -> Result<usize, String> {
+        fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String> {
             let now = Utc::now();
             let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
             let start_day_time = now - Duration::days(duration.into());
             let end_day_time = now.clone();
-            let before = std::time::Instant::now();
+
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-
             // Run query using Diesel to delete a entry (user_recovery).
-            let count: usize =
-                diesel::delete(schema::user_recovery::table.filter(
-                    dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time)),
-                ))
-                .execute(&mut conn)
-                .map_err(|e| format!("{}: {}", DB_USER_RECOVERY, e.to_string()))?;
-
-            let info = format!("{:.2?}", before.elapsed());
-            #[rustfmt::skip]
-            log::info!("user_recovery.delete(expired) time: {}, count: {}", info, count);
+            let count: usize = diesel::delete(
+                schema::user_recovery::table
+                    .filter(dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time))),
+            )
+            .execute(&mut conn)
+            .map_err(|e| format!("delete_inactive_final_date: {}", e.to_string()))?;
 
             Ok(count)
         }
@@ -194,7 +169,7 @@ pub mod inst {
 pub mod tests {
     use chrono::{DateTime, Duration, Utc};
 
-    use crate::users::user_models::{CreateUserRecoveryDto, UserRecovery};
+    use crate::users::user_models::{CreateUserRecovery, UserRecovery};
 
     use super::{UserRecoveryOrm, DURATION_IN_DAYS};
 
@@ -214,9 +189,9 @@ pub mod tests {
         }
         /// Create a new instance with the specified user recovery list.
         #[cfg(test)]
-        pub fn create(user_recov_vec: Vec<UserRecovery>) -> Self {
+        pub fn create(user_recov_vec: &[UserRecovery]) -> Self {
             let mut user_recovery_vec: Vec<UserRecovery> = Vec::new();
-            let mut idx: i32 = user_recov_vec.len().try_into().unwrap();
+            let mut idx: i32 = 0;
             for user_reg in user_recov_vec.iter() {
                 user_recovery_vec.push(Self::new_user_recovery(
                     USER_RECOVERY_ID + idx,
@@ -238,8 +213,8 @@ pub mod tests {
     }
 
     impl UserRecoveryOrm for UserRecoveryOrmApp {
-        /// Find for an entity (user_recovery) by id.
-        fn find_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String> {
+        /// Get an entity (user_recovery) by ID.
+        fn get_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String> {
             let result = self
                 .user_recovery_vec
                 .iter()
@@ -248,42 +223,32 @@ pub mod tests {
             Ok(result)
         }
         /// Find for an entity (user_recovery) by user_id.
-        fn find_user_recovery_by_user_id(
-            &self,
-            user_id: i32,
-        ) -> Result<Option<UserRecovery>, String> {
+        fn find_user_recovery_by_user_id(&self, user_id: i32) -> Result<Option<UserRecovery>, String> {
             let now = Utc::now();
 
             let result: Option<UserRecovery> = self
                 .user_recovery_vec
                 .iter()
-                .find(|user_recovery| {
-                    user_recovery.final_date > now && (user_recovery.user_id == user_id)
-                })
+                .find(|user_recovery| user_recovery.final_date > now && (user_recovery.user_id == user_id))
                 .map(|user_recovery| user_recovery.clone());
 
             Ok(result)
         }
 
         /// Add a new entity (user_recovery).
-        fn create_user_recovery(
-            &self,
-            create_user_recovery_dto: &CreateUserRecoveryDto,
-        ) -> Result<UserRecovery, String> {
-            let user_id = create_user_recovery_dto.user_id;
-            let final_date = create_user_recovery_dto.final_date.clone();
+        fn create_user_recovery(&self, create_user_recovery: CreateUserRecovery) -> Result<UserRecovery, String> {
+            let user_id = create_user_recovery.user_id;
+            let final_date = create_user_recovery.final_date.clone();
 
-            let res_user1_opt: Option<UserRecovery> =
-                self.find_user_recovery_by_user_id(user_id)?;
-            if res_user1_opt.is_some() {
+            let opt_res_user1: Option<UserRecovery> = self.find_user_recovery_by_user_id(user_id)?;
+            if opt_res_user1.is_some() {
                 return Err("\"User recovery\" already exists.".to_string());
             }
 
             let idx: i32 = self.user_recovery_vec.len().try_into().unwrap();
             let new_id: i32 = USER_RECOVERY_ID + idx;
 
-            let user_recovery_saved: UserRecovery =
-                UserRecoveryOrmApp::new_user_recovery(new_id, user_id, final_date);
+            let user_recovery_saved: UserRecovery = UserRecoveryOrmApp::new_user_recovery(new_id, user_id, final_date);
 
             Ok(user_recovery_saved)
         }
@@ -292,18 +257,17 @@ pub mod tests {
         fn modify_user_recovery(
             &self,
             id: i32,
-            create_user_recovery_dto: &CreateUserRecoveryDto,
+            modify_profile_recovery: CreateUserRecovery,
         ) -> Result<Option<UserRecovery>, String> {
-            let user_recovery_opt =
-                self.user_recovery_vec.iter().find(|user_recovery| user_recovery.id == id);
+            let user_recovery_opt = self.user_recovery_vec.iter().find(|user_recovery| user_recovery.id == id);
             if user_recovery_opt.is_none() {
                 return Ok(None);
             }
 
             let user_recovery_saved: UserRecovery = UserRecoveryOrmApp::new_user_recovery(
                 id,
-                create_user_recovery_dto.user_id,
-                create_user_recovery_dto.final_date.clone(),
+                modify_profile_recovery.user_id,
+                modify_profile_recovery.final_date.clone(),
             );
 
             Ok(Some(user_recovery_saved))
@@ -311,20 +275,14 @@ pub mod tests {
 
         /// Delete an entity (user_recovery).
         fn delete_user_recovery(&self, id: i32) -> Result<usize, String> {
-            let exist_user_recovery_opt =
-                self.user_recovery_vec.iter().find(|user_recovery| user_recovery.id == id);
+            let user_recovery_opt = self.user_recovery_vec.iter().find(|user_recovery| user_recovery.id == id);
 
-            if exist_user_recovery_opt.is_none() {
-                Ok(0)
-            } else {
-                Ok(1)
-            }
+            #[rustfmt::skip]
+            let result = if user_recovery_opt.is_none() { 0 } else { 1 };
+            Ok(result)
         }
         /// Delete all entities (user_recovery) with an inactive "final_date".
-        fn delete_inactive_final_date(
-            &self,
-            duration_in_days: Option<u16>,
-        ) -> Result<usize, String> {
+        fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String> {
             let now = Utc::now();
             let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
             let start_day_time = now - Duration::days(duration.into());
@@ -334,8 +292,7 @@ pub mod tests {
                 .user_recovery_vec
                 .iter()
                 .filter(|user_recovery| {
-                    user_recovery.final_date > start_day_time
-                        && user_recovery.final_date < end_day_time
+                    user_recovery.final_date > start_day_time && user_recovery.final_date < end_day_time
                 })
                 .count();
 

@@ -1,0 +1,22 @@
+/*# sourceURL=sidebar.component.scss */
+
+app-sidebar {
+    align-items: center;
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    overflow: var(--sb-ov-fl, hidden);
+    max-width: var(--sb-mx-wd, 150px);
+    min-width: var(--sb-mn-wd, 0px);
+    padding: var(--sb-pd);
+    transition-duration: var(--sb-durt);
+    transition-property: width, padding-left;
+
+    &[is-open] {
+        width: var(--sb-mx-wd, 150px);
+    }
+
+    &:not([is-open]) {
+        width: var(--sb-mn-wd, 150px);
+    }
+}

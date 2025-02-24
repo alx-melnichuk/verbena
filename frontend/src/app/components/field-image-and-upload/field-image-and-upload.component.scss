@@ -1,0 +1,65 @@
+/*# sourceURL=field-image-and-upload.component.scss */
+
+app-field-image-and-upload {
+    &[hg100] {
+        ---fiau-hg100: 100%;
+    }
+
+    &[wd100] {
+        ---fiau-wd100: 100%;
+        ---fiau-rmv-dl: -6px;
+    }
+
+    align-items: center;
+    box-sizing: border-box;
+    display: block;
+    height: var(---fiau-hg100, var(--fiau-hg));
+    width : var(---fiau-wd100, var(--fiau-wd));
+
+    .mat-mdc-form-field {
+        height: 100%;
+        width: 100%;
+    }
+
+    .mat-mdc-text-field-wrapper {
+        height: calc(100% - 19.167px); // subtract height for "mat-hint"/"mat-error".
+    }
+
+    .mat-mdc-form-field-flex {
+        height: 100%;
+    }
+
+    .mat-mdc-form-field-infix {
+        height: 100%;
+        text-align: center;
+    }
+
+    .fiau-image {
+        border-radius: 0.5em;
+        height: 100%;
+        object-fit: cover;
+        width: var(---fiau-wd100, var(--fiau-wd));
+        max-width: 100%;
+    }
+
+    .fiau-remove-wrap {
+        position: relative;
+        vertical-align: top;
+    }
+
+    .fiau-remove {
+        --mdc-icon-button-icon-size: 1.75rem;
+        position: absolute;
+        right: -2rem;
+        top: -1.5rem;
+        z-index: 1;
+    }
+
+    .mat-mdc-text-field-wrapper.mdc-text-field--outlined .mdc-text-field__input.fiau-hide {
+        display: none;
+    }
+
+    .fiau-file-circle-cross {
+        color: var(--app-svg-icon-cl);
+    }
+}

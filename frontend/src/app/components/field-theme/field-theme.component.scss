@@ -1,0 +1,39 @@
+/*# sourceURL=field-theme.component.scss */
+
+app-field-theme {
+    display: block;
+
+    &[wd100] {
+        width: 100%;
+    }
+
+    &[hg100] {
+        height: 100%;
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
+
+    .mat-mdc-form-field-infix {
+        width: 7em;
+    }
+
+    .ft-readonly {
+        pointer-events: none;
+    }
+
+    .ft-fn-it {
+        font-style: italic;
+        color: var(--ft-text-cl, var(--app-default-dis-cl))
+    }
+}
+
+
+.cdk-overlay-pane {
+    .ft-opt-fn-it {
+        font-style: italic;
+        color: var(--ft-text-cl, var(--app-default-dis-cl))
+    }
+}

@@ -1,0 +1,375 @@
+{
+  "app": {
+    "name": "Verbéna",
+    "demo_site": " demo site."
+  },
+  "error": {
+    "required": "Enter a required field.",
+    "server_api_call": "An error occurred while calling the server API."
+  },
+  "buttons": {
+    "ok": "Ok",
+    "cancel": "Cancel",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "main_menu": {
+    "about": "About",
+    "login": "Log in",
+    "signup": "Sign up",
+    "profile": "Profile",
+    "stream_list": "My streams",
+    "stream_create": "Create stream",
+    "concept_list": "View",
+    "my_follows_": "My follows",
+    "theme": "Theme",
+    "locale": "Locale",
+    "log_out": "Log Out"
+  },
+  "dialog": {
+    "confirmation": "Confirmation"
+  },
+  "locale": {
+    "": "nothing",
+    "en-US": "English [en-US]",
+    "de-DE": "Deutsch [de-DE]",
+    "uk-UA": "Українська [uk-UA]"
+  },
+  "theme": {
+    "": "nothing",
+    "light-azure-orange": "light azure",
+    "light-cyan-orange": "light cyan",
+    "light-violet-chartreuse": "light violet",
+    "light-orange-magenta": "light orange",
+    "light-magenta-cyan": "light magenta",
+    "dark-azure-orange": "dark azure",
+    "dark-cyan-orange": "dark cyan",
+    "dark-violet-chartreuse": "dark violet",
+    "dark-orange-magenta": "dark orange",
+    "dark-magenta-cyan": "dark magenta"
+  },
+  "Forbidden": {
+    "status": 403,
+    "access_denied" : "Access is denied."
+  },
+  "Unauthorized": {
+    "status": 401,
+    "token_missing" : "Authorization token is missing.",
+    "invalid_or_expired_token" : "Invalid or expired token.",
+    "unacceptable_token_num" : "Unacceptable token number",
+    "unacceptable_token_id" : "Unacceptable token id",
+    "nickname_or_email_incorrect" : "The nickname or email address is incorrect.",
+    "password_incorrect" : "The password specified is incorrect."
+  },
+  "NotFound": {
+    "status": 404,
+    "registration_not_found" : "An record for registering a new user was not found.",
+    "user_not_found" : "User not found.",
+    "recovery_not_found" : "An record to recover the user's password was not found."
+  },
+  "NotAcceptable": {
+    "status": 406,
+    "finish_date_less_start_date" : "The finish date \"{{ invalidPeriod.streamPeriodFinish }}\" is less than the start date \"{{ invalidPeriod.streamPeriodStart }}\".",
+    "invalid_field_tag" : "Error deserializing field \"tag\".",
+    "session_not_exist" : "There is no session for this user.",
+    "params_not_specified": "Parameters not specified",
+    "invalid_stream_state": "Invalid stream state transition from \"{{ invalidState.oldState }}\" to \"{{ invalidState.newState }}\"."
+  },
+  "Conflict": {
+    "status": 409,
+    "invalid_hash" : "Invalid password hash value.",
+    "email_already_use" : "This email is already in use or is being registered.",
+    "nickname_already_use" : "This nickname is already in use or is being registered."
+  },
+  "ContentTooLarge": {
+    "status": 413,
+    "finish_date_exceeds_limit" : "The finish date \"{{ periodTooLong.actualPeriodFinish }}\" of the search period exceeds the limit \"{{ periodTooLong.periodMaxNumberDays }}\".",
+    "invalid_file_size" : "File size ({{ invalidFileSize.actualFileSize }}) exceeds max ({{ invalidFileSize.maxFileSize }})."
+  },
+  "UnsupportedType": {
+    "status": 415,
+    "invalid_file_type" : "File type MIME upload ({{ invalidFileType.actualFileType }}) is not in the list of available ones ({{ invalidFileType.validFileType }})."
+  },
+  "RangeNotSatisfiable": {
+    "status": 416,
+    "parsing_type_not_supported" : "The data type is not supported during parsing."
+  },
+  "Validation": {
+    "status": 417,
+    "new_password:required" : "The \"newPassword\" field is required.",
+    "new_password:min_length" : "The \"newPassword\"field must have at least {{ minlength.requiredLength }} characters.",
+    "new_password:max_length" : "The \"newPassword\" field must have no more {{ maxlength.requiredLength }} characters.",
+    "new_password:regex" : "The \"newPassword\" field must contain: a lowercase letter, an uppercase letter and a number.",
+    "new_password:equal_to_old_value": "The \"newPassword\" field must be different from the old value.",
+    "nickname:required" : "The \"nickname\" field is required.",
+    "nickname:min_length" : "The \"nickname\" field must have at least {{ minlength.requiredLength }} characters.",
+    "nickname:max_length" : "The \"nickname\" field must have no more {{ maxlength.requiredLength }} characters.",
+    "nickname:regex" : "Available in \"nickname\": lowercase and uppercase letters, numbers and underscores.",
+    "email:required" : "The \"email\" field is required.",
+    "email:min_length" : "The \"email\" field must have at least {{ minlength.requiredLength }} characters.",
+    "email:max_length" : "The \"email\" field must have no more {{ maxlength.requiredLength }} characters.",
+    "email:email_type" : "The \"email\" field must comply with the standard (john.smith@example.com).",
+    "password:required" : "The \"password\" field is required.",
+    "password:min_length" : "The \"password\" field must have at least {{ minlength.requiredLength }} characters.",
+    "password:max_length" : "The \"password\" field must have no more {{ maxlength.requiredLength }} characters.",
+    "password:regex" : "The \"password\" field must contain: a lowercase letter, an uppercase letter and a number.",
+    "title:required" : "The \"title\" field is required.",
+    "title:min_length" : "The \"title\" field must have at least {{ minlength.requiredLength }} characters.",
+    "title:max_length" : "The \"title\" field must have no more {{ maxlength.requiredLength }} characters.",
+    "descript:min_length" : "The \"description\" field must have at least {{ minlength.requiredLength }} characters.",
+    "descript:max_length" : "The \"description\" field must have no more {{ maxlength.requiredLength }} characters.",
+    "starttime:min_valid_date" : "The \"date\" field \"{{ minValidDateTime.actualDateTime }}\" is less than the minimum value \"{{ minValidDateTime.minDateTime }}\".",
+    "source:min_length" : "The \"source\" field must have at least {{ minlength.requiredLength }} characters.",
+    "source:max_length" : "The \"source\" field must have no more {{ maxlength.requiredLength }} characters.",
+    "tag:required" : "The \"tags\" field is required.",
+    "tag:min_amount" : "The number of \"tag\" elements ({{ minAmount.actualAmount }}) is less than the minimum value ({{ minAmount.requiredAmount }}).",
+    "tag:max_amount" : "The number of \"tag\" elements ({{ maxAmount.actualAmount }}) is greater than the maximum value ({{ maxAmount.requiredAmount }}).",
+    "tag:min_length" : "The \"tag\" field must have at least {{ minlength.requiredLength }} characters ({{ minlength.actualValue }}).",
+    "tag:max_length" : "The \"tag\" field must have no more {{ maxlength.requiredLength }} characters ({{ maxlength.actualValue }}).",
+    "date:required": "The \"date\" field is required.",
+    "date:invalid_format": "Invalid date format.",
+    "date:minDate": "The \"date\" field \"{{matDatepickerMin.actual_s}}\" is less than the minimum value \"{{matDatepickerMin.min_s}}\".",
+    "date:maxDate":"The \"date\" field \"{{matDatepickerMax.actual_s}}\" is greater than the maximum value \"{{matDatepickerMax.max_s}}\".",
+    "time:required": "The \"time\" field is required.",
+    "time:min": "The \"time\" field must be no less than {{ min.requiredMin }}.",
+    "time:max": "The \"time\" field must be no greater than {{ max.requiredMax }}.",
+    "theme:required": "The \"theme\" field is required.",
+    "theme:min_length" : "The \"theme\" field must have at least {{ minlength.requiredLength }} characters.",
+    "theme:max_length" : "The \"theme\" field must have no more {{ maxlength.requiredLength }} characters.",
+    "locale:required": "The \"locale\" field is required.",
+    "locale:min_length" : "The \"locale\" field must have at least {{ minlength.requiredLength }} characters.",
+    "locale:max_length" : "The \"locale\" field must have no more {{ maxlength.requiredLength }} characters.",
+    "user_role:invalid_value": "Invalid value for \"user role\" ({{ invalid.actualValue }}).",
+    "no_fields_to_update": "There are no fields to update. Valid names: {{ noRequiredFields.validNames }}."
+  },
+  "UnprocessableEntity": {
+    "status": 422,
+    "json_web_token_encode" : "Error encoding web token."
+  },
+  "InternalServerError": {
+    "status": 500,
+    "internal_error_accessing_server_api" : "Internal error when accessing the server API.",
+    "user_not_received_from_request" : "Authentication - the entity \"user\" was not received from the request.",
+    "error_upload_file" : "Error uploading file",
+    "error_hashing_password" : "Error when hashing password"
+  },
+  "Blocking": {
+    "status": 506,
+    "error_waiting_for_operations" : "An error occurred while waiting for the operation to complete."
+  },
+  "Database": {
+    "status": 507,
+    "database_query_error" : "Error executing database query."
+  },
+  "NotExtended": {
+    "status": 510,
+    "error_convert_file" : "Error while converting file.",
+    "error_sending_email" : "Error when sending email."
+  },
+  "field-chip-grid": {
+    "label": "Add value",
+    "hint": "separator: Enter and space"
+  },
+  "field-date": {
+    "label": "Date "
+  },
+  "field-descript": {
+    "label": "Description"
+  },
+  "field-email": {
+    "err_minlength_symbol_search": "The symbol search should have {{value}} characters or more.",
+    "err_maxlength_symbol_search": "The symbol search should be less than {{value}} characters.",
+    "label": "Email "
+  },
+  "field-file-upload": {
+    "drag_files_or_browse": "Select file or drag file here.",
+    "supported_file_types": "Supported file types: {{validTypes}}.",
+    "upload_up_to": "Upload up to {{maxFileSize}}.",
+    "err_upload_images_use_valid_types": "Please upload images with valid format: {{validTypes}}.",
+    "err_file_size_must_not_exceed_max": "The file size must not exceed the maximum {{maxFileSize}} B ({{maxFileSizeShort}})."
+  },
+  "field-image-and-upload": {
+    "label": "Image file",
+    "remove_image": "Remove this image"
+  },
+  "field-nickname": {
+    "label": "Nickname ",
+    "nickname_hint": "Used: lowercase letters, uppercase letters, numbers and underscores. Minimum 3 characters."
+  },
+  "field-password": {
+    "label": "Password ",
+    "password_hint": "Use at least 6 characters, with one lowercase letter, one uppercase letter and a number."
+  },
+  "field-locale": {
+    "label": "Locale "
+  },
+  "field-theme": {
+    "label": "Color theme "
+  },
+  "field-time": {
+    "label": "Time "
+  },
+  "field-title": {
+    "label": "Title "
+  },
+  "panel-login": {
+    "title": "Log in",
+    "email_or_nickname": "Email or Nickname ",
+    "btn_login": "Log in",
+    "create_an_account": "Create an account",
+    "forgot_password": "Forgot password ?"
+  },
+  "panel-signup": {
+    "title": "Sign up",
+    "button_signup": "Sign up",
+    "already_registered": "Already registered ?",
+    "go_to_login_page": "Go to the login page."
+  },
+  "pg-signup": {
+    "dialog_title": "Welcome to the {{appName}} !",
+    "dialog_message": "We have sent a registration link to \"{{value}}\"."
+  },
+  "panel-forgot-password": {
+    "title": "Password change request",
+    "you_forgot_password": "If you have forgotten your password, please provide your email address and send a change request to it.",
+    "email_address": "Email Address ",
+    "button_send": "Send request",
+    "go_to_login_page": "Go to the login page."
+  },
+  "pg-forgot-password": {
+    "dialog_title": "Welcome to the {{appName}} !",
+    "dialog_message": "We have sent a link to change your password to \"{{value}}\"."
+  },
+  "logotype": {
+    "no_logo": "missing!"
+  },
+  "stream_list": {
+    "my_calendar": "My calendar",
+    "my_future_streams": "My future streams",
+    "my_past_streams": "My past streams",
+    "sure_you_want_delete_stream": "Are you sure you want to delete the stream \"{{title}}\" ?",
+    "error_get_streams_for_selected_day": "Error getting streams for the selected day",
+    "error_get_streams_for_active_period": "Error getting streams for the active period",
+    "error_delete_stream": "Error while deleting stream",
+    "error_get_future_streams": "Error while getting future streams",
+    "error_get_past_streams": "Error while getting past streams"
+  },
+  "panel-stream-mini": {
+    "buttons": {
+      "duplicate": "Duplicate",
+      "edit": "Edit",
+      "delete": "Delete"
+    }
+  },
+  "panel-stream-event": {
+    "buttons": {
+      "edit": "Edit"
+    }
+  },
+  "panel-stream-editor": {
+    "creating_stream": "Creating a Stream",
+    "editing_stream": "Editing a Stream",
+    "title": "Title",
+    "save": "Save",
+    "create": "Create",
+    "descript": "Description",
+    "thumbnail": "Thumbnail",
+    "tags": "Tags",
+    "add_tags": "Add tags",
+    "tags_hint": "Tags should be: minimum 1, maximum 4.",
+    "set_date_and_time_or_now": "Begin Now or Schedule Stream",
+    "start_date": "Start date",
+    "start_time": "Start time",
+    "link_for_visitors": "Link for visitors",
+    "copy_stream_link_to_clipboard": "Copy stream link to clipboard",
+    "stream_link_copied_to_clipboard": "Stream link copied to clipboard"
+  },
+  "panel-about": {
+    "title": "About the {{appName}} website.",
+    "label": "The {{appName}} site is a demo site. And has no commercial purposes.",
+    "label_swagger": "\"swagger\" visual interface",
+    "label_redoc": "\"redoc\" documentation",
+    "label_rapidoc": "\"rapidoc\" documentation",
+    "frontend_used": "On the Frontend we used:",
+    "frontend_items": [
+      "angular v.18",
+      "ngx-translate v.15",
+      "angular/material v.18",
+      "angular/mat-datepicker, mat-calendar + Internationalization",
+      "input components with ControlValueAccessor implementation",
+      "component for outputting an image file",
+      "\"DragAndDrop\" directive",
+      "service and component for displaying modal windows",
+      "Interceptor for updating the authorization token",
+      "Guard to control access to menu items",
+      "\"infinite scroll\" for page-by-page data loading",
+      "based on css-variables, 5 light and 5 dark color schemes have been prepared",
+      "the site is adapted for the old version of Chrome 109 (Windows 7, 10)"
+    ],
+    "backend_used": "On the Backend we used:"
+  },
+  "panel-profile": {
+    "title_profile": "Personal information",
+    "label_avatar": "Avatar",
+    "descript": "Description",
+    "btn_save_profile": "Save",
+ 
+    "title_change_password": "Change password",
+    "current_password": "Current Password",
+    "new_password": "New password",
+    "btn_set_password": "Set password",
+    
+    "title_delete_account": "Delete your account",
+    "note_before_deleting_account": "You will lose all data and content from this account, such as emails, files and photos. This data can no longer be restored.",
+    "dialog_title_question_account": "Delete your account",
+    "dialog_message_question_account": "Are you sure you want to delete your account \"{{nickname}}\" on the \"{{appName}}\" website ?",
+    "btn_delete_account": "Delete account"
+  },
+  "pg-profile": {
+    "error_editing_profile": "Error editing profile.",
+    "dialog_title_editing": "Profile change operation.",
+    "dialog_message_editing": "The profile change operation has been completed successfully !",
+
+    "error_update_password": "Error setting new password. Record \"{{nickname}}\" not found.",
+    "dialog_title_password": "Password change operation.",
+    "dialog_message_password": "The password change operation was completed successfully !",
+
+    "error_delete_account": "Error deleting account. Record \"{{nickname}}\" not found.",
+    "dialog_title_delete": "Account deletion operation.",
+    "dialog_message_delete": "The operation to delete account \"{{nickname}}\" has been successfully completed !"
+  },
+  "stream_state": {
+    "has_not_started": "The broadcast has not started yet.",
+    "has_paused": "The broadcast has been paused.",
+    "has_ended": "The broadcast has already ended.",
+    "error_preparing_broadcast"     : "Error preparing broadcast",
+    "error_when_starting_the_stream": "Error starting broadcast",
+    "error_when_stopping_the_stream": "Error stopping broadcast",
+    "error_while_pause_stream"      : "Error pausing broadcast"
+  },
+  "panel-stream-actions": {
+    "sure_you_want_stop_stream": "Are you sure you want to stop the stream \"{{title}}\" ?",
+    "prepare_stream": "Prepare",
+    "go_live_stream": "Go live",
+    "pause_stream": "Pause",
+    "stop_stream": "Stop"
+  },
+  "concept-view": {
+    "error_update_stream": "Error updating stream state",
+    "exist_is_active_stream": "You already have the active stream running <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
+  },
+  "panel-stream-params": {
+    "title": "Title:",
+    "tags": "Tags:",
+    "start": "Start:"
+  },
+  "panel-stream-admin": {
+    "btn_settings": "Settings",
+    "_followers": "Followers",
+    "_error_get_stream": "Error getting stream",
+    "_error_get_user_profile": "Error getting user profile",
+    "_error_get_profile_contact": "Error getting profile contact",
+    "_error_subscription": "Error while a subscription",
+    "_error_unsubscription": "Error while a unsubscription"
+  }
+}

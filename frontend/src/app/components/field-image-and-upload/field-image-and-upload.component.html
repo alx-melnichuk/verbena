@@ -1,0 +1,36 @@
+<mat-form-field [formGroup]="formGroup"
+  appearance="outline"
+  color="primary"
+  floatLabel="always">
+  <mat-label>{{ label | translate }}</mat-label>
+  <input matInput type="text" class="fiau-hide" formControlName="image" />
+
+  @if (!imageView) {
+    <app-field-file-upload hg100 wd100 
+      [accepts]="accepts"
+      [isDisabled]="isDisabledVal"
+      [isBorder]="true"
+      [isReadonly]="isReadonly"
+      [maxFileSize]="maxSize"
+      (addFile)="addImage($event)"
+      (readFile)="readImage($event)">
+    </app-field-file-upload>
+  } @else {
+    <img class="fiau-image" [src]="imageView" alt="image" />
+    <span class="fiau-remove-wrap">
+      @if (!isDisabledVal && !isReadonly) {
+        <button mat-icon-button
+          class="fiau-remove"
+          (click)="deleteImage()"
+          [matTooltip]="'field-image-and-upload.remove_image' | translate"
+          matTooltipPosition="above">
+          <svg class="fiau-file-circle-cross">
+            <use href="assets/icons/components/field-image-and-upload/file-circle-cross-bin.svg#file-circle-cross-bin"></use>
+          </svg>
+        </button>
+      }
+    </span>
+  }
+  <mat-hint>{{ hint | translate }}</mat-hint>
+  <mat-error>{{ (errorMsg || getErrorMsg(formControl.errors)) | translate : formControl.errors }}</mat-error>
+</mat-form-field>

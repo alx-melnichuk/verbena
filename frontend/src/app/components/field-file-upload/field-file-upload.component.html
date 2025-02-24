@@ -1,0 +1,30 @@
+<div class="ffu-container"
+  appFieldDragAndDrop
+  (fileDropped)="fileHandler($event, accepts, maxFileSize)">
+  <input type="file" #fileDropRef [attr.id]="id"
+    [attr.accept]="accepts || undefined"
+    [attr.multiple]="isMultiple ? '': undefined"
+    [attr.disabled]="isDisabled || isReadonly ? '': undefined"
+    [attr.readonly]="isReadonly ? '': undefined"
+    (change)="fileHandler(getFileList($event.target), accepts, maxFileSize)"
+  />
+  <label [attr.for]="id">
+    <svg class="ffu-file-add">
+      <use href="assets/icons/components/field-file-upload/file-circle-plus-bin.svg#file-circle-plus-bin"></use>
+    </svg>
+  </label>
+  <div>
+    <a href="javascript:void(0);">
+      <label [attr.for]="id">{{ 'field-file-upload.drag_files_or_browse' | translate }}</label>
+    </a>
+    <label [attr.for]="id" [ngClass]="['ffu-msg', (isShowMsgFileTypes || isShowMsgFileSize ? 'ffu-block' : '')]">
+      @if (isShowMsgFileTypes) {
+        <span>{{ 'field-file-upload.supported_file_types' | translate : { 'validTypes': availableFileTypes } }}</span>
+        <br/>
+      }
+      @if (isShowMsgFileSize) {
+        <span>{{ 'field-file-upload.upload_up_to' | translate : { 'maxFileSize': availableMaxFileSize } }}</span>
+      }
+    </label>
+  </div>
+</div>

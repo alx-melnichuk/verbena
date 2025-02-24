@@ -1,31 +1,50 @@
 {
+  "app": {
+    "name": "Verbéna",
+    "demo_site": " demo site."
+  },
   "Registration": {
     "title":"Registration",
     "label":"Your registration process has started.",
     "text":"Wait a little ...",
     "confirm_successful":"We inform you that your confirmation was successful !",
+    "link_login":"Go to the login page.",
     "confirm_failed":"We inform you that your confirmation failed.",
-    "link_login":"Go to the login page on our website."
+    "link_signup": "Go to the registration page."
+    
   },
-  "Forbidden": {
+  "Unauthorized": {
     "invalid_or_expired_token":"Invalid or expired token."
+  },
+  "NotFound": {
+    "registration_not_found":"An record for registering a new user was not found.",
+    "user_not_found":"User not found.",
+    "recovery_not_found":"An record to recover the user's password was not found."
+  },
+  "Blocking": {
+    "error_waiting_for_operations":"An error occurred while waiting for the operation to complete."
+  },
+  "Database": {
+    "database_query_error":"Error executing database query."
   },
   "Change_password": {
     "title":"Change password",
     "label":"Enter a new password for your account.",
+    "submit_label": "Change",
     "change_successful":"We inform you that the password change was successful !",
+    "link_login": "Go to the login page.",
     "change_failed":"We inform you that the password change failed.",
-    "link_signup":"Go to the registration page on our website."
+    "link_password_change":"Go to the password change page."
   },
   "field-password": {
     "label":"Password ",
     "placeholder":"New password",
-    "password_hint":"Use at least 6 characters, with one lowercase letter, one capital letter and a number."
+    "password_hint":"Use at least 6 characters, with one lowercase letter, one uppercase letter and a number."
   },
   "Validation": {
     "password:required":"The password field is required.",
-    "password:min_length":"The password should have 6 characters or more.",
-    "password:max_length":"The password should be less than 64 characters.",
+    "password:min_length":"The password must have at least 6 characters.",
+    "password:max_length":"The password must have no more 64 characters.",
     "password:regex":"The password must contain: a lowercase letter, an uppercase letter and a number."
   }
 }

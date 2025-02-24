@@ -1,0 +1,5 @@
+@if (!!logo) {
+  <img class="logo-image" [src]="logo" [alt]="'&ensp;' + ('logotype.no_logo' | translate)" />
+} @else {  
+  <div>{{ 'logotype.no_logo' | translate }}</div>
+}

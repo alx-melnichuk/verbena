@@ -1,0 +1,12 @@
+@if (isFillParent == '' || isFillParent == 'true') {
+    <div class="sp-back"></div>
+    <div class="sp-front">
+        <ng-container [ngTemplateOutlet]="templateSpinner" />
+    </div>
+} @else {
+  <ng-container [ngTemplateOutlet]="templateSpinner" />
+}
+
+<ng-template #templateSpinner>
+    <mat-spinner [color]="color" [diameter]="diameter" [mode]="mode" [value]="value"></mat-spinner>
+</ng-template> 

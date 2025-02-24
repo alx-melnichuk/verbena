@@ -1,13 +1,16 @@
+use std::fmt::Debug;
+
 use chrono::{Duration, Utc};
-use jsonwebtoken as jwt;
+use jsonwebtoken::{self as jwt, errors};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::settings::err;
-use crate::utils::parser;
+use crate::utils::{crypto, parser};
 
 pub const CD_NUM_TOKEN_MIN: usize = 1;
 pub const CD_NUM_TOKEN_MAX: usize = 10000;
+// User_ID from the header does not match the user_ID from the parameters
+pub const CD_UNALLOWABLE_TOKEN: &str = "UnallowableToken";
 
 #[derive(Debug, Serialize, Deserialize)]
 struct TokenClaims {
@@ -24,12 +27,16 @@ pub fn encode_token(
     secret: &[u8],
     // expires in seconds
     expires: i64,
-) -> Result<String, jwt::errors::Error> {
+) -> Result<String, String> {
     if num_token == 0 {
-        return Err(jwt::errors::ErrorKind::InvalidSubject.into());
+        let err = errors::Error::from(errors::ErrorKind::InvalidSubject).to_string();
+        log::error!("{:?}", err);
+        return Err(err);
     }
     if secret.len() == 0 {
-        return Err(jwt::errors::ErrorKind::InvalidKeyFormat.into());
+        let err = errors::Error::from(errors::ErrorKind::InvalidKeyFormat).to_string();
+        log::error!("{:?}", err);
+        return Err(err);
     }
 
     let now = Utc::now();
@@ -39,24 +46,56 @@ pub fn encode_token(
     let sub = user_id.to_string();
 
     let claims = TokenClaims { exp, iat, iss, sub };
-
-    jwt::encode(
+    // Encode the header and claims given and sign the payload using the algorithm from the header and the key.
+    let encoded = jwt::encode(
         &jwt::Header::new(jwt::Algorithm::HS256),
         &claims,
         &jwt::EncodingKey::from_secret(secret),
     )
+    .map_err(|e| {
+        let err = e.to_string();
+        log::error!("{:?}", err);
+        err
+    })?;
+    // Encrypt the data using a secret string.
+    let encrypted = crypto::encrypt_aes(secret, encoded.as_bytes())?;
+
+    Ok(encrypted)
 }
 
 /// Unpack two parameters from the token.
 pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<(i32, i32), String> {
+    if secret.len() == 0 {
+        let err = errors::Error::from(errors::ErrorKind::InvalidKeyFormat).to_string();
+        log::error!("{:?}", err);
+        return Err(err);
+    }
+
+    let token_into: String = token.into();
+    if token_into.len() == 0 {
+        let err = errors::Error::from(errors::ErrorKind::InvalidSubject).to_string();
+        log::error!("{:?}", err);
+        return Err(err);
+    }
+
+    let decrypted = crypto::decrypt_aes(secret, &token_into).map_err(|err| {
+        log::error!("{:?}", err.to_string());
+        err.to_string()
+    })?;
+
+    let token_str = std::str::from_utf8(&decrypted).map_err(|err| {
+        log::error!("{:?}", err.to_string());
+        err.to_string()
+    })?;
+
     let token_data = jwt::decode::<TokenClaims>(
-        &token.into(),
+        token_str,
         &jwt::DecodingKey::from_secret(secret),
         &jwt::Validation::new(jwt::Algorithm::HS256),
     )
     .map_err(|err| {
-        log::error!("decode error: {:?}", err);
-        err::CD_FORBIDDEN
+        log::error!("{:?}", err.to_string());
+        err.to_string()
     })?;
 
     let user_id_str = token_data.claims.sub.as_str();
@@ -64,22 +103,22 @@ pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<(i32, i3
 
     let user_id = parser::parse_i32(user_id_str).map_err(|err| {
         #[rustfmt::skip]
-        log::error!("{}: user_id: {} - {}", err::CD_UNALLOWABLE_TOKEN, user_id_str, err);
-        err::CD_UNALLOWABLE_TOKEN
+        log::error!("{}: user_id: {} - {}", CD_UNALLOWABLE_TOKEN, user_id_str, err);
+        CD_UNALLOWABLE_TOKEN
     })?;
 
     let num_token = parser::parse_i32(num_token_str).map_err(|err| {
         #[rustfmt::skip]
-        log::error!("{}: num_token: {} - {}", err::CD_UNALLOWABLE_TOKEN, num_token_str, err);
-        err::CD_UNALLOWABLE_TOKEN
+        log::error!("{}: num_token: {} - {}", CD_UNALLOWABLE_TOKEN, num_token_str, err);
+        CD_UNALLOWABLE_TOKEN
     })?;
 
     Ok((user_id, num_token))
 }
 
 pub fn generate_num_token() -> i32 {
-    let mut rng = rand::thread_rng();
-    let result = rng.gen_range(CD_NUM_TOKEN_MIN..CD_NUM_TOKEN_MAX);
+    let mut rng = rand::rng();
+    let result = rng.random_range(CD_NUM_TOKEN_MIN..CD_NUM_TOKEN_MAX);
     result as i32
 }
 
@@ -90,8 +129,10 @@ mod tests {
 
     const EXPIRES: i64 = 61;
 
+    // ** encode_token **
+
     #[test]
-    fn test2_encode_with_0_to_num_token() {
+    fn test_encode_with_0_to_num_token() {
         let user_id: i32 = 123;
         let num_token: i32 = 0;
         let secret = b"super-secret-key";
@@ -99,13 +140,11 @@ mod tests {
         let result = encode_token(user_id, num_token, secret, EXPIRES);
 
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().into_kind(),
-            jwt::errors::ErrorKind::InvalidSubject
-        );
+        let r = jwt::errors::Error::from(jwt::errors::ErrorKind::InvalidSubject).to_string();
+        assert_eq!(result.unwrap_err(), r);
     }
     #[test]
-    fn test2_encode_with_empty_secret() {
+    fn test_encode_with_empty_secret() {
         let user_id: i32 = 123;
         let num_token: i32 = 567;
         let secret = b"";
@@ -113,13 +152,58 @@ mod tests {
         let result = encode_token(user_id, num_token, secret, EXPIRES);
 
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().into_kind(),
-            jwt::errors::ErrorKind::InvalidKeyFormat
-        );
+        let r = jwt::errors::Error::from(jwt::errors::ErrorKind::InvalidKeyFormat).to_string();
+        assert_eq!(result.unwrap_err(), r);
+    }
+
+    // ** decode_token **
+
+    #[test]
+    fn test_decode_with_empty_secret() {
+        let token = "value-token";
+        let secret = b"";
+
+        let result = decode_token(token, secret);
+
+        assert!(result.is_err());
+        let r = jwt::errors::Error::from(jwt::errors::ErrorKind::InvalidKeyFormat).to_string();
+        assert_eq!(result.unwrap_err(), r);
     }
     #[test]
-    fn test2_encode_and_decoded_valid_token() {
+    fn test_decode_with_empty_token() {
+        let token = "";
+        let secret = b"super-secret-key";
+
+        let result = decode_token(token, secret);
+
+        assert!(result.is_err());
+        let r = jwt::errors::Error::from(jwt::errors::ErrorKind::InvalidSubject).to_string();
+        assert_eq!(result.unwrap_err(), r);
+    }
+    #[test]
+    fn test_decode_with_bad_token() {
+        let token = "bad";
+        let secret = b"super-secret-key";
+
+        let result = decode_token(token, secret);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), crypto::CRT_WRONG_STRING_BASE64URL);
+    }
+    #[test]
+    fn test_decode_expired_token() {
+        let user_id: i32 = 123;
+        let num_token: i32 = 567;
+        let secret = b"super-secret-key";
+        let expired_token = encode_token(user_id, num_token, secret, -EXPIRES).unwrap();
+
+        let result = decode_token(expired_token, secret);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "ExpiredSignature");
+    }
+    #[test]
+    fn test_encode_and_decoded_valid_token() {
         let user_id: i32 = 123;
         let num_token: i32 = 567;
         let secret = b"super-secret-key";
@@ -129,28 +213,5 @@ mod tests {
 
         assert_eq!(res_user_id, user_id);
         assert_eq!(res_num_token, num_token);
-    }
-
-    #[test]
-    fn test2_decoded_invalid_token() {
-        let secret = b"super-secret-key";
-        let invalid_token = "invalid-token";
-
-        let result = decode_token(invalid_token, secret);
-
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), err::CD_FORBIDDEN);
-    }
-    #[test]
-    fn test2_decode_expired_token() {
-        let user_id: i32 = 123;
-        let num_token: i32 = 567;
-        let secret = b"super-secret-key";
-
-        let expired_token = encode_token(user_id, num_token, secret, -EXPIRES).unwrap();
-        let result = decode_token(expired_token, secret);
-
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), err::CD_FORBIDDEN);
     }
 }

@@ -1,0 +1,20 @@
+/*# sourceURL=uniqueness-check.component.scss */
+
+app-uniqueness-check {
+    display: block;
+    position: relative;
+
+    .uc-loading {
+        height: 40px;
+        margin-right: 0.5em;
+        margin-top: 0.5em;
+        position: absolute;
+        right: 0px;
+        top: 0px;
+        width: 40px;
+
+        &:not(.show) {
+            display: none;
+        }
+    }
+}

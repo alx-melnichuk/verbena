@@ -1,0 +1,87 @@
+@if (streamCalendarService.calendarLoading || streamCalendarService.eventsOfDayLoading
+    || streamListService.futureStreamLoading || streamListService.pastStreamLoading) {
+    <app-spinner isFillParent></app-spinner>
+}
+<div class="sl-container global-scroll">
+    
+  <div class="sl-my-calendar">
+
+    <div class="sl-calendar-box sl-border">
+      <div class="sl-title">
+        <span>{{ 'stream_list.my_calendar' | translate }}</span>
+      </div>
+      <app-panel-stream-calendar
+        [locale]="localeService.getLocale()"
+        [markedDates]="streamCalendarService.calendarMarkedDates"
+        [minDate]="streamCalendarService.calendarMinDate"
+        [maxDate]="streamCalendarService.calendarMaxDate"
+        [selected]="streamCalendarService.eventsOfDaySelected"
+        (changeSelected)="getListEventsForDate($event, 1)"
+        (changeCalendar)="getCalendarInfoForPeriod($event)">
+      </app-panel-stream-calendar>
+    </div>
+
+    <div class="sl-indent"></div>
+
+    <div class="sl-events-box sl-border">
+      <div [ngClass]="{ 'sl-heavier': streamCalendarService.isShowEvents(streamCalendarService.calendarMonth) }"
+        class="sl-event-label">
+        <span>
+          {{ streamCalendarService.eventsOfDaySelected | dateTimeFormat:localeService.getLocale():formatDate }}
+        </span>
+      </div>
+      <div class="sl-event-list">
+        <app-panel-stream-event
+          [canEdit]="true"
+          [isRefresh]="isRefreshPanelStreamEvent"
+          [locale]="localeService.getLocale()"
+          [streamShortDtoList]="streamCalendarService.eventsOfDay"
+          (requestNextPage)="getListEventsForDate(streamCalendarService.eventsOfDaySelected, -1)"
+          (editStream)="actionEdit($event)">
+        </app-panel-stream-event>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="sl-indent"></div>
+
+  <div class="sl-my-streams">
+
+    <div class="sl-stream-box sl-border">
+      <div class="sl-title">{{ 'stream_list.my_future_streams' | translate }}</div>
+      <app-panel-stream-info
+        [canDuplicate]="true"
+        [canEdit]="true"
+        [canDelete]="true"
+        [isFuture]="true"
+        [locale]="localeService.getLocale()"
+        [streamList]="streamListService.futureStreamsDto"
+        (requestNextPage)="searchInfoNextFutureStream()"
+        (redirectToStream)="redirectToStreamView($event)"
+        (actionDuplicate)="actionDuplicate($event)"
+        (actionEdit)="actionEdit($event)"
+        (actionDelete)="actionDelete($event)">
+      </app-panel-stream-info>
+    </div>
+
+    <div class="sl-indent"></div>
+
+    <div class="sl-stream-box sl-border">
+      <div class="sl-title">{{ 'stream_list.my_past_streams' | translate }}</div>
+      <app-panel-stream-info
+        [canDuplicate]="true"
+        [canDelete]="true"
+        [locale]="localeService.getLocale()"
+        [streamList]="streamListService.pastStreamsDto"
+        (requestNextPage)="searchInfoNextPastStream()"
+        (redirectToStream)="redirectToStreamView($event)"
+        (actionDuplicate)="actionDuplicate($event)"
+        (actionDelete)="actionDelete($event)">
+      </app-panel-stream-info>
+    </div>
+
+    <div class="sl-indent"></div>
+
+  </div>
+</div>

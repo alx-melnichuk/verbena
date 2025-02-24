@@ -1,0 +1,30 @@
+@for (streamShort of streamShortDtoList; track streamShort.id) {
+  <div class="pse-stream">
+
+    <a class="pse-logo" (click)="doViewStream(streamShort.id)">
+      @if (!isFuture(streamShort.starttime)) {
+        <app-logotype [logo]="streamShort.logo"></app-logotype>
+      } @else {
+        <svg class="pse-logo-future">
+          <use href="assets/icons/lib-stream/panel-stream-event/logo-future.svg#logo-future"></use>
+        </svg>
+      }
+    </a>
+
+    <div class="pse-details-wrap">
+      <div class="pse-details">
+        <div class="pse-starttime pse-ellipsis">
+          {{ streamShort.starttime | dateTimeFormat:locale:(isFuture(streamShort.starttime) ? formatDateTime : formatDate)  }}
+        </div>
+        @if (canEdit && isFuture(streamShort.starttime)) {
+          <button class="pse-edit-btn" (click)="doEditStream(streamShort.id)">
+            {{ 'panel-stream-event.buttons.edit' | translate }}
+          </button>
+        }
+      </div>
+
+      <div class="pse-ellipsis">{{ streamShort.title }}</div>
+    </div>
+
+  </div>
+}

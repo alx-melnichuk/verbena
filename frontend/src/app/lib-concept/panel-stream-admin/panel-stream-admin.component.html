@@ -1,0 +1,34 @@
+<div class="psa-params">
+  <div class="psa-info-name">
+    <div class="psa-icon-people"></div>
+    <div class="psa-info-text">{{ countOfViewer || 0 }}</div>
+    <!-- <ng-container *ng If="!!broadcastDuration">
+      <div class="psa-icon-clock"></div>
+      <div class="psa-info-text">{{ broadcastDuration }}</div>
+    </ng-container> -->
+    <div class="psa-timer">
+      @if (isShowTimer(state)) {
+        <app-date-time-timer [isActive]="true" [startDate]="startDate"></app-date-time-timer>
+      }
+    </div>
+  </div>
+  <div class="psa-name-label">
+    <span>{{ title }}</span>
+  </div>
+</div>
+
+<div class="psa-actions">
+
+  <div class="psa-box-left">
+    @if (isShowSettings()) {
+      <button mat-stroked-button
+        click9="doSettings(streamDto?.credentials || null)"
+        class="psa-pd-lf-0_25">
+        <span class="psa-icon settings"></span>
+        <span class="psa-vert psa-pd-lf-0_25">{{ 'panel-stream-admin.btn_settings' | translate }}</span>
+      </button>
+    }
+  </div>
+
+
+</div>

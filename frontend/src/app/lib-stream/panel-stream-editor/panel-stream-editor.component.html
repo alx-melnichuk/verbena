@@ -1,0 +1,117 @@
+<div class="pse-content">
+  <form [formGroup]="formGroup" class="pse-form" novalidate>
+        
+    <div class="pse-title">{{(isCreate ? 'panel-stream-editor.creating_stream' : 'panel-stream-editor.editing_stream') | translate }}</div>
+
+    <app-field-title wd100 pse-mr-tp-0_5
+      formControlName="title"
+      [isRequired]="true"
+      label="panel-stream-editor.title"
+      (input)="updateErrMsgs();">
+    </app-field-title>
+
+    <app-field-descript wd100 pse-mr-tp-1
+      formControlName="descript"
+      [isRequired]="false"
+      label="panel-stream-editor.descript"
+      [numberRows]="5"
+      (input)="updateErrMsgs();">
+    </app-field-descript>
+
+    <div pse-mr-tp-1 class="pse-logo">
+      <app-field-image-and-upload hg100
+        formControlName="logo"
+        [hint]="('field-file-upload.supported_file_types' | translate : { 'validTypes': availableFileTypes })
+          + ' ' + ('field-file-upload.upload_up_to' | translate : { 'maxFileSize': availableMaxFileSize })"
+        [accepts]="accepts"
+        label="panel-stream-editor.thumbnail"
+        [maxSize]="maxSize"
+        (addFile)="updateErrMsgs();addLogoFile($event);"
+        (deleteFile)="updateErrMsgs();deleteLogoFile();">
+      </app-field-image-and-upload>
+    </div>
+
+    <app-field-chip-grid wd100 pse-mr-tp-1
+      formControlName="tags"
+      [label]="!(controls.tags.value || []).length ? 'panel-stream-editor.add_tags' : 'panel-stream-editor.tags'"
+      [isReadonly]="(controls.tags.value || []).length == tagMaxAmount ? true : null"
+      [isRequired]="true"
+      [isRemovable]="isTagRemovable"
+      [minLength]="tagMinLength"
+      [maxLength]="tagMaxLength"
+      [minAmount]="tagMinAmount"
+      [maxAmount]="tagMaxAmount"
+      [hint]="'panel-stream-editor.tags_hint'"
+      (input)="updateErrMsgs();"
+      (removedChip)="updateErrMsgs();">
+    </app-field-chip-grid>
+
+    <div pse-mr-tp-0_5>
+      <mat-slide-toggle
+        color="primary"
+        formControlName="isStartTime"
+        (change)="updateErrMsgs(); changeIsStartTime();">
+        <span class="pse-date-toggle">{{ 'panel-stream-editor.set_date_and_time_or_now' | translate }}</span>
+      </mat-slide-toggle>
+    </div>
+
+    <div pse-mr-tp-0_5 class="pse-start-date-time">
+      <app-field-date pse-mr-tp-0_5 class="pse-start-date"
+        formControlName="startDate"
+        [isRequired]="true"
+        [locale]="locale"
+        [minDate]="minDate"
+        [maxDate]="maxDate"
+        (dateInput)="updateErrMsgs();"
+        (dateChange)="updateErrMsgs();">
+      </app-field-date>
+
+      <app-field-time pse-mr-tp-0_5 class="pse-start-time"
+        formControlName="startTime"
+        [isRequired]="true"
+        [min]="'00:00'"
+        [max]="'23:59'"
+        (input)="updateErrMsgs();">
+      </app-field-time>
+    </div>
+
+    @if (!isCreate) {
+      <mat-form-field pse-mr-tp-0_5
+        appearance="outline"
+        color="primary">
+        <mat-label>{{ 'panel-stream-editor.link_for_visitors' | translate }}</mat-label>
+        <input matInput
+          formControlName="link" 
+          [readonly]="true"
+          autocomplete="new-password"
+          autocapitalize="off" />
+        <mat-icon matSuffix matTooltipPosition="above"
+          [matTooltip]="'panel-stream-editor.copy_stream_link_to_clipboard' | translate">
+          <svg class="pse-file-copy-bin">
+            <use href="assets/icons/lib-stream/panel-stream-editor/file-copy-bin.svg#file-copy-bin"></use>
+          </svg>
+        </mat-icon>
+      </mat-form-field>
+    }
+
+    <div class="pse-actions">
+      <button type="button" mat-stroked-button color="primary"
+        class="app-infix app-ordinary pse-btn-save"
+        [disabled]="formGroup.pristine || formGroup.invalid"
+        (click)="saveStream(formGroup)">
+        <span class="pse-actions-label">
+          <svg class="pse-svg-diskette-bin">
+            <use href="assets/icons/lib-stream/panel-stream-editor/diskette-bin.svg#diskette-bin"></use>
+          </svg>
+          <span>{{ (isCreate ? 'panel-stream-editor.create' : 'panel-stream-editor.save') | translate }}</span>
+        </span>
+      </button>
+    </div>
+  </form>
+
+  <div class="mat-mdc-form-field-subscript-wrapper">
+    @for (errMsg of errMsgs; track errMsg) {        
+      <mat-error>{{ errMsg | translate }}</mat-error>
+    }
+  </div>
+</div>

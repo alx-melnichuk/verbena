@@ -1,0 +1,30 @@
+<ng-container [formGroup]="formGroup">
+  <mat-form-field class="fcg-max-wd"
+    appearance="outline"
+    color="primary">
+    <mat-label>{{ label | translate }}</mat-label>
+    <mat-chip-grid #chipGrid [formControl]="formControl">
+      @for (chip of formControl.value; track chip) {
+        <mat-chip-row [removable]="!!isRemovable" (removed)="chipRemove(chip, formControl.value)">
+          {{ chip }}
+          @if (!!isRemovable) {
+            <button class="fcg-btn-chip-remove" matChipRemove>&#215;</button>
+          }
+        </mat-chip-row>
+      }
+      <input #chipInput
+        autocomplete="new-password"
+        autocapitalize="off"
+        [readonly]="isReadonly"
+        [required]="isRequired"
+        [matChipInputFor]="chipGrid"
+        [matChipInputAddOnBlur]="true"
+        [matChipInputSeparatorKeyCodes]="separatorCodes"
+        (matChipInputTokenEnd)="chipAdd($event, formControl.value)"
+        (blur)="onTouched()"
+      />
+    </mat-chip-grid>
+    <mat-hint>{{ hint | translate }}</mat-hint>
+    <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
+  </mat-form-field>
+</ng-container>

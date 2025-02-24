@@ -1,0 +1,44 @@
+<div class="pl-content">
+  <form novalidate class="pl-form"
+    [formGroup]="formGroup">
+
+    <div class="pl-title">{{ 'panel-login.title' | translate }}</div>
+  
+    <app-field-nickname wd100 pl-mr-tp-0_5
+      formControlName="nickname"
+      [gist]="isEmail ? 'email' : 'nickname'"
+      [isRequired]="true"
+      label="panel-login.email_or_nickname"
+      [maxLen]="isEmail ? emailMaxLen : nicknameMaxLen"
+      [minLen]="isEmail ? emailMinLen : nicknameMinLen"
+      [pattern]="isEmail ? '' : nicknamePattern"
+      [type]="isEmail ? 'email' : 'text'"
+      (input)="changeType($event['target']);updateErrMsg();"
+      (focusout)="nicknameFocusout()">
+    </app-field-nickname>
+  
+    <app-field-password wd100 pl-mr-tp-1
+      formControlName="password"
+      [isRequired]="true"
+      (input)="updateErrMsg()">
+    </app-field-password>
+  
+    <button mat-flat-button pl-mr-tp-1
+      class="mat-primary"
+      [disabled]="formGroup.invalid || isDisabledSubmit ? '' : undefined"
+      (click)="doLogin()">
+      {{ 'panel-login.btn_login' | translate }}
+    </button>
+  
+    <div pl-mr-tp-1 class="pl-note">
+      <a no-decor routerLink="{{linkSignup}}">{{ 'panel-login.create_an_account' | translate }}</a>
+      <a no-decor routerLink="{{linkForgotPassword}}">{{ 'panel-login.forgot_password' | translate }}</a>
+    </div>
+  </form>
+
+  <div class="mat-mdc-form-field-subscript-wrapper">
+    @for (errMsg of errMsgs; track errMsg) {
+      <mat-error>{{ errMsg | translate }}</mat-error>
+    }
+  </div>
+</div>

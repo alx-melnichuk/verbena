@@ -11,10 +11,10 @@ L_COMM=info,actix_web=info,actix_server=info
 L_MAIN=verbena_backend=debug
 #L_DBASE=verbena_backend::dbase=info
 L_USER=users::user_controller=debug
-L_USER_AUTH=users::user_auth_controller=debug
+L_PROFILE_AUTH=profiles::profile_auth_controller=debug
 L_AUTH=extractors::authentication=debug
 
-RUST_LOG=${L_COMM},${L_MAIN},${L_DBASE},${L_USER},${L_USER_AUTH},${L_AUTH}
+RUST_LOG=${L_COMM},${L_MAIN},${L_DBASE},${L_USER},${L_PROFILE_AUTH},${L_AUTH}
 
 # -----------------------------------------------------------------------------
 # Application properties
@@ -35,39 +35,91 @@ APP_RECOVERY_DURATION=600
 # Site name.
 APP_NAME=Verbéna
 # SSL certificate and private key (for the "https" protocol)
-APP_CERTIFICATE=example.crt.pem
+# APP_CERTIFICATE=example.crt.pem
 # SSL private key (for the "https" protocol)
-APP_PRIVATE_KEY=example.key.pem
-# Cors permissions "allowed_origin" (array of values, comma delimited). There should be no spaces.
+# The presence of a private key leads to encryption of the parameters: DATABASE_URL, JWT_SECRET_KEY, SMTP_HOST_PORT, SMTP_USER_PASS.
+# APP_PRIVATE_KEY=example.key.pem
+# Cors permissions "allowed_origin" (array of values, comma delimited). There should be no spaces. ("https://fonts.googleapis.com")
 # APP_ALLOWED_ORIGIN=
+# Directory for temporary files when uploading user files.
+APP_DIR_TMP=./tmp
+# Number of worker services (this is the number of available physical CPU cores for parallel computing).
+# By default, it is detected automatically.
+# APP_NUM_WORKERS=5
+
+# -----------------------------------------------------------------------------
+# When APP_PRIVATE_KEY is present, the following will be encoded: DATABASE_URL, JWT_SECRET_KEY, SMTP_HOST_PORT, SMTP_USER_PASS.
+# And in order to view the decrypted values of these parameters, you need to enable this parameter.
+# IS_SHOW_DECRYPTED_PRMS=true
 
 # -----------------------------------------------------------------------------
 # Database (PostgreSQL)
 # -----------------------------------------------------------------------------
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=
-DB_USER=
-DB_PASSWORD=
-# Don't worry about the placeholders. Rust supports this feature.
-DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}
+# The parameter will be encrypted if there is a private key (APP_PRIVATE_KEY).
+# DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}
+# DATABASE_URL=postgresql://database_user:database_password@127.0.0.1:5432/database_name
 
 # -----------------------------------------------------------------------------
 # JSON Web Token Credentials
 # -----------------------------------------------------------------------------
 JWT_SECRET_KEY=jwt_secret_key
-JWT_MAXAGE=60
-#  15 minutes;
-JWT_ACCESS_TOKEN_DURATION=15
-#  7 days = (60*24)×7=10080 minutes;
-JWT_REFRESH_TOKEN_DURATION=10080
+# Access token duration (in seconds). (900 seconds = 15 minutes)
+JWT_ACCESS_TOKEN_DURATION=900
+# Refresh token duration (in seconds). (345600 seconds = 4 days  60sec*60min*24hour*4days)
+JWT_REFRESH_TOKEN_DURATION=345600
 
 # -----------------------------------------------------------------------------
 # SMTP
 # -----------------------------------------------------------------------------
-SMTP_HOST=
-SMTP_PORT=
-SMTP_USER=
-SMTP_PASS=
-SMTP_SENDER=
+# The parameter will be encrypted if there is a private key (APP_PRIVATE_KEY).
+# The value of connection parameters to the SMTP server: `host:port`
+# SMTP_HOST_PORT=
+# The parameter will be encrypted if there is a private key (APP_PRIVATE_KEY).
+# The value of the SMTP server user parameters: `user:password`
+# SMTP_USER_PASS=
+# Sign to disable sending letters (default: false)
+# SMTP_NOT_SEND_LETTER=true
+# Sign for saving the text of the letter (default: false)
+# SMTP_SAVE_LETTER=true
 
+# -----------------------------------------------------------------------------
+# User Controller Settings
+# -----------------------------------------------------------------------------
+# A flag to display the execution time of methods. (default false)
+USR_SHOW_LEAD_TIME=true
+
+# -----------------------------------------------------------------------------
+# Stream Controller Settings
+# -----------------------------------------------------------------------------
+# Directory for storing logo files.
+STRM_LOGO_FILES_DIR=./imgs/logo
+# Maximum size for logo files. (5MB=5242880) If the value is 0, then there is no limit. (default 0)
+STRM_LOGO_MAX_SIZE=5242880
+# List of valid input mime types for logo files (comma delimited).
+# Valid values: image/jpeg,image/gif,image/png,image/bmp
+STRM_LOGO_VALID_TYPES=image/jpeg,image/gif,image/png,image/bmp
+# Logo files will be converted to this MIME type.
+# Valid values: jpeg,gif,png,bmp
+STRM_LOGO_EXT=jpeg
+# Maximum width for a logo file. (default 0)
+STRM_LOGO_MAX_WIDTH=1024
+# Maximum height for a logo file. (default 0)
+STRM_LOGO_MAX_HEIGHT=1024
+
+# -----------------------------------------------------------------------------
+# Profile Controller Settings
+# -----------------------------------------------------------------------------
+# Directory for storing avatar files.
+PRFL_AVATAR_FILES_DIR=./imgs/avatar
+# Maximum size for avatar files. (5MB=5242880) If the value is 0, then there is no limit. (default 0)
+PRFL_AVATAR_MAX_SIZE=5242880
+# List of valid input mime types for avatar files (comma delimited).
+# Valid values: image/jpeg,image/gif,image/png,image/bmp
+PRFL_AVATAR_VALID_TYPES=image/jpeg,image/gif,image/png,image/bmp
+# Logo files will be converted to this MIME type.
+# Valid values: jpeg,gif,png,bmp
+PRFL_AVATAR_EXT=jpeg
+# Maximum width (px) for a avatar file. (default 0)
+PRFL_AVATAR_MAX_WIDTH=192
+# Maximum height (px) for a avatar file. (default 0)
+PRFL_AVATAR_MAX_HEIGHT=192

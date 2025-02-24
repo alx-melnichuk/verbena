@@ -1,0 +1,148 @@
+/*# sourceURL=panel-stream-calendar-emblem.component.scss */
+
+app-panel-stream-calendar {
+
+    .psc-day-with-streams::after {
+        ---psc-wd: calc(100% * 0.55);
+        align-items: center;
+        background-color: var(--app-strm-clnd-emblem-bg);
+        border-radius: 50%;
+        content: counter(psc-day);
+        display: flex;
+        font-size: calc(1em - 1px);
+        height: var(---psc-wd, 2em);
+        justify-content: center;
+        left: calc(var(---psc-wd) * 1.2);
+        overflow: hidden;
+        pointer-events: none;
+        top: calc(var(---psc-wd) * -0.5);
+        width: var(---psc-wd, 2em);
+        z-index: 1;
+    }
+
+    .psc-day-with-streams {
+        &.psc-day-01::after {
+            counter-reset: psc-day var(---psc-day-01);
+        }
+
+        &.psc-day-02::after {
+            counter-reset: psc-day var(---psc-day-02);
+        }
+
+        &.psc-day-03::after {
+            counter-reset: psc-day var(---psc-day-03);
+        }
+
+        &.psc-day-04::after {
+            counter-reset: psc-day var(---psc-day-04);
+        }
+
+        &.psc-day-05::after {
+            counter-reset: psc-day var(---psc-day-05);
+        }
+
+        &.psc-day-06::after {
+            counter-reset: psc-day var(---psc-day-06);
+        }
+
+        &.psc-day-07::after {
+            counter-reset: psc-day var(---psc-day-07);
+        }
+
+        &.psc-day-08::after {
+            counter-reset: psc-day var(---psc-day-08);
+        }
+
+        &.psc-day-09::after {
+            counter-reset: psc-day var(---psc-day-09);
+        }
+
+        &.psc-day-10::after {
+            counter-reset: psc-day var(---psc-day-10);
+        }
+
+        &.psc-day-11::after {
+            counter-reset: psc-day var(---psc-day-11);
+        }
+
+        &.psc-day-12::after {
+            counter-reset: psc-day var(---psc-day-12);
+        }
+
+        &.psc-day-13::after {
+            counter-reset: psc-day var(---psc-day-13);
+        }
+
+        &.psc-day-14::after {
+            counter-reset: psc-day var(---psc-day-14);
+        }
+
+        &.psc-day-15::after {
+            counter-reset: psc-day var(---psc-day-15);
+        }
+
+        &.psc-day-16::after {
+            counter-reset: psc-day var(---psc-day-16);
+        }
+
+        &.psc-day-17::after {
+            counter-reset: psc-day var(---psc-day-17);
+        }
+
+        &.psc-day-18::after {
+            counter-reset: psc-day var(---psc-day-18);
+        }
+
+        &.psc-day-19::after {
+            counter-reset: psc-day var(---psc-day-19);
+        }
+
+        &.psc-day-20::after {
+            counter-reset: psc-day var(---psc-day-20);
+        }
+
+        &.psc-day-21::after {
+            counter-reset: psc-day var(---psc-day-21);
+        }
+
+        &.psc-day-22::after {
+            counter-reset: psc-day var(---psc-day-22);
+        }
+
+        &.psc-day-23::after {
+            counter-reset: psc-day var(---psc-day-23);
+        }
+
+        &.psc-day-24::after {
+            counter-reset: psc-day var(---psc-day-24);
+        }
+
+        &.psc-day-25::after {
+            counter-reset: psc-day var(---psc-day-25);
+        }
+
+        &.psc-day-26::after {
+            counter-reset: psc-day var(---psc-day-26);
+        }
+
+        &.psc-day-27::after {
+            counter-reset: psc-day var(---psc-day-27);
+        }
+
+        &.psc-day-28::after {
+            counter-reset: psc-day var(---psc-day-28);
+        }
+
+        &.psc-day-29::after {
+            counter-reset: psc-day var(---psc-day-29);
+        }
+
+        &.psc-day-30::after {
+            counter-reset: psc-day var(---psc-day-30);
+        }
+
+        &.psc-day-31::after {
+            counter-reset: psc-day var(---psc-day-31);
+        }
+    }
+}

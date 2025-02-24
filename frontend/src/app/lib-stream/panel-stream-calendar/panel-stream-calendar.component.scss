@@ -1,0 +1,32 @@
+/*# sourceURL=panel-stream-calendar.component.scss */
+
+app-panel-stream-calendar {
+    // Default value. The element is not a query container for any container size queries, 
+    // but remains a query container for container style queries.
+    display: block;
+
+
+    // The units are "em" because - font-size: var(--mat-datepicker-calendar-text-size, var(--mat-app-body-medium-size));
+    .mat-calendar {
+        background-color: var(--app-strm-clnd-pn-bg);
+        border: 1px solid var(--app-strm-clnd-pn-brd);
+        border-radius: 1em;
+        box-sizing: border-box;
+        height: 100%;
+        min-height: 19em;
+        min-width: 17em;
+
+        .mat-calendar-table-header-divider {
+            display: none;
+        }
+
+        .mat-calendar-body-label {
+            visibility: hidden;
+        }
+    }
+
+    button.psc-day-with-streams {
+        background-color: var(--app-strm-clnd-sel-bg);
+        border-radius: 100%;
+    }
+}

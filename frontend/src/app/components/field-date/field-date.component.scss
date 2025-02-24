@@ -1,0 +1,28 @@
+/*# sourceURL=field-date.component.scss */
+
+app-field-date {
+    display: block;
+
+    &[wd100] {
+        width: 100%;
+    }
+
+    &[hg100] {
+        height: 100%;
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
+}
+
+.fd-calendar.mat-calendar {
+    .mat-calendar-table-header-divider {
+        display: none;
+    }
+
+    .mat-calendar-body-label {
+        visibility: hidden;
+    }
+}

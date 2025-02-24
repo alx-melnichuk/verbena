@@ -1,3 +1,3 @@
 export type StrParams = {
-  [key: string]: string | null;
+    [key: string]: string | null;
 };

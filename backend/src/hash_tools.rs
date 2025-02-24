@@ -40,15 +40,14 @@ pub fn compare_hash(param: impl Into<String>, hashed_param: &str) -> Result<bool
         return Err(format!("{}{}", ERR_PARAM_EXCEED_MAX_LEN, MAX_PARAM_LENGTH));
     }
 
-    let parsed_hash = PasswordHash::new(hashed_param)
-        .map_err(|e| format!("{}{}", ERR_INVALID_HASH_FORMAT, e.to_string()))?;
+    let parsed_hash =
+        PasswordHash::new(hashed_param).map_err(|e| format!("{}{}", ERR_INVALID_HASH_FORMAT, e.to_string()))?;
 
     let compare_res = Argon2::default().verify_password(param.as_bytes(), &parsed_hash);
 
     Ok(compare_res.is_ok())
 }
 
-// ctreate_hash(param: impl Into<String>)   compare_hash(param: impl Into<String>, hashed_param: &str)
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -70,10 +69,7 @@ mod tests {
     fn test_compare_hashed_passwords_should_return_false() {
         let (_, hashed_password) = setup_test();
 
-        assert_eq!(
-            compare_hash("wrongpassword", &hashed_password).unwrap(),
-            false
-        );
+        assert_eq!(compare_hash("wrongpassword", &hashed_password).unwrap(), false);
     }
 
     #[test]
@@ -88,7 +84,7 @@ mod tests {
     fn test_compare_long_password_should_return_fail() {
         let (_, hashed_password) = setup_test();
 
-        let long_password = "a".repeat(1000);
+        let long_password = "a".repeat(MAX_PARAM_LENGTH + 1);
         let result = compare_hash(&long_password, &hashed_password).unwrap_err();
         let error = format!("{}{}", ERR_PARAM_EXCEED_MAX_LEN, MAX_PARAM_LENGTH);
         assert_eq!(result, error);
@@ -113,7 +109,7 @@ mod tests {
 
     #[test]
     fn test_hash_long_password_should_fail() {
-        let result = encode_hash("a".repeat(1000));
+        let result = encode_hash("a".repeat(MAX_PARAM_LENGTH + 1));
         let error = format!("{}{}", ERR_PARAM_EXCEED_MAX_LEN, MAX_PARAM_LENGTH);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), error);

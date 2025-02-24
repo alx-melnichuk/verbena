@@ -1,0 +1,24 @@
+<ng-container [formGroup]="formGroup">
+  <mat-form-field
+    appearance="outline"
+    color="primary"
+    [ngClass]="(isReadOnly ? 'ft-readonly' : '')">
+    <mat-label>{{ label | translate }}</mat-label>
+    <mat-select
+      formControlName="theme"
+      panelClass="ft-select"
+      (openedChange)="doOpenedChange($event)"
+      (selectionChange)="doSelectionChange($event.value)">
+      <mat-select-trigger [ngClass]="(!formControl.value ? 'ft-fn-it' : '')">
+        {{ ('theme.' + formControl.value) | translate }}
+      </mat-select-trigger>
+      @for (themeItem of themeList; track themeItem) {
+        <mat-option [ngClass]="(themeItem == '' ? 'ft-opt-fn-it' : '')" [value]="themeItem">
+          {{ ('theme.' + themeItem) | translate }}
+        </mat-option>
+      }
+    </mat-select>
+    <mat-hint>{{ hint | translate }}</mat-hint>
+    <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
+  </mat-form-field>
+</ng-container>

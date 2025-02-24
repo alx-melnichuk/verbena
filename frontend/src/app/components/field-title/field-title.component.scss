@@ -1,0 +1,18 @@
+/*# sourceURL=field-title.component.scss */
+
+app-field-title {
+    display: block;
+
+    &[wd100] {
+        width: 100%;
+    }
+
+    &[hg100] {
+        height: 100%;
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
+}

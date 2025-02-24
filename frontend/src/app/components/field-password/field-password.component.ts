@@ -1,158 +1,156 @@
 import {
-  ChangeDetectionStrategy,
-  Component,
-  Input,
-  OnChanges,
-  SimpleChanges,
-  ViewChild,
-  ViewEncapsulation,
-  forwardRef,
+    ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewChild, ViewEncapsulation, forwardRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  AbstractControl,
-  ControlValueAccessor,
-  FormControl,
-  FormGroup,
-  NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validator,
-  ValidatorFn,
-  Validators,
+    AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule,
+    ValidationErrors, Validator, ValidatorFn,
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
+import { ValidatorUtils } from 'src/app/utils/validator.utils';
+
+export const PASSWORD = "password";
 export const PASSWORD_MIN_LENGTH = 6;
 export const PASSWORD_MAX_LENGTH = 64;
-export const PASSWORD_MAX_PATTERN = '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d\\W_]{6,}$';
+export const PASSWORD_PATTERN = '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d\\W_]{6,}$';
+export const CUSTOM_ERROR = 'customError';
 
 @Component({
-  selector: 'app-field-password',
-  standalone: true,
-  imports: [CommonModule, TranslateModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule],
-  templateUrl: './field-password.component.html',
-  styleUrls: ['./field-password.component.scss'],
-  encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [
-    { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => FieldPasswordComponent), multi: true },
-    { provide: NG_VALIDATORS, useExisting: forwardRef(() => FieldPasswordComponent), multi: true },
-  ],
+    selector: 'app-field-password',
+    exportAs: 'appFieldPassword',
+    standalone: true,
+    imports: [CommonModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, TranslatePipe],
+    templateUrl: './field-password.component.html',
+    styleUrl: './field-password.component.scss',
+    encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [
+        { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => FieldPasswordComponent), multi: true },
+        { provide: NG_VALIDATORS, useExisting: forwardRef(() => FieldPasswordComponent), multi: true },
+    ],
 })
 export class FieldPasswordComponent implements OnChanges, ControlValueAccessor, Validator {
-  @Input()
-  public isReadOnly: boolean = false;
-  @Input()
-  public isRequired: boolean = false;
-  @Input()
-  public label: string = 'field-password.label';
-  @Input()
-  public minLen: number = PASSWORD_MIN_LENGTH;
-  @Input()
-  public maxLen: number = PASSWORD_MAX_LENGTH;
-  @Input()
-  public pattern: string = PASSWORD_MAX_PATTERN;
-  @Input()
-  public isDisabled: boolean = false;
-  @Input()
-  public hint: string = '';
+    @Input()
+    public gist: string = PASSWORD;
+    @Input()
+    public errorMsg: string | null | undefined;
+    @Input()
+    public hint: string = '';
+    @Input()
+    public isDisabled: boolean = false;
+    @Input()
+    public isReadOnly: boolean = false;
+    @Input()
+    public isRequired: boolean = false;
+    @Input()
+    public isSpellcheck: boolean = false;
+    @Input()
+    public label: string = 'field-password.label';
+    @Input()
+    public maxLen: number = PASSWORD_MAX_LENGTH;
+    @Input()
+    public minLen: number = PASSWORD_MIN_LENGTH;
+    @Input()
+    public pattern: string = PASSWORD_PATTERN;
+    @Input()
+    public type: string = "text";
 
-  @ViewChild(MatInput, { static: false })
-  public matInput: MatInput | null = null;
+    @ViewChild(MatInput, { static: false })
+    public matInput: MatInput | null = null;
 
-  public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
-  public formGroup: FormGroup = new FormGroup({ password: this.formControl });
-  public isShowPassword = false;
-  public errMessage: string = '';
+    public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
+    public formGroup: FormGroup = new FormGroup({ password: this.formControl });
+    public isShowPassword = false;
+    public errMessage: string = '';
 
-  constructor() {}
+    constructor() { }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen']) {
-      this.prepareFormGroup();
-    }
-    if (!!changes['isDisabled']) {
-      this.setDisabledState(this.isDisabled);
-    }
-  }
-
-  // ** ControlValueAccessor - start **
-
-  public onChange: (val: string) => void = () => {};
-  public onTouched: () => void = () => {};
-
-  public writeValue(value: any): void {
-    this.formControl.setValue(value, { emitEvent: true });
-  }
-
-  public registerOnChange(fn: any): void {
-    this.onChange = fn;
-  }
-
-  public registerOnTouched(fn: any): void {
-    this.onTouched = fn;
-  }
-
-  public setDisabledState(isDisabled: boolean): void {
-    if (isDisabled != this.formGroup.disabled) {
-        if (isDisabled) {
-          this.isShowPassword = false;
-          this.formGroup.disable();
-        } else {
-          this.formGroup.enable();
+    ngOnChanges(changes: SimpleChanges): void {
+        if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen'] || !!changes['pattern'] || !!changes['type']) {
+            this.prepareFormGroup();
         }
-      }
-  }
-
-  // ** ControlValueAccessor - finish **
-
-  // ** Validator - start **
-
-  public validate(control: AbstractControl): ValidationErrors | null {
-    return this.formControl.errors;
-  }
-
-  // ** Validator - finish **
-
-  // ** Public API **
-
-  public focus(): void {
-    this.matInput?.focus();
-  }
-
-  public getErrorMsg(errors: ValidationErrors | null): string {
-    let result: string = '';
-    const errorsProps: string[] = errors != null ? Object.keys(errors) : [];
-    for (let index = 0; index < errorsProps.length && !result; index++) {
-      const error: string = errorsProps[index];
-      result = !result && 'required' === error ? 'Validation.password:required' : result;
-      result = !result && 'minlength' === error ? 'Validation.password:min_length' : result;
-      result = !result && 'maxlength' === error ? 'Validation.password:max_length' : result;
-      result = !result && 'pattern' === error ? 'Validation.password:regex' : result;
-
+        if (!!changes['isDisabled']) {
+            this.setDisabledState(this.isDisabled);
+        }
+        if (!!changes['errorMsg']) {
+            this.formControl.updateValueAndValidity();
+            this.onChange(this.formControl.value);
+        }
     }
-    return result;
-  }
 
-  public showPassword(isShowPassword: boolean): void {
-    if (this.isShowPassword !== isShowPassword) {
-      this.isShowPassword = isShowPassword;
+    // ** ControlValueAccessor - start **
+
+    public onChange: (val: string) => void = () => { };
+    public onTouched: () => void = () => { };
+
+    public writeValue(value: any): void {
+        this.formControl.setValue(value, { emitEvent: true });
     }
-  }
 
-  // ** Private API **
+    public registerOnChange(fn: any): void {
+        this.onChange = fn;
+    }
 
-  private prepareFormGroup(): void {
-    this.formControl.clearValidators();
-    const newValidator: ValidatorFn[] = [
-      ...(this.isRequired ? [Validators.required] : []),
-      ...(this.minLen > 0 ? [Validators.minLength(this.minLen)] : []),
-      ...(this.maxLen > 0 ? [Validators.maxLength(this.maxLen)] : []),
-    ];
-    this.formControl.setValidators(newValidator);
-  }
+    public registerOnTouched(fn: any): void {
+        this.onTouched = fn;
+    }
+
+    public setDisabledState(isDisabled: boolean): void {
+        if (isDisabled != this.formGroup.disabled) {
+            if (isDisabled) {
+                this.isShowPassword = false;
+                this.formGroup.disable();
+            } else {
+                this.formGroup.enable();
+            }
+        }
+    }
+
+    // ** ControlValueAccessor - finish **
+
+    // ** Validator - start **
+
+    public validate(control: AbstractControl): ValidationErrors | null {
+        return this.formControl.errors;
+    }
+
+    // ** Validator - finish **
+
+    // ** Public API **
+
+    public focus(): void {
+        this.matInput?.focus();
+    }
+
+    public getErrorMsg(errors: ValidationErrors | null): string {
+        return ValidatorUtils.getErrorMsg(errors, this.gist || PASSWORD);
+    }
+
+    public showPassword(isShowPassword: boolean): void {
+        if (this.isShowPassword !== isShowPassword) {
+            this.isShowPassword = isShowPassword;
+        }
+    }
+
+    // ** Private API **
+
+    private errorMsgValidator = (control: AbstractControl): ValidationErrors | null => {
+        const result = !!control && !!this.errorMsg ? { [CUSTOM_ERROR]: true } : null;
+        return result;
+    };
+    private prepareFormGroup(): void {
+        this.formControl.clearValidators();
+        const paramsObj = {
+            ...(this.isRequired ? { "required": true } : {}),
+            ...(this.minLen > 0 ? { "minLength": this.minLen } : {}),
+            ...(this.maxLen > 0 ? { "maxLength": this.maxLen } : {}),
+            ...(this.pattern ? { "pattern": this.pattern } : {}),
+            ...(this.type == "email" ? { "email": true } : {})
+        };
+        this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj), this.errorMsgValidator]);
+        this.formControl.updateValueAndValidity();
+    }
 }

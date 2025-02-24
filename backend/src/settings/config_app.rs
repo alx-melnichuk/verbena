@@ -18,6 +18,8 @@ pub struct ConfigApp {
     pub app_certificate: String,
     pub app_private_key: String,
     pub app_allowed_origin: String,
+    pub app_dir_tmp: String,
+    pub app_num_workers: Option<usize>,
 }
 
 impl ConfigApp {
@@ -39,11 +41,9 @@ impl ConfigApp {
         let app_max_age = env::var("APP_MAX_AGE").expect("APP_MAX_AGE must be set");
         let app_domain = Self::get_domain(&app_protocol, &app_host, &app_port);
         // Waiting time for registration confirmation (in seconds).
-        let app_registr_duration =
-            env::var("APP_REGISTR_DURATION").expect("APP_REGISTR_DURATION must be set");
+        let app_registr_duration = env::var("APP_REGISTR_DURATION").expect("APP_REGISTR_DURATION must be set");
         // Waiting time for password recovery confirmation (in seconds).
-        let app_recovery_duration =
-            env::var("APP_RECOVERY_DURATION").expect("APP_RECOVERY_DURATION must be set");
+        let app_recovery_duration = env::var("APP_RECOVERY_DURATION").expect("APP_RECOVERY_DURATION must be set");
         let app_name = env::var("APP_NAME").expect("APP_NAME must be set");
         // SSL certificate and private key
         let app_certificate = env::var("APP_CERTIFICATE").unwrap_or("".to_string());
@@ -57,6 +57,13 @@ impl ConfigApp {
         }
         // Cors permissions "allowed_origin" (array of values, comma delimited)
         let app_allowed_origin = env::var("APP_ALLOWED_ORIGIN").unwrap_or("".to_string());
+        // Directory for temporary files when uploading user files.
+        let app_dir_tmp = env::var("APP_DIR_TMP").expect("APP_DIR_TMP must be set");
+        // Number of worker services (this is the number of available physical CPU cores for parallel computing).
+        // By default, it is detected automatically.
+        let num_workers = env::var("APP_NUM_WORKERS").unwrap_or("".to_string());
+        #[rustfmt::skip]
+        let app_num_workers = if num_workers.len() > 0 { Some(num_workers.parse::<usize>().unwrap()) } else { None };
 
         ConfigApp {
             app_host,
@@ -70,6 +77,8 @@ impl ConfigApp {
             app_certificate,
             app_private_key,
             app_allowed_origin,
+            app_dir_tmp,
+            app_num_workers,
         }
     }
     fn get_domain(protocol: &str, host: &str, port: &str) -> String {
@@ -96,5 +105,7 @@ pub fn get_test_config() -> ConfigApp {
         app_certificate: "demo.crt.pem".to_string(),
         app_private_key: "demo.key.pem".to_string(),
         app_allowed_origin: "".to_string(),
+        app_dir_tmp: "./".to_string(),
+        app_num_workers: None,
     }
 }

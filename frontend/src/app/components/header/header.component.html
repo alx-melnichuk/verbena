@@ -1,37 +1,90 @@
-<div class="hd-box-logo">
-  <a
-    class="hd-logo-link"
-    [routerLink]="[linkDashboard]"
-  >
-    <i class="hd-icon hd-logo-mini"></i>
-    <span class="hd-logo-text">{{ 'app_name' | translate }}</span>
-  </a>
-</div>
+<mat-toolbar>
+  <i class="h-icon-bg h-logo-mini"></i>
+  <span h-mr-lf-0_5></span>
+  <h4 class="h-logo-text">{{ 'app.name' | translate }}</h4>
+  <span h-mr-lf-0_5></span>
 
-<div class="hd-box-search">
-  <!-- <span>box-search</span> -->
-</div>
+  @for (mainMenuItem of mainMenuItems; track mainMenuItem.name) {
+    <a no-decor no-color mat-button class="h-elem-menu"
+      routerLink="{{ mainMenuItem.link }}"
+      routerLinkActive="h-selected"
+      ariaCurrentWhenActive="page">
+      {{ ('main_menu.' + mainMenuItem.name) | translate }}
+    </a>
+  }
 
-<div class="hd-box-actions">
-  <!-- <span>box-actions</span> -->
-</div>
+  <span class="h-spacer"></span>
 
-<div class="hd-box-user">
-  <!-- <span>box-user</span> -->
+  @if (!!profileDto) {
+    <button mat-button [matMenuTriggerFor]="mainMenu" class="h-nickname-btn">
+      <span class="h-nickname">{{ nickname }}</span>
+    </button>
+    <button mat-button [matMenuTriggerFor]="mainMenu" class="h-avatar-btn">
+      @if (!!profileDto.avatar) {
+        <img class="h-avatar-box" [src]="profileDto.avatar" />
+      } @else {
+        <svg class="h-avatar-box">
+          <use href="assets/icons/components/header/user-man-bin.svg#user-man-bin"></use>
+        </svg>
+      }
+    </button>
+  } @else {
+    <button mat-icon-button [matMenuTriggerFor]="mainMenu">
+      <svg class="h-svg-more-vert">
+        <use href="assets/icons/components/header/more-vert.svg#more-vert"></use>
+      </svg>
+    </button>
+  }
 
-  <ng-container *ngIf="!!userInfo">
-    <app-main-menu
-      (logout)="doLogout()">
-      <div class="hd-user-info">
-        <span>{{ userInfo.nickname }}</span>
-        <!-- <app-avatar class="hd-user-image"
-        [avatar]="sessionDTO.avatar"
-        [nickname]="sessionDTO.nickname">
-      </app-avatar> -->
-        <!-- <i class="hd-user-image hd-icon"
-          style="background-image: url('../../../assets/images/icon_man.png')">
-        </i> -->
-      </div>
-    </app-main-menu>
-  </ng-container>
-</div>
+</mat-toolbar>
+
+
+
+<mat-menu #mainMenu="matMenu" class="h-menu-panel" xPosition="before">
+  @for (panelMenuItem of panelMenuItems; track panelMenuItem.name) {
+    <button mat-menu-item class="pn-menu-item" routerLink="{{ panelMenuItem.link }}">
+      <span [ngClass]="['mm-icon', ('mm-' + panelMenuItem.name) ]"></span>
+      <span class="mm-mr-lf-0_5">{{ ('main_menu.' + panelMenuItem.name) | translate }}</span>
+    </button>
+  }
+  @if (isShowTheme) {
+    <button mat-menu-item class="pn-item-menu" [matMenuTriggerFor]="themes">
+      <span class="mm-icon mm-theme"></span>
+      <span class="mm-mr-lf-0_5">{{ 'main_menu.theme' | translate }}</span>
+    </button>
+  }
+  @if (isShowLocale) {
+    <button mat-menu-item class="pn-item-menu" [matMenuTriggerFor]="locales">
+      <span class="mm-icon mm-locale"></span>
+      <span class="mm-mr-lf-0_5">{{ 'main_menu.locale' | translate }}</span>
+    </button>
+  }
+  @if (isShowLogout && !!profileDto) {
+    <button mat-menu-item class="pn-item-menu" (click)="doLogout()">
+      <span class="mm-icon mm-log-out"></span>
+      <span class="mm-mr-lf-0_5">{{ 'main_menu.log_out' | translate }}</span>
+    </button>
+  }
+</mat-menu>
+
+<mat-menu #themes="matMenu" class="h-menu-panel">
+  @for (colorSchemeItem of colorSchemeList; track colorSchemeItem) {
+    <button mat-menu-item [value]="colorSchemeItem"
+      [ngClass]="['pn-item-menu', 'mm-menu-btn', (colorScheme == colorSchemeItem ? 'mm-curr' : '')]"
+      (click)="doSetColorScheme(colorSchemeItem)">
+      <span>{{ ('theme.' + colorSchemeItem) | translate }}</span>
+      <span [ngClass]="['mm-menu-item-min', (colorScheme == colorSchemeItem ? 'mm-check' : '')]"></span>
+    </button>
+  }
+</mat-menu>
+
+<mat-menu #locales="matMenu" class="h-menu-panel">
+  @for (localeItem of localeList; track localeItem) {
+    <button mat-menu-item [ngClass]="['pn-item-menu', 'mm-menu-btn', (locale == localeItem ? 'mm-curr' : '')]"
+      [value]="localeItem"
+      (click)="doSetLocale(localeItem)">
+      <span>{{ ('locale.' + localeItem) | translate }}</span>
+      <span [ngClass]="['mm-menu-item-min', (locale == localeItem ? 'mm-check' : '')]"></span>
+    </button>
+  }
+</mat-menu>

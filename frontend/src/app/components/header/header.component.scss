@@ -1,79 +1,183 @@
 /*# sourceURL=header.component.scss */
 
 app-header {
-  display: flex;
-  justify-content: space-between;
-  height: 100%;
-  
-  &:not(.hd-user-info) {
-    ---hd-bg-cl: var(--app-site-off-header-bg);
-  }
-  &.hd-user-info {
-    ---hd-bg-cl: var(--app-site-header-bg);
-  }
-  background-color: var(---hd-bg-cl);
+    --mat-toolbar-standard-height: var(--app-header-hg);
+    --mat-toolbar-mobile-height: var(--app-header-hg);
+    --mdc-text-button-label-text-size: 1rem; // 16px
+    --mdc-text-button-container-shape: 0.75rem; // 12px
+    ---hdr-hg: calc(var(--app-header-hg, 62px) - 8px);
 
-  & > div {
-    align-items: center;
-    display: flex;
-    padding: 0 0.5em 0 0.5em;
-  }
-  & > .hd-box-logo {
-    flex: 0 0 auto; // #255px;
-  }
-  & > .hd-box-search {
-    flex: 1 1 auto;
-  }
-  & > .hd-box-actions {
-    flex: 0 0 auto; // #270px;
-  }
-  & > .hd-box-user {
-    flex: 0 0 auto; // #255px;
-  }
+    container: cnt-header / inline-size;
+    display: block;
 
-  // Section: "box-logo"
-  .hd-logo-link {
-    align-items: center;
-    color: inherit;
-    display: flex;
-  }
-  .hd-logo-text {
-    font-size: x-large;
-    font-weight: 500;
-    margin-left: 0.5em;
-  }
-  .hd-logo-mini {
-    background-image: url('../../../assets/images/logo_mini.png');
-    height: 4em;
-    width: 4em;
-  }
+    &.h-is-authorized {
+        ---hdr-auth-pn-bg: var(--app-auth-pn-bg);
+    }
 
-  // Section: "box-search"
-  .hd-box-search {
-    // font-size: 14px;
-    margin-top: 3px;
-    max-width: 400px;
-    min-width: 200px;
-  }
+    --mat-toolbar-container-background-color: var(---hdr-auth-pn-bg, var(--app-unauth-pn-bg));
 
-  // "box-user"
-  .hd-user-info {
-    display: flex;
-    align-items: center;
-  }
-  .hd-user-image {
-    width: 45px;
-    height: 45px;
-    margin-left: 10px;
-    border-radius: 12px;
-  }
+    [h-mr-lf-0_5] {
+        margin-left: 0.5em;
+    }
 
-  // -- --
-  .hd-icon {
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-    // &.hd-my-profile { width: 21px; height: 21px; }
-    // &.hd-create-stream { width: 24px; height: 24px; }
-  }
+    // ** logo image **
+    .h-icon-bg {
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+    }
+
+    .h-logo-mini {
+        background-image: url('/assets/icons/components/header/logo-bin.svg');
+        flex-shrink: 0;
+        height: var(---hdr-hg);
+        width: var(---hdr-hg);
+    }
+
+    // ** logo text **
+    @container cnt-header (width <=380px) {
+        .h-logo-text {
+            display: none;
+        }
+    }
+
+    .h-logo-text {
+        margin-left: 0.5em;
+        --mat-toolbar-title-text-weight: 500;
+        --mat-toolbar-title-text-size: 1.125rem;
+    }
+
+    // ** page-menu **
+    .mat-toolbar .h-elem-menu.mat-mdc-button-base.mat-mdc-button-base.mat-unthemed {
+        --mdc-text-button-label-text-color: var(--sys-primary);
+    }
+
+    .h-elem-menu.h-selected {
+        background-color: color-mix(in srgb, var(--sys-primary) calc(15% + var(---hdr-dark-mn-sel, 0%)), rgba(0, 0, 0, 0));
+    }
+
+    // ** separator **
+    .h-spacer {
+        flex: 1 1 auto;
+    }
+
+    // ** menu button "nickname" **
+    .h-nickname-btn {
+        --mat-text-button-horizontal-padding: 0.5rem;
+
+        .mdc-button__label {
+            max-width: 100%;
+        }
+    }
+
+    .h-nickname {
+        display: inline-block;
+        line-height: normal;
+        text-wrap: auto;
+    }
+
+    // ** menu button "avatar" **
+    .h-avatar-btn {
+        --mdc-text-button-container-height: var(---hdr-hg);
+        --mdc-text-button-container-shape: calc(0.16 * var(---hdr-hg)); // border-radius for "mat-button"
+        --mat-text-button-horizontal-padding: 0px;
+        min-width: var(---hdr-hg);
+    }
+
+    // -- image or svg for logged in user --
+    .h-avatar-box {
+        border-radius: var(--mdc-text-button-container-shape);
+        color: var(--app-svg-icon-cl); // for "svg"
+        display: block;
+        height: var(---hdr-hg);
+        object-fit: cover; // for "img"
+        width: var(---hdr-hg);
+    }
+
+    // -- svg "more-vert" for unlogged in user --
+    .h-svg-more-vert {
+        color: var(--sys-on-surface-variant);
+    }
+}
+
+.cdk-overlay-container .mat-mdc-menu-panel {
+    .mm-mr-lf-0_5 {
+        margin-left: 0.5em;
+    }
+
+    .mm-menu-btn {
+        &.mm-curr {
+            background-color: var(--mat-option-selected-state-layer-color);
+        }
+
+        .mat-mdc-menu-item-text {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .mm-menu-item-min {
+            flex-shrink: 0;
+            height: 18px;
+            margin-left: 10px;
+            position: relative;
+            width: 18px;
+        }
+
+        .mm-menu-item-min.mm-check::after {
+            border-bottom: 2px solid currentColor;
+            border-left: 2px solid currentColor;
+            bottom: 0;
+            content: "";
+            height: 6px;
+            left: 0;
+            margin: auto;
+            position: absolute;
+            right: 0;
+            top: -4.24px;
+            transform: rotate(-45deg);
+            width: 14px;
+        }
+    }
+}
+
+@supports not(color: color-mix(in srgb, #ff0000 50%, #00ff00)) {
+    html.light app-header {
+        ---hdr-selected: hsla(210, 50%, 50%, 20%);
+        ---hdr-selected-hov: hsla(210, 50%, 50%, 25%);
+
+    }
+
+    html.dark app-header {
+        ---hdr-selected: hsla(210, 50%, 50%, 25%);
+        ---hdr-selected-hov: hsla(210, 50%, 50%, 30%);
+    }
+
+    app-header {
+
+        .h-elem-menu.h-selected {
+            background-color: var(---hdr-selected);
+        }
+
+        .h-elem-menu:hover {
+            background-color: var(---hdr-selected-hov);
+        }
+    }
+
+    .cdk-overlay-pane .h-menu-panel {
+        .pn-item-menu:hover {
+            background-color: var(---hdr-dark-pn-mn-hov, hsla(228, 9%, 11%, 12%));
+        }
+    }
+}
+
+html.dark .h-menu-panel {
+    ---hdr-dark-pn-mn-hov: hsla(240, 10%, 80%, 12%);
+}
+
+
+html.dark app-header {
+    .h-elem-menu {
+        ---hdr-dark-mn-sel: 7%;
+        --mat-text-button-hover-state-layer-opacity: 0.14;
+    }
 }
