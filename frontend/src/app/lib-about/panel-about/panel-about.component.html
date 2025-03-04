@@ -26,7 +26,7 @@
       <ul pa-mr-bt-0>
         <li>{{ backendItem01 }}</li>
         @for (item of backendItem02; track item) {
-            <li>{{ item }}</li>
+            <li>{{ item }} {{ 'panel-about.backend.' + getKey(item) | translate }} </li>
         }
         @for (item of backendItem03; track item) {
         <li>{{ item }}</li>
