@@ -27,6 +27,9 @@ backend/imgs/
 # temporary upload directory
 backend/tmp/
 
+# Environment Variables Configuration File
+backend/env_var_dev
+
 
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
