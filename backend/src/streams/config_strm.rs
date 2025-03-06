@@ -1,10 +1,12 @@
-use std::{io, path::PathBuf};
+use std::{env, io, path::PathBuf};
 
 use mime::{self, IMAGE, IMAGE_BMP, IMAGE_GIF, IMAGE_JPEG, IMAGE_PNG};
 
-const STRM_LOGO_MAX_SIZE_DEF: u32 = 0;
-const STRM_LOGO_MAX_WIDTH_DEF: u32 = 0;
-const STRM_LOGO_MAX_HEIGHT_DEF: u32 = 0;
+pub const LOGO_FILES_DIR: &str = "./imgs/logo";
+pub const LOGO_MAX_SIZE: &str = "0";
+pub const LOGO_VALID_TYPES: &str = "image/jpeg,image/gif,image/png,image/bmp";
+pub const LOGO_MAX_WIDTH: &str = "0";
+pub const LOGO_MAX_HEIGHT: &str = "0";
 
 // Stream Logo Properties
 #[derive(Debug, Clone)]
@@ -27,33 +29,28 @@ pub struct ConfigStrm {
 
 impl ConfigStrm {
     pub fn init_by_env() -> Self {
-        let logo_files_dir = std::env::var("STRM_LOGO_FILES_DIR").expect("STRM_LOGO_FILES_DIR must be set");
+        let logo_files_dir = env::var("STRM_LOGO_FILES_DIR").unwrap_or(LOGO_FILES_DIR.to_string());
         let path_dir: PathBuf = PathBuf::from(logo_files_dir).iter().collect();
         let strm_logo_files_dir = path_dir.to_str().unwrap().to_string();
 
-        let max_size_def = STRM_LOGO_MAX_SIZE_DEF.to_string();
-        let logo_max_size = std::env::var("STRM_LOGO_MAX_SIZE")
-            .unwrap_or(max_size_def)
-            .trim()
-            .parse()
-            .unwrap();
+        let max_size = LOGO_MAX_SIZE.to_string();
+        let logo_max_size = env::var("STRM_LOGO_MAX_SIZE").unwrap_or(max_size).trim().parse().unwrap();
 
-        let valid_types = Self::get_logo_valid_types();
+        #[rustfmt::skip]
+        let valid_types = env::var("STRM_LOGO_VALID_TYPES").unwrap_or(LOGO_VALID_TYPES.to_string()).to_lowercase();
         let logo_valid_types: Vec<String> = Self::get_logo_valid_types_by_str(&valid_types).unwrap();
 
-        let logo_ext = std::env::var("STRM_LOGO_EXT").unwrap_or("".to_string());
+        let logo_ext = env::var("STRM_LOGO_EXT").unwrap_or("".to_string());
         #[rustfmt::skip]
         let strm_logo_ext = if Self::logo_ext_validate(&logo_ext) { Some(logo_ext) } else { None };
 
-        let max_width_def = STRM_LOGO_MAX_WIDTH_DEF.to_string();
+        let max_width = LOGO_MAX_WIDTH.to_string();
         #[rustfmt::skip]
-        let logo_max_width: u32 = std::env::var("STRM_LOGO_MAX_WIDTH")
-            .unwrap_or(max_width_def).trim().parse().unwrap();
+        let logo_max_width: u32 = env::var("STRM_LOGO_MAX_WIDTH").unwrap_or(max_width).trim().parse().unwrap();
 
-        let max_height_def = STRM_LOGO_MAX_HEIGHT_DEF.to_string();
+        let max_height = LOGO_MAX_HEIGHT.to_string();
         #[rustfmt::skip]
-        let logo_max_height: u32 = std::env::var("STRM_LOGO_MAX_HEIGHT")
-            .unwrap_or(max_height_def).trim().parse().unwrap();
+        let logo_max_height: u32 = env::var("STRM_LOGO_MAX_HEIGHT").unwrap_or(max_height).trim().parse().unwrap();
 
         ConfigStrm {
             strm_logo_files_dir,
@@ -77,9 +74,6 @@ impl ConfigStrm {
         let text = format!("{}/", IMAGE);
         let types: Vec<String> = image_types.iter().map(|v| v.replace(&text, "")).collect();
         types
-    }
-    pub fn get_logo_valid_types() -> String {
-        std::env::var("STRM_LOGO_VALID_TYPES").expect("STRM_LOGO_VALID_TYPES must be set")
     }
     pub fn get_logo_valid_types_by_str(logo_valid_types: &str) -> Result<Vec<String>, io::Error> {
         let image_types: Vec<String> = Self::image_types();
@@ -110,13 +104,13 @@ impl ConfigStrm {
 pub fn get_test_config() -> ConfigStrm {
     ConfigStrm {
         strm_logo_files_dir: "./tmp".to_string(),
-        strm_logo_max_size: STRM_LOGO_MAX_SIZE_DEF,
+        strm_logo_max_size: LOGO_MAX_SIZE.parse().unwrap(),
         strm_logo_valid_types: vec![
             IMAGE_JPEG.essence_str().to_string(),
             IMAGE_PNG.essence_str().to_string(),
         ],
         strm_logo_ext: None,
-        strm_logo_max_width: STRM_LOGO_MAX_WIDTH_DEF,
-        strm_logo_max_height: STRM_LOGO_MAX_HEIGHT_DEF,
+        strm_logo_max_width: LOGO_MAX_WIDTH.parse().unwrap(),
+        strm_logo_max_height: LOGO_MAX_HEIGHT.parse().unwrap(),
     }
 }
