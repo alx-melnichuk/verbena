@@ -1,4 +1,4 @@
-use std::{env, io};
+use std::env;
 
 use actix_cors::Cors;
 use actix_multipart::form::tempfile::TempFileConfig;
@@ -59,9 +59,6 @@ pub async fn server_run() -> std::io::Result<()> {
 
     env_logger::init();
 
-    // Checking the presence of required directories
-    check_presence_required_directories()?;
-
     let config_app = config_app::ConfigApp::init_by_env();
 
     let app_protocol = config_app.app_protocol.clone();
@@ -80,9 +77,8 @@ pub async fn server_run() -> std::io::Result<()> {
     let config_prfl = config_prfl::ConfigPrfl::init_by_env();
     std::fs::create_dir_all(&config_prfl.prfl_avatar_files_dir)?;
 
-    let version = env!("CARGO_PKG_VERSION");
     let app_domain = config_app.app_domain.clone();
-    log::info!("Starting server (v.{}) {}", version, &app_domain);
+    log::info!("Starting server {}", &app_domain);
 
     let config_app2 = config_app.clone();
 
@@ -114,7 +110,7 @@ pub async fn server_run() -> std::io::Result<()> {
 
 pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
-        let db_url = env::var("DATABASE_URL").expect("DATABASE_URL not found.");
+        let db_url = env::var("DATABASE_URL").expect("Env \"DATABASE_URL\" not found.");
 
         let pool: dbase::DbPool = dbase::init_db_pool(&db_url);
         dbase::run_migration(&mut pool.get().unwrap());
@@ -204,21 +200,11 @@ pub fn create_cors(config_app: settings::config_app::ConfigApp) -> Cors {
     let cors_allowed_origin: Vec<&str> = config_app.app_allowed_origin.split(',').collect();
     if cors_allowed_origin.len() > 0 {
         for allowed_origin in cors_allowed_origin.into_iter() {
-            cors = cors.allowed_origin(allowed_origin.trim());
+            let allowed_origin_val = allowed_origin.trim();
+            if allowed_origin_val.len() > 0 {
+                cors = cors.allowed_origin(allowed_origin_val);
+            }
         }
     }
     cors
-}
-
-// Checking the presence of required directories
-pub fn check_presence_required_directories() -> Result<(), io::Error> {
-    // Check the correctness of "STRM_LOGO_VALID_TYPES"
-    let logo_valid_types = config_strm::ConfigStrm::get_logo_valid_types();
-    config_strm::ConfigStrm::get_logo_valid_types_by_str(&logo_valid_types)?;
-
-    // Check the correctness of "PRFL_AVATAR_VALID_TYPES"
-    let avatar_valid_types = config_prfl::ConfigPrfl::get_avatar_valid_types();
-    config_prfl::ConfigPrfl::get_avatar_valid_types_by_str(&avatar_valid_types)?;
-
-    Ok(())
 }
