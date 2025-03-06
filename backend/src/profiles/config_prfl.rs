@@ -1,10 +1,12 @@
-use std::{io, path::PathBuf};
+use std::{env, io, path::PathBuf};
 
 use mime::{self, IMAGE, IMAGE_BMP, IMAGE_GIF, IMAGE_JPEG, IMAGE_PNG};
 
-const PRFL_AVATAR_MAX_SIZE_DEF: u32 = 0;
-const PRFL_AVATAR_MAX_WIDTH_DEF: u32 = 0;
-const PRFL_AVATAR_MAX_HEIGHT_DEF: u32 = 0;
+pub const AVATAR_FILES_DIR: &str = "./imgs/avatar";
+pub const AVATAR_MAX_SIZE: &str = "0";
+pub const AVATAR_VALID_TYPES: &str = "image/jpeg,image/gif,image/png,image/bmp";
+pub const AVATAR_MAX_WIDTH: &str = "0";
+pub const AVATAR_MAX_HEIGHT: &str = "0";
 
 // Profile Properties
 #[derive(Debug, Clone)]
@@ -27,33 +29,29 @@ pub struct ConfigPrfl {
 
 impl ConfigPrfl {
     pub fn init_by_env() -> Self {
-        let avatar_files_dir = std::env::var("PRFL_AVATAR_FILES_DIR").expect("PRFL_AVATAR_FILES_DIR must be set");
+        let avatar_files_dir = env::var("PRFL_AVATAR_FILES_DIR").unwrap_or(AVATAR_FILES_DIR.to_string());
         let path_dir: PathBuf = PathBuf::from(avatar_files_dir).iter().collect();
         let prfl_avatar_files_dir = path_dir.to_str().unwrap().to_string();
 
-        let max_size_def = PRFL_AVATAR_MAX_SIZE_DEF.to_string();
-        let avatar_max_size = std::env::var("PRFL_AVATAR_MAX_SIZE")
-            .unwrap_or(max_size_def)
-            .trim()
-            .parse()
-            .unwrap();
+        let max_size = AVATAR_MAX_SIZE.to_string();
+        let avatar_max_size = env::var("PRFL_AVATAR_MAX_SIZE").unwrap_or(max_size).trim().parse().unwrap();
 
-        let valid_types = Self::get_avatar_valid_types();
+        #[rustfmt::skip]
+        let valid_types = env::var("PRFL_AVATAR_VALID_TYPES").unwrap_or(AVATAR_VALID_TYPES.to_string())
+            .to_lowercase();
         let avatar_valid_types: Vec<String> = Self::get_avatar_valid_types_by_str(&valid_types).unwrap();
 
-        let avatar_ext = std::env::var("PRFL_AVATAR_EXT").unwrap_or("".to_string());
+        let avatar_ext = env::var("PRFL_AVATAR_EXT").unwrap_or("".to_string());
         #[rustfmt::skip]
         let prfl_avatar_ext = if Self::avatar_ext_validate(&avatar_ext) { Some(avatar_ext) } else { None };
 
-        let max_width_def = PRFL_AVATAR_MAX_WIDTH_DEF.to_string();
+        let max_width = AVATAR_MAX_WIDTH.to_string();
         #[rustfmt::skip]
-        let avatar_max_width: u32 = std::env::var("PRFL_AVATAR_MAX_WIDTH")
-            .unwrap_or(max_width_def).trim().parse().unwrap();
+        let avatar_max_width: u32 = env::var("PRFL_AVATAR_MAX_WIDTH").unwrap_or(max_width).trim().parse().unwrap();
 
-        let max_height_def = PRFL_AVATAR_MAX_HEIGHT_DEF.to_string();
+        let max_height = AVATAR_MAX_HEIGHT.to_string();
         #[rustfmt::skip]
-        let avatar_max_height: u32 = std::env::var("PRFL_AVATAR_MAX_HEIGHT")
-            .unwrap_or(max_height_def).trim().parse().unwrap();
+        let avatar_max_height: u32 = env::var("PRFL_AVATAR_MAX_HEIGHT").unwrap_or(max_height).trim().parse().unwrap();
 
         ConfigPrfl {
             prfl_avatar_files_dir,
@@ -77,9 +75,6 @@ impl ConfigPrfl {
         let text = format!("{}/", IMAGE);
         let types: Vec<String> = image_types.iter().map(|v| v.replace(&text, "")).collect();
         types
-    }
-    pub fn get_avatar_valid_types() -> String {
-        std::env::var("PRFL_AVATAR_VALID_TYPES").expect("PRFL_AVATAR_VALID_TYPES must be set")
     }
     pub fn get_avatar_valid_types_by_str(avatar_valid_types: &str) -> Result<Vec<String>, io::Error> {
         let image_types: Vec<String> = Self::image_types();
@@ -110,13 +105,13 @@ impl ConfigPrfl {
 pub fn get_test_config() -> ConfigPrfl {
     ConfigPrfl {
         prfl_avatar_files_dir: "./tmp".to_string(),
-        prfl_avatar_max_size: PRFL_AVATAR_MAX_SIZE_DEF,
+        prfl_avatar_max_size: AVATAR_MAX_SIZE.parse().unwrap(),
         prfl_avatar_valid_types: vec![
             IMAGE_JPEG.essence_str().to_string(),
             IMAGE_PNG.essence_str().to_string(),
         ],
         prfl_avatar_ext: None,
-        prfl_avatar_max_width: PRFL_AVATAR_MAX_WIDTH_DEF,
-        prfl_avatar_max_height: PRFL_AVATAR_MAX_HEIGHT_DEF,
+        prfl_avatar_max_width: AVATAR_MAX_WIDTH.parse().unwrap(),
+        prfl_avatar_max_height: AVATAR_MAX_HEIGHT.parse().unwrap(),
     }
 }
