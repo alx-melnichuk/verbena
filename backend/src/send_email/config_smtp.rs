@@ -1,4 +1,9 @@
+use std::env;
+
 use crate::utils::parser::parse_bool;
+
+pub const NOT_SEND_LETTER: &str = "false";
+pub const SAVE_LETTER: &str = "false";
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
@@ -14,18 +19,18 @@ pub struct ConfigSmtp {
 
 impl ConfigSmtp {
     pub fn init_by_env() -> Self {
-        let smtp_host_port = std::env::var("SMTP_HOST_PORT").expect("SMTP_HOST_PORT must be set");
+        let smtp_host_port = env::var("SMTP_HOST_PORT").expect("Env \"SMTP_HOST_PORT\" not found.");
         let (host, port) = smtp_host_port.split_once(':').unwrap_or(("", ""));
         let smtp_host = host.to_string();
         let smtp_port = port.to_string();
-        let smtp_user_pass = std::env::var("SMTP_USER_PASS").expect("SMTP_USER_PASS must be set");
+        let smtp_user_pass = env::var("SMTP_USER_PASS").expect("Env \"SMTP_USER_PASS\" not found.");
         let (user, pass) = smtp_user_pass.split_once(':').unwrap_or(("", ""));
         let smtp_user = user.to_string();
         let smtp_pass = pass.to_string();
         let smtp_sender = smtp_user.clone();
-        let not_send_letter = std::env::var("SMTP_NOT_SEND_LETTER").unwrap_or("false".to_string());
+        let not_send_letter = env::var("SMTP_NOT_SEND_LETTER").unwrap_or(NOT_SEND_LETTER.to_string());
         let smtp_not_send_letter = parse_bool(&not_send_letter).unwrap();
-        let save_letter = std::env::var("SMTP_SAVE_LETTER").unwrap_or("false".to_string());
+        let save_letter = env::var("SMTP_SAVE_LETTER").unwrap_or(SAVE_LETTER.to_string());
         let smtp_save_letter = parse_bool(&save_letter).unwrap();
 
         ConfigSmtp {
