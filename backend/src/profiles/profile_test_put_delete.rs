@@ -523,7 +523,7 @@ pub mod tests {
         let mut config_prfl = config_prfl::get_test_config();
         let prfl_avatar_max_size = 160;
         config_prfl.prfl_avatar_max_size = prfl_avatar_max_size;
-        let cfg_c = (cfg_c.0, config_prfl);
+        let cfg_c = (cfg_c.0, config_prfl, cfg_c.2);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
@@ -690,7 +690,7 @@ pub mod tests {
         config_prfl.prfl_avatar_max_height = 18;
         let prfl_avatar_files_dir = config_prfl.prfl_avatar_files_dir.clone();
 
-        let cfg_c = (cfg_c.0, config_prfl);
+        let cfg_c = (cfg_c.0, config_prfl, cfg_c.2);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
@@ -752,7 +752,7 @@ pub mod tests {
         let mut profile1 = data_c.0.get(0).unwrap().clone();
         let profile1_id = profile1.user_id;
         profile1.avatar = Some(path_name0_alias.clone());
-        let data_c = (vec![profile1], data_c.1, data_c.2);
+        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
@@ -809,7 +809,7 @@ pub mod tests {
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         let mut profile1 = data_c.0.get(0).unwrap().clone();
         profile1.avatar = Some(path_name0_alias.clone());
-        let data_c = (vec![profile1], data_c.1, data_c.2);
+        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
@@ -853,7 +853,7 @@ pub mod tests {
 
         let mut profile1 = data_c.0.get(0).unwrap().clone();
         profile1.avatar = Some(path_name0_alias.clone());
-        let data_c = (vec![profile1], data_c.1, data_c.2);
+        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
@@ -1043,7 +1043,7 @@ pub mod tests {
         let mut profile1: Profile = create_profile(USER, Some(&old_password));
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         profile1.user_id = data_c.0.get(0).unwrap().user_id;
-        let data_c = (vec![profile1], data_c.1, data_c.2);
+        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
@@ -1070,7 +1070,7 @@ pub mod tests {
         let mut profile1: Profile = create_profile(USER, Some(&old_password));
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         profile1.user_id = data_c.0.get(0).unwrap().user_id;
-        let data_c = (vec![profile1], data_c.1, data_c.2);
+        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
@@ -1097,7 +1097,7 @@ pub mod tests {
         let mut profile1: Profile = create_profile(USER, Some(&old_password));
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         profile1.user_id = data_c.0.get(0).unwrap().user_id;
-        let data_c = (vec![profile1], data_c.1, data_c.2);
+        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
@@ -1124,7 +1124,7 @@ pub mod tests {
         let mut profile1: Profile = create_profile(USER, Some(&old_password));
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         profile1.user_id = data_c.0.get(0).unwrap().user_id;
-        let data_c = (vec![profile1], data_c.1, data_c.2);
+        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
@@ -1151,7 +1151,7 @@ pub mod tests {
         let mut profile1: Profile = create_profile(USER, Some(&old_password));
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         profile1.user_id = data_c.0.get(0).unwrap().user_id;
-        let data_c = (vec![profile1], data_c.1, data_c.2);
+        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
@@ -1180,7 +1180,7 @@ pub mod tests {
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         profile1.user_id = data_c.0.get(0).unwrap().user_id;
 
-        let data_c = (vec![profile1], data_c.1, data_c.2);
+        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
@@ -1207,7 +1207,7 @@ pub mod tests {
         let mut profile1: Profile = create_profile(USER, Some(&old_password));
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         profile1.user_id = data_c.0.get(0).unwrap().user_id;
-        let data_c = (vec![profile1], data_c.1, data_c.2);
+        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
@@ -1235,7 +1235,7 @@ pub mod tests {
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         profile1.user_id = data_c.0.get(0).unwrap().user_id;
         let profile1_dto = ProfileDto::from(profile1.clone());
-        let data_c = (vec![profile1], data_c.1, data_c.2);
+        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
 
         #[rustfmt::skip]
         let app = test::init_service(

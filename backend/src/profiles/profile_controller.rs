@@ -994,6 +994,10 @@ pub mod tests {
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
     };
+    use crate::streams::{config_strm, stream_models::StreamInfoDto,
+        stream_controller::tests::create_stream,
+        stream_orm::tests::StreamOrmApp,
+    };
     use crate::users::user_models::{UserRegistr, UserRole};
     use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
 
@@ -1034,11 +1038,16 @@ pub mod tests {
         (header::AUTHORIZATION, header_value)
     }
     #[rustfmt::skip]
-    pub fn get_cfg_data(is_registr: bool, role: u8) -> ((config_jwt::ConfigJwt, config_prfl::ConfigPrfl), (Vec<Profile>, Vec<Session>, Vec<UserRegistr>), String) {
+    pub fn get_cfg_data(is_registr: bool, role: u8) -> (
+        (config_jwt::ConfigJwt, config_prfl::ConfigPrfl, config_strm::ConfigStrm), // configuration
+        (Vec<Profile>, Vec<Session>, Vec<UserRegistr>, Vec<StreamInfoDto>) // data vectors
+        , String) {
         // Create profile values.
         let profile1: Profile = profile_with_id(create_profile(role, None));
         let num_token = 1234;
         let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token));
+
+        let stream1 = create_stream(0, profile1.user_id, "title0", "tag01,tag02", Utc::now());
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
@@ -1050,29 +1059,34 @@ pub mod tests {
         } else { vec![] };
 
         let config_prfl = config_prfl::get_test_config();
-        let cfg_c = (config_jwt, config_prfl);
-        let data_c = (vec![profile1], vec![session1], user_registr_vec);
+        let config_strm = config_strm::get_test_config();
+        let cfg_c = (config_jwt, config_prfl, config_strm);
+        let data_c = (vec![profile1], vec![session1], user_registr_vec, vec![stream1]);
 
         (cfg_c, data_c, token)
     }
     pub fn configure_profile(
-        cfg_c: (config_jwt::ConfigJwt, config_prfl::ConfigPrfl), // configuration
-        data_c: (Vec<Profile>, Vec<Session>, Vec<UserRegistr>),  // cortege of data vectors
+        cfg_c: (config_jwt::ConfigJwt, config_prfl::ConfigPrfl, config_strm::ConfigStrm), // configuration
+        data_c: (Vec<Profile>, Vec<Session>, Vec<UserRegistr>, Vec<StreamInfoDto>),  // data vectors
     ) -> impl FnOnce(&mut web::ServiceConfig) {
         move |config: &mut web::ServiceConfig| {
             let data_config_jwt = web::Data::new(cfg_c.0);
             let data_config_prfl = web::Data::new(cfg_c.1);
+            let data_config_strm = web::Data::new(cfg_c.2);
 
             let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
             let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
             let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.2));
+            let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.3));
 
             config
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_config_prfl))
+                .app_data(web::Data::clone(&data_config_strm))
                 .app_data(web::Data::clone(&data_profile_orm))
                 .app_data(web::Data::clone(&data_session_orm))
-                .app_data(web::Data::clone(&data_user_registr_orm));
+                .app_data(web::Data::clone(&data_user_registr_orm))
+                .app_data(web::Data::clone(&data_stream_orm));
         }
     }
     pub fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {

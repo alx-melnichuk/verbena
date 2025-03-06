@@ -58,7 +58,7 @@ mod tests {
         let profile2_dto = ProfileDto::from(profile_vec.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
 
-        let data_c = (profile_vec, data_c.1, data_c.2);
+        let data_c = (profile_vec, data_c.1, data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_by_id).configure(configure_profile(cfg_c, data_c))).await;
@@ -86,7 +86,7 @@ mod tests {
         let profile2_dto = ProfileDto::from(profile_vec.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
 
-        let data_c = (profile_vec, data_c.1, data_c.2);
+        let data_c = (profile_vec, data_c.1, data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_profile_by_id).configure(configure_profile(cfg_c, data_c))).await;
