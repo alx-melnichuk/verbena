@@ -1,3 +1,8 @@
+use std::env;
+
+pub const ACCESS_TOKEN_DURATION: &str = "900"; // 900 seconds = 15 minutes
+pub const REFRESH_TOKEN_DURATION: &str = "345600"; // 345600 seconds = 4 days  60sec*60min*24hour*4days
+
 #[derive(Debug, Clone)]
 pub struct ConfigJwt {
     pub jwt_secret: String,
@@ -9,9 +14,9 @@ pub struct ConfigJwt {
 
 impl ConfigJwt {
     pub fn init_by_env() -> Self {
-        let jwt_secret = std::env::var("JWT_SECRET_KEY").expect("JWT_SECRET_KEY must be set");
-        let jwt_access = std::env::var("JWT_ACCESS_TOKEN_DURATION").expect("JWT_ACCESS_TOKEN_DURATION must be set");
-        let jwt_refresh = std::env::var("JWT_REFRESH_TOKEN_DURATION").expect("JWT_REFRESH_TOKEN_DURATION must be set");
+        let jwt_secret = env::var("JWT_SECRET_KEY").expect("Env \"JWT_SECRET_KEY\" not found.");
+        let jwt_access = env::var("JWT_ACCESS_TOKEN_DURATION").unwrap_or(ACCESS_TOKEN_DURATION.to_string());
+        let jwt_refresh = env::var("JWT_REFRESH_TOKEN_DURATION").unwrap_or(REFRESH_TOKEN_DURATION.to_string());
 
         ConfigJwt {
             jwt_secret,
