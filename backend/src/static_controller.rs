@@ -44,10 +44,12 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
     let app_backend01 = "rustc v.1.85";
     let app_backend02: Vec<&str> = vec![
         "actix = \"0.13.5\"",
+        "actix-broker = \"0.4.3\"",
         "actix-cors = \"0.7.0\"",
         "actix-files = \"0.6.6\"",
         "actix-multipart = \"0.7.2\"",
         "actix-web = { version = \"4.9.0\", features = [\"openssl\"] }",
+        "actix-web-actors = \"4.3.1\"",
         "argon2 = \"0.5.3\"",
         "chrono = { version = \"0.4.40\", features = [\"serde\"] }",
         "diesel = { version = \"2.2.7\", features = [\"postgres\", \"r2d2\", \"chrono\"] }",
