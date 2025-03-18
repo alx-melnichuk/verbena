@@ -309,10 +309,12 @@
     "backend_used": "On the Backend the following was used:",
     "backend": {
         "actix": "- Actor framework",
+        "actix-broker": "Message broker for the Actix actor framework",
         "actix-cors": "- Cross-Origin Resource Sharing (CORS) controls for Actix Web",
         "actix-files": "- Static file serving for Actix Web",
         "actix-multipart": "- Multipart form support for Actix Web",
         "actix-web": "- Fast web framework",
+        "actix-web-actors": "Actix actors support for Actix Web",
         "argon2": "- Implementation of password hashing function",
         "chrono": "- Date and time library",
         "diesel": "- ORM and query builder",
