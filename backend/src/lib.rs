@@ -2,11 +2,7 @@ use std::env;
 
 use actix_cors::Cors;
 use actix_multipart::form::tempfile::TempFileConfig;
-use actix_web::{
-    http, middleware,
-    web::{self, Data},
-    App, HttpServer,
-};
+use actix_web::{http, middleware, web, App, HttpServer};
 use dotenv;
 use env_logger;
 use log;
@@ -14,6 +10,7 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 
+use chats::chat_controller;
 use profiles::{
     config_prfl, profile_auth_controller, profile_controller, profile_orm::cfg::get_profile_orm_app,
     profile_registr_controller,
@@ -27,6 +24,7 @@ use utils::ssl_acceptor;
 use utoipa::OpenApi;
 
 pub mod cdis;
+pub mod chats;
 pub(crate) mod dbase;
 pub(crate) mod errors;
 pub(crate) mod extractors;
@@ -120,50 +118,50 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let temp_file_config0 = TempFileConfig::default().clone().directory(config_app0.app_dir_tmp.clone());
 
         // used: profile_registr_controller, static_controller
-        let config_app = Data::new(config_app0);
+        let config_app = web::Data::new(config_app0);
         // used: profile_auth_controller, profile_registr_controller
-        let config_jwt = Data::new(config_jwt::ConfigJwt::init_by_env());
+        let config_jwt = web::Data::new(config_jwt::ConfigJwt::init_by_env());
         // Used "actix-multipart" to upload files. TempFileConfig.from_req()
-        let temp_file_config = Data::new(temp_file_config0);
+        let temp_file_config = web::Data::new(temp_file_config0);
         // used: stream_controller
-        let config_strm = Data::new(config_strm::ConfigStrm::init_by_env());
+        let config_strm = web::Data::new(config_strm::ConfigStrm::init_by_env());
         //
         let config_smtp0 = config_smtp::ConfigSmtp::init_by_env();
         // used: stream_controller, profile_controller
-        let config_smtp = Data::new(config_smtp0.clone());
+        let config_smtp = web::Data::new(config_smtp0.clone());
         // used: profile_controller
-        let config_prfl = Data::new(config_prfl::ConfigPrfl::init_by_env());
+        let config_prfl = web::Data::new(config_prfl::ConfigPrfl::init_by_env());
 
         // Adding various entities.
         // used: profile_registr_controller
-        let mailer = Data::new(mailer::cfg::get_mailer_app(config_smtp0));
+        let mailer = web::Data::new(mailer::cfg::get_mailer_app(config_smtp0));
         // used: profile_registr_controller
-        let user_registr_orm = Data::new(get_user_registr_orm_app(pool.clone()));
+        let user_registr_orm = web::Data::new(get_user_registr_orm_app(pool.clone()));
         // used: profile_registr_controller
-        let user_recovery_orm = Data::new(get_user_recovery_orm_app(pool.clone()));
+        let user_recovery_orm = web::Data::new(get_user_recovery_orm_app(pool.clone()));
         // used: profile_auth_controller, profile_registr_controller
-        let session_orm = Data::new(get_session_orm_app(pool.clone()));
+        let session_orm = web::Data::new(get_session_orm_app(pool.clone()));
         // used: stream_controller, profile_controller
-        let stream_orm = Data::new(get_stream_orm_app(pool.clone()));
+        let stream_orm = web::Data::new(get_stream_orm_app(pool.clone()));
         // used: profile_controller
-        let profile_orm = Data::new(get_profile_orm_app(pool.clone()));
+        let profile_orm = web::Data::new(get_profile_orm_app(pool.clone()));
 
         // Make instance variable of ApiDoc so all worker threads gets the same instance.
         let openapi = swagger_docs::ApiDoc::openapi();
 
         config
-            .app_data(Data::clone(&config_app))
-            .app_data(Data::clone(&config_jwt))
-            .app_data(Data::clone(&temp_file_config))
-            .app_data(Data::clone(&config_strm))
-            .app_data(Data::clone(&config_smtp))
-            .app_data(Data::clone(&config_prfl))
-            .app_data(Data::clone(&mailer))
-            .app_data(Data::clone(&user_registr_orm))
-            .app_data(Data::clone(&session_orm))
-            .app_data(Data::clone(&user_recovery_orm))
-            .app_data(Data::clone(&stream_orm))
-            .app_data(Data::clone(&profile_orm))
+            .app_data(web::Data::clone(&config_app))
+            .app_data(web::Data::clone(&config_jwt))
+            .app_data(web::Data::clone(&temp_file_config))
+            .app_data(web::Data::clone(&config_strm))
+            .app_data(web::Data::clone(&config_smtp))
+            .app_data(web::Data::clone(&config_prfl))
+            .app_data(web::Data::clone(&mailer))
+            .app_data(web::Data::clone(&user_registr_orm))
+            .app_data(web::Data::clone(&session_orm))
+            .app_data(web::Data::clone(&user_recovery_orm))
+            .app_data(web::Data::clone(&stream_orm))
+            .app_data(web::Data::clone(&profile_orm))
             // Add documentation service "Redoc" and "RapiDoc".
             .service(Redoc::with_url("/redoc", openapi.clone()))
             .service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
@@ -174,7 +172,8 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             .configure(profile_auth_controller::configure())
             .configure(stream_controller::configure())
             .configure(profile_controller::configure())
-            .configure(static_controller::configure());
+            .configure(static_controller::configure())
+            .configure(chat_controller::configure());
     }
 }
 
