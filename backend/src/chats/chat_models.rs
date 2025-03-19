@@ -5,15 +5,15 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub enum WSEventType {
     Block,
-    Count, // +
-    Echo,  // +
-    Err,   // +
-    Join,  // +
-    Leave, // +
-    Msg,   // +
+    Count,
+    Echo,
+    Err,
+    Join,
+    Leave,
+    Msg,
     MsgCut,
     MsgPut,
     Name,
@@ -108,8 +108,8 @@ impl WSEvent {
         return self.data_map.get(name).map(|s| s.clone());
     }
 
-    pub fn block(block: String) -> String {
-        serde_json::to_string(&WSEventBlock { block }).unwrap()
+    pub fn block(block: String, count: Option<u64>) -> String {
+        serde_json::to_string(&WSEventBlock { block, count }).unwrap()
     }
 
     pub fn count(count: usize) -> String {
@@ -149,10 +149,11 @@ impl WSEvent {
     }
 }
 
-// ** Block the client in the room. **
+// ** Block clients in a room by name. **
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct WSEventBlock {
     pub block: String,
+    pub count: Option<u64>, // Amount of blocked clients.
 }
 
 // ** Count of clients in the room. **
@@ -197,6 +198,7 @@ pub struct WSEventMsg {
 
 // ** Send a delete message to all chat members. **
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct WSEventMsgCut {
     pub msg_cut: String,
     pub member: String,
@@ -205,6 +207,7 @@ pub struct WSEventMsgCut {
 
 // ** Send a correction to the message to everyone in the chat. **
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct WSEventMsgPut {
     pub msg_put: String,
     pub member: String,
