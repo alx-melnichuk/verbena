@@ -1,18 +1,26 @@
 use actix::prelude::*;
 
-// ** Block the client in the room. **
-#[derive(Clone, Message)]
-#[rtype(result = "()")]
-pub struct Block(
+// ** Block clients in a room by name. **
+#[derive(Debug, Clone, Message)]
+#[rtype(result = "String")] // amount of blocked members
+pub struct BlockMembers(
     pub String, // room_name
     pub String, // client_name
 );
 
-#[derive(Clone, Message)]
+// ** Send a chat message to all clients in the room. **
+#[derive(Debug, Clone, Message)]
 #[rtype(result = "()")]
 pub struct ChatMessage(
     pub String, // message
 );
+// ** Commands that have one handler. (Session -> Server) **
+#[derive(Debug, Clone, Message)]
+#[rtype(result = "()")]
+pub enum SrvCommand {
+    Block(BlockMembers),
+    Chat(ChatMessage),
+}
 
 // ** Count of clients in the room. **
 #[derive(Clone, Message)]
@@ -26,21 +34,22 @@ pub struct JoinRoom(
     pub String,                 // room_name
     pub Option<String>,         // client_name
     pub Recipient<ChatMessage>, // client
+    pub Recipient<SrvCommand>,  // client_session: SessionCommand
 );
-// ** Leave the client from the chat room. **
+
+// ** Leave the client from the chat room. (Session -> Server) **
 #[derive(Clone, Message)]
 #[rtype(result = "()")]
-pub struct LeaveRoom(
+pub struct SrvLeaveRoom(
     pub String,         // room_name
     pub u64,            // id client
     pub Option<String>, // client_name
 );
 
-// ** Send a message to everyone in the chat room. **
-
+// ** Send a message to everyone in the chat room. (Session -> Server) **
 #[derive(Clone, Message)]
 #[rtype(result = "()")]
-pub struct SendMessage(
+pub struct SrvSendMessage(
     pub String, // room_name
     pub u64,    // id client
     pub String, // message
