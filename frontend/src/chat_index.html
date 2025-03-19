@@ -8,11 +8,11 @@
       :root {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
           Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        font-size: 18px;
+        font-size: 16px;
       }
 
       input[type='text'] { font-size: inherit; }
-
+      code { font-size: calc(1em - 1px); }
       #log { width: 30em; height: 20em; overflow: auto; margin: 0.5em 0; border: 1px solid black; }
 
       #status { padding: 0 0.2em; }
@@ -49,30 +49,46 @@
 
     <section>
       <h2>Commands</h2>
-      <table style="border-spacing: 0.5em">
+      <table>
         <tr>
-          <td>
-            <code>/list</code>
-          </td>
-          <td>list all available rooms</td>
+          <td style="width: 300px;">code</td>
+          <td>description</td>
         </tr>
         <tr>
-          <td>
-            <code>/join name</code>
-          </td>
-          <td>join room, if room does not exist, create new one</td>
-        </tr>
-        <tr>
-          <td>
-            <code>/name name</code>
-          </td>
+          <td> <code>{ "name": "User1" }</code> </td>
           <td>set session name</td>
         </tr>
         <tr>
-          <td>
-            <code>some message</code>
-          </td>
+          <td> <code>{ "count": -1 }</code> </td>
+          <td>Count of clients in the room</td>
+        </tr>
+        <tr>
+          <td> <code>{ "join": "romm_21" }</code> </td>
+          <td>join room, if room does not exist, create new one</td>
+        </tr>
+        <tr>
+          <td> <code>{ "leave": "" }</code> </td>
+          <td>leave from room</td>
+        </tr>
+        <tr>
+          <td> <code>{ "block": "User2" }</code> </td>
+          <td>Block chat members in a room by name</td>
+        </tr>
+        <tr>
+          <td> <code>{ "msg": "text01" }</code> </td>
           <td>just string, send message to all peers in same room</td>
+        </tr>
+        <tr>
+          <td>
+            <code>{ "msgCut": "", "date":"2025-03-02T08:32:20.710Z" }</code>
+          </td>
+          <td>Send a delete message to all chat members.</td>
+        </tr>
+        <tr>
+          <td>
+            <code>{ "msgPut":"new text", "date":"2025-03-02T08:32:20.710Z" }</code>
+          </td>
+          <td>Send a correction to the message to everyone in the chat.</td>
         </tr>
       </table>
     </section>
