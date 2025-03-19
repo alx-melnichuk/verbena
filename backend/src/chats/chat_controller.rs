@@ -20,6 +20,7 @@ pub async fn get_ws_chat(
     stream: web::Payload,
 ) -> actix_web::Result<HttpResponse<actix_web::body::BoxBody>, actix_web::Error> {
     ws::start(WsChatSession::default(), &request, stream)
+    // WsChatSession::new(id: u64, room: String, name: Option<String>, is_blocked: bool)
 }
 
 #[get("/chat")]
