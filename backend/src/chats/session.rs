@@ -1,12 +1,11 @@
 use actix::prelude::*;
 use actix_broker::BrokerIssue;
 use actix_web_actors::ws;
+use serde_json::to_string;
 
-use super::chat_models::{WSEvent, WSEventType};
-use super::message::{BlockMembers, ChatMessage, CountMembers, JoinRoom, SrvCommand, SrvLeaveRoom, SrvSendMessage};
+use super::chat_models::{EWSType, EchoEWS, ErrEWS, EventWS, NameEWS};
+use super::message::{BlockingClients, BlockingSsn, ChatMessageSsn, CommandSrv, JoinRoomSrv, LeaveRoomSrv};
 use super::server::WsChatServer;
-
-pub const UNDEFINED_ROOM_NAME: &str = "Undefined room name.";
 
 // ** WsChatSession **
 
@@ -29,81 +28,132 @@ impl WsChatSession {
             is_blocked,
         }
     }
-
-    // ** Count of clients in the room. **
-
-    pub fn count_members(&mut self, ctx: &mut ws::WebsocketContext<Self>) {
-        // Check if there is an joined room
-        if let Err(err) = self.check_is_joined_room() {
-            return ctx.text(err);
+    // Check if this field is required
+    fn check_field_is_required(&self, value: &str, name: &str) -> Result<(), String> {
+        if value.len() == 0 {
+            Err(format!("The \"{}\" field is required.", name))
+        } else {
+            Ok(())
         }
-        let count_members_msg = CountMembers(self.room.clone());
+    }
+    // Check if there is an joined room
+    fn check_is_joined_room(&self) -> Result<(), String> {
+        if self.room.len() == 0 {
+            Err("There was no \"join\" command.".to_owned())
+        } else {
+            Ok(())
+        }
+    }
 
-        WsChatServer::from_registry()
-            .send(count_members_msg)
-            .into_actor(self)
-            .then(|res, _act, ctx| {
-                if let Ok(count) = res {
-                    ctx.text(WSEvent::count(count));
+    fn handle_text(&mut self, msg: &str, ctx: &mut ws::WebsocketContext<Self>) {
+        // Parse input data of ws event.
+        let res_event = EventWS::parsing(msg);
+        if let Err(err) = res_event {
+            log::debug!("WEBSOCKET: Error: {:?} msg: \"{}\"", err, msg);
+            ctx.text(to_string(&ErrEWS { err }).unwrap());
+            return;
+        }
+        let event = res_event.unwrap();
+
+        match event.et {
+            EWSType::Echo => {
+                let echo = event.get("echo").unwrap_or("".to_string());
+                // Check if this field is required
+                if let Err(err) = self.check_field_is_required(&echo, "echo") {
+                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                } else {
+                    ctx.text(to_string(&EchoEWS { echo }).unwrap());
                 }
+            }
+            EWSType::Block => {
+                let block = event.get("block").unwrap_or("".to_string());
+                if let Err(err) = self.blocking_clients(&block, true, ctx) {
+                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                }
+            }
+            EWSType::Join => {
+                let join = event.get("join").unwrap_or("".to_string());
+                if let Err(err) = self.join_room(&join, ctx) {
+                    ctx.text(to_string(&ErrEWS { err }).unwrap())
+                }
+            }
+            EWSType::Leave => {
+                if let Err(err) = self.leave_room(ctx) {
+                    ctx.text(to_string(&ErrEWS { err }).unwrap())
+                }
+            }
+            EWSType::Name => {
+                let name = event.get("name").unwrap_or("".to_string());
+                self.name = if name.len() > 0 { Some(name.clone()) } else { None };
+                ctx.text(to_string(&NameEWS { name }).unwrap());
+            }
+            EWSType::Unblock => {
+                let unblock = event.get("unblock").unwrap_or("".to_string());
+                if let Err(err) = self.blocking_clients(&unblock, false, ctx) {
+                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // ** Blocking clients in a room by name. (Session -> Server) **
+
+    pub fn blocking_clients(
+        &self,
+        client_name: &str,
+        is_blocked: bool,
+        ctx: &mut ws::WebsocketContext<Self>,
+    ) -> Result<(), String> {
+        // Check if this field is required
+        self.check_field_is_required(&client_name, "block")?;
+        // Check if there is an joined room
+        self.check_is_joined_room()?;
+
+        let room_name = self.room.clone();
+        let block_client = BlockingClients(room_name, client_name.to_owned(), is_blocked);
+        eprintln!("@__block() client_name: {}, is_blocked: {}", &client_name, is_blocked); // #
+        WsChatServer::from_registry()
+            .send(block_client)
+            .into_actor(self)
+            .then(move |res, _act, _ctx| {
+                eprintln!("@__block() res: {:?}", res);
+                // if let Ok(id) = res {
+                // }
 
                 fut::ready(())
             })
             .wait(ctx);
-    }
-
-    // ** Block clients in a room by name. **
-
-    pub fn block(&self, block: &str, ctx: &mut ws::WebsocketContext<Self>) {
-        if self.is_blocked {
-            eprintln!("@__block() is_blocked: true");
-        }
-        // Check if this field is required
-        if let Err(err) = self.check_field_is_required(&block, "block") {
-            return ctx.text(err);
-        }
-        // Check if there is an joined room
-        if let Err(err) = self.check_is_joined_room() {
-            return ctx.text(err);
-        }
-        eprintln!("@__block() block: {}", &block);
+        /*
         //let block2 = block.to_owned().clone();
-        let comm_block_members = SrvCommand::Block(BlockMembers(self.room.clone(), block.to_owned().clone()));
+        let comm_block_members = CommandSrv::Block(BlockMemberSsn(self.room.clone(), client_name.to_owned().clone()));
         // // issue_sync comes from having the `BrokerIssue` trait in scope.
         let res = self.issue_system_sync(comm_block_members, ctx);
         eprintln!("@__block() issue_system_sync(block_members_msg, ctx): {:?}", res);
+        */
+        Ok(())
     }
 
     // ** Join the client to the chat room. **
 
-    pub fn join_room(&mut self, room_name: &str, ctx: &mut ws::WebsocketContext<Self>) {
+    pub fn join_room(&mut self, room_name: &str, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {
         // Check if this field is required
-        if let Err(err) = self.check_field_is_required(room_name, "join") {
-            return ctx.text(err);
-        }
+        self.check_field_is_required(room_name, "join")?;
         // Check if there was a join to this room.
         if self.room.eq(room_name) {
-            let err = format!("There was already a \"join\" to the \"{}\" room.", room_name);
-            return ctx.text(WSEvent::err(err));
+            return Err(format!("There was already a \"join\" to the \"{}\" room.", room_name));
         }
-
+        // If there is a room name, then leave it.
         if self.room.len() > 0 {
-            // First send a leave message for the current room
-            let leave_msg = SrvLeaveRoom(self.room.clone(), self.id, self.name.clone());
-            // issue_sync comes from having the `BrokerIssue` trait in scope.
-            self.issue_system_sync(leave_msg, ctx);
+            // Send message about "leave"
+            let _ = self.leave_room(ctx);
         }
         let room_name = room_name.to_owned();
         // Then send a join message for the new room
-        let join_room_msg = JoinRoom(
-            room_name.clone(),
-            self.name.clone(),
-            ctx.address().recipient(),
-            ctx.address().recipient(),
-        );
+        let join_room_srv = JoinRoomSrv(room_name.clone(), self.name.clone(), ctx.address().recipient());
 
         WsChatServer::from_registry()
-            .send(join_room_msg)
+            .send(join_room_srv)
             .into_actor(self)
             .then(move |res, act, _ctx| {
                 if let Ok(id) = res {
@@ -114,139 +164,20 @@ impl WsChatSession {
                 fut::ready(())
             })
             .wait(ctx);
+        Ok(())
     }
 
     // ** Leave the client from the chat room. (Session -> Server) **
-    pub fn leave_room(&mut self, ctx: &mut ws::WebsocketContext<Self>) {
+    pub fn leave_room(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {
         // Check if there is an joined room
-        if let Err(err) = self.check_is_joined_room() {
-            return ctx.text(err);
-        }
-        // Send a message about leaving the current room.
-        let leave_room_msg = SrvLeaveRoom(self.room.clone(), self.id, self.name.clone());
+        self.check_is_joined_room()?;
+        // Send a message about leaving the room.
+        let leave_room_srv = LeaveRoomSrv(self.room.clone(), self.id, self.name.clone());
         // issue_sync comes from having the `BrokerIssue` trait in scope.
-        self.issue_system_sync(leave_room_msg, ctx);
+        self.issue_system_sync(leave_room_srv, ctx);
         // Reset room name.
         self.room = "".to_string();
-    }
-
-    // ** Send a message to everyone in the chat room. (Session -> Server) **
-    pub fn send_message(&self, msg: &str, date: &str, ctx: &mut ws::WebsocketContext<Self>) {
-        // Check if this field is required
-        if let Err(err) = self.check_field_is_required(&msg, "msg") {
-            return ctx.text(err);
-        }
-        // Check if there is an joined room
-        if let Err(err) = self.check_is_joined_room() {
-            return ctx.text(err);
-        }
-        let member = self.name.clone().unwrap_or("".to_owned());
-        let msg_str = WSEvent::msg(msg.to_owned(), member, date.to_owned());
-        let send_message = SrvSendMessage(self.room.clone(), self.id, msg_str);
-        // issue_async comes from having the `BrokerIssue` trait in scope.
-        self.issue_system_async(send_message);
-    }
-
-    // ** ?? Send a delete message to all chat members. **
-    pub fn send_message_cut(&self, msg_cut: &str, date: &str, ctx: &mut ws::WebsocketContext<Self>) {
-        // Check if there is an joined room
-        if let Err(err) = self.check_is_joined_room() {
-            return ctx.text(err);
-        }
-        let member = self.name.clone().unwrap_or("".to_owned());
-        let msg_cut_str = WSEvent::msg_cut(msg_cut.to_owned(), member, date.to_owned());
-        let send_message = SrvSendMessage(self.room.clone(), self.id, msg_cut_str);
-
-        // issue_async comes from having the `BrokerIssue` trait in scope.
-        self.issue_system_async(send_message);
-    }
-
-    // ** ?? Send a correction to the message to everyone in the chat. **
-    pub fn send_message_put(&self, msg_put: &str, date: &str, ctx: &mut ws::WebsocketContext<Self>) {
-        // Check if this field is required
-        if let Err(err) = self.check_field_is_required(&msg_put, "msg_put") {
-            return ctx.text(err);
-        }
-        // Check if there is an joined room
-        if let Err(err) = self.check_is_joined_room() {
-            return ctx.text(err);
-        }
-        let member = self.name.clone().unwrap_or("".to_owned());
-        let msg_put_str = WSEvent::msg_put(msg_put.to_owned(), member, date.to_owned());
-        let send_message = SrvSendMessage(self.room.clone(), self.id, msg_put_str);
-
-        // issue_async comes from having the `BrokerIssue` trait in scope.
-        self.issue_system_async(send_message);
-    }
-
-    // Check if there is an joined room
-    fn check_is_joined_room(&self) -> Result<(), String> {
-        if self.room.len() == 0 {
-            Err(WSEvent::err("There was no \"join\" command.".to_owned()))
-        } else {
-            Ok(())
-        }
-    }
-
-    // Check if this field is required
-    fn check_field_is_required(&self, value: &str, name: &str) -> Result<(), String> {
-        if value.len() == 0 {
-            Err(WSEvent::err(format!("The \"{}\" field is required.", name)))
-        } else {
-            Ok(())
-        }
-    }
-
-    fn handle_text(&mut self, msg: &str, ctx: &mut ws::WebsocketContext<Self>) {
-        // Parse input data of ws event.
-        let res_event = WSEvent::parsing(msg);
-        if let Err(err) = res_event {
-            log::debug!("WEBSOCKET: Error: {:?} msg: \"{}\"", err, msg);
-            ctx.text(WSEvent::err(err));
-            return;
-        }
-        let event = res_event.unwrap();
-
-        match event.et {
-            WSEventType::Count => {
-                self.count_members(ctx);
-            }
-            WSEventType::Echo => {
-                let echo = event.get("echo").unwrap_or("".to_string());
-                // Check if this field is required
-                if let Err(err) = self.check_field_is_required(&echo, "echo") {
-                    ctx.text(err)
-                } else {
-                    ctx.text(WSEvent::echo(echo));
-                }
-            }
-            WSEventType::Name => {
-                let name = event.get("name").unwrap_or("".to_string());
-                self.name = if name.len() > 0 { Some(name.clone()) } else { None };
-                ctx.text(WSEvent::name(name));
-            }
-            WSEventType::Block => {
-                #[rustfmt::skip]
-                eprintln!("@__handle_text() block: {}", event.get("block").unwrap_or("".to_string()));
-                self.block(&event.get("block").unwrap_or("".to_string()), ctx);
-            }
-            WSEventType::Join => {
-                self.join_room(&event.get("join").unwrap_or("".to_string()), ctx);
-            }
-            WSEventType::Leave => {
-                self.leave_room(ctx);
-            }
-            WSEventType::Msg => {
-                self.send_message(&event.get("msg").unwrap_or("".to_string()), "", ctx);
-            }
-            WSEventType::MsgCut => {
-                self.send_message_cut(&event.get("msgCut").unwrap_or("".to_string()), "", ctx);
-            }
-            WSEventType::MsgPut => {
-                self.send_message_put(&event.get("msgPut").unwrap_or("".to_string()), "", ctx);
-            }
-            _ => {}
-        }
+        Ok(())
     }
 }
 
@@ -286,7 +217,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
             }
             ws::Message::Close(reason) => {
                 // Send message about "leave"
-                self.leave_room(ctx);
+                let _ = self.leave_room(ctx);
                 ctx.close(reason);
                 ctx.stop();
             }
@@ -295,38 +226,34 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
     }
 }
 
-// ** WsChatSession implementation "Handler<SrvCommand>" **
+// ** WsChatSession implementation "Handler<CommandSrv>" **
 
-impl Handler<SrvCommand> for WsChatSession {
-    type Result = MessageResult<SrvCommand>;
+impl Handler<CommandSrv> for WsChatSession {
+    type Result = MessageResult<CommandSrv>;
 
-    fn handle(&mut self, msg: SrvCommand, _ctx: &mut Self::Context) -> Self::Result {
-        eprintln!("@_hd_SessionCommand() msg: {:?}", msg);
+    fn handle(&mut self, command: CommandSrv, ctx: &mut Self::Context) -> Self::Result {
+        eprintln!("@_hd_Ssn_CmndSrv() msg: {:?}", command);
         //ctx.text(msg.0);
+        match command {
+            CommandSrv::Blocking(blocking) => self.handle_block_client(blocking, ctx),
+            CommandSrv::Chat(chat_msg) => self.handle_chat_message_ssn(chat_msg, ctx),
+        }
+
         MessageResult(())
     }
 }
 
-impl Handler<ChatMessage> for WsChatSession {
-    type Result = MessageResult<ChatMessage>;
-
-    fn handle(&mut self, msg: ChatMessage, ctx: &mut Self::Context) -> Self::Result {
-        eprintln!("@_hd_ChatMessage() msg: {:?}", msg);
-        ctx.text(msg.0);
-        MessageResult(())
+impl WsChatSession {
+    // Handler for "CommandSrv::Block(BlockSsn)".
+    fn handle_block_client(&mut self, blocking: BlockingSsn, _ctx: &mut <Self as actix::Actor>::Context) {
+        let BlockingSsn(is_blocked) = blocking;
+        #[rustfmt::skip]
+        eprintln!("@_handle_block_client() id: {}, room: {}, name: {:?}, is_blocked: {}", self.id, self.room, self.name, is_blocked);
+        self.is_blocked = is_blocked;
     }
-}
 
-// ** Block clients in a room by name. **
-impl Handler<BlockMembers> for WsChatSession {
-    type Result = MessageResult<BlockMembers>;
-
-    fn handle(&mut self, msg: BlockMembers, _ctx: &mut Self::Context) -> Self::Result {
-        let BlockMembers(room_name, client_name) = msg;
-        eprintln!(
-            "@_hd_BlockMembers() room: \"{}\", client: \"{}\"",
-            room_name, client_name
-        );
-        return MessageResult("".to_owned());
+    // Handler for "CommandSrv::Chat(ChatMessageSsn)".
+    fn handle_chat_message_ssn(&mut self, chat_msg: ChatMessageSsn, ctx: &mut ws::WebsocketContext<Self>) {
+        ctx.text(chat_msg.0);
     }
 }
