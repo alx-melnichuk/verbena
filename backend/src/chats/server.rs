@@ -5,7 +5,7 @@ use actix_broker::BrokerSubscribe;
 use serde_json::to_string;
 
 use super::chat_models::{JoinEWS, LeaveEWS};
-use super::message::{BlockingClients, BlockingSsn, ChatMessageSsn, CommandSrv, JoinRoomSrv, LeaveRoomSrv};
+use super::message::{BlockClients, BlockSsn, ChatMsgSsn, CommandSrv, JoinRoom, LeaveRoom, SendMessage};
 
 type Client = Recipient<CommandSrv>; // ChatMessage
 
@@ -63,7 +63,7 @@ impl WsChatServer {
         let mut room = self.take_room(room_name)?;
 
         for (id, client_info) in room.drain() {
-            let command_srv = CommandSrv::Chat(ChatMessageSsn(msg.to_owned()));
+            let command_srv = CommandSrv::Chat(ChatMsgSsn(msg.to_owned()));
             if client_info.client.try_send(command_srv).is_ok() {
                 self.add_client_to_room(room_name, Some(id), client_info);
             }
@@ -82,57 +82,47 @@ impl Actor for WsChatServer {
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        self.subscribe_system_async::<BlockingClients>(ctx);
-        // self.subscribe_system_async::<CommandSrv>(ctx);
-        self.subscribe_system_async::<LeaveRoomSrv>(ctx);
+        // Asynchronously subscribe to "SendMessage". (sending `BrokerIssue`.issue_system_async())
+        self.subscribe_system_async::<SendMessage>(ctx);
+        // Asynchronously subscribe to "LeaveRoomSrv". (sending `BrokerIssue`.issue_system_sync())
+        self.subscribe_system_async::<LeaveRoom>(ctx);
     }
 }
 
-// ** WsChatServer implementation "Handler<BlockClient>" **
+// ** Blocking clients in a room by name. (Session -> Server) **
 
-impl Handler<BlockingClients> for WsChatServer {
-    type Result = MessageResult<BlockingClients>;
+impl Handler<BlockClients> for WsChatServer {
+    type Result = MessageResult<BlockClients>;
 
-    fn handle(&mut self, msg: BlockingClients, _ctx: &mut Self::Context) -> Self::Result {
-        let BlockingClients(room_name, client_name, is_blocked) = msg.clone();
-        eprintln!(
-            "#_hd_BlockClient() room: {}, client: {}, is_blocked: {}",
-            room_name, client_name, is_blocked
-        );
+    fn handle(&mut self, msg: BlockClients, _ctx: &mut Self::Context) -> Self::Result {
+        let BlockClients(room_name, client_name, is_blocked) = msg.clone();
         if room_name.len() == 0 || client_name.len() == 0 {
-            return MessageResult(());
+            return MessageResult(0);
         }
         let mut count_blocked = 0;
         // Get a chat room by its name.
         if let Some(room) = self.rooms.get_mut(&room_name) {
             // Loop through all chat participants.
-            for (id, client_info) in room {
-                let r1 = client_info.name.eq(&client_name);
-                #[rustfmt::skip]
-                eprintln!("#_BlockMembers() id: {id}, cl_name: {}, cl_name.eq(name): {}", client_info.name, r1);
+            for (_id, client_info) in room {
                 // Checking the chat participant name with the name to block.
                 if client_info.name.eq(&client_name) {
                     count_blocked += 1;
-                    eprintln!(
-                        "#_BlockMembers client.do_send(CommandSrv::Block(BlockSsn({})));",
-                        is_blocked
-                    );
-                    client_info.client.do_send(CommandSrv::Blocking(BlockingSsn(is_blocked)));
+                    client_info.client.do_send(CommandSrv::Block(BlockSsn(is_blocked)));
                 }
             }
         }
-        eprintln!("#_BlockMembers() count_blocked: {}", count_blocked);
-        MessageResult(())
+
+        MessageResult(count_blocked)
     }
 }
 
 // ** Join the client to the chat room. (Session -> Server) **
 
-impl Handler<JoinRoomSrv> for WsChatServer {
-    type Result = MessageResult<JoinRoomSrv>;
+impl Handler<JoinRoom> for WsChatServer {
+    type Result = MessageResult<JoinRoom>;
 
-    fn handle(&mut self, msg: JoinRoomSrv, _ctx: &mut Self::Context) -> Self::Result {
-        let JoinRoomSrv(room_name, client_name, client) = msg;
+    fn handle(&mut self, msg: JoinRoom, _ctx: &mut Self::Context) -> Self::Result {
+        let JoinRoom(room_name, client_name, client) = msg;
         let name = client_name.unwrap_or("".to_owned());
         let member = name.clone();
         let id = self.add_client_to_room(&room_name, None, ClientInfo { name, client });
@@ -151,10 +141,10 @@ impl Handler<JoinRoomSrv> for WsChatServer {
 
 // ** Leave the client from the chat room. (Session -> Server) **
 
-impl Handler<LeaveRoomSrv> for WsChatServer {
+impl Handler<LeaveRoom> for WsChatServer {
     type Result = ();
 
-    fn handle(&mut self, msg: LeaveRoomSrv, _ctx: &mut Self::Context) {
+    fn handle(&mut self, msg: LeaveRoom, _ctx: &mut Self::Context) {
         let room_name = msg.0;
 
         if let Some(room) = self.rooms.get_mut(&room_name) {
@@ -170,9 +160,22 @@ impl Handler<LeaveRoomSrv> for WsChatServer {
             self.send_chat_message_to_clients(&room_name, &leave_str);
 
             if let Some(client_info) = recipient_opt {
-                let command_srv = CommandSrv::Chat(ChatMessageSsn(leave_str.to_owned()));
+                let command_srv = CommandSrv::Chat(ChatMsgSsn(leave_str.to_owned()));
                 client_info.client.do_send(command_srv);
             }
         }
+    }
+}
+
+// ** Send a text message to all clients in the room. (Server -> Session) **
+
+impl Handler<SendMessage> for WsChatServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: SendMessage, _ctx: &mut Self::Context) {
+        let SendMessage(room_name, msg) = msg;
+        eprintln!("#_hd_SendMessage() room: {}, msg: {}", room_name, msg);
+        // Send a chat message to all members.
+        self.send_chat_message_to_clients(&room_name, &msg);
     }
 }
