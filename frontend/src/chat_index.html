@@ -13,7 +13,7 @@
 
       input[type='text'] { font-size: inherit; }
       code { font-size: calc(1em - 1px); }
-      #log { width: 30em; height: 20em; overflow: auto; margin: 0.5em 0; border: 1px solid black; }
+      #log { width: 50em; height: 20em; overflow: auto; margin: 0.5em 0; border: 1px solid black; }
 
       #status { padding: 0 0.2em; }
 
@@ -63,7 +63,7 @@
           <td>Count of clients in the room</td>
         </tr>
         <tr>
-          <td> <code>{ "join": "romm_21" }</code> </td>
+          <td> <code>{ "join": "romm_1" }</code> </td>
           <td>join room, if room does not exist, create new one</td>
         </tr>
         <tr>
@@ -73,6 +73,10 @@
         <tr>
           <td> <code>{ "block": "User2" }</code> </td>
           <td>Block chat members in a room by name</td>
+        </tr>
+        <tr>
+          <td> <code>{ "unblock": "User2" }</code> </td>
+          <td>Unblock chat members in a room by name</td>
         </tr>
         <tr>
           <td> <code>{ "msg": "text01" }</code> </td>
