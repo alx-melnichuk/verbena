@@ -14,18 +14,24 @@ pub enum EWSType {
     Err,
     Join,
     Leave,
+    Msg,
+    MsgCut,
+    MsgPut,
     Name,
     Unblock,
 }
 
 impl EWSType {
     pub fn iterator() -> Iter<'static, EWSType> {
-        static LIST: [EWSType; 7] = [
+        static LIST: [EWSType; 10] = [
             EWSType::Block,
             EWSType::Echo,
             EWSType::Err,
             EWSType::Join,
             EWSType::Leave,
+            EWSType::Msg,
+            EWSType::MsgCut,
+            EWSType::MsgPut,
             EWSType::Name,
             EWSType::Unblock,
         ];
@@ -54,7 +60,7 @@ impl fmt::Display for EWSType {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EventWS {
-    pub et: EWSType,
+    et: EWSType,
     params: HashMap<String, String>,
 }
 
@@ -101,17 +107,12 @@ impl EventWS {
         Ok(EventWS::new(ews_type, Some(params)))
     }
 
-    pub fn get(&self, name: &str) -> Option<String> {
-        return self.params.get(name).map(|s| s.clone());
+    pub fn ews_type(&self) -> EWSType {
+        self.et.clone()
     }
 
-    pub fn get_param(&self, name: &str) -> Result<String, String> {
-        let value = self.get(name).unwrap_or("".to_owned());
-        if value.len() == 0 {
-            Err(format!("The \"{}\" field is required.", name))
-        } else {
-            Ok(value)
-        }
+    pub fn get(&self, name: &str) -> Option<String> {
+        self.params.get(name).map(|s| s.clone())
     }
 }
 
@@ -121,6 +122,7 @@ impl EventWS {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct BlockEWS {
     pub block: String,
+    pub count: u32,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -149,6 +151,32 @@ pub struct LeaveEWS {
     pub count: usize,
 }
 
+// ** Send a text message to all clients in the room. **
+#[derive(Serialize, Deserialize, Clone)]
+pub struct MsgEWS {
+    pub msg: String,
+    pub member: String,
+    pub date: String,
+}
+
+// ** Send a delete message to all chat members. **
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MsgCutEWS {
+    pub msg_cut: String,
+    pub member: String,
+    pub date: String,
+}
+
+// ** Send a correction to the message to everyone in the chat. **
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MsgPutEWS {
+    pub msg_put: String,
+    pub member: String,
+    pub date: String,
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct NameEWS {
     pub name: String,
@@ -158,6 +186,7 @@ pub struct NameEWS {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct UnblockEWS {
     pub unblock: String,
+    pub count: u32,
 }
 
 // ** **
