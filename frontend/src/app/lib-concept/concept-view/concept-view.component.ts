@@ -10,6 +10,7 @@ import { InitializationService } from 'src/app/common/initialization.service';
 import { StringDateTime } from 'src/app/common/string-date-time';
 import { SidebarComponent } from 'src/app/components/sidebar/sidebar.component';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
+import { PanelChatComponent } from 'src/app/lib-chat/panel-chat/panel-chat.component';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { ConfirmationData } from 'src/app/lib-dialog/confirmation/confirmation.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
@@ -28,7 +29,7 @@ import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-st
     exportAs: 'appConceptView',
     standalone: true,
     imports: [CommonModule, SpinnerComponent, SidebarComponent, TranslatePipe,
-        PanelStreamStateComponent, PanelStreamParamsComponent, PanelStreamActionsComponent],
+        PanelStreamStateComponent, PanelStreamParamsComponent, PanelStreamActionsComponent, PanelChatComponent],
     templateUrl: './concept-view.component.html',
     styleUrl: './concept-view.component.scss',
     encapsulation: ViewEncapsulation.None,
