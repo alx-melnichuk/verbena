@@ -4,9 +4,9 @@ use actix_web_actors::ws;
 use serde_json::to_string;
 
 use super::chat_models::{
-    BlockEWS, EWSType, EchoEWS, ErrEWS, EventWS, MsgCutEWS, MsgEWS, MsgPutEWS, NameEWS, UnblockEWS,
+    BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, MsgCutEWS, MsgEWS, MsgPutEWS, NameEWS, UnblockEWS,
 };
-use super::message::{BlockClients, BlockSsn, ChatMsgSsn, CommandSrv, JoinRoom, LeaveRoom, SendMessage};
+use super::message::{BlockClients, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage};
 use super::server::WsChatServer;
 
 // ** WsChatSession **
@@ -100,6 +100,11 @@ impl WsChatSession {
                     ctx.text(to_string(&ErrEWS { err }).unwrap());
                 }
             }
+            EWSType::Count => {
+                if let Err(err) = self.count_members(ctx) {
+                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                }
+            }
             EWSType::Join => {
                 let join = event.get("join").unwrap_or("".to_string());
                 if let Err(err) = self.join_room(&join, ctx) {
@@ -185,7 +190,28 @@ impl WsChatSession {
         Ok(())
     }
 
-    // ** Join the client to the chat room. **
+    // ** Count of clients in the room. (Session -> Server) **
+
+    pub fn count_members(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {
+        // Check if there is an joined room
+        self.check_is_joined_room()?;
+        let count_members = CountMembers(self.room.clone());
+
+        WsChatServer::from_registry()
+            .send(count_members)
+            .into_actor(self)
+            .then(|res, _act, ctx| {
+                if let Ok(count) = res {
+                    ctx.text(to_string(&CountEWS { count }).unwrap());
+                }
+
+                fut::ready(())
+            })
+            .wait(ctx);
+        Ok(())
+    }
+
+    // ** Join the client to the chat room. (Session -> Server) **
     pub fn join_room(&mut self, room_name: &str, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {
         // Check if this field is required
         self.check_field_is_required(room_name, "join")?;
@@ -337,7 +363,6 @@ impl Handler<CommandSrv> for WsChatSession {
     type Result = MessageResult<CommandSrv>;
 
     fn handle(&mut self, command: CommandSrv, ctx: &mut Self::Context) -> Self::Result {
-        eprintln!("@_hd_Ssn_CmndSrv() msg: {:?}", command);
         match command {
             CommandSrv::Block(blocking) => self.handle_block_client(blocking, ctx),
             CommandSrv::Chat(chat_msg) => self.handle_chat_message_ssn(chat_msg, ctx),
