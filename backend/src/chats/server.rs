@@ -186,7 +186,6 @@ impl Handler<SendMessage> for WsChatServer {
 
     fn handle(&mut self, msg: SendMessage, _ctx: &mut Self::Context) {
         let SendMessage(room_name, msg) = msg;
-        eprintln!("#_hd_SendMessage() room: {}, msg: {}", room_name, msg);
         // Send a chat message to all members.
         self.send_chat_message_to_clients(&room_name, &msg);
     }
