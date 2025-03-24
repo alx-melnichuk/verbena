@@ -10,6 +10,7 @@ use serde_json;
 #[serde(rename_all = "camelCase")]
 pub enum EWSType {
     Block,
+    Count,
     Echo,
     Err,
     Join,
@@ -23,8 +24,9 @@ pub enum EWSType {
 
 impl EWSType {
     pub fn iterator() -> Iter<'static, EWSType> {
-        static LIST: [EWSType; 10] = [
+        static LIST: [EWSType; 11] = [
             EWSType::Block,
+            EWSType::Count,
             EWSType::Echo,
             EWSType::Err,
             EWSType::Join,
@@ -123,6 +125,12 @@ impl EventWS {
 pub struct BlockEWS {
     pub block: String,
     pub count: u32,
+}
+
+// ** Count of clients in the room. **
+#[derive(Serialize, Deserialize, Clone)]
+pub struct CountEWS {
+    pub count: usize,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
