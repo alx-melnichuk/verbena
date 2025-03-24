@@ -5,7 +5,7 @@ use actix_broker::BrokerSubscribe;
 use serde_json::to_string;
 
 use super::chat_models::{JoinEWS, LeaveEWS};
-use super::message::{BlockClients, BlockSsn, ChatMsgSsn, CommandSrv, JoinRoom, LeaveRoom, SendMessage};
+use super::message::{BlockClients, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage};
 
 type Client = Recipient<CommandSrv>; // ChatMessage
 
@@ -113,6 +113,18 @@ impl Handler<BlockClients> for WsChatServer {
         }
 
         MessageResult(count_blocked)
+    }
+}
+
+// ** Count of clients in the room. (Session -> Server) **
+
+impl Handler<CountMembers> for WsChatServer {
+    type Result = MessageResult<CountMembers>;
+
+    fn handle(&mut self, msg: CountMembers, _ctx: &mut Self::Context) -> Self::Result {
+        let CountMembers(room_name) = msg;
+        let count = self.count_clients_in_room(&room_name);
+        MessageResult(count)
     }
 }
 
