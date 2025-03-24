@@ -1,0 +1,12 @@
+/*# sourceURL=panel-chat.component.scss */
+
+app-panel-chat {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: hidden;
+
+
+    .pc-header {}
+}
