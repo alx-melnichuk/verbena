@@ -1,7 +1,7 @@
 use actix::prelude::*;
 
 // ** Blocking clients in a room by name. (Session -> Server) **
-#[derive(Debug, Clone, Message)]
+#[derive(Clone, Message)]
 #[rtype(result = "u32")] // Count of chat room members. // MAX 4_294_967_295u32
 pub struct BlockClients(
     pub String, // room_name
@@ -10,32 +10,34 @@ pub struct BlockClients(
 );
 
 // ** Send a block to the client in the room. (Server -> Session) **
-#[derive(Debug, Clone, Message)]
+#[derive(Clone, Message)]
 #[rtype(result = "()")]
 pub struct BlockSsn(
     pub bool, // is_blocked
 );
 
 // ** Send a chat message to all clients in the room. (Server -> Session) **
-#[derive(Debug, Clone, Message)]
+#[derive(Clone, Message)]
 #[rtype(result = "()")]
 pub struct ChatMsgSsn(
     pub String, // message
 );
 
 // ** Commands that have one handler. (Session -> Server) **
-#[derive(Debug, Clone, Message)]
+#[derive(Clone, Message)]
 #[rtype(result = "()")]
 pub enum CommandSrv {
     Block(BlockSsn),
     Chat(ChatMsgSsn),
 }
-/*
-// ** Count of clients in the room. **
+
+// ** Count of clients in the room. (Session -> Server) **
 #[derive(Clone, Message)]
 #[rtype(result = "usize")]
-pub struct CountMembers(pub String);
-*/
+pub struct CountMembers(
+    pub String, // room_name
+);
+
 // ** Join the client to the chat room. (Session -> Server) **
 #[derive(Clone, Message)]
 #[rtype(result = "u64")] // id client
