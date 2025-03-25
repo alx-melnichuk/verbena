@@ -390,7 +390,8 @@
   },
   "concept-view": {
     "error_update_stream": "Error updating stream state",
-    "exist_is_active_stream": "You already have the active stream running <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
+    "exist_is_active_stream": "You already have the active stream running <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
+    "chat_title": "Stream chat"
   },
   "panel-stream-params": {
     "title": "Title:",

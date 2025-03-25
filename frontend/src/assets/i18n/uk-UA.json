@@ -392,7 +392,8 @@
   },
   "concept-view": {
     "error_update_stream": "Помилка оновлення стану потоку",
-    "exist_is_active_stream": "Ви вже запустили активний потік <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
+    "exist_is_active_stream": "Ви вже запустили активний потік <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
+    "chat_title": "Чат трансляції"
   },
   "panel-stream-params": {
     "title": "Назва:",
