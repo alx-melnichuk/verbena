@@ -1,10 +1,75 @@
-<p>panel-chat works!</p>
-
-<article class="pc-header">
-    <!-- <div class="pc-icon prc-chat-stream"></div> -->
-    <div class="pc-label">{{ (label  | translate) }}</div>
-</article>
+<div class="pc-header">
+  <!-- <div class="pc-icon prc-chat-stream"></div> -->
+  <div class="pc-label">{{ (title  | translate) }}</div>
+</div>
  
-<article class="global-scroll" #scrollItem>
+<div class="pc-middle global-scroll" #scrollItem>
+  <section *ngFor="let chatMsg of chatMsgs; trackBy: trackById">
+    <div class="pc-chat-item" (mouseenter)="doMouseEnter(chatMsg.id, true)" (mouseleave)="doMouseLeave(chatMsg.id, true)">
+      <div class="pc-item-date">
+        @if (!isSelf(chatMsg.userId)) {
+        <div class="pc-date-nickname ellipsis2">{{ chatMsg.nickname }}</div>
+        }
+        <div class="pc-date-time">
+            21:55
+          <!-- @if (!isToday(chatMsg.event)) {
+          <span class="prc-text-date">{{ chatMsg.event | date:formatDateCompact }}</span>
+          }
+          <span class="prc-text-date"> {{ chatMsg.event | date:formatTimeShort }}</span> -->
+        </div>
+      </div>
+      <div class="pc-item-info">
+        <!-- @if (chatMsg.userId!=userId) {
+        <div class="pc-info-avatar"> -->
+            <!-- <app-avatar
+              [avatar]="chatMessage.avatar || null"
+              [nickname]="chatMessage.nickname || null">
+            </app-avatar> -->avatar
+        <!-- </div>
+        } -->
+        <div [ngClass]="['pc-info-text', (isSelf(chatMsg.userId) ? 'prc-color-self' : 'prc-color-other')]">
+          <!-- <p *ngFor="let chatMessageRow of getMessageRows(chatMsg.text)">{{ chatMessageRow }}</p> -->
+        </div>
+        <!-- <div *ngIf="isBannedUserById(chatMessage.userId)" class="prc-banned-user">
+          <div class="prc-msg-banned-orange"></div>
+        </div> -->
+      </div>
+    </div>
+  </section>
+</div>
 
-</article>
+@if (isEditable && !isBlocked) {
+<div class="pc-footer" [formGroup]="formGroup">
+  <mat-form-field
+    [ngClass]="['pc-new-msg', (!!modifyMsgId ? 'pc-modify-msg' : '')]"
+    appearance="outline"
+    color="primary"
+    subscriptSizing="dynamic">
+    
+    <textarea matInput #messageInput 
+      class="pc-textarea global-scroll"
+      formControlName="newMsg"
+      autocomplete="new-password"
+      autocapitalize="off"
+      [rows]="cntRows"
+      (keydown.enter)="doKeydownEnter($event, formControl.value)"
+      (keydown.escape)="doKeydownEscape()"
+      [attr.maxlength]="(maxLen > 0 ? maxLen + 1 : null)"
+      cdkTextareaAutosize9
+      cdkAutosizeMinRows9="minRows"
+      cdkAutosizeMaxRows9="maxRows">
+    </textarea>
+
+    <!-- <button mat-button matSuffix class="prc-btn-face-smile" (click)="isShowFaceSmilePanel=!isShowFaceSmilePanel;">
+      <div class="prc-icon prc-face-smile"></div>
+    </button> -->
+
+    <button mat-icon-button matSuffix (click)="doSendMessage(formControl.value)">
+      <svg class="h-svg-more-vert">
+        <use href="assets/icons/lib-chat/panel-chat/send-bin.svg#send-bin"></use>
+      </svg>
+    </button>
+
+  </mat-form-field>
+</div>
+}
