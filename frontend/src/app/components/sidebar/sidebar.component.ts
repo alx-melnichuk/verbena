@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostBinding, Input, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, Output, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -11,21 +11,29 @@ import { CommonModule } from '@angular/common';
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SidebarComponent implements OnChanges {
+export class SidebarComponent {
     @Input()
     public isOpen: boolean = false;
+    @Input()
+    public isVeilByClosing: boolean = false;
+
+    @Output()
+    readonly clickByVeil: EventEmitter<boolean> = new EventEmitter();
 
     @HostBinding('attr.is-open')
     public get attrIsOpen(): boolean | null {
         return this.isOpen ? true : null;
     }
 
+    @HostBinding('class.sb-relative')
+    public get classIsRelativeVal(): boolean {
+        return this.isVeilByClosing;
+    }
+
     constructor() {
     }
 
-    ngOnChanges(changes: SimpleChanges): void {
-        if (!!changes['isOpen']) {
-            console.log(`isOpen: ${this.isOpen}`); // #
-        }
+    public doClickByVeil(): void {
+        this.clickByVeil.emit(true);
     }
 }

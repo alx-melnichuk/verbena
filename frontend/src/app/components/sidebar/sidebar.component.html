@@ -1,1 +1,4 @@
-<ng-content></ng-content> 
+@if (isVeilByClosing) {
+  <div [ngClass]="[isOpen ? '' : 'sb-veil']" (click)="doClickByVeil()"></div>
+}
+<ng-content></ng-content>
