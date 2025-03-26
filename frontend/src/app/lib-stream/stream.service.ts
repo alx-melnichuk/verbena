@@ -3,7 +3,8 @@ import { Router } from '@angular/router';
 
 import { StreamApiService } from './stream-api.service';
 import {
-    SearchStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto, SearchStreamsPeriodDto, StreamsPeriodDto, UpdateStreamFileDto, StreamState,
+    SearchStreamDto, StreamDto, StreamListDto, SearchStreamEventDto, StreamEventPageDto, SearchStreamsPeriodDto, UpdateStreamFileDto,
+    StreamState,
 } from './stream-api.interface';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Uri } from '../common/uri';
