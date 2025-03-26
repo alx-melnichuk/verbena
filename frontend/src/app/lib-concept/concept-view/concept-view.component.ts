@@ -61,8 +61,8 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
     @Output()
     readonly bannedUser: EventEmitter<string> = new EventEmitter();
 
-    public isSidebarLeftOpen: boolean = false;
-    public isSidebarRightOpen: boolean = false;
+    public isSidebarLfOpen: boolean = false;
+    public isSidebarRgOpen: boolean = false;
 
     public isDarkTheme = false;
     public isMiniSidebarLeft = false;

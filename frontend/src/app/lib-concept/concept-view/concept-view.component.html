@@ -2,14 +2,16 @@
   <app-spinner [isFullOwner]="true"></app-spinner>
 } -->
 
-<app-sidebar class="cv-side-bar cv-brd-rg" [isOpen]="isSidebarLeftOpen">
-  <button class="cv-btn-arrow cv-left" (click)="isSidebarLeftOpen = !isSidebarLeftOpen;">
-    <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarLeftOpen ? 'cv-0deg' : 'cv-180deg')]">
-      <use href="assets/icons/lib-chat/panel-chat/angle-left-bin.svg#angle-left-bin"></use>
+<div class="cv-side-bar">
+  <button class="cv-btn-arrow cv-left" (click)="isSidebarLfOpen = !isSidebarLfOpen;">
+    <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarLfOpen ? 'cv-0deg' : 'cv-180deg')]">
+      <use href="assets/icons/lib-concept/concept-view/angle-left-bin.svg#angle-left-bin"></use>
     </svg>
   </button>
-  <aside class="cv-aside">
-    cv-bar-left
+    
+  <app-sidebar [isOpen]="isSidebarLfOpen" [isVeilByClosing]="true" (clickByVeil)="isSidebarLfOpen=true">
+    <aside class="cv-aside cv-fix-rg">
+      cv-bar-left
   <!-- <app-panel-left-followers
     [isMiniSize]="isMiniSidebarLeft"
     [isLoading]="followersService.followersAndPopularLoading"
@@ -19,8 +21,9 @@
     <div class="ticker" [appTradMarketOverview]="{ isDarkTheme: isDarkTheme }">
     </div>
   </app-panel-left-followers> -->
-  </aside>
-</app-sidebar>
+    </aside>
+  </app-sidebar>
+</div>
 
 <div class="cv-center">
   
@@ -90,19 +93,21 @@
   </div> -->
 </div>
 
-<app-sidebar class="cv-side-bar cv-brd-lf" [isOpen]="isSidebarRightOpen">
-  <button class="cv-btn-arrow cv-right" (click)="isSidebarRightOpen = !isSidebarRightOpen;">
-    <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarRightOpen ? 'cv-0deg' : 'cv-180deg')]">
-      <use href="assets/icons/lib-chat/panel-chat/angle-right-bin.svg#angle-right-bin"></use>
+<div class="cv-side-bar">
+  <button class="cv-btn-arrow cv-right" (click)="isSidebarRgOpen = !isSidebarRgOpen;">
+    <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarRgOpen ? 'cv-0deg' : 'cv-180deg')]">
+      <use href="assets/icons/lib-concept/concept-view/angle-right-bin.svg#angle-right-bin"></use>
     </svg>
   </button>
-  <aside class="cv-aside">
-    <app-panel-chat
-      [isBlocked]="false"
-      [isEditable]="true"
-      [title]="'concept-view.chat_title'"
-    ></app-panel-chat>
-  <!-- <app-panel-right-chat
+    
+  <app-sidebar [isOpen]="isSidebarRgOpen" [isVeilByClosing]="true" (clickByVeil)="isSidebarRgOpen=true">
+    <aside class="cv-aside cv-fix-lf">
+      <app-panel-chat
+        [isBlocked]="false"
+        [isEditable]="true"
+        [title]="'concept-view.chat_title'">
+      </app-panel-chat>
+    <!-- <app-panel-right-chat
     [isEditable]="isEditableChat"
     [userId]="profileService.getUserId()"
     [chatMessages]="chatMessages"
@@ -113,5 +118,6 @@
     (editMessage)="doEditMessage($event)"
     (bannedUser)="doBannedUser($event)"
   ></app-panel-right-chat> -->
-  </aside>
-</app-sidebar>
+    </aside>
+  </app-sidebar>
+</div>
