@@ -7,15 +7,20 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
 
-import { DateUtil } from 'src/app/utils/date.utils';
+import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
+import { StringDateTime } from 'src/app/common/string-date-time';
+
 
 interface ChatMsg {
-    id: string;
-    userId: string;
-    nickname: string;
-    avatar?: string;
-    event: string;
-    text: string;
+    msg: string;
+    member: string;
+    date: StringDateTime;
+    // id: string;
+    // userId: string;
+    // nickname: string;
+    // avatar?: string;
+    // event: string;
+    // text: string;
 }
 
 export const PIPE_DATE_COMPACT = 'MMM dd yyyy';
@@ -26,7 +31,7 @@ export const CNT_ROWS = 2;
 @Component({
     selector: 'app-panel-chat',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, MatFormFieldModule, TranslatePipe],
+    imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, MatFormFieldModule, TranslatePipe, DateTimeFormatPipe],
     templateUrl: './panel-chat.component.html',
     styleUrl: './panel-chat.component.scss',
     encapsulation: ViewEncapsulation.None,
@@ -40,10 +45,12 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Input()
     public isEditable: boolean | null = null;
     @Input()
+    public locale: string | null = null;
+    @Input()
+    public nickname: string | null = null;
+    @Input()
     public title = '';
     // -- old --
-    @Input()
-    public userId: string | null = null;
     @Input()
     public chatMsgs: ChatMsg[] = [];
     @Input()
@@ -79,6 +86,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public maxRows = 4;
     public formatDateCompact = PIPE_DATE_COMPACT;
     public formatTimeShort = PIPE_TIME_SHORT;
+    readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
+    readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' };
+
     // public isShowFaceSmilePanel = false;
 
     // public faceSmileList: string[] = [
@@ -93,6 +103,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     constructor() {
         this.chatMsgs = this.getChatMsg(); // #
+        console.log(`PanelChat()`); // #
     }
 
     ngAfterViewInit(): void {
@@ -113,7 +124,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     // ** Public API **
 
     public trackById(index: number, item: ChatMsg): string {
-        return item?.id;
+        return item?.date;
     }
 
     public doSendMessage(newMsg: string): void {
@@ -148,8 +159,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     }
 
     public doBannedUser(chatMessage: ChatMsg): void {
-        if (!!chatMessage && !!chatMessage.userId) {
-              this.bannedUser.emit(chatMessage.userId);
+        if (!!chatMessage && !!chatMessage.nickname) {
+              this.bannedUser.emit(chatMessage.nickname);
         }
     }
     */
@@ -166,12 +177,12 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         // const date = this.dateAdapter.format(value, null);
         return false;
     }
-    public isSelf(userId: string): boolean {
-        return (this.userId === userId);
+    public isSelf(nickname: string): boolean {
+        return (this.nickname === nickname);
     }
     /*
-    public isBannedUserById(userId: string): boolean {
-        return this.bannedUserIds.includes(userId);
+    public isBannedUserById(nickname: string): boolean {
+        return this.bannedUserIds.includes(nickname);
     }
 
     public isHover(chatMessageId: string): boolean {
@@ -262,20 +273,16 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         const result: ChatMsg[] = [];
 
         for (let idx = 0; idx < 18; idx++) {
-            let userId = "11";
-            let nickname = "Teodor_Nickols";
-            let avatar = undefined;
+            let member = "Teodor_Nickols";
             let d1 = new Date(Date.now());
-            let event = d1.toISOString();
-            let text = "text_" + idx;
+            let date = d1.toISOString();
+            let msg = "text_" + idx + " This function can be used to pass through a successful result while handling an error.";
             if (idx % 3 == 0) {
-                userId = "13";
-                nickname = "Devid_Torner";
+                member = "Devid_Torner";
             } else if (idx % 2 == 0) {
-                userId = "12";
-                nickname = "Snegana_Miller";
+                member = "Snegana_Miller";
             }
-            result.push({ id: "" + idx, userId, nickname, avatar, event, text });
+            result.push({ msg, member, date });
         }
         return result;
     }

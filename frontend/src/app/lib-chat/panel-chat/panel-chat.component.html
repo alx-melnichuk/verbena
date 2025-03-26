@@ -1,41 +1,53 @@
 <div class="pc-header">
   <!-- <div class="pc-icon prc-chat-stream"></div> -->
-  <div class="pc-label">{{ (title  | translate) }}</div>
+  <div class="pc-label">{{ (title | translate) }}</div>
 </div>
  
 <div class="pc-middle global-scroll" #scrollItem>
-  <section *ngFor="let chatMsg of chatMsgs; trackBy: trackById">
-    <div class="pc-chat-item" (mouseenter)="doMouseEnter(chatMsg.id, true)" (mouseleave)="doMouseLeave(chatMsg.id, true)">
+  @for (chatMsg of chatMsgs; track trackById) {    
+    <div [ngClass]="['pc-chat-item', (isSelf(chatMsg.member) ? 'pc-owner' : 'pc-other') ]"
+      (mouseenter)="doMouseEnter(chatMsg.date, true)"
+      (mouseleave)="doMouseLeave(chatMsg.date, true)">
       <div class="pc-item-date">
-        @if (!isSelf(chatMsg.userId)) {
-        <div class="pc-date-nickname ellipsis2">{{ chatMsg.nickname }}</div>
-        }
+        <div class="pc-date-nickname">
+          {{ isSelf(chatMsg.member) ? ('panel-chat.you' | translate) : chatMsg.member }}
+        </div>
         <div class="pc-date-time">
-            21:55
+          {{ chatMsg.date | dateTimeFormat:locale:formatDateTime  }}
+        </div>
+
+        <!-- @if (!isSelf(chatMsg.member)) {
+        <div class="pc-date-nickname ellipsis2">{{ chatMsg.member }}</div>
+        } -->
+        <!-- <div class="pc-date-time"> -->
+          
+          <!-- {{ chatMsg.date | dateTimeFormat:locale:(isFuture ? formatDateTime : formatDate)  }} -->
           <!-- @if (!isToday(chatMsg.event)) {
           <span class="prc-text-date">{{ chatMsg.event | date:formatDateCompact }}</span>
           }
           <span class="prc-text-date"> {{ chatMsg.event | date:formatTimeShort }}</span> -->
-        </div>
+        <!-- </div> -->
+        
       </div>
       <div class="pc-item-info">
-        <!-- @if (chatMsg.userId!=userId) {
+        <!-- @if (!isSelf(chatMsg.member)) {
         <div class="pc-info-avatar"> -->
             <!-- <app-avatar
               [avatar]="chatMessage.avatar || null"
               [nickname]="chatMessage.nickname || null">
-            </app-avatar> -->avatar
+            </app-avatar> -->
         <!-- </div>
         } -->
-        <div [ngClass]="['pc-info-text', (isSelf(chatMsg.userId) ? 'prc-color-self' : 'prc-color-other')]">
+        <div [ngClass]="['pc-info-text', (isSelf(chatMsg.member) ? 'prc-color-self' : 'prc-color-other')]">
+            {{ chatMsg.msg }}
           <!-- <p *ngFor="let chatMessageRow of getMessageRows(chatMsg.text)">{{ chatMessageRow }}</p> -->
         </div>
-        <!-- <div *ngIf="isBannedUserById(chatMessage.userId)" class="prc-banned-user">
+        <!-- <div *ngIf="isBannedUserById(chatMsg.member)" class="prc-banned-user">
           <div class="prc-msg-banned-orange"></div>
         </div> -->
       </div>
     </div>
-  </section>
+  }
 </div>
 
 @if (isEditable && !isBlocked) {

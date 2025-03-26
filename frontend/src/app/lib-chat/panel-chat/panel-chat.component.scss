@@ -11,7 +11,7 @@ app-panel-chat {
 
     .pc-header {
         flex: 0 0 auto;
-        outline: 1px dashed orange;
+        // outline: 1px dashed orange;
         padding: 0.4rem .5rem;
     }
 
@@ -24,6 +24,7 @@ app-panel-chat {
         flex: 1 1 auto;
         font-size: 0.75rem; //  12px;
         overflow-y: auto;
+        padding: 0 3px;
         width: 100%;
 
         // section {
@@ -33,25 +34,34 @@ app-panel-chat {
         // }
     }
 
-    section {
-        position: relative; // ?
-    }
-
     .pc-chat-item {
-        outline: 1px dashed green;
-        // display: flex;
-        // flex-direction: column;
+        // outline: 1px dashed green;
+        background-color: var(---pc-ch-itm-bg);
+
+        // border: 1px solid var(--sys-surface-container-high);
+        border-radius: 1rem;
+        // box-shadow: 0 0 2px 1px var(--sys-surface-container-high);
+        box-shadow: 0 0 1px 1px var(---pc-ch-itm-sh, var(--sys-outline-variant));
         display: flex;
         flex-direction: column;
-        // font-family: "Google Sans";
         gap: .25rem;
-        padding: .5rem .5rem;
+        margin: 0.5rem 0px;
+        padding: 0.25rem 0.5rem;
+
+        &.pc-owner {
+            // box-shadow: 0 0 1px 1px var(--sys-tertiary);
+            ---pc-ch-itm-sh: var(--sys-inverse-primary);
+        }
+
+        &.pc-other {
+            // background-color: var(--sys-surface-container-low);
+            ---pc-ch-itm-bg: var(--sys-surface-container-low);
+        }
     }
+
 
     // -- item-date  --
     .pc-item-date {
-        // display: flex;
-        // flex: 0 0 1.25rem;
         align-items: baseline;
         display: flex;
         flex-direction: row;
@@ -61,28 +71,23 @@ app-panel-chat {
     }
 
     .pc-date-nickname {
-        // flex: 1 1 auto;
-        color: rgb(32, 33, 36); // var(--hotlane-on-background-color);
+        color: var(--sys-on-surface); // color: rgb(32, 33, 36); // var(--hotlane-on-background-color);
         display: inline-block;
-        float: left;
         font-size: .8125rem;
         font-weight: 500;
         word-wrap: break-word;
     }
 
     .pc-date-time {
-        // flex: 1 0 auto;
-        // text-align: end;
-        // margin-right: 2px;
-        color: rgb(95, 99, 104); //   var(--hotlane-on-surface-variant-color);
+        color: var(--sys-secondary); // color: rgb(95, 99, 104); //   var(--hotlane-on-surface-variant-color);
         display: inline-block;
-        float: left;
         font-size: .75rem;
+        word-wrap: break-word;
     }
 
     // -- item-info --
     .pc-item-info {
-        outline: 1px dashed orange;
+        // outline: 1px dashed orange;
         // display: flex;
         // flex: 1 1 auto;
         clear: both;
@@ -91,17 +96,25 @@ app-panel-chat {
         gap: .25rem;
         max-width: 100%;
 
-        .pc-info-avatar {
-            flex: 0 0 46px;
-        }
+        // .pc-info-avatar {
+        //     flex: 0 0 46px;
+        // }
 
-        .pc-info-text {
-            flex: 1 1 auto;
-        }
+        // .pc-info-text {
+        //     flex: 1 1 auto;
+        // }
 
         position: relative;
     }
 
+    .pc-info-text {
+        color: var(--sys-on-surface); // color: rgb(32, 33, 36); // color: var(--hotlane-on-background-color);
+        // font-size: .8125rem;
+        // line-height: 1.25rem;
+        position: relative;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
 
 
     // ** Footer **
