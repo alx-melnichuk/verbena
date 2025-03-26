@@ -7,6 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { InitializationService } from 'src/app/common/initialization.service';
+import { LocaleService } from 'src/app/common/locale.service';
 import { StringDateTime } from 'src/app/common/string-date-time';
 import { SidebarComponent } from 'src/app/components/sidebar/sidebar.component';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
@@ -96,6 +97,7 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
         private router: Router,
         private translateService: TranslateService,
         public initializationService: InitializationService,
+        public localeService: LocaleService,
         private dialogService: DialogService,
         private alertService: AlertService,
         private streamService: StreamService,
