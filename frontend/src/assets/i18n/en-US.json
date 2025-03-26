@@ -406,5 +406,8 @@
     "_error_get_profile_contact": "Error getting profile contact",
     "_error_subscription": "Error while a subscription",
     "_error_unsubscription": "Error while a unsubscription"
+  },
+  "panel-chat": {
+    "you": "you"
   }
 }
