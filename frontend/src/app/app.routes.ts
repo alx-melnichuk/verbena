@@ -6,19 +6,19 @@ import { authenticationGuard } from './common/authentication.guard';
 export const APP_ROUTES: Routes = [
     {
         path: R_ABOUT,
-        loadComponent: () => import('./pg-about/pg-about.component').then((c) => c.PgAboutComponent),
+        loadChildren: () => import('./pg-about/pg-about.routes').then((c) => c.PG_ABOUT_ROUTES),
     },
     {
         path: R_LOGIN,
-        loadComponent: () => import('./pg-login/pg-login.component').then((c) => c.PgLoginComponent),
+        loadChildren: () => import('./pg-login/pg-login.routes').then((c) => c.PG_LOGIN_ROUTES),
     },
     {
         path: R_SIGNUP,
-        loadComponent: () => import('./pg-signup/pg-signup.component').then((c) => c.PgSignupComponent),
+        loadChildren: () => import('./pg-signup/pg-signup.routes').then((c) => c.PG_SIGNUP_ROUTES),
     },
     {
         path: R_FORGOT_PASSWORD,
-        loadComponent: () => import('./pg-forgot-password/pg-forgot-password.component').then((c) => c.PgForgotPasswordComponent),
+        loadChildren: () => import('./pg-forgot-password/pg-forgot-password.routes').then((c) => c.PG_FORGOT_PASSWORD_ROUTES),
     },
     {
         path: R_PROFILE,
