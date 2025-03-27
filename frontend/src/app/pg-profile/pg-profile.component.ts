@@ -1,8 +1,8 @@
+import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy, ChangeDetectorRef, Component, Renderer2, ViewEncapsulation
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 
