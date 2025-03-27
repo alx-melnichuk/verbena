@@ -54,7 +54,7 @@ export class PanelStreamEditorComponent implements OnChanges {
     @Input()
     public locale: string | null = null;
     @Input()
-    public streamDto: StreamDto = StreamDtoUtil.create();
+    public streamDto: StreamDto | null = null;
     @Input()
     public streamConfigDto: StreamConfigDto | null = null;
     @Input()
@@ -173,7 +173,7 @@ export class PanelStreamEditorComponent implements OnChanges {
         const tags: string[] = cntlTags.value || [];
 
         const updateStreamFileDto: UpdateStreamFileDto = {
-            id: (this.isCreate ? undefined : this.streamDto.id),
+            id: (this.isCreate ? undefined : this.streamDto?.id),
             title: (this.isCreate ? title : (this.origStreamDto.title != title ? title : undefined)),
             descript: (this.isCreate ? descript : (this.origStreamDto.descript != descript ? descript : undefined)),
             starttime: (this.isCreate ? starttime : (this.origStreamDto.starttime != starttime ? starttime : undefined)),
@@ -194,7 +194,7 @@ export class PanelStreamEditorComponent implements OnChanges {
 
     private prepareFormGroupByStreamDto(streamDto: StreamDto | null): void {
         if (!streamDto) {
-            return;
+            streamDto = StreamDtoUtil.create();
         }
         this.origStreamDto = { ...streamDto };
         Object.freeze(this.origStreamDto);
@@ -202,7 +202,7 @@ export class PanelStreamEditorComponent implements OnChanges {
         this.isCreate = (streamDto.id < 0);
         const now = new Date(Date.now())
         const currentTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 5, now.getSeconds());
-        // Date.parse("2019-01-01T00:00:00.000Z");
+        // Date.parse("2010-01-01T00:00:00.000Z");
         const startDate = (!!streamDto.starttime ? new Date(Date.parse(streamDto.starttime)) : currentTime);
         const startHours = ('00' + startDate.getHours()).slice(-2);
         const startMinutes = ('00' + startDate.getMinutes()).slice(-2);
