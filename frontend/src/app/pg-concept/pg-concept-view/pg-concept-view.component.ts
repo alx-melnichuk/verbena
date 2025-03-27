@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnInit, ViewEncapsulation } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { ConceptViewComponent } from 'src/app/lib-concept/concept-view/concept-view.component';
 import { StreamDto } from 'src/app/lib-stream/stream-api.interface';
 
@@ -12,8 +13,19 @@ import { StreamDto } from 'src/app/lib-stream/stream-api.interface';
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PgConceptViewComponent {
+export class PgConceptViewComponent implements OnInit {
+
     @Input()
     public streamDto: StreamDto | null = null;
+
+    constructor(
+        private route: ActivatedRoute,
+    ) {
+        this.streamDto = this.route.snapshot.data['streamDto'];
+    }
+
+    ngOnInit(): void {
+        // console.log(`^OnInit()_this.streamDto:`, this.streamDto); // #
+    }
 
 }
