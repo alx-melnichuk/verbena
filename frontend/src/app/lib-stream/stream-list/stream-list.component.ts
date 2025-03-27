@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewEncapsulation } from '@angular/core';
+import { CommonModule, KeyValue } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
@@ -9,6 +8,7 @@ import { LocaleService } from 'src/app/common/locale.service';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
+import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 
 import { PanelStreamCalendarComponent } from '../panel-stream-calendar/panel-stream-calendar.component';
@@ -28,15 +28,25 @@ import { StreamService } from '../stream.service';
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class StreamListComponent implements OnInit {
-    public userId: number;
+export class StreamListComponent implements OnChanges, OnInit {
+    @Input()
+    public err: string | null = null;
+    @Input()
+    public profileDto: ProfileDto | null = null;
+
+    @Output()
+    readonly actionDuplicate: EventEmitter<number> = new EventEmitter();
+    @Output()
+    readonly actionEdit: EventEmitter<number> = new EventEmitter();
+    @Output()
+    readonly actionDelete: EventEmitter<number> = new EventEmitter();
+
     public isRefreshPanelStreamEvent: boolean | null | undefined;
 
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'long' };
 
     constructor(
         private changeDetector: ChangeDetectorRef,
-        private route: ActivatedRoute,
         private translateService: TranslateService,
         private dialogService: DialogService,
         private streamService: StreamService,
@@ -45,9 +55,15 @@ export class StreamListComponent implements OnInit {
         public streamListService: StreamListService,
         public streamCalendarService: StreamCalendarService,
     ) {
-        const userDto = this.route.snapshot.data['userDto'];
-        this.userId = userDto.id;
     }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (!!changes['err'] && !!this.err) {
+            this.alertService.hide();
+            // this.alertService.showError(HttpErrorUtil.getMsgs(err as HttpErrorResponse)[0], 'stream_list.error_delete_stream');
+        }
+    }
+
 
     async ngOnInit(): Promise<void> {
         await this.loadFutureAndPastStreamsAndSchedule();
@@ -110,19 +126,32 @@ export class StreamListComponent implements OnInit {
 
     // ** **
 
-    public actionDuplicate(streamId: number): void {
-        this.streamService.redirectToStreamCreationPage(streamId);
+    public doActionDuplicate(streamId: number): void {
+        this.actionDuplicate.emit(streamId);
+        //     this.streamService.redirectToStreamCreationPage(streamId);
     }
 
-    public actionEdit(streamId: number): void {
-        this.streamService.redirectToStreamEditingPage(streamId);
+    public doActionEdit(streamId: number): void {
+        this.actionEdit.emit(streamId);
+        //     this.streamService.redirectToStreamEditingPage(streamId);
     }
 
     public redirectToStreamView(streamId: number): void {
         this.streamService.redirectToStreamViewPage(streamId);
     }
 
-    public async actionDelete(info: { id: number, title: string }): Promise<void> {
+    public async doActionDelete(info: { id: number, title: string }): Promise<void> {
+        this.alertService.hide();
+        if (!info || !info.id) {
+            return Promise.resolve();
+        }
+        const message = this.translateService.instant('stream_list.sure_you_want_delete_stream', { title: info.title });
+        const res = await this.dialogService.openConfirmation(message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
+        if (!!res) {
+            this.actionDelete.emit(info.id);
+        }
+    }
+    /*public async actionDelete0(info: { id: number, title: string }): Promise<void> {
         this.alertService.hide();
         if (!info || !info.id) {
             return Promise.resolve();
@@ -132,7 +161,7 @@ export class StreamListComponent implements OnInit {
         if (!!res) {
             await this.deleteDataStream(info.id);
         }
-    }
+    }*/
 
     // ** Private API **
 

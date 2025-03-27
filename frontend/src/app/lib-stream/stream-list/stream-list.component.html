@@ -37,7 +37,7 @@
           [locale]="localeService.getLocale()"
           [streamShortDtoList]="streamCalendarService.eventsOfDay"
           (requestNextPage)="getListEventsForDate(streamCalendarService.eventsOfDaySelected, -1)"
-          (editStream)="actionEdit($event)">
+          (editStream)="doActionEdit($event)">
         </app-panel-stream-event>
       </div>
     </div>
@@ -59,9 +59,9 @@
         [streamList]="streamListService.futureStreamsDto"
         (requestNextPage)="searchInfoNextFutureStream()"
         (redirectToStream)="redirectToStreamView($event)"
-        (actionDuplicate)="actionDuplicate($event)"
-        (actionEdit)="actionEdit($event)"
-        (actionDelete)="actionDelete($event)">
+        (actionDuplicate)="doActionDuplicate($event)"
+        (actionEdit)="doActionEdit($event)"
+        (actionDelete)="doActionDelete($event)">
       </app-panel-stream-info>
     </div>
 
@@ -76,8 +76,8 @@
         [streamList]="streamListService.pastStreamsDto"
         (requestNextPage)="searchInfoNextPastStream()"
         (redirectToStream)="redirectToStreamView($event)"
-        (actionDuplicate)="actionDuplicate($event)"
-        (actionDelete)="actionDelete($event)">
+        (actionDuplicate)="doActionDuplicate($event)"
+        (actionDelete)="doActionDelete($event)">
       </app-panel-stream-info>
     </div>
 
