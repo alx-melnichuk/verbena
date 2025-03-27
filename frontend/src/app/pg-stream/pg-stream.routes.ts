@@ -1,13 +1,13 @@
 import { Routes } from '@angular/router';
 
-import { StreamEditComponent } from '../lib-stream/stream-edit/stream-edit.component';
-import { StreamListComponent } from '../lib-stream/stream-list/stream-list.component';
 import { P_STREAM_ID, E_STREAM_EDIT, E_STREAM_CREATE, E_STREAM_LIST } from '../common/routes';
 
 import { PgStreamComponent } from './pg-stream.component';
 import { pgStreamResolver } from './pg-stream.resolver';
 import { pgProfileResolver } from './pg-profile.resolver';
 import { pgStreamConfigResolver } from './pg-stream-config.resolver';
+import { PgStreamListComponent } from './pg-stream-list/pg-stream-list.component';
+import { PgStreamEditComponent } from './pg-stream-edit/pg-stream-edit.component';
 
 export const PG_STREAM_ROUTES: Routes = [
     {
@@ -16,12 +16,12 @@ export const PG_STREAM_ROUTES: Routes = [
         children: [
             {
                 path: E_STREAM_LIST, // 'ind/stream/list'
-                component: StreamListComponent,
-                resolve: { userDto: pgProfileResolver }
+                component: PgStreamListComponent,
+                resolve: { profileDto: pgProfileResolver }
             },
             {
                 path: E_STREAM_EDIT + '/:' + P_STREAM_ID, // 'ind/stream/edit/:streamId'
-                component: StreamEditComponent,
+                component: PgStreamEditComponent,
                 resolve: {
                     streamDto: pgStreamResolver,
                     streamConfigDto: pgStreamConfigResolver,
@@ -29,7 +29,7 @@ export const PG_STREAM_ROUTES: Routes = [
             },
             {
                 path: E_STREAM_CREATE, // 'ind/stream/create'
-                component: StreamEditComponent,
+                component: PgStreamEditComponent,
                 resolve: {
                     streamDto: pgStreamResolver,
                     streamConfigDto: pgStreamConfigResolver,
