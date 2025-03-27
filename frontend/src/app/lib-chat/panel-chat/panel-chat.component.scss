@@ -71,11 +71,15 @@ app-panel-chat {
     }
 
     .pc-date-nickname {
-        color: var(--sys-on-surface); // color: rgb(32, 33, 36); // var(--hotlane-on-background-color);
+        color: var(---pc-dt-nick-cl, var(--sys-on-surface)); // color: rgb(32, 33, 36); // var(--hotlane-on-background-color);
         display: inline-block;
         font-size: .8125rem;
         font-weight: 500;
         word-wrap: break-word;
+
+        &.pc-myself {
+            ---pc-dt-nick-cl: var(--sys-primary);
+        }
     }
 
     .pc-date-time {

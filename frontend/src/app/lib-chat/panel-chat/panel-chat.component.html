@@ -9,7 +9,7 @@
       (mouseenter)="doMouseEnter(chatMsg.date, true)"
       (mouseleave)="doMouseLeave(chatMsg.date, true)">
       <div class="pc-item-date">
-        <div class="pc-date-nickname">
+        <div [ngClass]="['pc-date-nickname', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
           {{ isSelf(chatMsg.member) ? ('panel-chat.you' | translate) : chatMsg.member }}
         </div>
         <div class="pc-date-time">
