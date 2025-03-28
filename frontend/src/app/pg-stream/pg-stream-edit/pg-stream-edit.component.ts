@@ -3,7 +3,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ROUTE_STREAM_EDIT, ROUTE_STREAM_LIST } from 'src/app/common/routes';
-import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { StreamDto, UpdateStreamFileDto } from 'src/app/lib-stream/stream-api.interface';
 import { StreamConfigDto } from 'src/app/lib-stream/stream-config.interface';
 
@@ -14,7 +13,7 @@ import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 @Component({
     selector: 'app-pg-stream-edit',
     standalone: true,
-    imports: [CommonModule, StreamEditComponent, SpinnerComponent],
+    imports: [CommonModule, StreamEditComponent],
     templateUrl: './pg-stream-edit.component.html',
     styleUrl: './pg-stream-edit.component.scss',
     encapsulation: ViewEncapsulation.None,
