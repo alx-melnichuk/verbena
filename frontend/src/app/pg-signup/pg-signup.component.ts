@@ -19,7 +19,6 @@ import { HttpErrorUtil } from '../utils/http-error.util';
     styleUrl: './pg-signup.component.scss',
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [DialogService],
 })
 export class PgSignupComponent {
     public isDisabledSubmit = false;
