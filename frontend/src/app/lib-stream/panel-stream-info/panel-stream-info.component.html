@@ -1,7 +1,7 @@
 @for (stream of streamList; track stream.id) {
   <div class="psi-stream-card">
 
-    <a class="psi-logo" (click)="doRedirectToStream(stream.id)">
+    <a class="psi-logo" (click)="doActionView(stream.id)">
       @if (!isFuture) {
         <app-logotype [logo]="stream.logo"></app-logotype>
       } @else {
@@ -16,7 +16,7 @@
         {{ stream.starttime | dateTimeFormat:locale:(isFuture ? formatDateTime : formatDate)  }}
       </div>
       <div class="psi-title">
-        <a href9="javascript:void(0);" (click)="doRedirectToStream(stream.id)">
+        <a href9="javascript:void(0);" (click)="doActionView(stream.id)">
           {{ stream.title }}
         </a>
       </div>

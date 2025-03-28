@@ -49,11 +49,11 @@ export class PanelStreamInfoComponent {
     @Output()
     readonly requestNextPage: EventEmitter<void> = new EventEmitter();
     @Output()
-    readonly redirectToStream: EventEmitter<number> = new EventEmitter();
-    @Output()
     readonly actionDuplicate: EventEmitter<number> = new EventEmitter();
     @Output()
     readonly actionEdit: EventEmitter<number> = new EventEmitter();
+    @Output()
+    readonly actionView: EventEmitter<number> = new EventEmitter();
     @Output()
     readonly actionDelete: EventEmitter<{ id: number, title: string }> = new EventEmitter();
 
@@ -102,13 +102,6 @@ export class PanelStreamInfoComponent {
         return item.id;
     }
 
-
-    public doRedirectToStream(streamId: number): void {
-        if (!!streamId) {
-            this.redirectToStream.emit(streamId);
-        }
-    }
-
     public doActionDuplicate(streamId: number): void {
         if (!!streamId) {
             this.actionDuplicate.emit(streamId);
@@ -119,6 +112,13 @@ export class PanelStreamInfoComponent {
             this.actionEdit.emit(streamId);
         }
     }
+
+    public doActionView(streamId: number): void {
+        if (!!streamId) {
+            this.actionView.emit(streamId);
+        }
+    }
+
     public doActionDelete(streamDto: StreamDto): void {
         if (!!streamDto) {
             this.actionDelete.emit({ id: streamDto.id, title: streamDto.title });
