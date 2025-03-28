@@ -35,10 +35,10 @@ export class CalendarHeaderComponent<D> extends MatCalendarHeader<D> {
         @Inject(forwardRef(() => MatCalendar)) calendar: MatCalendar<D>,
         @Optional() dateAdapter: DateAdapter<D>,
         @Optional() @Inject(MAT_DATE_FORMATS) dateFormats: MatDateFormats,
-        changeDetectorRef: ChangeDetectorRef,
+        changeDetector: ChangeDetectorRef,
         @Optional() @Inject(APP_CALENDAR_HEADER_EVENT) private calendarHeaderEvent: CalendarHeaderEvent,
     ) {
-        super(intl, calendar, dateAdapter, dateFormats, changeDetectorRef);
+        super(intl, calendar, dateAdapter, dateFormats, changeDetector);
     }
     /** Handles user clicks on the previous button. */
     public override previousClicked(): void {

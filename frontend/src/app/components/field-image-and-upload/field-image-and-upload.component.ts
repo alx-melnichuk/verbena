@@ -129,7 +129,7 @@ export class FieldImageAndUploadComponent implements OnChanges, ControlValueAcce
     public formGroup: FormGroup = new FormGroup({ image: this.formControl });
 
     constructor(
-        private changeDetectorRef: ChangeDetectorRef,
+        private changeDetector: ChangeDetectorRef,
     ) {
     }
 
@@ -209,7 +209,7 @@ export class FieldImageAndUploadComponent implements OnChanges, ControlValueAcce
         }
         if (buffFile.length > 0) {
             this.imageView = buffFile[1];
-            this.changeDetectorRef.markForCheck();
+            this.changeDetector.markForCheck();
         }
         this.readFile.emit(buffFile);
     }

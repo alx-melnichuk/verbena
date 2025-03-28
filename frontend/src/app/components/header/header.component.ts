@@ -77,14 +77,14 @@ export class HeaderComponent implements OnChanges {
             this.timerResizeEvent = null;
 
             this.prepareMenuItems(this.profileDto, MAIN_MENU_LIST, CN_MIN_WINDOW_WIDTH < this.getWidth());
-            this.changeDetectorRef.markForCheck();
+            this.changeDetector.markForCheck();
         }, CN_ResizeEventTimeout);
     }
 
     constructor(
         public renderer: Renderer2,
         public initializationService: InitializationService,
-        private changeDetectorRef: ChangeDetectorRef,
+        private changeDetector: ChangeDetectorRef,
     ) {
     }
 
