@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ROUTE_STREAM_EDIT, ROUTE_STREAM_LIST } from 'src/app/common/routes';
+import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { StreamDto, UpdateStreamFileDto } from 'src/app/lib-stream/stream-api.interface';
 import { StreamConfigDto } from 'src/app/lib-stream/stream-config.interface';
 
@@ -13,7 +14,7 @@ import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 @Component({
     selector: 'app-pg-stream-edit',
     standalone: true,
-    imports: [CommonModule, StreamEditComponent],
+    imports: [CommonModule, StreamEditComponent, SpinnerComponent],
     templateUrl: './pg-stream-edit.component.html',
     styleUrl: './pg-stream-edit.component.scss',
     encapsulation: ViewEncapsulation.None,
@@ -28,6 +29,7 @@ export class PgStreamEditComponent {
     private goBackToRoute: string = ROUTE_STREAM_LIST;
 
     constructor(
+        private changeDetector: ChangeDetectorRef,
         private route: ActivatedRoute,
         private router: Router,
         private streamService: StreamService,
@@ -74,10 +76,10 @@ export class PgStreamEditComponent {
             })
             .catch((error: HttpErrorResponse) => {
                 this.errMsgs = HttpErrorUtil.getMsgs(error);
-                throw error;
             })
             .finally(() => {
                 this.isLoadStream = false;
+                this.changeDetector.markForCheck();
             });
     }
 

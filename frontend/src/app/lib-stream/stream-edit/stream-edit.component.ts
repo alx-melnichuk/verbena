@@ -4,7 +4,6 @@ import {
 import { CommonModule } from '@angular/common';
 
 import { LocaleService } from 'src/app/common/locale.service';
-import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 
 import { PanelStreamEditorComponent } from '../panel-stream-editor/panel-stream-editor.component';
 import { StreamDto, UpdateStreamFileDto } from '../stream-api.interface';
@@ -13,7 +12,7 @@ import { StreamConfigDto } from '../stream-config.interface';
 @Component({
     selector: 'app-stream-edit',
     standalone: true,
-    imports: [CommonModule, SpinnerComponent, PanelStreamEditorComponent],
+    imports: [CommonModule, PanelStreamEditorComponent],
     templateUrl: './stream-edit.component.html',
     styleUrl: './stream-edit.component.scss',
     encapsulation: ViewEncapsulation.None,
