@@ -2,7 +2,7 @@ import { HTTP_INTERCEPTORS, HttpClient, provideHttpClient, withInterceptorsFromD
 import { APP_INITIALIZER, ApplicationConfig, ErrorHandler, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
-import { MatDialogModule } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
@@ -17,6 +17,7 @@ import { APP_DATE_TIME_FORMAT_CONFIG } from './common/date-time-format.pipe';
 import { InitializationService } from './common/initialization.service';
 import { LocaleService } from './common/locale.service';
 import { DateUtil } from './utils/date.utils';
+import { DialogService } from './lib-dialog/dialog.service';
 
 // AoT requires an exported function for factories
 export const TRANSLATE_LOADER_FACTORY = (httpClient: HttpClient): TranslateHttpLoader => {
@@ -86,6 +87,11 @@ export const appConfig: ApplicationConfig = {
         { // Handling the error "Loading chunk [\d]+ failed"
             provide: ErrorHandler,
             useClass: AppErrorHandler
+        },
+        {
+            provide: DialogService,
+            useFactory: (dialog: MatDialog) => new DialogService(dialog),
+            deps: [MatDialog],
         },
     ]
 };
