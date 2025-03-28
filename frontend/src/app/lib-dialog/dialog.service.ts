@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 
 import { ConfirmationComponent, ConfirmationData } from './confirmation/confirmation.component';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({
     providedIn: 'root',
@@ -64,6 +65,7 @@ export class DialogService {
         //   });
         // });
         // return answer;
-        return dialogRef.afterClosed().toPromise();
+        // return dialogRef.afterClosed().toPromise();
+        return firstValueFrom(dialogRef.afterClosed());
     }
 }
