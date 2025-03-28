@@ -32,6 +32,19 @@ export class StreamListService {
     ) {
     }
 
+    // Delete a stream by its ID.
+    public async deleteDataStream(streamId: number | null): Promise<void> {
+        if (!streamId) {
+            return Promise.reject();
+        }
+        this.futureStreamLoading = true;
+        try {
+            await this.streamService.deleteStream(streamId);
+        } finally {
+            this.futureStreamLoading = false;
+        }
+    }
+
     // "Future Streams"
 
     /** Clear array of "Future Stream". */
