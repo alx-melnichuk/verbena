@@ -8,6 +8,7 @@ import {
     MatSnackBarRef,
     MatSnackBarVerticalPosition,
 } from '@angular/material/snack-bar';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({
     providedIn: 'root',
@@ -31,6 +32,9 @@ export class AlertService {
         title?: string,
         config?: MatSnackBarConfig<any>
     ): MatSnackBarRef<AlertWrapComponent> {
+        if (this.currentSnackBarRef != null) {
+            this.currentSnackBarRef.dismiss();
+        }
         const mode: AlertMode = toasterMode || AlertMode.comment;
         const duration = AlertDurationByMode[mode];
         const horizontalPosition: MatSnackBarHorizontalPosition = 'center'; // ['start' | 'center' | 'end' | 'left' | 'right']
@@ -43,10 +47,8 @@ export class AlertService {
             ...{ data: { mode, title, message } },
         };
         this.currentSnackBarRef = this.snackBar.openFromComponent(AlertWrapComponent, innConfig);
-        this.currentSnackBarRef
-            .afterDismissed()
-            .toPromise()
-            .finally(() => {
+        firstValueFrom(this.currentSnackBarRef.afterDismissed())
+            .then(() => {
                 this.currentSnackBarRef = null;
             });
         return this.currentSnackBarRef;
