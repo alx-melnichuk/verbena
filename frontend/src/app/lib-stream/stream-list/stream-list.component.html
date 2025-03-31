@@ -11,9 +11,9 @@
       </div>
       <app-panel-stream-calendar
         [locale]="localeService.getLocale()"
-         [markedDates]="calendarMarkedDates"
-         [minDate]="calendarMinDate"
-         [maxDate]="calendarMaxDate"
+        [markedDates]="calendarMarkedDates"
+        [minDate]="calendarMinDate"
+        [maxDate]="calendarMaxDate"
         [selected]="calendarDaySelected"
         (changeSelected)="doStreamEventsForDate($event, 1)"
         (changeCalendar)="doCalendarForPeriod($event)">
