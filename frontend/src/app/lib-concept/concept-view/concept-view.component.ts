@@ -1,9 +1,9 @@
 import {
-    AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, ViewEncapsulation
+    AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule, KeyValue } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { InitializationService } from 'src/app/common/initialization.service';
@@ -24,6 +24,7 @@ import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
 import { PanelStreamActionsComponent } from '../panel-stream-actions/panel-stream-actions.component';
 import { PanelStreamParamsComponent } from '../panel-stream-params/panel-stream-params.component';
 import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-state.component';
+import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 
 @Component({
     selector: 'app-concept-view',
@@ -36,8 +37,12 @@ import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-st
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ConceptViewComponent implements AfterContentInit, OnInit {
+export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit {
 
+    @Input()
+    public isLoadStream = false;
+    @Input()
+    public profileDto: ProfileDto | null = null;
     //   @Input()
     //   public streamId: string | null = null;
     @Input()
@@ -62,6 +67,7 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
     @Output()
     readonly bannedUser: EventEmitter<string> = new EventEmitter();
 
+    public isShowTimer: boolean = false;
     public isSidebarLfOpen: boolean = false;
     public isSidebarRgOpen: boolean = false;
 
@@ -93,7 +99,6 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
 
     constructor(
         private changeDetectorRef: ChangeDetectorRef,
-        private route: ActivatedRoute,
         private router: Router,
         private translateService: TranslateService,
         public initializationService: InitializationService,
@@ -129,11 +134,29 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
         //   });
 
         // this.getFollowersAndPopular();
-        this.streamDto = this.route.snapshot.data['streamDto'];
+
         // #if (this.streamDto != null) { // #
         // #  this.streamDto.state = StreamState.started; // #
         // #  this.streamDto.starttime = "2024-10-29T16:34:00.000Z";
         // #} // #
+    }
+    ngOnChanges(changes: SimpleChanges): void {
+        if (!!changes['streamDto']) {
+            this.isShowTimer = false;
+            if (this.streamDto?.starttime != null) {
+                // console.log(`startDateTime: ${this.streamDto.starttime}`); // #
+                const startTime = new Date(this.streamDto.starttime);
+                const now = new Date(Date.now());
+                // console.log(`now          : ${now.toJSON()}`); // #
+                const diffTime = Math.abs(startTime.getTime() - now.getTime());
+                // console.log(`diffTime     : ${diffTime}`); // #
+                const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+                // console.log(`diffDays     : ${Math.floor(diffTime / (1000 * 60 * 60 * 24))}`); // #
+                // console.log(`diffHours    : ${diffHours}`); // #
+                this.isShowTimer = diffHours < 2;
+                // console.log(`diffHours < 2: ${diffHours < 2}`); // #
+            }
+        }
     }
 
     // To disable the jumping effect of the "stream-video" panel at startup.
@@ -160,6 +183,8 @@ export class ConceptViewComponent implements AfterContentInit, OnInit {
             // this.firebaseService.subscribingToChatContent(this.streamDto.id);
         }
         this.broadcastDuration = '00';
+        // console.log(`#CV() profileDto=`, this.profileDto); // #
+        // console.log(`#CV() streamDto=`, this.streamDto); // #
     }
 
     // ** Public API **

@@ -1,14 +1,17 @@
 <!-- @if (streamStateService.changeOfState) {
   <app-spinner [isFullOwner]="true"></app-spinner>
 } -->
-
+@if (isLoadStream) {
+  <app-spinner isFillParent></app-spinner>
+}
+  
 <div class="cv-side-bar">
   <button class="cv-btn-arrow cv-left" (click)="isSidebarLfOpen = !isSidebarLfOpen;">
     <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarLfOpen ? 'cv-0deg' : 'cv-180deg')]">
       <use href="assets/icons/lib-concept/concept-view/angle-left-bin.svg#angle-left-bin"></use>
     </svg>
   </button>
-    
+
   <app-sidebar [isOpen]="isSidebarLfOpen" [isVeilByClosing]="true" (clickByVeil)="isSidebarLfOpen=true">
     <aside class="cv-aside cv-fix-rg">
       cv-bar-left
@@ -37,9 +40,11 @@
     <!-- </div> -->
   </div>
 
-  <div class="cv-stream-panel">
+  <div class="cv-stream-panel cv-demo3">
     
-    <app-panel-stream-params style9="outline: 1px dashed darkblue;"
+    <app-panel-stream-params
+      [isShowTimer]="isShowTimer"
+      [locale]="localeService.getLocale()"
       [title]="streamDto?.title"
       [tags]="streamDto?.tags || []"
       [startDateTime]="getDate(streamDto?.starttime)">
@@ -106,7 +111,7 @@
         [isBlocked]="false"
         [isEditable]="true"
         [locale]="localeService.getLocale()"
-        [nickname]="'Teodor_Nickols'"
+        [nickname]="profileDto?.nickname || ''"
         [title]="'concept-view.chat_title'">
       </app-panel-chat>
     <!-- <app-panel-right-chat
