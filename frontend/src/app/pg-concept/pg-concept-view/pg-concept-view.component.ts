@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ConceptViewComponent } from 'src/app/lib-concept/concept-view/concept-view.component';
+import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 import { StreamDto } from 'src/app/lib-stream/stream-api.interface';
 
 @Component({
@@ -15,12 +16,16 @@ import { StreamDto } from 'src/app/lib-stream/stream-api.interface';
 })
 export class PgConceptViewComponent implements OnInit {
 
-    @Input()
+    public isLoadStream = false;
+    public profileDto: ProfileDto | null = null;
     public streamDto: StreamDto | null = null;
+
+
 
     constructor(
         private route: ActivatedRoute,
     ) {
+        this.profileDto = this.route.snapshot.data['profileDto'];
         this.streamDto = this.route.snapshot.data['streamDto'];
     }
 
