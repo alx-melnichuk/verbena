@@ -133,9 +133,8 @@ export class StreamService {
     }
 
     public redirectToStreamViewPage(streamId: number): void {
-        // TODO Currently under development.
-        // if (!!streamId) {
-        //     window.setTimeout(() => this.router.navigate([ROUTE_VIEW, streamId]), 0);
-        // }
+        if (!!streamId) {
+            window.setTimeout(() => this.router.navigate([ROUTE_CONCEPT_VIEW, streamId]), 0);
+        }
     }
 }
