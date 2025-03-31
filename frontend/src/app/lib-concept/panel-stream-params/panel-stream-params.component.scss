@@ -4,40 +4,31 @@ app-panel-stream-params {
     display: block;
     line-height: 1.7;
     min-width: 18rem;
+    max-width: 60%;
+    // outline: 1px dashed green;
 
     [psp-mr-lf-1] {
         margin-left: 1rem;
     }
 
-    .psp-title {
-        max-width: 400px;
-    }
-
-    .psp-tag {
-        background-color: rgb(224, 224, 224); // TODO replace on mat-x
-        border-bottom-left-radius: 16px;
-        border-bottom-right-radius: 16px;
-        border-top-left-radius: 16px;
-        border-top-right-radius: 16px;
-        cursor: default;
+    [psp-mr-lf-0_5] {
         margin-left: 0.5rem;
-        padding: 0.25rem 0.75rem;
     }
 
-    .psp-timer {
-        display: inline-block;
-        width: 18ch;
+    // ** props **
+    .psp-props {
+        height: 2.5rem;
     }
 
     // ** icon **
-    .psp-ver-md {
-        vertical-align: middle;
-    }
-
     .psp-users-group {
         color: var(--app-svg-icon-cl);
         height: 2.5rem;
         width: 2.5rem;
+    }
+
+    .psp-middle {
+        vertical-align: middle;
     }
 
     .psp-clock-5hours {
@@ -46,7 +37,14 @@ app-panel-stream-params {
         width: 2.25rem;
     }
 
+    .psp-timer {
+        display: inline-block;
+        width: 18ch;
+    }
 
+    // ** **
+
+    /*
     // ** author **
     .psp-author>img {
         border-radius: var(--hd-image-brd-rd, 0.3rem);
@@ -69,5 +67,5 @@ app-panel-stream-params {
         object-fit: cover;
         width: calc(var(--app-header-hg, 62px) - 4px);
     }
-
+    */
 }

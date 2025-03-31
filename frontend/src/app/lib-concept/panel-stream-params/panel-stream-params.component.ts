@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatChipsModule } from '@angular/material/chips';
 import { TranslatePipe } from '@ngx-translate/core';
 
+import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { DateTimeTimerComponent } from 'src/app/components/date-time-timer/date-time-timer.component';
 
 
@@ -9,13 +11,17 @@ import { DateTimeTimerComponent } from 'src/app/components/date-time-timer/date-
     selector: 'app-panel-stream-params',
     exportAs: 'appPanelStreamParams',
     standalone: true,
-    imports: [CommonModule, TranslatePipe, DateTimeTimerComponent],
+    imports: [CommonModule, DateTimeFormatPipe, MatChipsModule, TranslatePipe, DateTimeTimerComponent],
     templateUrl: './panel-stream-params.component.html',
     styleUrl: './panel-stream-params.component.scss',
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PanelStreamParamsComponent implements OnChanges {
+export class PanelStreamParamsComponent {
+    @Input()
+    public isShowTimer: boolean | null | undefined;
+    @Input()
+    public locale: string | null = null;
     @Input()
     public title: string | null | undefined;
     @Input()
@@ -25,19 +31,5 @@ export class PanelStreamParamsComponent implements OnChanges {
     @Input()
     public countOfViewer: number | null | undefined;
 
-    public innStartDate: string | null = null;
-    public innStartTime: string | null = null;
-    public innStartDateTime: Date | null | undefined;
-
-    ngOnChanges(changes: SimpleChanges): void {
-        if (!!changes['startDateTime']) {
-            this.innStartDateTime = this.startDateTime;
-            this.innStartDate = '';
-            this.innStartTime = '';
-            if (this.startDateTime != null) {
-                this.innStartDate = this.startDateTime.toISOString().slice(0, 10);
-                this.innStartTime = this.startDateTime.toTimeString().slice(0, 5);
-            }
-        }
-    }
+    readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: 'long', timeStyle: 'short' };
 }
