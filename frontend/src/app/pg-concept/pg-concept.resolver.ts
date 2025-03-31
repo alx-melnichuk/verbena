@@ -19,7 +19,7 @@ export const pgConceptResolver: ResolveFn<StreamDto | HttpErrorResponse | undefi
         const streamIdStr = route.paramMap.get(P_CONCEPT_ID);
         const streamId = parseInt(streamIdStr || '-1', 10);
 
-        if (E_CONCEPT_VIEW === url.path && !!streamId) {
+        if (E_CONCEPT_VIEW === url.path && streamId > -1) {
             return streamService.getStream(streamId)
                 .catch((err) =>
                     goToPageNotFound(router));
