@@ -69,10 +69,10 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     //   @Output()
     //   readonly bannedUser: EventEmitter<string> = new EventEmitter();
 
-    @ViewChild('scrollItem')
-    private scrollItemContainer: ElementRef | undefined;
-    @ViewChild(MatInput)
-    private messageInput: MatInput | undefined;
+    // @ViewChild('scrollItem')
+    // private scrollItemContainer: ElementRef | undefined;
+    // @ViewChild(MatInput)
+    // private messageInput: MatInput | undefined;
     //   @ViewChild('textarea', { static: true })
     //   private textareaItem: ElementRef | undefined;
 
@@ -102,7 +102,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     private readonly dateAdapter: DateAdapter<Date> = inject(DateAdapter);
 
     constructor() {
-        this.chatMsgs = this.getChatMsg(); // #
         console.log(`PanelChat()`); // #
     }
 
@@ -119,12 +118,15 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             Promise.resolve().then(() =>
                 this.scrollToBottom());
         }
+        if (!!changes['nickname']) {
+            this.chatMsgs = this.getChatMsg(this.nickname || ''); // #
+        }
     }
 
     // ** Public API **
 
     public trackById(index: number, item: ChatMsg): string {
-        return item?.date;
+        return item.date;
     }
 
     public doSendMessage(newMsg: string): void {
@@ -189,22 +191,22 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         return (!!this.mapHoverPrimary[chatMessageId] || !!this.mapHoverSecondary[chatMessageId]);
     }*/
     public doMouseEnter(chatMsgId: string, isPrimary: boolean): void {
-        if (!!chatMsgId) {
+        /*if (!!chatMsgId) {
             if (isPrimary) {
                 this.mapHoverPrimary[chatMsgId] = true;
             } else {
                 this.mapHoverSecondary[chatMsgId] = true;
             }
-        }
+        }*/
     }
     public doMouseLeave(chatMsgId: string, isPrimary: boolean): void {
-        if (!!chatMsgId) {
+        /*if (!!chatMsgId) {
             if (isPrimary) {
                 delete this.mapHoverPrimary[chatMsgId];
             } else {
                 delete this.mapHoverSecondary[chatMsgId];
             }
-        }
+        }*/
     }
 
     public doKeydownEnter(event: Event, newMsg: string): void {
@@ -254,11 +256,11 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         return document.getElementsByClassName('prc-new-message')[0].getElementsByTagName('textarea')[0];
     }*/
     private scrollToBottom(): void {
-        if (!!this.scrollItemContainer) {
+        /*if (!!this.scrollItemContainer) {
             try {
                 this.scrollItemContainer.nativeElement.scrollTop = this.scrollItemContainer.nativeElement.scrollHeight;
             } catch (err) { }
-        }
+        }*/
     }
     /*
     private hexToUtf8(hex: string): string {
@@ -269,7 +271,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     */
 
 
-    private getChatMsg(): ChatMsg[] {
+    private getChatMsg(nickname: string): ChatMsg[] {
         const result: ChatMsg[] = [];
 
         for (let idx = 0; idx < 18; idx++) {
@@ -278,12 +280,23 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             let date = d1.toISOString();
             let msg = "text_" + idx + " This function can be used to pass through a successful result while handling an error.";
             if (idx % 3 == 0) {
-                member = "Devid_Torner";
+                member = nickname;
             } else if (idx % 2 == 0) {
                 member = "Snegana_Miller";
             }
+            // const date1 = date.slice(20, 24) + '_' + date.slice(11, 19) + '_' + date.slice(0, 10);
             result.push({ msg, member, date });
+            // console.log(` date=${date}`); // #
+            this.wait(1);
         }
         return result;
+    }
+
+    wait(ms: number): void {
+        const start = Date.now();
+        let now = start;
+        while (now - start < ms) {
+            now = Date.now();
+        }
     }
 }

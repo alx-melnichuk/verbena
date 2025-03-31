@@ -6,8 +6,10 @@
 <div class="pc-middle global-scroll" #scrollItem>
   @for (chatMsg of chatMsgs; track trackById) {    
     <div [ngClass]="['pc-chat-item', (isSelf(chatMsg.member) ? 'pc-owner' : 'pc-other') ]"
-      (mouseenter)="doMouseEnter(chatMsg.date, true)"
-      (mouseleave)="doMouseLeave(chatMsg.date, true)">
+      mouseenter9="doMouseEnter(chatMsg.date, true)"
+      mouseleave9="doMouseLeave(chatMsg.date, true)"
+      >
+
       <div class="pc-item-date">
         <div [ngClass]="['pc-date-nickname', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
           {{ isSelf(chatMsg.member) ? ('panel-chat.you' | translate) : chatMsg.member }}
@@ -39,7 +41,7 @@
         <!-- </div>
         } -->
         <div [ngClass]="['pc-info-text', (isSelf(chatMsg.member) ? 'prc-color-self' : 'prc-color-other')]">
-            {{ chatMsg.msg }}
+            {{ chatMsg.date }} {{ chatMsg.msg }}
           <!-- <p *ngFor="let chatMessageRow of getMessageRows(chatMsg.text)">{{ chatMessageRow }}</p> -->
         </div>
         <!-- <div *ngIf="isBannedUserById(chatMsg.member)" class="prc-banned-user">
