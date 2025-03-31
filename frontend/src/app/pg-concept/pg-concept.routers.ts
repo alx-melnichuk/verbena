@@ -6,6 +6,7 @@ import { PgConceptComponent } from './pg-concept.component';
 import { pgConceptResolver } from './pg-concept.resolver';
 import { PgConceptListComponent } from './pg-concept-list/pg-concept-list.component';
 import { PgConceptViewComponent } from './pg-concept-view/pg-concept-view.component';
+import { pgProfileResolver } from './pg-profile.resolver';
 
 export const PG_CONCEPT_ROUTES: Routes = [
     {
@@ -19,7 +20,10 @@ export const PG_CONCEPT_ROUTES: Routes = [
             {
                 path: E_CONCEPT_VIEW + '/:' + P_CONCEPT_ID, // 'ind/concept/view/:streamId'
                 component: PgConceptViewComponent,
-                resolve: { streamDto: pgConceptResolver }
+                resolve: {
+                    profileDto: pgProfileResolver,
+                    streamDto: pgConceptResolver,
+                }
             },
         ]
     },
