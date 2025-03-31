@@ -10,7 +10,7 @@ function goToPageNotFound(router: Router): Promise<undefined> {
     return router.navigateByUrl('/technical/not-found').then(() => Promise.resolve(undefined));
 }
 
-export const pgStreamResolver: ResolveFn<StreamDto | HttpErrorResponse | undefined> =
+export const pgStreamResolver: ResolveFn<StreamDto | null | HttpErrorResponse | undefined> =
     (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
         const router = inject(Router);
         const streamService: StreamService = inject(StreamService);
@@ -31,7 +31,7 @@ export const pgStreamResolver: ResolveFn<StreamDto | HttpErrorResponse | undefin
                     .catch((err) =>
                         goToPageNotFound(router));
             } else {
-                return Promise.resolve(StreamDtoUtil.create());
+                return Promise.resolve(null);
             }
         } else if (E_STREAM_EDIT === url.path && !!streamId) {
             return streamService.getStream(streamId)

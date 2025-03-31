@@ -193,6 +193,7 @@ export class PanelStreamEditorComponent implements OnChanges {
     // ** Private API **
 
     private prepareFormGroupByStreamDto(streamDto: StreamDto | null): void {
+        const isDuplicate = streamDto?.id == -1;
         if (!streamDto) {
             streamDto = StreamDtoUtil.create();
         }
@@ -224,6 +225,9 @@ export class PanelStreamEditorComponent implements OnChanges {
         this.changeIsStartTime();
         this.logoFile = undefined;
         this.initIsLogo = !!streamDto.logo;
+        if (isDuplicate) {
+            this.formGroup.markAsDirty();
+        }
     }
     // '10:12'
     private getStartDateTime(startDate: Date | null, startTime: string | null): Date | null {
