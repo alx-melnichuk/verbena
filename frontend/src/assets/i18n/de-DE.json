@@ -393,10 +393,10 @@
   "concept-view": {
     "error_update_stream": "Fehler beim Aktualisieren des Streamstatus",
     "exist_is_active_stream": "Der aktive Stream wird bereits ausgeführt <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
-    "chat_title": "Stream-Chat"
+    "chat_title": "Stream-Chat",
+    "title": "Titel:"
   },
   "panel-stream-params": {
-    "title": "Titel:",
     "tags": "Schlagwörter:",
     "start": "Start:"
   },
