@@ -21,6 +21,10 @@ app-concept-view {
     display: flex;
     height: 100%;
 
+    [cv-mr-rg-1] {
+        margin-right: 1rem;
+    }
+
     // ** sidebar **
     .cv-side-bar {
         border-style: solid;
@@ -96,8 +100,8 @@ app-concept-view {
         padding-right: 1rem;
     }
 
-    // ** stream-video **
-    .cv-stream-video {
+    // * stream-video *
+    .cv-cnt-video {
         background-color: var(---cv-pn-bg);
         border: 1px solid var(---cv-pn-brd);
         box-sizing: border-box;
@@ -105,6 +109,26 @@ app-concept-view {
 
         position: relative;
     }
+
+    .cv-cnt-footer {
+        background-color: var(---cv-pn-bg);
+        border: 1px solid var(---cv-pn-brd);
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        margin-top: 1rem;
+        padding: 0.5rem;
+    }
+
+    .cv-flex {
+        display: flex;
+    }
+
+    .cv-flex-grow {
+        flex-grow: 1;
+    }
+
+    // ** **
 
     .cv-stream-state {
         // --pss-panel-bg: var(---cv-pn-bg);
@@ -123,19 +147,16 @@ app-concept-view {
 
     // ** cv-stream-panel ** 
     .cv-stream-panel {
-        align-items: center;
+        outline: 1px dashed orange;
         background-color: var(---cv-pn-bg);
         border: 1px solid var(---cv-pn-brd);
         box-sizing: border-box;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
         margin-top: 1rem;
         padding: 1rem;
     }
 
     .cv-stream-tools {
-        outline: 1px dashed orange;
+        // outline: 1px dashed orange;
     }
 
     .cv-stream-actions {

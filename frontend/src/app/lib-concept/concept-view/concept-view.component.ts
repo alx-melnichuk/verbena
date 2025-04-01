@@ -9,6 +9,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InitializationService } from 'src/app/common/initialization.service';
 import { LocaleService } from 'src/app/common/locale.service';
 import { StringDateTime } from 'src/app/common/string-date-time';
+import { AvatarComponent } from 'src/app/components/avatar/avatar.component';
 import { SidebarComponent } from 'src/app/components/sidebar/sidebar.component';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { PanelChatComponent } from 'src/app/lib-chat/panel-chat/panel-chat.component';
@@ -16,6 +17,7 @@ import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { ConfirmationData } from 'src/app/lib-dialog/confirmation/confirmation.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { ProfileService } from 'src/app/lib-profile/profile.service';
+import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 import { StreamService } from 'src/app/lib-stream/stream.service';
 import { StreamDto, StreamState } from 'src/app/lib-stream/stream-api.interface';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
@@ -24,13 +26,12 @@ import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
 import { PanelStreamActionsComponent } from '../panel-stream-actions/panel-stream-actions.component';
 import { PanelStreamParamsComponent } from '../panel-stream-params/panel-stream-params.component';
 import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-state.component';
-import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 
 @Component({
     selector: 'app-concept-view',
     exportAs: 'appConceptView',
     standalone: true,
-    imports: [CommonModule, SpinnerComponent, SidebarComponent, TranslatePipe,
+    imports: [CommonModule, AvatarComponent, SpinnerComponent, SidebarComponent, TranslatePipe,
         PanelStreamStateComponent, PanelStreamParamsComponent, PanelStreamActionsComponent, PanelChatComponent],
     templateUrl: './concept-view.component.html',
     styleUrl: './concept-view.component.scss',
@@ -166,7 +167,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     }
 
     ngOnInit(): void {
-        const currentUserId: number = this.profileService.profileDto?.id || -1;
+        const currentUserId: number = this.profileDto?.id || -1;
         // An indication that this is the owner of the stream.
         this.isStreamOwner = (this.streamDto?.userId === currentUserId);
         console.log(`#_this.isStreamOwner:${this.isStreamOwner}`); // #

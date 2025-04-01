@@ -30,7 +30,7 @@
 
 <div class="cv-center">
   
-  <div [ngClass]="[(isStreamVideo ? 'cv-stream-video' : '')]">
+  <div [ngClass]="[(isStreamVideo ? 'cv-cnt-video' : '')]">
     <!-- <div [ngClass]="['cv-box-video', classNameViewerSize()]"> -->
       <!-- <div class="height-100ps" [appMillicastViewer]="millicastViewer"></div> -->
       <div class="cv-hg100"></div>
@@ -40,29 +40,35 @@
     <!-- </div> -->
   </div>
 
-  <div class="cv-stream-panel cv-demo3">
+  <div class="cv-cnt-footer">
     
-    <app-panel-stream-params
-      [isShowTimer]="isShowTimer"
-      [locale]="localeService.getLocale()"
-      [title]="streamDto?.title"
-      [tags]="streamDto?.tags || []"
-      [startDateTime]="getDate(streamDto?.starttime)">
-    </app-panel-stream-params>
+    <div class="cv-flex">
+      <span cv-mr-rg-1>{{ 'concept-view.title' | translate }}</span> 
+      <span>{{ streamDto?.title }}</span>
+    </div>
+    <div class="cv-flex">
+      <app-panel-stream-params class="cv-flex-grow"
+        [avatar]="profileDto?.avatar"
+        [locale]="localeService.getLocale()"
+        [nickname]="profileDto?.nickname"
+        [tags]="streamDto?.tags || []"
+        [isShowTimer]="!isShowTimer"
+        [startDateTime]="getDate(streamDto?.starttime)">
+      </app-panel-stream-params>
+      
+      <div class="cv-flex-grow">
+        @if (isStreamOwner) {
+          <app-panel-stream-actions
+            [state]="streamDto?.state"
+            [title]="streamDto?.title"
+            (changeState)="doChangeState($event)">
+          </app-panel-stream-actions>
+        }
+      </div>
+    </div>
     
-    <div class="cv-stream-tools">
-      stream-tools
-    </div>
-    <div class="cv-stream-actions">
-      @if (isStreamOwner) {
-        <app-panel-stream-actions
-          [state]="streamDto?.state"
-          [title]="streamDto?.title"
-          (changeState)="doChangeState($event)">
-        </app-panel-stream-actions>
-      }
-    </div>
   </div>
+    
   @if (!isStreamOwner) {
     Is not Stream Owner
     <!-- @if (subscribeLoading) {
