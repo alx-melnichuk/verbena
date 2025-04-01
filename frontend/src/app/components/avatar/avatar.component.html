@@ -1,0 +1,7 @@
+@if (!!avatar) {
+  <img class="av-box" [src]="avatar" />
+} @else {
+  <svg class="av-box">
+    <use href="assets/icons/components/avatar/user-man-bin.svg#user-man-bin"></use>
+  </svg>
+}

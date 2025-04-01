@@ -1,0 +1,18 @@
+/*# sourceURL=avatar.component.scss */
+
+app-avatar {
+    ---av-zs: var(--av-sz, 2rem);
+    ---av-brd-rd: var(--av-brd-rd, 0px);
+
+    display: block;
+
+    .av-box {
+        border-radius: var(---av-brd-rd);
+        color: var(--app-svg-icon-cl); // for "svg"
+        display: block;
+        height: var(---av-zs);
+        object-fit: cover; // for "img"
+        width: var(---av-zs);
+    }
+
+}
