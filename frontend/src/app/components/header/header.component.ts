@@ -15,6 +15,7 @@ import { LOCALE_LIST, COLOR_SCHEME_LIST } from 'src/app/common/constants';
 import { InitializationService } from 'src/app/common/initialization.service';
 import { MainMenu, MainMenuUtil } from 'src/app/common/main-menu';
 import { MAIN_MENU_LIST } from 'src/app/common/routes';
+import { AvatarComponent } from 'src/app/components/avatar/avatar.component';
 import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 
 export const HM_LOGOUT = 'logout';
@@ -29,7 +30,7 @@ const CN_ResizeEventTimeout = 150; // milliseconds
     exportAs: 'appHeader',
     standalone: true,
     imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, MatButtonModule, MatMenuModule, MatSlideToggleModule,
-        MatToolbarModule, TranslatePipe],
+        MatToolbarModule, TranslatePipe, AvatarComponent],
     templateUrl: './header.component.html',
     styleUrl: './header.component.scss',
     encapsulation: ViewEncapsulation.None,
