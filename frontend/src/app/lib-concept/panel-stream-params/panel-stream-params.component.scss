@@ -1,71 +1,50 @@
 /*# sourceURL=panel-stream-params.component.scss */
 
 app-panel-stream-params {
-    display: block;
+    flex-wrap: wrap;
+    display: flex;
     line-height: 1.7;
-    min-width: 18rem;
-    max-width: 60%;
-    // outline: 1px dashed green;
+    min-width: 16.1rem;
 
-    [psp-mr-lf-1] {
-        margin-left: 1rem;
+    [psp-mr-rg-0_5] {
+        margin-right: 0.5rem;
     }
 
-    [psp-mr-lf-0_5] {
-        margin-left: 0.5rem;
+    .psp-avatar {
+        --av-sz: 4rem;
+        --av-brd-rd: 0.5rem;
     }
 
-    // ** props **
-    .psp-props {
-        height: 2.5rem;
+    .psp-grow-1 {
+        flex-grow: 1;
     }
 
-    // ** icon **
-    .psp-users-group {
-        color: var(--app-svg-icon-cl);
-        height: 2.5rem;
-        width: 2.5rem;
+    .psp-flex-wrap {
+        display: flex;
+        flex-wrap: wrap;
     }
 
     .psp-middle {
         vertical-align: middle;
     }
 
-    .psp-clock-5hours {
+    .psp-clock {
+        display: flex;
+        align-items: center;
+    }
+
+    // ** icon **
+
+    .psp-icon-users {
+        color: var(--app-svg-icon-cl);
+        height: 2.5rem;
+        width: 2.5rem;
+    }
+
+    .psp-icon-clock {
         color: var(--app-svg-icon-cl);
         height: 2.25rem;
         width: 2.25rem;
     }
 
-    .psp-timer {
-        display: inline-block;
-        width: 18ch;
-    }
-
-    // ** **
-
-    /*
-    // ** author **
-    .psp-author>img {
-        border-radius: var(--hd-image-brd-rd, 0.3rem);
-        box-sizing: border-box;
-        height: calc(var(--app-header-hg, 62px) - 4px);
-        margin-left: 0.75rem;
-        object-fit: cover;
-        width: calc(var(--app-header-hg, 62px) - 4px);
-    }
-
-    //.hd-profile-avatar {
-    //  display: flex;
-    //  align-items: center;
-    //}
-    img.hd-avatar {
-        border-radius: var(--hd-image-brd-rd, 0.3rem);
-        box-sizing: border-box;
-        height: calc(var(--app-header-hg, 62px) - 4px);
-        margin-left: 0.75rem;
-        object-fit: cover;
-        width: calc(var(--app-header-hg, 62px) - 4px);
-    }
-    */
 }

@@ -1,38 +1,42 @@
-<div>
-  <span>{{ 'panel-stream-params.title' | translate }}</span> 
-  <span psp-mr-lf-1>{{ title }}</span>
-</div>
-<div>
-  <span>{{ 'panel-stream-params.tags' | translate }}</span>
-  @for (tag of tags; track tag) {
-    <mat-chip psp-mr-lf-0_5>{{ tag }}</mat-chip>
-  }
-</div>
-<div>
-  <span>{{ 'panel-stream-params.start' | translate }}</span>
-  <span psp-mr-lf-1>{{ startDateTime | dateTimeFormat:locale:formatDateTime }} </span>
-</div>
-<div class="psp-props">
-  @if (isShowTimer) {
-    <svg psp-mr-lf-1 class="psp-users-group psp-middle">
-      <use href="assets/icons/lib-concept/panel-stream-params/users-group-bin.svg#users-group-bin"></use>
-    </svg>
-    <span psp-mr-lf-1 class="psp-middle">{{ countOfViewer || 0 }}</span>
-  
-    <svg psp-mr-lf-1 class="psp-clock-5hours psp-middle">
-      <use href="assets/icons/lib-concept/panel-stream-params/clock-5hours-bin.svg#clock-5hours-bin"></use>
-    </svg>
-    <span psp-mr-lf-1 class="psp-timer psp-middle">
-      <app-date-time-timer [isActive]="true" [startDate]="startDateTime">
-      </app-date-time-timer>
-    </span>
-  }
+<app-avatar psp-mr-rg-0_5 class="psp-avatar"
+  [avatar]="avatar">
+</app-avatar>
+
+<div class="psp-grow-1">
+  <div>{{ nickname }}</div>
+  <div class="psp-flex-wrap">
+    <span psp-mr-rg-0_5>{{ 'Tags:' | translate }}</span>
+    @for (tag of (tags || []); track tag) {
+      <span psp-mr-rg-0_5>#{{ tag }}</span>
+    }
+  </div>
 </div>
 
-<!-- <div class="psp-author">
-  <img class="psp-author-avatar" [src]="avatar || '/assets/images/icon_man.png'" alt="image" />
-</div> -->
-<!-- <div class="hd-profile-avatar">
-  <span>{{ profileDto.nickname }}</span>
-  <img class="hd-avatar" [src]="profileDto.avatar || '/assets/images/icon_man.png'" alt="image" />
-</div> -->
+<div class="psp-grow-1">
+  <div class="psp-flex-wrap">
+    <span psp-mr-rg-0_5>{{ 'panel-stream-params.start' | translate }}</span>
+    <span psp-mr-rg-0_5>{{ startDateTime | dateTimeFormat:locale:formatDateTime }} </span>
+  </div>
+
+  @if (isShowTimer) {
+    <div class="psp-flex-wrap">
+      <span psp-mr-rg-0_5>
+        <svg psp-mr-rg-0_5 class="psp-icon-users psp-middle">
+          <use href="assets/icons/lib-concept/panel-stream-params/users-group-bin.svg#users-group-bin"></use>
+        </svg>
+        <span class="psp-middle">{{ countOfViewer || 0 }}</span>
+      </span>
+      
+      <span psp-mr-rg-0_5 class="psp-clock">
+        <svg psp-mr-rg-0_5 class="psp-icon-clock">
+          <use href="assets/icons/lib-concept/panel-stream-params/clock-5hours-bin.svg#clock-5hours-bin"></use>
+        </svg>
+        <app-date-time-timer psp-mr-rg-0_5
+          [isActive]="true"
+          [startDate]="startDateTime">
+        </app-date-time-timer>
+      </span>
+    </div>
+  }
+
+</div>
