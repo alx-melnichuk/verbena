@@ -120,6 +120,11 @@ app-concept-view {
         padding: 0.5rem;
     }
 
+    .cv-cnt-title {
+        font-size: calc(1em + 2px);
+        font-weight: 500;
+    }
+
     .cv-flex {
         display: flex;
     }
@@ -130,6 +135,10 @@ app-concept-view {
 
     .cv-wrap {
         flex-wrap: wrap;
+    }
+
+    .cv-cnt-actions {
+        margin-top: 0.5rem;
     }
 
     // ** **

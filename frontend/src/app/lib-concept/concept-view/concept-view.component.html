@@ -1,6 +1,3 @@
-<!-- @if (streamStateService.changeOfState) {
-  <app-spinner [isFullOwner]="true"></app-spinner>
-} -->
 @if (isLoadStream) {
   <app-spinner isFillParent></app-spinner>
 }
@@ -16,7 +13,7 @@
     <aside class="cv-aside cv-fix-rg">
       cv-bar-left
   <!-- <app-panel-left-followers
-    [isMiniSize]="isMiniSidebarLeft"
+    [isMiniSize]="!isSidebarLfOpen"
     [isLoading]="followersService.followersAndPopularLoading"
     [followerList]="followersService.followerDTOList"
     [popularList]="followersService.popularDTOList"
@@ -45,20 +42,20 @@
     <div class="cv-flex">
       <span>
         <span cv-mr-rg-1>{{ 'concept-view.title' | translate }}</span>
-        <span>{{ streamDto?.title + ' ' + streamDto?.title  + ' ' + streamDto?.title}}</span>
+        <span class="cv-cnt-title">{{ streamDto?.title + ' ' + streamDto?.title  + ' ' + streamDto?.title}}</span>
       </span>  
     </div>
     <div class="cv-flex cv-wrap">
       <app-panel-stream-params class="cv-grow"
-        [avatar]="profileDto?.avatar"
+        [avatar]="avatar"
         [locale]="localeService.getLocale()"
-        [nickname]="profileDto?.nickname"
+        [nickname]="nickname"
         [tags]="streamDto?.tags || []"
-        [isShowTimer]="!isShowTimer"
+        [isShowTimer]="isShowTimer"
         [startDateTime]="getDate(streamDto?.starttime)">
       </app-panel-stream-params>
       
-      <div class="cv-grow">
+      <div class="cv-cnt-actions cv-grow">
         @if (isStreamOwner) {
           <app-panel-stream-actions
             [state]="streamDto?.state"
@@ -96,7 +93,6 @@
       </app-panel-stream-admin>
     </div> -->
   }
-
   <!-- <div class="user-portfolio">
     <app-panel-portfolio-schedule class="details"
       [isDarkTheme]="isDarkTheme"
@@ -117,13 +113,13 @@
     <aside class="cv-aside cv-fix-lf">
       <app-panel-chat
         [isBlocked]="false"
-        [isEditable]="true"
+        [isEditable]="isStreamActive"
         [locale]="localeService.getLocale()"
-        [nickname]="profileDto?.nickname || ''"
+        [nickname]="nickname || ''"
         [title]="'concept-view.chat_title'">
       </app-panel-chat>
     <!-- <app-panel-right-chat
-    [isEditable]="isEditableChat"
+    [isEditable]="isStreamActive"
     [userId]="profileService.getUserId()"
     [chatMessages]="chatMessages"
     [isStreamOwner]="isStreamOwner"
