@@ -1,7 +1,7 @@
 /*# sourceURL=date-time-timer.component.scss */
 
 app-date-time-timer {
-    display: block;
+    display: table;
     container: cnt-d-t-timer / inline-size;
     letter-spacing: var(--dtt-letter-spacing, 0px);
 
