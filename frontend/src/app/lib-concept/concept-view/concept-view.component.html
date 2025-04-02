@@ -43,11 +43,13 @@
   <div class="cv-cnt-footer">
     
     <div class="cv-flex">
-      <span cv-mr-rg-1>{{ 'concept-view.title' | translate }}</span> 
-      <span>{{ streamDto?.title }}</span>
+      <span>
+        <span cv-mr-rg-1>{{ 'concept-view.title' | translate }}</span>
+        <span>{{ streamDto?.title + ' ' + streamDto?.title  + ' ' + streamDto?.title}}</span>
+      </span>  
     </div>
-    <div class="cv-flex">
-      <app-panel-stream-params class="cv-flex-grow"
+    <div class="cv-flex cv-wrap">
+      <app-panel-stream-params class="cv-grow"
         [avatar]="profileDto?.avatar"
         [locale]="localeService.getLocale()"
         [nickname]="profileDto?.nickname"
@@ -56,7 +58,7 @@
         [startDateTime]="getDate(streamDto?.starttime)">
       </app-panel-stream-params>
       
-      <div class="cv-flex-grow">
+      <div class="cv-grow">
         @if (isStreamOwner) {
           <app-panel-stream-actions
             [state]="streamDto?.state"

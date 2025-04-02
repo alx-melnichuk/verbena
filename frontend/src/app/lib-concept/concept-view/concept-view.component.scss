@@ -124,8 +124,12 @@ app-concept-view {
         display: flex;
     }
 
-    .cv-flex-grow {
+    .cv-grow {
         flex-grow: 1;
+    }
+
+    .cv-wrap {
+        flex-wrap: wrap;
     }
 
     // ** **
