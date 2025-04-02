@@ -390,9 +390,11 @@
     "pause_stream": "Pause",
     "stop_stream": "Stoppen"
   },
-  "concept-view": {
+  "pg-concept-view": {
     "error_update_stream": "Fehler beim Aktualisieren des Streamstatus",
-    "exist_is_active_stream": "Der aktive Stream wird bereits ausgeführt <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
+    "exist_is_active_stream": "Der aktive Stream wird bereits ausgeführt <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
+  },
+  "concept-view": {
     "chat_title": "Stream-Chat",
     "title": "Titel:"
   },

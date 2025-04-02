@@ -1,5 +1,9 @@
 <app-concept-view
+  [avatar]="profileDto?.avatar"
   [isLoadStream]="isLoadStream"
-  [profileDto]="profileDto"
-  [streamDto]="streamDto">
+  [isShowTimer]="isShowTimer"
+  [isStreamOwner]="isStreamOwner"
+  [nickname]="profileDto?.nickname"
+  [streamDto]="streamDto"
+  (changeState)="doChangeState(isStreamOwner, streamDto?.id, $event)">
 </app-concept-view>
