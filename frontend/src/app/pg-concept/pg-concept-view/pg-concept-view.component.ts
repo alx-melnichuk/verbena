@@ -48,14 +48,15 @@ export class PgConceptViewComponent implements OnInit {
         this.profileDto = this.route.snapshot.data['profileDto'];
         this.streamDto = this.route.snapshot.data['streamDto'];
 
-        if (!!this.streamDto) { // #
-            // this.streamDto.state = StreamState.waiting; // # for demo
-            // this.streamDto.state = StreamState.preparing; // # for demo
-            this.streamDto.state = StreamState.started; // # for demo
-            // this.streamDto.state = StreamState.paused; // # for demo
-            // this.streamDto.state = StreamState.stopped; // # for demo
-            // #  this.streamDto.starttime = "2024-10-29T16:34:00.000Z";
-        }
+        // if (!!this.streamDto) { // #
+        // this.streamDto.state = StreamState.waiting; // # for demo
+        // this.streamDto.state = StreamState.preparing; // # for demo
+        // this.streamDto.state = StreamState.started; // # for demo
+        // this.streamDto.state = StreamState.paused; // # for demo
+        // this.streamDto.state = StreamState.stopped; // # for demo
+        // #  this.streamDto.starttime = "2024-10-29T16:34:00.000Z";
+        // this.streamDto.tags = [this.streamDto.tags[0], 'tag02', 'tag03', 'tag04']
+        // }
     }
 
     ngOnInit(): void {
