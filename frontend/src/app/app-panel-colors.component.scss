@@ -54,12 +54,10 @@ app-root {
     --app-strm-clnd-sel-bg: color-mix(in srgb, hsl(var(---strm-clnd-h), 50%, 50%) calc(10%), var(--sys-inverse-primary));
     --app-strm-clnd-emblem-bg: color-mix(in srgb, hsl(var(---strm-clnd-h), 50%, 50%) calc(10%), var(--sys-tertiary-container));
 
-
     // --app-pn-concept: hsl(220, 50%, 50%);
     ---concept-h: 220;
     --app-concept-pn-bg: color-mix(in srgb, hsl(var(---concept-h), 50%, 50%) 10%, var(--sys-surface));
     --app-concept-pn-brd: color-mix(in srgb, hsl(var(---concept-h), 50%, 50%) 22%, var(--sys-surface));
-
     // ** color of SVG icons **
     --app-svg-icon-cl: var(--sys-outline);
 
@@ -99,9 +97,11 @@ app-root {
 
             --app-strm-clnd-pn-bg: hsl(calc(var(---strm-clnd-h) + 10), calc(50% + var(---dr-s, 10%)), calc(50% + var(---dr-l, 45%)));
             --app-strm-clnd-pn-brd: hsl(calc(var(---strm-clnd-h) + 10), calc(50% + var(---dr-s, 10%) - 10%), calc(50% + var(---dr-l, 45%) + var(---dr2-l, -8%)));
-
             --app-strm-clnd-sel-bg: var(--sys-inverse-primary);
             --app-strm-clnd-emblem-bg: var(--sys-tertiary-container);
+
+            --app-concept-pn-bg: hsl(calc(var(---concept-h) + 10), calc(50% + var(---dr-s, 10%)), calc(50% + var(---dr-l, 45%)));
+            --app-concept-pn-brd: hsl(calc(var(---concept-h) + 10), calc(50% + var(---dr-s, 10%) - 10%), calc(50% + var(---dr-l, 45%) + var(---dr2-l, -8%)));
 
         }
     }
