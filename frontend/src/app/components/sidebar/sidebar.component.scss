@@ -7,8 +7,16 @@ app-sidebar {
     max-width: var(--sb-mx-wd, 150px);
     min-width: var(--sb-mn-wd, 0px);
     padding: var(--sb-pd);
+
     transition-duration: var(--sb-durat);
     transition-property: width, padding-left;
+
+    &[is-above-parent] {
+        position: relative;
+    }
+
+    &:not([is-above-parent]) {}
+
 
     &[is-open] {
         width: var(--sb-mx-wd, 150px);
@@ -16,19 +24,6 @@ app-sidebar {
 
     &:not([is-open]) {
         width: var(--sb-mn-wd, 150px);
-    }
-
-    &.sb-relative {
-        position: relative;
-    }
-
-    .sb-veil {
-        bottom: 0;
-        left: 0;
-        position: absolute;
-        right: 0;
-        top: 0;
-        z-index: 1;
     }
 
 }

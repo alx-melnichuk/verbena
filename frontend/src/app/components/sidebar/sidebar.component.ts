@@ -13,22 +13,14 @@ import { CommonModule } from '@angular/common';
 })
 export class SidebarComponent {
     @Input()
-    public isOpen: boolean = false;
+    @HostBinding('attr.is-above-parent')
+    public isAboveParent: boolean = false;
     @Input()
-    public isVeilByClosing: boolean = false;
+    @HostBinding('attr.is-open')
+    public isOpen: boolean = false;
 
     @Output()
     readonly clickByVeil: EventEmitter<boolean> = new EventEmitter();
-
-    @HostBinding('attr.is-open')
-    public get attrIsOpen(): boolean | null {
-        return this.isOpen ? true : null;
-    }
-
-    @HostBinding('class.sb-relative')
-    public get classIsRelativeVal(): boolean {
-        return this.isVeilByClosing;
-    }
 
     constructor() {
     }
