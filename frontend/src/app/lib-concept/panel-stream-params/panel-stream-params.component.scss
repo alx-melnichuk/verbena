@@ -1,24 +1,14 @@
 /*# sourceURL=panel-stream-params.component.scss */
 
 app-panel-stream-params {
-    flex-wrap: wrap;
-    display: flex;
+    display: block;
     line-height: 1.7;
 
-    [psp-mr-rg-0_5] {
+    [psp-mr-r0_5] {
         margin-right: 0.5rem;
     }
 
-    .psp-avatar {
-        --av-sz: 4rem;
-        --av-brd-rd: 0.5rem;
-    }
-
-    .psp-grow-1 {
-        flex-grow: 1;
-    }
-
-    .psp-flex-wrap {
+    .psp-param {
         display: flex;
         flex-wrap: wrap;
     }

@@ -1,42 +1,32 @@
-<app-avatar psp-mr-rg-0_5 class="psp-avatar"
-  [avatar]="avatar">
-</app-avatar>
-
-<div class="psp-grow-1">
-  <div>{{ nickname }}</div>
-  <div class="psp-flex-wrap">
-    <span psp-mr-rg-0_5>{{ 'Tags:' | translate }}</span>
-    @for (tag of (tags || []); track tag) {
-      <span psp-mr-rg-0_5>#{{ tag }}</span>
-    }
-  </div>
+<div class="psp-param">
+  <span psp-mr-r0_5>{{ (!started ? 'panel-stream-params.start' :'panel-stream-params.started') | translate }}</span>
+  <span psp-mr-r0_5>{{ (started || start)  | dateTimeFormat:locale:formatDateTime }} </span>
 </div>
 
-<div class="psp-grow-1">
-  <div class="psp-flex-wrap">
-    <span psp-mr-rg-0_5>{{ 'panel-stream-params.start' | translate }}</span>
-    <span psp-mr-rg-0_5>{{ startDateTime | dateTimeFormat:locale:formatDateTime }} </span>
-  </div>
-
-  @if (isShowTimer) {
-    <div class="psp-flex-wrap">
-      <span psp-mr-rg-0_5>
-        <svg psp-mr-rg-0_5 class="psp-icon-users psp-middle">
+@if (!stopped) {
+  @if (isShowTimer && (!!started || !!start)) {
+    <div class="psp-param">
+      <span psp-mr-r0_5>
+        <svg psp-mr-r0_5 class="psp-icon-users psp-middle">
           <use href="assets/icons/lib-concept/panel-stream-params/users-group-bin.svg#users-group-bin"></use>
         </svg>
         <span class="psp-middle">{{ countOfViewer || 0 }}</span>
       </span>
-      
-      <span psp-mr-rg-0_5 class="psp-clock">
-        <svg psp-mr-rg-0_5 class="psp-icon-clock">
+        
+      <span psp-mr-r0_5 class="psp-clock">
+        <svg psp-mr-r0_5 class="psp-icon-clock">
           <use href="assets/icons/lib-concept/panel-stream-params/clock-5hours-bin.svg#clock-5hours-bin"></use>
         </svg>
         <app-date-time-timer
           [isActive]="true"
-          [startDate]="startDateTime">
+          [startDate]="started || start">
         </app-date-time-timer>
       </span>
     </div>
   }
-
-</div>
+} @else {
+  <div class="psp-param">
+    <span psp-mr-r0_5>{{ 'panel-stream-params.stopped' | translate }}</span>
+    <span psp-mr-r0_5>{{ stopped | dateTimeFormat:locale:formatDateTime }} </span>
+  </div>
+}
