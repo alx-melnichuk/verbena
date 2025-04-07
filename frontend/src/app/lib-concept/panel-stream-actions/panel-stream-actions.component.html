@@ -1,5 +1,5 @@
-@if (isShowBntPrepare(state) || true) {
-  <button mat-stroked-button psa-box-mr (click)="doChangeState(statePreparing)">
+@if (isShowBntPrepare(state)) {
+  <button mat-stroked-button psa-btn (click)="doChangeState(statePreparing)">
     <svg psa-mr-r0_25 class="psa-svg-sz psa-ver-md">
       <use href="assets/icons/lib-concept/panel-stream-actions/prepare-bin.svg#prepare-bin"></use>
     </svg>
@@ -7,8 +7,8 @@
   </button>
 }
 
-@if (isShowBntStart(state) || true) {
-  <button mat-stroked-button psa-box-mr (click)="doChangeState(stateStarted)">
+@if (isShowBntStart(state)) {
+  <button mat-stroked-button psa-btn (click)="doChangeState(stateStarted)">
     <svg psa-mr-r0_25 class="psa-svg-sz psa-ver-md psa-scale">
       <use href="assets/icons/lib-concept/panel-stream-actions/play-bin.svg#play-bin"></use>
     </svg>
@@ -16,8 +16,8 @@
   </button>
 }
 
-@if (isShowBntPause(state) || true) {
-  <button mat-stroked-button psa-box-mr (click)="doChangeState(statePaused)">
+@if (isShowBntPause(state)) {
+  <button mat-stroked-button psa-btn (click)="doChangeState(statePaused)">
     <svg psa-mr-r0_25 class="psa-svg-sz psa-ver-md psa-scale">
       <use href="assets/icons/lib-concept/panel-stream-actions/pause-bin.svg#pause-bin"></use>
     </svg>
@@ -25,8 +25,8 @@
   </button>
 }
 
-@if (isShowBtnStop(state) || true) {
-  <button mat-stroked-button psa-box-mr (click)="doChangeState(stateStopped)">
+@if (isShowBtnStop(state)) {
+  <button mat-stroked-button psa-btn (click)="doChangeState(stateStopped)">
     <svg psa-mr-r0_25 class="psa-svg-sz psa-ver-md psa-scale">
       <use href="assets/icons/lib-concept/panel-stream-actions/stop-bin.svg#stop-bin"></use>
     </svg>
