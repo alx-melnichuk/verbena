@@ -30,16 +30,26 @@ export type StreamSateType = 'waiting' | 'preparing' | 'started' | 'paused' | 's
 
 export interface StreamDto {
     id: number;
+    // Owner id
     userId: number;
+    // Custom title (min: 2, max: 255)
     title: string;
-    descript: string; // description
+    // Custom description (default: '') (min: 2, max: 2048)
+    descript: string;
+    // Link to stream logo, optional (min: 2, max: 255)
     logo: string | null;
+    // Time when stream should start. Required on create
     starttime: StringDateTime | null;
+    // Stream live status, false means inactive
     live: boolean;
+    // Stream live state - waiting, preparing, start, paused, stop (waiting by default)
     state: StreamState; // ['waiting', 'preparing', 'started', 'paused', 'stopped']
+    // Time when stream was started
     started: StringDateTime | null; // Date | null;
+    // Time when stream was stopped
     stopped: StringDateTime | null; // Date | null;
-    // status: bool,
+    // Stream status, false means disabled
+    // status: bool, 
     source: string;
     tags: string[];
     isMyStream?: boolean;
