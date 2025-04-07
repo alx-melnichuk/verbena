@@ -400,7 +400,9 @@
   },
   "panel-stream-params": {
     "tags": "Теги:",
-    "start": "Початок:"
+    "start": "Початок:",
+    "started": "Розпочато:",
+    "stopped": "Зупинено:"
   },
   "panel-stream-admin": {
     "btn_settings": "Налаштування"

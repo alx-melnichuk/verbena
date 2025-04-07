@@ -398,7 +398,9 @@
   },
   "panel-stream-params": {
     "tags": "Tags:",
-    "start": "Start:"
+    "start": "Start:",
+    "started": "Started:",
+    "stopped": "Stopped:"
   },
   "panel-stream-admin": {
     "btn_settings": "Settings",
