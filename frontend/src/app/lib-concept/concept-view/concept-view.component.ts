@@ -1,5 +1,5 @@
 import {
-    AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit,
+    AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnInit,
     Output, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -21,6 +21,8 @@ import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
 import { PanelStreamActionsComponent } from '../panel-stream-actions/panel-stream-actions.component';
 import { PanelStreamParamsComponent } from '../panel-stream-params/panel-stream-params.component';
 import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-state.component';
+
+const CN_ResizeEventTimeout = 150; // milliseconds
 
 @Component({
     selector: 'app-concept-view',
@@ -92,10 +94,32 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     // private sessionDTOSub: Subscription;
     // private routerNavigationStartSub: Subscription;
     // private targetsFirebaseSub: Subscription | undefined;
+    public countOfViewer = -1;
+    private timerResizeEvent: any = null;
+
+    @HostListener('window:resize', ['$event'])
+    public doScrollPanel(event: Event): void {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (this.timerResizeEvent !== null) {
+            clearTimeout(this.timerResizeEvent);
+        }
+        this.timerResizeEvent = setTimeout(() => {
+            this.timerResizeEvent = null;
+
+            //this.preparePanel();
+
+            console.log(`event:`, event);
+            this.test(this.hostRef.nativeElement);
+            this.changeDetector.markForCheck();
+        }, CN_ResizeEventTimeout);
+    }
 
     constructor(
         private changeDetector: ChangeDetectorRef,
         // private router: Router,
+        public hostRef: ElementRef<HTMLElement>,
         // private translateService: TranslateService,
         public initializationService: InitializationService,
         public localeService: LocaleService,
@@ -153,6 +177,16 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
 
     // ** Public API **
 
+    public hasScrollBar(elem: HTMLElement): boolean {
+        const delta = elem.offsetWidth - elem.clientWidth;
+        console.log(`## delta: ${delta}`); // #
+        return delta != 0;
+        // .scrollHeight > this.height()
+    }
+    public test(element: HTMLElement): void {
+        const delta = element.scrollWidth - element.clientWidth;
+        console.log(`## delta: ${delta}`); // #        
+    }
     // Section: "Panel stream info"
     /*
     public doActionSubscribe(isSubscribe: boolean): void {

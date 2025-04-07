@@ -2,16 +2,16 @@
   <app-spinner isFillParent></app-spinner>
 }
   
-<div class="cv-side-bar cv-side-lf">
-  <button class="cv-btn-arrow cv-left" (click)="isSidebarLfOpen = !isSidebarLfOpen;">
+<!-- <div class="cv-side-bar cv-side-lf"> -->
+  <!-- <button class="cv-btn-arrow cv-left" (click)="isSidebarLfOpen = !isSidebarLfOpen;">
     <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarLfOpen ? 'cv-0deg' : 'cv-180deg')]">
       <use href="assets/icons/lib-concept/concept-view/angle-left-bin.svg#angle-left-bin"></use>
     </svg>
-  </button>
+  </button> -->
 
-  <app-sidebar [isOpen]="isSidebarLfOpen" (clickByVeil)="isSidebarLfOpen=true">
+  <!-- <app-sidebar [isOpen]="isSidebarLfOpen">
     <aside class="cv-aside cv-pg-lf-0" style="outline: 1px dashed blueviolet; height: 100%;">
-      cv-bar-left
+      cv-bar-left -->
   <!-- <app-panel-left-followers
     [isMiniSize]="!isSidebarLfOpen"
     [isLoading]="followersService.followersAndPopularLoading"
@@ -21,53 +21,83 @@
     <div class="ticker" [appTradMarketOverview]="{ isDarkTheme: isDarkTheme }">
     </div>
   </app-panel-left-followers> -->
-    </aside>
-  </app-sidebar>
-</div>
+
+    <!-- </aside>
+  </app-sidebar> -->
+<!-- </div> -->
+
+<app-sidebar class="cv-sidebar"
+    (click)="isSidebarLfOpen=!isSidebarLfOpen"
+    [isOpen]="isSidebarLfOpen"
+    [isOver]="false">
+    bar-left
+</app-sidebar>
 
 <div class="cv-center">
   
-  <div class="cv-cnt-video-wrap">
-    <div [ngClass]="[(isStreamVideo ? 'cv-cnt-video' : '')]">
-    <!-- <div [ngClass]="['cv-box-video', classNameViewerSize()]"> -->
-      <!-- <div class="height-100ps" [appMillicastViewer]="millicastViewer"></div> -->
-      <div class="cv-hg100"></div>
-      <app-panel-stream-state class="cv-stream-state"
-        [streamState]="streamDto?.state || null">
-      </app-panel-stream-state>
-    <!-- </div> -->
-    </div>
+  <div [ngClass]="[(isStreamVideo ? 'cv-cnt-video' : '')]">
+  <!-- <div [ngClass]="['cv-box-video', classNameViewerSize()]"> -->
+    <!-- <div class="height-100ps" [appMillicastViewer]="millicastViewer"></div> -->
+    <div class="cv-hg100"></div>
+    <app-panel-stream-state class="cv-stream-state"
+      [streamState]="streamDto?.state || null">
+    </app-panel-stream-state>
+  <!-- </div> -->
   </div>
 
-  <div class="cv-cnt-footer-wrap">
-    <div class="cv-cnt-footer">
-      <div class="cv-flex">
-        <span>
-          <span class="cv-title">{{ 'concept-view.title' | translate }}</span>
-          <span class="cv-value">{{ streamDto?.title }}</span>
-        </span>  
-      </div>
-      <div class="cv-flex cv-wrap">
-        <app-panel-stream-params class="cv-params"  style="outline: 1px dashed orangered;"
-          [avatar]="avatar"
-          [locale]="localeService.getLocale()"
-          [nickname]="nickname"
-          [tags]="streamDto?.tags || []"
-          [isShowTimer]="isShowTimer"
-          [startDateTime]="getDate(streamDto?.starttime)">
-        </app-panel-stream-params>
-      
-        <div cv-mr-tp-0_5 class="cv-actions" style="outline: 1px dashed green;">
-          @if (isStreamOwner) {
-            <app-panel-stream-actions class="cv-wrap"
-              [state]="streamDto?.state"
-              [title]="streamDto?.title"
-              (changeState)="doChangeState($event)">
-            </app-panel-stream-actions>
-          }
+  <div cv-pd-tp0_5></div>
+
+  <div class="cv-cnt-footer">
+
+    <div class="cv-flex-wrap">
+      <span>
+        <span cv-mr-rg1>{{ 'concept-view.title' | translate }}</span>
+        <span class="cv-cnt-ft-title">{{ streamDto?.title }}</span>
+      </span>  
+    </div>
+
+    <div class="cv-cnt-params">
+        
+      <div class="cv-flex cv-prm" style="outline: 1px dashed cadetblue;">
+        <app-avatar cv-mr-rg-0_5 class="cv-psp-avatar"
+          [avatar]="avatar">
+        </app-avatar>
+        <div class="cv-cnt-ft-prm-name">
+          <div>{{ nickname }}</div>
+          <div class="cv-psp-flex-wrap">
+            <span cv-mr-rg-0_5>{{ 'Tags:' | translate }}</span>
+            @for (tag of (streamDto?.tags || []); track tag) {
+              <span cv-mr-rg-0_5>#{{ tag }}</span>
+            }
+          </div>
         </div>
       </div>
+
+      <div class="cv-flex-wrap9 cv-prm" style="outline: 1px dashed orangered;">
+      <app-panel-stream-params class="cv-params9"
+        [countOfViewer]="countOfViewer"
+        [isShowTimer]="isShowTimer"
+        [locale]="localeService.getLocale()"
+        [start]="getDate(streamDto?.starttime)"
+        [started]="getDate(streamDto?.started)"
+        [stopped]="getDate(streamDto?.stopped)">
+      </app-panel-stream-params>
+      </div>
+
+      <div class="cv-flex-wrap9 cv-prm" style="outline: 1px dashed green;">
+      <!-- <div cv-mr-tp-0_5 class="cv-actions"> -->
+      @if (isStreamOwner) {
+        <app-panel-stream-actions class="" 
+          [state]="streamDto?.state"
+          [title]="streamDto?.title"
+          (changeState)="doChangeState($event)">
+        </app-panel-stream-actions>
+      }
+      <!-- </div> -->
+      </div>
+
     </div>
+
   </div>
     
   @if (!isStreamOwner) {
@@ -104,21 +134,24 @@
   </div> -->
 </div>
 
+<app-sidebar class="cv-sidebar"
+  (click)="isSidebarRgOpen=!isSidebarRgOpen"
+  [isOpen]="isSidebarRgOpen"
+  [isOver]="false">
+  chat 1
+  <!-- <div style="outline: 1px dashed blueviolet; height: 100%;">
+      <p>app-panel-chat 1</p>
+      <p>app-panel-chat 2</p>
+  </div> -->
+  <!-- <app-panel-chat class="cv-aside cv-pg-rg0"
+    [isBlocked]="false"
+    [isEditable]="isStreamActive"
+    [locale]="localeService.getLocale()"
+    [nickname]="nickname || ''"
+    [title]="'concept-view.chat_title'">
+  </app-panel-chat> -->
+</app-sidebar>
 
-<div class="cv-sidebar-wrap">
-  <app-sidebar
-    [isAboveParent]="!isSidebarRgOpen"
-    [isOpen]="isSidebarRgOpen"
-    (clickByVeil)="isSidebarRgOpen=true">
-    <app-panel-chat class="cv-aside cv-pg-rg0"
-      [isBlocked]="false"
-      [isEditable]="isStreamActive"
-      [locale]="localeService.getLocale()"
-      [nickname]="nickname || ''"
-      [title]="'concept-view.chat_title'">
-    </app-panel-chat>
-  </app-sidebar>
-</div>
 
 <!--<div class="cv-side-bar cv-side-rg">
   <button class="cv-btn-arrow cv-right" (click)="isSidebarRgOpen = !isSidebarRgOpen;">
