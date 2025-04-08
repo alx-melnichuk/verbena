@@ -27,10 +27,15 @@
 <!-- </div> -->
 
 <app-sidebar class="cv-sidebar"
-    (click)="isSidebarLfOpen=!isSidebarLfOpen"
-    [isOpen]="isSidebarLfOpen"
-    [isOver]="false">
-    bar-left
+    [mode]="'left'"
+    appSidebarHandler
+    [sidebarHandlerOwner]="hostRef.nativeElement"
+    [sidebarHandlerIfScroll]="true">
+    <div class="cv-sdb-cover-lf">
+      <div class="cv-sdb-box-lf">
+        bar-left 1 bar-left 2
+      </div>
+    </div>
 </app-sidebar>
 
 <div class="cv-center">
@@ -135,10 +140,15 @@
 </div>
 
 <app-sidebar class="cv-sidebar"
-  (click)="isSidebarRgOpen=!isSidebarRgOpen"
-  [isOpen]="isSidebarRgOpen"
-  [isOver]="false">
-  chat 1
+  [mode]="'right'"
+  appSidebarHandler
+  [sidebarHandlerOwner]="hostRef.nativeElement"
+  [sidebarHandlerIfScroll]="true">
+  <div class="cv-sdb-cover-rg">
+    <div class="cv-sdb-box-rg">
+      chat 1 chat 2 chat 3
+    </div>
+  </div>
   <!-- <div style="outline: 1px dashed blueviolet; height: 100%;">
       <p>app-panel-chat 1</p>
       <p>app-panel-chat 2</p>
@@ -154,13 +164,13 @@
 
 
 <!--<div class="cv-side-bar cv-side-rg">
-  <button class="cv-btn-arrow cv-right" (click)="isSidebarRgOpen = !isSidebarRgOpen;">
-    <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarRgOpen ? 'cv-0deg' : 'cv-180deg')]">
+  <button class="cv-btn-arrow cv-right" (click)="isSidebar RgOpen = !isSidebar RgOpen;">
+    <svg [ngClass]="['cv-arrow cv-rotate', (isSidebar RgOpen ? 'cv-0deg' : 'cv-180deg')]">
       <use href="assets/icons/lib-concept/concept-view/angle-right-bin.svg#angle-right-bin"></use>
     </svg>
   </button>
     
-  <app-sidebar [isOpen]="isSidebarRgOpen" (clickByVeil)="isSidebarRgOpen=true">
+  <app-sidebar [isOpen]="isSidebar RgOpen" (clickByVeil)="isSidebar RgOpen=true">
       <app-panel-chat class="cv-aside cv-pg-rg0"
         [isBlocked]="false"
         [isEditable]="isStreamActive"

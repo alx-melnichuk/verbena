@@ -10,6 +10,7 @@ import { LocaleService } from 'src/app/common/locale.service';
 import { StringDateTime } from 'src/app/common/string-date-time';
 import { AvatarComponent } from 'src/app/components/avatar/avatar.component';
 import { SidebarComponent } from 'src/app/components/sidebar/sidebar.component';
+import { SidebarHandlerDirective } from 'src/app/components/sidebar/sidebar-handler.directive';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { PanelChatComponent } from 'src/app/lib-chat/panel-chat/panel-chat.component';
 import { ProfileService } from 'src/app/lib-profile/profile.service';
@@ -29,7 +30,8 @@ const CN_ResizeEventTimeout = 150; // milliseconds
     exportAs: 'appConceptView',
     standalone: true,
     imports: [CommonModule, AvatarComponent, SpinnerComponent, SidebarComponent, TranslatePipe,
-        PanelStreamStateComponent, PanelStreamParamsComponent, PanelStreamActionsComponent, PanelChatComponent],
+        PanelStreamStateComponent, PanelStreamParamsComponent, PanelStreamActionsComponent, PanelChatComponent,
+        SidebarHandlerDirective],
     templateUrl: './concept-view.component.html',
     styleUrl: './concept-view.component.scss',
     encapsulation: ViewEncapsulation.None,
@@ -94,11 +96,15 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     // private sessionDTOSub: Subscription;
     // private routerNavigationStartSub: Subscription;
     // private targetsFirebaseSub: Subscription | undefined;
-    public countOfViewer = -1;
+    public countOfViewer: number = -1;
+    public isOverPanel: boolean = false;
+
+    private timerOpenRgPanelEvent: any = null;
+    private countCheckRgPanel = 0;
     private timerResizeEvent: any = null;
 
     @HostListener('window:resize', ['$event'])
-    public doScrollPanel(event: Event): void {
+    public doResizePanel(event: Event): void {
         event.preventDefault();
         event.stopPropagation();
 
@@ -107,11 +113,10 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
         }
         this.timerResizeEvent = setTimeout(() => {
             this.timerResizeEvent = null;
-
-            //this.preparePanel();
-
-            console.log(`event:`, event);
-            this.test(this.hostRef.nativeElement);
+            this.isOverPanel = this.getIsOverPanel(
+                this.hostRef.nativeElement,
+                this.isSidebarLfOpen || this.isSidebarRgOpen,
+                this.isOverPanel);
             this.changeDetector.markForCheck();
         }, CN_ResizeEventTimeout);
     }
@@ -177,16 +182,38 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
 
     // ** Public API **
 
-    public hasScrollBar(elem: HTMLElement): boolean {
-        const delta = elem.offsetWidth - elem.clientWidth;
-        console.log(`## delta: ${delta}`); // #
-        return delta != 0;
-        // .scrollHeight > this.height()
+    private isScroll(element: HTMLElement): boolean {
+        return element.scrollWidth > element.clientWidth;
     }
-    public test(element: HTMLElement): void {
-        const delta = element.scrollWidth - element.clientWidth;
-        console.log(`## delta: ${delta}`); // #        
+    public getIsOverPanel(element: HTMLElement, isSidebarOpen: boolean, isOverPanel: boolean): boolean {
+        const isScrollBar = this.isScroll(element);
+        return !isOverPanel ? isSidebarOpen && isScrollBar : isSidebarOpen;
     }
+    public checkScrollRgPanel(): void {
+        if (this.timerOpenRgPanelEvent !== null) {
+            clearTimeout(this.timerOpenRgPanelEvent);
+        }
+        this.countCheckRgPanel = 10;
+        this.checkScrollPanel();
+    }
+    public checkScrollPanel(): void {
+        this.isOverPanel = this.getIsOverPanel(
+            this.hostRef.nativeElement,
+            this.isSidebarLfOpen || this.isSidebarRgOpen,
+            this.isOverPanel);
+        this.countCheckRgPanel--;
+        console.log(`## this.countCheckRgPanel: ${this.countCheckRgPanel}`); // #
+        if (this.countCheckRgPanel > 0) {
+            this.timerOpenRgPanelEvent = setTimeout(() => {
+                this.timerOpenRgPanelEvent = null;
+                this.checkScrollPanel();
+            }, 250);
+        } else {
+            console.log(`## changeDetector.markForCheck();`); // #
+            this.changeDetector.markForCheck();
+        }
+    }
+
     // Section: "Panel stream info"
     /*
     public doActionSubscribe(isSubscribe: boolean): void {
