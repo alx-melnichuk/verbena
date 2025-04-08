@@ -3,6 +3,7 @@
 app-sidebar {
     ---sb-mx-wd: var(--sb-mx-wd, 150px);
     ---sb-mn-wd: var(--sb-mn-wd, 50px);
+    ---sb-durat: var(--sb-durat, 1s);
 
     display: block;
     height: 100%;
@@ -10,7 +11,8 @@ app-sidebar {
     max-width: var(---sb-mx-wd);
     min-width: var(---sb-mn-wd);
     padding: var(--sb-pd);
-    position: var(---sb-pos);
+    position: relative; //var(---sb-pos);
+    z-index: 1;
 
     &[is-open] {
         ---sb-wd: var(---sb-mx-wd);
@@ -22,42 +24,41 @@ app-sidebar {
 
     &[is-over] {
         // ---sb-over-wd: var(---sb-mx-wd);
-        ---sb-pos: relative;
+        // ---sb-pos: relative;
         ---sb-panel-pos: absolute;
+        outline: 1px dashed brown;
+    }
+
+    &[is-left] {
+        ---sb-pnl-lf: 0;
+    }
+
+    &[is-right] {
+        ---sb-pnl-rg: 0;
     }
 
     .sb-panel {
-        background-color: beige;
+        background-color: var(--sb-bg);
         height: 100%;
-        // overflow: hidden;
-        // position: var(---sb-panel-pos);
-        transition-duration: var(--sb-durat, 1s);
+        left: var(---sb-pnl-lf);
+        position: var(---sb-panel-pos);
+        transition-duration: var(---sb-durat);
         transition-property: width;
         width: var(---sb-wd);
-        // right: 0;
-        // z-index: 1;
+        right: var(---sb-pnl-rg); // 0
     }
 
-    .sb-verge {
+    .sb-panel-box {
         height: 100%;
-        width: var(---sb-mx-wd);
-    }
-
-    /*.sb-cover {
-        height: 100%;
+        overflow: hidden;
         position: relative;
-        transition-duration: var(--sb-durat, 1s);
-        transition-property: width;
-        width: var(---sb-over-wd, var(---sb-wd));
-        // position: absolute;
-        // right: 0;
-        // z-index: 1;
     }
 
-    .sb-content {
+    .sb-panel-cont {
         height: 100%;
-        left: 0;
+        left: var(---sb-pnl-rg); // 0;
         position: absolute;
         width: var(---sb-mx-wd);
-    }*/
+        right: var(---sb-pnl-lf);
+    }
 }

@@ -1,5 +1,9 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, Output, ViewEncapsulation } from '@angular/core';
+import {
+    ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, Inject, Input,
+    ViewEncapsulation
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { APP_SIDEBAR_PARENT, SidebarParent } from './sidebar-parent.interface';
 
 @Component({
     selector: 'app-sidebar',
@@ -9,12 +13,12 @@ import { CommonModule } from '@angular/common';
     templateUrl: './sidebar.component.html',
     styleUrl: './sidebar.component.scss',
     encapsulation: ViewEncapsulation.None,
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [{ provide: APP_SIDEBAR_PARENT, useExisting: SidebarComponent }],
 })
-export class SidebarComponent {
-    // @Input()
-    // @HostBinding('attr.is-above-parent')
-    // public isAboveParent: boolean = false;
+export class SidebarComponent implements SidebarParent {
+    @Input()
+    public mode: 'left' | 'right' = 'left';
     @Input()
     public isOpen: boolean = false;
     @Input()
@@ -22,6 +26,16 @@ export class SidebarComponent {
 
     // @Output()
     // readonly clickByVeil: EventEmitter<boolean> = new EventEmitter();
+
+    @HostBinding('attr.is-left')
+    public get attrIsLeft(): string | null {
+        return this.mode == 'left' ? '' : null;
+    }
+
+    @HostBinding('attr.is-right')
+    public get attrIsRight(): string | null {
+        return this.mode == 'right' ? '' : null;
+    }
 
     @HostBinding('attr.is-open')
     public get attrIsOpen(): string | null {
@@ -38,10 +52,32 @@ export class SidebarComponent {
     //     return this.isVeilByClosing;
     // }
 
-    constructor() {
+    constructor(
+        private changeDetector: ChangeDetectorRef,
+    ) {
+        // console.log(`Sidebar()`);
     }
 
+    // ** Public API **
     // public doClickByVeil(): void {
     //     this.clickByVeil.emit(true);
     // }
+
+    // ** SidebarParent **
+
+    public setIsOpen(isOpen: boolean): void {
+        if (this.isOpen != isOpen) {
+            this.isOpen = isOpen;
+            this.changeDetector.markForCheck();
+        }
+    }
+
+    public setIsOver(isOver: boolean): void {
+        if (this.isOver != isOver) {
+            this.isOver = isOver;
+            this.changeDetector.markForCheck();
+        }
+    }
+
+    // ** **
 }
