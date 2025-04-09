@@ -48,19 +48,21 @@ export class PgConceptViewComponent implements OnInit {
         this.profileDto = this.route.snapshot.data['profileDto'];
         this.streamDto = this.route.snapshot.data['streamDto'];
 
-        // if (!!this.streamDto) { // #
-        // this.streamDto.state = StreamState.waiting; // # for demo
-        // this.streamDto.state = StreamState.preparing; // # for demo
-        // this.streamDto.state = StreamState.started; // # for demo
-        // this.streamDto.state = StreamState.paused; // # for demo
-        // this.streamDto.state = StreamState.stopped; // # for demo
-        // this.streamDto.starttime = "2024-10-29T16:34:00.000Z";
-        // this.streamDto.starttime = "2025-04-10T12:00:00.000Z";
-        // this.streamDto.tags = [this.streamDto.tags[0], 'tag02', 'tag03', 'tag04'];
-        // this.streamDto.started = "2025-04-07T14:05:00.000Z";
-        // this.streamDto.stopped = "2025-04-07T16:40:00.000Z";
-        // this.streamDto.title = this.streamDto.title + ' Invalid stream state transition from "waiting" to "stopped".';
-        // }
+        if (!!this.streamDto) { // #
+            // this.streamDto.state = StreamState.waiting; // # for demo
+            this.streamDto.state = StreamState.preparing; // # for demo
+            // this.streamDto.state = StreamState.started; // # for demo
+            // this.streamDto.state = StreamState.paused; // # for demo
+            // this.streamDto.state = StreamState.stopped; // # for demo
+            // this.streamDto.starttime = "2024-10-29T16:34:00.000Z";
+            // this.streamDto.starttime = "2025-04-10T12:00:00.000Z";
+            this.streamDto.tags = [this.streamDto.tags[0], 'tag_word02', 'tag_word03', 'tag_word04'];
+            // this.streamDto.tags = [this.streamDto.tags[0], 'tag02', 'tag03', 'tag04'];
+            // this.streamDto.started = "2025-04-07T14:05:00.000Z";
+            // this.streamDto.stopped = "2025-04-07T16:40:00.000Z";
+            this.streamDto.title = this.streamDto.title + ' Invalid stream state transition from "waiting" to "stopped".'
+                + ' Invalid stream state transition from "waiting" to "stopped".';
+        }
     }
 
     ngOnInit(): void {
