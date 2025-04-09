@@ -1,9 +1,11 @@
 import {
-    ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, Inject, Input,
+    ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostBinding, Input, OnChanges, Output, SimpleChanges,
     ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { APP_SIDEBAR_PARENT, SidebarParent } from './sidebar-parent.interface';
+
+let uniqueIdCounter = 0;
 
 @Component({
     selector: 'app-sidebar',
@@ -16,7 +18,9 @@ import { APP_SIDEBAR_PARENT, SidebarParent } from './sidebar-parent.interface';
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [{ provide: APP_SIDEBAR_PARENT, useExisting: SidebarComponent }],
 })
-export class SidebarComponent implements SidebarParent {
+export class SidebarComponent implements SidebarParent, OnChanges {
+    @Input()
+    public id = `app-sdbr-${uniqueIdCounter++}`;
     @Input()
     public mode: 'left' | 'right' = 'left';
     @Input()
@@ -24,8 +28,10 @@ export class SidebarComponent implements SidebarParent {
     @Input()
     public isOver: boolean = false;
 
-    // @Output()
-    // readonly clickByVeil: EventEmitter<boolean> = new EventEmitter();
+    @Output()
+    readonly changeOpen: EventEmitter<boolean> = new EventEmitter();
+    @Output()
+    readonly changeOver: EventEmitter<boolean> = new EventEmitter();
 
     @HostBinding('attr.is-left')
     public get attrIsLeft(): string | null {
@@ -47,21 +53,19 @@ export class SidebarComponent implements SidebarParent {
         return this.isOver ? '' : null;
     }
 
-    // @HostBinding('class.sb-relative')
-    // public get classIsRelativeVal(): boolean {
-    //     return this.isVeilByClosing;
-    // }
+    constructor(private changeDetector: ChangeDetectorRef) {
+    }
 
-    constructor(
-        private changeDetector: ChangeDetectorRef,
-    ) {
-        // console.log(`Sidebar()`);
+    ngOnChanges(changes: SimpleChanges): void {
+        if (!!changes['isOpen'] && !!changes['isOpen'].currentValue != !!changes['isOpen'].previousValue) {
+            this.changeOpen.emit(this.isOpen);
+        }
+        if (!!changes['isOver'] && !!changes['isOver'].currentValue != !!changes['isOver'].previousValue) {
+            this.changeOver.emit(this.isOver);
+        }
     }
 
     // ** Public API **
-    // public doClickByVeil(): void {
-    //     this.clickByVeil.emit(true);
-    // }
 
     // ** SidebarParent **
 
@@ -69,6 +73,7 @@ export class SidebarComponent implements SidebarParent {
         if (this.isOpen != isOpen) {
             this.isOpen = isOpen;
             this.changeDetector.markForCheck();
+            this.changeOpen.emit(this.isOpen);
         }
     }
 
@@ -76,8 +81,9 @@ export class SidebarComponent implements SidebarParent {
         if (this.isOver != isOver) {
             this.isOver = isOver;
             this.changeDetector.markForCheck();
+            this.changeOver.emit(this.isOver);
         }
     }
 
-    // ** **
+    // ** Private API **
 }

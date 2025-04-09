@@ -1,32 +1,31 @@
 /*# sourceURL=sidebar.component.scss */
 
 app-sidebar {
+    ---sb-pnl-bg: var(--sb-bg, var(--sys-background));
     ---sb-mx-wd: var(--sb-mx-wd, 150px);
     ---sb-mn-wd: var(--sb-mn-wd, 50px);
     ---sb-durat: var(--sb-durat, 1s);
 
     display: block;
     height: 100%;
-    // overflow: var(--sb-ov-fl, hidden);
     max-width: var(---sb-mx-wd);
     min-width: var(---sb-mn-wd);
     padding: var(--sb-pd);
-    position: relative; //var(---sb-pos);
-    z-index: 1;
+    position: relative;
 
     &[is-open] {
-        ---sb-wd: var(---sb-mx-wd);
+        ---sb-pnl-wd: var(---sb-mx-wd);
+        ---sb-hst-wd: var(---sb-mx-wd);
     }
 
     &:not([is-open]) {
-        ---sb-wd: var(---sb-mn-wd);
+        ---sb-pnl-wd: var(---sb-mn-wd);
+        ---sb-hst-wd: var(---sb-mn-wd);
     }
 
     &[is-over] {
-        // ---sb-over-wd: var(---sb-mx-wd);
-        // ---sb-pos: relative;
+        ---sb-ovr-wd: var(---sb-mn-wd);
         ---sb-panel-pos: absolute;
-        outline: 1px dashed brown;
     }
 
     &[is-left] {
@@ -38,14 +37,14 @@ app-sidebar {
     }
 
     .sb-panel {
-        background-color: var(--sb-bg);
+        background-color: var(---sb-pnl-bg);
         height: 100%;
         left: var(---sb-pnl-lf);
         position: var(---sb-panel-pos);
         transition-duration: var(---sb-durat);
         transition-property: width;
-        width: var(---sb-wd);
-        right: var(---sb-pnl-rg); // 0
+        width: var(---sb-pnl-wd);
+        right: var(---sb-pnl-rg);
     }
 
     .sb-panel-box {
@@ -56,7 +55,7 @@ app-sidebar {
 
     .sb-panel-cont {
         height: 100%;
-        left: var(---sb-pnl-rg); // 0;
+        left: var(---sb-pnl-rg);
         position: absolute;
         width: var(---sb-mx-wd);
         right: var(---sb-pnl-lf);
