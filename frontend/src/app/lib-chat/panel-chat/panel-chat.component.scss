@@ -10,100 +10,79 @@ app-panel-chat {
     padding: var(--pc-pd, 0.5rem);
     overflow-y: hidden;
 
-
     // ** Header **
 
     .pc-header {
-        flex: 0 0 auto;
-        // outline: 1px dashed orange;
-        padding: 0.4rem .5rem;
+        flex-shrink: 0;
+        padding: 0.4rem 0.5rem;
     }
 
     // ** Middle **
 
     .pc-middle {
-        outline: 1px dashed green;
-        // border: 1px solid var(--app-theme-accent);
-        flex: 1 1 auto;
-        font-size: 0.75rem; //  12px;
+        box-sizing: border-box;
+        flex-grow: 1;
+        font-size: var(--pc-fn-sz, 0.75rem);
         overflow-y: auto;
+        padding-left: 2px;
+        padding-right: 2px;
         width: 100%;
-
-        // section {
-        //     &:not(:first-of-type) {
-        //         margin-top: 15px;
-        //     }
-        // }
     }
 
-    .pc-chat-item {
-        // outline: 1px dashed green;
-        background-color: var(--sys-background);
+    .pc-item {
+        &.pc-self {
+            ---pc-itm-bg: var(--pc-itm-self-bg);
+            ---pc-itm-sh: var(--pc-itm-self-sh);
+        }
+
+        background-color: var(---pc-itm-bg, var(--pc-itm-bg));
+        box-shadow: 0 0 2px 1px var(---pc-itm-sh, var(--pc-itm-sh));
         box-sizing: border-box;
-        // border: 1px solid var(--sys-surface-container-high);
-        border-radius: 1rem;
-        // box-shadow: 0 0 2px 1px var(--sys-surface-container-high);
-        box-shadow: 0 0 1px 1px var(---pc-ch-itm-sh, var(--sys-outline-variant));
+        border-radius: var(--pc-br-rd, 0.75rem);
         display: flex;
         flex-direction: column;
-        gap: .25rem;
-        margin: 0.5rem 0px;
-        padding: 0.25rem 0.5rem;
-
-        &.pc-owner {
-            ---pc-ch-itm-sh: var(--sys-inverse-primary);
-        }
+        gap: var(--pc-itm-gp, .25rem);
+        margin: var(--pc-itm-mr, 0.5rem 0px);
+        padding: var(--pc-itm-pd, 0.25rem 0.5rem);
     }
 
-
     // -- item-date  --
-    .pc-item-date {
+    .pc-item-name-date {
         align-items: baseline;
         display: flex;
         flex-direction: row;
         gap: .5rem;
-        // padding-left: 1rem;
-        // padding-right: 1rem;
     }
 
-    .pc-date-nickname {
-        color: var(---pc-dt-nick-cl, var(--sys-on-surface)); // color: rgb(32, 33, 36); // var(--hotlane-on-background-color);
+    .pc-item-name {
+        &.pc-myself {
+            ---pc-name-cl: var(--pc-name-self-cl);
+        }
+
+        color: var(---pc-name-cl, var(--pc-name-cl));
         display: inline-block;
-        font-size: .8125rem;
+        font-size: var(--pc-name-fn-sz, .8125rem);
         font-weight: 500;
         word-wrap: break-word;
-
-        &.pc-myself {
-            ---pc-dt-nick-cl: var(--sys-primary);
-        }
     }
 
-    .pc-date-time {
-        color: var(--sys-secondary); // color: rgb(95, 99, 104); //   var(--hotlane-on-surface-variant-color);
+    .pc-item-date {
+        color: var(--pc-date-cl);
         display: inline-block;
-        font-size: .75rem;
+        font-size: var(--pc-fn-sz, 0.75rem);
         word-wrap: break-word;
     }
 
     // -- item-info --
     .pc-item-info {
-        // display: flex;
-        // flex: 1 1 auto;
         clear: both;
         display: flex;
         flex-direction: column;
         gap: .25rem;
         max-width: 100%;
-
-        // .pc-info-avatar {
-        //     flex: 0 0 46px;
-        // }
-
-        // .pc-info-text {
-        //     flex: 1 1 auto;
-        // }
-
         position: relative;
+        // .pc-info-avatar { flex: 0 0 46px; }
+        // .pc-info-text { flex: 1 1 auto; }
     }
 
     .pc-info-text {
@@ -115,14 +94,13 @@ app-panel-chat {
         word-wrap: break-word;
     }
 
-
     // ** Footer **
 
     .pc-footer {
         background-color: inherit;
         box-sizing: border-box;
         flex: 0 0 auto;
-        padding-top: 4px;
+        padding-top: 3px;
         position: relative;
         width: 100%;
     }
