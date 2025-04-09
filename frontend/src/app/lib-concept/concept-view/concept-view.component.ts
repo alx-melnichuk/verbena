@@ -23,8 +23,6 @@ import { PanelStreamActionsComponent } from '../panel-stream-actions/panel-strea
 import { PanelStreamParamsComponent } from '../panel-stream-params/panel-stream-params.component';
 import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-state.component';
 
-const CN_ResizeEventTimeout = 150; // milliseconds
-
 @Component({
     selector: 'app-concept-view',
     exportAs: 'appConceptView',
@@ -73,7 +71,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     // readonly bannedUser: EventEmitter<string> = new EventEmitter();
 
     public isSidebarLfOpen: boolean = false;
-    public isSidebarRgOpen: boolean = false;
+    public isSidebarRgOpen: boolean = true;//false;
 
     // An indication that the stream is in active status. ([preparing, started, paused]) 
     public isStreamActive: boolean = false;
@@ -98,28 +96,6 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     // private targetsFirebaseSub: Subscription | undefined;
     public countOfViewer: number = -1;
     public isOverPanel: boolean = false;
-
-    private timerOpenRgPanelEvent: any = null;
-    private countCheckRgPanel = 0;
-    private timerResizeEvent: any = null;
-
-    @HostListener('window:resize', ['$event'])
-    public doResizePanel(event: Event): void {
-        event.preventDefault();
-        event.stopPropagation();
-
-        if (this.timerResizeEvent !== null) {
-            clearTimeout(this.timerResizeEvent);
-        }
-        this.timerResizeEvent = setTimeout(() => {
-            this.timerResizeEvent = null;
-            this.isOverPanel = this.getIsOverPanel(
-                this.hostRef.nativeElement,
-                this.isSidebarLfOpen || this.isSidebarRgOpen,
-                this.isOverPanel);
-            this.changeDetector.markForCheck();
-        }, CN_ResizeEventTimeout);
-    }
 
     constructor(
         private changeDetector: ChangeDetectorRef,
@@ -181,38 +157,6 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     }
 
     // ** Public API **
-
-    private isScroll(element: HTMLElement): boolean {
-        return element.scrollWidth > element.clientWidth;
-    }
-    public getIsOverPanel(element: HTMLElement, isSidebarOpen: boolean, isOverPanel: boolean): boolean {
-        const isScrollBar = this.isScroll(element);
-        return !isOverPanel ? isSidebarOpen && isScrollBar : isSidebarOpen;
-    }
-    public checkScrollRgPanel(): void {
-        if (this.timerOpenRgPanelEvent !== null) {
-            clearTimeout(this.timerOpenRgPanelEvent);
-        }
-        this.countCheckRgPanel = 10;
-        this.checkScrollPanel();
-    }
-    public checkScrollPanel(): void {
-        this.isOverPanel = this.getIsOverPanel(
-            this.hostRef.nativeElement,
-            this.isSidebarLfOpen || this.isSidebarRgOpen,
-            this.isOverPanel);
-        this.countCheckRgPanel--;
-        console.log(`## this.countCheckRgPanel: ${this.countCheckRgPanel}`); // #
-        if (this.countCheckRgPanel > 0) {
-            this.timerOpenRgPanelEvent = setTimeout(() => {
-                this.timerOpenRgPanelEvent = null;
-                this.checkScrollPanel();
-            }, 250);
-        } else {
-            console.log(`## changeDetector.markForCheck();`); // #
-            this.changeDetector.markForCheck();
-        }
-    }
 
     // Section: "Panel stream info"
     /*

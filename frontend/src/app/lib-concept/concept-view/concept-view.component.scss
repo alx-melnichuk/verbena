@@ -15,25 +15,20 @@ app-concept-view {
     ---cv-pn-brd: var(--app-concept-pn-brd);
     --sb-mn-wd: var(--cv-sb-mn-wd, 57px);
     --sb-mx-wd: var(--cv-sb-mx-wd, 300px);
-    // --sb-durat: 1s;
-    // --sb-durat: 1200ms;
-    --sb-durat: 1.300s;
-    --sb-bg: var(--sys-background);
+    --sb-durat: 1200ms; // --sb-durat: 1.200s;
+
 
     // background-color: var(---cv-pn-low-bg);
     container: cnt-concept-view / inline-size;
     display: flex;
     height: 100%;
     // overflow: hidden;
-    // #overflow-x: hidden;
-    // #overflow-y: auto;
-    // #position: relative;
 
     [cv-mr-rg1] {
         margin-right: 1rem;
     }
 
-    [cv-mr-rg-0_5] {
+    [cv-mr-rg0_5] {
         margin-right: 0.5rem;
     }
 
@@ -46,8 +41,11 @@ app-concept-view {
         height: 100%;
     }
 
+    // ** left, right side **
+
     .cv-sidebar {
         flex-shrink: 0;
+        z-index: 2;
     }
 
     // ** left side **
@@ -98,25 +96,20 @@ app-concept-view {
         background-color: var(---cv-pn-bg);
         border: 1px solid var(---cv-pn-brd);
         box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
         padding: 0.5rem;
     }
 
-    .cv-flex {
-        display: flex;
+    .cv-cnt-title {
+        max-height: 15rem;
+        overflow: hidden;
     }
 
-    .cv-flex-wrap {
-        display: flex;
-        flex-wrap: wrap;
-    }
-
-    .cv-cnt-ft-title {
+    .cv-cnt-label {
         font-size: calc(1em + 2px);
         font-weight: 500;
     }
 
+    // * center footer - params *
     .cv-cnt-params {
         display: flex;
         flex-wrap: wrap;
@@ -124,29 +117,26 @@ app-concept-view {
         outline: 1px dashed darkseagreen;
     }
 
-    .cv-prm {
-        max-width: max(33%, 13rem);
-    }
-
-    .cv-cnt-ft-prm-name {
-        display: block;
-        overflow-wrap: anywhere;
-
-    }
-
-    .cv-psp-avatar {
+    .cv-cnt-nickname {
         --av-sz: 4rem;
         --av-brd-rd: 0.5rem;
+        display: flex;
+        max-width: max(33%, 15rem);
     }
 
-    .cv-psp-flex-wrap {
+    .cv-cnt-prm {
+        flex-grow: 1;
+    }
+
+    .cv-cnt-name-tags {
+        display: block;
+        overflow-wrap: anywhere;
+    }
+
+    .cv-cnt-tags {
         display: flex;
         flex-wrap: wrap;
     }
-
-    // .cv-actions {
-    //     flex: 1 1 33%;
-    // }
 
     // ** right side **
 
@@ -156,38 +146,30 @@ app-concept-view {
         padding-left: 0.5rem;
     }
 
-    .cv-sdb-box-rg {
-        background-color: beige;
-        height: 100%;
+    // * right side - chat * 
+    .cv-sdb-chat {
+        --pc-pd: 0px 0px 0px 0.5rem;
+        --pc-bg: var(--sys-surface-variant);
+        --pc-itm-bg: var(--sys-surface);
+        --pc-itm-sh: var(--sys-outline-variant);
+        --pc-itm-self-bg: var(--sys-on-primary);
+        --pc-itm-self-sh: var(--sys-primary-fixed-dim);
+        --pc-name-cl: var(--sys-on-surface);
+        --pc-name-self-cl: var(--sys-primary);
+        --pc-date-cl: var(--sys-secondary);
     }
 
     // ** **
 
-    // ** OLD **
-
-    @container cnt-concept-view (width <=844px) {
-        .cv-side-bar {
-            ---cv-side2bar-posit: absolute;
-            --sb-mn-wd: 4px;
-            box-sizing: border-box;
-            height: 100%;
-            left: var(---cv-lf-0, unset);
-            right: var(---cv-rg-0, unset);
-            z-index: 1;
+    @container cnt-concept-view (width<800px) {
+        .cv-sidebar {
+            ---sb-ovr-wd: var(---sb-mn-wd);
+            ---sb-panel-pos: absolute;
         }
     }
 
-    [cv-mr-tp-0_5] {
-        margin-top: 0.5rem;
-    }
+    // ** OLD **
 
-    [cv-lf-0] {
-        ---cv-lf-0: 0;
-    }
-
-    [cv-rg-0] {
-        ---cv-rg-0: 0;
-    }
 
     // ** sidebar **
     .cv-side-bar {
@@ -197,25 +179,6 @@ app-concept-view {
         border-width: 1px;
         box-sizing: border-box;
         position: var(---cv-side2bar-posit, relative);
-    }
-
-    .cv-side-lf {
-        box-sizing: border-box;
-        padding: 0.5rem 0.5rem 0.5rem 0;
-    }
-
-    .cv-side-rg {
-        box-sizing: border-box;
-        padding: 0.5rem 0 0.5rem 0.5rem;
-    }
-
-    .cv-aside {
-        // padding: 0 0.5rem; // 3.2px
-        width: var(--sb-mx-wd);
-
-        // padding-left: var(---cv-lf-0, 0.5rem);
-        // padding-right: var(---cv-rg-0, 0.5rem);
-
     }
 
     .cv-btn-arrow {
@@ -260,11 +223,6 @@ app-concept-view {
         }
     }
 
-    // ** center **
-
-    // !!
-
-
     // ** **
 
 
@@ -276,14 +234,6 @@ app-concept-view {
         box-sizing: border-box;
         // margin-top: 1rem;
         // padding: 1rem;
-    }
-
-    .cv-stream-tools {
-        // outline: 1px dashed orange;
-    }
-
-    .cv-stream-actions {
-        outline: 1px dashed blueviolet;
     }
 
 }

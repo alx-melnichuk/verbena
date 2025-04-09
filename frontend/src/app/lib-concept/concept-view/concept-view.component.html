@@ -27,15 +27,16 @@
 <!-- </div> -->
 
 <app-sidebar class="cv-sidebar"
-    [mode]="'left'"
-    appSidebarHandler
-    [sidebarHandlerOwner]="hostRef.nativeElement"
-    [sidebarHandlerIfScroll]="true">
-    <div class="cv-sdb-cover-lf">
-      <div class="cv-sdb-box-lf">
-        bar-left 1 bar-left 2
-      </div>
+  mode="left"
+  [isOpen]="isSidebarLfOpen"
+  (click)="isSidebarLfOpen=!isSidebarLfOpen;">
+
+  <div class="cv-sdb-cover-lf">
+    <div class="cv-sdb-box-lf">
+      bar-left 1 bar-left 2
     </div>
+  </div>
+    
 </app-sidebar>
 
 <div class="cv-center">
@@ -54,31 +55,29 @@
 
   <div class="cv-cnt-footer">
 
-    <div class="cv-flex-wrap">
-      <span>
-        <span cv-mr-rg1>{{ 'concept-view.title' | translate }}</span>
-        <span class="cv-cnt-ft-title">{{ streamDto?.title }}</span>
-      </span>  
+    <div class="cv-cnt-title">
+      <span cv-mr-rg0_5>{{ 'concept-view.title' | translate }}</span>
+      <span class="cv-cnt-label">{{ streamDto?.title }}</span>
     </div>
 
     <div class="cv-cnt-params">
         
-      <div class="cv-flex cv-prm" style="outline: 1px dashed cadetblue;">
-        <app-avatar cv-mr-rg-0_5 class="cv-psp-avatar"
+      <div class="cv-cnt-nickname cv-cnt-prm" style="outline: 1px dashed cadetblue;">
+        <app-avatar cv-mr-rg0_5 class="cv-cnt-avatar"
           [avatar]="avatar">
         </app-avatar>
-        <div class="cv-cnt-ft-prm-name">
+        <div class="cv-cnt-name-tags">
           <div>{{ nickname }}</div>
-          <div class="cv-psp-flex-wrap">
-            <span cv-mr-rg-0_5>{{ 'Tags:' | translate }}</span>
+          <div class="cv-cnt-tags">
+            <span cv-mr-rg0_5>{{ 'Tags:' | translate }}</span>
             @for (tag of (streamDto?.tags || []); track tag) {
-              <span cv-mr-rg-0_5>#{{ tag }}</span>
+              <span cv-mr-rg0_5>#{{ tag }}</span>
             }
           </div>
         </div>
       </div>
 
-      <div class="cv-flex-wrap9 cv-prm" style="outline: 1px dashed orangered;">
+      <div class="cv-cnt-prm" style="outline: 1px dashed orangered;">
       <app-panel-stream-params class="cv-params9"
         [countOfViewer]="countOfViewer"
         [isShowTimer]="isShowTimer"
@@ -89,25 +88,23 @@
       </app-panel-stream-params>
       </div>
 
-      <div class="cv-flex-wrap9 cv-prm" style="outline: 1px dashed green;">
-      <!-- <div cv-mr-tp-0_5 class="cv-actions"> -->
-      @if (isStreamOwner) {
-        <app-panel-stream-actions class="" 
-          [state]="streamDto?.state"
-          [title]="streamDto?.title"
-          (changeState)="doChangeState($event)">
-        </app-panel-stream-actions>
-      }
-      <!-- </div> -->
+      <div class="cv-cnt-prm" style="outline: 1px dashed green;">
+        @if (isStreamOwner) {
+          <app-panel-stream-actions
+            [state]="streamDto?.state"
+            [title]="streamDto?.title"
+            (changeState)="doChangeState($event)">
+          </app-panel-stream-actions>
+        }
       </div>
 
     </div>
 
   </div>
     
-  @if (!isStreamOwner) {
+  <!-- @if (!isStreamOwner) {
     Is not Stream Owner
-    <!-- @if (subscribeLoading) {
+    @if (subscribeLoading) {
     <app-spinner [isFullOwner]="true" [diameter]="60"></app-spinner>
     }
     <app-panel-stream-info
@@ -117,9 +114,9 @@
       [countOfViewer]="socketService.countOfViewer$ | async"
       [broadcastDuration]="broadcastDuration"
       (actionSubscribe)="doActionSubscribe($event)">
-    </app-panel-stream-info> -->
+    </app-panel-stream-info>
   } @else {
-    <!-- <div class="cv-stream-info">
+    <div class="cv-stream-info">
       <app-panel-stream-admin
         countOfViewer9="socketService.countOfViewer$ | async"
         [countOfViewer]="0"
@@ -128,9 +125,9 @@
         [title]="streamDto?.title"
         (changeState)="doChangeState($event)">
       </app-panel-stream-admin>
-    </div> -->
+    </div> 
   }
-  <!-- <div class="user-portfolio">
+  <div class="user-portfolio">
     <app-panel-portfolio-schedule class="details"
       [isDarkTheme]="isDarkTheme"
       [queryParamMap]="route.queryParamMap | async"
@@ -140,15 +137,20 @@
 </div>
 
 <app-sidebar class="cv-sidebar"
-  [mode]="'right'"
-  appSidebarHandler
-  [sidebarHandlerOwner]="hostRef.nativeElement"
-  [sidebarHandlerIfScroll]="true">
+  mode="right"
+  [isOpen]="isSidebarRgOpen"
+  (click)="isSidebarRgOpen=!isSidebarRgOpen;">
+
   <div class="cv-sdb-cover-rg">
-    <div class="cv-sdb-box-rg">
-      chat 1 chat 2 chat 3
-    </div>
+    <app-panel-chat class="cv-sdb-chat"
+      [isBlocked]="false"
+      [isEditable]="isStreamActive"
+      [locale]="localeService.getLocale()"
+      [nickname]="nickname || ''"
+      [title]="'concept-view.chat_title'">
+    </app-panel-chat>
   </div>
+
   <!-- <div style="outline: 1px dashed blueviolet; height: 100%;">
       <p>app-panel-chat 1</p>
       <p>app-panel-chat 2</p>
