@@ -1,7 +1,10 @@
-import { Directive, ElementRef, HostListener, Inject, Input, OnInit, Optional } from '@angular/core';
+import { ChangeDetectorRef, Directive, ElementRef, HostListener, Inject, Input, OnInit, Optional } from '@angular/core';
+
 import { APP_SIDEBAR_PARENT, SidebarParent } from './sidebar-parent.interface';
 
 const CN_INTERVAL = 100;
+
+let uniqueIdCounter = 0;
 
 @Directive({
     selector: '[appSidebarHandler]',
@@ -9,6 +12,8 @@ const CN_INTERVAL = 100;
     standalone: true
 })
 export class SidebarHandlerDirective implements OnInit {
+    @Input()
+    public id = `app-sdbr-hndlr-${uniqueIdCounter++}`;
     @Input('sidebarHandlerOwner')
     public owner: HTMLElement | null = null;
     @Input('sidebarHandlerIfScroll')
@@ -24,6 +29,7 @@ export class SidebarHandlerDirective implements OnInit {
 
     constructor(
         public hostRef: ElementRef<HTMLElement>,
+        private changeDetector: ChangeDetectorRef,
         @Optional() @Inject(APP_SIDEBAR_PARENT) public parent: SidebarParent,
     ) {
         this.owner = hostRef.nativeElement.parentElement;
@@ -41,29 +47,24 @@ export class SidebarHandlerDirective implements OnInit {
     }
 
     ngOnInit(): void {
-        // console.log(`SidebarHandler.OnInit() parent != null - ${this.parent != null}`);
         const style = window.getComputedStyle(this.hostRef.nativeElement);
         const duratStr = style.getPropertyValue('---sb-durat');
         this.duration = this.getMillisecond(duratStr); // millisecond 10^-3
         this.count = Math.ceil(this.duration / CN_INTERVAL);
-        // console.log(`SidebarHandler.OnInit()  durat: ${duratStr}  duration: ${this.duration}`); // #
-        // console.log(`SidebarHandler.OnInit()  duration / CN_INTERVAL - ${this.duration} / ${CN_INTERVAL} = this.count: ${this.count}`); // #
     }
 
     // ** Public API **
 
     public toggleOpen(): void {
         this.isOpen = !this.isOpen;
-        // console.log(`#$ toggleOpen() this.isOpen: ${this.isOpen}`); // #
         this.parent?.setIsOpen(this.isOpen);
+        this.changeDetector.markForCheck();
     }
 
     public checkScrollByTimer(count: number): void {
         if (this.timerOpenPanelEvent !== null) {
             clearTimeout(this.timerOpenPanelEvent);
         }
-        // console.log(`## timer  this.isOver: ${this.isOver}`); // #
-
         this.countOfChecks = count;
         const isForward = !this.isOver;
         this.checkScrollPanelByTimer(isForward);
@@ -79,9 +80,7 @@ export class SidebarHandlerDirective implements OnInit {
         const isScrollBar = this.isScroll(this.owner);
         this.isOver = !this.isOver ? this.isOpen && isScrollBar : this.isOpen;
         this.countOfChecks--;
-        // console.log(`## this.countOfChecks: ${this.countOfChecks}  this.isOver: ${this.isOver}`); // #
         if (isForward) {
-            // console.log(`##  isForward parent?.setIsOver(${this.isOver});`); // #
             this.parent?.setIsOver(this.isOver);
         }
         if (this.countOfChecks > 0) {
@@ -90,7 +89,6 @@ export class SidebarHandlerDirective implements OnInit {
                 this.checkScrollPanelByTimer(isForward);
             }, CN_INTERVAL);
         } else if (!isForward) {
-            // console.log(`## !isForward parent?.setIsOver(${this.isOver});`); // #
             this.parent?.setIsOver(this.isOver);
         }
     }
