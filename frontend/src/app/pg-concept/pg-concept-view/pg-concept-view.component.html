@@ -5,5 +5,6 @@
   [isStreamOwner]="isStreamOwner"
   [nickname]="profileDto?.nickname"
   [streamDto]="streamDto"
-  (changeState)="doChangeState(isStreamOwner, streamDto?.id, $event)">
+  (changeState)="doChangeState(isStreamOwner, streamDto?.id, $event)"
+  (sendMessage)="doSendMessage($event)">
 </app-concept-view>

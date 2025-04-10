@@ -78,6 +78,10 @@ export class PgConceptViewComponent implements OnInit {
 
     }
 
+    public doSendMessage(msg: string): void {
+        console.log(`msg: ${msg}`); // #
+    }
+
     // ** Private API **
 
     private updateParams(streamDto: StreamDto | null, profileDto: ProfileDto | null): void {
