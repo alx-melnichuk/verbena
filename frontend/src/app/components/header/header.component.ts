@@ -17,6 +17,7 @@ import { MainMenu, MainMenuUtil } from 'src/app/common/main-menu';
 import { MAIN_MENU_LIST } from 'src/app/common/routes';
 import { AvatarComponent } from 'src/app/components/avatar/avatar.component';
 import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
+import { ReplaceWithZeroUtil } from 'src/app/utils/replace-with-zero.util';
 
 export const HM_LOGOUT = 'logout';
 export const HM_SET_LOCALE = 'setLocale';
@@ -109,22 +110,8 @@ export class HeaderComponent implements OnChanges {
         this.doCommand(HM_SET_COLOR_SCHEME, value);
     }
 
-    public nicknameWithSeparateSpaces(nickname: string | null | undefined): string {
-        let result: string = nickname || '';
-        if (!!result) {
-            const ch1 = String.fromCharCode(0x200B); // "empty space" character for line breaks.
-            if (result.indexOf('_') > -1) {
-                result = result.replaceAll('_', '_' + ch1);
-            } else {
-                const idx = Math.round(result.length / 2);
-                result = result.slice(0, idx) + ch1 + result.slice(idx);
-            }
-        }
-        return result;
-    }
-
     public prepareMenuItems(profileDto: ProfileDto | null, mainMenuList: string[], isShowMainMenu: boolean): void {
-        this.nickname = this.nicknameWithSeparateSpaces(profileDto?.nickname);
+        this.nickname = ReplaceWithZeroUtil.replace(profileDto?.nickname)
         const items = MainMenuUtil.getList(profileDto != null, mainMenuList);
         this.mainMenuItems = isShowMainMenu ? items : [];
         this.panelMenuItems = isShowMainMenu ? [] : items;
