@@ -61,8 +61,8 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     readonly changeState: EventEmitter<StreamState> = new EventEmitter();
     // @Output()
     // readonly actionSubscribe: EventEmitter<boolean> = new EventEmitter();
-    // @Output()
-    // readonly sendMessage: EventEmitter<string> = new EventEmitter();
+    @Output()
+    readonly sendMessage: EventEmitter<string> = new EventEmitter();
     // @Output()
     // readonly removeMessage: EventEmitter<string> = new EventEmitter();
     // @Output()
@@ -71,7 +71,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     // readonly bannedUser: EventEmitter<string> = new EventEmitter();
 
     public isSidebarLfOpen: boolean = false;
-    public isSidebarRgOpen: boolean = true;//false;
+    public isSidebarRgOpen: boolean = false;
 
     // An indication that the stream is in active status. ([preparing, started, paused]) 
     public isStreamActive: boolean = false;
@@ -88,6 +88,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     // public settimeoutId: number | null = null;
 
     // Block "Chat"
+    public cntRows: number = 3;
     // public isEditableChat = false;
     // public isUserBanned = false;
 
@@ -178,12 +179,12 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
 
     // Section: "Chat"
 
-    /*public doSendMessage(newMessage: string): void {
+    public doSendMessage(newMessage: string): void {
         if (!!newMessage) {
             this.sendMessage.emit(newMessage);
         }
     }
-    public doRemoveMessage(messageId: string): void {
+    /*public doRemoveMessage(messageId: string): void {
         if (!!messageId) {
             this.removeMessage.emit(messageId);
         }

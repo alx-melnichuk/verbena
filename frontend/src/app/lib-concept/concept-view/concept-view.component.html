@@ -1,17 +1,20 @@
 @if (isLoadStream) {
   <app-spinner isFillParent></app-spinner>
 }
-  
-<!-- <div class="cv-side-bar cv-side-lf"> -->
-  <!-- <button class="cv-btn-arrow cv-left" (click)="isSidebarLfOpen = !isSidebarLfOpen;">
-    <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarLfOpen ? 'cv-0deg' : 'cv-180deg')]">
-      <use href="assets/icons/lib-concept/concept-view/angle-left-bin.svg#angle-left-bin"></use>
-    </svg>
-  </button> -->
 
-  <!-- <app-sidebar [isOpen]="isSidebarLfOpen">
-    <aside class="cv-aside cv-pg-lf-0" style="outline: 1px dashed blueviolet; height: 100%;">
-      cv-bar-left -->
+<app-sidebar class="cv-sidebar" mode="left"
+  [isOpen]="isSidebarLfOpen">
+  <div sidebar-layer>
+    <button class="cv-sdb-btn cv-btn-arrow cv-left" (click)="isSidebarLfOpen = !isSidebarLfOpen;">
+      <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarLfOpen ? 'cv-0deg' : 'cv-180deg')]">
+        <use href="assets/icons/lib-concept/concept-view/angle-left-bin.svg#angle-left-bin"></use>
+      </svg>
+    </button>
+  </div>
+  <div class="cv-sdb-cover-lf">
+    <div class="cv-sdb-box-lf">
+      bar-left 1 bar-left 2
+
   <!-- <app-panel-left-followers
     [isMiniSize]="!isSidebarLfOpen"
     [isLoading]="followersService.followersAndPopularLoading"
@@ -22,21 +25,8 @@
     </div>
   </app-panel-left-followers> -->
 
-    <!-- </aside>
-  </app-sidebar> -->
-<!-- </div> -->
-
-<app-sidebar class="cv-sidebar"
-  mode="left"
-  [isOpen]="isSidebarLfOpen"
-  (click)="isSidebarLfOpen=!isSidebarLfOpen;">
-
-  <div class="cv-sdb-cover-lf">
-    <div class="cv-sdb-box-lf">
-      bar-left 1 bar-left 2
     </div>
   </div>
-    
 </app-sidebar>
 
 <div class="cv-center">
@@ -51,7 +41,7 @@
   <!-- </div> -->
   </div>
 
-  <div cv-pd-tp0_5></div>
+  <div class="cv-cnt-sepr"></div>
 
   <div class="cv-cnt-footer">
 
@@ -60,9 +50,11 @@
       <span class="cv-cnt-label">{{ streamDto?.title }}</span>
     </div>
 
+    <div class="cv-cnt-brd"></div>
+
     <div class="cv-cnt-params">
         
-      <div class="cv-cnt-nickname cv-cnt-prm" style="outline: 1px dashed cadetblue;">
+      <div class="cv-cnt-nickname cv-cnt-prm" style9="outline: 1px dashed cadetblue;">
         <app-avatar cv-mr-rg0_5 class="cv-cnt-avatar"
           [avatar]="avatar">
         </app-avatar>
@@ -77,7 +69,7 @@
         </div>
       </div>
 
-      <div class="cv-cnt-prm" style="outline: 1px dashed orangered;">
+      <div class="cv-cnt-prm" style9="outline: 1px dashed orangered;">
       <app-panel-stream-params class="cv-params9"
         [countOfViewer]="countOfViewer"
         [isShowTimer]="isShowTimer"
@@ -88,7 +80,7 @@
       </app-panel-stream-params>
       </div>
 
-      <div class="cv-cnt-prm" style="outline: 1px dashed green;">
+      <div class="cv-cnt-prm" style9="outline: 1px dashed green;">
         @if (isStreamOwner) {
           <app-panel-stream-actions
             [state]="streamDto?.state"
@@ -136,51 +128,28 @@
   </div> -->
 </div>
 
-<app-sidebar class="cv-sidebar"
-  mode="right"
-  [isOpen]="isSidebarRgOpen"
-  (click)="isSidebarRgOpen=!isSidebarRgOpen;">
-
+<app-sidebar class="cv-sidebar" mode="right"
+  [isOpen]="isSidebarRgOpen">
+  <div sidebar-layer>
+    <button class="cv-sdb-btn cv-btn-arrow cv-right" (click)="isSidebarRgOpen = !isSidebarRgOpen;">
+      <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarRgOpen ? 'cv-0deg' : 'cv-180deg')]">
+        <use href="assets/icons/lib-concept/concept-view/angle-right-bin.svg#angle-right-bin"></use>
+      </svg>
+    </button>
+  </div>
   <div class="cv-sdb-cover-rg">
     <app-panel-chat class="cv-sdb-chat"
+      [cntRows]="cntRows"
       [isBlocked]="false"
       [isEditable]="isStreamActive"
       [locale]="localeService.getLocale()"
       [nickname]="nickname || ''"
-      [title]="'concept-view.chat_title'">
+      [title]="'concept-view.chat_title'"
+      (sendMsg)="doSendMessage($event)">
     </app-panel-chat>
   </div>
 
-  <!-- <div style="outline: 1px dashed blueviolet; height: 100%;">
-      <p>app-panel-chat 1</p>
-      <p>app-panel-chat 2</p>
-  </div> -->
-  <!-- <app-panel-chat class="cv-aside cv-pg-rg0"
-    [isBlocked]="false"
-    [isEditable]="isStreamActive"
-    [locale]="localeService.getLocale()"
-    [nickname]="nickname || ''"
-    [title]="'concept-view.chat_title'">
-  </app-panel-chat> -->
-</app-sidebar>
-
-
-<!--<div class="cv-side-bar cv-side-rg">
-  <button class="cv-btn-arrow cv-right" (click)="isSidebar RgOpen = !isSidebar RgOpen;">
-    <svg [ngClass]="['cv-arrow cv-rotate', (isSidebar RgOpen ? 'cv-0deg' : 'cv-180deg')]">
-      <use href="assets/icons/lib-concept/concept-view/angle-right-bin.svg#angle-right-bin"></use>
-    </svg>
-  </button>
-    
-  <app-sidebar [isOpen]="isSidebar RgOpen" (clickByVeil)="isSidebar RgOpen=true">
-      <app-panel-chat class="cv-aside cv-pg-rg0"
-        [isBlocked]="false"
-        [isEditable]="isStreamActive"
-        [locale]="localeService.getLocale()"
-        [nickname]="nickname || ''"
-        [title]="'concept-view.chat_title'">
-      </app-panel-chat>
-    < !-- <app-panel-right-chat
+  <!-- <app-panel-right-chat
     [isEditable]="isStreamActive"
     [userId]="profileService.getUserId()"
     [chatMessages]="chatMessages"
@@ -190,7 +159,8 @@
     (removeMessage)="doRemoveMessage($event)"
     (editMessage)="doEditMessage($event)"
     (bannedUser)="doBannedUser($event)"
-  ></app-panel-right-chat> -- >
-    
-  </app-sidebar>
-</div>-->
+  ></app-panel-right-chat> -->
+
+</app-sidebar>
+
+

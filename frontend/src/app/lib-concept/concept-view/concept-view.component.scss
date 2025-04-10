@@ -17,12 +17,11 @@ app-concept-view {
     --sb-mx-wd: var(--cv-sb-mx-wd, 300px);
     --sb-durat: 1200ms; // --sb-durat: 1.200s;
 
-
     // background-color: var(---cv-pn-low-bg);
     container: cnt-concept-view / inline-size;
     display: flex;
     height: 100%;
-    // overflow: hidden;
+    position: relative;
 
     [cv-mr-rg1] {
         margin-right: 1rem;
@@ -48,6 +47,20 @@ app-concept-view {
         z-index: 2;
     }
 
+    .cv-sdb-btn {
+        position: absolute;
+        top: 0.5em;
+        z-index: 1;
+
+        &.cv-left {
+            right: -0.78rem;
+        }
+
+        &.cv-right {
+            left: -0.78rem;
+        }
+    }
+
     // ** left side **
 
     .cv-sdb-cover-lf {
@@ -64,12 +77,11 @@ app-concept-view {
     // ** center **
 
     .cv-center {
-        // background-color: var(--sys-inverse-on-surface);
-        // background-color: var(--sys-secondary-container);
         box-sizing: border-box;
         display: flex;
         flex: 1 1 auto;
         flex-direction: column;
+        z-index: 1;
     }
 
     // * center video *
@@ -91,6 +103,10 @@ app-concept-view {
         top: 0;
     }
 
+    .cv-cnt-sepr {
+        padding-top: 0.5rem;
+    }
+
     // * center footer *
     .cv-cnt-footer {
         background-color: var(---cv-pn-bg);
@@ -100,12 +116,14 @@ app-concept-view {
     }
 
     .cv-cnt-title {
+        box-sizing: border-box;
         max-height: 15rem;
         overflow: hidden;
+        padding-bottom: 0.25rem;
     }
 
     .cv-cnt-label {
-        font-size: calc(1em + 2px);
+        font-size: 1rem;
         font-weight: 500;
     }
 
@@ -114,7 +132,13 @@ app-concept-view {
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;
-        outline: 1px dashed darkseagreen;
+        // # outline: 1px dashed darkseagreen;
+    }
+
+    .cv-cnt-brd {
+        border-top: 1px solid var(---cv-pn-brd);
+        box-sizing: border-box;
+        padding-bottom: 0.25rem;
     }
 
     .cv-cnt-nickname {
@@ -148,38 +172,15 @@ app-concept-view {
 
     // * right side - chat * 
     .cv-sdb-chat {
-        --pc-pd: 0px 0px 0px 0.5rem;
+        --pc-pd-lf: 0.5rem;
         --pc-bg: var(--sys-surface-variant);
-        --pc-itm-bg: var(--sys-surface);
-        --pc-itm-sh: var(--sys-outline-variant);
-        --pc-itm-self-bg: var(--sys-on-primary);
-        --pc-itm-self-sh: var(--sys-primary-fixed-dim);
-        --pc-name-cl: var(--sys-on-surface);
-        --pc-name-self-cl: var(--sys-primary);
-        --pc-date-cl: var(--sys-secondary);
+        --pc-mdl-fn-sz: 0.9rem;
+        --pc-new-msg-bg: var(--sys-on-primary);
     }
 
     // ** **
 
-    @container cnt-concept-view (width<800px) {
-        .cv-sidebar {
-            ---sb-ovr-wd: var(---sb-mn-wd);
-            ---sb-panel-pos: absolute;
-        }
-    }
-
-    // ** OLD **
-
-
-    // ** sidebar **
-    .cv-side-bar {
-        background-color: var(--sys-surface-container-high);
-        border-style: solid;
-        border-color: var(---cv-pn-brd);
-        border-width: 1px;
-        box-sizing: border-box;
-        position: var(---cv-side2bar-posit, relative);
-    }
+    // ** btn-arrow **
 
     .cv-btn-arrow {
         // background-color: var(--cv-btn-arrow-cl, var(--sys-tertiary-container));
@@ -190,17 +191,6 @@ app-concept-view {
         box-sizing: border-box;
         display: flex;
         padding: 2px;
-        position: absolute;
-        top: 0.5em;
-        z-index: 2;
-
-        &.cv-left {
-            right: calc(-1.5em + 1px);
-        }
-
-        &.cv-right {
-            left: calc(-1.5em + 1px);
-        }
     }
 
     .cv-arrow {
@@ -225,15 +215,11 @@ app-concept-view {
 
     // ** **
 
-
-    // ** cv-stream-panel ** 
-    .cv-stream-panel {
-        outline: 1px dashed orange;
-        background-color: var(---cv-pn-bg);
-        border: 1px solid var(---cv-pn-brd);
-        box-sizing: border-box;
-        // margin-top: 1rem;
-        // padding: 1rem;
+    @container cnt-concept-view (width<800px) {
+        .cv-sidebar {
+            ---sb-ovr-wd: var(---sb-mn-wd);
+            ---sb-panel-pos: absolute;
+        }
     }
 
 }
