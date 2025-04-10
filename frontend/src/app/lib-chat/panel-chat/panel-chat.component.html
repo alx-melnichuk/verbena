@@ -2,13 +2,14 @@
   <!-- <div class="pc-icon prc-chat-stream"></div> -->
   <div class="pc-label">{{ (title | translate) }}</div>
 </div>
- 
+
+<div class="pc-sepr"></div>
+
 <div class="pc-middle global-scroll" #scrollItem>
-  @for (chatMsg of chatMsgs; track trackById) {    
+  @for (chatMsg of chatMsgs; track chatMsg.date) {    
     <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : '') ]"
       mouseenter9="doMouseEnter(chatMsg.date, true)"
-      mouseleave9="doMouseLeave(chatMsg.date, true)"
-      >
+      mouseleave9="doMouseLeave(chatMsg.date, true)">
 
       <div class="pc-item-name-date">
         <div [ngClass]="['pc-item-name', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
@@ -31,7 +32,7 @@
         <!-- </div> -->
         
       </div>
-      <div class="pc-item-info">
+      <!-- <div class="pc-item-info"> -->
         <!-- @if (!isSelf(chatMsg.member)) {
         <div class="pc-info-avatar"> -->
             <!-- <app-avatar
@@ -40,22 +41,23 @@
             </app-avatar> -->
         <!-- </div>
         } -->
-        <div [ngClass]="['pc-info-text', (isSelf(chatMsg.member) ? 'prc-color-self' : 'prc-color-other')]">
+        <div [ngClass]="['pc-item-msg', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
           {{ chatMsg.date }} {{ chatMsg.msg }}
           <!-- <p *ngFor="let chatMessageRow of getMessageRows(chatMsg.text)">{{ chatMessageRow }}</p> -->
         </div>
         <!-- <div *ngIf="isBannedUserById(chatMsg.member)" class="prc-banned-user">
           <div class="prc-msg-banned-orange"></div>
         </div> -->
-      </div>
+
+      <!-- </div> -->
     </div>
   }
 </div>
 
 @if (isEditable && !isBlocked) {
+<div class="pc-sepr"></div>
 <div class="pc-footer" [formGroup]="formGroup">
-  <mat-form-field
-    [ngClass]="['pc-new-msg', (!!modifyMsgId ? 'pc-modify-msg' : '')]"
+  <mat-form-field [ngClass]="['pc-new-msg', (!!modifyMsgId ? 'pc-modify-msg' : '')]"
     appearance="outline"
     color="primary"
     subscriptSizing="dynamic">
@@ -74,15 +76,16 @@
       cdkAutosizeMaxRows9="maxRows">
     </textarea>
 
+    <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
     <!-- <button mat-button matSuffix class="prc-btn-face-smile" (click)="isShowFaceSmilePanel=!isShowFaceSmilePanel;">
       <div class="prc-icon prc-face-smile"></div>
     </button> -->
 
-    <button mat-icon-button matSuffix (click)="doSendMessage(formControl.value)">
-      <svg class="h-svg-more-vert">
+    <!-- <button mat-icon-button matSuffix (click)="doSendMessage(formControl.value)">
+      <svg class="pc-svg-send">
         <use href="assets/icons/lib-chat/panel-chat/send-bin.svg#send-bin"></use>
       </svg>
-    </button>
+    </button> -->
 
   </mat-form-field>
 </div>

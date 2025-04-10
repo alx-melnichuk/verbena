@@ -1,7 +1,7 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation } from '@angular/core';
 import { CommonModule, KeyValue } from '@angular/common';
 import { DateAdapter } from '@angular/material/core';
-import { MatInput, MatInputModule } from '@angular/material/input';
+import { MatInputModule } from '@angular/material/input';
 import { TranslatePipe } from '@ngx-translate/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -27,6 +27,9 @@ export const PIPE_DATE_COMPACT = 'MMM dd yyyy';
 export const PIPE_TIME_SHORT = 'HH:mm aa';
 
 export const CNT_ROWS = 2;
+
+// <mat-form-field subscriptSizing="dynamic"
+// it'll remove the space until an error or hint actually needs to get displayed and only then expands.
 
 @Component({
     selector: 'app-panel-chat',
@@ -102,7 +105,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     private readonly dateAdapter: DateAdapter<Date> = inject(DateAdapter);
 
     constructor() {
-        console.log(`PanelChat()`); // #
     }
 
     ngAfterViewInit(): void {
@@ -286,7 +288,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             }
             // const date1 = date.slice(20, 24) + '_' + date.slice(11, 19) + '_' + date.slice(0, 10);
             result.push({ msg, member, date });
-            // console.log(` date=${date}`); // #
             this.wait(1);
         }
         return result;
