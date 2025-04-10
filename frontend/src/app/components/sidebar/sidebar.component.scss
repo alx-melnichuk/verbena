@@ -47,6 +47,12 @@ app-sidebar {
         right: var(---sb-pnl-rg);
     }
 
+    .sb-layer {
+        height: 100%;
+        position: relative;
+        z-index: 1;
+    }
+
     .sb-panel-box {
         height: 100%;
         overflow: hidden;
