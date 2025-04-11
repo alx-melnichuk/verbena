@@ -12,6 +12,7 @@ import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 import { StreamDto, StreamState, StreamStateUtil } from 'src/app/lib-stream/stream-api.interface';
 import { StreamService } from 'src/app/lib-stream/stream.service';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
+import { NavigatorUtil } from 'src/app/utils/navigator.util';
 
 @Component({
     selector: 'app-pg-concept-view',
@@ -24,7 +25,10 @@ import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 })
 export class PgConceptViewComponent implements OnInit {
 
+    public chatMaxRows: number = 4;
+    public chatMinRows: number = 1;
     public isLoadStream = false;
+    readonly isMobile: boolean = NavigatorUtil.isMobile();
     public isShowTimer: boolean = false;
     // An indication that the stream is in active status. ([preparing, started, paused]) 
     public isStreamActive: boolean = false;
