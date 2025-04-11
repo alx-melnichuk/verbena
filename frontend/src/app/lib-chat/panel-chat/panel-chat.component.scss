@@ -116,24 +116,34 @@ app-panel-chat {
         width: 100%;
 
         .mat-mdc-icon-button {
-            --mdc-icon-button-state-layer-size: 48px;
+            --mdc-icon-button-state-layer-size: 36px;
             --mdc-icon-button-icon-size: 32px;
         }
 
+        &.is-mobile {
+            ---pc-nmsg-wrp-pd-rg: 0.4rem;
+        }
+
         .mat-mdc-text-field-wrapper {
-            padding-right: 0.75rem;
-            padding-left: 0.75rem;
+            padding-right: var(---pc-nmsg-wrp-pd-rg, 0.7rem);
+            padding-left: 0.7rem;
+        }
+
+        .mat-mdc-form-field-infix {
+            --mat-form-field-container-height: 0px;
         }
 
         textarea.pc-textarea {
-            line-height: 1.5;
-            resize: none;
             scrollbar-width: thin;
         }
     }
 
+    .pc-btn-send:not([disabled]) {
+        ---pc-svg-send-cl: var(--sys-on-surface-variant);
+    }
+
     .pc-svg-send {
-        color: var(--sys-on-surface-variant);
+        color: var(---pc-svg-send-cl);
     }
 
 }

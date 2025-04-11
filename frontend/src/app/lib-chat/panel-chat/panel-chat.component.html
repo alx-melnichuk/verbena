@@ -56,37 +56,36 @@
 
 @if (isEditable && !isBlocked) {
 <div class="pc-sepr"></div>
+
 <div class="pc-footer" [formGroup]="formGroup">
-  <mat-form-field [ngClass]="['pc-new-msg', (!!modifyMsgId ? 'pc-modify-msg' : '')]"
+  <mat-form-field [ngClass]="['pc-new-msg', (isMobile ? 'is-mobile':''), (!!modifyMsgId ? 'pc-modify-msg' : '')]"
     appearance="outline"
     color="primary"
     subscriptSizing="dynamic">
     
-    <textarea matInput #messageInput 
+    <textarea matInput #messageInput #textareaElement
       class="pc-textarea global-scroll"
       formControlName="newMsg"
       autocomplete="new-password"
       autocapitalize="off"
-      [rows]="cntRows"
+      [attr.maxlength]="(maxLen > 0 ? maxLen + 1 : null)"
       (keydown.enter)="doKeydownEnter($event, formControl.value)"
       (keydown.escape)="doKeydownEscape()"
-      [attr.maxlength]="(maxLen > 0 ? maxLen + 1 : null)"
-      cdkTextareaAutosize9
-      cdkAutosizeMinRows9="minRows"
-      cdkAutosizeMaxRows9="maxRows">
+      cdkTextareaAutosize
+      #autosize="cdkTextareaAutosize"
+      [cdkAutosizeMinRows]="minRowsVal"
+      [cdkAutosizeMaxRows]="2 + maxRowsVal">
     </textarea>
 
-    <!-- <mat-icon matSuffix>mode_edit</mat-icon> -->
-    <!-- <button mat-button matSuffix class="prc-btn-face-smile" (click)="isShowFaceSmilePanel=!isShowFaceSmilePanel;">
-      <div class="prc-icon prc-face-smile"></div>
-    </button> -->
-
-    <!-- <button mat-icon-button matSuffix (click)="doSendMessage(formControl.value)">
+    @if (isMobile) {
+    <button mat-icon-button matSuffix class="pc-btn-send"
+      [disabled]="!formControl.value ? '' : null"
+      (click)="doSendMessage(formControl.value)">
       <svg class="pc-svg-send">
         <use href="assets/icons/lib-chat/panel-chat/send-bin.svg#send-bin"></use>
       </svg>
-    </button> -->
-
+    </button>
+    }
   </mat-form-field>
 </div>
 }

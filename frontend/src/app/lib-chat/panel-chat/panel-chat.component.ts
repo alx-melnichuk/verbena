@@ -1,7 +1,11 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation } from '@angular/core';
+import {
+    afterNextRender, AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, inject, Injector, Input, OnChanges,
+    Output, SimpleChanges, ViewChild, ViewEncapsulation
+} from '@angular/core';
+import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { CommonModule, KeyValue } from '@angular/common';
 import { DateAdapter } from '@angular/material/core';
-import { MatInputModule } from '@angular/material/input';
+import { MatInput, MatInputModule } from '@angular/material/input';
 import { TranslatePipe } from '@ngx-translate/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -9,7 +13,6 @@ import { MatButtonModule } from '@angular/material/button';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { StringDateTime } from 'src/app/common/string-date-time';
-
 
 interface ChatMsg {
     msg: string;
@@ -26,7 +29,8 @@ interface ChatMsg {
 export const PIPE_DATE_COMPACT = 'MMM dd yyyy';
 export const PIPE_TIME_SHORT = 'HH:mm aa';
 
-export const CNT_ROWS = 2;
+export const MIN_ROWS = 1;
+export const MAX_ROWS = 3;
 
 // <mat-form-field subscriptSizing="dynamic"
 // it'll remove the space until an error or hint actually needs to get displayed and only then expands.
@@ -42,13 +46,17 @@ export const CNT_ROWS = 2;
 })
 export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Input()
-    public cntRows: number | null = CNT_ROWS;
-    @Input()
     public isBlocked: boolean | null = null;
     @Input()
     public isEditable: boolean | null = null;
     @Input()
+    public isMobile: boolean | null = null;
+    @Input()
     public locale: string | null = null;
+    @Input()
+    public maxRows: number | null = null;
+    @Input()
+    public minRows: number | null = null;
     @Input()
     public nickname: string | null = null;
     @Input()
@@ -72,21 +80,24 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     //   @Output()
     //   readonly bannedUser: EventEmitter<string> = new EventEmitter();
 
+    @ViewChild('autosize')
+    public autosize!: CdkTextareaAutosize;
     // @ViewChild('scrollItem')
     // private scrollItemContainer: ElementRef | undefined;
     // @ViewChild(MatInput)
     // private messageInput: MatInput | undefined;
-    //   @ViewChild('textarea', { static: true })
-    //   private textareaItem: ElementRef | undefined;
+    @ViewChild('textareaElement')
+    public textareaElem!: ElementRef<HTMLTextAreaElement>;
 
     public modifyMsgId: string | null = null;
     // #public newMessage = '';  // formControl.value
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ newMsg: this.formControl });
 
-    public maxLen = 255;
-    public minRows = 1;
-    public maxRows = 4;
+    public maxLen: number = 255;
+    public maxRowsVal: number = MAX_ROWS;
+    public minRowsVal: number = MIN_ROWS;
+
     public formatDateCompact = PIPE_DATE_COMPACT;
     public formatTimeShort = PIPE_TIME_SHORT;
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
@@ -103,17 +114,35 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     private mapHoverSecondary: { [key: string]: boolean } = {};
 
     private readonly dateAdapter: DateAdapter<Date> = inject(DateAdapter);
+    private _injector = inject(Injector);
 
     constructor() {
     }
 
+    triggerResize() {
+        // Wait for content to render, then trigger textarea resize.
+        afterNextRender(
+            () => {
+                this.autosize.resizeToFitContent(true);
+            },
+            {
+                injector: this._injector,
+            },
+        );
+    }
     ngAfterViewInit(): void {
         this.scrollToBottom();
+        // console.log(`!!this.messageInput: ${!!this.messageInput}`);
+        // console.log(`!!this.textareaElem: ${!!this.textareaElem}`);
+        // console.log(`!!this.autosize: ${!!this.autosize}`);
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (!!changes['cntRows'] && (!this.cntRows || this.cntRows < 1)) {
-            this.cntRows = CNT_ROWS;
+        if (!!changes['maxRows']) {
+            this.maxRowsVal = (!!this.maxRows && this.maxRows > 0 ? this.maxRows : MAX_ROWS);
+        }
+        if (!!changes['minRows']) {
+            this.minRowsVal = (!!this.minRows && this.minRows > 0 ? this.minRows : MIN_ROWS);
         }
         if (!!changes['chatMsgs']) {
             this.scrollToBottom();
@@ -212,7 +241,13 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     }
 
     public doKeydownEnter(event: Event, newMsg: string): void {
-        const keyEvent: KeyboardEvent = (event as KeyboardEvent);
+        if (!this.isMobile) {
+            const keyEvent: KeyboardEvent = (event as KeyboardEvent);
+            if (!keyEvent.altKey && !keyEvent.shiftKey) {
+                this.doSendMessage(newMsg);
+            }
+        }
+        /*const keyEvent: KeyboardEvent = (event as KeyboardEvent);
         // const textArea: HTMLTextAreaElement = this.getTextArea();
         //   && !!textArea.value && textArea.value.length > 0
         if (!keyEvent.altKey && !keyEvent.ctrlKey && !keyEvent.shiftKey && !!newMsg && newMsg.length > 0) {
@@ -220,7 +255,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             this.doSendMessage(newMsg);
             this.cleanNewMsg();
             // textArea.value = '';
-        }
+        }*/
         event.preventDefault();
     }
 
