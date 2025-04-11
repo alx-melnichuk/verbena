@@ -39,7 +39,13 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     @Input()
     public avatar: string | null | undefined;
     @Input()
+    public chatMaxRows: number | null = null;
+    @Input()
+    public chatMinRows: number | null = null;
+    @Input()
     public isLoadStream = false;
+    @Input()
+    public isMobile: boolean | null = null;
     @Input()
     public isShowTimer: boolean = false;
     @Input()
@@ -88,7 +94,6 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     // public settimeoutId: number | null = null;
 
     // Block "Chat"
-    public cntRows: number = 3;
     // public isEditableChat = false;
     // public isUserBanned = false;
 

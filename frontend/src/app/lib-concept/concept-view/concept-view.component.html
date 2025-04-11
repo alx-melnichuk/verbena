@@ -139,10 +139,12 @@
   </div>
   <div class="cv-sdb-cover-rg">
     <app-panel-chat class="cv-sdb-chat"
-      [cntRows]="cntRows"
       [isBlocked]="false"
       [isEditable]="isStreamActive"
+      [isMobile]="isMobile"
       [locale]="localeService.getLocale()"
+      [maxRows]="chatMaxRows"
+      [minRows]="chatMinRows"
       [nickname]="nickname || ''"
       [title]="'concept-view.chat_title'"
       (sendMsg)="doSendMessage($event)">
