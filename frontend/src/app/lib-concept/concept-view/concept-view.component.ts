@@ -164,6 +164,13 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
 
     // ** Public API **
 
+    // ** Side Left and Right **
+
+    public clearEvent(event: Event): void {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
     // Section: "Panel stream info"
     /*
     public doActionSubscribe(isSubscribe: boolean): void {

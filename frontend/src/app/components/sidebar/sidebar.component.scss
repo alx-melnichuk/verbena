@@ -21,6 +21,7 @@ app-sidebar {
     &:not([is-open]) {
         ---sb-pnl-wd: var(---sb-mn-wd);
         ---sb-hst-wd: var(---sb-mn-wd);
+        ---sb-pnl-bx-pnt-evn: var(--sb-pnl-bx-pnt-evn, none);
     }
 
     &[is-over] {
@@ -56,6 +57,7 @@ app-sidebar {
     .sb-panel-box {
         height: 100%;
         overflow: hidden;
+        pointer-events: var(---sb-pnl-bx-pnt-evn);
         position: relative;
     }
 

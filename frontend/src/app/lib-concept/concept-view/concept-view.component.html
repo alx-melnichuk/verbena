@@ -3,9 +3,10 @@
 }
 
 <app-sidebar class="cv-sidebar" mode="left"
-  [isOpen]="isSidebarLfOpen">
+  [isOpen]="isSidebarLfOpen"
+  (click)="isSidebarLfOpen=(isSidebarLfOpen==false ? true: isSidebarLfOpen)">
   <div sidebar-layer>
-    <button class="cv-sdb-btn cv-btn-arrow cv-left" (click)="isSidebarLfOpen = !isSidebarLfOpen;">
+    <button class="cv-sdb-btn cv-btn-arrow cv-left" (click)="clearEvent($event); isSidebarLfOpen = !isSidebarLfOpen;">
       <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarLfOpen ? 'cv-0deg' : 'cv-180deg')]">
         <use href="assets/icons/lib-concept/concept-view/angle-left-bin.svg#angle-left-bin"></use>
       </svg>
@@ -129,9 +130,10 @@
 </div>
 
 <app-sidebar class="cv-sidebar" mode="right"
-  [isOpen]="isSidebarRgOpen">
+  [isOpen]="isSidebarRgOpen"
+  (click)="isSidebarRgOpen=(isSidebarRgOpen==false ? true: isSidebarRgOpen)">
   <div sidebar-layer>
-    <button class="cv-sdb-btn cv-btn-arrow cv-right" (click)="isSidebarRgOpen = !isSidebarRgOpen;">
+    <button class="cv-sdb-btn cv-btn-arrow cv-right" (click)="clearEvent($event); isSidebarRgOpen=!isSidebarRgOpen;">
       <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarRgOpen ? 'cv-0deg' : 'cv-180deg')]">
         <use href="assets/icons/lib-concept/concept-view/angle-right-bin.svg#angle-right-bin"></use>
       </svg>
