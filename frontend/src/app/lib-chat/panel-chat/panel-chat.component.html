@@ -7,9 +7,14 @@
 
 <div class="pc-middle global-scroll" #scrollItem>
   @for (chatMsg of chatMsgs; track chatMsg.date) {    
-    <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : '') ]"
+    <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : ''), (selectedMsg==chatMsg ? 'pc-select' : ''),
+     (!!nickname && nickname == chatMsg.member ? 'demo1' : '') ]"
       mouseenter9="doMouseEnter(chatMsg.date, true)"
-      mouseleave9="doMouseLeave(chatMsg.date, true)">
+      mouseleave9="doMouseLeave(chatMsg.date, true)"
+      [matMenuTriggerFor]="isEnableMenu(chatMsg, nickname) ? menuItem : null"
+      [matMenuTriggerData]="menuDataMap.get(chatMsg.date) || getMenuDataByMap(chatMsg)"
+      (menuOpened)="selectedMsg=chatMsg"
+      (menuClosed)="selectedMsg=null">
 
       <div class="pc-item-name-date">
         <div [ngClass]="['pc-item-name', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
@@ -89,3 +94,20 @@
   </mat-form-field>
 </div>
 }
+
+<mat-menu #menuItem="matMenu" xPosition="before" [overlapTrigger]="true">
+  <ng-template matMenuContent let-name="name" let-isEdit="isEdit" let-isRemove="isRemove">
+    @if (isEdit) {
+      <button mat-menu-item class="pn-menu-item" (click)="doMenuEditItem(selectedMsg)">
+        <span [ngClass]="['mm-icon']"></span>
+        <span class="mm-mr-lf-0_5">{{ 'panel-chat.menu.edit' | translate }}</span>
+      </button>
+    }
+    @if (isRemove) {
+      <button mat-menu-item class="pn-item-menu"  (click)="doMenuRemoveItem(selectedMsg)">
+        <span class="mm-icon mm-theme"></span>
+        <span class="mm-mr-lf-0_5">{{ 'panel-chat.menu.remove' | translate }}</span>
+      </button>
+    }
+  </ng-template>
+</mat-menu>

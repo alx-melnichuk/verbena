@@ -408,6 +408,10 @@
     "btn_settings": "Einstellungen"
   },
   "panel-chat": {
-    "you": "du"
+    "you": "du",
+    "menu": {
+        "edit": "Bearbeiten",
+        "remove": "Löschen"
+    }
   }
 }

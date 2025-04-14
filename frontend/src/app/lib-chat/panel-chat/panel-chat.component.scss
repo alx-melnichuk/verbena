@@ -44,8 +44,12 @@ app-panel-chat {
             ---itm-sh: var(--pc-itm-self-sh, var(--sys-primary-fixed-dim));
         }
 
+        &.pc-select {
+            ---itm-bx-sh: 0 0 3px 1px var(--sys-tertiary);
+        }
+
         background-color: var(---itm-bg, var(---pc-itm-bg));
-        box-shadow: 0 0 2px 1px var(---itm-sh, var(---pc-itm-sh));
+        box-shadow: var(---itm-bx-sh, 0 0 2px 1px var(---itm-sh, var(---pc-itm-sh)));
         box-sizing: border-box;
         border-radius: var(--pc-br-rd, 0.75rem);
         display: flex;

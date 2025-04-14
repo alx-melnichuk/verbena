@@ -412,6 +412,10 @@
     "_error_unsubscription": "Error while a unsubscription"
   },
   "panel-chat": {
-    "you": "you"
+    "you": "you",
+    "menu": {
+        "edit": "Edit",
+        "remove": "Remove"
+    }
   }
 }

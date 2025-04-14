@@ -4,12 +4,13 @@ import {
 } from '@angular/core';
 import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { CommonModule, KeyValue } from '@angular/common';
-import { DateAdapter } from '@angular/material/core';
-import { MatInput, MatInputModule } from '@angular/material/input';
-import { TranslatePipe } from '@ngx-translate/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
+import { DateAdapter } from '@angular/material/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInput, MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { StringDateTime } from 'src/app/common/string-date-time';
@@ -25,6 +26,11 @@ interface ChatMsg {
     // avatar?: string;
     // event: string;
     // text: string;
+};
+
+interface MenuData {
+    isEdit: boolean;
+    isRemove: boolean;
 }
 
 export const PIPE_DATE_COMPACT = 'MMM dd yyyy';
@@ -39,7 +45,8 @@ export const MAX_ROWS = 3;
 @Component({
     selector: 'app-panel-chat',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, MatFormFieldModule, TranslatePipe, DateTimeFormatPipe],
+    imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatMenuModule,
+        TranslatePipe, DateTimeFormatPipe],
     templateUrl: './panel-chat.component.html',
     styleUrl: './panel-chat.component.scss',
     encapsulation: ViewEncapsulation.None,
@@ -90,19 +97,22 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @ViewChild('textareaElement')
     public textareaElem!: ElementRef<HTMLTextAreaElement>;
 
-    public modifyMsgId: string | null = null;
-    // #public newMessage = '';  // formControl.value
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ newMsg: this.formControl });
-
     public maxLen: number = 255;
     public maxRowsVal: number = MAX_ROWS;
     public minRowsVal: number = MIN_ROWS;
+    public selectedMsg: ChatMsg | null = null;
+    public menuDataMap: Map<string, MenuData> = new Map();
 
-    public formatDateCompact = PIPE_DATE_COMPACT;
-    public formatTimeShort = PIPE_TIME_SHORT;
-    readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
     readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' };
+
+    // ** OLD **
+    public modifyMsgId: string | null = null;
+    // #public newMessage = '';  // formControl.value
+    // public formatDateCompact = PIPE_DATE_COMPACT;
+    // public formatTimeShort = PIPE_TIME_SHORT;
+    // readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
 
     // public isShowFaceSmilePanel = false;
 
@@ -163,6 +173,33 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     public memberWithZero(value: string): string {
         return ReplaceWithZeroUtil.replace(value);
+    }
+
+    public isEnableMenu(chatMsg: ChatMsg | null, selfName: string | null): boolean {
+        return !!selfName && selfName == chatMsg?.member;
+    }
+
+    public getMenuDataByMap(chatMsg: ChatMsg | null): MenuData {
+        let result: MenuData = this.getMenuData('_' + this.nickname, this.nickname || '');
+        if (!!chatMsg && !!this.nickname) {
+            result = this.getMenuData(chatMsg.member, this.nickname);
+            this.menuDataMap.set(chatMsg.date, result);
+        }
+        return result;
+    }
+
+    public doMenuEditItem(selectedMsg: ChatMsg | null): void {
+        if (!selectedMsg) {
+            return;
+        }
+        console.log(`doMenuEditItem(${selectedMsg.date})`); // #
+    }
+
+    public doMenuRemoveItem(selectedMsg: ChatMsg | null): void {
+        if (!selectedMsg) {
+            return;
+        }
+        console.log(`doMenuRemoveItem(${selectedMsg.date})`); // #
     }
 
     public doSendMessage(newMsg: string): void {
@@ -292,6 +329,15 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     private cleanNewMsg(): void {
         this.formControl.setValue('');
     }
+
+    private getMenuData(member: string, selfName: string): MenuData {
+        const value = member == selfName;
+        return {
+            isEdit: value,
+            isRemove: value,
+        }
+    }
+
 
     /*
     private getTextArea(): HTMLTextAreaElement {
