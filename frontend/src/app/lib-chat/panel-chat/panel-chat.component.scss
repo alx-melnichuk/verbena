@@ -118,6 +118,7 @@ app-panel-chat {
         .mat-mdc-icon-button {
             --mdc-icon-button-state-layer-size: 36px;
             --mdc-icon-button-icon-size: 32px;
+            --mdc-icon-button-icon-color: var(--app-svg-icon-cl);
         }
 
         &.is-mobile {
@@ -136,14 +137,6 @@ app-panel-chat {
         textarea.pc-textarea {
             scrollbar-width: thin;
         }
-    }
-
-    .pc-btn-send:not([disabled]) {
-        ---pc-svg-send-cl: var(--sys-on-surface-variant);
-    }
-
-    .pc-svg-send {
-        color: var(---pc-svg-send-cl);
     }
 
 }

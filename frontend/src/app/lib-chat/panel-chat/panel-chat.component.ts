@@ -13,6 +13,7 @@ import { MatButtonModule } from '@angular/material/button';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { StringDateTime } from 'src/app/common/string-date-time';
+import { ReplaceWithZeroUtil } from 'src/app/utils/replace-with-zero.util';
 
 interface ChatMsg {
     msg: string;
@@ -158,6 +159,10 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     public trackById(index: number, item: ChatMsg): string {
         return item.date;
+    }
+
+    public memberWithZero(value: string): string {
+        return ReplaceWithZeroUtil.replace(value);
     }
 
     public doSendMessage(newMsg: string): void {

@@ -13,7 +13,7 @@
 
       <div class="pc-item-name-date">
         <div [ngClass]="['pc-item-name', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
-          {{ isSelf(chatMsg.member) ? ('panel-chat.you' | translate) : chatMsg.member }}
+          {{ isSelf(chatMsg.member) ? ('panel-chat.you' | translate) : memberWithZero(chatMsg.member) }}
         </div>
         <div class="pc-item-date">
           {{ chatMsg.date | dateTimeFormat:locale:formatDateTime  }}
