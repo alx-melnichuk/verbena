@@ -3,11 +3,11 @@
   [chatMaxRows]="chatMaxRows"
   [chatMinRows]="chatMinRows"
   [isLoadStream]="isLoadStream"
-  [isMobile]="isMobile"
   [isShowTimer]="isShowTimer"
   [isStreamOwner]="isStreamOwner"
   [nickname]="profileDto?.nickname"
   [streamDto]="streamDto"
   (changeState)="doChangeState(isStreamOwner, streamDto?.id, $event)"
-  (sendMessage)="doSendMessage($event)">
+  (sendMessage)="doSendMessage($event)"
+  (removeMessage)="doRemoveMessage($event)">
 </app-concept-view>
