@@ -143,13 +143,13 @@
     <app-panel-chat class="cv-sdb-chat"
       [isBlocked]="false"
       [isEditable]="isStreamActive"
-      [isMobile]="isMobile"
       [locale]="localeService.getLocale()"
       [maxRows]="chatMaxRows"
       [minRows]="chatMinRows"
       [nickname]="nickname || ''"
       [title]="'concept-view.chat_title'"
-      (sendMsg)="doSendMessage($event)">
+      (sendMsg)="doSendMessage($event)"
+      (removeMsg)="doRemoveMessage($event)">
     </app-panel-chat>
   </div>
 

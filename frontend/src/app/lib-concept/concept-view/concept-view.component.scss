@@ -14,7 +14,7 @@ app-concept-view {
     ---cv-pn-bg: var(--app-concept-pn-bg);
     ---cv-pn-brd: var(--app-concept-pn-brd);
     --sb-mn-wd: var(--cv-sb-mn-wd, 57px);
-    --sb-mx-wd: var(--cv-sb-mx-wd, 300px);
+    --sb-mx-wd: var(--cv-sb-mx-wd, 400px);
     --sb-durat: 1200ms; // --sb-durat: 1.200s;
 
     // background-color: var(---cv-pn-low-bg);
@@ -215,7 +215,7 @@ app-concept-view {
 
     // ** **
 
-    @container cnt-concept-view (width<800px) {
+    @container cnt-concept-view (width<1024px) {
         .cv-sidebar {
             ---sb-ovr-wd: var(---sb-mn-wd);
             ---sb-panel-pos: absolute;
