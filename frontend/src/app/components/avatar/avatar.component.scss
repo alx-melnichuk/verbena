@@ -1,7 +1,7 @@
 /*# sourceURL=avatar.component.scss */
 
 app-avatar {
-    ---av-zs: var(--av-sz, 2rem);
+    ---av-sz: var(--av-sz, 2rem);
     ---av-brd-rd: var(--av-brd-rd, 0px);
 
     display: block;
@@ -10,9 +10,9 @@ app-avatar {
         border-radius: var(---av-brd-rd);
         color: var(--app-svg-icon-cl); // for "svg"
         display: block;
-        height: var(---av-zs);
+        height: var(---av-sz);
         object-fit: cover; // for "img"
-        width: var(---av-zs);
+        width: var(---av-sz);
     }
 
 }
