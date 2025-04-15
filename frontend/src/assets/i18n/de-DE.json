@@ -412,6 +412,7 @@
     "menu": {
         "edit": "Bearbeiten",
         "remove": "Löschen"
-    }
+    },
+    "editing_msg": "Bearbeiten einer nachricht"
   }
 }

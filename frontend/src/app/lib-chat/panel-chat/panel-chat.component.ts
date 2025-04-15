@@ -58,8 +58,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Input()
     public isEditable: boolean | null = null;
     @Input()
-    public isMobile: boolean | null = null;
-    @Input()
     public locale: string | null = null;
     @Input()
     public maxRows: number | null = null;
@@ -82,7 +80,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Output()
     readonly sendMsg: EventEmitter<string> = new EventEmitter();
     @Output()
-    readonly removeMsg: EventEmitter<string> = new EventEmitter();
+    readonly removeMsg: EventEmitter<{ date: string, msg: string }> = new EventEmitter();
     @Output()
     readonly editMsg: EventEmitter<KeyValue<string, string>> = new EventEmitter();
     //   @Output()
@@ -102,8 +100,10 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public maxLen: number = 255;
     public maxRowsVal: number = MAX_ROWS;
     public minRowsVal: number = MIN_ROWS;
-    public selectedMsg: ChatMsg | null = null;
     public menuDataMap: Map<string, MenuData> = new Map();
+    public msgMarked: ChatMsg | null = null;
+    public msgEditing: ChatMsg | null = null;
+    public initValue: string | null = null;
 
     readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' };
 
@@ -144,7 +144,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     ngAfterViewInit(): void {
         this.scrollToBottom();
         // console.log(`!!this.messageInput: ${!!this.messageInput}`);
-        // console.log(`!!this.textareaElem: ${!!this.textareaElem}`);
         // console.log(`!!this.autosize: ${!!this.autosize}`);
     }
 
@@ -170,11 +169,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public trackById(index: number, item: ChatMsg): string {
         return item.date;
     }
-
     public memberWithZero(value: string): string {
         return ReplaceWithZeroUtil.replace(value);
     }
-
     public isEnableMenu(chatMsg: ChatMsg | null, selfName: string | null): boolean {
         return !!selfName && selfName == chatMsg?.member;
     }
@@ -187,19 +184,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
         return result;
     }
-
-    public doMenuEditItem(selectedMsg: ChatMsg | null): void {
-        if (!selectedMsg) {
-            return;
-        }
-        console.log(`doMenuEditItem(${selectedMsg.date})`); // #
-    }
-
-    public doMenuRemoveItem(selectedMsg: ChatMsg | null): void {
-        if (!selectedMsg) {
-            return;
-        }
-        console.log(`doMenuRemoveItem(${selectedMsg.date})`); // #
+    public cleanNewMsg(): void {
+        this.setTextareaValue(null);
+        this.msgEditing = null;
     }
 
     public doSendMessage(newMsg: string): void {
@@ -212,18 +199,30 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
                 this.sendMsg.emit(newMsg);
             }
             this.cleanNewMsg();
-            // this.newMessage = '';
             this.scrollToBottom();
+        }
+    }
+    public doRemoveMessage(chatMsg: ChatMsg | null): void {
+        if (!!chatMsg && chatMsg.member == this.nickname) {
+            console.log(`doRemoveMessage(${chatMsg.date})`); // #
+            this.removeMsg.emit({ date: chatMsg.date, msg: chatMsg.msg });
         }
     }
     /*
     public doRemoveMessage(chatMessage: ChatMsg): void {
         if (!!chatMessage && !!chatMessage.id) {
-              this.removeMessage.emit(chatMessage.id);
+            this.removeMessage.emit(chatMessage.id);
+        }
+    }*/
+    public doSetValueForEditing(chatMsg: ChatMsg | null): void {
+        console.log(`doSetValueForEditing()`); // #
+        if (this.msgEditing != chatMsg) {
+            this.msgEditing = chatMsg;
+            this.setTextareaValue(chatMsg?.msg || null);
+            this.textareaElem.nativeElement.focus();
         }
     }
-
-    public doEditMessage(chatMessage: ChatMsg): void {
+    /*public doEditMessage(chatMessage: ChatMsg): void {
         if (!!chatMessage && !!chatMessage.id) {
             this.newMessage = chatMessage.text;
             this.modifyMsgId = chatMessage.id;
@@ -231,9 +230,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
                 this.messageInput.focus();
               }
         }
-    }
-
-    public doBannedUser(chatMessage: ChatMsg): void {
+    }*/
+    /*public doBannedUser(chatMessage: ChatMsg): void {
         if (!!chatMessage && !!chatMessage.nickname) {
               this.bannedUser.emit(chatMessage.nickname);
         }
@@ -283,11 +281,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     }
 
     public doKeydownEnter(event: Event, newMsg: string): void {
-        if (!this.isMobile) {
-            const keyEvent: KeyboardEvent = (event as KeyboardEvent);
-            if (!keyEvent.altKey && !keyEvent.shiftKey) {
-                this.doSendMessage(newMsg);
-            }
+        const keyEvent: KeyboardEvent = (event as KeyboardEvent);
+        if (!keyEvent.altKey && !keyEvent.shiftKey) {
+            this.doSendMessage(newMsg);
         }
         /*const keyEvent: KeyboardEvent = (event as KeyboardEvent);
         // const textArea: HTMLTextAreaElement = this.getTextArea();
@@ -302,8 +298,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     }
 
     public doKeydownEscape(): void {
-        if (!!this.modifyMsgId) {
-            this.modifyMsgId = null;
+        if (!!this.msgEditing) {
             this.cleanNewMsg();
         }
     }
@@ -326,10 +321,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     */
     // ** Private API **
 
-    private cleanNewMsg(): void {
-        this.formControl.setValue('');
-    }
-
     private getMenuData(member: string, selfName: string): MenuData {
         const value = member == selfName;
         return {
@@ -337,7 +328,10 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             isRemove: value,
         }
     }
-
+    private setTextareaValue(value: string | null): void {
+        this.initValue = value;
+        this.formControl.setValue(value);
+    }
 
     /*
     private getTextArea(): HTMLTextAreaElement {

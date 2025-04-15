@@ -7,14 +7,15 @@
 
 <div class="pc-middle global-scroll" #scrollItem>
   @for (chatMsg of chatMsgs; track chatMsg.date) {    
-    <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : ''), (selectedMsg==chatMsg ? 'pc-select' : ''),
+    <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : ''), 
+     (msgMarked==chatMsg || msgEditing==chatMsg ? 'pc-marked' : ''),
      (!!nickname && nickname == chatMsg.member ? 'demo1' : '') ]"
       mouseenter9="doMouseEnter(chatMsg.date, true)"
       mouseleave9="doMouseLeave(chatMsg.date, true)"
       [matMenuTriggerFor]="isEnableMenu(chatMsg, nickname) ? menuItem : null"
       [matMenuTriggerData]="menuDataMap.get(chatMsg.date) || getMenuDataByMap(chatMsg)"
-      (menuOpened)="selectedMsg=chatMsg"
-      (menuClosed)="selectedMsg=null">
+      (menuOpened)="msgMarked=chatMsg;"
+      (menuClosed)="msgMarked=null;">
 
       <div class="pc-item-name-date">
         <div [ngClass]="['pc-item-name', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
@@ -37,24 +38,14 @@
         <!-- </div> -->
         
       </div>
-      <!-- <div class="pc-item-info"> -->
-        <!-- @if (!isSelf(chatMsg.member)) {
-        <div class="pc-info-avatar"> -->
-            <!-- <app-avatar
-              [avatar]="chatMessage.avatar || null"
-              [nickname]="chatMessage.nickname || null">
-            </app-avatar> -->
-        <!-- </div>
-        } -->
-        <div [ngClass]="['pc-item-msg', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
-          {{ chatMsg.date }} {{ chatMsg.msg }}
-          <!-- <p *ngFor="let chatMessageRow of getMessageRows(chatMsg.text)">{{ chatMessageRow }}</p> -->
-        </div>
-        <!-- <div *ngIf="isBannedUserById(chatMsg.member)" class="prc-banned-user">
-          <div class="prc-msg-banned-orange"></div>
-        </div> -->
-
-      <!-- </div> -->
+        
+      <div [ngClass]="['pc-item-msg', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
+        {{ chatMsg.msg }}
+      </div><sub>{{ chatMsg.date }}</sub>
+      <!-- <div *ngIf="isBannedUserById(chatMsg.member)" class="prc-banned-user">
+        <div class="prc-msg-banned-orange"></div>
+      </div> -->
+      
     </div>
   }
 </div>
@@ -63,11 +54,17 @@
 <div class="pc-sepr"></div>
 
 <div class="pc-footer" [formGroup]="formGroup">
-  <mat-form-field [ngClass]="['pc-new-msg', (isMobile ? 'is-mobile':''), (!!modifyMsgId ? 'pc-modify-msg' : '')]"
+  <mat-form-field [ngClass]="['pc-new-msg', (!!modifyMsgId ? 'pc-modify-msg' : ''), (!!msgEditing ? 'pc-editing' : '')]"
     appearance="outline"
     color="primary"
-    subscriptSizing="dynamic">
-    
+    subscriptSizing="dynamic"
+    floatLabel="auto">
+    <div [ngClass]="['pc-nmsg-label', (!msgEditing ? 'hide' : '')]">
+      <svg class="pc-svg-mini">
+        <use href="assets/icons/lib-chat/panel-chat/pen-bin.svg#pen-bin"></use>
+      </svg>
+      <span>{{ 'panel-chat.editing_msg' | translate }}</span>
+    </div>
     <textarea matInput #messageInput #textareaElement
       class="pc-textarea global-scroll"
       formControlName="newMsg"
@@ -82,31 +79,44 @@
       [cdkAutosizeMaxRows]="2 + maxRowsVal">
     </textarea>
 
-    @if (isMobile) {
+    @if (!!msgEditing) {
+    <button mat-icon-button matSuffix class="pc-btn-cancel"
+      (click)="doSetValueForEditing(null)">
+      <svg class="pc-svg-send">
+        <use href="assets/icons/lib-chat/panel-chat/close-circle-bin.svg#close-circle-bin"></use>
+      </svg>
+    </button>
+    }
     <button mat-icon-button matSuffix class="pc-btn-send"
-      [disabled]="!formControl.value ? '' : null"
+      [disabled]="initValue == (formControl.value?.trim() || null) ? '' : null"
       (click)="doSendMessage(formControl.value)">
       <svg class="pc-svg-send">
         <use href="assets/icons/lib-chat/panel-chat/send-bin.svg#send-bin"></use>
       </svg>
     </button>
-    }
+
   </mat-form-field>
 </div>
 }
 
-<mat-menu #menuItem="matMenu" xPosition="before" [overlapTrigger]="true">
-  <ng-template matMenuContent let-name="name" let-isEdit="isEdit" let-isRemove="isRemove">
+<mat-menu #menuItem="matMenu" class="pc-menu-panel" xPosition="before" [overlapTrigger]="true">
+  <ng-template matMenuContent let-isEdit="isEdit" let-isRemove="isRemove">
     @if (isEdit) {
-      <button mat-menu-item class="pn-menu-item" (click)="doMenuEditItem(selectedMsg)">
-        <span [ngClass]="['mm-icon']"></span>
-        <span class="mm-mr-lf-0_5">{{ 'panel-chat.menu.edit' | translate }}</span>
+      <button mat-menu-item class="pn-menu-item" (click)="doSetValueForEditing(msgMarked)">
+        <!-- <span [ngClass]="['mm-icon']"></span> -->
+        <!-- pen-bin.svg -->
+        <svg class="pc-svg-box">
+          <use href="assets/icons/lib-chat/panel-chat/pen-bin.svg#pen-bin"></use>
+        </svg>
+        <span class="pc-menu-label">{{ 'panel-chat.menu.edit' | translate }}</span>
       </button>
     }
     @if (isRemove) {
-      <button mat-menu-item class="pn-item-menu"  (click)="doMenuRemoveItem(selectedMsg)">
-        <span class="mm-icon mm-theme"></span>
-        <span class="mm-mr-lf-0_5">{{ 'panel-chat.menu.remove' | translate }}</span>
+      <button mat-menu-item class="pn-item-menu"  (click)="doRemoveMessage(msgMarked)">
+        <svg class="pc-svg-box">
+          <use href="assets/icons/lib-chat/panel-chat/trash-bin.svg#trash-bin"></use>
+        </svg>
+        <span class="pc-menu-label">{{ 'panel-chat.menu.remove' | translate }}</span>
       </button>
     }
   </ng-template>
