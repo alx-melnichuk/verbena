@@ -14,21 +14,10 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { StringDateTime } from 'src/app/common/string-date-time';
+import { ChatMsg, RefreshChatMsgs } from 'src/app/lib-stream/stream-chats.interface';
 import { DateUtil } from 'src/app/utils/date.utils';
 import { ReplaceWithZeroUtil } from 'src/app/utils/replace-with-zero.util';
 import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
-
-interface ChatMsg {
-    msg: string;
-    member: string;
-    date: StringDateTime;
-    // id: string;
-    // userId: string;
-    // nickname: string;
-    // avatar?: string;
-    // event: string;
-    // text: string;
-};
 
 interface MenuData {
     isEdit: boolean;
@@ -51,7 +40,7 @@ export const MAX_ROWS = 3;
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PanelChatComponent implements OnChanges, AfterViewInit {
+export class PanelChatComponent implements OnChanges, AfterViewInit, RefreshChatMsgs {
     @Input()
     public isBlocked: boolean | null = null;
     @Input()
@@ -82,6 +71,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     readonly removeMsg: EventEmitter<KeyValue<string, string>> = new EventEmitter();
     @Output()
     readonly editMsg: EventEmitter<KeyValue<string, string>> = new EventEmitter();
+    @Output()
+    readonly setRefreshChatMsgs: EventEmitter<RefreshChatMsgs> = new EventEmitter();
     //   @Output()
     //   readonly bannedUser: EventEmitter<string> = new EventEmitter();
 
@@ -92,6 +83,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @ViewChild('textareaElement')
     public textareaElem!: ElementRef<HTMLTextAreaElement>;
 
+    public listChatMsg: ChatMsg[] = [];
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ newMsg: this.formControl });
     public maxLen: number = 255;
@@ -106,10 +98,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     readonly formatTime: Intl.DateTimeFormatOptions = { timeStyle: 'short' };
 
     // ** OLD **
-    // #public newMessage = '';  // formControl.value
-    // public formatDateCompact = PIPE_DATE_COMPACT;
-    // readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
-
     // public isShowFaceSmilePanel = false;
 
     // public faceSmileList: string[] = [
@@ -121,7 +109,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     private _injector = inject(Injector);
 
     constructor() {
-        this.chatMsgs = this.getChatMsg('evelyn_allen', 18); // #
+        // this.chatMsgs = this.getChatMsg('evelyn_allen', 18); // #
     }
 
     triggerResize() {
@@ -137,7 +125,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     }
     ngAfterViewInit(): void {
         this.scrollToBottom();
-        // console.log(`!!this.scrollItemContainer: ${!!this.scrollItemContainer}`);
+        this.setRefreshChatMsgs.emit(this);
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -148,6 +136,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             this.minRowsVal = (!!this.minRows && this.minRows > 0 ? this.minRows : MIN_ROWS);
         }
         if (!!changes['chatMsgs']) {
+            console.log(`&& PanelChat.OnChange('chatMsgs') chatMsgs: ${JSON.stringify(this.chatMsgs)}`);
+            this.listChatMsg.push(...this.chatMsgs);
             this.scrollToBottom();
             Promise.resolve().then(() =>
                 this.scrollToBottom());
@@ -212,24 +202,15 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     //     }
     // }
 
-    // public isToday(value: StringDateTime): boolean {
-    //     const todayStr = moment().clone().format(MOMENT_ISO8601_DATE);
-    //     const todayMoment = moment(todayStr, MOMENT_ISO8601_DATE);
-    //     const valueMoment = moment(value, MOMENT_ISO8601);
-    //     return todayMoment.isBefore(valueMoment);
-    // }
+    public isSelf(nickname: string): boolean {
+        return (this.nickname === nickname);
+    }
     public isToday(value: StringDateTime | null | undefined): boolean {
         let result: boolean = false;
         if (!!value && value.length > 0) {
-            const valueDate = StringDateTimeUtil.toDate(value);
-            const nowDate: Date = new Date(Date.now());
-            result = DateUtil.compare(valueDate, nowDate) == 0;
+            result = DateUtil.compare(StringDateTimeUtil.toDate(value), new Date(Date.now())) == 0;
         }
-        // const date = this.dateAdapter.format(value, null);
         return result;
-    }
-    public isSelf(nickname: string): boolean {
-        return (this.nickname === nickname);
     }
 
     // public isBannedUserById(nickname: string): boolean {
@@ -259,6 +240,18 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
     }
 
+    // ** implements "UpdateChatMsgs" **
+    public refreshAddChatMsg(chatMsg: ChatMsg): void {
+        console.log(`@@ addChatMsg() chatMsg: ${JSON.stringify(chatMsg)}`); // #
+    }
+    public refreshEditChatMsg(chatMsg: ChatMsg): void {
+        console.log(`@@ addChatMsg() chatMsg: ${JSON.stringify(chatMsg)}`); // #
+    }
+    public refreshRemoveChatMsg(msgDate: StringDateTime): void {
+        console.log(`@@ addChatMsg() msgDate: ${msgDate}`); // #
+    }
+
+    // ** **
     /*
     public clickFaceSmilePanel(code: string): void {
         const item: HTMLTextAreaElement = this.getTextArea();

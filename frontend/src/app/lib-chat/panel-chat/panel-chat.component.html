@@ -6,7 +6,7 @@
 <div class="pc-sepr"></div>
 
 <div class="pc-middle global-scroll" #scrollItem>
-  @for (chatMsg of chatMsgs; track chatMsg.date) {    
+  @for (chatMsg of listChatMsg; track chatMsg.date) {    
     <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : '')
       , (msgMarked==chatMsg || msgEditing==chatMsg ? 'pc-marked' : '')]"
       [matMenuTriggerFor]="isEnableMenu(chatMsg, nickname) ? menuItem : null"

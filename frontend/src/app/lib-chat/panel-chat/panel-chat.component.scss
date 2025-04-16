@@ -118,7 +118,7 @@ app-panel-chat {
     .mat-mdc-form-field.pc-new-msg {
         --mat-form-field-container-vertical-padding: 0.75rem;
         --mat-form-field-container-text-size: var(--pc-mdl-fn-sz, 1rem);
-        background-color: var(--pc-new-msg-bg);
+        // #background-color: var(--pc-new-msg-bg);
         border-radius: var(--mdc-outlined-text-field-container-shape);
         width: 100%;
 

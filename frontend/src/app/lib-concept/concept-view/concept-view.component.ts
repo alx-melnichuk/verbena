@@ -21,6 +21,7 @@ import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
 import { PanelStreamActionsComponent } from '../panel-stream-actions/panel-stream-actions.component';
 import { PanelStreamParamsComponent } from '../panel-stream-params/panel-stream-params.component';
 import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-state.component';
+import { ChatMsg, RefreshChatMsgs } from 'src/app/lib-stream/stream-chats.interface';
 
 
 @Component({
@@ -70,6 +71,8 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     readonly editMessage: EventEmitter<KeyValue<string, string>> = new EventEmitter();
     @Output()
     readonly removeMessage: EventEmitter<string> = new EventEmitter();
+    @Output()
+    readonly setRefreshChatMsgs: EventEmitter<RefreshChatMsgs> = new EventEmitter();
     // @Output()
     // readonly bannedUser: EventEmitter<string> = new EventEmitter();
 
@@ -175,7 +178,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
         this.actionSubscribe.emit(isSubscribe);
     }
     */
-    // Section: "app-panel-stream-admin"
+    // Section: "panel stream admin"
 
     public getDate(starttime: StringDateTime | null | undefined): Date | null {
         return StringDateTimeUtil.toDate(starttime);
@@ -221,7 +224,11 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
             this.bannedUser.emit(userId);
         }
     }*/
-
+    public doSetRefreshChatMsgs(refreshChatMsgs: RefreshChatMsgs | null): void {
+        if (!!refreshChatMsgs) {
+            this.setRefreshChatMsgs.emit(refreshChatMsgs);
+        }
+    }
     // ** Private API **
 
     // Section: "Followers And Popular"
@@ -330,4 +337,33 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
             this.setBroadcastDuration();
         }
     }*/
+
+    private getChatMsg(nickname: string, len: number): ChatMsg[] {
+        const result: ChatMsg[] = [];
+
+        for (let idx = 0; idx < len; idx++) {
+            let member = "Teodor_Nickols";
+            let d1 = new Date((idx < (len / 2) ? -100000000 : 0) + Date.now());
+            let date = d1.toISOString();
+            let msg = "text_" + idx + " This function can be used to pass through a successful result while handling an error.";
+            if (idx % 3 == 0) {
+                member = nickname;
+            } else if (idx % 2 == 0) {
+                member = "Snegana_Miller";
+            }
+            // const date1 = date.slice(20, 24) + '_' + date.slice(11, 19) + '_' + date.slice(0, 10);
+            result.push({ msg, member, date });
+            this.wait(1);
+        }
+        return result;
+    }
+
+    private wait(ms: number): void {
+        const start = Date.now();
+        let now = start;
+        while (now - start < ms) {
+            now = Date.now();
+        }
+    }
+
 }

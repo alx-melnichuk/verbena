@@ -1,6 +1,6 @@
 import { CommonModule, KeyValue } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 
@@ -9,7 +9,9 @@ import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { ConfirmationData } from 'src/app/lib-dialog/confirmation/confirmation.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
+import { SocketApiService } from 'src/app/lib-socket/socket-api.service';
 import { StreamDto, StreamState, StreamStateUtil } from 'src/app/lib-stream/stream-api.interface';
+import { RefreshChatMsgs } from 'src/app/lib-stream/stream-chats.interface';
 import { StreamService } from 'src/app/lib-stream/stream.service';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 
@@ -20,9 +22,10 @@ import { HttpErrorUtil } from 'src/app/utils/http-error.util';
     templateUrl: './pg-concept-view.component.html',
     styleUrl: './pg-concept-view.component.scss',
     encapsulation: ViewEncapsulation.None,
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [SocketApiService],
 })
-export class PgConceptViewComponent implements OnInit {
+export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     public chatMaxRows: number = 4;
     public chatMinRows: number = 1;
@@ -38,6 +41,8 @@ export class PgConceptViewComponent implements OnInit {
     public profileDto: ProfileDto | null = null;
     public streamDto: StreamDto | null = null;
 
+    private refreshChatMsgs: RefreshChatMsgs | null = null;
+
     constructor(
         private changeDetector: ChangeDetectorRef,
         private route: ActivatedRoute,
@@ -45,7 +50,9 @@ export class PgConceptViewComponent implements OnInit {
         private alertService: AlertService,
         private dialogService: DialogService,
         private streamService: StreamService,
+        private socketApiService: SocketApiService,
     ) {
+        console.log(`PgConceptView()`); // #
         // this.showTimerBeforeStart = 120; // minutes
         this.profileDto = this.route.snapshot.data['profileDto'];
         this.streamDto = this.route.snapshot.data['streamDto'];
@@ -66,19 +73,29 @@ export class PgConceptViewComponent implements OnInit {
                 + ' Invalid stream state transition from "waiting" to "stopped".';
         }
     }
-
     ngOnInit(): void {
+        console.log(`PgConceptView.OnInit()`); // #
         this.updateParams(this.streamDto, this.profileDto);
+        let host = '127.0.0.1:8080';
+        this.socketApiService.connect('ws', host);
     }
 
+    ngOnDestroy(): void {
+        this.socketApiService.disconnect();
+    }
+
+
     // ** Public API **
+
+    // Section: "panel stream admin"
 
     public doChangeState(isStreamOwner: boolean, streamId: number | undefined, newState: StreamState | null): void {
         if (!!isStreamOwner && !!streamId && !!newState) {
             this.toggleStreamState(isStreamOwner, streamId, newState);
         }
-
     }
+
+    // Section: "Chat"
 
     public doSendMessage(newMessage: string | null): void {
         const msgVal = (newMessage || '').trim();
@@ -101,6 +118,12 @@ export class PgConceptViewComponent implements OnInit {
             return;
         }
         console.log(`doRemoveMessage(${messageDate})`); // #
+    }
+    public doSetRefreshChatMsgs(refreshChatMsgs: RefreshChatMsgs | null): void {
+        if (!!refreshChatMsgs) {
+            console.log(`doSetRefreshChatMsgs()`); // #
+            this.refreshChatMsgs = refreshChatMsgs;
+        }
     }
 
     // ** Private API **

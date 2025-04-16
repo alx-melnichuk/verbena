@@ -150,7 +150,8 @@
       [title]="'concept-view.chat_title'"
       (sendMsg)="doSendMessage($event)"
       (editMsg)="doEditMessage($event)"
-      (removeMsg)="doRemoveMessage($event)">
+      (removeMsg)="doRemoveMessage($event)"
+      (setRefreshChatMsgs)="doSetRefreshChatMsgs($event)">
     </app-panel-chat>
   </div>
 
