@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, KeyValue } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -80,12 +80,27 @@ export class PgConceptViewComponent implements OnInit {
 
     }
 
-    public doSendMessage(msg: string): void {
-        console.log(`doSendMessage(${msg})`); // #
+    public doSendMessage(newMessage: string | null): void {
+        const msgVal = (newMessage || '').trim();
+        if (!msgVal) {
+            return;
+        }
+        console.log(`doSendMessage(${msgVal})`); // #
     }
-
-    public doRemoveMessage(msgId: string): void {
-        console.log(`doRemoveMessage(${msgId})`); // #
+    public doEditMessage(keyValue: KeyValue<string, string> | null): void {
+        const msgDate = (keyValue?.key || '').trim();
+        const msgVal = (keyValue?.value || '').trim();
+        if (!msgDate || !msgVal) {
+            return;
+        }
+        console.log(`doEditMessage(${JSON.stringify(keyValue)})`); // #
+    }
+    public doRemoveMessage(messageDate: string | null): void {
+        const msgDate = (messageDate || '').trim();
+        if (!msgDate) {
+            return;
+        }
+        console.log(`doRemoveMessage(${messageDate})`); // #
     }
 
     // ** Private API **
