@@ -396,7 +396,8 @@
   },
   "concept-view": {
     "chat_title": "Чат трансляції",
-    "title": "Назва:"
+    "title": "Назва:",
+    "sure_you_want_delete_message": "Ви впевнені, що хочете видалити повідомлення: \"{{message}}\" ?"
   },
   "panel-stream-params": {
     "tags": "Теги:",

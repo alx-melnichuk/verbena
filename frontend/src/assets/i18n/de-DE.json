@@ -396,7 +396,8 @@
   },
   "concept-view": {
     "chat_title": "Stream-Chat",
-    "title": "Titel:"
+    "title": "Titel:",
+    "sure_you_want_delete_message": "Möchten sie die nachricht \"{{message}}\" wirklich löschen ?"
   },
   "panel-stream-params": {
     "tags": "Schlagwörter:",
