@@ -14,7 +14,9 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { StringDateTime } from 'src/app/common/string-date-time';
+import { DateUtil } from 'src/app/utils/date.utils';
 import { ReplaceWithZeroUtil } from 'src/app/utils/replace-with-zero.util';
+import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
 
 interface ChatMsg {
     msg: string;
@@ -32,9 +34,6 @@ interface MenuData {
     isEdit: boolean;
     isRemove: boolean;
 }
-
-export const PIPE_DATE_COMPACT = 'MMM dd yyyy';
-export const PIPE_TIME_SHORT = 'HH:mm aa';
 
 export const MIN_ROWS = 1;
 export const MAX_ROWS = 3;
@@ -80,7 +79,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Output()
     readonly sendMsg: EventEmitter<string> = new EventEmitter();
     @Output()
-    readonly removeMsg: EventEmitter<{ date: string, msg: string }> = new EventEmitter();
+    readonly removeMsg: EventEmitter<KeyValue<string, string>> = new EventEmitter();
     @Output()
     readonly editMsg: EventEmitter<KeyValue<string, string>> = new EventEmitter();
     //   @Output()
@@ -88,10 +87,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     @ViewChild('autosize')
     public autosize!: CdkTextareaAutosize;
-    // @ViewChild('scrollItem')
-    // private scrollItemContainer: ElementRef | undefined;
-    // @ViewChild(MatInput)
-    // private messageInput: MatInput | undefined;
+    @ViewChild('scrollItem')
+    private scrollItemContainer!: ElementRef<HTMLElement>;
     @ViewChild('textareaElement')
     public textareaElem!: ElementRef<HTMLTextAreaElement>;
 
@@ -105,13 +102,12 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public msgEditing: ChatMsg | null = null;
     public initValue: string | null = null;
 
-    readonly formatDateTime: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' };
+    readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
+    readonly formatTime: Intl.DateTimeFormatOptions = { timeStyle: 'short' };
 
     // ** OLD **
-    public modifyMsgId: string | null = null;
     // #public newMessage = '';  // formControl.value
     // public formatDateCompact = PIPE_DATE_COMPACT;
-    // public formatTimeShort = PIPE_TIME_SHORT;
     // readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
 
     // public isShowFaceSmilePanel = false;
@@ -121,13 +117,11 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     //     ...this.getEmojiPart2(),
     // ];
 
-    private mapHoverPrimary: { [key: string]: boolean } = {};
-    private mapHoverSecondary: { [key: string]: boolean } = {};
-
     private readonly dateAdapter: DateAdapter<Date> = inject(DateAdapter);
     private _injector = inject(Injector);
 
     constructor() {
+        this.chatMsgs = this.getChatMsg('evelyn_allen', 18); // #
     }
 
     triggerResize() {
@@ -143,8 +137,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     }
     ngAfterViewInit(): void {
         this.scrollToBottom();
-        // console.log(`!!this.messageInput: ${!!this.messageInput}`);
-        // console.log(`!!this.autosize: ${!!this.autosize}`);
+        // console.log(`!!this.scrollItemContainer: ${!!this.scrollItemContainer}`);
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -158,9 +151,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             this.scrollToBottom();
             Promise.resolve().then(() =>
                 this.scrollToBottom());
-        }
-        if (!!changes['nickname']) {
-            this.chatMsgs = this.getChatMsg(this.nickname || ''); // #
         }
     }
 
@@ -190,110 +180,76 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     }
 
     public doSendMessage(newMsg: string): void {
-        if (!!newMsg && newMsg.length > 0) {
-            if (!!this.modifyMsgId) {
-                const keyValue: KeyValue<string, string> = { key: this.modifyMsgId, value: newMsg };
+        const newMsgVal = (newMsg || '').trim();
+        if (newMsgVal.length > 0) {
+            if (!!this.msgEditing) {
+                const keyValue: KeyValue<string, string> = { key: this.msgEditing.date, value: newMsgVal };
                 this.editMsg.emit(keyValue);
-                this.modifyMsgId = null;
             } else {
-                this.sendMsg.emit(newMsg);
+                this.sendMsg.emit(newMsgVal);
             }
             this.cleanNewMsg();
             this.scrollToBottom();
         }
     }
     public doRemoveMessage(chatMsg: ChatMsg | null): void {
-        if (!!chatMsg && chatMsg.member == this.nickname) {
-            console.log(`doRemoveMessage(${chatMsg.date})`); // #
-            this.removeMsg.emit({ date: chatMsg.date, msg: chatMsg.msg });
+        if (!!chatMsg && !!chatMsg.date && chatMsg.member == this.nickname) {
+            const keyValue: KeyValue<string, string> = { key: chatMsg.date, value: chatMsg.msg };
+            this.removeMsg.emit(keyValue);
         }
     }
-    /*
-    public doRemoveMessage(chatMessage: ChatMsg): void {
-        if (!!chatMessage && !!chatMessage.id) {
-            this.removeMessage.emit(chatMessage.id);
-        }
-    }*/
     public doSetValueForEditing(chatMsg: ChatMsg | null): void {
-        console.log(`doSetValueForEditing()`); // #
         if (this.msgEditing != chatMsg) {
             this.msgEditing = chatMsg;
             this.setTextareaValue(chatMsg?.msg || null);
             this.textareaElem.nativeElement.focus();
         }
     }
-    /*public doEditMessage(chatMessage: ChatMsg): void {
-        if (!!chatMessage && !!chatMessage.id) {
-            this.newMessage = chatMessage.text;
-            this.modifyMsgId = chatMessage.id;
-              if (!!this.messageInput) {
-                this.messageInput.focus();
-              }
-        }
-    }*/
-    /*public doBannedUser(chatMessage: ChatMsg): void {
-        if (!!chatMessage && !!chatMessage.nickname) {
-              this.bannedUser.emit(chatMessage.nickname);
-        }
-    }
-    */
+
+    // public doBannedUser(chatMessage: ChatMsg): void {
+    //     if (!!chatMessage && !!chatMessage.nickname) {
+    //           this.bannedUser.emit(chatMessage.nickname);
+    //     }
+    // }
+
     // public isToday(value: StringDateTime): boolean {
     //     const todayStr = moment().clone().format(MOMENT_ISO8601_DATE);
     //     const todayMoment = moment(todayStr, MOMENT_ISO8601_DATE);
     //     const valueMoment = moment(value, MOMENT_ISO8601);
     //     return todayMoment.isBefore(valueMoment);
     // }
-    public isToday(value: String | null | undefined): boolean {
+    public isToday(value: StringDateTime | null | undefined): boolean {
+        let result: boolean = false;
         if (!!value && value.length > 0) {
-
+            const valueDate = StringDateTimeUtil.toDate(value);
+            const nowDate: Date = new Date(Date.now());
+            result = DateUtil.compare(valueDate, nowDate) == 0;
         }
         // const date = this.dateAdapter.format(value, null);
-        return false;
+        return result;
     }
     public isSelf(nickname: string): boolean {
         return (this.nickname === nickname);
     }
-    /*
-    public isBannedUserById(nickname: string): boolean {
-        return this.bannedUserIds.includes(nickname);
-    }
 
-    public isHover(chatMessageId: string): boolean {
-        return (!!this.mapHoverPrimary[chatMessageId] || !!this.mapHoverSecondary[chatMessageId]);
-    }*/
-    public doMouseEnter(chatMsgId: string, isPrimary: boolean): void {
-        /*if (!!chatMsgId) {
-            if (isPrimary) {
-                this.mapHoverPrimary[chatMsgId] = true;
-            } else {
-                this.mapHoverSecondary[chatMsgId] = true;
-            }
-        }*/
-    }
-    public doMouseLeave(chatMsgId: string, isPrimary: boolean): void {
-        /*if (!!chatMsgId) {
-            if (isPrimary) {
-                delete this.mapHoverPrimary[chatMsgId];
-            } else {
-                delete this.mapHoverSecondary[chatMsgId];
-            }
-        }*/
-    }
+    // public isBannedUserById(nickname: string): boolean {
+    //     return this.bannedUserIds.includes(nickname);
+    // }
 
     public doKeydownEnter(event: Event, newMsg: string): void {
         const keyEvent: KeyboardEvent = (event as KeyboardEvent);
         if (!keyEvent.altKey && !keyEvent.shiftKey) {
             this.doSendMessage(newMsg);
         }
-        /*const keyEvent: KeyboardEvent = (event as KeyboardEvent);
+        //const keyEvent: KeyboardEvent = (event as KeyboardEvent);
         // const textArea: HTMLTextAreaElement = this.getTextArea();
         //   && !!textArea.value && textArea.value.length > 0
-        if (!keyEvent.altKey && !keyEvent.ctrlKey && !keyEvent.shiftKey && !!newMsg && newMsg.length > 0) {
-            // this.doSendMessage(textArea.value);
-            this.doSendMessage(newMsg);
-            this.cleanNewMsg();
-            // textArea.value = '';
-        }*/
+        // if (!keyEvent.altKey && !keyEvent.ctrlKey && !keyEvent.shiftKey && !!newMsg && newMsg.length > 0) {
+        // this.doSendMessage(textArea.value);
+        // this.doSendMessage(newMsg);
+        // this.cleanNewMsg();
+        // textArea.value = '';
+        //}
         event.preventDefault();
     }
 
@@ -313,10 +269,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         item.selectionEnd = item.selectionStart;
         this.isShowFaceSmilePanel = false;
         this.messageInput?.focus();
-    }
-
-    public getMessageRows(messageTest: string): string[] {
-        return messageTest.split('\n');
     }
     */
     // ** Private API **
@@ -338,11 +290,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         return document.getElementsByClassName('prc-new-message')[0].getElementsByTagName('textarea')[0];
     }*/
     private scrollToBottom(): void {
-        /*if (!!this.scrollItemContainer) {
-            try {
-                this.scrollItemContainer.nativeElement.scrollTop = this.scrollItemContainer.nativeElement.scrollHeight;
-            } catch (err) { }
-        }*/
+        try {
+            this.scrollItemContainer.nativeElement.scrollTop = this.scrollItemContainer.nativeElement.scrollHeight;
+        } catch (err) { }
     }
     /*
     private hexToUtf8(hex: string): string {
@@ -353,12 +303,12 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     */
 
 
-    private getChatMsg(nickname: string): ChatMsg[] {
+    private getChatMsg(nickname: string, len: number): ChatMsg[] {
         const result: ChatMsg[] = [];
 
-        for (let idx = 0; idx < 18; idx++) {
+        for (let idx = 0; idx < len; idx++) {
             let member = "Teodor_Nickols";
-            let d1 = new Date(Date.now());
+            let d1 = new Date((idx < (len / 2) ? -100000000 : 0) + Date.now());
             let date = d1.toISOString();
             let msg = "text_" + idx + " This function can be used to pass through a successful result while handling an error.";
             if (idx % 3 == 0) {

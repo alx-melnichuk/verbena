@@ -7,11 +7,8 @@
 
 <div class="pc-middle global-scroll" #scrollItem>
   @for (chatMsg of chatMsgs; track chatMsg.date) {    
-    <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : ''), 
-     (msgMarked==chatMsg || msgEditing==chatMsg ? 'pc-marked' : ''),
-     (!!nickname && nickname == chatMsg.member ? 'demo1' : '') ]"
-      mouseenter9="doMouseEnter(chatMsg.date, true)"
-      mouseleave9="doMouseLeave(chatMsg.date, true)"
+    <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : '')
+      , (msgMarked==chatMsg || msgEditing==chatMsg ? 'pc-marked' : '')]"
       [matMenuTriggerFor]="isEnableMenu(chatMsg, nickname) ? menuItem : null"
       [matMenuTriggerData]="menuDataMap.get(chatMsg.date) || getMenuDataByMap(chatMsg)"
       (menuOpened)="msgMarked=chatMsg;"
@@ -19,24 +16,14 @@
 
       <div class="pc-item-name-date">
         <div [ngClass]="['pc-item-name', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
-          {{ isSelf(chatMsg.member) ? ('panel-chat.you' | translate) : memberWithZero(chatMsg.member) }}
+          {{ isSelf(chatMsg.member) ? ('panel-chat.you' | translate) : memberWithZero('Demotext' + chatMsg.member) }}
         </div>
         <div class="pc-item-date">
-          {{ chatMsg.date | dateTimeFormat:locale:formatDateTime  }}
-        </div>
-
-        <!-- @if (!isSelf(chatMsg.member)) {
-        <div class="pc-date-nickname ellipsis2">{{ chatMsg.member }}</div>
-        } -->
-        <!-- <div class="pc-date-time"> -->
-          
-          <!-- {{ chatMsg.date | dateTimeFormat:locale:(isFuture ? formatDateTime : formatDate)  }} -->
-          <!-- @if (!isToday(chatMsg.event)) {
-          <span class="prc-text-date">{{ chatMsg.event | date:formatDateCompact }}</span>
+          @if (!isToday(chatMsg.date)) {
+            <span>{{ chatMsg.date | dateTimeFormat:locale:formatDate }}</span>
           }
-          <span class="prc-text-date"> {{ chatMsg.event | date:formatTimeShort }}</span> -->
-        <!-- </div> -->
-        
+          <span>{{ chatMsg.date | dateTimeFormat:locale:formatTime }}</span>
+        </div>
       </div>
         
       <div [ngClass]="['pc-item-msg', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
@@ -51,60 +38,58 @@
 </div>
 
 @if (isEditable && !isBlocked) {
-<div class="pc-sepr"></div>
+  <div class="pc-sepr"></div>
 
-<div class="pc-footer" [formGroup]="formGroup">
-  <mat-form-field [ngClass]="['pc-new-msg', (!!modifyMsgId ? 'pc-modify-msg' : ''), (!!msgEditing ? 'pc-editing' : '')]"
-    appearance="outline"
-    color="primary"
-    subscriptSizing="dynamic"
-    floatLabel="auto">
-    <div [ngClass]="['pc-nmsg-label', (!msgEditing ? 'hide' : '')]">
-      <svg class="pc-svg-mini">
-        <use href="assets/icons/lib-chat/panel-chat/pen-bin.svg#pen-bin"></use>
-      </svg>
-      <span>{{ 'panel-chat.editing_msg' | translate }}</span>
-    </div>
-    <textarea matInput #messageInput #textareaElement
-      class="pc-textarea global-scroll"
-      formControlName="newMsg"
-      autocomplete="new-password"
-      autocapitalize="off"
-      [attr.maxlength]="(maxLen > 0 ? maxLen + 1 : null)"
-      (keydown.enter)="doKeydownEnter($event, formControl.value)"
-      (keydown.escape)="doKeydownEscape()"
-      cdkTextareaAutosize
-      #autosize="cdkTextareaAutosize"
-      [cdkAutosizeMinRows]="minRowsVal"
-      [cdkAutosizeMaxRows]="2 + maxRowsVal">
-    </textarea>
+  <div class="pc-footer" [formGroup]="formGroup">
+    <mat-form-field [ngClass]="['pc-new-msg', (!!msgEditing ? 'pc-editing' : '')]"
+      appearance="outline"
+      color="primary"
+      subscriptSizing="dynamic"
+      floatLabel="auto">
+      <div [ngClass]="['pc-nmsg-label', (!msgEditing ? 'hide' : '')]">
+        <svg class="pc-svg-mini">
+          <use href="assets/icons/lib-chat/panel-chat/pen-bin.svg#pen-bin"></use>
+        </svg>
+        <span>{{ 'panel-chat.editing_msg' | translate }}</span>
+      </div>
+      <textarea matInput #messageInput #textareaElement
+        class="pc-textarea global-scroll"
+        formControlName="newMsg"
+        autocomplete="new-password"
+        autocapitalize="off"
+        [attr.maxlength]="(maxLen > 0 ? maxLen + 1 : null)"
+        (keydown.enter)="doKeydownEnter($event, formControl.value)"
+        (keydown.escape)="doKeydownEscape()"
+        cdkTextareaAutosize
+        #autosize="cdkTextareaAutosize"
+        [cdkAutosizeMinRows]="minRowsVal"
+        [cdkAutosizeMaxRows]="2 + maxRowsVal">
+      </textarea>
 
-    @if (!!msgEditing) {
-    <button mat-icon-button matSuffix class="pc-btn-cancel"
-      (click)="doSetValueForEditing(null)">
-      <svg class="pc-svg-send">
-        <use href="assets/icons/lib-chat/panel-chat/close-circle-bin.svg#close-circle-bin"></use>
-      </svg>
-    </button>
-    }
-    <button mat-icon-button matSuffix class="pc-btn-send"
-      [disabled]="initValue == (formControl.value?.trim() || null) ? '' : null"
-      (click)="doSendMessage(formControl.value)">
-      <svg class="pc-svg-send">
-        <use href="assets/icons/lib-chat/panel-chat/send-bin.svg#send-bin"></use>
-      </svg>
-    </button>
+      @if (!!msgEditing) {
+        <button mat-icon-button matSuffix class="pc-btn-cancel"
+          (click)="doSetValueForEditing(null)">
+          <svg class="pc-svg-send">
+            <use href="assets/icons/lib-chat/panel-chat/close-circle-bin.svg#close-circle-bin"></use>
+          </svg>
+        </button>
+      }
+      <button mat-icon-button matSuffix class="pc-btn-send"
+        [disabled]="initValue == (formControl.value?.trim() || null) ? '' : null"
+        (click)="doSendMessage(formControl.value)">
+        <svg class="pc-svg-send">
+          <use href="assets/icons/lib-chat/panel-chat/send-bin.svg#send-bin"></use>
+        </svg>
+      </button>
 
-  </mat-form-field>
-</div>
+    </mat-form-field>
+  </div>
 }
 
 <mat-menu #menuItem="matMenu" class="pc-menu-panel" xPosition="before" [overlapTrigger]="true">
   <ng-template matMenuContent let-isEdit="isEdit" let-isRemove="isRemove">
     @if (isEdit) {
       <button mat-menu-item class="pn-menu-item" (click)="doSetValueForEditing(msgMarked)">
-        <!-- <span [ngClass]="['mm-icon']"></span> -->
-        <!-- pen-bin.svg -->
         <svg class="pc-svg-box">
           <use href="assets/icons/lib-chat/panel-chat/pen-bin.svg#pen-bin"></use>
         </svg>

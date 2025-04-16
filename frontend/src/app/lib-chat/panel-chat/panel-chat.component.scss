@@ -81,7 +81,9 @@ app-panel-chat {
 
     .pc-item-date {
         color: var(--pc-date-cl, var(--sys-secondary));
-        display: inline-block;
+        column-gap: 0.5rem;
+        display: flex;
+        flex-wrap: wrap;
         font-size: var(--pc-date-fn-sz, inherit);
         min-width: var(--pc-date-mn-wd, 6rem);
         word-wrap: break-word;
