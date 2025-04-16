@@ -2,7 +2,7 @@ import {
     AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit,
     Output, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, KeyValue } from '@angular/common';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { InitializationService } from 'src/app/common/initialization.service';
@@ -67,9 +67,9 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     @Output()
     readonly sendMessage: EventEmitter<string> = new EventEmitter();
     @Output()
+    readonly editMessage: EventEmitter<KeyValue<string, string>> = new EventEmitter();
+    @Output()
     readonly removeMessage: EventEmitter<string> = new EventEmitter();
-    // @Output()
-    // readonly editMessage: EventEmitter<KeyValue<string, string>> = new EventEmitter();
     // @Output()
     // readonly bannedUser: EventEmitter<string> = new EventEmitter();
 
@@ -194,28 +194,29 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
             this.sendMessage.emit(newMessage);
         }
     }
-    // public doRemoveMessage(messageId: string): void {
-    //     if (!!messageId) {
-    //         this.removeMessage.emit(messageId);
-    //     }
-    // }
-    public async doRemoveMessage(info: { date: string, msg: string }): Promise<void> {
-        if (!info?.date || !info?.msg) {
-            return Promise.resolve();
-        }
-        const msg = info.msg.slice(0, 45) + (info.msg.length > 45 ? '...' : '');
-        const message = this.translateService.instant('concept-view.sure_you_want_delete_message', { message: msg });
-        const res = await this.dialogService.openConfirmation(message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
-        if (!!res) {
-            this.removeMessage.emit(info.date);
-        }
-    }
-    /*public doEditMessage(keyValue: KeyValue<string, string>): void {
+    public doEditMessage(keyValue: KeyValue<string, string>): void {
         if (!!keyValue && !!keyValue.key) {
             this.editMessage.emit(keyValue);
         }
     }
-    public doBannedUser(userId: string): void {
+    public async doRemoveMessage(keyValue: KeyValue<string, string>): Promise<void> {
+        if (!keyValue || !keyValue.key || !keyValue.value) {
+            return Promise.resolve();
+        }
+        const msg = keyValue.value.slice(0, 45) + (keyValue.value.length > 45 ? '...' : '');
+        const message = this.translateService.instant('concept-view.sure_you_want_delete_message', { message: msg });
+        const res = await this.dialogService.openConfirmation(
+            message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
+        if (!!res) {
+            this.removeMessage.emit(keyValue.key);
+        }
+    }
+    /*public doRemoveMessage(messageId: string): void {
+        if (!!messageId) {
+            this.removeMessage.emit(messageId);
+        }
+    }*/
+    /*public doBannedUser(userId: string): void {
         if (!!userId) {
             this.bannedUser.emit(userId);
         }

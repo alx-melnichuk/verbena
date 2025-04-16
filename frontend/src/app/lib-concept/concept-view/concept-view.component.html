@@ -149,6 +149,7 @@
       [nickname]="nickname || ''"
       [title]="'concept-view.chat_title'"
       (sendMsg)="doSendMessage($event)"
+      (editMsg)="doEditMessage($event)"
       (removeMsg)="doRemoveMessage($event)">
     </app-panel-chat>
   </div>
