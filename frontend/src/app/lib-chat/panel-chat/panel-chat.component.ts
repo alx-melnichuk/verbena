@@ -42,6 +42,8 @@ export const MAX_ROWS = 3;
 })
 export class PanelChatComponent implements OnChanges, AfterViewInit, RefreshChatMsgs {
     @Input()
+    public chatMsgs: ChatMsg[] = [];
+    @Input()
     public isBlocked: boolean | null = null;
     @Input()
     public isEditable: boolean | null = null;
@@ -56,8 +58,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit, RefreshChat
     @Input()
     public title = '';
     // -- old --
-    @Input()
-    public chatMsgs: ChatMsg[] = [];
     @Input()
     public isStreamOwner: boolean | null = true;
     @Input()
