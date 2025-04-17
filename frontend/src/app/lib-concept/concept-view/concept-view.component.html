@@ -141,6 +141,7 @@
   </div>
   <div class="cv-sdb-cover-rg">
     <app-panel-chat class="cv-sdb-chat"
+      [chatMsgs]="chatMsgs"
       [isBlocked]="false"
       [isEditable]="isStreamActive"
       [locale]="localeService.getLocale()"

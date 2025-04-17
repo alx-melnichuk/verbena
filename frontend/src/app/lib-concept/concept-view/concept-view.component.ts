@@ -43,6 +43,8 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     @Input()
     public chatMinRows: number | null = null;
     @Input()
+    public chatMsgs: ChatMsg[] = [];
+    @Input()
     public isLoadStream = false;
     @Input()
     public isShowTimer: boolean = false;
