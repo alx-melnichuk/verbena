@@ -20,34 +20,26 @@ export class SocketApiService {
     constructor() {
         console.log(`SocketApiService(id: ${this.id})`); // #
     }
-    // 'ws'
-    public connect(pathName: string, host?: string | null): void {
+    /** Connect to the server's web socket. */
+    public connect(uriWs: string): void {
         this.disconnect();
 
-        const { location } = window
-        const proto = location.protocol.startsWith('https') ? 'wss' : 'ws';
-        const host2 = !!host ? host : location.host;
-
-        // if (host == 'localhost:4250') {
-        //     host = '127.0.0.1:8080';
-        // }
-        this.uriWs = `${proto}://${host2}/${pathName}`;
-
-        console.log(`Connecting with "${this.uriWs}" ...`);
-        // # http://127.0.0.1:8080/ws   "ws://localhost:4250/ws"   hostSocketChat
+        this.uriWs = uriWs;
+        console.log(`Connecting with "${this.uriWs}" ...`); // #
+        // Create a web socket.
         this.socket = new WebSocket(this.uriWs);
 
         this.socket.onopen = () => {
             console.log('Connected'); // #
             this.isConnected = true;
-            if (!!this.handlerByOpening) {
+            if (this.handlerByOpening != null) {
                 this.handlerByOpening();
             }
         }
 
         this.socket.onmessage = (ev: MessageEvent<any>) => {
             console.log('Received:' + ev.data, 'message'); // #
-            if (!!this.handlerByMessages) {
+            if (this.handlerByMessages != null) {
                 this.handlerByMessages(ev.data);
             }
         }
@@ -55,28 +47,27 @@ export class SocketApiService {
         this.socket.onclose = () => {
             console.log('Disconnected'); // #
             this.socket = null;
-            if (!!this.handlerByClosing) {
+            if (this.handlerByClosing != null) {
                 this.handlerByClosing();
             }
         }
     }
-
+    /** Disconnect from the server's web socket. */
     public disconnect(): void {
         if (this.socket) {
             console.log('Disconnecting...'); // #
             this.isConnected = false;
-            const socket = this.socket;
+            this.socket.close();
             this.socket = null;
-            socket.close();
         }
     }
 
     public hasConnect(): boolean {
-        return !!this.socket;
+        return !!this.socket && this.isConnected;
     }
 
     public send(text: string): void {
-        if (!!this.socket) {
+        if (!!this.socket && this.isConnected) {
             this.socket.send(text);
         }
     }

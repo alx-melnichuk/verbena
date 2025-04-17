@@ -10,10 +10,12 @@ import { ConfirmationData } from 'src/app/lib-dialog/confirmation/confirmation.c
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
 import { SocketApiService } from 'src/app/lib-socket/socket-api.service';
+import { ChatConfig, SocketChatService } from 'src/app/lib-socket/socket-chat.service';
 import { StreamDto, StreamState, StreamStateUtil } from 'src/app/lib-stream/stream-api.interface';
 import { RefreshChatMsgs } from 'src/app/lib-stream/stream-chats.interface';
 import { StreamService } from 'src/app/lib-stream/stream.service';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
+import { environment } from 'src/environments/environment';
 
 @Component({
     selector: 'app-pg-concept-view',
@@ -23,7 +25,7 @@ import { HttpErrorUtil } from 'src/app/utils/http-error.util';
     styleUrl: './pg-concept-view.component.scss',
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [SocketApiService],
+    providers: [SocketApiService, SocketChatService],
 })
 export class PgConceptViewComponent implements OnInit, OnDestroy {
 
@@ -41,6 +43,10 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public profileDto: ProfileDto | null = null;
     public streamDto: StreamDto | null = null;
 
+    public chatName: string = '';
+    public chatRoom: string = '';
+    public chatAccess: string | null = null;
+
     private refreshChatMsgs: RefreshChatMsgs | null = null;
 
     constructor(
@@ -51,6 +57,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         private dialogService: DialogService,
         private streamService: StreamService,
         private socketApiService: SocketApiService,
+        private socketChatService: SocketChatService,
     ) {
         console.log(`PgConceptView()`); // #
         // this.showTimerBeforeStart = 120; // minutes
@@ -72,18 +79,31 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.streamDto.title = this.streamDto.title + ' Invalid stream state transition from "waiting" to "stopped".'
                 + ' Invalid stream state transition from "waiting" to "stopped".';
         }
+        const nickname: string = this.profileDto?.nickname || '';
+        const room: string = (!!this.streamDto ? this.streamDto.id.toString() : '');
+
+        if (!!nickname && !!room) {
+            const chatConfig: ChatConfig = {
+                nickname,
+                room,
+            };
+            this.socketChatService.config(chatConfig);
+        }
     }
+
     ngOnInit(): void {
         console.log(`PgConceptView.OnInit()`); // #
         this.updateParams(this.streamDto, this.profileDto);
-        let host = '127.0.0.1:8080';
-        this.socketApiService.connect('ws', host);
+        const wsChatPathname: string = environment.wsChatPathname || 'ws';
+        const wsChatHost: string | null = environment.wsChatHost || null;
+        // Connect to the server web socket chat.
+        this.socketChatService.connect(wsChatPathname, wsChatHost);
     }
 
     ngOnDestroy(): void {
+        this.socketChatService.disconnect();
         this.socketApiService.disconnect();
     }
-
 
     // ** Public API **
 
