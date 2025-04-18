@@ -5,8 +5,8 @@
 export const environment = {
     production: false,
     // In case the chat server is located on a different host.
-    wsChatHost: null,
-    wsChatPathname: null,
+    wsChatHost: null, // default window.location.host
+    wsChatPathname: null, // default 'ws'
 };
 
 /*
