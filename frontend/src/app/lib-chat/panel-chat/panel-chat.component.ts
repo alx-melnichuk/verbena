@@ -8,13 +8,14 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { DateAdapter } from '@angular/material/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInput, MatInputModule } from '@angular/material/input';
+import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { StringDateTime } from 'src/app/common/string-date-time';
-import { ChatMsg, RefreshChatMsgs } from 'src/app/lib-stream/stream-chats.interface';
+import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
+import { RefreshChatMsgs, ChatMsg } from 'src/app/lib-stream/stream-chats.interface';
 import { DateUtil } from 'src/app/utils/date.utils';
 import { ReplaceWithZeroUtil } from 'src/app/utils/replace-with-zero.util';
 import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
@@ -34,7 +35,7 @@ export const MAX_ROWS = 3;
     selector: 'app-panel-chat',
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatMenuModule,
-        TranslatePipe, DateTimeFormatPipe],
+        TranslatePipe, DateTimeFormatPipe, SpinnerComponent],
     templateUrl: './panel-chat.component.html',
     styleUrl: './panel-chat.component.scss',
     encapsulation: ViewEncapsulation.None,
@@ -44,9 +45,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit, RefreshChat
     @Input()
     public chatMsgs: ChatMsg[] = [];
     @Input()
-    public isBlocked: boolean | null = null;
-    @Input()
     public isEditable: boolean | null = null;
+    @Input()
+    public isNotReady: boolean | null = null;
     @Input()
     public locale: string | null = null;
     @Input()
@@ -129,6 +130,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit, RefreshChat
     }
 
     ngOnChanges(changes: SimpleChanges): void {
+        if (!!changes['isNotReady']) {
+            console.log(`PanelChat.OnChanges() isNotReady: ${this.isNotReady}`); // #
+        }
         if (!!changes['maxRows']) {
             this.maxRowsVal = (!!this.maxRows && this.maxRows > 0 ? this.maxRows : MAX_ROWS);
         }
@@ -136,7 +140,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit, RefreshChat
             this.minRowsVal = (!!this.minRows && this.minRows > 0 ? this.minRows : MIN_ROWS);
         }
         if (!!changes['chatMsgs']) {
-            console.log(`&& PanelChat.OnChange('chatMsgs') chatMsgs: ${JSON.stringify(this.chatMsgs)}`);
+            console.log(`PanelChat.OnChange('chatMsgs') chatMsgs: ${JSON.stringify(this.chatMsgs)}`);
             this.listChatMsg.push(...this.chatMsgs);
             this.scrollToBottom();
             Promise.resolve().then(() =>

@@ -37,10 +37,13 @@
   }
 </div>
 
-@if (isEditable && !isBlocked) {
+@if (isEditable) {
   <div class="pc-sepr"></div>
 
   <div class="pc-footer" [formGroup]="formGroup">
+    @if (isNotReady) {
+        <app-spinner isFillParent [diameter]="40"></app-spinner>
+    }
     <mat-form-field [ngClass]="['pc-new-msg', (!!msgEditing ? 'pc-editing' : '')]"
       appearance="outline"
       color="primary"
