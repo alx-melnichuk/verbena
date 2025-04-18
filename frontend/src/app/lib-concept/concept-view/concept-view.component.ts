@@ -39,11 +39,15 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     @Input()
     public avatar: string | null | undefined;
     @Input()
+    public chatIsNotReady: boolean | null = null;
+    @Input()
     public chatMaxRows: number | null = null;
     @Input()
     public chatMinRows: number | null = null;
     @Input()
     public chatMsgs: ChatMsg[] = [];
+    @Input()
+    public countOfViewer: number | null | undefined;
     @Input()
     public isLoadStream = false;
     @Input()
@@ -102,7 +106,6 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     // private sessionDTOSub: Subscription;
     // private routerNavigationStartSub: Subscription;
     // private targetsFirebaseSub: Subscription | undefined;
-    public countOfViewer: number = -1;
     public isOverPanel: boolean = false;
 
     constructor(
@@ -135,11 +138,15 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
         //   });
 
         // this.getFollowersAndPopular();
+        // this.chatMsgs = this.getChatMsg('evelyn_allen', 10);
 
     }
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['streamDto']) {
             this.isStreamActive = !!this.streamDto && StreamStateUtil.isActive(this.streamDto.state);
+        }
+        if (!!changes['countOfViewer']) {
+            console.log(`ConceptView.OnChanges() countOfViewer: ${this.countOfViewer}`); // #
         }
     }
 
