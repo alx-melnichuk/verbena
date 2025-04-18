@@ -1,9 +1,12 @@
 /*# sourceURL=panel-chat.component.scss */
 
 app-panel-chat {
-    ---pc-itm-bg: var(--pc-itm-bg, var(--sys-surface));
-    ---pc-itm-sh: var(--pc-itm-sh, var(--sys-outline-variant));
-
+    ---pc-itm-bg: var(--pc-itm-bg);
+    ---pc-itm-sh: var(--pc-itm-sh);
+    ---pc-brd-sz: var(--pc-brd-sz, medium); // thin-1px, medium-3px, thick-5px
+    ---pc-itm-self-bg: var(--pc-itm-self-bg, var(--sys-on-primary));
+    ---pc-itm-self-sh: var(--pc-itm-self-sh, var(--sys-primary-fixed-dim));
+    ---pc-itm-mrk-sh: var(--pc-itm-mrk-sh, var(--sys-tertiary));
     align-items: center;
     background-color: var(--pc-bg, inherit);
     display: flex;
@@ -21,8 +24,8 @@ app-panel-chat {
 
     // ** separator **
     .pc-sepr {
-        background-color: var(---pc-itm-sh);
-        height: 0.25rem;
+        border-top: var(---pc-brd-sz) solid var(---pc-itm-sh, initial);
+        box-sizing: border-box;
         width: 100%;
     }
 
@@ -40,12 +43,12 @@ app-panel-chat {
 
     .pc-item {
         &.pc-self {
-            ---itm-bg: var(--pc-itm-self-bg, var(--sys-on-primary));
-            ---itm-sh: var(--pc-itm-self-sh, var(--sys-primary-fixed-dim));
+            ---itm-bg: var(---pc-itm-self-bg);
+            ---itm-sh: var(---pc-itm-self-sh);
         }
 
         &.pc-marked {
-            ---itm-bx-sh: 0 0 3px 1px var(--sys-tertiary);
+            ---itm-bx-sh: 0 0 3px 1px var(---pc-itm-mrk-sh);
         }
 
         background-color: var(---itm-bg, var(---pc-itm-bg));
@@ -118,7 +121,7 @@ app-panel-chat {
     .mat-mdc-form-field.pc-new-msg {
         --mat-form-field-container-vertical-padding: 0.75rem;
         --mat-form-field-container-text-size: var(--pc-mdl-fn-sz, 1rem);
-        // #background-color: var(--pc-new-msg-bg);
+        background-color: var(--pc-new-msg-bg, var(---pc-itm-self-bg));
         border-radius: var(--mdc-outlined-text-field-container-shape);
         width: 100%;
 
@@ -148,7 +151,6 @@ app-panel-chat {
         .pc-nmsg-label {
             font-size: calc(1rem - 4px);
             font-weight: 500;
-            // color: var(--mdc-outlined-text-field-outline-color, var(--mat-app-outline));
             color: var(---pc-nmsg-lbl-cl, unset);
 
             &.hide {
