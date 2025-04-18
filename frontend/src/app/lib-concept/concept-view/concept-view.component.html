@@ -6,14 +6,14 @@
   [isOpen]="isSidebarLfOpen"
   (click)="isSidebarLfOpen=(isSidebarLfOpen==false ? true: isSidebarLfOpen)">
   <div sidebar-layer>
-    <button class="cv-sdb-btn cv-btn-arrow cv-left" (click)="clearEvent($event); isSidebarLfOpen = !isSidebarLfOpen;">
+    <button class="cv-sdb-btn cv-btn-arrow cv-btn-lf" (click)="clearEvent($event); isSidebarLfOpen = !isSidebarLfOpen;">
       <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarLfOpen ? 'cv-0deg' : 'cv-180deg')]">
         <use href="assets/icons/lib-concept/concept-view/angle-left-bin.svg#angle-left-bin"></use>
       </svg>
     </button>
   </div>
-  <div class="cv-sdb-cover-lf">
-    <div class="cv-sdb-box-lf">
+  <div cv-hg100 cv-brd-bx cv-pd-rg0_5>
+    <div cv-hg100 class="cv-sdb-brd cv-brd-rg">
       bar-left 1 bar-left 2
 
   <!-- <app-panel-left-followers
@@ -35,7 +35,7 @@
   <div [ngClass]="[(isStreamVideo ? 'cv-cnt-video' : '')]">
   <!-- <div [ngClass]="['cv-box-video', classNameViewerSize()]"> -->
     <!-- <div class="height-100ps" [appMillicastViewer]="millicastViewer"></div> -->
-    <div class="cv-hg100"></div>
+    <div cv-hg100></div>
     <app-panel-stream-state class="cv-stream-state"
       [streamState]="streamDto?.state || null">
     </app-panel-stream-state>
@@ -133,14 +133,14 @@
   [isOpen]="isSidebarRgOpen"
   (click)="isSidebarRgOpen=(isSidebarRgOpen==false ? true: isSidebarRgOpen)">
   <div sidebar-layer>
-    <button class="cv-sdb-btn cv-btn-arrow cv-right" (click)="clearEvent($event); isSidebarRgOpen=!isSidebarRgOpen;">
+    <button class="cv-sdb-btn cv-btn-arrow cv-btn-rg" (click)="clearEvent($event); isSidebarRgOpen=!isSidebarRgOpen;">
       <svg [ngClass]="['cv-arrow cv-rotate', (isSidebarRgOpen ? 'cv-0deg' : 'cv-180deg')]">
         <use href="assets/icons/lib-concept/concept-view/angle-right-bin.svg#angle-right-bin"></use>
       </svg>
     </button>
   </div>
-  <div class="cv-sdb-cover-rg">
-    <app-panel-chat class="cv-sdb-chat"
+  <div cv-hg100 cv-brd-bx cv-pd-lf0_5>
+    <app-panel-chat class="cv-sdb-chat cv-sdb-brd cv-brd-lf"
       [chatMsgs]="chatMsgs"
       [isBlocked]="false"
       [isEditable]="isStreamActive"

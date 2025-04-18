@@ -16,6 +16,8 @@ app-concept-view {
     --sb-mn-wd: var(--cv-sb-mn-wd, 57px);
     --sb-mx-wd: var(--cv-sb-mx-wd, 350px);
     --sb-durat: 1200ms; // --sb-durat: 1.200s;
+    ---cv-brd-sz: var(--cv-brd-sz, medium); // thin-1px, medium-3px, thick-5px
+    ---cv-brd-cl: var(--cv-brd-cl, var(--sys-outline-variant));
 
     // background-color: var(---cv-pn-low-bg);
     container: cnt-concept-view / inline-size;
@@ -31,12 +33,19 @@ app-concept-view {
         margin-right: 0.5rem;
     }
 
-    [cv-pd-tp0_5] {
+    [cv-brd-bx] {
         box-sizing: border-box;
-        padding-top: 0.5rem;
     }
 
-    .cv-hg100 {
+    [cv-pd-lf0_5] {
+        padding-left: 0.5rem;
+    }
+
+    [cv-pd-rg0_5] {
+        padding-right: 0.5rem;
+    }
+
+    [cv-hg100] {
         height: 100%;
     }
 
@@ -52,26 +61,28 @@ app-concept-view {
         top: 0.5em;
         z-index: 1;
 
-        &.cv-left {
+        &.cv-btn-lf {
             right: -0.78rem;
         }
 
-        &.cv-right {
+        &.cv-btn-rg {
             left: -0.78rem;
         }
     }
 
-    // ** left side **
-
-    .cv-sdb-cover-lf {
+    .cv-sdb-brd {
+        border-color: var(---cv-brd-cl, initial);
+        border-style: solid;
+        border-width: 0px;
         box-sizing: border-box;
-        height: 100%;
-        padding-right: 0.5rem;
-    }
 
-    .cv-sdb-box-lf {
-        background-color: bisque;
-        height: 100%;
+        &.cv-brd-lf {
+            border-left-width: var(---cv-brd-sz);
+        }
+
+        &.cv-brd-rg {
+            border-right-width: var(---cv-brd-sz);
+        }
     }
 
     // ** center **
@@ -162,20 +173,14 @@ app-concept-view {
         flex-wrap: wrap;
     }
 
-    // ** right side **
-
-    .cv-sdb-cover-rg {
-        box-sizing: border-box;
-        height: 100%;
-        padding-left: 0.5rem;
-    }
-
     // * right side - chat * 
     .cv-sdb-chat {
-        --pc-pd-lf: 0.5rem;
-        --pc-bg: var(--sys-surface-variant);
+        --pc-itm-sh: var(---cv-brd-cl);
+        --pc-brd-sz: var(---cv-brd-sz);
+
+        --pc-bg: var(--sys-surface);
         --pc-mdl-fn-sz: 0.9rem;
-        // #--pc-new-msg-bg: var(--sys-on-primary);
+        --pc-pd-lf: 0.5rem;
     }
 
     // ** **
