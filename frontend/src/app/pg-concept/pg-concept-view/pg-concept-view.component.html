@@ -1,8 +1,10 @@
 <app-concept-view
   [avatar]="profileDto?.avatar"
+  [chatIsNotReady]="!socketChatService.isReady"
   [chatMaxRows]="chatMaxRows"
   [chatMinRows]="chatMinRows"
   chatMsgs9="chatMsgs"
+  [countOfViewer]="socketChatService.countOfMembers$ | async"
   [isLoadStream]="isLoadStream"
   [isShowTimer]="isShowTimer"
   [isStreamOwner]="isStreamOwner"

@@ -17,6 +17,9 @@ import { StreamService } from 'src/app/lib-stream/stream.service';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 import { environment } from 'src/environments/environment';
 
+const WS_CHAT_PATHNAME: string = environment.wsChatPathname || 'ws';
+const WS_CHAT_HOST: string | null = environment.wsChatHost || null;
+
 @Component({
     selector: 'app-pg-concept-view',
     standalone: true,
@@ -56,14 +59,13 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         private alertService: AlertService,
         private dialogService: DialogService,
         private streamService: StreamService,
-        private socketApiService: SocketApiService,
-        private socketChatService: SocketChatService,
+        // private socketApiService: SocketApiService,
+        public socketChatService: SocketChatService,
     ) {
-        console.log(`PgConceptView()`); // #
         // this.showTimerBeforeStart = 120; // minutes
         this.profileDto = this.route.snapshot.data['profileDto'];
         this.streamDto = this.route.snapshot.data['streamDto'];
-
+        // =v
         if (!!this.streamDto) { // #
             // this.streamDto.state = StreamState.waiting; // # for demo
             this.streamDto.state = StreamState.preparing; // # for demo
@@ -79,30 +81,41 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.streamDto.title = this.streamDto.title + ' Invalid stream state transition from "waiting" to "stopped".'
                 + ' Invalid stream state transition from "waiting" to "stopped".';
         }
-        const nickname: string = this.profileDto?.nickname || '';
-        const room: string = (!!this.streamDto ? this.streamDto.id.toString() : '');
+        // =^
+        // StreamState = [preparing, started, paused]
+        this.isStreamActive = !!this.streamDto && StreamStateUtil.isActive(this.streamDto.state);
+        console.log(`PgConceptView() this.isStreamActive: ${this.isStreamActive}`); // #
 
-        if (!!nickname && !!room) {
-            const chatConfig: ChatConfig = {
-                nickname,
-                room,
-            };
-            this.socketChatService.config(chatConfig);
+        const nickname: string = this.profileDto?.nickname || '';
+        const streamId: string = (!!this.streamDto ? this.streamDto.id.toString() : '');
+
+        if (!!nickname && !!streamId && this.isStreamActive) {
+            this.socketChatService.config({ nickname, room: 'room_' + streamId });
+            // // Connect to the server web socket chat.
+            // this.socketChatService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
+            console.log(`PgConceptView() socketChatService.connect2()`); // #
+            this.socketChatService.connect2(WS_CHAT_PATHNAME, WS_CHAT_HOST)
+                .then(() => {
+                    console.log(`PgConceptView() socketChatService.connect2().then()`); // #
+                })
+                .catch(() => {
+                    console.log(`PgConceptView() socketChatService.connect2().catch()`); // #
+
+                })
+                .finally(() => {
+                    console.log(`PgConceptView() socketChatService.connect2().finally()`); // #
+                    this.changeDetector.markForCheck();
+                })
         }
     }
 
     ngOnInit(): void {
         console.log(`PgConceptView.OnInit()`); // #
         this.updateParams(this.streamDto, this.profileDto);
-        const wsChatPathname: string = environment.wsChatPathname || 'ws';
-        const wsChatHost: string | null = environment.wsChatHost || null;
-        // Connect to the server web socket chat.
-        this.socketChatService.connect(wsChatPathname, wsChatHost);
     }
 
     ngOnDestroy(): void {
         this.socketChatService.disconnect();
-        this.socketApiService.disconnect();
     }
 
     // ** Public API **
