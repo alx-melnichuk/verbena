@@ -14,7 +14,6 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { StringDateTime } from 'src/app/common/string-date-time';
-import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { RefreshChatMsgs, ChatMsg } from 'src/app/lib-stream/stream-chats.interface';
 import { DateUtil } from 'src/app/utils/date.utils';
 import { ReplaceWithZeroUtil } from 'src/app/utils/replace-with-zero.util';
@@ -35,7 +34,7 @@ export const MAX_ROWS = 3;
     selector: 'app-panel-chat',
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatMenuModule,
-        TranslatePipe, DateTimeFormatPipe, SpinnerComponent],
+        TranslatePipe, DateTimeFormatPipe],
     templateUrl: './panel-chat.component.html',
     styleUrl: './panel-chat.component.scss',
     encapsulation: ViewEncapsulation.None,
@@ -46,8 +45,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit, RefreshChat
     public chatMsgs: ChatMsg[] = [];
     @Input()
     public isEditable: boolean | null = null;
-    @Input()
-    public isNotReady: boolean | null = null;
     @Input()
     public locale: string | null = null;
     @Input()
@@ -130,9 +127,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit, RefreshChat
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (!!changes['isNotReady']) {
-            console.log(`PanelChat.OnChanges() isNotReady: ${this.isNotReady}`); // #
-        }
         if (!!changes['maxRows']) {
             this.maxRowsVal = (!!this.maxRows && this.maxRows > 0 ? this.maxRows : MAX_ROWS);
         }
@@ -140,7 +134,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit, RefreshChat
             this.minRowsVal = (!!this.minRows && this.minRows > 0 ? this.minRows : MIN_ROWS);
         }
         if (!!changes['chatMsgs']) {
-            console.log(`PanelChat.OnChange('chatMsgs') chatMsgs: ${JSON.stringify(this.chatMsgs)}`);
+            // console.log(`PanelChat.OnChange('chatMsgs') chatMsgs: ${JSON.stringify(this.chatMsgs)}`);
             this.listChatMsg.push(...this.chatMsgs);
             this.scrollToBottom();
             Promise.resolve().then(() =>
@@ -246,13 +240,13 @@ export class PanelChatComponent implements OnChanges, AfterViewInit, RefreshChat
 
     // ** implements "UpdateChatMsgs" **
     public refreshAddChatMsg(chatMsg: ChatMsg): void {
-        console.log(`@@ addChatMsg() chatMsg: ${JSON.stringify(chatMsg)}`); // #
+        // console.log(`@@ addChatMsg() chatMsg: ${JSON.stringify(chatMsg)}`); // #
     }
     public refreshEditChatMsg(chatMsg: ChatMsg): void {
-        console.log(`@@ addChatMsg() chatMsg: ${JSON.stringify(chatMsg)}`); // #
+        // console.log(`@@ addChatMsg() chatMsg: ${JSON.stringify(chatMsg)}`); // #
     }
     public refreshRemoveChatMsg(msgDate: StringDateTime): void {
-        console.log(`@@ addChatMsg() msgDate: ${msgDate}`); // #
+        // console.log(`@@ addChatMsg() msgDate: ${msgDate}`); // #
     }
 
     // ** **
