@@ -9,7 +9,6 @@ import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { ConfirmationData } from 'src/app/lib-dialog/confirmation/confirmation.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
-import { SocketApiService } from 'src/app/lib-socket/socket-api.service';
 import { ChatConfig, SocketChatService } from 'src/app/lib-socket/socket-chat.service';
 import { StreamDto, StreamState, StreamStateUtil } from 'src/app/lib-stream/stream-api.interface';
 import { RefreshChatMsgs } from 'src/app/lib-stream/stream-chats.interface';
@@ -28,7 +27,7 @@ const WS_CHAT_HOST: string | null = environment.wsChatHost || null;
     styleUrl: './pg-concept-view.component.scss',
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [SocketApiService, SocketChatService],
+    providers: [SocketChatService],
 })
 export class PgConceptViewComponent implements OnInit, OnDestroy {
 
@@ -59,7 +58,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         private alertService: AlertService,
         private dialogService: DialogService,
         private streamService: StreamService,
-        // private socketApiService: SocketApiService,
         public socketChatService: SocketChatService,
     ) {
         // this.showTimerBeforeStart = 120; // minutes
@@ -91,21 +89,13 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
         if (!!nickname && !!streamId && this.isStreamActive) {
             this.socketChatService.config({ nickname, room: 'room_' + streamId });
-            // // Connect to the server web socket chat.
-            // this.socketChatService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
-            console.log(`PgConceptView() socketChatService.connect2()`); // #
-            this.socketChatService.connect2(WS_CHAT_PATHNAME, WS_CHAT_HOST)
-                .then(() => {
-                    console.log(`PgConceptView() socketChatService.connect2().then()`); // #
-                })
-                .catch(() => {
-                    console.log(`PgConceptView() socketChatService.connect2().catch()`); // #
-
-                })
-                .finally(() => {
-                    console.log(`PgConceptView() socketChatService.connect2().finally()`); // #
-                    this.changeDetector.markForCheck();
-                })
+            this.socketChatService.changeDetector = () => {
+                console.log(`PgConceptView() changeDetector.markForCheck();`); // #
+                this.changeDetector.markForCheck();
+            }
+            // Connect to the server web socket chat.
+            console.log(`PgConceptView.openSocket() socketSrv.connect()`); // #
+            this.socketChatService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
         }
     }
 
