@@ -39,7 +39,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     @Input()
     public avatar: string | null | undefined;
     @Input()
-    public chatIsNotReady: boolean | null = null;
+    public chatIsEditable: boolean | null = null;
     @Input()
     public chatMaxRows: number | null = null;
     @Input()
@@ -85,8 +85,8 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     public isSidebarLfOpen: boolean = false;
     public isSidebarRgOpen: boolean = true; // false;
 
-    // An indication that the stream is in active status. ([preparing, started, paused]) 
-    public isStreamActive: boolean = false;
+    // #An indication that the stream is in active status. ([preparing, started, paused]) 
+    // #public isStreamActive: boolean = false;
     //   public streamSetStateForbbidenDTO: StreamSetStateForbbidenDTO | null = null;
     // To disable the jumping effect of the "stream-video" panel at startup.
     public isStreamVideo = false;
@@ -117,7 +117,6 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
         public initializationService: InitializationService,
         public localeService: LocaleService,
         // private streamService: StreamService,
-        // public socketService: SocketService,
         // public firebaseService: FirebaseService,
         // public streamInfoService: StreamInfoService,
         public profileService: ProfileService,
@@ -142,9 +141,9 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
 
     }
     ngOnChanges(changes: SimpleChanges): void {
-        if (!!changes['streamDto']) {
-            this.isStreamActive = !!this.streamDto && StreamStateUtil.isActive(this.streamDto.state);
-        }
+        // #if (!!changes['streamDto']) {
+        // #    this.isStreamActive = !!this.streamDto && StreamStateUtil.isActive(this.streamDto.state);
+        // #}
         if (!!changes['countOfViewer']) {
             console.log(`ConceptView.OnChanges() countOfViewer: ${this.countOfViewer}`); // #
         }
