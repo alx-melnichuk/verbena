@@ -15,13 +15,13 @@ import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { PanelChatComponent } from 'src/app/lib-chat/panel-chat/panel-chat.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { ProfileService } from 'src/app/lib-profile/profile.service';
-import { StreamDto, StreamState, StreamStateUtil } from 'src/app/lib-stream/stream-api.interface';
+import { StreamDto, StreamState } from 'src/app/lib-stream/stream-api.interface';
 import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
 
 import { PanelStreamActionsComponent } from '../panel-stream-actions/panel-stream-actions.component';
 import { PanelStreamParamsComponent } from '../panel-stream-params/panel-stream-params.component';
 import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-state.component';
-import { ChatMsg, RefreshChatMsgs } from 'src/app/lib-stream/stream-chats.interface';
+import { ChatMsg } from 'src/app/lib-stream/stream-chats.interface';
 
 
 @Component({
@@ -74,11 +74,9 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     @Output()
     readonly sendMessage: EventEmitter<string> = new EventEmitter();
     @Output()
-    readonly editMessage: EventEmitter<KeyValue<string, string>> = new EventEmitter();
+    readonly editMessage: EventEmitter<KeyValue<StringDateTime, string>> = new EventEmitter();
     @Output()
-    readonly removeMessage: EventEmitter<string> = new EventEmitter();
-    @Output()
-    readonly setRefreshChatMsgs: EventEmitter<RefreshChatMsgs> = new EventEmitter();
+    readonly removeMessage: EventEmitter<StringDateTime> = new EventEmitter();
     // @Output()
     // readonly bannedUser: EventEmitter<string> = new EventEmitter();
 
@@ -205,12 +203,12 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
             this.sendMessage.emit(newMessage);
         }
     }
-    public doEditMessage(keyValue: KeyValue<string, string>): void {
+    public doEditMessage(keyValue: KeyValue<StringDateTime, string>): void {
         if (!!keyValue && !!keyValue.key) {
             this.editMessage.emit(keyValue);
         }
     }
-    public async doRemoveMessage(keyValue: KeyValue<string, string>): Promise<void> {
+    public async doRemoveMessage(keyValue: KeyValue<StringDateTime, string>): Promise<void> {
         if (!keyValue || !keyValue.key || !keyValue.value) {
             return Promise.resolve();
         }
@@ -222,21 +220,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
             this.removeMessage.emit(keyValue.key);
         }
     }
-    /*public doRemoveMessage(messageId: string): void {
-        if (!!messageId) {
-            this.removeMessage.emit(messageId);
-        }
-    }*/
-    /*public doBannedUser(userId: string): void {
-        if (!!userId) {
-            this.bannedUser.emit(userId);
-        }
-    }*/
-    public doSetRefreshChatMsgs(refreshChatMsgs: RefreshChatMsgs | null): void {
-        if (!!refreshChatMsgs) {
-            this.setRefreshChatMsgs.emit(refreshChatMsgs);
-        }
-    }
+
     // ** Private API **
 
     // Section: "Followers And Popular"

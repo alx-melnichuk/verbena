@@ -6,9 +6,13 @@ export interface ChatMsg {
     msg: string;
 };
 
-export interface RefreshChatMsgs {
-    refreshAddChatMsg(chatMsg: ChatMsg): void;
-    refreshEditChatMsg(chatMsg: ChatMsg): void;
-    refreshRemoveChatMsg(msgDate: StringDateTime): void;
-};
+export class ChatMsgUtil {
+    public static create(obj: { date: StringDateTime, member: string, msg: string }): ChatMsg {
+        const { date, member, msg } = obj;
+        return { date, member, msg };
+    }
+    public static getChatMsg(date: StringDateTime, member: string, msg: string): ChatMsg {
+        return { date, member, msg };
+    }
+}
 
