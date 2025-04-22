@@ -1,6 +1,7 @@
 use actix::prelude::*;
 use actix_broker::BrokerIssue;
 use actix_web_actors::ws;
+use chrono::{DateTime, SecondsFormat, Utc};
 use serde_json::to_string;
 
 use super::chat_models::{
@@ -118,7 +119,10 @@ impl WsChatSession {
             }
             EWSType::Msg => {
                 let msg = event.get("msg").unwrap_or("".to_string());
-                let date = "date".to_owned(); // TODO Determine date from DB.
+                //
+                let current_dt: DateTime<Utc> = Utc::now();
+                let date = current_dt.to_rfc3339_opts(SecondsFormat::Millis, true);
+                // let date = "date".to_owned(); // TODO Determine date from DB.
                 if let Err(err) = self.send_message(&msg, &date) {
                     ctx.text(to_string(&ErrEWS { err }).unwrap());
                 }
