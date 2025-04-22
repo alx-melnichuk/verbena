@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import { EventWS, EWSType } from './socket-chat.interface';
+import { EventWS, EWSType, EWSTypeUtil } from './socket-chat.interface';
 
 export interface ChatConfig {
     nickname: string;
@@ -17,7 +17,14 @@ export class SocketChatService {
     public countOfMembers: number = 0;
     public error: string = '';
 
+    public handlOnOpen: () => void = () => { };
+    public handlOnClose: () => void = () => { };
+    public handlOnError: (err: string) => void = () => { };
+    public handlSend: (val: string) => void = () => { };
+    public handlReceive: (val: string) => void = () => { };
+
     private chatConfig: ChatConfig | null = null;
+    private hasJoined: boolean = false;
     private socket: WebSocket | null = null;
     private uriWs: string = '';
 
@@ -43,20 +50,19 @@ export class SocketChatService {
 
             this.disconnect();
 
-            this.error = '';
+            this.initParams();
             this.uriWs = uriWs;
-            this.log(`SocketChatSrv.connect(${uriWs})`); // #
+            console.log(`[01]SocketChatSrv.connect(${uriWs})`); // #
             // Create a web socket.
             this.socket = new WebSocket(this.uriWs);
 
-            this.socket.onclose = this.handlOnClose;
-            this.socket.onerror = this.handlOnError;
-            this.socket.onopen = this.handlOnOpen;
+            this.socket.onopen = this.eventOpen;
+            this.socket.onclose = this.eventClose;
+            this.socket.onerror = this.eventError;
         }
     }
     /** Disconnect from the server's web socket. */
     public disconnect(): void {
-        this.log(`SocketChatSrv.disconnect()`); // #
         if (this.socket) {
             this.socket.close();
             this.socket = null;
@@ -67,62 +73,81 @@ export class SocketChatService {
         return this.socket?.readyState == WebSocket.OPEN;
     }
 
-    public send(msg: string): void {
-        this.error = '';
-        if (!!this.socket && this.hasConnect()) {
-            this.log(`SocketChatSrv.send(${msg})`); // #
-            this.socket.send(msg);
+    public isJoined(): boolean {
+        return this.hasConnect() && this.hasJoined;
+    }
+
+    public sendData(val: string): void {
+        if (!!this.socket && this.socket.readyState == WebSocket.OPEN) {
+            this.eventSend(val);
+            this.socket.send(val);
         }
+    }
+
+    public clearError(): void {
+        this.error = '';
     }
 
     // ** Private API **
 
-    private handlOnClose = (): void => {
-        this.log(`SocketChatSrv.handlOnClose()`); // #
-    };
-
-    private handlOnError = (err: any): void => {
-        this.error = '' + err;
-        this.log(`SocketChatSrv.handlOnError(${err}) changeDetector();`); // #
-        this.changeDetector();
-    };
-
-    private handlOnOpen = (): void => {
-        this.log(`SocketChatSrv.handlOnOpen()`); // #
+    /** Processing the "open" event of the Socket. */
+    private eventOpen = (): void => {
+        console.log(`[02]SocketChatSrv.eventOpen()`); // #
         if (!!this.socket && !!this.chatConfig) {
-            this.socket.onmessage = (ev: MessageEvent<any>) => this.handlOnMessage(ev.data);
+            this.socket.onmessage = (ev: MessageEvent<any>) => this.eventReceive(ev.data);
 
-            this.send(`{ "name": "${this.chatConfig.nickname}" }`);
-            this.send(`{ "join": "${this.chatConfig.room}" }`);
+            this.handlOnOpen();
+            // Set the chat username.
+            this.sendData(EWSTypeUtil.getNameEWS(this.chatConfig.nickname));
+            // Join the chat room.
+            this.sendData(EWSTypeUtil.getJoinEWS(this.chatConfig.room));
         }
-        this.log(`SocketChatSrv.handlOnOpen() changeDetector();`); // #
-        this.changeDetector();
     };
-
-    private handlOnMessage = (val: string): void => {
-        this.log(`SocketChatSrv.handlOnMessage(${val})`); // #
+    /** Processing the "close" event of the Socket. */
+    private eventClose = (): void => {
+        this.handlOnClose();
+    };
+    /** Processing the "error" event of the Socket. */
+    private eventError = (err: any): void => {
+        this.error = '' + err;
+        console.log(`[03]SocketChatSrv.eventError(${err});`); // #
+        this.handlOnError(this.error);
+    };
+    /** Processing the "send data" event of the Socket. */
+    private eventSend = (val: string): void => {
+        console.log(`[04]SocketChatSrv.eventSend(${val});`); // #
+        this.handlSend(val);
+    }
+    /** Processing the "receive data" event of the Socket. */
+    private eventReceive = (val: string): void => {
+        console.log(`[05]SocketChatSrv.eventReceive(${val})`); // #
         const eventWS: EventWS | null = EventWS.parse(val);
         this.eventAnalysis(eventWS, this.chatConfig);
-        this.log(`SocketChatSrv.handlOnMessage(${val}) changeDetector();`); // #
-        this.changeDetector();
+        this.handlReceive(val);
     };
+
+    private initParams(): void {
+        this.countOfMembers = 0;
+        this.error = '';
+        this.hasJoined = false;
+    }
 
     private eventAnalysis(eventWS: EventWS | null, chatConfig: ChatConfig | null) {
         if (!eventWS || !chatConfig) {
             return;
         }
-        if (eventWS.et == EWSType.Join || eventWS.et == EWSType.Leave) {
-            this.log(`SocketChatSrv.eventAnalysis(Join || Leave) eventWS: ${JSON.stringify(eventWS)}`); // #
-            eventWS.get('count')
-            const count = parseInt((eventWS.get('count') || '-1'), 10) || -1;
-            if (count > -1) {
-                this.log(`SocketChatSrv.eventAnalysis(Join || Leave) countOfMembers=${count}`); // #
-                this.countOfMembers = count;
+        if (eventWS.et == EWSType.Err) {
+            const err: string = eventWS.get('err') || '';
+            this.error = err;
+        } else if (eventWS.et == EWSType.Count || eventWS.et == EWSType.Join || eventWS.et == EWSType.Leave) {
+            if (eventWS.et == EWSType.Join && !this.hasJoined) {
+                const room = eventWS.get('join') || '';
+                const member = eventWS.get('member') || '';
+                this.hasJoined = (room == chatConfig.room && member == chatConfig.nickname);
             }
+            const count: number = parseInt((eventWS.get('count') || '-1'), 10) || -1;
+            this.countOfMembers = count > -1 ? count : this.countOfMembers;
         }
     }
 
-    private log(text: string): void {
-        // console.log(text);
-    }
 }
