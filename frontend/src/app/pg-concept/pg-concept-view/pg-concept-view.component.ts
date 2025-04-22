@@ -3,15 +3,17 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
+import { StringDateTime } from 'src/app/common/string-date-time';
 
 import { ConceptViewComponent } from 'src/app/lib-concept/concept-view/concept-view.component';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { ConfirmationData } from 'src/app/lib-dialog/confirmation/confirmation.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
-import { ChatConfig, SocketChatService } from 'src/app/lib-socket/socket-chat.service';
+import { EWSTypeUtil } from 'src/app/lib-socket/socket-chat.interface';
+import { SocketChatService } from 'src/app/lib-socket/socket-chat.service';
 import { StreamDto, StreamState, StreamStateUtil } from 'src/app/lib-stream/stream-api.interface';
-import { RefreshChatMsgs } from 'src/app/lib-stream/stream-chats.interface';
+import { ChatMsg, ChatMsgUtil } from 'src/app/lib-stream/stream-chats.interface';
 import { StreamService } from 'src/app/lib-stream/stream.service';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 import { environment } from 'src/environments/environment';
@@ -48,8 +50,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public chatName: string = '';
     public chatRoom: string = '';
     public chatAccess: string | null = null;
-
-    private refreshChatMsgs: RefreshChatMsgs | null = null;
+    public chatMsgs: ChatMsg[] = [];
 
     constructor(
         private changeDetector: ChangeDetectorRef,
@@ -89,10 +90,22 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
         if (!!nickname && !!streamId && this.isStreamActive) {
             this.socketChatService.config({ nickname, room: 'room_' + streamId });
-            this.socketChatService.changeDetector = () => {
-                console.log(`PgConceptView() changeDetector.markForCheck();`); // #
+
+            this.socketChatService.handlOnError = (err: string) => {
+                console.log(`PgConceptView handlOnError(); changeDetector.markForCheck();`); // #
                 this.changeDetector.markForCheck();
-            }
+            };
+            this.socketChatService.handlReceive = (val: string) => {
+                let s1 = ''; // #
+                const obj = JSON.parse(val);
+                if (!!obj['member'] && !!obj['msg']) {
+                    const chatMsg: ChatMsg = ChatMsgUtil.create(JSON.parse(val));
+                    s1 = ` chatMsg: ${JSON.stringify(chatMsg)}`; // #
+                    this.chatMsgs = [chatMsg];
+                }
+                console.log(`PgConceptView handlReceive(); changeDetector.markForCheck();${s1}`); // #
+                this.changeDetector.markForCheck();
+            };
             // Connect to the server web socket chat.
             console.log(`PgConceptView.openSocket() socketSrv.connect()`); // #
             this.socketChatService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
@@ -100,7 +113,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        console.log(`PgConceptView.OnInit()`); // #
         this.updateParams(this.streamDto, this.profileDto);
     }
 
@@ -122,30 +134,21 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     public doSendMessage(newMessage: string | null): void {
         const msgVal = (newMessage || '').trim();
-        if (!msgVal) {
-            return;
+        if (!!msgVal) {
+            this.socketChatService.sendData(EWSTypeUtil.getMsgEWS(msgVal));
         }
-        console.log(`doSendMessage(${msgVal})`); // #
     }
     public doEditMessage(keyValue: KeyValue<string, string> | null): void {
         const msgDate = (keyValue?.key || '').trim();
-        const msgVal = (keyValue?.value || '').trim();
-        if (!msgDate || !msgVal) {
-            return;
+        const msgPut = (keyValue?.value || '').trim();
+        if (!!msgDate && !!msgPut) {
+            this.socketChatService.sendData(EWSTypeUtil.getMsgPutEWS(msgPut, undefined, msgDate));
         }
-        console.log(`doEditMessage(${JSON.stringify(keyValue)})`); // #
     }
-    public doRemoveMessage(messageDate: string | null): void {
+    public doRemoveMessage(messageDate: StringDateTime | null): void {
         const msgDate = (messageDate || '').trim();
-        if (!msgDate) {
-            return;
-        }
-        console.log(`doRemoveMessage(${messageDate})`); // #
-    }
-    public doSetRefreshChatMsgs(refreshChatMsgs: RefreshChatMsgs | null): void {
-        if (!!refreshChatMsgs) {
-            console.log(`doSetRefreshChatMsgs()`); // #
-            this.refreshChatMsgs = refreshChatMsgs;
+        if (!!msgDate) {
+            this.socketChatService.sendData(EWSTypeUtil.getMsgCutEWS('', undefined, msgDate));
         }
     }
 

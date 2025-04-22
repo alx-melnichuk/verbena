@@ -1,9 +1,9 @@
 <app-concept-view
   [avatar]="profileDto?.avatar"
-  [chatIsEditable]="isStreamActive && socketChatService.hasConnect() && !socketChatService.error"
+  [chatIsEditable]="isStreamActive && socketChatService.isJoined()"
   [chatMaxRows]="chatMaxRows"
   [chatMinRows]="chatMinRows"
-  chatMsgs9="chatMsgs"
+  [chatMsgs]="chatMsgs"
   [countOfViewer]="socketChatService.countOfMembers"
   [isLoadStream]="isLoadStream"
   [isShowTimer]="isShowTimer"
@@ -13,6 +13,5 @@
   (changeState)="doChangeState(isStreamOwner, streamDto?.id, $event)"
   (sendMessage)="doSendMessage($event)"
   (editMessage)="doEditMessage($event)"
-  (removeMessage)="doRemoveMessage($event)"
-  (setRefreshChatMsgs)="doSetRefreshChatMsgs($event)">
+  (removeMessage)="doRemoveMessage($event)">
 </app-concept-view>
