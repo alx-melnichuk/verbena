@@ -1,17 +1,18 @@
+import { StringDateTime } from "../common/string-date-time";
 
 
 export enum EWSType {
-    Block = 'block',
+    Block = 'block', // -
     Count = 'count',
-    Echo = 'echo',
+    Echo = 'echo', // -
     Err = 'err',
-    Join = 'join', // +
+    Join = 'join',
     Leave = 'leave',
     Msg = 'msg',
-    MsgCut = 'msgCut',
-    MsgPut = 'msgPut',
+    MsgCut = 'msgCut', // -
+    MsgPut = 'msgPut', // -
     Name = 'name',
-    Unblock = 'unblock',
+    Unblock = 'unblock', // -
 }
 
 export class EWSTypeUtil {
@@ -44,6 +45,40 @@ export class EWSTypeUtil {
         }
         return result;
     }
+
+    public static getBlockEWS(block: string, count?: number): string {
+        return JSON.stringify({ ...{ block }, ...{ count } });
+    }
+    public static getCountEWS(): string {
+        return JSON.stringify({ count: -1 });
+    }
+    public static getEchoEWS(echo: string): string {
+        return JSON.stringify({ echo });
+    }
+    public static getErrEWS(err: string): string {
+        return JSON.stringify({ err });
+    }
+    public static getJoinEWS(join: string, member?: string, count?: number): string {
+        return JSON.stringify({ ...{ join }, ...{ member }, ...{ count } });
+    }
+    public static getLeaveEWS(member?: string, count?: number): string {
+        return JSON.stringify({ ...{ leave: '' }, ...{ member }, ...{ count } });
+    }
+    public static getMsgEWS(msg: string, member?: string, date?: StringDateTime): string {
+        return JSON.stringify({ ...{ msg }, ...{ member }, ...{ date } });
+    }
+    public static getMsgPutEWS(msgPut: string, member?: string, date?: StringDateTime): string {
+        return JSON.stringify({ ...{ msgPut }, ...{ member }, ...{ date } });
+    }
+    public static MsgCutEWS(msgCut: string, member?: string, date?: StringDateTime): string {
+        return JSON.stringify({ ...{ msgCut }, ...{ member }, ...{ date } });
+    }
+    public static getNameEWS(name: string): string {
+        return JSON.stringify({ name });
+    }
+    public static getUnblockEWS(unblock: string, count?: number): string {
+        return JSON.stringify({ ...{ unblock }, ...{ count } });
+    }
 }
 
 export class EventWS {
@@ -65,7 +100,6 @@ export class EventWS {
         }
         // Get the name of the first tag.
         let buf = event.split("\"");
-        // buf.next();
         // let first_tag = buf.next().unwrap_or("");
         let firstTag = buf.length > 1 ? buf[1] : '';
         let ewsType = EWSTypeUtil.parse(firstTag);
