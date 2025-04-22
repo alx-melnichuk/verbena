@@ -70,7 +70,7 @@ export class EWSTypeUtil {
     public static getMsgPutEWS(msgPut: string, member?: string, date?: StringDateTime): string {
         return JSON.stringify({ ...{ msgPut }, ...{ member }, ...{ date } });
     }
-    public static MsgCutEWS(msgCut: string, member?: string, date?: StringDateTime): string {
+    public static getMsgCutEWS(msgCut: string, member?: string, date?: StringDateTime): string {
         return JSON.stringify({ ...{ msgCut }, ...{ member }, ...{ date } });
     }
     public static getNameEWS(name: string): string {
