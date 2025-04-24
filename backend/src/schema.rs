@@ -11,6 +11,33 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    chat_message_logs (id) {
+        id -> Int4,
+        chat_message_id -> Int4,
+        #[max_length = 255]
+        old_msg -> Varchar,
+        #[max_length = 255]
+        new_msg -> Varchar,
+        date_changed -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    chat_messages (id) {
+        id -> Int4,
+        stream_id -> Int4,
+        user_id -> Int4,
+        #[max_length = 255]
+        msg -> Varchar,
+        date_created -> Timestamptz,
+        date_changed -> Nullable<Timestamptz>,
+        date_removed -> Nullable<Timestamptz>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     link_stream_tags_to_streams (id) {
         id -> Int4,
         stream_tag_id -> Int4,
@@ -112,6 +139,9 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(chat_message_logs -> chat_messages (chat_message_id));
+diesel::joinable!(chat_messages -> streams (stream_id));
+diesel::joinable!(chat_messages -> users (user_id));
 diesel::joinable!(link_stream_tags_to_streams -> stream_tags (stream_tag_id));
 diesel::joinable!(link_stream_tags_to_streams -> streams (stream_id));
 diesel::joinable!(profiles -> users (user_id));
@@ -121,6 +151,8 @@ diesel::joinable!(streams -> users (user_id));
 diesel::joinable!(user_recovery -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    chat_message_logs,
+    chat_messages,
     link_stream_tags_to_streams,
     profiles,
     sessions,
