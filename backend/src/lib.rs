@@ -10,7 +10,7 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 
-use chats::chat_controller;
+use chats::{chat_controller, chat_message_orm::cfg::get_chat_message_orm_app};
 use profiles::{
     config_prfl, profile_auth_controller, profile_controller, profile_orm::cfg::get_profile_orm_app,
     profile_registr_controller,
@@ -145,6 +145,8 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let stream_orm = web::Data::new(get_stream_orm_app(pool.clone()));
         // used: profile_controller
         let profile_orm = web::Data::new(get_profile_orm_app(pool.clone()));
+        // used: chat_controller
+        let chat_message_orm = web::Data::new(get_chat_message_orm_app(pool.clone()));
 
         // Make instance variable of ApiDoc so all worker threads gets the same instance.
         let openapi = swagger_docs::ApiDoc::openapi();
@@ -162,6 +164,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             .app_data(web::Data::clone(&user_recovery_orm))
             .app_data(web::Data::clone(&stream_orm))
             .app_data(web::Data::clone(&profile_orm))
+            .app_data(web::Data::clone(&chat_message_orm))
             // Add documentation service "Redoc" and "RapiDoc".
             .service(Redoc::with_url("/redoc", openapi.clone()))
             .service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
