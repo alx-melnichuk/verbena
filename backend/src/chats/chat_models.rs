@@ -163,6 +163,7 @@ pub struct LeaveEWS {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct MsgEWS {
     pub msg: String,
+    pub id: String,
     pub member: String,
     pub date: String,
 }
