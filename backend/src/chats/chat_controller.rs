@@ -20,14 +20,15 @@ pub async fn get_ws_chat(
     request: actix_web::HttpRequest,
     stream: web::Payload,
 ) -> actix_web::Result<HttpResponse<actix_web::body::BoxBody>, actix_web::Error> {
-    let chat_message_orm_app = chat_message_orm.get_ref().clone();
+    let _chat_message_orm_app = chat_message_orm.get_ref().clone();
     let ws_chat_session = WsChatSession::new(
         u64::default(),
         String::default(),
         Option::default(),
         bool::default(),
-        Some(chat_message_orm_app),
+        // Some(chat_message_orm_app),
     );
+
     ws::start(ws_chat_session, &request, stream)
 }
 

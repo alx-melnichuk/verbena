@@ -180,7 +180,7 @@ pub mod impls {
             let query =
                 diesel::sql_query("select * from delete_profile_user($1);").bind::<sql_types::Integer, _>(user_id);
 
-            // Run query using Diesel to find user by id (and user_id) and return it.
+            // Run a query using Diesel to delete the "profile" entity by ID and return the data for that entity.
             let opt_profile = query
                 .get_result::<Profile>(&mut conn)
                 .optional()
