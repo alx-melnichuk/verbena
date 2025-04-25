@@ -16,9 +16,7 @@ diesel::table! {
         chat_message_id -> Int4,
         #[max_length = 255]
         old_msg -> Varchar,
-        #[max_length = 255]
-        new_msg -> Varchar,
-        date_changed -> Timestamptz,
+        date_update -> Timestamptz,
     }
 }
 
@@ -28,10 +26,10 @@ diesel::table! {
         stream_id -> Int4,
         user_id -> Int4,
         #[max_length = 255]
-        msg -> Varchar,
-        date_created -> Timestamptz,
-        date_changed -> Nullable<Timestamptz>,
-        date_removed -> Nullable<Timestamptz>,
+        msg -> Nullable<Varchar>,
+        date_update -> Timestamptz,
+        is_changed -> Bool,
+        is_removed -> Bool,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
     }
