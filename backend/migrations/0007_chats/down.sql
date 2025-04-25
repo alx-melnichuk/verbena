@@ -1,19 +1,19 @@
-/* Remove stored function to delete a user, their profile, and their session. */
--- DROP FUNCTION IF EXISTS delete_profile_user;
-
-/* Remove stored function to modify a user and their profile. */
--- DROP FUNCTION IF EXISTS modify_profile_user;
-
-/* Remove stored function to add a new user. */
--- DROP FUNCTION IF EXISTS create_profile_user;
-
-/* Drop stored function for retrieving data from the "profiles", "password" and "users" tables by id or nickname, email. */
--- DROP FUNCTION IF EXISTS find_profile_user;
-
+-- Removing entities: "chat_messages", chat_message_logs.
 
 -- **
 
-/* Remove stored function to add a new entry to "chat_messages".*/
+/* Remove stored function to get an array of entities in "chat_message_logs". */
+DROP FUNCTION IF EXISTS get_chat_message_log;
+
+-- **
+
+/* Remove stored function to delete the entry in "chat_messages". */
+DROP FUNCTION IF EXISTS delete_chat_message;
+
+/* Remove stored function to modify the entry in "chat_messages". */
+DROP FUNCTION IF EXISTS modify_chat_message;
+
+/* Remove stored function to add a new entry to "chat_messages". */
 DROP FUNCTION IF EXISTS create_chat_message;
 
 -- **
