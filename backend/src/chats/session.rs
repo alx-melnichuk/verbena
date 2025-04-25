@@ -1,12 +1,12 @@
 use actix::prelude::*;
 use actix_broker::BrokerIssue;
-use actix_web::web;
+// use actix_web::web;
 use actix_web_actors::ws;
-use chrono::{DateTime, SecondsFormat, Utc};
+use chrono::{SecondsFormat, Utc};
 use serde_json::to_string;
 
-use crate::chats::chat_message_models::CreateChatMessage;
-use crate::chats::chat_message_orm::{impls::ChatMessageOrmApp, ChatMessageOrm};
+// use crate::chats::chat_message_models::CreateChatMessage;
+// use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
 use crate::chats::chat_models::{
     BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, MsgCutEWS, MsgEWS, MsgPutEWS, NameEWS, UnblockEWS,
 };
@@ -14,7 +14,7 @@ use crate::chats::message::{
     BlockClients, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage,
 };
 use crate::chats::server::WsChatServer;
-use crate::settings::err;
+// use crate::settings::err;
 
 // ** WsChatSession **
 
@@ -24,7 +24,7 @@ pub struct WsChatSession {
     room: String,
     name: Option<String>,
     is_blocked: bool,
-    chat_message_orm: Option<ChatMessageOrmApp>,
+    // chat_message_orm: Option<ChatMessageOrmApp>,
 }
 
 // ** WsChatSession implementation **
@@ -35,14 +35,14 @@ impl WsChatSession {
         room: String,
         name: Option<String>,
         is_blocked: bool,
-        chat_message_orm: Option<ChatMessageOrmApp>,
+        // chat_message_orm: Option<ChatMessageOrmApp>,
     ) -> Self {
         WsChatSession {
             id,
             room,
             name,
             is_blocked,
-            chat_message_orm,
+            // chat_message_orm,
         }
     }
     // Check if this field is required
@@ -293,47 +293,20 @@ impl WsChatSession {
         // let msg_ews = self.prepare_msg_ews(MsgEWS { msg, id, member, date })?;
         // prepare_msg_ews(msg_ews: MsgEWS, chat_message_orm: ChatMessageOrmApp) -> Result<MsgEWS, String>
 
-        if let Some(chat_message_orm) = self.chat_message_orm.clone() {
-            // let msg_ews2 = msg_ews.clone();
-            eprintln!("[01]send_message() let _ = async move "); // #
+        // if let Some(chat_message_orm) = self.chat_message_orm.clone() {
+        //     // let msg_ews2 = msg_ews.clone();
+        //     eprintln!("[01]send_message() let _ = async move "); // #
 
-            /*let _res = async move {
-                let stream_id = 1;
-                let user_id = 1;
-                let create_chat_message = CreateChatMessage::new(stream_id, user_id, &msg.clone());
-                eprintln!("[02a]prepare_msg_ews() web::block(move || ..."); // #
+        //     /*let res = async move {
+        //         // wake_and_yield_once().await; // `await` is used within `async` block
+        //         // x
 
-                let opt_chat_message = web::block(move || {
-                    // Add a new entry (chat_message).
-                    chat_message_orm
-                        .create_chat_message(create_chat_message)
-                        .map_err(|e| {
-                            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                            format!("{}; {}", err::MSG_DATABASE, &e)
-                        })
-                        .ok()
-                })
-                .await
-                .map_err(|e| {
-                    log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-                    format!("{}; {}", err::MSG_BLOCKING, &e.to_string())
-                });
-                eprintln!("[02b]prepare_msg_ews() opt_chat_message"); // #
+        //         let res = prepare_msg_ews(msg_ews2, chat_message_orm).await;
 
-                // opt_chat_message
-                fut::ready(())
-            };*/
-
-            /*let res = async move {
-                // wake_and_yield_once().await; // `await` is used within `async` block
-                // x
-
-                let res = prepare_msg_ews(msg_ews2, chat_message_orm).await;
-
-                res
-            };*/
-            eprintln!("[04]send_message() "); // #
-        }
+        //         res
+        //     };*/
+        //     eprintln!("[04]send_message() "); // #
+        // }
 
         let msg_str = to_string(&msg_ews).unwrap();
         // issue_async comes from having the `BrokerIssue` trait in scope.
