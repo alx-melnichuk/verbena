@@ -297,7 +297,7 @@ impl WsChatSession {
             // let msg_ews2 = msg_ews.clone();
             eprintln!("[01]send_message() let _ = async move "); // #
 
-            let _res = async move {
+            /*let _res = async move {
                 let stream_id = 1;
                 let user_id = 1;
                 let create_chat_message = CreateChatMessage::new(stream_id, user_id, &msg.clone());
@@ -322,7 +322,7 @@ impl WsChatSession {
 
                 // opt_chat_message
                 fut::ready(())
-            };
+            };*/
 
             /*let res = async move {
                 // wake_and_yield_once().await; // `await` is used within `async` block
@@ -380,7 +380,7 @@ impl WsChatSession {
 // ** **
 
 // Additional data processing (saving in the database).
-async fn prepare_msg_ews(msg_ews: MsgEWS, chat_message_orm: ChatMessageOrmApp) -> Result<MsgEWS, String> {
+/*async fn prepare_msg_ews(msg_ews: MsgEWS, chat_message_orm: ChatMessageOrmApp) -> Result<MsgEWS, String> {
     let msg = msg_ews.msg;
     let mut id = "".to_string();
     let member = msg_ews.member;
@@ -414,7 +414,7 @@ async fn prepare_msg_ews(msg_ews: MsgEWS, chat_message_orm: ChatMessageOrmApp) -
     }
     eprintln!("[02c]prepare_msg_ews() MsgEWS ( msg:{msg}, member:{member}, id:{id}, date:{date} )"); // #
     Ok(MsgEWS { msg, member, id, date })
-}
+}*/
 
 // ** WsChatSession implementation "Actor" **
 
