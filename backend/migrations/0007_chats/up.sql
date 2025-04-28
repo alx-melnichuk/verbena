@@ -103,7 +103,6 @@ CREATE OR REPLACE FUNCTION modify_chat_message(
 AS $$
 DECLARE 
   _id INTEGER;
-  is_request_completed BOOLEAN = FALSE;
   val1 VARCHAR;
   date_update TIMESTAMP WITH TIME ZONE;
   sql1 TEXT;
@@ -112,14 +111,24 @@ BEGIN
   _id := id;
   id := NULL;
   IF _id IS NULL THEN
+    stream_id := NULL;
+    user_id := NULL;
+    msg := NULL;
     RETURN;
   END IF;
 
   update_fields := ARRAY[]::VARCHAR[];
 
+  IF stream_id IS NOT NULL THEN
+    update_fields := ARRAY_APPEND(update_fields, 'stream_id = ' || stream_id);
+  END IF;
+
+  IF user_id IS NOT NULL THEN
+    update_fields := ARRAY_APPEND(update_fields, 'user_id = ' || user_id);
+  END IF;
+
   IF msg IS NOT NULL THEN
-    update_fields := ARRAY_APPEND(update_fields, 'msg = '
-      || CASE WHEN LENGTH(msg) > 0 THEN '''' || msg || '''' ELSE ' NULL' END);
+    update_fields := ARRAY_APPEND(update_fields, 'msg = ' || '''' || msg || '''');
 
     update_fields := ARRAY_APPEND(update_fields, 'date_update = CURRENT_TIMESTAMP');
 
@@ -127,13 +136,13 @@ BEGIN
       sql1 := 'INSERT INTO chat_message_logs (chat_message_id, old_msg, date_update)'
         || ' SELECT chat_messages.id, chat_messages.msg, chat_messages.date_update'
         || ' FROM chat_messages'
-        || ' WHERE LENGTH(chat_messages.msg) > 0 '
-        || '  AND chat_messages.id = ' || _id;
+        || ' WHERE chat_messages.id = ' || _id;
 
       EXECUTE sql1;
 
       val1 := 'is_changed = TRUE';
     ELSE
+      -- LENGTH(msg) == 0
       val1 := 'is_removed = TRUE';
     END IF;
     update_fields := ARRAY_APPEND(update_fields, val1);
@@ -142,7 +151,7 @@ BEGIN
   IF ARRAY_LENGTH(update_fields, 1) > 0 THEN
     sql1 := 'UPDATE chat_messages SET '
       || ARRAY_TO_STRING(update_fields, ',')
-      || ' WHERE LENGTH(msg) > 0 AND id = ' || _id
+      || ' WHERE id = ' || _id
       || ' RETURNING '
       || ' chat_messages.id, chat_messages.stream_id, chat_messages.user_id, chat_messages.msg,'
       || ' chat_messages.date_update, chat_messages.is_changed, chat_messages.is_removed,'
@@ -150,11 +159,9 @@ BEGIN
 
     EXECUTE sql1 INTO
       id, stream_id, user_id, msg, date_update, is_changed, is_removed, created_at, updated_at;
-
-    is_request_completed := TRUE;
   END IF;
 
-  IF is_request_completed THEN
+  IF id IS NOT NULL THEN
     RETURN QUERY SELECT
       id, stream_id, user_id, msg, date_update, is_changed, is_removed, created_at, updated_at;
   END IF;
