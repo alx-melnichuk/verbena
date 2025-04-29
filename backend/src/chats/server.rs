@@ -4,8 +4,14 @@ use actix::prelude::*;
 use actix_broker::BrokerSubscribe;
 use serde_json::to_string;
 
-use super::chat_models::{JoinEWS, LeaveEWS};
-use super::message::{BlockClients, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage};
+#[cfg(not(all(test, feature = "mockdata")))]
+use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
+#[cfg(all(test, feature = "mockdata"))]
+use crate::chats::chat_message_orm::tests::ChatMessageOrmApp;
+use crate::chats::chat_models::{JoinEWS, LeaveEWS};
+use crate::chats::message::{
+    BlockClients, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage,
+};
 
 type Client = Recipient<CommandSrv>; // ChatMessage
 
@@ -185,6 +191,28 @@ impl Handler<SendMessage> for WsChatServer {
     type Result = ();
 
     fn handle(&mut self, msg: SendMessage, _ctx: &mut Self::Context) {
+        // let addr = ctx.address();
+        // let srv = addr.recipient();
+
+        /*let opt_chat_message_orm: Option<&web::Data<ChatMessageOrmApp>> =
+        request.app_data::<web::Data<ChatMessageOrmApp>>();
+        if let Some(_chat_message_orm2) = opt_chat_message_orm {
+            eprintln!("@@01 chat_message_orm2 exist"); // #
+        }*/
+
+        /*let pool = self.database.clone();
+        // Starting an async block to save to database
+        actix::spawn(async move {
+            let new_message = NewMessage {
+                username,
+                target,
+                message,
+            };
+            if let Err(e) = pool.save_message(&new_message).await {
+                eprintln!("Failed to save message: {:?}", e);
+            }
+        });*/
+
         let SendMessage(room_name, msg) = msg;
         // Send a chat message to all members.
         self.send_chat_message_to_clients(&room_name, &msg);

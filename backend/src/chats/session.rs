@@ -5,8 +5,10 @@ use actix_web_actors::ws;
 use chrono::{SecondsFormat, Utc};
 use serde_json::to_string;
 
-// use crate::chats::chat_message_models::CreateChatMessage;
-// use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
+#[cfg(not(all(test, feature = "mockdata")))]
+use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
+#[cfg(all(test, feature = "mockdata"))]
+use crate::chats::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::chats::chat_models::{
     BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, MsgCutEWS, MsgEWS, MsgPutEWS, NameEWS, UnblockEWS,
 };
@@ -14,17 +16,15 @@ use crate::chats::message::{
     BlockClients, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage,
 };
 use crate::chats::server::WsChatServer;
-// use crate::settings::err;
 
 // ** WsChatSession **
 
-#[derive(Default)]
 pub struct WsChatSession {
     id: u64,
     room: String,
     name: Option<String>,
     is_blocked: bool,
-    // chat_message_orm: Option<ChatMessageOrmApp>,
+    chat_message_orm: ChatMessageOrmApp,
 }
 
 // ** WsChatSession implementation **
@@ -35,14 +35,14 @@ impl WsChatSession {
         room: String,
         name: Option<String>,
         is_blocked: bool,
-        // chat_message_orm: Option<ChatMessageOrmApp>,
+        chat_message_orm: ChatMessageOrmApp,
     ) -> Self {
         WsChatSession {
             id,
             room,
             name,
             is_blocked,
-            // chat_message_orm,
+            chat_message_orm,
         }
     }
     // Check if this field is required
@@ -133,7 +133,7 @@ impl WsChatSession {
             }
             EWSType::Msg => {
                 let msg = event.get("msg").unwrap_or("".to_string());
-                if let Err(err) = self.send_message(&msg) {
+                if let Err(err) = self.send_message(&msg, ctx) {
                     ctx.text(to_string(&ErrEWS { err }).unwrap());
                 }
             }
@@ -271,7 +271,7 @@ impl WsChatSession {
     }
 
     // ** Send a text message to all clients in the room. (Server -> Session) **
-    pub fn send_message(&self, msg: &str) -> Result<(), String> {
+    pub fn send_message(&self, msg: &str, _ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {
         let msg = msg.to_owned();
         // Check if this field is required
         self.check_field_is_required(&msg, "msg")?;
@@ -290,6 +290,16 @@ impl WsChatSession {
             member,
             date,
         };
+
+        /*let chat_message_orm = self.chat_message_orm.clone();
+
+        actix_web::rt::spawn(async move {
+            let _chat_message_orm2 = chat_message_orm;
+            eprintln!("@@ 03 chat_message_orm2 exist");
+        });
+        eprintln!("@@ 05 chat_message_orm2 exist");
+        */
+
         // let msg_ews = self.prepare_msg_ews(MsgEWS { msg, id, member, date })?;
         // prepare_msg_ews(msg_ews: MsgEWS, chat_message_orm: ChatMessageOrmApp) -> Result<MsgEWS, String>
 
