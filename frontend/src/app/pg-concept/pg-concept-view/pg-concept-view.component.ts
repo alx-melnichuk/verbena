@@ -86,10 +86,10 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         console.log(`PgConceptView() this.isStreamActive: ${this.isStreamActive}`); // #
 
         const nickname: string = this.profileDto?.nickname || '';
-        const streamId: string = (!!this.streamDto ? this.streamDto.id.toString() : '');
+        const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
 
         if (!!nickname && !!streamId && this.isStreamActive) {
-            this.socketChatService.config({ nickname, room: 'room_' + streamId });
+            this.socketChatService.config({ nickname, room: streamId });
 
             this.socketChatService.handlOnError = (err: string) => {
                 console.log(`PgConceptView handlOnError(); changeDetector.markForCheck();`); // #

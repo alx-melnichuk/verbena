@@ -4,7 +4,7 @@ import { EventWS, EWSType, EWSTypeUtil } from './socket-chat.interface';
 
 export interface ChatConfig {
     nickname: string;
-    room: string; // Stream.id
+    room: number; // Stream.id
     access?: string | null | undefined; // AccessToken
 }
 
@@ -97,8 +97,9 @@ export class SocketChatService {
             this.socket.onmessage = (ev: MessageEvent<any>) => this.eventReceive(ev.data);
 
             this.handlOnOpen();
-            // Set the chat username.
-            this.sendData(EWSTypeUtil.getNameEWS(this.chatConfig.nickname));
+            // The username is taken from the authorization.
+            // // Set the chat username.
+            // this.sendData(EWSTypeUtil.getNameEWS(this.chatConfig.nickname));
             // Join the chat room.
             this.sendData(EWSTypeUtil.getJoinEWS(this.chatConfig.room));
         }
@@ -137,15 +138,15 @@ export class SocketChatService {
             return;
         }
         if (eventWS.et == EWSType.Err) {
-            const err: string = eventWS.get('err') || '';
+            const err: string = eventWS.getStr('err') || '';
             this.error = err;
         } else if (eventWS.et == EWSType.Count || eventWS.et == EWSType.Join || eventWS.et == EWSType.Leave) {
             if (eventWS.et == EWSType.Join && !this.hasJoined) {
-                const room = eventWS.get('join') || '';
-                const member = eventWS.get('member') || '';
+                const room = eventWS.getInt('join') || -1;
+                const member = eventWS.getStr('member') || '';
                 this.hasJoined = (room == chatConfig.room && member == chatConfig.nickname);
             }
-            const count: number = parseInt((eventWS.get('count') || '-1'), 10) || -1;
+            const count: number = parseInt((eventWS.getStr('count') || '-1'), 10) || -1;
             this.countOfMembers = count > -1 ? count : this.countOfMembers;
         }
     }

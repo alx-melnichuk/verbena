@@ -58,7 +58,7 @@ export class EWSTypeUtil {
     public static getErrEWS(err: string): string {
         return JSON.stringify({ err });
     }
-    public static getJoinEWS(join: string, member?: string, count?: number): string {
+    public static getJoinEWS(join: number, member?: string, count?: number): string {
         return JSON.stringify({ ...{ join }, ...{ member }, ...{ count } });
     }
     public static getLeaveEWS(member?: string, count?: number): string {
@@ -118,8 +118,12 @@ export class EventWS {
         return new EventWS(ewsType, params);
     }
 
-    public get(name: string): string | undefined {
+    public getStr(name: string): string | undefined {
         return this.params.get(name);
+    }
+    public getInt(name: string): number | undefined {
+        const res = parseInt(this.params.get(name) || '0', 10);
+        return !Number.isNaN(res) ? res : undefined;
     }
 }
 
