@@ -1,7 +1,8 @@
 pub mod chat_controller;
+pub mod chat_event_ws;
+pub mod chat_message;
 pub mod chat_message_models;
 pub mod chat_message_orm;
-pub mod chat_models;
-pub mod message;
-pub mod server;
-pub mod session;
+pub mod chat_message_storage;
+pub mod chat_ws_server;
+pub mod chat_ws_session;
