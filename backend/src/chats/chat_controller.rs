@@ -1,22 +1,21 @@
 use std::ops::Deref;
 
 use actix_files::NamedFile;
-use actix_web::{get, post, put, web, HttpResponse, Responder};
+use actix_web::{get, post, put, web, HttpMessage, HttpResponse, Responder};
 use actix_web_actors::ws;
 
+use crate::chats::chat_message_models::{
+    ChatMessage, ChatMessageDto, CreateChatMessage, CreateChatMessageDto, ModifyChatMessage, ModifyChatMessageDto,
+};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::chats::chat_message_orm::tests::ChatMessageOrmApp;
-use crate::chats::session::WsChatSession;
-use crate::chats::{
-    chat_message_models::{
-        ChatMessage, ChatMessageDto, CreateChatMessage, CreateChatMessageDto, ModifyChatMessage, ModifyChatMessageDto,
-    },
-    chat_message_orm::ChatMessageOrm,
-};
+use crate::chats::chat_message_orm::ChatMessageOrm;
+use crate::chats::chat_ws_session::ChatWsSession;
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
+use crate::profiles::profile_models::Profile;
 use crate::settings::err;
 use crate::users::user_models::UserRole;
 use crate::utils::parser;
@@ -41,15 +40,24 @@ pub async fn get_ws_chat(
     request: actix_web::HttpRequest,
     stream: web::Payload,
 ) -> actix_web::Result<HttpResponse<actix_web::body::BoxBody>, actix_web::Error> {
+    let opt_profile = request.extensions().get::<Profile>().cloned();
+    let user_id = opt_profile.clone().map(|p| p.user_id);
+    let user_name = opt_profile.clone().map(|p| p.nickname);
+
+    let name = user_name.clone().unwrap_or("#".to_string());
+    eprintln!("~~get_ws_chat() user_name: {}", name);
+
     let chat_message_orm_app = chat_message_orm.get_ref().clone();
-    let ws_chat_session = WsChatSession::new(
-        u64::default(),
-        String::default(),
-        Option::default(),
-        bool::default(),
-        chat_message_orm_app,
+
+    let chat_ws_session = ChatWsSession::new(
+        u64::default(),       // id: u64,
+        Option::default(),    // room_id: Option<i32>,
+        user_id,              // user_id: Option<i32>,
+        user_name,            // user_name: Option<String>,
+        bool::default(),      //is_blocked: bool,
+        chat_message_orm_app, // chat_message_orm: ChatMessageOrmApp,
     );
-    ws::start(ws_chat_session, &request, stream)
+    ws::start(chat_ws_session, &request, stream)
 }
 
 #[get("/chat")]
