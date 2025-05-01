@@ -810,7 +810,6 @@ mod tests {
     use serde_json::json;
 
     use crate::errors::AppError;
-    use crate::extractors::authentication::BEARER;
     use crate::profiles::{
         profile_models::{self, Profile, ProfileTest},
         profile_err as p_err,
@@ -825,6 +824,7 @@ mod tests {
         user_recovery_orm::tests::UserRecoveryOrmApp,
         user_registr_orm::tests::UserRegistrOrmApp,
     };
+    use crate::utils::token::BEARER;
 
     use super::*;
 

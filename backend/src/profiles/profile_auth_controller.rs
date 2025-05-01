@@ -408,7 +408,7 @@ mod tests {
     use profile_models::{Profile, ProfileDto, ProfileTest};
     use serde_json::json;
 
-    use crate::{extractors::authentication::BEARER, hash_tools};
+    use crate::{hash_tools, utils::token::BEARER};
     use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
     use crate::users::user_models::UserRole;
 

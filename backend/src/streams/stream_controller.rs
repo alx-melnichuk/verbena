@@ -1514,7 +1514,6 @@ pub mod tests {
     use chrono::{DateTime, Utc};
 
     use crate::errors::AppError;
-    use crate::extractors::authentication::BEARER;
     use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp};
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
@@ -1525,6 +1524,7 @@ pub mod tests {
         stream_orm::tests::{StreamOrmApp, STREAM_ID},
     };
     use crate::users::user_models::UserRole;
+    use crate::utils::token::BEARER;
 
     use super::*;
 

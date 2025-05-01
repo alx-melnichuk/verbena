@@ -988,7 +988,6 @@ pub mod tests {
     use chrono::{DateTime, Duration, Utc};
 
     use crate::errors::AppError;
-    use crate::extractors::authentication::BEARER;
     use crate::hash_tools;
     use crate::profiles::{config_prfl, profile_models::Profile, profile_orm::tests::ProfileOrmApp};
     use crate::sessions::{
@@ -1000,6 +999,7 @@ pub mod tests {
     };
     use crate::users::user_models::{UserRegistr, UserRole};
     use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
+    use crate::utils::token::BEARER;
 
     pub const ADMIN: u8 = 0;
     pub const USER: u8 = 1;
