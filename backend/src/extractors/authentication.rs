@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use actix_web::{dev, error, http, web, FromRequest, HttpMessage};
+use actix_web::{dev, error, web, FromRequest, HttpMessage};
 use futures_util::{
     future::{ready, LocalBoxFuture, Ready},
     FutureExt,
@@ -20,8 +20,8 @@ use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::{config_jwt, session_orm::SessionOrm, tokens::decode_token};
 use crate::settings::err;
 use crate::users::user_models::UserRole;
+use crate::utils::token::get_token_from_cookie_or_header;
 
-pub const BEARER: &str = "Bearer ";
 // 401 Unauthorized - According to "user_id" in the token, the user was not found.
 pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
 // 500 Internal Server Error - Authentication: The entity "user" was not received from the request.
@@ -100,23 +100,6 @@ where
     }
 }
 
-fn jwt_from_header(header_token: &str) -> Result<String, String> {
-    const NO_AUTH_HEADER: &str = "No authentication header";
-    // eprintln!("jwt_from_header({})", header_token);
-    if header_token.len() == 0 {
-        return Err(NO_AUTH_HEADER.to_string());
-    }
-    let auth_header = match std::str::from_utf8(header_token.as_bytes()) {
-        Ok(v) => v,
-        Err(e) => return Err(format!("{} : {}", NO_AUTH_HEADER, e.to_string())),
-    };
-    // eprintln!("@auth_header: {}", auth_header.to_owned());
-    if !auth_header.starts_with(BEARER) {
-        return Err("Invalid authentication header".to_string());
-    }
-    Ok(auth_header.trim_start_matches(BEARER).to_owned())
-}
-
 pub struct AuthMiddleware<S> {
     service: Rc<S>,
     allowed_roles: Rc<Vec<UserRole>>,
@@ -145,23 +128,9 @@ where
 
     /// The future type representing the asynchronous response.
     fn call(&self, req: dev::ServiceRequest) -> Self::Future {
-        // const IS_PRINT: bool = false;
         // let timer0 = std::time::Instant::now();
         // Attempt to extract token from cookie or authorization header
-        let token = req.cookie("token").map(|c| c.value().to_string()).or_else(|| {
-            let header_token = req
-                .headers()
-                .get(http::header::AUTHORIZATION)
-                .map(|h| h.to_str().unwrap().to_string())
-                .unwrap_or("".to_string());
-            let token2 = jwt_from_header(&header_token)
-                .map_err(|e| {
-                    log::error!("InvalidToken: {}", e);
-                    None::<String>
-                })
-                .ok();
-            token2
-        });
+        let token = get_token_from_cookie_or_header(req.request());
 
         // If token is missing, return unauthorized error
         if token.is_none() {
@@ -169,7 +138,7 @@ where
             let json_error = AppError::unauthorized401(err::MSG_MISSING_TOKEN);
             return Box::pin(ready(Err(error::ErrorUnauthorized(json_error)))); // 401
         }
-        let token = token.unwrap().to_string();
+        let token = token.unwrap().clone();
 
         let config_jwt = req.app_data::<web::Data<config_jwt::ConfigJwt>>().unwrap();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
@@ -190,48 +159,13 @@ where
 
         // Handle user extraction and request processing
         async move {
-            // let timer1 = std::time::Instant::now();
-            let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap();
-            // Find a session for a given user.
-            let opt_session = session_orm.get_session_by_id(user_id).map_err(|e| {
-                log::error!("{}: {}", err::CD_DATABASE, e.to_string());
-                let error = AppError::database507(&e.to_string());
-                return error::ErrorInsufficientStorage(error); // 507
-            })?;
-            // let timer1s = format!("{:.2?}", timer1.elapsed());
-            let session = opt_session.ok_or_else(|| {
-                // There is no session for this user.
-                let message = format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id);
-                log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406+
-                error::ErrorNotAcceptable(AppError::not_acceptable406(&message))
-            })?;
-            // Each session contains an additional numeric value.
-            let session_num_token = session.num_token.unwrap_or(0);
-            // Compare an additional numeric value from the session and from the token.
-            if session_num_token != num_token {
-                // If they do not match, then this is an error.
-                let message = format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
-                log::error!("{}: {}", err::CD_UNAUTHORIZED, &message); // 401+
-                return Err(error::ErrorUnauthorized(AppError::unauthorized401(&message)));
-            }
+            let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap().get_ref();
+            let profile_orm = req.app_data::<web::Data<ProfileOrmApp>>().unwrap().get_ref();
+            // Check the token for correctness and get the user profile.
+            let profile = check_token_and_get_profile(user_id, num_token, session_orm, profile_orm)?;
 
-            let profile_orm = req.app_data::<web::Data<ProfileOrmApp>>().unwrap();
-            // let timer2 = std::time::Instant::now();
-            let result = profile_orm.get_profile_user_by_id(user_id, false).map_err(|e| {
-                log::error!("{}: {}", err::CD_DATABASE, e.to_string());
-                let error = AppError::database507(&e.to_string());
-                error::ErrorInsufficientStorage(error) // 507
-            })?;
-            // let timer2s = format!("{:.2?}", timer2.elapsed());
-
-            let profile = result.ok_or_else(|| {
-                let message = format!("{}; user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id);
-                log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
-                error::ErrorUnauthorized(AppError::unauthorized401(&message)) // 401+
-            })?;
-
-            // let timer0s = format!("{:.2?}", timer0.elapsed());
-            // eprintln!("## timer0: {}, timer1: {}, timer2: {}", timer0s, timer1s, timer2s);
+            // eprintln!("## timer0: {}", format!("{:.2?}", timer0.elapsed()));
+            // eprintln!("## profile.role: {:?}", &profile.role);
 
             // Check if user's role matches the required role
             if allowed_roles.contains(&profile.role) {
@@ -250,14 +184,63 @@ where
     }
 }
 
+/** Check the token for correctness and get the user profile. */
+fn check_token_and_get_profile(
+    user_id: i32,
+    num_token: i32,
+    session_orm: &SessionOrmApp,
+    profile_orm: &ProfileOrmApp,
+) -> Result<Profile, actix_web::Error> {
+    // let timer1 = std::time::Instant::now();
+    // Find a session for a given user.
+    let opt_session = session_orm.get_session_by_id(user_id).map_err(|e| {
+        log::error!("{}: {}", err::CD_DATABASE, e.to_string());
+        let error = AppError::database507(&e.to_string());
+        return error::ErrorInsufficientStorage(error); // 507
+    })?;
+    // let timer1s = format!("{:.2?}", timer1.elapsed());
+    let session = opt_session.ok_or_else(|| {
+        // There is no session for this user.
+        let message = format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id);
+        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406+
+        error::ErrorNotAcceptable(AppError::not_acceptable406(&message))
+    })?;
+    // Each session contains an additional numeric value.
+    let session_num_token = session.num_token.unwrap_or(0);
+    // Compare an additional numeric value from the session and from the token.
+    if session_num_token != num_token {
+        // If they do not match, then this is an error.
+        let message = format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
+        log::error!("{}: {}", err::CD_UNAUTHORIZED, &message); // 401+
+        return Err(error::ErrorUnauthorized(AppError::unauthorized401(&message)).into());
+    }
+    // let timer2 = std::time::Instant::now();
+    let result = profile_orm.get_profile_user_by_id(user_id, false).map_err(|e| {
+        log::error!("{}: {}", err::CD_DATABASE, e.to_string());
+        let error = AppError::database507(&e.to_string());
+        error::ErrorInsufficientStorage(error) // 507
+    })?;
+    // let timer2s = format!("{:.2?}", timer2.elapsed());
+    // eprintln!("## timer1: {}, timer2: {}", timer1s, timer2s);
+
+    let profile = result.ok_or_else(|| {
+        let message = format!("{}; user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id);
+        log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
+        error::ErrorUnauthorized(AppError::unauthorized401(&message)) // 401+
+    })?;
+
+    Ok(profile)
+}
+
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{cookie::Cookie, dev, get, http, test, web, App, HttpResponse};
 
-    use crate::{
-        sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token},
-        users::user_models::UserRole,
+    use crate::sessions::{
+        config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
     };
+    use crate::users::user_models::UserRole;
+    use crate::utils::token::BEARER;
 
     use super::*;
 
@@ -458,6 +441,7 @@ mod tests {
     }
     #[test]
     async fn test_authentication_middelware_valid_token_non_existent_user() {
+        // error1
         let (cfg_c, data_c, _token) = get_cfg_data(USER);
 
         let num_token2 = data_c.1.get(0).unwrap().num_token.unwrap_or(0) + 1; // session_vec
