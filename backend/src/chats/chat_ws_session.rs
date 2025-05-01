@@ -32,6 +32,7 @@ pub struct ChatWsSession {
     user_id: Option<i32>,
     user_name: Option<String>,
     is_blocked: bool,
+    token: Option<String>,
     chat_message_orm: ChatMessageOrmApp,
 }
 
@@ -44,6 +45,7 @@ impl ChatWsSession {
         user_id: Option<i32>,
         user_name: Option<String>,
         is_blocked: bool,
+        token: Option<String>,
         chat_message_orm: ChatMessageOrmApp,
     ) -> Self {
         let name = user_name.clone().unwrap_or("@".to_string());
@@ -54,6 +56,7 @@ impl ChatWsSession {
             user_id,
             user_name,
             is_blocked,
+            token,
             chat_message_orm,
         }
     }
@@ -93,6 +96,7 @@ impl ChatWsSession {
 
         match event.ews_type() {
             EWSType::Join => {
+                // {"join": 1}
                 let join = event.get_i32("join").unwrap_or(-1);
                 if let Err(err) = self.do_join_room(join, ctx) {
                     ctx.text(to_string(&ErrEWS { err }).unwrap());
@@ -130,6 +134,11 @@ impl ChatWsSession {
         //     // Send message about "leave"
         //     let _ = self.do_leave_room(ctx);
         // }
+
+        if let Some(token) = &self.token {
+            eprintln!("__token: {}", token);
+        }
+
         #[rustfmt::skip]
         eprintln!("}}_do_join_room() user_name: {}", self.user_name.clone().unwrap_or("^".to_string()));
         // Then send a join message for the new room

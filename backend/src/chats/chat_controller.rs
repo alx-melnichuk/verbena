@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use actix_files::NamedFile;
-use actix_web::{get, post, put, web, HttpMessage, HttpResponse, Responder};
+use actix_web::{get, post, put, web, HttpResponse, Responder};
 use actix_web_actors::ws;
 
 use crate::chats::chat_message_models::{
@@ -15,10 +15,10 @@ use crate::chats::chat_message_orm::ChatMessageOrm;
 use crate::chats::chat_ws_session::ChatWsSession;
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
-use crate::profiles::profile_models::Profile;
 use crate::settings::err;
 use crate::users::user_models::UserRole;
 use crate::utils::parser;
+use crate::utils::token::get_token_from_cookie_or_header;
 use crate::validators::{msg_validation, Validator};
 
 // 403 Access denied - insufficient user rights.
@@ -40,21 +40,19 @@ pub async fn get_ws_chat(
     request: actix_web::HttpRequest,
     stream: web::Payload,
 ) -> actix_web::Result<HttpResponse<actix_web::body::BoxBody>, actix_web::Error> {
-    let opt_profile = request.extensions().get::<Profile>().cloned();
-    let user_id = opt_profile.clone().map(|p| p.user_id);
-    let user_name = opt_profile.clone().map(|p| p.nickname);
+    // Attempt to extract token from cookie or authorization header
+    let token = get_token_from_cookie_or_header(&request);
 
-    let name = user_name.clone().unwrap_or("#".to_string());
-    eprintln!("~~get_ws_chat() user_name: {}", name);
-
+    eprintln!("~~get_ws_chat() jwt_token: {:?}", token);
     let chat_message_orm_app = chat_message_orm.get_ref().clone();
 
     let chat_ws_session = ChatWsSession::new(
         u64::default(),       // id: u64,
         Option::default(),    // room_id: Option<i32>,
-        user_id,              // user_id: Option<i32>,
-        user_name,            // user_name: Option<String>,
-        bool::default(),      //is_blocked: bool,
+        Option::default(),    // user_id: Option<i32>,
+        Option::default(),    // user_name: Option<String>,
+        bool::default(),      // is_blocked: bool,
+        token,                // jwt_token: Option<String>,
         chat_message_orm_app, // chat_message_orm: ChatMessageOrmApp,
     );
     ws::start(chat_ws_session, &request, stream)
