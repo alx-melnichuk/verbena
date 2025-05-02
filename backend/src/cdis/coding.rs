@@ -59,7 +59,7 @@ pub const MSG_INVALID_SECOND: &str = "Invalid second";
 /// ```
 
 pub fn encode(date_time: DateTime<Utc>, accuracy: u8) -> String {
-    let buff_s = BUFF.to_string();
+    let buff_s = BUFF.to_owned();
     let buff = buff_s.as_bytes();
     let accuracy = if accuracy > 2 { 0 } else { accuracy };
 
@@ -82,12 +82,12 @@ pub fn encode(date_time: DateTime<Utc>, accuracy: u8) -> String {
     let trio5 = if accuracy > 0 {
         format!("{}{}{}", &nanosec[5..6], &nanosec[4..5], &nanosec[3..4])
     } else {
-        "".to_string()
+        "".to_owned()
     };
     let trio6 = if accuracy > 1 {
         format!("{}{}{}", &nanosec[8..9], &nanosec[7..8], &nanosec[6..7])
     } else {
-        "".to_string()
+        "".to_owned()
     };
 
     format!("{}{}{}{}{}{}", trio1, trio2, trio3, trio4, trio5, trio6)
