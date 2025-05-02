@@ -29,27 +29,27 @@ pub struct ConfigPrfl {
 
 impl ConfigPrfl {
     pub fn init_by_env() -> Self {
-        let avatar_files_dir = env::var("PRFL_AVATAR_FILES_DIR").unwrap_or(AVATAR_FILES_DIR.to_string());
+        let avatar_files_dir = env::var("PRFL_AVATAR_FILES_DIR").unwrap_or(AVATAR_FILES_DIR.to_owned());
         let path_dir: PathBuf = PathBuf::from(avatar_files_dir).iter().collect();
-        let prfl_avatar_files_dir = path_dir.to_str().unwrap().to_string();
+        let prfl_avatar_files_dir = path_dir.to_str().unwrap().to_owned();
 
-        let max_size = AVATAR_MAX_SIZE.to_string();
+        let max_size = AVATAR_MAX_SIZE.to_owned();
         let avatar_max_size = env::var("PRFL_AVATAR_MAX_SIZE").unwrap_or(max_size).trim().parse().unwrap();
 
         #[rustfmt::skip]
-        let valid_types = env::var("PRFL_AVATAR_VALID_TYPES").unwrap_or(AVATAR_VALID_TYPES.to_string())
+        let valid_types = env::var("PRFL_AVATAR_VALID_TYPES").unwrap_or(AVATAR_VALID_TYPES.to_owned())
             .to_lowercase();
         let avatar_valid_types: Vec<String> = Self::get_avatar_valid_types_by_str(&valid_types).unwrap();
 
-        let avatar_ext = env::var("PRFL_AVATAR_EXT").unwrap_or("".to_string());
+        let avatar_ext = env::var("PRFL_AVATAR_EXT").unwrap_or("".to_owned());
         #[rustfmt::skip]
         let prfl_avatar_ext = if Self::avatar_ext_validate(&avatar_ext) { Some(avatar_ext) } else { None };
 
-        let max_width = AVATAR_MAX_WIDTH.to_string();
+        let max_width = AVATAR_MAX_WIDTH.to_owned();
         #[rustfmt::skip]
         let avatar_max_width: u32 = env::var("PRFL_AVATAR_MAX_WIDTH").unwrap_or(max_width).trim().parse().unwrap();
 
-        let max_height = AVATAR_MAX_HEIGHT.to_string();
+        let max_height = AVATAR_MAX_HEIGHT.to_owned();
         #[rustfmt::skip]
         let avatar_max_height: u32 = env::var("PRFL_AVATAR_MAX_HEIGHT").unwrap_or(max_height).trim().parse().unwrap();
 
@@ -65,10 +65,10 @@ impl ConfigPrfl {
 
     pub fn image_types() -> Vec<String> {
         vec![
-            IMAGE_BMP.essence_str().to_string(),
-            IMAGE_GIF.essence_str().to_string(),
-            IMAGE_JPEG.essence_str().to_string(),
-            IMAGE_PNG.essence_str().to_string(),
+            IMAGE_BMP.essence_str().to_owned(),
+            IMAGE_GIF.essence_str().to_owned(),
+            IMAGE_JPEG.essence_str().to_owned(),
+            IMAGE_PNG.essence_str().to_owned(),
         ]
     }
     pub fn get_types(image_types: Vec<String>) -> Vec<String> {
@@ -97,19 +97,16 @@ impl ConfigPrfl {
     }
     fn avatar_ext_validate(value: &str) -> bool {
         let type_list: Vec<String> = Self::get_types(Self::image_types());
-        value.len() > 0 && type_list.contains(&value.to_string())
+        value.len() > 0 && type_list.contains(&value.to_owned())
     }
 }
 
 #[cfg(all(test, feature = "mockdata"))]
 pub fn get_test_config() -> ConfigPrfl {
     ConfigPrfl {
-        prfl_avatar_files_dir: "./tmp".to_string(),
+        prfl_avatar_files_dir: "./tmp".to_owned(),
         prfl_avatar_max_size: AVATAR_MAX_SIZE.parse().unwrap(),
-        prfl_avatar_valid_types: vec![
-            IMAGE_JPEG.essence_str().to_string(),
-            IMAGE_PNG.essence_str().to_string(),
-        ],
+        prfl_avatar_valid_types: vec![IMAGE_JPEG.essence_str().to_owned(), IMAGE_PNG.essence_str().to_owned()],
         prfl_avatar_ext: None,
         prfl_avatar_max_width: AVATAR_MAX_WIDTH.parse().unwrap(),
         prfl_avatar_max_height: AVATAR_MAX_HEIGHT.parse().unwrap(),
