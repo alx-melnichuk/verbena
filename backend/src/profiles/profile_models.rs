@@ -194,14 +194,14 @@ impl Profile {
         let now = Utc::now();
         Profile {
             user_id,
-            nickname: nickname.to_string(),
-            email: email.to_string(),
-            password: "".to_string(),
+            nickname: nickname.to_owned(),
+            email: email.to_owned(),
+            password: "".to_owned(),
             role,
-            avatar: avatar.map(|v| v.to_string()),
-            descript: descript.map(|v| v.to_string()),
-            theme: theme.map(|v| v.to_string()),
-            locale: locale.map(|v| v.to_string()),
+            avatar: avatar.map(|v| v.to_owned()),
+            descript: descript.map(|v| v.to_owned()),
+            theme: theme.map(|v| v.to_owned()),
+            locale: locale.map(|v| v.to_owned()),
             created_at: now.clone(),
             updated_at: now.clone(),
         }
@@ -225,9 +225,9 @@ pub struct CreateProfile {
 impl CreateProfile {
     pub fn new(nickname: &str, email: &str, password: &str, role: Option<UserRole>) -> CreateProfile {
         CreateProfile {
-            nickname: nickname.to_string(),
-            email: email.to_string(),
-            password: password.to_string(),
+            nickname: nickname.to_owned(),
+            email: email.to_owned(),
+            password: password.to_owned(),
             role: role.clone(),
             avatar: None,
             descript: None,
@@ -644,7 +644,7 @@ impl ProfileTest {
         format!("{}#", nickname)
     }
     pub fn email_min() -> String {
-        let suffix = "@us".to_string();
+        let suffix = "@us".to_owned();
         let email_min: usize = EMAIL_MIN.into();
         let email: String = (0..(email_min - 1 - suffix.len())).map(|_| 'a').collect();
         format!("{}{}", email, suffix)
@@ -658,7 +658,7 @@ impl ProfileTest {
         format!("{}@{}{}", prefix, suffix, domain)
     }
     pub fn email_wrong() -> String {
-        let suffix = "@".to_string();
+        let suffix = "@".to_owned();
         let email_min: usize = EMAIL_MIN.into();
         let email: String = (0..(email_min - suffix.len())).map(|_| 'a').collect();
         format!("{}{}", email, suffix)
@@ -673,8 +673,8 @@ impl ProfileTest {
         (0..(PASSWORD_MIN)).map(|_| 'a').collect()
     }
     pub fn role_wrong() -> String {
-        let role = UserRole::all_values().get(0).unwrap().to_string();
-        role[0..(role.len() - 1)].to_string()
+        let role = UserRole::all_values().get(0).unwrap().to_owned();
+        role[0..(role.len() - 1)].to_owned()
     }
     pub fn descript_min() -> String {
         (0..(DESCRIPT_MIN - 1)).map(|_| 'a').collect()
