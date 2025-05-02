@@ -161,8 +161,8 @@ mod tests {
         result.push("5TKCF4qV0CWAKkzoTo4p0B64A5eTGFd8ezXQRA0CgYEA0J5gCYiKmA8+5NBw+PUr\n".to_string());
         result.push("6ptrmJnGQhrfcwnF8diRFVpCXvbXR8Q0KTlHa8y8TxPtMYou8YcauDb9ppcQike3\n".to_string());
         result.push("X4MUEvfi2jU/WvpjBZCvXe4bC0Bj5IXhYm0mw5OXpwjJ4DevUGShGXtOZyVXv3NT\n".to_string());
-        result.push("W5N93UmbAj+n5lu17tKxnYQ=\n".to_string());
-        result.push("-----END PRIVATE KEY-----\n".to_string());
+        result.push("W5N93UmbAj+n5lu17tKxnYQ=\n".to_owned());
+        result.push("-----END PRIVATE KEY-----\n".to_owned());
         result.join("")
     }
 
@@ -170,7 +170,7 @@ mod tests {
     #[test]
     fn test_encrypt_utf8_with_empty_pr_key_pem() {
         let data = "Test data1 string.".as_bytes();
-        let pr_key_pem_str = "".to_string();
+        let pr_key_pem_str = "".to_owned();
         // Encrypt data with the specified private key.
         let result = encrypt_utf8(&pr_key_pem_str, data);
 
