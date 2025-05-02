@@ -4,5 +4,6 @@ pub mod chat_message;
 pub mod chat_message_models;
 pub mod chat_message_orm;
 pub mod chat_message_storage;
+pub mod chat_ws_assistant;
 pub mod chat_ws_server;
 pub mod chat_ws_session;
