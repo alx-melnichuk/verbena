@@ -101,7 +101,12 @@ export class SocketChatService {
             // // Set the chat username.
             // this.sendData(EWSTypeUtil.getNameEWS(this.chatConfig.nickname));
             // Join the chat room.
-            this.sendData(EWSTypeUtil.getJoinEWS(this.chatConfig.room));
+            this.sendData(EWSTypeUtil.getJoinEWS(
+                this.chatConfig.room,
+                undefined,
+                undefined,
+                this.chatConfig.access || undefined,
+            ));
         }
     };
     /** Processing the "close" event of the Socket. */

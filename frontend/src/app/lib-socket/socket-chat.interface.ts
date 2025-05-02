@@ -58,8 +58,8 @@ export class EWSTypeUtil {
     public static getErrEWS(err: string): string {
         return JSON.stringify({ err });
     }
-    public static getJoinEWS(join: number, member?: string, count?: number): string {
-        return JSON.stringify({ ...{ join }, ...{ member }, ...{ count } });
+    public static getJoinEWS(join: number, member?: string, count?: number, access?: string): string {
+        return JSON.stringify({ ...{ join }, ...{ member }, ...{ count }, ...{ access } });
     }
     public static getLeaveEWS(member?: string, count?: number): string {
         return JSON.stringify({ ...{ leave: '' }, ...{ member }, ...{ count } });
