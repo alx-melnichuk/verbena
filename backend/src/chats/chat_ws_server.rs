@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 
 use actix::prelude::*;
-// use actix_broker::BrokerSubscribe;
+use actix_broker::BrokerSubscribe;
 use serde_json::to_string;
 
-use crate::chats::chat_event_ws::{JoinEWS /*LeaveEWS*/};
-use crate::chats::chat_message::{ChatMsgSsn, CommandSrv, JoinRoom};
-// use crate::chats::chat_message::{
-//     BlockClients, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage,
-// };
+use crate::chats::chat_event_ws::{JoinEWS, LeaveEWS};
+use crate::chats::chat_message::{
+    /*BlockClients, BlockSsn,*/ ChatMsgSsn, CommandSrv, /*CountMembers,*/ JoinRoom,
+    LeaveRoom, /*SendMessage,*/
+};
 
 type Client = Recipient<CommandSrv>; // ChatMessage
 
@@ -64,7 +64,7 @@ impl ChatWsServer {
     // Send a chat message to all members.
     fn send_chat_message_to_clients(&mut self, room_id: i32, msg: &str) -> Option<()> {
         let mut room = self.take_room(room_id)?;
-
+        eprintln!("@_send_chat_message() msg: \"{}\"", msg);
         for (id, client_info) in room.drain() {
             let command_srv = CommandSrv::Chat(ChatMsgSsn(msg.to_owned()));
             if client_info.client.try_send(command_srv).is_ok() {
@@ -84,11 +84,11 @@ impl Supervised for ChatWsServer {}
 impl Actor for ChatWsServer {
     type Context = Context<Self>;
 
-    fn started(&mut self, _ctx: &mut Self::Context) {
+    fn started(&mut self, ctx: &mut Self::Context) {
         // // Asynchronously subscribe to "SendMessage". (sending `BrokerIssue`.issue_system_async())
         // self.subscribe_system_async::<SendMessage>(ctx);
-        // // Asynchronously subscribe to "LeaveRoomSrv". (sending `BrokerIssue`.issue_system_sync())
-        // self.subscribe_system_async::<LeaveRoom>(ctx);
+        // Asynchronously subscribe to "LeaveRoom". (sending `BrokerIssue`.issue_system_sync())
+        self.subscribe_system_async::<LeaveRoom>(ctx);
     }
 }
 
@@ -107,7 +107,7 @@ impl Handler<JoinRoom> for ChatWsServer {
 
     fn handle(&mut self, msg: JoinRoom, _ctx: &mut Self::Context) -> Self::Result {
         #[rustfmt::skip]
-        eprintln!("!!_handler<JoinRoom>() 01 msg.0: {}, msg.1: \"{}\"", msg.0, msg.1.clone().unwrap_or("_".to_string()));
+        eprintln!("@_handler<JoinRoom>() 01 msg.0: {}, msg.1: \"{}\"", msg.0, msg.1.clone().unwrap_or("_".to_string()));
         let JoinRoom(room_id, client_name, client) = msg;
         let name = client_name.unwrap_or("".to_owned());
         let member = name.clone();
@@ -115,11 +115,10 @@ impl Handler<JoinRoom> for ChatWsServer {
 
         // Get the number of clients in the room.
         let count = self.count_clients_in_room(room_id);
-        eprintln!("!!_handler<JoinRoom>() 02 count: {}", count);
+        eprintln!("@_handler<JoinRoom>() 02 count: {}", count);
         let join = room_id;
         let join_str = to_string(&JoinEWS { join, member, count }).unwrap();
         // Send a chat message to all members.
-        eprintln!("!!_handler<JoinRoom>() 03 join_str: \"{}\"", &join_str);
         self.send_chat_message_to_clients(room_id, &join_str);
 
         MessageResult(id)
@@ -128,7 +127,32 @@ impl Handler<JoinRoom> for ChatWsServer {
 
 // ** Leave the client from the chat room. (Session -> Server) **
 
-// --
+impl Handler<LeaveRoom> for ChatWsServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: LeaveRoom, _ctx: &mut Self::Context) {
+        let room_id = msg.0;
+        let client_id = msg.1;
+        let user_name = msg.2;
+
+        if let Some(room) = self.room_map.get_mut(&room_id) {
+            // Remove the client from the room.
+            let recipient_opt = room.remove(&client_id);
+            let leave = room_id;
+            let member = user_name.unwrap_or("".to_owned());
+            // Get the number of clients in the room.
+            let count = self.count_clients_in_room(room_id);
+            let leave_str = to_string(&LeaveEWS { leave, member, count }).unwrap();
+            // Send a chat message to all members.
+            self.send_chat_message_to_clients(room_id, &leave_str);
+
+            if let Some(client_info) = recipient_opt {
+                let command_srv = CommandSrv::Chat(ChatMsgSsn(leave_str.to_owned()));
+                client_info.client.do_send(command_srv);
+            }
+        }
+    }
+}
 
 // ** Send a text message to all clients in the room. (Server -> Session) **
 
