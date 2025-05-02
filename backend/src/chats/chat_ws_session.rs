@@ -1,5 +1,5 @@
 use actix::prelude::*;
-// use actix_broker::BrokerIssue;
+use actix_broker::BrokerIssue;
 // use actix_web::web;
 use actix_web_actors::ws;
 // use chrono::{SecondsFormat, Utc};
@@ -10,16 +10,13 @@ use crate::chats::chat_event_ws::{
     /*MsgCutEWS, MsgEWS, MsgPutEWS,*/ NameEWS, /*UnblockEWS,*/
 };
 use crate::chats::chat_message::{
-    /*BlockClients, BlockSsn, ChatMsgSsn,*/
-    CommandSrv, /*CountMembers,*/ JoinRoom, /*LeaveRoom, SaveMessageResult, SendMessage,*/
+    /*BlockClients, BlockSsn,*/ ChatMsgSsn, CommandSrv, /*CountMembers,*/ JoinRoom,
+    LeaveRoom, /*SaveMessageResult, SendMessage,*/
 };
-// use crate::chats::chat_message_models::CreateChatMessage;
-#[cfg(not(all(test, feature = "mockdata")))]
-use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
-#[cfg(all(test, feature = "mockdata"))]
-use crate::chats::chat_message_orm::tests::ChatMessageOrmApp;
-// use crate::chats::chat_message_storage::execute_create_chat_message;
+use crate::chats::chat_ws_assistant::ChatWsAssistant;
 use crate::chats::chat_ws_server::ChatWsServer;
+// use crate::profiles::profile_models::Profile;
+// use crate::settings::err;
 
 pub const PARAMETER_NOT_DEFINED: &str = "parameter not defined";
 pub const THERE_WAS_ALREADY_JOIN_TO_ROOM: &str = "There was already a \"join\" to the room";
@@ -32,149 +29,8 @@ pub struct ChatWsSession {
     user_id: Option<i32>,
     user_name: Option<String>,
     is_blocked: bool,
-    token: Option<String>,
-    chat_message_orm: ChatMessageOrmApp,
+    assistant: ChatWsAssistant,
 }
-
-// ** ChatWsSession implementation **
-
-impl ChatWsSession {
-    pub fn new(
-        id: u64,
-        room_id: Option<i32>,
-        user_id: Option<i32>,
-        user_name: Option<String>,
-        is_blocked: bool,
-        token: Option<String>,
-        chat_message_orm: ChatMessageOrmApp,
-    ) -> Self {
-        let name = user_name.clone().unwrap_or("@".to_string());
-        eprintln!("}}ChatWsSession() user_name: {}", name);
-        ChatWsSession {
-            id,
-            room_id,
-            user_id,
-            user_name,
-            is_blocked,
-            token,
-            chat_message_orm,
-        }
-    }
-    // Check if this field is required
-    // #[rustfmt::skip]
-    // fn check_is_required_string(&self, value: &str, name: &str) -> Result<(), String> {
-    //     if value.len() == 0 { Err(format!("\"{}\" {}", name, PARAMETER_NOT_DEFINED)) } else { Ok(()) }
-    // }
-    #[rustfmt::skip]
-    fn check_is_required_i32(&self, value: i32, name: &str) -> Result<(), String> {
-        if value < 0 { Err(format!("\"{}\" {}", name, PARAMETER_NOT_DEFINED)) } else { Ok(()) }
-    }
-    // // Check if there is an joined room
-    // fn check_is_joined_room(&self) -> Result<(), String> {
-    //     if self.room.len() == 0 { Err("There was no \"join\" command.".to_owned()) } else { Ok(()) }
-    // }
-    // // Check if there is a block on sending messages
-    // fn check_is_blocked(&self) -> Result<(), String> {
-    //     if self.is_blocked { Err("There is a block on sending messages.".to_owned()) } else { Ok(()) }
-    // }
-    // // Check if the member has a name or is anonymous
-    // fn check_is_name(&self) -> Result<(), String> {
-    //     let name = self.name.clone().unwrap_or("".to_owned());
-    //     if name.len() == 0 { Err("There was no \"name\" command.".to_owned()) } else { Ok(()) }
-    // }
-
-    fn handle_text(&mut self, msg: &str, ctx: &mut ws::WebsocketContext<Self>) {
-        eprintln!("}}_handle_text() msg: {}", msg);
-        // Parse input data of ws event.
-        let res_event = EventWS::parsing(msg);
-        if let Err(err) = res_event {
-            log::debug!("WEBSOCKET: Error: {:?} msg: \"{}\"", err, msg);
-            ctx.text(to_string(&ErrEWS { err }).unwrap());
-            return;
-        }
-        let event = res_event.unwrap();
-
-        match event.ews_type() {
-            EWSType::Join => {
-                // {"join": 1}
-                let join = event.get_i32("join").unwrap_or(-1);
-                if let Err(err) = self.do_join_room(join, ctx) {
-                    ctx.text(to_string(&ErrEWS { err }).unwrap());
-                }
-            }
-            EWSType::Name => {
-                let name2 = event.get_string("name").unwrap_or("".to_string());
-                // For an authorized user, id and name are defined.
-                let id = self.user_id.clone().unwrap_or_default();
-                let name = self.user_name.clone().unwrap_or(name2);
-                ctx.text(to_string(&NameEWS { id, name }).unwrap());
-            }
-            _ => {}
-        }
-    }
-
-    // // ** Blocking clients in a room by name. (Session -> Server) **
-    // pub fn blocking_clients(&self,client_name: &str,is_blocked: bool,ctx: &mut ws::WebsocketContext<Self>,) -> Result<(), String> {    }
-
-    // // ** Count of clients in the room. (Session -> Server) **
-    // pub fn count_members(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {    }
-
-    // ** Join the client to the chat room. (Session -> Server) **
-    pub fn do_join_room(&mut self, room_id: i32, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {
-        eprintln!("}}_do_join_room() room_id: {}", room_id);
-        // Check if this field is required
-        self.check_is_required_i32(room_id, "join")?;
-        let curr_room_id = self.room_id.unwrap_or(-1);
-        // Check if there was a join to this room.
-        if curr_room_id == room_id {
-            return Err(format!("{} {}.", THERE_WAS_ALREADY_JOIN_TO_ROOM, room_id));
-        }
-        // If there is a room name, then leave it.
-        // if curr_room_id > 0 {
-        //     // Send message about "leave"
-        //     let _ = self.do_leave_room(ctx);
-        // }
-
-        if let Some(token) = &self.token {
-            eprintln!("__token: {}", token);
-        }
-
-        #[rustfmt::skip]
-        eprintln!("}}_do_join_room() user_name: {}", self.user_name.clone().unwrap_or("^".to_string()));
-        // Then send a join message for the new room
-        let join_room_srv = JoinRoom(room_id, self.user_name.clone(), ctx.address().recipient());
-
-        ChatWsServer::from_registry()
-            .send(join_room_srv)
-            .into_actor(self)
-            .then(move |res, act, _ctx| {
-                let mut id2 = 0;
-                if let Ok(id) = res {
-                    act.id = id;
-                    act.room_id = Some(room_id);
-                    id2 = id;
-                }
-                eprintln!("}}_do_join_room(2) room_id: {}, id: {}", room_id, id2);
-                fut::ready(())
-            })
-            .wait(ctx);
-        Ok(())
-    }
-
-    // // ** Leave the client from the chat room. (Session -> Server) **
-    // pub fn leave_room(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {    }
-
-    // // ** Send a text message to all clients in the room. (Server -> Session) **
-    // pub fn send_message(&self, msg: &str, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {    }
-
-    // // ** Send a correction to the message to everyone in the chat. (Server -> Session) **
-    // pub fn send_message_to_update(&self, msg_put: &str, date: &str) -> Result<(), String> {    }
-
-    // // ** Send a delete message to all chat members. (Server -> Session) **
-    // pub fn send_message_to_delete(&self, msg_cut: &str, date: &str) -> Result<(), String> {    }
-}
-
-// ** **
 
 // ** ChatWsSession implementation "Actor" **
 
@@ -214,11 +70,12 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatWsSession {
 
         match msg {
             ws::Message::Text(text) => {
-                self.handle_text(text.trim(), ctx);
+                // Handle socket text messages.
+                self.handle_text_messages(text.trim(), ctx);
             }
             ws::Message::Close(reason) => {
-                // // Send message about "leave"
-                // let _ = self.leave_room(ctx);
+                // Send message about "leave"
+                let _ = self.handle_ews_leave(ctx);
                 ctx.close(reason);
                 ctx.stop();
             }
@@ -227,24 +84,243 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatWsSession {
     }
 }
 
-// ** ChatWsSession implementation "Handler<CommandSrv>" **
+// ** ChatWsSession implementation **
+
+impl ChatWsSession {
+    pub fn new(
+        id: u64,
+        room_id: Option<i32>,
+        user_id: Option<i32>,
+        user_name: Option<String>,
+        is_blocked: bool,
+        assistant: ChatWsAssistant,
+    ) -> Self {
+        ChatWsSession {
+            id,
+            room_id,
+            user_id,
+            user_name,
+            is_blocked,
+            assistant,
+        }
+    }
+    // Check if this field is required
+    // #[rustfmt::skip]
+    // fn check_is_required_string(&self, value: &str, name: &str) -> Result<(), String> {
+    //     if value.len() == 0 { Err(format!("\"{}\" {}", name, PARAMETER_NOT_DEFINED)) } else { Ok(()) }
+    // }
+    #[rustfmt::skip]
+    fn check_is_required_i32(&self, value: i32, name: &str) -> Result<(), String> {
+        if value < 0 { Err(format!("\"{}\" {}", name, PARAMETER_NOT_DEFINED)) } else { Ok(()) }
+    }
+    // Check if there is an joined room
+    #[rustfmt::skip]
+    fn check_is_joined_room(&self) -> Result<(), String> {
+        if self.room_id.is_none() { Err("There was no \"join\" command.".to_owned()) } else { Ok(()) }
+    }
+    // // Check if there is a block on sending messages
+    // fn check_is_blocked(&self) -> Result<(), String> {
+    //     if self.is_blocked { Err("There is a block on sending messages.".to_owned()) } else { Ok(()) }
+    // }
+    // // Check if the member has a name or is anonymous
+    // fn check_is_name(&self) -> Result<(), String> {
+    //     let name = self.name.clone().unwrap_or("".to_owned());
+    //     if name.len() == 0 { Err("There was no \"name\" command.".to_owned()) } else { Ok(()) }
+    // }
+
+    /** Handle socket text messages. */
+    fn handle_text_messages(&mut self, msg: &str, ctx: &mut ws::WebsocketContext<Self>) {
+        eprintln!("#!_WEBSOCKET: Text msg: \"{}\"", msg);
+        log::debug!("WEBSOCKET: Text: msg: \"{}\"", msg);
+        // Parse input data of ws event.
+        let res_event = EventWS::parsing(msg);
+        if let Err(err) = res_event {
+            log::debug!("WEBSOCKET: Error: {:?} msg: \"{}\"", err, msg);
+            ctx.text(to_string(&ErrEWS { err }).unwrap());
+            return;
+        }
+        let event = res_event.unwrap();
+
+        match event.ews_type() {
+            EWSType::Join => {
+                // {"join": 1}
+                let room_id = event.get_i32("join").unwrap_or(-1);
+                let access = event.get_string("access").unwrap_or("".to_owned());
+                if let Err(err) = self.handle_ews_join(room_id, &access, ctx) {
+                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                }
+            }
+            EWSType::Leave => {
+                if let Err(err) = self.handle_ews_leave(ctx) {
+                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                }
+            }
+            EWSType::Name => {
+                let new_name = event.get_string("name").unwrap_or("".to_owned());
+                // For an authorized user, id and name are defined.
+                let id = self.user_id.clone().unwrap_or_default();
+                let user_name = self.user_name.clone().unwrap_or_default();
+                if new_name.len() > 0 && (user_name.len() == 0 || !user_name.eq(&new_name)) {
+                    self.user_name = Some(new_name);
+                }
+                let name = self.user_name.clone().unwrap_or("".to_owned());
+                ctx.text(to_string(&NameEWS { id, name }).unwrap());
+            }
+            _ => {}
+        }
+    }
+
+    // // * Blocking clients in a room by name. (Session -> Server) *
+    // pub fn blocking_clients(&self,client_name: &str,is_blocked: bool,ctx: &mut ws::WebsocketContext<Self>,) -> Result<(), String> {    }
+
+    // // * Count of clients in the room. (Session -> Server) *
+    // pub fn count_members(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {    }
+
+    // * Join the client to the chat room. (Session -> Server) *
+    pub fn handle_ews_join(
+        &mut self,
+        room_id: i32,
+        access: &str,
+        ctx: &mut ws::WebsocketContext<Self>,
+    ) -> Result<(), String> {
+        // Check if this field is required
+        self.check_is_required_i32(room_id, "join")?;
+        // Check if there was a join to this room.
+        if self.room_id.unwrap_or_default() == room_id {
+            return Err(format!("{} {}.", THERE_WAS_ALREADY_JOIN_TO_ROOM, room_id));
+        }
+        // If "access" is specified, then get the user profile.
+        if access.len() > 0 {
+            // Decode the token. And unpack the two parameters from the token.
+            let (user_id, num_token) = self.assistant.decode_and_verify_token(access)?;
+            // Spawn an async task.
+            let addr = ctx.address();
+            // let input = text.clone();
+            let assistant = self.assistant.clone();
+
+            actix_web::rt::spawn(async move {
+                // Check the token for correctness and get the user profile.
+                let result = assistant.check_num_token_and_get_profile(user_id, num_token).await;
+                if let Err(err) = result {
+                    return addr.do_send(AsyncResultError(err.to_string()));
+                }
+                let profile = result.unwrap();
+                let user_id = Some(profile.user_id);
+                let user_name = Some(profile.nickname.clone());
+                addr.do_send(AsyncResultEwsJoin(room_id, user_id, user_name));
+            });
+        } else {
+            ctx.address().do_send(AsyncResultEwsJoin(room_id, None, self.user_name.clone()));
+        }
+        Ok(())
+    }
+
+    // * Leave the client from the chat room. (Session -> Server) *
+    pub fn handle_ews_leave(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {
+        // Check if there is an joined room
+        self.check_is_joined_room()?;
+
+        let room_id = self.room_id.unwrap_or_default();
+        // Send a message about leaving the room.
+        let leave_room_srv = LeaveRoom(room_id, self.id, self.user_name.clone());
+        // issue_sync comes from having the `BrokerIssue` trait in scope.
+        self.issue_system_sync(leave_room_srv, ctx);
+        // Reset room name.
+        self.room_id = None;
+        Ok(())
+    }
+
+    // // * Send a text message to all clients in the room. (Server -> Session) *
+    // pub fn send_message(&self, msg: &str, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {    }
+
+    // // * Send a correction to the message to everyone in the chat. (Server -> Session) *
+    // pub fn send_message_to_update(&self, msg_put: &str, date: &str) -> Result<(), String> {    }
+
+    // // * Send a delete message to all chat members. (Server -> Session) *
+    // pub fn send_message_to_delete(&self, msg_cut: &str, date: &str) -> Result<(), String> {    }
+}
+
+// ** - **
+
+// * * * * Handler for asynchronous response to the "error" command. * * * *
+
+struct AsyncResultError(String);
+
+impl Message for AsyncResultError {
+    type Result = ();
+}
+
+impl Handler<AsyncResultError> for ChatWsSession {
+    type Result = ();
+
+    fn handle(&mut self, msg: AsyncResultError, ctx: &mut Self::Context) {
+        eprintln!("#!_handle<AsyncResultError>(01) msg.0: {}", &msg.0);
+        ctx.text(to_string(&ErrEWS { err: msg.0 }).unwrap());
+    }
+}
+
+// * * * * Handler for asynchronous response to the "JoinEWS" event * * * *
+
+struct AsyncResultEwsJoin(
+    i32,            // room_id
+    Option<i32>,    // user_id
+    Option<String>, // user_name
+);
+
+impl Message for AsyncResultEwsJoin {
+    type Result = ();
+}
+
+impl Handler<AsyncResultEwsJoin> for ChatWsSession {
+    type Result = ();
+
+    fn handle(&mut self, msg: AsyncResultEwsJoin, ctx: &mut Self::Context) {
+        // If there is a room name, then leave it.
+        if self.room_id.unwrap_or_default() > 0 {
+            // Send message about "leave"
+            let _ = self.handle_ews_leave(ctx);
+        }
+        let room_id = msg.0;
+        self.user_id = msg.1;
+        self.user_name = msg.2;
+
+        // Then send a join message for the new room
+        let join_room_srv = JoinRoom(room_id, self.user_name.clone(), ctx.address().recipient());
+        // Send the "JoinRoom" command to the server.
+        ChatWsServer::from_registry()
+            .send(join_room_srv)
+            .into_actor(self)
+            .then(move |res, act, _ctx| {
+                if let Ok(id) = res {
+                    act.id = id;
+                    act.room_id = Some(room_id);
+                }
+                fut::ready(())
+            })
+            .wait(ctx);
+    }
+}
+
+// * * * *  __  * * * *
+
+// **** ChatWsSession implementation "Handler<CommandSrv>" ****
 
 impl Handler<CommandSrv> for ChatWsSession {
     type Result = MessageResult<CommandSrv>;
 
-    fn handle(&mut self, _command: CommandSrv, _ctx: &mut Self::Context) -> Self::Result {
-        // match command {
-        //     CommandSrv::Block(blocking) => self.handle_block_client(blocking, ctx),
-        //     CommandSrv::Chat(chat_msg) => self.handle_chat_message_ssn(chat_msg, ctx),
-        // }
+    fn handle(&mut self, command: CommandSrv, ctx: &mut Self::Context) -> Self::Result {
+        match command {
+            // CommandSrv::Block(blocking) => self.handle_block_client(blocking, ctx),
+            CommandSrv::Chat(chat_msg) => self.handle_chat_message_ssn(chat_msg, ctx),
+        }
 
         MessageResult(())
     }
 }
 
-/*impl ChatWsSession {
+impl ChatWsSession {
     // Handler for "CommandSrv::Block(BlockSsn)".
-    fn handle_block_client(&mut self, blocking: BlockSsn, ctx: &mut <Self as actix::Actor>::Context) {
+    /*fn handle_block_client(&mut self, blocking: BlockSsn, ctx: &mut <Self as actix::Actor>::Context) {
         let BlockSsn(is_blocked) = blocking;
         self.is_blocked = is_blocked;
         let client_name = self.name.clone().unwrap_or("".to_owned());
@@ -255,21 +331,23 @@ impl Handler<CommandSrv> for ChatWsSession {
             to_string(& UnblockEWS { unblock: client_name, count: 1 }).unwrap()
         };
         ctx.text(str);
-    }
+    }*/
 
     // Handler for "CommandSrv::Chat(ChatMessageSsn)".
     fn handle_chat_message_ssn(&mut self, chat_msg: ChatMsgSsn, ctx: &mut ws::WebsocketContext<Self>) {
         ctx.text(chat_msg.0);
     }
-}*/
+}
 
-// ** ChatWsSession implementation "Handler<SaveMessageResult>" **
+// ****  __  ****
+
+// **** ChatWsSession implementation "Handler<SaveMessageResult>" ****
 
 /*impl Handler<SaveMessageResult> for ChatWsSession {
     type Result = MessageResult<SaveMessageResult>;
 
     fn handle(&mut self, msg_res: SaveMessageResult, _ctx: &mut Self::Context) -> Self::Result {
-        eprintln!("handler<SaveMessageResult>() msg_res: {:?}", msg_res.0);
+        eprintln!("#!_handler<SaveMessageResult>() msg_res: {:?}", msg_res.0);
         MessageResult(msg_res.0)
     }
 }*/
