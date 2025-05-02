@@ -19,7 +19,7 @@ pub enum EWSType {
     // Echo,
     Err,
     Join,
-    // Leave,
+    Leave,
     // Msg,
     // MsgCut,
     // MsgPut,
@@ -29,13 +29,13 @@ pub enum EWSType {
 
 impl EWSType {
     pub fn iterator() -> Iter<'static, EWSType> {
-        static LIST: [EWSType; 3] = [
+        static LIST: [EWSType; 4] = [
             // EWSType::Block,
             // EWSType::Count,
             // EWSType::Echo,
             EWSType::Err,
             EWSType::Join,
-            // EWSType::Leave,
+            EWSType::Leave,
             // EWSType::Msg,
             // EWSType::MsgCut,
             // EWSType::MsgPut,
@@ -185,12 +185,12 @@ pub struct JoinEWS {
 }
 
 // ** Leave the client from the chat room. **
-/*#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct LeaveEWS {
-    pub leave: String,
+    pub leave: i32,
     pub member: String,
     pub count: usize,
-}*/
+}
 
 // ** Send a text message to all clients in the room. **
 /*#[derive(Serialize, Deserialize, Clone)]
