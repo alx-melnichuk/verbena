@@ -12,13 +12,22 @@ use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::chats::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::chats::chat_message_orm::ChatMessageOrm;
+use crate::chats::chat_ws_assistant::ChatWsAssistant;
 use crate::chats::chat_ws_session::ChatWsSession;
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
+#[cfg(not(all(test, feature = "mockdata")))]
+use crate::profiles::profile_orm::impls::ProfileOrmApp;
+#[cfg(all(test, feature = "mockdata"))]
+use crate::profiles::profile_orm::tests::ProfileOrmApp;
+use crate::sessions::config_jwt;
+#[cfg(not(feature = "mockdata"))]
+use crate::sessions::session_orm::impls::SessionOrmApp;
+#[cfg(feature = "mockdata")]
+use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::settings::err;
 use crate::users::user_models::UserRole;
 use crate::utils::parser;
-use crate::utils::token::get_token_from_cookie_or_header;
 use crate::validators::{msg_validation, Validator};
 
 // 403 Access denied - insufficient user rights.
@@ -36,24 +45,26 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 
 #[get("/ws")]
 pub async fn get_ws_chat(
+    config_jwt: web::Data<config_jwt::ConfigJwt>,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
+    profile_orm: web::Data<ProfileOrmApp>,
+    session_orm: web::Data<SessionOrmApp>,
     request: actix_web::HttpRequest,
     stream: web::Payload,
 ) -> actix_web::Result<HttpResponse<actix_web::body::BoxBody>, actix_web::Error> {
-    // Attempt to extract token from cookie or authorization header
-    let token = get_token_from_cookie_or_header(&request);
-
-    eprintln!("~~get_ws_chat() jwt_token: {:?}", token);
+    let config_jwt = config_jwt.get_ref().clone();
     let chat_message_orm_app = chat_message_orm.get_ref().clone();
+    let profile_orm_app = profile_orm.get_ref().clone();
+    let session_orm_app = session_orm.get_ref().clone();
+    let assistant = ChatWsAssistant::new(config_jwt, chat_message_orm_app, profile_orm_app, session_orm_app);
 
     let chat_ws_session = ChatWsSession::new(
-        u64::default(),       // id: u64,
-        Option::default(),    // room_id: Option<i32>,
-        Option::default(),    // user_id: Option<i32>,
-        Option::default(),    // user_name: Option<String>,
-        bool::default(),      // is_blocked: bool,
-        token,                // jwt_token: Option<String>,
-        chat_message_orm_app, // chat_message_orm: ChatMessageOrmApp,
+        u64::default(),    // id: u64,
+        Option::default(), // room_id: Option<i32>,
+        Option::default(), // user_id: Option<i32>,
+        Option::default(), // user_name: Option<String>,
+        bool::default(),   // is_blocked: bool,
+        assistant,         // assistant: ChatWsAssistant
     );
     ws::start(chat_ws_session, &request, stream)
 }
@@ -95,7 +106,7 @@ pub async fn post_chat_message(
         id: chat_message2.id,
         stream_id: chat_message2.stream_id,
         user_id: chat_message2.user_id,
-        msg: chat_message2.msg.unwrap_or("".to_string()),
+        msg: chat_message2.msg.unwrap_or("".to_owned()),
         date_update: chat_message2.date_update.clone(),
         is_changed: chat_message2.is_changed,
         is_removed: chat_message2.is_removed,
@@ -158,7 +169,7 @@ pub async fn put_chat_message(
             id: chat_message2.id,
             stream_id: chat_message2.stream_id,
             user_id: chat_message2.user_id,
-            msg: chat_message2.msg.unwrap_or("".to_string()),
+            msg: chat_message2.msg.unwrap_or("".to_owned()),
             date_update: chat_message2.date_update.clone(),
             is_changed: chat_message2.is_changed,
             is_removed: chat_message2.is_removed,
