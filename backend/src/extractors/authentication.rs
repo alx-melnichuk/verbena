@@ -21,9 +21,8 @@ use crate::sessions::{config_jwt, session_orm::SessionOrm, tokens::decode_token}
 use crate::settings::err;
 use crate::users::user_models::UserRole;
 use crate::utils::token::get_token_from_cookie_or_header;
+use crate::utils::token_verification::check_token_and_get_profile;
 
-// 401 Unauthorized - According to "user_id" in the token, the user was not found.
-pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
 // 500 Internal Server Error - Authentication: The entity "user" was not received from the request.
 pub const MSG_USER_NOT_RECEIVED_FROM_REQUEST: &str = "user_not_received_from_request";
 
@@ -162,7 +161,7 @@ where
             let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap().get_ref();
             let profile_orm = req.app_data::<web::Data<ProfileOrmApp>>().unwrap().get_ref();
             // Check the token for correctness and get the user profile.
-            let profile = check_token_and_get_profile(user_id, num_token, session_orm, profile_orm)?;
+            let profile = check_token_and_get_profile(user_id, num_token, session_orm, profile_orm).await?;
 
             // eprintln!("## timer0: {}", format!("{:.2?}", timer0.elapsed()));
             // eprintln!("## profile.role: {:?}", &profile.role);
@@ -184,54 +183,6 @@ where
     }
 }
 
-/** Check the token for correctness and get the user profile. */
-fn check_token_and_get_profile(
-    user_id: i32,
-    num_token: i32,
-    session_orm: &SessionOrmApp,
-    profile_orm: &ProfileOrmApp,
-) -> Result<Profile, actix_web::Error> {
-    // let timer1 = std::time::Instant::now();
-    // Find a session for a given user.
-    let opt_session = session_orm.get_session_by_id(user_id).map_err(|e| {
-        log::error!("{}: {}", err::CD_DATABASE, e.to_string());
-        let error = AppError::database507(&e.to_string());
-        return error::ErrorInsufficientStorage(error); // 507
-    })?;
-    // let timer1s = format!("{:.2?}", timer1.elapsed());
-    let session = opt_session.ok_or_else(|| {
-        // There is no session for this user.
-        let message = format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id);
-        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406+
-        error::ErrorNotAcceptable(AppError::not_acceptable406(&message))
-    })?;
-    // Each session contains an additional numeric value.
-    let session_num_token = session.num_token.unwrap_or(0);
-    // Compare an additional numeric value from the session and from the token.
-    if session_num_token != num_token {
-        // If they do not match, then this is an error.
-        let message = format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
-        log::error!("{}: {}", err::CD_UNAUTHORIZED, &message); // 401+
-        return Err(error::ErrorUnauthorized(AppError::unauthorized401(&message)).into());
-    }
-    // let timer2 = std::time::Instant::now();
-    let result = profile_orm.get_profile_user_by_id(user_id, false).map_err(|e| {
-        log::error!("{}: {}", err::CD_DATABASE, e.to_string());
-        let error = AppError::database507(&e.to_string());
-        error::ErrorInsufficientStorage(error) // 507
-    })?;
-    // let timer2s = format!("{:.2?}", timer2.elapsed());
-    // eprintln!("## timer1: {}, timer2: {}", timer1s, timer2s);
-
-    let profile = result.ok_or_else(|| {
-        let message = format!("{}; user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id);
-        log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
-        error::ErrorUnauthorized(AppError::unauthorized401(&message)) // 401+
-    })?;
-
-    Ok(profile)
-}
-
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{cookie::Cookie, dev, get, http, test, web, App, HttpResponse};
@@ -241,6 +192,7 @@ mod tests {
     };
     use crate::users::user_models::UserRole;
     use crate::utils::token::BEARER;
+    use crate::utils::token_verification::MSG_UNACCEPTABLE_TOKEN_ID;
 
     use super::*;
 
