@@ -9,7 +9,7 @@ import { ConceptViewComponent } from 'src/app/lib-concept/concept-view/concept-v
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { ConfirmationData } from 'src/app/lib-dialog/confirmation/confirmation.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
-import { ProfileDto } from 'src/app/lib-profile/profile-api.interface';
+import { ProfileDto, ProfileTokensDto } from 'src/app/lib-profile/profile-api.interface';
 import { EWSTypeUtil } from 'src/app/lib-socket/socket-chat.interface';
 import { SocketChatService } from 'src/app/lib-socket/socket-chat.service';
 import { StreamDto, StreamState, StreamStateUtil } from 'src/app/lib-stream/stream-api.interface';
@@ -45,6 +45,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public showTimerBeforeStart: number | null | undefined;
 
     public profileDto: ProfileDto | null = null;
+    public profileTokensDto: ProfileTokensDto | null = null;
     public streamDto: StreamDto | null = null;
 
     public chatName: string = '';
@@ -63,6 +64,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     ) {
         // this.showTimerBeforeStart = 120; // minutes
         this.profileDto = this.route.snapshot.data['profileDto'];
+        this.profileTokensDto = this.route.snapshot.data['profileTokensDto'];
         this.streamDto = this.route.snapshot.data['streamDto'];
         // =v
         if (!!this.streamDto) { // #
@@ -87,9 +89,10 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
         const nickname: string = this.profileDto?.nickname || '';
         const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
+        const access = this.profileTokensDto?.accessToken;
 
         if (!!nickname && !!streamId && this.isStreamActive) {
-            this.socketChatService.config({ nickname, room: streamId });
+            this.socketChatService.config({ nickname, room: streamId, access });
 
             this.socketChatService.handlOnError = (err: string) => {
                 console.log(`PgConceptView handlOnError(); changeDetector.markForCheck();`); // #

@@ -7,6 +7,7 @@ import { pgConceptResolver } from './pg-concept.resolver';
 import { PgConceptListComponent } from './pg-concept-list/pg-concept-list.component';
 import { PgConceptViewComponent } from './pg-concept-view/pg-concept-view.component';
 import { pgProfileResolver } from './pg-profile.resolver';
+import { pgProfileTokensResolver } from './pg-profile-tokens.resolver';
 
 export const PG_CONCEPT_ROUTES: Routes = [
     {
@@ -22,6 +23,7 @@ export const PG_CONCEPT_ROUTES: Routes = [
                 component: PgConceptViewComponent,
                 resolve: {
                     profileDto: pgProfileResolver,
+                    profileTokensDto: pgProfileTokensResolver,
                     streamDto: pgConceptResolver,
                 }
             },
