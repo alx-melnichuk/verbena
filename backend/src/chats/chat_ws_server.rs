@@ -6,8 +6,7 @@ use serde_json::to_string;
 
 use crate::chats::chat_event_ws::{JoinEWS, LeaveEWS};
 use crate::chats::chat_message::{
-    /*BlockClients, BlockSsn,*/ ChatMsgSsn, CommandSrv, /*CountMembers,*/ JoinRoom,
-    LeaveRoom, /*SendMessage,*/
+    /*BlockClients, BlockSsn,*/ ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage,
 };
 
 type Client = Recipient<CommandSrv>; // ChatMessage
@@ -85,8 +84,8 @@ impl Actor for ChatWsServer {
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        // // Asynchronously subscribe to "SendMessage". (sending `BrokerIssue`.issue_system_async())
-        // self.subscribe_system_async::<SendMessage>(ctx);
+        // Asynchronously subscribe to "SendMessage". (sending `BrokerIssue`.issue_system_async())
+        self.subscribe_system_async::<SendMessage>(ctx);
         // Asynchronously subscribe to "LeaveRoom". (sending `BrokerIssue`.issue_system_sync())
         self.subscribe_system_async::<LeaveRoom>(ctx);
     }
@@ -98,7 +97,16 @@ impl Actor for ChatWsServer {
 
 // ** Count of clients in the room. (Session -> Server) **
 
-// --
+impl Handler<CountMembers> for ChatWsServer {
+    type Result = MessageResult<CountMembers>;
+
+    fn handle(&mut self, msg: CountMembers, _ctx: &mut Self::Context) -> Self::Result {
+        let CountMembers(room_id) = msg;
+        let count = self.count_clients_in_room(room_id);
+
+        MessageResult(count)
+    }
+}
 
 // ** Join the client to the chat room. (Session -> Server) **
 
@@ -156,6 +164,14 @@ impl Handler<LeaveRoom> for ChatWsServer {
 
 // ** Send a text message to all clients in the room. (Server -> Session) **
 
-// --
+impl Handler<SendMessage> for ChatWsServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: SendMessage, _ctx: &mut Self::Context) {
+        let SendMessage(room_id, msg_str) = msg;
+        // Send a chat message to all members.
+        self.send_chat_message_to_clients(room_id, &msg_str);
+    }
+}
 
 // ** -- **

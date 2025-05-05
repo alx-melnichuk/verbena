@@ -2,17 +2,18 @@ use actix::prelude::*;
 use actix_broker::BrokerIssue;
 // use actix_web::web;
 use actix_web_actors::ws;
-// use chrono::{SecondsFormat, Utc};
+use chrono::{SecondsFormat /*Utc*/};
 use serde_json::to_string;
 
 use crate::chats::chat_event_ws::{
-    /*BlockEWS, CountEWS,*/ EWSType, /*EchoEWS,*/ ErrEWS, EventWS,
-    /*MsgCutEWS, MsgEWS, MsgPutEWS,*/ NameEWS, /*UnblockEWS,*/
+    /*BlockEWS,*/ CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, /*MsgCutEWS,*/ MsgEWS,
+    /*MsgPutEWS,*/ NameEWS, /*UnblockEWS,*/
 };
 use crate::chats::chat_message::{
-    /*BlockClients, BlockSsn,*/ ChatMsgSsn, CommandSrv, /*CountMembers,*/ JoinRoom,
-    LeaveRoom, /*SaveMessageResult, SendMessage,*/
+    /*BlockClients, BlockSsn,*/ ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom,
+    /*SaveMessageResult,*/ SendMessage,
 };
+use crate::chats::chat_message_models::{ChatMessage, CreateChatMessage};
 use crate::chats::chat_ws_assistant::ChatWsAssistant;
 use crate::chats::chat_ws_server::ChatWsServer;
 // use crate::profiles::profile_models::Profile;
@@ -65,9 +66,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatWsSession {
             }
             Ok(msg) => msg,
         };
-
         log::debug!("WEBSOCKET MESSAGE: {msg:?}");
-
         match msg {
             ws::Message::Text(text) => {
                 // Handle socket text messages.
@@ -105,10 +104,10 @@ impl ChatWsSession {
         }
     }
     // Check if this field is required
-    // #[rustfmt::skip]
-    // fn check_is_required_string(&self, value: &str, name: &str) -> Result<(), String> {
-    //     if value.len() == 0 { Err(format!("\"{}\" {}", name, PARAMETER_NOT_DEFINED)) } else { Ok(()) }
-    // }
+    #[rustfmt::skip]
+    fn check_is_required_string(&self, value: &str, name: &str) -> Result<(), String> {
+        if value.len() == 0 { Err(format!("\"{}\" {}", name, PARAMETER_NOT_DEFINED)) } else { Ok(()) }
+    }
     #[rustfmt::skip]
     fn check_is_required_i32(&self, value: i32, name: &str) -> Result<(), String> {
         if value < 0 { Err(format!("\"{}\" {}", name, PARAMETER_NOT_DEFINED)) } else { Ok(()) }
@@ -142,16 +141,36 @@ impl ChatWsSession {
         let event = res_event.unwrap();
 
         match event.ews_type() {
+            EWSType::Echo => {
+                let echo = event.get_string("echo").unwrap_or("".to_owned());
+                // Check if this field is required
+                if let Err(err) = self.check_is_required_string(&echo, "echo") {
+                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                } else {
+                    ctx.text(to_string(&EchoEWS { echo }).unwrap());
+                }
+            }
+            EWSType::Count => {
+                if let Err(err) = self.handle_ews_count(ctx) {
+                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                }
+            }
             EWSType::Join => {
                 // {"join": 1}
                 let room_id = event.get_i32("join").unwrap_or(-1);
                 let access = event.get_string("access").unwrap_or("".to_owned());
-                if let Err(err) = self.handle_ews_join(room_id, &access, ctx) {
+                if let Err(err) = self.handle_ews_join_ext_task(room_id, &access, ctx) {
                     ctx.text(to_string(&ErrEWS { err }).unwrap());
                 }
             }
             EWSType::Leave => {
                 if let Err(err) = self.handle_ews_leave(ctx) {
+                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                }
+            }
+            EWSType::Msg => {
+                let msg = event.get_string("msg").unwrap_or("".to_string());
+                if let Err(err) = self.handle_ews_msg_ext_task(&msg, ctx) {
                     ctx.text(to_string(&ErrEWS { err }).unwrap());
                 }
             }
@@ -173,11 +192,27 @@ impl ChatWsSession {
     // // * Blocking clients in a room by name. (Session -> Server) *
     // pub fn blocking_clients(&self,client_name: &str,is_blocked: bool,ctx: &mut ws::WebsocketContext<Self>,) -> Result<(), String> {    }
 
-    // // * Count of clients in the room. (Session -> Server) *
-    // pub fn count_members(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {    }
+    // ** Count of clients in the room. (Session -> Server) **
+    pub fn handle_ews_count(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {
+        // Check if there is an joined room
+        self.check_is_joined_room()?;
+        let count_members = CountMembers(self.room_id.unwrap_or_default());
+
+        ChatWsServer::from_registry()
+            .send(count_members)
+            .into_actor(self)
+            .then(|res, _act, ctx| {
+                if let Ok(count) = res {
+                    ctx.text(to_string(&CountEWS { count }).unwrap());
+                }
+                fut::ready(())
+            })
+            .wait(ctx);
+        Ok(())
+    }
 
     // * Join the client to the chat room. (Session -> Server) *
-    pub fn handle_ews_join(
+    pub fn handle_ews_join_ext_task(
         &mut self,
         room_id: i32,
         access: &str,
@@ -195,9 +230,9 @@ impl ChatWsSession {
             let (user_id, num_token) = self.assistant.decode_and_verify_token(access)?;
             // Spawn an async task.
             let addr = ctx.address();
-            // let input = text.clone();
+            // Get a clone of the assistant.
             let assistant = self.assistant.clone();
-
+            // Start an additional asynchronous task.
             actix_web::rt::spawn(async move {
                 // Check the token for correctness and get the user profile.
                 let result = assistant.check_num_token_and_get_profile(user_id, num_token).await;
@@ -207,9 +242,11 @@ impl ChatWsSession {
                 let profile = result.unwrap();
                 let user_id = Some(profile.user_id);
                 let user_name = Some(profile.nickname.clone());
+                // Send the "AsyncResultEwsJoin" command for execution.
                 addr.do_send(AsyncResultEwsJoin(room_id, user_id, user_name));
             });
         } else {
+            // Send the "AsyncResultEwsJoin" command for execution.
             ctx.address().do_send(AsyncResultEwsJoin(room_id, None, self.user_name.clone()));
         }
         Ok(())
@@ -230,8 +267,39 @@ impl ChatWsSession {
         Ok(())
     }
 
-    // // * Send a text message to all clients in the room. (Server -> Session) *
-    // pub fn send_message(&self, msg: &str, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {    }
+    // * Send a text message to all clients in the room. (Server -> Session) *
+    pub fn handle_ews_msg_ext_task(&self, msg: &str, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {
+        let msg = msg.to_owned();
+        // Check if this field is required
+        self.check_is_required_string(&msg, "msg")?;
+        // Check if there is an joined room
+        self.check_is_joined_room()?;
+
+        // Get room (stream) ID and user ID.
+        let stream_id = self.room_id.unwrap_or_default();
+        let user_id = self.user_id.unwrap_or_default();
+        // Prepare data for a new message.
+        let create_chat_message = CreateChatMessage::new(stream_id, user_id, &msg);
+        // Spawn an async task.
+        let addr = ctx.address();
+        // Get a clone of the assistant.
+        let assistant = self.assistant.clone();
+        // Start an additional asynchronous task.
+        actix_web::rt::spawn(async move {
+            // Check the token for correctness and get the user profile.
+            let result = assistant.execute_create_chat_message(create_chat_message).await;
+
+            if let Err(err) = result {
+                return addr.do_send(AsyncResultError(err.to_string()));
+            }
+            let chat_message = result.unwrap();
+            let msg = chat_message.msg.unwrap_or_default();
+            let date = chat_message.date_update.to_rfc3339_opts(SecondsFormat::Millis, true);
+            // Send the "AsyncResultEwsMsg" command for execution.
+            addr.do_send(AsyncResultEwsMsg(msg, chat_message.id, date));
+        });
+        Ok(())
+    }
 
     // // * Send a correction to the message to everyone in the chat. (Server -> Session) *
     // pub fn send_message_to_update(&self, msg_put: &str, date: &str) -> Result<(), String> {    }
@@ -298,6 +366,33 @@ impl Handler<AsyncResultEwsJoin> for ChatWsSession {
                 fut::ready(())
             })
             .wait(ctx);
+    }
+}
+
+// * * * * Handler for asynchronous response to the "JoinEWS" event * * * *
+
+struct AsyncResultEwsMsg(
+    String, // message
+    i32,    // message_id
+    String, // message_date
+);
+
+impl Message for AsyncResultEwsMsg {
+    type Result = ();
+}
+
+impl Handler<AsyncResultEwsMsg> for ChatWsSession {
+    type Result = ();
+
+    fn handle(&mut self, msg_info: AsyncResultEwsMsg, _ctx: &mut Self::Context) {
+        let msg = msg_info.0;
+        let id = msg_info.1;
+        let member = self.user_name.clone().unwrap_or("".to_owned());
+        let date = msg_info.2;
+        let msg_str = to_string(&MsgEWS { msg, id, member, date }).unwrap();
+
+        // issue_async comes from having the `BrokerIssue` trait in scope.
+        self.issue_system_async(SendMessage(self.room_id.unwrap_or_default(), msg_str));
     }
 }
 
