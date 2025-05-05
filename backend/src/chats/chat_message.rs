@@ -32,11 +32,11 @@ pub enum CommandSrv {
 }
 
 // ** Count of clients in the room. (Session -> Server) **
-/*#[derive(Clone, Message)]
+#[derive(Clone, Message)]
 #[rtype(result = "usize")] // MAX 18_446_744_073_709_551_615usize
 pub struct CountMembers(
-    pub String, // room_name
-);*/
+    pub i32, // room_id
+);
 
 // ** Join the client to the chat room. (Session -> Server) **
 #[derive(Clone, Message)]
@@ -57,12 +57,12 @@ pub struct LeaveRoom(
 );
 
 // ** Send a text message to all clients in the room. (Server -> Session) **
-/*#[derive(Clone, Message)]
+#[derive(Clone, Message)]
 #[rtype(result = "()")]
 pub struct SendMessage(
-    pub String, // room_name
+    pub i32,    // room_id
     pub String, // message
-);*/
+);
 
 // **  (Session -> Session) **
 /*#[derive(Clone, Message)]
