@@ -64,14 +64,14 @@ export class EWSTypeUtil {
     public static getLeaveEWS(member?: string, count?: number): string {
         return JSON.stringify({ ...{ leave: '' }, ...{ member }, ...{ count } });
     }
-    public static getMsgEWS(msg: string, member?: string, date?: StringDateTime): string {
-        return JSON.stringify({ ...{ msg }, ...{ member }, ...{ date } });
+    public static getMsgEWS(msg: string, id?: number, member?: string, date?: StringDateTime): string {
+        return JSON.stringify({ ...{ msg }, ...{ id }, ...{ member }, ...{ date } });
     }
-    public static getMsgPutEWS(msgPut: string, member?: string, date?: StringDateTime): string {
-        return JSON.stringify({ ...{ msgPut }, ...{ member }, ...{ date } });
+    public static getMsgPutEWS(msgPut: string, id?: number, member?: string, date?: StringDateTime): string {
+        return JSON.stringify({ ...{ msgPut }, ...{ id }, ...{ member }, ...{ date } });
     }
-    public static getMsgCutEWS(msgCut: string, member?: string, date?: StringDateTime): string {
-        return JSON.stringify({ ...{ msgCut }, ...{ member }, ...{ date } });
+    public static getMsgCutEWS(msgCut: string, id?: number, member?: string, date?: StringDateTime): string {
+        return JSON.stringify({ ...{ msgCut }, ...{ id }, ...{ member }, ...{ date } });
     }
     public static getNameEWS(name: string): string {
         return JSON.stringify({ name });
