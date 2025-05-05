@@ -66,9 +66,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Output()
     readonly sendMsg: EventEmitter<string> = new EventEmitter();
     @Output()
-    readonly removeMsg: EventEmitter<KeyValue<string, string>> = new EventEmitter();
+    readonly removeMsg: EventEmitter<KeyValue<number, string>> = new EventEmitter();
     @Output()
-    readonly editMsg: EventEmitter<KeyValue<string, string>> = new EventEmitter();
+    readonly editMsg: EventEmitter<KeyValue<number, string>> = new EventEmitter();
     //   @Output()
     //   readonly bannedUser: EventEmitter<string> = new EventEmitter();
 
@@ -166,9 +166,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     public doSendMessage(newMsg: string): void {
         const newMsgVal = (newMsg || '').trim();
-        if (newMsgVal.length > 0) {
+        if (this.isEditable && newMsgVal.length > 0) {
             if (!!this.msgEditing) {
-                const keyValue: KeyValue<string, string> = { key: this.msgEditing.date, value: newMsgVal };
+                const keyValue: KeyValue<number, string> = { key: this.msgEditing.id, value: newMsgVal };
                 this.editMsg.emit(keyValue);
             } else {
                 this.sendMsg.emit(newMsgVal);
@@ -178,8 +178,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
     }
     public doRemoveMessage(chatMsg: ChatMsg | null): void {
-        if (!!chatMsg && !!chatMsg.date && chatMsg.member == this.nickname) {
-            const keyValue: KeyValue<string, string> = { key: chatMsg.date, value: chatMsg.msg };
+        if (this.isEditable && !!chatMsg && !!chatMsg.date && chatMsg.member == this.nickname) {
+            const keyValue: KeyValue<number, string> = { key: chatMsg.id, value: chatMsg.msg };
             this.removeMsg.emit(keyValue);
         }
     }
@@ -294,7 +294,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
                 member = "Snegana_Miller";
             }
             // const date1 = date.slice(20, 24) + '_' + date.slice(11, 19) + '_' + date.slice(0, 10);
-            result.push({ msg, member, date });
+            result.push({ id: idx, date, member, msg });
             this.wait(1);
         }
         return result;

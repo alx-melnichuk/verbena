@@ -141,17 +141,16 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.socketChatService.sendData(EWSTypeUtil.getMsgEWS(msgVal));
         }
     }
-    public doEditMessage(keyValue: KeyValue<string, string> | null): void {
-        const msgDate = (keyValue?.key || '').trim();
+    public doEditMessage(keyValue: KeyValue<number, string> | null): void {
+        const id = keyValue?.key;
         const msgPut = (keyValue?.value || '').trim();
-        if (!!msgDate && !!msgPut) {
-            this.socketChatService.sendData(EWSTypeUtil.getMsgPutEWS(msgPut, undefined, msgDate));
+        if (!!id && !!msgPut) {
+            this.socketChatService.sendData(EWSTypeUtil.getMsgPutEWS(msgPut, id));
         }
     }
-    public doRemoveMessage(messageDate: StringDateTime | null): void {
-        const msgDate = (messageDate || '').trim();
-        if (!!msgDate) {
-            this.socketChatService.sendData(EWSTypeUtil.getMsgCutEWS('', undefined, msgDate));
+    public doRemoveMessage(id: number | null): void {
+        if (!!id) {
+            this.socketChatService.sendData(EWSTypeUtil.getMsgCutEWS('', id));
         }
     }
 
