@@ -25,18 +25,14 @@ pub async fn check_token_and_get_profile(
     // Find a session for a given user.
     let opt_session = session_orm.get_session_by_id(user_id).map_err(|e| {
         log::error!("{}: {}", err::CD_DATABASE, e.to_string());
-        // let error = AppError::database507(&e.to_string());
-        // return error::ErrorInsufficientStorage(error); // 507
         return AppError::database507(&e.to_string()); // 507
     })?;
     // let timer1s = format!("{:.2?}", timer1.elapsed());
     let session = opt_session.ok_or_else(|| {
         // There is no session for this user.
         let message = format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id);
-        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406+
-
-        // error::ErrorNotAcceptable(AppError::not_acceptable406(&message))
-        AppError::not_acceptable406(&message) // 406+
+        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
+        AppError::not_acceptable406(&message) // 406
     })?;
     // Each session contains an additional numeric value.
     let session_num_token = session.num_token.unwrap_or(0);
@@ -44,17 +40,12 @@ pub async fn check_token_and_get_profile(
     if session_num_token != num_token {
         // If they do not match, then this is an error.
         let message = format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id);
-        log::error!("{}: {}", err::CD_UNAUTHORIZED, &message); // 401+
-
-        // return Err(error::ErrorUnauthorized(AppError::unauthorized401(&message)).into());
-        return Err(AppError::unauthorized401(&message)); // 401+
+        log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
+        return Err(AppError::unauthorized401(&message)); // 401
     }
     // let timer2 = std::time::Instant::now();
     let result = profile_orm.get_profile_user_by_id(user_id, false).map_err(|e| {
         log::error!("{}: {}", err::CD_DATABASE, e.to_string());
-        // let error = AppError::database507(&e.to_string());
-        // error::ErrorInsufficientStorage(error) // 507
-
         AppError::database507(&e.to_string()) // 507
     })?;
     // let timer2s = format!("{:.2?}", timer2.elapsed());
@@ -63,8 +54,6 @@ pub async fn check_token_and_get_profile(
     let profile = result.ok_or_else(|| {
         let message = format!("{}; user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id);
         log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
-        // error::ErrorUnauthorized(AppError::unauthorized401(&message)) // 401+
-
         AppError::unauthorized401(&message) // 401+
     })?;
 
