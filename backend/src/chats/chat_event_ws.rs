@@ -15,12 +15,12 @@ pub const SERIALIZATION: &str = "Serialization: ";
 #[serde(rename_all = "camelCase")]
 pub enum EWSType {
     // Block,
-    // Count,
-    // Echo,
+    Count,
+    Echo,
     Err,
     Join,
     Leave,
-    // Msg,
+    Msg,
     // MsgCut,
     // MsgPut,
     Name,
@@ -29,14 +29,14 @@ pub enum EWSType {
 
 impl EWSType {
     pub fn iterator() -> Iter<'static, EWSType> {
-        static LIST: [EWSType; 4] = [
+        static LIST: [EWSType; 7] = [
             // EWSType::Block,
-            // EWSType::Count,
-            // EWSType::Echo,
+            EWSType::Count,
+            EWSType::Echo,
             EWSType::Err,
             EWSType::Join,
             EWSType::Leave,
-            // EWSType::Msg,
+            EWSType::Msg,
             // EWSType::MsgCut,
             // EWSType::MsgPut,
             EWSType::Name,
@@ -161,15 +161,15 @@ pub struct BlockEWS {
 }*/
 
 // ** Count of clients in the room. **
-/*#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct CountEWS {
     pub count: usize,
-}*/
+}
 
-/*#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct EchoEWS {
     pub echo: String,
-}*/
+}
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ErrEWS {
@@ -193,13 +193,13 @@ pub struct LeaveEWS {
 }
 
 // ** Send a text message to all clients in the room. **
-/*#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct MsgEWS {
     pub msg: String,
-    pub id: String,
+    pub id: i32,
     pub member: String,
     pub date: String,
-}*/
+}
 
 // ** Send a delete message to all chat members. **
 /*#[derive(Serialize, Deserialize, Clone)]
