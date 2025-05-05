@@ -74,9 +74,9 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     @Output()
     readonly sendMessage: EventEmitter<string> = new EventEmitter();
     @Output()
-    readonly editMessage: EventEmitter<KeyValue<StringDateTime, string>> = new EventEmitter();
+    readonly editMessage: EventEmitter<KeyValue<number, string>> = new EventEmitter();
     @Output()
-    readonly removeMessage: EventEmitter<StringDateTime> = new EventEmitter();
+    readonly removeMessage: EventEmitter<number> = new EventEmitter();
     // @Output()
     // readonly bannedUser: EventEmitter<string> = new EventEmitter();
 
@@ -203,12 +203,12 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
             this.sendMessage.emit(newMessage);
         }
     }
-    public doEditMessage(keyValue: KeyValue<StringDateTime, string>): void {
+    public doEditMessage(keyValue: KeyValue<number, string>): void {
         if (!!keyValue && !!keyValue.key) {
             this.editMessage.emit(keyValue);
         }
     }
-    public async doRemoveMessage(keyValue: KeyValue<StringDateTime, string>): Promise<void> {
+    public async doRemoveMessage(keyValue: KeyValue<number, string>): Promise<void> {
         if (!keyValue || !keyValue.key || !keyValue.value) {
             return Promise.resolve();
         }
@@ -344,7 +344,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
                 member = "Snegana_Miller";
             }
             // const date1 = date.slice(20, 24) + '_' + date.slice(11, 19) + '_' + date.slice(0, 10);
-            result.push({ msg, member, date });
+            result.push({ id: idx, date, member, msg });
             this.wait(1);
         }
         return result;
