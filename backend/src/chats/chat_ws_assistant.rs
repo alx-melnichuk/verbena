@@ -1,8 +1,10 @@
-// use crate::chats::chat_message_models::CreateChatMessage;
+use log;
+
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::chats::chat_message_orm::tests::ChatMessageOrmApp;
+use crate::chats::chat_message_orm::ChatMessageOrm;
 use crate::errors::AppError;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
@@ -15,6 +17,7 @@ use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
 // use crate::sessions::session_orm::SessionOrm;
+use crate::chats::chat_message_models::{ChatMessage, CreateChatMessage};
 use crate::sessions::tokens::decode_token;
 use crate::settings::err;
 use crate::utils::token_verification::check_token_and_get_profile;
@@ -57,5 +60,16 @@ impl ChatWsAssistant {
         let profile_orm: ProfileOrmApp = self.profile_orm.clone();
         // Check the token for correctness and get the user profile.
         check_token_and_get_profile(user_id, num_token, &session_orm, &profile_orm).await
+    }
+    pub async fn execute_create_chat_message(
+        &self,
+        create_chat_message: CreateChatMessage,
+    ) -> Result<ChatMessage, AppError> {
+        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
+        // Add a new entity (stream).
+        chat_message_orm.create_chat_message(create_chat_message).map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        })
     }
 }
