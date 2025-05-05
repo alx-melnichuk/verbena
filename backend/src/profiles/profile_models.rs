@@ -673,8 +673,8 @@ impl ProfileTest {
         (0..(PASSWORD_MIN)).map(|_| 'a').collect()
     }
     pub fn role_wrong() -> String {
-        let role = UserRole::all_values().get(0).unwrap().to_owned();
-        role[0..(role.len() - 1)].to_owned()
+        let role = UserRole::all_values().get(0).unwrap().to_string();
+        role[0..(role.len() - 1)].to_string()
     }
     pub fn descript_min() -> String {
         (0..(DESCRIPT_MIN - 1)).map(|_| 'a').collect()
