@@ -8,16 +8,16 @@ use futures_util::{
 use log;
 
 use crate::errors::AppError;
+use crate::profiles::profile_models::Profile;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
-use crate::profiles::{profile_models::Profile, profile_orm::ProfileOrm};
 #[cfg(not(feature = "mockdata"))]
 use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::sessions::{config_jwt, session_orm::SessionOrm, tokens::decode_token};
+use crate::sessions::{config_jwt, tokens::decode_token};
 use crate::settings::err;
 use crate::users::user_models::UserRole;
 use crate::utils::token::get_token_from_cookie_or_header;
@@ -161,7 +161,11 @@ where
             let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap().get_ref();
             let profile_orm = req.app_data::<web::Data<ProfileOrmApp>>().unwrap().get_ref();
             // Check the token for correctness and get the user profile.
-            let profile = check_token_and_get_profile(user_id, num_token, session_orm, profile_orm).await?;
+            let res_profile = check_token_and_get_profile(user_id, num_token, session_orm, profile_orm).await;
+            if let Err(app_error) = res_profile {
+                return Err(app_error.into());
+            }
+            let profile = res_profile.unwrap();
 
             // eprintln!("## timer0: {}", format!("{:.2?}", timer0.elapsed()));
             // eprintln!("## profile.role: {:?}", &profile.role);

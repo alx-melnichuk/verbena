@@ -17,7 +17,7 @@ use crate::sessions::session_orm::tests::SessionOrmApp;
 // use crate::sessions::session_orm::SessionOrm;
 use crate::sessions::tokens::decode_token;
 use crate::settings::err;
-use crate::utils::token_verification::check_token_and_get_profile2;
+use crate::utils::token_verification::check_token_and_get_profile;
 
 // ** ChatWsAssistant **
 
@@ -56,6 +56,6 @@ impl ChatWsAssistant {
         let session_orm: SessionOrmApp = self.session_orm.clone();
         let profile_orm: ProfileOrmApp = self.profile_orm.clone();
         // Check the token for correctness and get the user profile.
-        check_token_and_get_profile2(user_id, num_token, &session_orm, &profile_orm).await
+        check_token_and_get_profile(user_id, num_token, &session_orm, &profile_orm).await
     }
 }
