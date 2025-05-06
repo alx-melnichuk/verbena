@@ -123,6 +123,17 @@ impl CreateChatMessage {
     }
 }
 
+impl Validator for CreateChatMessage {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        errors.push(validate_message(&self.msg).err());
+
+        self.filter_errors(errors)
+    }
+}
+
 // ** Model: "ModifyChatMessage". Used: ChatMessageOrm::modify_chat_message() **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -139,6 +150,34 @@ impl ModifyChatMessage {
             user_id,
             msg: msg.clone(),
         }
+    }
+}
+
+impl ModifyChatMessage {
+    pub fn valid_names<'a>() -> Vec<&'a str> {
+        vec!["stream_id", "user_id", "msg"]
+    }
+}
+
+impl Validator for ModifyChatMessage {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        if let Some(value) = &self.msg {
+            if value.len() > 0 {
+                // If the string is empty, the DB will assign NULL.
+                errors.push(validate_message(&value).err());
+            }
+        }
+
+        let list_is_some = vec![self.stream_id.is_some(), self.user_id.is_some(), self.msg.is_some()];
+        let valid_names = Self::valid_names().join(",");
+        errors.push(
+            ValidationChecks::no_fields_to_update(&list_is_some, &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err(),
+        );
+
+        self.filter_errors(errors)
     }
 }
 
