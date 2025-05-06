@@ -22,14 +22,14 @@ pub enum EWSType {
     Leave,
     Msg,
     // MsgCut,
-    // MsgPut,
+    MsgPut,
     Name,
     // Unblock,
 }
 
 impl EWSType {
     pub fn iterator() -> Iter<'static, EWSType> {
-        static LIST: [EWSType; 7] = [
+        static LIST: [EWSType; 8] = [
             // EWSType::Block,
             EWSType::Count,
             EWSType::Echo,
@@ -38,7 +38,7 @@ impl EWSType {
             EWSType::Leave,
             EWSType::Msg,
             // EWSType::MsgCut,
-            // EWSType::MsgPut,
+            EWSType::MsgPut,
             EWSType::Name,
             // EWSType::Unblock,
         ];
@@ -194,11 +194,14 @@ pub struct LeaveEWS {
 
 // ** Send a text message to all clients in the room. **
 #[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct MsgEWS {
     pub msg: String,
     pub id: i32,
     pub member: String,
     pub date: String,
+    pub is_edt: bool,
+    pub is_rmv: bool,
 }
 
 // ** Send a delete message to all chat members. **
@@ -215,6 +218,7 @@ pub struct MsgCutEWS {
 #[serde(rename_all = "camelCase")]
 pub struct MsgPutEWS {
     pub msg_put: String,
+    pub id: i32,
     pub member: String,
     pub date: String,
 }*/
