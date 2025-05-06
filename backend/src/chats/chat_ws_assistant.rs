@@ -17,7 +17,7 @@ use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
 // use crate::sessions::session_orm::SessionOrm;
-use crate::chats::chat_message_models::{ChatMessage, CreateChatMessage};
+use crate::chats::chat_message_models::{ChatMessage, CreateChatMessage, ModifyChatMessage};
 use crate::sessions::tokens::decode_token;
 use crate::settings::err;
 use crate::utils::token_verification::check_token_and_get_profile;
@@ -61,6 +61,7 @@ impl ChatWsAssistant {
         // Check the token for correctness and get the user profile.
         check_token_and_get_profile(user_id, num_token, &session_orm, &profile_orm).await
     }
+    /** Create a new user message in the chat. */
     pub async fn execute_create_chat_message(
         &self,
         create_chat_message: CreateChatMessage,
@@ -68,6 +69,19 @@ impl ChatWsAssistant {
         let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
         // Add a new entity (stream).
         chat_message_orm.create_chat_message(create_chat_message).map_err(|e| {
+            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        })
+    }
+    /** Change a user's message in a chat. */
+    pub async fn execute_modify_chat_message(
+        &self,
+        id: i32,
+        modify_chat_message: ModifyChatMessage,
+    ) -> Result<Option<ChatMessage>, AppError> {
+        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
+        // Modify an entity (chat_message).
+        chat_message_orm.modify_chat_message(id, modify_chat_message).map_err(|e| {
             log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         })
