@@ -344,7 +344,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
                 member = "Snegana_Miller";
             }
             // const date1 = date.slice(20, 24) + '_' + date.slice(11, 19) + '_' + date.slice(0, 10);
-            result.push({ id: idx, date, member, msg });
+            result.push({ id: idx, date, member, msg, isEdt: false, isRmv: false });
             this.wait(1);
         }
         return result;
