@@ -178,7 +178,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
     }
     public doRemoveMessage(chatMsg: ChatMsg | null): void {
-        if (this.isEditable && !!chatMsg && !!chatMsg.date && chatMsg.member == this.nickname) {
+        if (this.isEditable && !!chatMsg && !!chatMsg.id && chatMsg.member == this.nickname) {
             const keyValue: KeyValue<number, string> = { key: chatMsg.id, value: chatMsg.msg };
             this.removeMsg.emit(keyValue);
         }
