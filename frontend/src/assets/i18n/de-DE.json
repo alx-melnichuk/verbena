@@ -414,6 +414,8 @@
         "edit": "Bearbeiten",
         "remove": "Löschen"
     },
-    "editing_msg": "Bearbeiten einer nachricht"
+    "editing_msg": "Bearbeiten einer nachricht",
+    "message_edited": "geändert",
+    "message_deleted": "Diese Nachricht wurde entfernt."
   }
 }

@@ -418,7 +418,8 @@
         "edit": "Edit",
         "remove": "Remove"
     },
-    "editing_msg": "Editing a message"
-    
+    "editing_msg": "Editing a message",
+    "message_edited": "changed",
+    "message_deleted": "This message has been removed."
   }
 }
