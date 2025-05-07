@@ -92,6 +92,10 @@ app-panel-chat {
         word-wrap: break-word;
     }
 
+    .pc-item-msg-rmv {
+        color: var(--pc-msg-rmv-cl, var(--sys-secondary));
+    }
+
     // -- item-msg --
     .pc-item-msg {
         &.pc-myself {

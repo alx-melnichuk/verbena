@@ -6,7 +6,7 @@
 <div class="pc-sepr"></div>
 
 <div class="pc-middle global-scroll" #scrollItem>
-  @for (chatMsg of listChatMsg; track chatMsg.date) {    
+  @for (chatMsg of listChatMsg; track chatMsg.id) {    
     <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : '')
       , (msgMarked==chatMsg || msgEditing==chatMsg ? 'pc-marked' : '')]"
       [matMenuTriggerFor]="isEnableMenu(chatMsg, nickname) ? menuItem : null"
@@ -23,13 +23,29 @@
             <span>{{ chatMsg.date | dateTimeFormat:locale:formatDate }}</span>
           }
           <span>{{ chatMsg.date | dateTimeFormat:locale:formatTime }}</span>
+          @if (chatMsg.isEdt && !chatMsg.isRmv) {
+            <div><i>{{ 'panel-chat.message_edited' | translate }}</i></div>
+          }
         </div>
-      </div>
         
-      <div [ngClass]="['pc-item-msg', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
-        {{ chatMsg.msg }}
       </div>
-      <sub>id: {{ chatMsg.id }}, date: {{ chatMsg.date }}, isEdt: {{ chatMsg.isEdt ? 1 : 0 }}, isRmv: {{ chatMsg.isRmv ? 1 : 0 }}</sub>
+      
+      @if (!chatMsg.isRmv) {
+        <div [ngClass]="['pc-item-msg', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
+          {{ chatMsg.msg }}
+          <sub style="color: var(--sys-secondary);">
+            id:{{ chatMsg.id }}<!-- date: {{ chatMsg.date }},--> E:{{ chatMsg.isEdt ? 1 : 0 }} R:{{ chatMsg.isRmv ? 1 : 0 }}
+          </sub>
+        </div>
+      } @else {
+        <div class="pc-item-msg-rmv">
+          <i>{{ 'panel-chat.message_deleted' | translate }}</i>
+          <sub style="color: var(--sys-secondary);">
+            id:{{ chatMsg.id }}<!-- date: {{ chatMsg.date }},--> E:{{ chatMsg.isEdt ? 1 : 0 }} R:{{ chatMsg.isRmv ? 1 : 0 }}
+          </sub>
+        </div>
+      }
+      
       <!-- <div *ngIf="isBannedUserById(chatMsg.member)" class="prc-banned-user">
         <div class="prc-msg-banned-orange"></div>
       </div> -->

@@ -92,6 +92,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
     readonly formatTime: Intl.DateTimeFormatOptions = { timeStyle: 'short' };
+    readonly chatMsgMap: Map<number, ChatMsg> = new Map();
 
     // ** OLD **
     // public isShowFaceSmilePanel = false;
@@ -132,7 +133,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
         if (!!changes['chatMsgs']) {
             console.log(`PanelChat.OnChange('chatMsgs') chatMsgs: ${JSON.stringify(this.chatMsgs)}`);
-            this.listChatMsg.push(...this.chatMsgs);
+            this.loadChatMsgList(this.listChatMsg, this.chatMsgMap, this.chatMsgs);
+            // this.listChatMsg.push(...this.chatMsgs);
             this.scrollToBottom();
             Promise.resolve().then(() =>
                 this.scrollToBottom());
@@ -148,7 +150,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         return ReplaceWithZeroUtil.replace(value);
     }
     public isEnableMenu(chatMsg: ChatMsg | null, selfName: string | null): boolean {
-        return !!selfName && selfName == chatMsg?.member;
+        return !!selfName && selfName == chatMsg?.member && !chatMsg?.isRmv;
     }
 
     public getMenuDataByMap(chatMsg: ChatMsg | null): MenuData {
@@ -167,7 +169,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public doSendMessage(newMsg: string): void {
         const newMsgVal = (newMsg || '').trim();
         if (this.isEditable && newMsgVal.length > 0) {
-            if (!!this.msgEditing?.id) {
+            if (!!this.msgEditing && this.msgEditing.id > 0 && !this.msgEditing.isRmv) {
                 const keyValue: KeyValue<number, string> = { key: this.msgEditing.id, value: newMsgVal };
                 this.editMsg.emit(keyValue);
             } else {
@@ -178,7 +180,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
     }
     public doRemoveMessage(chatMsg: ChatMsg | null): void {
-        if (this.isEditable && !!chatMsg && !!chatMsg.id && chatMsg.member == this.nickname) {
+        if (this.isEditable && !!chatMsg && !!chatMsg.id && chatMsg.member == this.nickname && !chatMsg.isRmv) {
             const keyValue: KeyValue<number, string> = { key: chatMsg.id, value: chatMsg.msg };
             this.removeMsg.emit(keyValue);
         }
@@ -279,6 +281,30 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     }
     */
 
+    private loadChatMsgList(listChatMsg: ChatMsg[], chatMsgMap: Map<number, ChatMsg>, chatMsgs: ChatMsg[]) {
+        const newChatMsgs: ChatMsg[] = [];
+
+        for (let idx = 0; idx < chatMsgs.length; idx++) {
+            const chatMsg = chatMsgs[idx];
+            const oldChatMsg = !!chatMsg.isEdt || !!chatMsg.isRmv ? chatMsgMap.get(chatMsg.id) : null;
+            if (!!oldChatMsg) {
+                oldChatMsg.date = chatMsg.date;
+                oldChatMsg.msg = chatMsg.msg;
+                oldChatMsg.isEdt = chatMsg.isEdt;
+                oldChatMsg.isRmv = chatMsg.isRmv;
+            } else {
+                newChatMsgs.push(chatMsg);
+            }
+        }
+        if (newChatMsgs.length > 0) {
+            const len = listChatMsg.length;
+            listChatMsg.push(...newChatMsgs);
+            for (let idx = len; idx < listChatMsg.length; idx++) {
+                const chatMsg = listChatMsg[idx];
+                chatMsgMap.set(chatMsg.id, chatMsg);
+            }
+        }
+    }
 
     private getChatMsg(nickname: string, len: number): ChatMsg[] {
         const result: ChatMsg[] = [];

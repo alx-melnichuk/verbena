@@ -82,6 +82,15 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.streamDto.title = this.streamDto.title + ' Invalid stream state transition from "waiting" to "stopped".'
                 + ' Invalid stream state transition from "waiting" to "stopped".';
         }
+        // this.chatMsgs = this.getChatMsgDemo(); // #
+        // setTimeout(() => { this.chatMsgs =
+        // [{ "msg": "demo01 v2", "id": 6, "member": "emma_johnson", "date": "2025-05-05T15:42:29.270Z", "isEdt": true, "isRmv": false }];
+        //     this.changeDetector.markForCheck();
+        // }, 5000);
+        // setTimeout(() => {this.chatMsgs =
+        //     [{ "msg": "", "id": 6, "member": "emma_johnson", "date": "2025-05-05T16:33:29.270Z", "isEdt": true, "isRmv": true }];
+        //     this.changeDetector.markForCheck();
+        // }, 10000);
         // =^
         // StreamState = [preparing, started, paused]
         this.isStreamActive = !!this.streamDto && StreamStateUtil.isActive(this.streamDto.state);
@@ -204,4 +213,17 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     }
 
+    private getChatMsgDemo(): ChatMsg[] {
+        return [
+            { "msg": "Demo message A v1", "id": 1, "member": "emma_johnson", "date": "2025-04-28T09:10:30.727Z", "isEdt": false, "isRmv": false },
+            { "msg": "Demo message B v2", "id": 2, "member": "evelyn_allen", "date": "2025-04-28T09:11:06.542Z", "isEdt": true, "isRmv": false },
+            { "msg": "", "id": 3, "member": "liam_smith", "date": "2025-04-28T09:15:15.353Z", "isEdt": false, "isRmv": true },
+            { "msg": "Demo message D v1", "id": 4, "member": "emma_johnson", "date": "2025-04-28T09:10:30.727Z", "isEdt": false, "isRmv": false },
+            { "msg": "demo", "id": 5, "member": "evelyn_allen", "date": "2025-04-30T12:39:33.405Z", "isEdt": false, "isRmv": false },
+            { "msg": "demo01", "id": 6, "member": "emma_johnson", "date": "2025-05-05T14:56:29.270Z", "isEdt": false, "isRmv": false },
+            { "msg": "Demo02", "id": 7, "member": "evelyn_allen", "date": "2025-05-06T10:18:21.147Z", "isEdt": false, "isRmv": false },
+            { "msg": "Demo03 v2", "id": 8, "member": "emma_johnson", "date": "2025-05-06T07:27:00.766Z", "isEdt": true, "isRmv": false },
+            { "msg": "", "id": 9, "member": "evelyn_allen", "date": "2025-05-06T07:32:29.427Z", "isEdt": true, "isRmv": true },
+        ];
+    }
 }
