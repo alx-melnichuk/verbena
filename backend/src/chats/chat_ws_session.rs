@@ -191,8 +191,15 @@ impl ChatWsSession {
             }
             EWSType::Msg => {
                 // {"msg":"text msg"}
-                let msg = event.get_string("msg").unwrap_or("".to_string());
+                let msg = event.get_string("msg").unwrap_or_default();
                 if let Err(err) = self.handle_ews_msg_ext_task(&msg, ctx) {
+                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                }
+            }
+            EWSType::MsgCut => {
+                // { "msgCut": "", "id": 1 }
+                let id = event.get_i32("id").unwrap_or_default();
+                if let Err(err) = self.handle_ews_msg_cut_ext_task(id, ctx) {
                     ctx.text(to_string(&ErrEWS { err }).unwrap());
                 }
             }
@@ -345,6 +352,52 @@ impl ChatWsSession {
         Ok(())
     }
 
+    // * Send a delete message to all chat members. (Server -> Session) *
+    pub fn handle_ews_msg_cut_ext_task(&self, id: i32, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {
+        let msg_cut = "".to_owned();
+        // Check if this field is required
+        self.check_is_required_i32(id, "id")?;
+        // Checking the possibility of sending a message.
+        self.check_possibility_sending_message()?;
+
+        // Prepare data to change the message.
+        let modify_chat_message = ModifyChatMessage::new(None, None, Some(msg_cut));
+        // Checking the validity of the data model.
+        if let Err(validation_errors) = modify_chat_message.validate() {
+            let err = msg_validation(&validation_errors);
+            log::error!("{}: {}", err::CD_VALIDATION, err.clone());
+            ctx.address().do_send(AsyncResultError(err));
+            return Ok(());
+        }
+
+        // Spawn an async task.
+        let addr = ctx.address();
+        // Get a clone of the assistant.
+        let assistant = self.assistant.clone();
+        // Start an additional asynchronous task.
+        actix_web::rt::spawn(async move {
+            let timer0 = std::time::Instant::now();
+            // Check the token for correctness and get the user profile.
+            let result = assistant.execute_modify_chat_message(id, modify_chat_message).await;
+            #[rustfmt::skip]
+            eprintln!("#!2_execute_modify_chat_message: {}", format!("{:.2?}", timer0.elapsed()));
+            if let Err(err) = result {
+                return addr.do_send(AsyncResultError(err.to_string()));
+            }
+            let opt_chat_message = result.unwrap();
+            if opt_chat_message.is_none() {
+                return addr.do_send(AsyncResultError(format!("{} (msg_id: {})", USERS_MSG_NOT_FOUND, id)));
+            }
+            let ch_msg = opt_chat_message.unwrap();
+            let msg2 = ch_msg.msg.unwrap_or_default();
+            let date = ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true);
+            // Send the "AsyncResultEwsMsg" command for execution.
+            #[rustfmt::skip]
+            addr.do_send(AsyncResultEwsMsg(msg2, ch_msg.id, date, ch_msg.is_changed, ch_msg.is_removed));
+        });
+        Ok(())
+    }
+
     // * Send a correction to the message to everyone in the chat. (Server -> Session) *
     pub fn handle_ews_msg_put_ext_task(
         &self,
@@ -397,9 +450,6 @@ impl ChatWsSession {
         });
         Ok(())
     }
-
-    // // * Send a delete message to all chat members. (Server -> Session) *
-    // pub fn send_message_to_delete(&self, msg_cut: &str, date: &str) -> Result<(), String> {    }
 }
 
 // ** - **
