@@ -167,7 +167,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public doSendMessage(newMsg: string): void {
         const newMsgVal = (newMsg || '').trim();
         if (this.isEditable && newMsgVal.length > 0) {
-            if (!!this.msgEditing) {
+            if (!!this.msgEditing?.id) {
                 const keyValue: KeyValue<number, string> = { key: this.msgEditing.id, value: newMsgVal };
                 this.editMsg.emit(keyValue);
             } else {

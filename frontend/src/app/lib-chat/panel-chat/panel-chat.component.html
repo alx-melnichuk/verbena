@@ -28,7 +28,8 @@
         
       <div [ngClass]="['pc-item-msg', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
         {{ chatMsg.msg }}
-      </div><sub>id: {{ chatMsg.id }}, date: {{ chatMsg.date }}</sub>
+      </div>
+      <sub>id: {{ chatMsg.id }}, date: {{ chatMsg.date }}, isEdt: {{ chatMsg.isEdt ? 1 : 0 }}, isRmv: {{ chatMsg.isRmv ? 1 : 0 }}</sub>
       <!-- <div *ngIf="isBannedUserById(chatMsg.member)" class="prc-banned-user">
         <div class="prc-msg-banned-orange"></div>
       </div> -->
