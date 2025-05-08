@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use chrono::{Duration, Utc};
 use jsonwebtoken::{self as jwt, errors};
+use log::error;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -30,12 +31,12 @@ pub fn encode_token(
 ) -> Result<String, String> {
     if num_token == 0 {
         let err = errors::Error::from(errors::ErrorKind::InvalidSubject).to_string();
-        log::error!("{:?}", err);
+        error!("{:?}", err);
         return Err(err);
     }
     if secret.len() == 0 {
         let err = errors::Error::from(errors::ErrorKind::InvalidKeyFormat).to_string();
-        log::error!("{:?}", err);
+        error!("{:?}", err);
         return Err(err);
     }
 
@@ -54,7 +55,7 @@ pub fn encode_token(
     )
     .map_err(|e| {
         let err = e.to_string();
-        log::error!("{:?}", err);
+        error!("{:?}", err);
         err
     })?;
     // Encrypt the data using a secret string.
@@ -67,24 +68,24 @@ pub fn encode_token(
 pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<(i32, i32), String> {
     if secret.len() == 0 {
         let err = errors::Error::from(errors::ErrorKind::InvalidKeyFormat).to_string();
-        log::error!("{:?}", err);
+        error!("{:?}", err);
         return Err(err);
     }
 
     let token_into: String = token.into();
     if token_into.len() == 0 {
         let err = errors::Error::from(errors::ErrorKind::InvalidSubject).to_string();
-        log::error!("{:?}", err);
+        error!("{:?}", err);
         return Err(err);
     }
 
     let decrypted = crypto::decrypt_aes(secret, &token_into).map_err(|err| {
-        log::error!("{:?}", err.to_string());
+        error!("{:?}", err.to_string());
         err.to_string()
     })?;
 
     let token_str = std::str::from_utf8(&decrypted).map_err(|err| {
-        log::error!("{:?}", err.to_string());
+        error!("{:?}", err.to_string());
         err.to_string()
     })?;
 
@@ -94,7 +95,7 @@ pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<(i32, i3
         &jwt::Validation::new(jwt::Algorithm::HS256),
     )
     .map_err(|err| {
-        log::error!("{:?}", err.to_string());
+        error!("{:?}", err.to_string());
         err.to_string()
     })?;
 
@@ -103,13 +104,13 @@ pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<(i32, i3
 
     let user_id = parser::parse_i32(user_id_str).map_err(|err| {
         #[rustfmt::skip]
-        log::error!("{}: user_id: {} - {}", CD_UNALLOWABLE_TOKEN, user_id_str, err);
+        error!("{}: user_id: {} - {}", CD_UNALLOWABLE_TOKEN, user_id_str, err);
         CD_UNALLOWABLE_TOKEN
     })?;
 
     let num_token = parser::parse_i32(num_token_str).map_err(|err| {
         #[rustfmt::skip]
-        log::error!("{}: num_token: {} - {}", CD_UNALLOWABLE_TOKEN, num_token_str, err);
+        error!("{}: num_token: {} - {}", CD_UNALLOWABLE_TOKEN, num_token_str, err);
         CD_UNALLOWABLE_TOKEN
     })?;
 
