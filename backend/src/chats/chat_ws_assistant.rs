@@ -1,4 +1,4 @@
-use log;
+use log::error;
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
@@ -69,7 +69,7 @@ impl ChatWsAssistant {
         let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
         // Add a new entity (stream).
         chat_message_orm.create_chat_message(create_chat_message).map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         })
     }
@@ -82,7 +82,7 @@ impl ChatWsAssistant {
         let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
         // Modify an entity (chat_message).
         chat_message_orm.modify_chat_message(id, modify_chat_message).map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         })
     }

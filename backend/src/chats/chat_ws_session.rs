@@ -1,4 +1,4 @@
-use log;
+use log::{debug, error, log_enabled, Level::Debug};
 
 use actix::prelude::*;
 use actix_broker::BrokerIssue;
@@ -46,17 +46,17 @@ impl Actor for ChatWsSession {
     fn started(&mut self, _ctx: &mut Self::Context) {
         let user_id = self.user_id.clone().unwrap_or(-1);
         let user_name = self.user_name.clone().unwrap_or_default();
-        let user_str = format!("(user_id: {}, user_name: \"{}\", id: {})", user_id, user_name, self.id);
+        let user_str = format!("user_id: {}, user_name: \"{}\", id: {}", user_id, user_name, self.id);
         let room_id = self.room_id.clone().unwrap_or(-1);
-        log::debug!("Session opened for user{} in room \"{}\".", user_str, room_id);
+        debug!("Session opened for user({}) in room_id {}.", user_str, room_id);
     }
     // Called after an actor is stopped.
     fn stopped(&mut self, _ctx: &mut Self::Context) {
         let user_id = self.user_id.clone().unwrap_or(-1);
         let user_name = self.user_name.clone().unwrap_or_default();
-        let user_str = format!("(user_id: {}, user_name: \"{}\", id: {})", user_id, user_name, self.id);
+        let user_str = format!("user_id: {}, user_name: \"{}\", id: {}", user_id, user_name, self.id);
         let room_id = self.room_id.clone().unwrap_or(-1);
-        log::debug!("Session closed for user{} in room \"{}\".", user_str, room_id);
+        debug!("Session closed for user({}) in room_id {}.", user_str, room_id);
     }
 }
 
@@ -71,7 +71,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatWsSession {
             }
             Ok(msg) => msg,
         };
-        log::debug!("WEBSOCKET MESSAGE: {msg:?}");
+        debug!("WEBSOCKET MESSAGE: {msg:?}");
         match msg {
             ws::Message::Text(text) => {
                 // Handle socket text messages.
@@ -150,12 +150,11 @@ impl ChatWsSession {
 
     /** Handle socket text messages. */
     fn handle_text_messages(&mut self, msg: &str, ctx: &mut ws::WebsocketContext<Self>) {
-        eprintln!("#!_WEBSOCKET: Text msg: \"{}\"", msg);
-        log::debug!("WEBSOCKET: Text: msg: \"{}\"", msg);
+        debug!("WEBSOCKET: Text: msg: \"{}\"", msg);
         // Parse input data of ws event.
         let res_event = EventWS::parsing(msg);
         if let Err(err) = res_event {
-            log::debug!("WEBSOCKET: Error: {:?} msg: \"{}\"", err, msg);
+            debug!("WEBSOCKET: Error: {:?} msg: \"{}\"", err, msg);
             ctx.text(to_string(&ErrEWS { err }).unwrap());
             return;
         }
@@ -271,11 +270,14 @@ impl ChatWsSession {
             let assistant = self.assistant.clone();
             // Start an additional asynchronous task.
             actix_web::rt::spawn(async move {
-                let timer0 = std::time::Instant::now();
+                #[rustfmt::skip]
+                let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
                 // Check the token for correctness and get the user profile.
                 let result = assistant.check_num_token_and_get_profile(user_id, num_token).await;
-                #[rustfmt::skip]
-                eprintln!("#!_check_num_token_and_get_profile: {}", format!("{:.2?}", timer0.elapsed()));
+                if let Some(timer0) = opt_timer0 {
+                    #[rustfmt::skip]
+                    debug!("check_num_token_and_get_profile: {}", format!("{:.2?}", timer0.elapsed()));
+                }
                 if let Err(err) = result {
                     return addr.do_send(AsyncResultError(err.to_string()));
                 }
@@ -323,7 +325,7 @@ impl ChatWsSession {
         // Checking the validity of the data model.
         if let Err(validation_errors) = create_chat_message.validate() {
             let err = msg_validation(&validation_errors);
-            log::error!("{}: {}", err::CD_VALIDATION, err.clone());
+            error!("{}: {}", err::CD_VALIDATION, err.clone());
             ctx.address().do_send(AsyncResultError(err));
             return Ok(());
         }
@@ -334,11 +336,14 @@ impl ChatWsSession {
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
-            let timer0 = std::time::Instant::now();
+            #[rustfmt::skip]
+            let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
             // Check the token for correctness and get the user profile.
             let result = assistant.execute_create_chat_message(create_chat_message).await;
-            #[rustfmt::skip]
-            eprintln!("#!_execute_create_chat_message: {}", format!("{:.2?}", timer0.elapsed()));
+            if let Some(timer0) = opt_timer0 {
+                #[rustfmt::skip]
+                debug!("execute_create_chat_message: {}", format!("{:.2?}", timer0.elapsed()));
+            }
             if let Err(err) = result {
                 return addr.do_send(AsyncResultError(err.to_string()));
             }
@@ -365,7 +370,7 @@ impl ChatWsSession {
         // Checking the validity of the data model.
         if let Err(validation_errors) = modify_chat_message.validate() {
             let err = msg_validation(&validation_errors);
-            log::error!("{}: {}", err::CD_VALIDATION, err.clone());
+            error!("{}: {}", err::CD_VALIDATION, err.clone());
             ctx.address().do_send(AsyncResultError(err));
             return Ok(());
         }
@@ -376,11 +381,14 @@ impl ChatWsSession {
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
-            let timer0 = std::time::Instant::now();
+            #[rustfmt::skip]
+            let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
             // Check the token for correctness and get the user profile.
             let result = assistant.execute_modify_chat_message(id, modify_chat_message).await;
-            #[rustfmt::skip]
-            eprintln!("#!2_execute_modify_chat_message: {}", format!("{:.2?}", timer0.elapsed()));
+            if let Some(timer0) = opt_timer0 {
+                #[rustfmt::skip]
+                debug!("execute_modify_chat_message: {}", format!("{:.2?}", timer0.elapsed()));
+            }
             if let Err(err) = result {
                 return addr.do_send(AsyncResultError(err.to_string()));
             }
@@ -418,7 +426,7 @@ impl ChatWsSession {
         // Checking the validity of the data model.
         if let Err(validation_errors) = modify_chat_message.validate() {
             let err = msg_validation(&validation_errors);
-            log::error!("{}: {}", err::CD_VALIDATION, err.clone());
+            error!("{}: {}", err::CD_VALIDATION, err.clone());
             ctx.address().do_send(AsyncResultError(err));
             return Ok(());
         }
@@ -429,11 +437,14 @@ impl ChatWsSession {
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
-            let timer0 = std::time::Instant::now();
+            #[rustfmt::skip]
+            let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
             // Check the token for correctness and get the user profile.
             let result = assistant.execute_modify_chat_message(id, modify_chat_message).await;
-            #[rustfmt::skip]
-            eprintln!("#!_execute_modify_chat_message: {}", format!("{:.2?}", timer0.elapsed()));
+            if let Some(timer0) = opt_timer0 {
+                #[rustfmt::skip]
+                debug!("execute_modify_chat_message: {}", format!("{:.2?}", timer0.elapsed()));
+            }
             if let Err(err) = result {
                 return addr.do_send(AsyncResultError(err.to_string()));
             }
@@ -466,7 +477,7 @@ impl Handler<AsyncResultError> for ChatWsSession {
     type Result = ();
 
     fn handle(&mut self, msg: AsyncResultError, ctx: &mut Self::Context) {
-        eprintln!("#!_handle<AsyncResultError>(01) msg.0: {}", &msg.0);
+        debug!("handle<AsyncResultError>() msg.0: {}", &msg.0);
         ctx.text(to_string(&ErrEWS { err: msg.0 }).unwrap());
     }
 }
@@ -591,7 +602,7 @@ impl ChatWsSession {
     type Result = MessageResult<SaveMessageResult>;
 
     fn handle(&mut self, msg_res: SaveMessageResult, _ctx: &mut Self::Context) -> Self::Result {
-        eprintln!("#!_handler<SaveMessageResult>() msg_res: {:?}", msg_res.0);
+        debug!("#!_handler<SaveMessageResult>() msg_res: {:?}", msg_res.0);
         MessageResult(msg_res.0)
     }
 }*/

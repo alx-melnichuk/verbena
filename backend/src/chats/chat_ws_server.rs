@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use actix::prelude::*;
 use actix_broker::BrokerSubscribe;
+use log::debug;
 use serde_json::to_string;
 
 use crate::chats::chat_event_ws::{JoinEWS, LeaveEWS};
@@ -63,7 +64,7 @@ impl ChatWsServer {
     // Send a chat message to all members.
     fn send_chat_message_to_clients(&mut self, room_id: i32, msg: &str) -> Option<()> {
         let mut room = self.take_room(room_id)?;
-        eprintln!("@_send_chat_message() msg: \"{}\"", msg);
+        debug!("send_chat_message() msg: \"{}\"", msg);
         for (id, client_info) in room.drain() {
             let command_srv = CommandSrv::Chat(ChatMsgSsn(msg.to_owned()));
             if client_info.client.try_send(command_srv).is_ok() {
@@ -114,8 +115,6 @@ impl Handler<JoinRoom> for ChatWsServer {
     type Result = MessageResult<JoinRoom>;
 
     fn handle(&mut self, msg: JoinRoom, _ctx: &mut Self::Context) -> Self::Result {
-        #[rustfmt::skip]
-        eprintln!("@_handler<JoinRoom>() 01 msg.0: {}, msg.1: \"{}\"", msg.0, msg.1.clone().unwrap_or("_".to_string()));
         let JoinRoom(room_id, client_name, client) = msg;
         let name = client_name.unwrap_or("".to_owned());
         let member = name.clone();
@@ -123,7 +122,10 @@ impl Handler<JoinRoom> for ChatWsServer {
 
         // Get the number of clients in the room.
         let count = self.count_clients_in_room(room_id);
-        eprintln!("@_handler<JoinRoom>() 02 count: {}", count);
+
+        #[rustfmt::skip]
+        debug!("handler<JoinRoom>() room_id: {}, client_name: \"{}\", count: {}", room_id, member.clone(), count);
+
         let join = room_id;
         let join_str = to_string(&JoinEWS { join, member, count }).unwrap();
         // Send a chat message to all members.

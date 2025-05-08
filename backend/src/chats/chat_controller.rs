@@ -3,6 +3,7 @@ use std::ops::Deref;
 use actix_files::NamedFile;
 use actix_web::{get, post, put, web, HttpResponse, Responder};
 use actix_web_actors::ws;
+use log::error;
 
 use crate::chats::chat_message_models::{
     ChatMessage, ChatMessageDto, CreateChatMessage, CreateChatMessageDto, ModifyChatMessage, ModifyChatMessageDto,
@@ -89,7 +90,7 @@ pub async fn post_chat_message(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
+        error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
     }
 
@@ -133,14 +134,14 @@ pub async fn put_chat_message(
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
         AppError::range_not_satisfiable416(&message) // 416
     })?;
     
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
+        error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
     }
 
@@ -155,7 +156,7 @@ pub async fn put_chat_message(
             let text = format!("curr_user_id: {}, user_id: {}", profile.user_id, user_id2);
             #[rustfmt::skip]
             let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_MODIFY_ANOTHER_USERS_CHAT_MESSAGE, &text);
-            log::error!("{}: {}", err::CD_FORBIDDEN, &message);
+            error!("{}: {}", err::CD_FORBIDDEN, &message);
             return Err(AppError::forbidden403(&message)); // 403
         }
     }
@@ -190,14 +191,14 @@ async fn execute_create_chat_message(
     let res_chat_message = web::block(move || {
         // Add a new entity (stream).
         let res_chat_message1 = chat_message_orm.create_chat_message(create_chat_message).map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
         res_chat_message1
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })?;
 
@@ -214,14 +215,14 @@ async fn execute_modify_chat_message(
     let res_chat_message = web::block(move || {
         // Add a new entity (stream).
         let res_chat_message1 = chat_message_orm.modify_chat_message(id, modify_chat_message).map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
         res_chat_message1
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })?;
 
