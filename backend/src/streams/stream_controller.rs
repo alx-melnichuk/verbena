@@ -3,7 +3,7 @@ use std::{borrow::Cow, ops::Deref, path};
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, get, post, put, web, HttpResponse};
 use chrono::{DateTime, Duration, SecondsFormat::Millis, Utc};
-use log;
+use log::error;
 use mime::IMAGE;
 use serde_json::{self, json};
 use utoipa;
@@ -97,7 +97,7 @@ pub fn remove_file_and_log(file_name: &str, msg: &str) {
     if file_name.len() > 0 {
         let res_remove = std::fs::remove_file(file_name);
         if let Err(err) = res_remove {
-            log::error!("{} remove_file({}): error: {:?}", msg, file_name, err);
+            error!("{} remove_file({}): error: {:?}", msg, file_name, err);
         }
     }
 }
@@ -149,7 +149,7 @@ pub async fn get_stream_by_id(
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
         AppError::range_not_satisfiable416(&message) // 416
     })?;
 
@@ -158,14 +158,14 @@ pub async fn get_stream_by_id(
         let res_data = stream_orm
             .find_stream_by_params(Some(id), opt_user_id, None, true, &[])
             .map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
         res_data
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })?;
 
@@ -294,7 +294,7 @@ pub async fn get_streams(
         let text = format!("curr_user_id: {}, user_id: {}", profile.user_id, search_stream.user_id);
         #[rustfmt::skip]
         let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS, &text);
-        log::error!("{}: {}", err::CD_FORBIDDEN, &message);
+        error!("{}: {}", err::CD_FORBIDDEN, &message);
         return Err(AppError::forbidden403(&message)); // 403
     }
 
@@ -302,14 +302,14 @@ pub async fn get_streams(
         // A query to obtain a list of "streams" based on the specified search parameters.
         let res_data =
             stream_orm.find_streams_by_pages(search_stream, true).map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             });
         res_data
         })
         .await
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
             AppError::blocking506(&e.to_string())
         })?;
         
@@ -475,7 +475,7 @@ pub async fn get_streams_events(
         let text = format!("curr_user_id: {}, user_id: {}", profile.user_id, search_event.user_id);
         #[rustfmt::skip]
         let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
-        log::error!("{}: {}", err::CD_FORBIDDEN, &message);
+        error!("{}: {}", err::CD_FORBIDDEN, &message);
         return Err(AppError::forbidden403(&message)); // 403
     }
     
@@ -483,14 +483,14 @@ pub async fn get_streams_events(
         // Find for an entity (stream event) by SearchStreamEvent.
         let res_data =
             stream_orm.find_stream_events_by_pages(search_event).map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             });
         res_data
         })
         .await
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
             AppError::blocking506(&e.to_string())
         })?;
 
@@ -586,13 +586,13 @@ pub async fn get_streams_period(
         let text = format!("curr_user_id: {}, user_id: {}", profile.user_id, search_period.user_id);
         #[rustfmt::skip]
         let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
-        log::error!("{}: {}", err::CD_FORBIDDEN, &message);
+        error!("{}: {}", err::CD_FORBIDDEN, &message);
         return Err(AppError::forbidden403(&message)); // 403
     }
     if finish < start {
         let json = serde_json::json!({ "streamPeriodStart": start.to_rfc3339_opts(Millis, true)
             , "streamPeriodFinish": finish.to_rfc3339_opts(Millis, true) });
-        log::error!("{}: {}: {}", err::CD_NOT_ACCEPTABLE, MSG_FINISH_LESS_START, json.to_string());
+        error!("{}: {}: {}", err::CD_NOT_ACCEPTABLE, MSG_FINISH_LESS_START, json.to_string());
         return Err(AppError::not_acceptable406(MSG_FINISH_LESS_START) // 406
             .add_param(Cow::Borrowed("invalidPeriod"), &json));
     }
@@ -600,7 +600,7 @@ pub async fn get_streams_period(
     if max_finish <= finish {
         let json = serde_json::json!({ "actualPeriodFinish": finish.to_rfc3339_opts(Millis, true)
             , "maxPeriodFinish": max_finish.to_rfc3339_opts(Millis, true), "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS });
-        log::error!("{}: {}: {}", err::CD_CONTENT_TOO_LARGE, MSG_FINISH_EXCEEDS_LIMIT, json.to_string());
+        error!("{}: {}: {}", err::CD_CONTENT_TOO_LARGE, MSG_FINISH_EXCEEDS_LIMIT, json.to_string());
         return Err(AppError::content_large413(MSG_FINISH_EXCEEDS_LIMIT) // 413
             .add_param(Cow::Borrowed("periodTooLong"), &json));
     }
@@ -609,14 +609,14 @@ pub async fn get_streams_period(
         // Find for an entity (stream period) by SearchStreamEvent.
         let res_data =
             stream_orm.find_streams_period(search_period).map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)    
             });
         res_data
         })
         .await
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
             AppError::blocking506(&e.to_string())
         })?;
 
@@ -816,14 +816,14 @@ pub async fn post_stream(
     let (create_stream_info_dto, logo_file) = CreateStreamForm::convert(create_stream_form)
         .map_err(|e| {
             let message = format!("{}; {}", MSG_INVALID_FIELD_TAG, e);
-            log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
+            error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
             AppError::not_acceptable406(&message) // 406
         })?;
 
     // Checking the validity of the data model.
     let validation_res = create_stream_info_dto.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors)); // 417
+        error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors)); // 417
         return Ok(AppError::to_response(&AppError::validations(validation_errors)));
     }
 
@@ -839,7 +839,7 @@ pub async fn post_stream(
         let logo_max_size = usize::try_from(config_strm.strm_logo_max_size).unwrap();
         if logo_max_size > 0 && temp_file.size > logo_max_size {
             let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": logo_max_size });
-            log::error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
+            error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
             return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Cow::Borrowed("invalidFileSize"), &json));
         }
@@ -849,7 +849,7 @@ pub async fn post_stream(
         let valid_file_mime_types = config_strm.strm_logo_valid_types.clone();
         if !valid_file_mime_types.contains(&file_mime_type) {
             let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
-            log::error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
+            error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
             return Err(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE) // 415
                 .add_param(Cow::Borrowed("invalidFileType"), &json));
         }
@@ -864,7 +864,7 @@ pub async fn post_stream(
         let res_upload = temp_file.file.persist(&full_path_file);
         if let Err(err) = res_upload {
             let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &full_path_file, err.to_string());
-            log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
+            error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
             return Err(AppError::internal_err500(&message)) // 500
         }
         path_new_logo_file = full_path_file;
@@ -873,7 +873,7 @@ pub async fn post_stream(
         let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "post_stream()")
             .map_err(|e| {
                 let message = format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, e);
-                log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
+                error!("{}: {}", err::CD_NOT_EXTENDED, &message);
                 AppError::not_extended510(&message) // 510
             })?;
         if let Some(new_path_file) = res_convert_logo_file {
@@ -893,14 +893,14 @@ pub async fn post_stream(
     let res_data = web::block(move || {
         // Add a new entity (stream).
         let res_data = stream_orm.create_stream(create_stream, &tags).map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
         res_data
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })?;
 
@@ -1067,7 +1067,7 @@ pub async fn put_stream(
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
         AppError::range_not_satisfiable416(&message) // 416
     })?;
 
@@ -1075,7 +1075,7 @@ pub async fn put_stream(
     let (modify_stream_info_dto, logo_file) = ModifyStreamForm::convert(modify_stream_form)
     .map_err(|e| {
         let message = format!("{}; {}", MSG_INVALID_FIELD_TAG, e);
-        log::error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
+        error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
         AppError::not_acceptable406(&message)
     })?;
 
@@ -1095,7 +1095,7 @@ pub async fn put_stream(
             }
         }).collect();
         if !is_no_fields_to_update || logo_file.is_none() {
-            log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&errors));
+            error!("{}: {}", err::CD_VALIDATION, msg_validation(&errors));
             return Ok(AppError::to_response(&AppError::validations(errors))); // 417
         }
     }
@@ -1115,7 +1115,7 @@ pub async fn put_stream(
         // Check file size for maximum value.
         if logo_max_size > 0 && temp_file.size > logo_max_size {
             let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": logo_max_size });
-            log::error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
+            error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
             return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Cow::Borrowed("invalidFileSize"), &json));
         }
@@ -1126,7 +1126,7 @@ pub async fn put_stream(
         let valid_file_mime_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
         if !valid_file_mime_types.contains(&file_mime_type) {
             let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
-            log::error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
+            error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
             return Err(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE) // 415
                 .add_param(Cow::Borrowed("invalidFileType"), &json));
         }
@@ -1142,7 +1142,7 @@ pub async fn put_stream(
         let res_upload = temp_file.file.persist(&full_path_file);
         if let Err(err) = res_upload {
             let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &full_path_file, err.to_string());
-            log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
+            error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
             return Err(AppError::internal_err500(&message)); // 500
         }
         path_new_logo_file = full_path_file;
@@ -1151,7 +1151,7 @@ pub async fn put_stream(
         let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "put_stream()")
             .map_err(|e| {
                 let message = format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, e);
-                log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
+                error!("{}: {}", err::CD_NOT_EXTENDED, &message);
                 AppError::not_extended510(&message) // 510
             })?;
         if let Some(new_path_file) = res_convert_logo_file {
@@ -1174,7 +1174,7 @@ pub async fn put_stream(
             // Get the logo file name for an entity (stream) by ID.
             let res_get_stream_logo = stream_orm.get_stream_logo_by_id(id)
             .map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             });
 
@@ -1185,7 +1185,7 @@ pub async fn put_stream(
         // Modify an entity (stream).
         let res_data_stream = stream_orm.modify_stream(id, opt_user_id, modify_stream, tags)
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
 
@@ -1193,7 +1193,7 @@ pub async fn put_stream(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })?;
 
@@ -1305,7 +1305,7 @@ pub async fn put_toggle_state(
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
         AppError::range_not_satisfiable416(&message) // 416
     })?;
 
@@ -1317,14 +1317,14 @@ pub async fn put_toggle_state(
         let res_stream_tags = stream_orm2
             .find_stream_by_params(Some(id), opt_user_id, None, false, &[])
             .map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             });
         res_stream_tags
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })?;
 
@@ -1338,7 +1338,7 @@ pub async fn put_toggle_state(
 
     if stream.state == new_state {
         let json = json!({ "oldState": &stream.state, "newState": &new_state });
-        log::error!("{}: {}; {}", err::CD_NOT_ACCEPTABLE, MSG_INVALID_STREAM_STATE, json.to_string());
+        error!("{}: {}; {}", err::CD_NOT_ACCEPTABLE, MSG_INVALID_STREAM_STATE, json.to_string());
         return Err(AppError::not_acceptable406(MSG_INVALID_STREAM_STATE) // 406
             .add_param(Cow::Borrowed("invalidState"), &json));
     }
@@ -1352,7 +1352,7 @@ pub async fn put_toggle_state(
     };
     if is_not_acceptable {
         let json = json!({ "oldState": &stream.state.to_string(), "newState": &new_state });
-        log::error!("{}: {}; {}", err::CD_NOT_ACCEPTABLE, MSG_INVALID_STREAM_STATE, json.to_string());
+        error!("{}: {}; {}", err::CD_NOT_ACCEPTABLE, MSG_INVALID_STREAM_STATE, json.to_string());
         return Err(AppError::not_acceptable406(MSG_INVALID_STREAM_STATE) // 406
             .add_param(Cow::Borrowed("invalidState"), &json));
     }
@@ -1364,14 +1364,14 @@ pub async fn put_toggle_state(
             let res_stream2_tags = stream_orm2
                 .find_stream_by_params(None, opt_user_id, Some(true), false, &[id])
                 .map_err(|e| {
-                    log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                    error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                     AppError::database507(&e)
                 });
             res_stream2_tags
         })
         .await
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
             AppError::blocking506(&e.to_string())
         })?;
         
@@ -1379,7 +1379,7 @@ pub async fn put_toggle_state(
 
         if let Some((stream2, _tags)) = opt_stream2_tags {
             let json = json!({ "id": stream2.id, "title": &stream2.title });
-            log::error!("{}: {}; {}", err::CD_CONFLICT, MSG_EXIST_IS_ACTIVE_STREAM, json.to_string());
+            error!("{}: {}; {}", err::CD_CONFLICT, MSG_EXIST_IS_ACTIVE_STREAM, json.to_string());
             return Err(AppError::conflict409(MSG_EXIST_IS_ACTIVE_STREAM) // 409
                 .add_param(Cow::Borrowed("activeStream"), &json));
         }
@@ -1400,14 +1400,14 @@ pub async fn put_toggle_state(
         // Modify an entity (stream).
         let res_stream_tags = stream_orm.modify_stream(id, opt_user_id, modify_stream, None)
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
         res_stream_tags
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })?;
 
@@ -1469,7 +1469,7 @@ pub async fn delete_stream(
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
+        error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
         AppError::range_not_satisfiable416(&message) // 416
     })?;
 
@@ -1477,14 +1477,14 @@ pub async fn delete_stream(
     let res_stream = web::block(move || {
         // Add a new entity (stream).
         let res_data = stream_orm.delete_stream(id, opt_user_id).map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         res_data
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })?;
 

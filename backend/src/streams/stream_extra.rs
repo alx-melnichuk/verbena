@@ -1,5 +1,5 @@
 use actix_web::web;
-use log;
+use log::error;
 
 use crate::errors::AppError;
 use crate::settings::err;
@@ -25,14 +25,14 @@ pub async fn get_stream_logo_files(stream_orm: web::Data<StreamOrmApp>, user_id:
         let res_data = stream_orm
             .filter_streams_by_params(opt_id, opt_user_id, opt_is_logo, opt_live, false, &[])
             .map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             });
         res_data
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })?;
 
