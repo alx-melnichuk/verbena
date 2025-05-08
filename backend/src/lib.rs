@@ -5,7 +5,7 @@ use actix_multipart::form::tempfile::TempFileConfig;
 use actix_web::{http, middleware, web, App, HttpServer};
 use dotenv;
 use env_logger;
-use log;
+use log::{info, log_enabled, Level::Info};
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
@@ -51,8 +51,7 @@ pub async fn server_run() -> std::io::Result<()> {
     dotenv::dotenv().expect("Failed to read .env file");
 
     if env::var("RUST_LOG").is_err() {
-        let log = "warn,actix_web=info,verbena_backend=info";
-        env::set_var("RUST_LOG", log);
+        env::set_var("RUST_LOG", "warn,actix_web=info,verbena=info");
     }
 
     env_logger::init();
@@ -76,7 +75,7 @@ pub async fn server_run() -> std::io::Result<()> {
     std::fs::create_dir_all(&config_prfl.prfl_avatar_files_dir)?;
 
     let app_domain = config_app.app_domain.clone();
-    log::info!("Starting server {}", &app_domain);
+    app_log(&format!("Starting server {}", &app_domain));
 
     let config_app2 = config_app.clone();
 
@@ -110,7 +109,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
         let db_url = env::var("DATABASE_URL").expect("Env \"DATABASE_URL\" not found.");
 
-        log::info!("Configuring database.");
+        app_log("Configuring database.");
         let pool: dbase::DbPool = dbase::init_db_pool(&db_url);
         dbase::run_migration(&mut pool.get().unwrap());
 
@@ -210,4 +209,12 @@ pub fn create_cors(config_app: settings::config_app::ConfigApp) -> Cors {
         }
     }
     cors
+}
+
+fn app_log(text: &str) {
+    if log_enabled!(Info) {
+        info!("{}", text);
+    } else {
+        eprintln!("{}", text);
+    }
 }
