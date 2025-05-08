@@ -14,7 +14,6 @@ pub type DbPooledConnection = r2d2::PooledConnection<r2d2::ConnectionManager<Con
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 pub fn init_db_pool(db_url: &str) -> DbPool {
-    log::info!("Configuring database.");
     let manager = r2d2::ConnectionManager::<Connection>::new(db_url);
     let pool = r2d2::Pool::builder().build(manager).expect("Failed to create pool.");
 

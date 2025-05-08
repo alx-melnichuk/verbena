@@ -46,12 +46,12 @@ pub mod validators;
 pub async fn server_run() -> std::io::Result<()> {
     #[cfg(feature = "mockdata")]
     #[rustfmt::skip]
-    assert!(false, "Launch in `mockdata` mode! Disable `default=[test, mockdata]` in Cargo.toml.");
+    assert!(false, "Launch in \"mockdata\" mode! Disable \"default=[test, mockdata]\" in Cargo.toml.");
 
     dotenv::dotenv().expect("Failed to read .env file");
 
     if env::var("RUST_LOG").is_err() {
-        let log = "info,actix_web=info,actix_server=info,verbena_backend=info";
+        let log = "warn,actix_web=info,verbena_backend=info";
         env::set_var("RUST_LOG", log);
     }
 
@@ -110,6 +110,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
         let db_url = env::var("DATABASE_URL").expect("Env \"DATABASE_URL\" not found.");
 
+        log::info!("Configuring database.");
         let pool: dbase::DbPool = dbase::init_db_pool(&db_url);
         dbase::run_migration(&mut pool.get().unwrap());
 
