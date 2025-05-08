@@ -4,14 +4,12 @@
 # RUST_LOG
 # -----------------------------------------------------------------------------
 # for release
-# RUST_LOG=info,actix_web=info,actix_server=info,verbena_backend=info
+# RUST_LOG=warn,actix_web=info,verbena=info
 
 # for debugging
-L_COMM=info,actix_web=info,actix_server=info
-L_MAIN=verbena_backend=debug
-L_AUTH=extractors::authentication=debug
-
-RUST_LOG=${L_COMM},${L_MAIN},${L_AUTH}
+# LOG_AUTH=extractors::authentication=debug
+# verbena=info - Output "info!" messages from module src/lib.rs.
+RUST_LOG=warn,actix_web=info,verbena=info,${LOG_AUTH}
 
 # -----------------------------------------------------------------------------
 # Application properties
