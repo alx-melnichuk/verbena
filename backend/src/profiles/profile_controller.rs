@@ -3,7 +3,7 @@ use std::{borrow::Cow, ops::Deref, path};
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{get,delete, put, web, HttpResponse};
 use chrono::{DateTime, Utc};
-use log;
+use log::error;
 use mime::IMAGE;
 use serde_json::json;
 use utoipa;
@@ -74,7 +74,7 @@ fn remove_file_and_log(file_name: &str, msg: &str) {
     if file_name.len() > 0 {
         let res_remove = std::fs::remove_file(file_name);
         if let Err(err) = res_remove {
-            log::error!("{} remove_file({}): error: {:?}", msg, file_name, err);
+            error!("{} remove_file({}): error: {:?}", msg, file_name, err);
         }
     }
 }
@@ -165,7 +165,7 @@ pub async fn get_profile_by_id(
 
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
         AppError::range_not_satisfiable416(&message) // 416
     })?;
 
@@ -173,7 +173,7 @@ pub async fn get_profile_by_id(
         // Find profile by user id.
         let profile =
             profile_orm.get_profile_user_by_id(id, false).map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             }).ok()?;
 
@@ -181,7 +181,7 @@ pub async fn get_profile_by_id(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) //506
     })?;
 
@@ -359,7 +359,7 @@ pub async fn uniqueness_check(
         .map_err(|err| {
             #[rustfmt::skip]
             let prm1 = match err.params.first_key_value() { Some((_, v)) => v.to_string(), None => "".to_string() };
-            log::error!("{}:{}; {}", &err.code, &err.message, &prm1);
+            error!("{}:{}; {}", &err.code, &err.message, &prm1);
             err
         })?;
     let uniqueness = res_search.is_none();
@@ -518,7 +518,7 @@ pub async fn put_profile(
             }
         }).collect();
         if !is_no_fields_to_update || avatar_file.is_none() {
-            log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&errors));
+            error!("{}: {}", err::CD_VALIDATION, msg_validation(&errors));
             return Ok(AppError::to_response(&AppError::validations(errors))); // 417
         }
     }
@@ -534,7 +534,7 @@ pub async fn put_profile(
             .map_err(|err| {
                 #[rustfmt::skip]
                 let prm1 = match err.params.first_key_value() { Some((_, v)) => v.to_string(), None => "".to_string() };
-                log::error!("{}:{}; {}", &err.code, &err.message, &prm1);
+                error!("{}:{}; {}", &err.code, &err.message, &prm1);
                 err
             })?;
 
@@ -542,7 +542,7 @@ pub async fn put_profile(
         if let Some((is_nickname, _)) = res_search {
             #[rustfmt::skip]
             let message = if is_nickname { err::MSG_NICKNAME_ALREADY_USE } else { err::MSG_EMAIL_ALREADY_USE };
-            log::error!("{}: {}", err::CD_CONFLICT, &message);
+            error!("{}: {}", err::CD_CONFLICT, &message);
             return Err(AppError::conflict409(&message)); // 409
         }
     }
@@ -563,7 +563,7 @@ pub async fn put_profile(
         let avatar_max_size = usize::try_from(config_prfl.prfl_avatar_max_size).unwrap();
         if avatar_max_size > 0 && temp_file.size > avatar_max_size {
             let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": avatar_max_size });
-            log::error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
+            error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
             return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Cow::Borrowed("invalidFileSize"), &json));
         }
@@ -574,7 +574,7 @@ pub async fn put_profile(
         let valid_file_mime_types: Vec<String> = config_prfl.prfl_avatar_valid_types.clone();
         if !valid_file_mime_types.contains(&file_mime_type) {
             let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
-            log::error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
+            error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
             return Err(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE) // 415
                 .add_param(Cow::Borrowed("invalidFileType"), &json));
         }
@@ -590,7 +590,7 @@ pub async fn put_profile(
         let res_upload = temp_file.file.persist(&full_path_file);
         if let Err(err) = res_upload {
             let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &full_path_file, err.to_string());
-            log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
+            error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
             return Err(AppError::internal_err500(&message)); // 500
         }
         path_new_avatar_file = full_path_file;
@@ -599,7 +599,7 @@ pub async fn put_profile(
         let res_convert_img_file = convert_avatar_file(&path_new_avatar_file, config_prfl.clone(), "put_profile()")
         .map_err(|e| {
             let message = format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, e);
-            log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
+            error!("{}: {}", err::CD_NOT_EXTENDED, &message);
             AppError::not_extended510(&message) // 510
         })?;
         if let Some(new_path_file) = res_convert_img_file {
@@ -624,7 +624,7 @@ pub async fn put_profile(
         // Modify an entity (profile).
         let res_data_profile = profile_orm.modify_profile(curr_user_id, modify_profile)
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
 
@@ -632,7 +632,7 @@ pub async fn put_profile(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })?;
 
@@ -718,7 +718,7 @@ pub async fn put_profile_new_password(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
+        error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
     }
 
@@ -727,7 +727,7 @@ pub async fn put_profile_new_password(
     // Get a hash of the new password.
     let new_password_hashed = hash_tools::encode_hash(&new_password).map_err(|e| {
         let message = format!("{}; {}", err::MSG_ERROR_HASHING_PASSWORD, e.to_string());
-        log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
+        error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
         AppError::internal_err500(&message) // 500
     })?;
     
@@ -736,19 +736,19 @@ pub async fn put_profile_new_password(
         // Find user by nickname or email.
         let existing_profile = profile_orm2.get_profile_user_by_id(profile_id, true)
             .map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
         existing_profile
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
     let profile_pwd = opt_profile_pwd.ok_or_else(|| {
-        log::error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_WRONG_NICKNAME_EMAIL);
+        error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_WRONG_NICKNAME_EMAIL);
         AppError::unauthorized401(err::MSG_WRONG_NICKNAME_EMAIL) // 401 (A)
     })?;
 
@@ -759,12 +759,12 @@ pub async fn put_profile_new_password(
     // Check whether the hash for the specified password value matches the old password hash.
     let password_matches = hash_tools::compare_hash(&old_password, &profile_hashed_old_password).map_err(|e| {
         let message = format!("{}; {}", err::MSG_INVALID_HASH, &e);
-        log::error!("{}: {}", err::CD_CONFLICT, &message);
+        error!("{}: {}", err::CD_CONFLICT, &message);
         AppError::conflict409(&message) // 409
     })?;
     // If the hash for the specified password does not match the old password hash, then return an error.
     if !password_matches {
-        log::error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_PASSWORD_INCORRECT);
+        error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_PASSWORD_INCORRECT);
         return Err(AppError::unauthorized401(err::MSG_PASSWORD_INCORRECT)); // 401 (B)
     }
 
@@ -779,14 +779,14 @@ pub async fn put_profile_new_password(
     let opt_profile = web::block(move || {
         let opt_profile1 = profile_orm.modify_profile(profile_id, modify_profile)
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         opt_profile1
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
@@ -858,7 +858,7 @@ pub async fn delete_profile(
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        log::error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
         AppError::range_not_satisfiable416(&message) // 416
     })?;
 
@@ -869,14 +869,14 @@ pub async fn delete_profile(
         // Delete an entity (profile).
         let res_profile = profile_orm.delete_profile(id)
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         res_profile
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
@@ -954,14 +954,14 @@ pub async fn delete_profile_current(
         // Delete an entity (profile).
         let res_profile = profile_orm.delete_profile(id)
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         res_profile
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) //506
     })??;
 

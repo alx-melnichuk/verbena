@@ -5,7 +5,7 @@ use futures_util::{
     future::{ready, LocalBoxFuture, Ready},
     FutureExt,
 };
-use log;
+use log::{debug, error, log_enabled, Level::Debug};
 
 use crate::errors::AppError;
 use crate::profiles::profile_models::Profile;
@@ -127,13 +127,15 @@ where
 
     /// The future type representing the asynchronous response.
     fn call(&self, req: dev::ServiceRequest) -> Self::Future {
-        // let timer0 = std::time::Instant::now();
+        #[rustfmt::skip]
+        let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
+
         // Attempt to extract token from cookie or authorization header
         let token = get_token_from_cookie_or_header(req.request());
 
         // If token is missing, return unauthorized error
         if token.is_none() {
-            log::error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_MISSING_TOKEN);
+            error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_MISSING_TOKEN);
             let json_error = AppError::unauthorized401(err::MSG_MISSING_TOKEN);
             return Box::pin(ready(Err(error::ErrorUnauthorized(json_error)))); // 401
         }
@@ -146,7 +148,7 @@ where
 
         if let Err(e) = token_res {
             let message = format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
-            log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
+            error!("{}: {}", err::CD_UNAUTHORIZED, &message);
             let json_error = AppError::unauthorized401(&message);
             return Box::pin(ready(Err(error::ErrorUnauthorized(json_error)))); // 401
         }
@@ -167,8 +169,10 @@ where
             }
             let profile = res_profile.unwrap();
 
-            // eprintln!("## timer0: {}", format!("{:.2?}", timer0.elapsed()));
-            // eprintln!("## profile.role: {:?}", &profile.role);
+            if let Some(timer0) = opt_timer0 {
+                #[rustfmt::skip]
+                debug!("timer0: {}, profile.role: {:?}", format!("{:.2?}", timer0.elapsed()), &profile.role);
+            }
 
             // Check if user's role matches the required role
             if allowed_roles.contains(&profile.role) {
@@ -178,7 +182,7 @@ where
                 let res = srv.call(req).await?;
                 Ok(res)
             } else {
-                log::error!("{}: {}", err::CD_FORBIDDEN, err::MSG_ACCESS_DENIED);
+                error!("{}: {}", err::CD_FORBIDDEN, err::MSG_ACCESS_DENIED);
                 let err_msg = AppError::forbidden403(err::MSG_ACCESS_DENIED);
                 Err(error::ErrorForbidden(err_msg)) // 403
             }

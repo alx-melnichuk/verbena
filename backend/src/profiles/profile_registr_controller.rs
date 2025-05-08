@@ -1,6 +1,7 @@
 use actix_web::{get, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
 use utoipa;
+use log::error;
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
@@ -132,7 +133,7 @@ pub async fn registration(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
+        error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
     }
 
@@ -143,7 +144,7 @@ pub async fn registration(
     let password = registr_profile_dto.password.clone();
     let password_hashed = hash_tools::encode_hash(&password).map_err(|e| {
         let message = format!("{}; {}", err::MSG_ERROR_HASHING_PASSWORD, e.to_string());
-        log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
+        error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
         AppError::internal_err500(&message) // 500
     })?;
 
@@ -159,7 +160,7 @@ pub async fn registration(
         .map_err(|err| {
             #[rustfmt::skip]
             let prm1 = match err.params.first_key_value() { Some((_, v)) => v.to_string(), None => "".to_string() };
-            log::error!("{}:{}; {}", &err.code, &err.message, &prm1);
+            error!("{}:{}; {}", &err.code, &err.message, &prm1);
             err
         })?;
 
@@ -167,7 +168,7 @@ pub async fn registration(
     if let Some((is_nickname, _)) = res_search {
         #[rustfmt::skip]
         let message = if is_nickname { err::MSG_NICKNAME_ALREADY_USE } else { err::MSG_EMAIL_ALREADY_USE };
-        log::error!("{}: {}", err::CD_CONFLICT, &message);
+        error!("{}: {}", err::CD_CONFLICT, &message);
         return Err(AppError::conflict409(&message)); // 409
     }
 
@@ -186,14 +187,14 @@ pub async fn registration(
     // Create a new entity (user).
     let user_registr = web::block(move || {
         let user_registr = user_registr_orm.create_user_registr(create_profile_registr_dto).map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         user_registr
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
@@ -204,7 +205,7 @@ pub async fn registration(
     // Pack two parameters (user_registr.id, num_token) into a registr_token.
     let registr_token = encode_token(user_registr.id, num_token, jwt_secret, app_registr_duration).map_err(|e| {
         let message = format!("{}; {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, e.to_string());
-        log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
+        error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
         AppError::unprocessable422(&message) // 422
     })?;
 
@@ -219,7 +220,7 @@ pub async fn registration(
 
     if result.is_err() {
         let message = format!("{}: {}", MSG_ERROR_SENDING_EMAIL, result.unwrap_err());
-        log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
+        error!("{}: {}", err::CD_NOT_EXTENDED, &message);
         return Err(AppError::not_extended510(&message)); // 510
     }
 
@@ -276,7 +277,7 @@ pub async fn confirm_registration(
     // Check the signature and expiration date on the received “registr_token".
     let dual_token = decode_token(&registr_token, jwt_secret).map_err(|e| {
         let message = format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
-        log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
+        error!("{}: {}", err::CD_UNAUTHORIZED, &message);
         AppError::unauthorized401(&message) // 401
     })?;
 
@@ -287,14 +288,14 @@ pub async fn confirm_registration(
     // Find a record with the specified ID in the “user_registr" table.
     let opt_user_registr = web::block(move || {
         let user_registr = user_registr_orm2.find_user_registr_by_id(user_registr_id).map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         user_registr
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
@@ -305,7 +306,7 @@ pub async fn confirm_registration(
     // If no such entry exists, then exit with code 404.
     let user_registr = opt_user_registr.ok_or_else(|| {
         let message = format!("{}: user_registr_id: {}", MSG_REGISTR_NOT_FOUND, user_registr_id);
-        log::error!("{}: {}", err::CD_NOT_FOUND, &message);
+        error!("{}: {}", err::CD_NOT_FOUND, &message);
         AppError::not_found404(&message) // 404
     })?;
 
@@ -320,7 +321,7 @@ pub async fn confirm_registration(
     let profile = web::block(move || {
         // Create a new entity (profile,user).
         let res_profile = profile_orm.create_profile_user(create_profile).map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
         });
 
@@ -328,7 +329,7 @@ pub async fn confirm_registration(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string())
     })??;
 
@@ -338,7 +339,7 @@ pub async fn confirm_registration(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         // An error during this operation has no effect.
     });
 
@@ -392,7 +393,7 @@ pub async fn recovery(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
+        error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
     }
 
@@ -405,14 +406,14 @@ pub async fn recovery(
         let existing_profile = profile_orm
             .find_profile_by_nickname_or_email(None, Some(&email), false)
             .map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
         existing_profile
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
@@ -421,7 +422,7 @@ pub async fn recovery(
         Some(v) => v,
         None => {
             let message = format!("{}: email: {}", MSG_USER_NOT_FOUND, recovery_profile_dto.email.clone());
-            log::error!("{}: {}", err::CD_NOT_FOUND, &message);
+            error!("{}: {}", err::CD_NOT_FOUND, &message);
             return Err(AppError::not_found404(&message)); // 404
         }
     };
@@ -435,14 +436,14 @@ pub async fn recovery(
         let existing_user_recovery = user_recovery_orm2
             .find_user_recovery_by_user_id(user_id)
             .map_err(|e| {
-                log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
             });
         existing_user_recovery
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
@@ -465,14 +466,14 @@ pub async fn recovery(
             let user_recovery = user_recovery_orm2
                 .modify_user_recovery(user_recovery_id, create_user_recovery)
                 .map_err(|e| {
-                    log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                    error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                     AppError::database507(&e) // 507
                 });
                 user_recovery
         })
         .await
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
             AppError::blocking506(&e.to_string()) // 506
         })??;
     } else {
@@ -482,14 +483,14 @@ pub async fn recovery(
             let user_recovery = user_recovery_orm2
                 .create_user_recovery(create_user_recovery)
                 .map_err(|e| {
-                    log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                    error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                     AppError::database507(&e) // 507
                 });
                 user_recovery
         })
         .await
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
             AppError::blocking506(&e.to_string()) // 506
         })??;
 
@@ -509,7 +510,7 @@ pub async fn recovery(
     )
     .map_err(|e| {
         let message = format!("{}; {}", p_err::MSG_JSON_WEB_TOKEN_ENCODE, e.to_string());
-        log::error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
+        error!("{}: {}", err::CD_UNPROCESSABLE_ENTITY, &message);
         AppError::unprocessable422(&message) // 422
     })?;
 
@@ -532,7 +533,7 @@ pub async fn recovery(
 
     if result.is_err() {
         let message = format!("{}: {}", MSG_ERROR_SENDING_EMAIL, result.unwrap_err());
-        log::error!("{}: {}", err::CD_NOT_EXTENDED, &message);
+        error!("{}: {}", err::CD_NOT_EXTENDED, &message);
         return Err(AppError::not_extended510(&message)); // 510
     }
 
@@ -605,7 +606,7 @@ pub async fn confirm_recovery(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        log::error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
+        error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
         return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
     }
 
@@ -614,7 +615,7 @@ pub async fn confirm_recovery(
     // Prepare a password hash.
     let password_hashed = hash_tools::encode_hash(&recovery_data_dto.password).map_err(|e| {
         let message = format!("{}: {}", err::MSG_ERROR_HASHING_PASSWORD, e.to_string());
-        log::error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
+        error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
         AppError::internal_err500(&message) // 500
     })?;
 
@@ -626,7 +627,7 @@ pub async fn confirm_recovery(
     // Check the signature and expiration date on the received “recovery_token".
     let dual_token = decode_token(&recovery_token, jwt_secret).map_err(|e| {
         let message = format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
-        log::error!("{}: {}", err::CD_UNAUTHORIZED, &message);
+        error!("{}: {}", err::CD_UNAUTHORIZED, &message);
         AppError::unauthorized401(&message) // 401
     })?;
 
@@ -638,14 +639,14 @@ pub async fn confirm_recovery(
     let opt_user_recovery = web::block(move || {
         let user_recovery = user_recovery_orm2.get_user_recovery_by_id(user_recovery_id)
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         user_recovery
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
@@ -656,7 +657,7 @@ pub async fn confirm_recovery(
     // If no such entry exists, then exit with code 404.
     let user_recovery = opt_user_recovery.ok_or_else(|| {
         let message = format!("{}: user_recovery_id: {}", MSG_RECOVERY_NOT_FOUND, user_recovery_id);
-        log::error!("{}: {}", err::CD_NOT_FOUND, &message);
+        error!("{}: {}", err::CD_NOT_FOUND, &message);
         AppError::not_found404(&message) // 404
     })?;
     let user_id = user_recovery.user_id;
@@ -666,7 +667,7 @@ pub async fn confirm_recovery(
     let opt_profile = web::block(move || {
         // Find profile by user id.
         let res_profile = profile_orm2.get_profile_user_by_id(user_id, false).map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
 
@@ -674,14 +675,14 @@ pub async fn confirm_recovery(
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) //506
     })??;
 
     // If no such entry exists, then exit with code 404.
     let profile = opt_profile.ok_or_else(|| {
         let message = format!("{}: user_id: {}", MSG_USER_NOT_FOUND, user_id);
-        log::error!("{}: {}", err::CD_NOT_FOUND, &message);
+        error!("{}: {}", err::CD_NOT_FOUND, &message);
         AppError::not_found404(&message) // 404
     })?;
     // Create a model to update the "password" field in the user profile.
@@ -692,14 +693,14 @@ pub async fn confirm_recovery(
     let opt_profile = web::block(move || {
         let opt_profile1 = profile_orm.modify_profile(profile.user_id, modify_profile)
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
         opt_profile1
     })
     .await
     .map_err(|e| {
-        log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
         AppError::blocking506(&e.to_string()) // 506
     })??;
 
@@ -719,7 +720,7 @@ pub async fn confirm_recovery(
         Ok(HttpResponse::Ok().json(profile_dto)) // 200
     } else {
         let message = format!("{}: user_id: {}", MSG_USER_NOT_FOUND, user_id);
-        log::error!("{}: {}", err::CD_NOT_FOUND, &message);
+        error!("{}: {}", err::CD_NOT_FOUND, &message);
         Err(AppError::not_found404(&message)) // 404
     }
 }
@@ -764,12 +765,12 @@ pub async fn clear_for_expired(
     let count_inactive_registr_res = 
         web::block(move || user_registr_orm.delete_inactive_final_date(None)
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         })
         ).await
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
             AppError::blocking506(&e.to_string()) // 506
         })?;
 
@@ -779,12 +780,12 @@ pub async fn clear_for_expired(
     let count_inactive_recover_res = 
         web::block(move || user_recovery_orm.delete_inactive_final_date(None)
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         })
         ).await
         .map_err(|e| {
-            log::error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
             AppError::blocking506(&e.to_string()) // 506
         })?;
 
