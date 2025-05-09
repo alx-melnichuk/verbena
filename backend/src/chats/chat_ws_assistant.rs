@@ -77,13 +77,16 @@ impl ChatWsAssistant {
     pub async fn execute_modify_chat_message(
         &self,
         id: i32,
+        opt_by_user_id: Option<i32>,
         modify_chat_message: ModifyChatMessage,
     ) -> Result<Option<ChatMessage>, AppError> {
         let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
         // Modify an entity (chat_message).
-        chat_message_orm.modify_chat_message(id, modify_chat_message).map_err(|e| {
-            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
-        })
+        chat_message_orm
+            .modify_chat_message(id, opt_by_user_id, modify_chat_message)
+            .map_err(|e| {
+                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            })
     }
 }
