@@ -101,7 +101,22 @@ pub async fn post_chat_message(
     
     let create_chat_message = CreateChatMessage::new(stream_id, user_id, &msg);
 
-    let chat_message2 = execute_create_chat_message(chat_message_orm.get_ref().clone(), create_chat_message).await?;
+    let chat_message_orm2 = chat_message_orm.get_ref().clone();
+    let res_chat_message = web::block(move || {
+        // Add a new entity (stream).
+        let res_chat_message1 = chat_message_orm2.create_chat_message(create_chat_message).map_err(|e| {
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        });
+        res_chat_message1
+    })
+    .await
+    .map_err(|e| {
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
+
+    let chat_message2 = res_chat_message?;
 
     let chat_message_dto = ChatMessageDto {
         id: chat_message2.id,
@@ -128,6 +143,7 @@ pub async fn put_chat_message(
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get current user details.
     let profile = authenticated.deref();
+    let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
     let _nickname = profile.nickname.clone();
 
     // Get data from request.
@@ -163,8 +179,25 @@ pub async fn put_chat_message(
     
     let modify_chat_message = ModifyChatMessage::new(stream_id, user_id, msg);
 
-    let opt_chat_message2 = execute_modify_chat_message(chat_message_orm.get_ref().clone(), id, modify_chat_message).await?;
-
+    let chat_message_orm2 = chat_message_orm.get_ref().clone();
+    let res_chat_message = web::block(move || {
+            // Add a new entity (stream).
+            let res_chat_message1 = chat_message_orm2
+                .modify_chat_message(id, opt_user_id, modify_chat_message)
+                .map_err(|e| {
+                    error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                    AppError::database507(&e)
+                });
+            res_chat_message1
+        })
+        .await
+        .map_err(|e| {
+            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            AppError::blocking506(&e.to_string())
+        })?;
+    
+    let opt_chat_message2 = res_chat_message?;
+    
     if let Some(chat_message2) = opt_chat_message2 {
         let chat_message_dto = ChatMessageDto {
             id: chat_message2.id,
@@ -182,51 +215,4 @@ pub async fn put_chat_message(
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204        
     }    
-}
-
-async fn execute_create_chat_message(
-    chat_message_orm: ChatMessageOrmApp,
-    create_chat_message: CreateChatMessage,
-) -> Result<ChatMessage, AppError> {
-    let res_chat_message = web::block(move || {
-        // Add a new entity (stream).
-        let res_chat_message1 = chat_message_orm.create_chat_message(create_chat_message).map_err(|e| {
-            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
-        });
-        res_chat_message1
-    })
-    .await
-    .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
-    })?;
-
-    let chat_message = res_chat_message?;
-
-    Ok(chat_message)
-}
-
-async fn execute_modify_chat_message(
-    chat_message_orm: ChatMessageOrmApp,
-    id: i32,
-    modify_chat_message: ModifyChatMessage,
-) -> Result<Option<ChatMessage>, AppError> {
-    let res_chat_message = web::block(move || {
-        // Add a new entity (stream).
-        let res_chat_message1 = chat_message_orm.modify_chat_message(id, modify_chat_message).map_err(|e| {
-            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
-        });
-        res_chat_message1
-    })
-    .await
-    .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
-    })?;
-
-    let opt_chat_message = res_chat_message?;
-
-    Ok(opt_chat_message)
 }
