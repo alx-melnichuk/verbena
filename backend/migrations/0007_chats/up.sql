@@ -91,6 +91,7 @@ $$;
 /* Create a stored function to modify the entry in "chat_messages". */
 CREATE OR REPLACE FUNCTION modify_chat_message(
   INOUT id INTEGER,
+  IN by_user_id INTEGER,
   INOUT stream_id INTEGER,
   INOUT user_id INTEGER,
   INOUT msg VARCHAR,
@@ -136,7 +137,9 @@ BEGIN
       sql1 := 'INSERT INTO chat_message_logs (chat_message_id, old_msg, date_update)'
         || ' SELECT chat_messages.id, chat_messages.msg, chat_messages.date_update'
         || ' FROM chat_messages'
-        || ' WHERE chat_messages.is_removed = FALSE AND chat_messages.id = ' || _id;
+        || ' WHERE chat_messages.is_removed=FALSE'
+        || CASE WHEN by_user_id IS NOT NULL THEN ' AND chat_messages.user_id=' || by_user_id ELSE '' END
+        || ' AND chat_messages.id=' || _id;
 
       EXECUTE sql1;
 
@@ -151,7 +154,9 @@ BEGIN
   IF ARRAY_LENGTH(update_fields, 1) > 0 THEN
     sql1 := 'UPDATE chat_messages SET '
       || ARRAY_TO_STRING(update_fields, ',')
-      || ' WHERE is_removed = FALSE AND id = ' || _id
+      || ' WHERE is_removed=FALSE'
+      || CASE WHEN by_user_id IS NOT NULL THEN ' AND user_id=' || by_user_id ELSE '' END
+      || ' AND id=' || _id
       || ' RETURNING '
       || ' chat_messages.id, chat_messages.stream_id, chat_messages.user_id, chat_messages.msg,'
       || ' chat_messages.date_update, chat_messages.is_changed, chat_messages.is_removed,'
