@@ -11,6 +11,7 @@ pub trait ChatMessageOrm {
     fn modify_chat_message(
         &self,
         id: i32,
+        opt_by_user_id: Option<i32>,
         modify_chat_message: ModifyChatMessage,
     ) -> Result<Option<ChatMessage>, String>;
 
@@ -100,16 +101,18 @@ pub mod impls {
         fn modify_chat_message(
             &self,
             id: i32,
+            opt_by_user_id: Option<i32>,
             modify_chat_message: ModifyChatMessage,
         ) -> Result<Option<ChatMessage>, String> {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select * from modify_chat_message($1,$2,$3,$4);")
+            let query = diesel::sql_query("select * from modify_chat_message($1,$2,$3,$4,$5);")
                 .bind::<sql_types::Integer, _>(id) // $1
-                .bind::<sql_types::Nullable<sql_types::Integer>, _>(modify_chat_message.stream_id) // $2
-                .bind::<sql_types::Nullable<sql_types::Integer>, _>(modify_chat_message.user_id) // $3
-                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_chat_message.msg); // $4
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(opt_by_user_id) // $2
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(modify_chat_message.stream_id) // $3
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(modify_chat_message.user_id) // $4
+                .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_chat_message.msg); // $5
 
             // TODO ??
             // Run a query with Diesel to create a new user and return it.
@@ -255,9 +258,22 @@ pub mod tests {
         fn modify_chat_message(
             &self,
             id: i32,
+            opt_by_user_id: Option<i32>,
             modify_chat_message: ModifyChatMessage,
         ) -> Result<Option<ChatMessage>, String> {
-            let opt_chat_message = self.chat_message_vec.iter().find(|chat_msg| (*chat_msg).id == id);
+            let opt_chat_message = self
+                .chat_message_vec
+                .iter()
+                .find(|chat_msg| {
+                    let check_user_id = if let Some(by_user_id) = opt_by_user_id {
+                        (*chat_msg).user_id == by_user_id
+                    } else {
+                        true
+                    };
+                    (*chat_msg).id == id && check_user_id
+                })
+                .map(|chat_msg| chat_msg.clone());
+
             let opt_chat_message3: Option<ChatMessage> = if let Some(chat_message) = opt_chat_message {
                 #[rustfmt::skip]
                 let msg_len: i8 = match modify_chat_message.msg {
