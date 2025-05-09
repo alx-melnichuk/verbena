@@ -44,18 +44,18 @@ impl Actor for ChatWsSession {
     type Context = ws::WebsocketContext<Self>;
     // Called when an actor gets polled the first time.
     fn started(&mut self, _ctx: &mut Self::Context) {
-        let user_id = self.user_id.clone().unwrap_or(-1);
+        let user_id = self.user_id.clone().unwrap_or_default();
         let user_name = self.user_name.clone().unwrap_or_default();
         let user_str = format!("user_id: {}, user_name: \"{}\", id: {}", user_id, user_name, self.id);
-        let room_id = self.room_id.clone().unwrap_or(-1);
+        let room_id = self.room_id.clone().unwrap_or_default();
         debug!("Session opened for user({}) in room_id {}.", user_str, room_id);
     }
     // Called after an actor is stopped.
     fn stopped(&mut self, _ctx: &mut Self::Context) {
-        let user_id = self.user_id.clone().unwrap_or(-1);
+        let user_id = self.user_id.clone().unwrap_or_default();
         let user_name = self.user_name.clone().unwrap_or_default();
         let user_str = format!("user_id: {}, user_name: \"{}\", id: {}", user_id, user_name, self.id);
-        let room_id = self.room_id.clone().unwrap_or(-1);
+        let room_id = self.room_id.clone().unwrap_or_default();
         debug!("Session closed for user({}) in room_id {}.", user_str, room_id);
     }
 }
@@ -150,7 +150,6 @@ impl ChatWsSession {
 
     /** Handle socket text messages. */
     fn handle_text_messages(&mut self, msg: &str, ctx: &mut ws::WebsocketContext<Self>) {
-        debug!("WEBSOCKET: Text: msg: \"{}\"", msg);
         // Parse input data of ws event.
         let res_event = EventWS::parsing(msg);
         if let Err(err) = res_event {
@@ -276,7 +275,7 @@ impl ChatWsSession {
                 let result = assistant.check_num_token_and_get_profile(user_id, num_token).await;
                 if let Some(timer0) = opt_timer0 {
                     #[rustfmt::skip]
-                    debug!("check_num_token_and_get_profile: {}", format!("{:.2?}", timer0.elapsed()));
+                    debug!("check_num_token_and_get_profile() lead_time: {}", format!("{:.2?}", timer0.elapsed()));
                 }
                 if let Err(err) = result {
                     return addr.do_send(AsyncResultError(err.to_string()));
@@ -342,7 +341,7 @@ impl ChatWsSession {
             let result = assistant.execute_create_chat_message(create_chat_message).await;
             if let Some(timer0) = opt_timer0 {
                 #[rustfmt::skip]
-                debug!("execute_create_chat_message: {}", format!("{:.2?}", timer0.elapsed()));
+                debug!("execute_create_chat_message() lead_time: {}", format!("{:.2?}", timer0.elapsed()));
             }
             if let Err(err) = result {
                 return addr.do_send(AsyncResultError(err.to_string()));
@@ -375,6 +374,7 @@ impl ChatWsSession {
             return Ok(());
         }
 
+        let opt_user_id = self.user_id;
         // Spawn an async task.
         let addr = ctx.address();
         // Get a clone of the assistant.
@@ -384,10 +384,12 @@ impl ChatWsSession {
             #[rustfmt::skip]
             let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
             // Check the token for correctness and get the user profile.
-            let result = assistant.execute_modify_chat_message(id, modify_chat_message).await;
+            let result = assistant
+                .execute_modify_chat_message(id, opt_user_id, modify_chat_message)
+                .await;
             if let Some(timer0) = opt_timer0 {
                 #[rustfmt::skip]
-                debug!("execute_modify_chat_message: {}", format!("{:.2?}", timer0.elapsed()));
+                debug!("execute_modify_chat_message() lead_time: {}", format!("{:.2?}", timer0.elapsed()));
             }
             if let Err(err) = result {
                 return addr.do_send(AsyncResultError(err.to_string()));
@@ -431,6 +433,7 @@ impl ChatWsSession {
             return Ok(());
         }
 
+        let opt_user_id = self.user_id;
         // Spawn an async task.
         let addr = ctx.address();
         // Get a clone of the assistant.
@@ -440,10 +443,12 @@ impl ChatWsSession {
             #[rustfmt::skip]
             let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
             // Check the token for correctness and get the user profile.
-            let result = assistant.execute_modify_chat_message(id, modify_chat_message).await;
+            let result = assistant
+                .execute_modify_chat_message(id, opt_user_id, modify_chat_message)
+                .await;
             if let Some(timer0) = opt_timer0 {
                 #[rustfmt::skip]
-                debug!("execute_modify_chat_message: {}", format!("{:.2?}", timer0.elapsed()));
+                debug!("execute_modify_chat_message() lead_time: {}", format!("{:.2?}", timer0.elapsed()));
             }
             if let Err(err) = result {
                 return addr.do_send(AsyncResultError(err.to_string()));
