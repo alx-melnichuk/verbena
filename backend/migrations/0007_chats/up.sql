@@ -210,8 +210,7 @@ BEGIN
   END IF;
 
   RETURN QUERY SELECT
-    rec1.id, rec1.stream_id, rec1.user_id, rec1.msg,
-    rec1.date_update, rec1.is_changed, rec1.is_removed,
+    rec1.id, rec1.stream_id, rec1.user_id, rec1.msg, rec1.date_update, rec1.is_changed, rec1.is_removed,
     rec1.created_at, rec1.updated_at;
 END;
 $$;
@@ -239,12 +238,117 @@ $$;
 
 -- **
 
--- # Test data
-INSERT INTO chat_messages (stream_id,user_id,msg) VALUES
-(913,18,'Demo message A v1'),
-(913,18,'Demo message B v1'),
-(913,18,'Demo message C v1'),
-(913,18,'Demo message D v1');
+/* Create a procedure that adds test data to the table: chat messages, chat_message logs. */
+CREATE OR REPLACE PROCEDURE add_chat_messages_test_data()
+LANGUAGE plpgsql 
+AS $$
+DECLARE
+  names VARCHAR[];
+  nickname1 VARCHAR;
+  len1 INTEGER;
+  idx1 INTEGER;
+  rec1 record;
+  mark_ids INTEGER[] := ARRAY[]::INTEGER[];
+  stream_ids INTEGER[] := ARRAY[]::INTEGER[];
+  user_ids INTEGER[] := ARRAY[]::INTEGER[];
+  starttimes TIMESTAMP WITH TIME ZONE[] := ARRAY[]::TIMESTAMP WITH TIME ZONE[];
+  len2 INTEGER;
+  idx2 INTEGER;
+  len3 INTEGER;
+  idx3 INTEGER;
+  mark_id INTEGER;
+  stream_id INTEGER;
+  user_id INTEGER;
+  starttime TIMESTAMP WITH TIME ZONE;
+  msg1 VARCHAR;
+  ch_msg_id INTEGER;
+  ch_msg_logs_ids INTEGER[];
+BEGIN
+  -- raise notice 'Start';
+  names := ARRAY['Ethan_Brown' , 'Ava_Wilson'   , 'James_Miller'   , 'Mila_Davis'  , 'evelyn_allen'];
+
+  len1 := ARRAY_LENGTH(names, 1);
+  idx1 := 1;
+    WHILE idx1 <= len1 LOOP
+      nickname1 = LOWER(names[idx1]);
+      -- raise notice '_';
+      -- raise notice 'idx1: %, nickname1: %', idx1, nickname1;
+
+      FOR rec1 IN
+        SELECT s.id AS stream_id, s.user_id AS user_id, s.starttime AS starttime
+        FROM streams s, users u
+        WHERE s.user_id = u.id AND s.starttime < now() AND u.nickname = nickname1
+        ORDER BY s.starttime ASC
+        LIMIT 6 -- Get 6 streams for each user.
+      LOOP
+        -- raise notice 'idx1: %, rec.stream_id: %, rec.user_id: %, rec.starttime: %', idx1, rec1.stream_id, rec1.user_id, rec1.starttime;
+        mark_id := rec1.stream_id;
+        stream_ids := stream_ids || rec1.stream_id;
+        user_ids := user_ids || rec1.user_id;
+        starttimes := starttimes || rec1.starttime;
+      END LOOP;
+      mark_ids := mark_ids || mark_id;
+      idx1 := idx1 + 1;
+    END LOOP;
+
+    -- raise notice '_';
+    -- raise notice 'stream_ids: %, LEN(stream_ids): %', stream_ids, ARRAY_LENGTH(stream_ids, 1);
+    -- raise notice 'user_ids: %, LEN(user_ids): %', user_ids, ARRAY_LENGTH(user_ids, 1);
+    -- raise notice 'mark_ids: %, LEN(mark_ids): %', mark_ids, ARRAY_LENGTH(mark_ids, 1);
+    len1 := ARRAY_LENGTH(mark_ids, 1);
+    IF len1 >= 2 THEN
+      mark_ids := ARRAY[]::INTEGER[] || mark_ids[len1 - 1] || mark_ids[len1];
+      -- raise notice 'mark_ids: %, LEN(mark_ids): %', mark_ids, ARRAY_LENGTH(mark_ids, 1);
+    END IF;
+    -- raise notice '_';
+
+    len1 := ARRAY_LENGTH(stream_ids, 1);
+    idx1 := 1;
+    WHILE idx1 <= len1 LOOP
+      stream_id := stream_ids[idx1];
+      user_id := user_ids[idx1];
+      len2 := CASE WHEN stream_id = ANY(mark_ids) THEN 100 ELSE 10 END;
+      idx2 := 1;
+      WHILE idx2 <= len2 LOOP
+        starttime := (starttimes[idx1] + (idx2 * INTERVAL '1 hours'))::timestamp;
+        msg1 := 'Demo message ' || idx2;
+        -- raise notice 'idx2: %, len2: %, stream_id: %, user_id: %, msg1: %, starttime: %', idx2, len2, stream_id, user_id, msg1, starttime;
+
+        -- Add a new message for the specified user and their stream.
+        INSERT INTO chat_messages(stream_id, user_id, msg, date_update)
+        SELECT stream_id, user_id, msg1, starttime
+        RETURNING chat_messages.id
+        INTO ch_msg_id;
+        -- raise notice '    ch_msg_id: %', ch_msg_id;
+
+        IF MOD(ch_msg_id, 2) = 0  THEN
+          -- Add message change.
+          ch_msg_logs_ids := ARRAY(SELECT id FROM modify_chat_message(ch_msg_id, user_id, NULL, NULL, msg1 || ' ver.2'));
+          -- raise notice '    modify_chat_message(user_id: %, ch_msg_id: %, "ver2")= %', user_id, ch_msg_id, ch_msg_logs_ids;
+        ELSE 
+          IF MOD(ch_msg_id, 9) = 0  THEN
+            -- Delete message contents.
+            ch_msg_logs_ids := ARRAY(SELECT id FROM modify_chat_message(ch_msg_id, user_id, NULL, NULL, ''));
+            -- raise notice '    modify_chat_message(user_id: %, ch_msg_id: %, "")= %', user_id, ch_msg_id, ch_msg_logs_ids;
+          END IF;
+        END IF;
+
+        idx2 := idx2 + 1;
+      END LOOP;
+      idx1 := idx1 + 1;
+    END LOOP;
+
+  -- raise notice 'Finish';
+END;
+$$;
+
+/*
+ * Add test data to the tables: chat_messages, chat_message_logs.
+ */
+CALL add_chat_messages_test_data();
+
+/* Removing the procedure that adds test data to the table: chat messages, chat_message logs. */
+DROP PROCEDURE IF EXISTS add_chat_messages_test_data;
 
 -- **
 
