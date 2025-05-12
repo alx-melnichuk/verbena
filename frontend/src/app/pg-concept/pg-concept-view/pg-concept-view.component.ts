@@ -83,12 +83,13 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 + ' Invalid stream state transition from "waiting" to "stopped".';
         }
         // this.chatMsgs = this.getChatMsgDemo(); // #
-        // setTimeout(() => { this.chatMsgs =
-        // [{ "msg": "demo01 v2", "id": 6, "member": "emma_johnson", "date": "2025-05-05T15:42:29.270Z", "isEdt": true, "isRmv": false }];
+        this.chatMsgs = this.getChatMsg(2, "evelyn_allen", 10); // #
+        // setTimeout(() => {
+        //     this.chatMsgs = this.getChatMsg(1, "evelyn_allen", 10); // #
         //     this.changeDetector.markForCheck();
         // }, 5000);
-        // setTimeout(() => {this.chatMsgs =
-        //     [{ "msg": "", "id": 6, "member": "emma_johnson", "date": "2025-05-05T16:33:29.270Z", "isEdt": true, "isRmv": true }];
+        // setTimeout(() => {
+        //     this.chatMsgs = this.getChatMsg(0, "evelyn_allen", 10); // #
         //     this.changeDetector.markForCheck();
         // }, 10000);
         // =^
@@ -215,15 +216,44 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     private getChatMsgDemo(): ChatMsg[] {
         return [
-            { "msg": "Demo message A v1", "id": 1, "member": "emma_johnson", "date": "2025-04-28T09:10:30.727Z", "isEdt": false, "isRmv": false },
-            { "msg": "Demo message B v2", "id": 2, "member": "evelyn_allen", "date": "2025-04-28T09:11:06.542Z", "isEdt": true, "isRmv": false },
+            { "msg": "Demo msg Av1", "id": 1, "member": "emma_johnson", "date": "2025-04-28T09:10:30.727Z", "isEdt": false, "isRmv": false },
+            { "msg": "Demo msg Bv2", "id": 2, "member": "evelyn_allen", "date": "2025-04-28T09:11:06.542Z", "isEdt": true, "isRmv": false },
             { "msg": "", "id": 3, "member": "liam_smith", "date": "2025-04-28T09:15:15.353Z", "isEdt": false, "isRmv": true },
-            { "msg": "Demo message D v1", "id": 4, "member": "emma_johnson", "date": "2025-04-28T09:10:30.727Z", "isEdt": false, "isRmv": false },
+            { "msg": "Demo msg Dv1", "id": 4, "member": "emma_johnson", "date": "2025-04-28T09:10:30.727Z", "isEdt": false, "isRmv": false },
             { "msg": "demo", "id": 5, "member": "evelyn_allen", "date": "2025-04-30T12:39:33.405Z", "isEdt": false, "isRmv": false },
             { "msg": "demo01", "id": 6, "member": "emma_johnson", "date": "2025-05-05T14:56:29.270Z", "isEdt": false, "isRmv": false },
             { "msg": "Demo02", "id": 7, "member": "evelyn_allen", "date": "2025-05-06T10:18:21.147Z", "isEdt": false, "isRmv": false },
             { "msg": "Demo03 v2", "id": 8, "member": "emma_johnson", "date": "2025-05-06T07:27:00.766Z", "isEdt": true, "isRmv": false },
             { "msg": "", "id": 9, "member": "evelyn_allen", "date": "2025-05-06T07:32:29.427Z", "isEdt": true, "isRmv": true },
+            { "msg": "Demo02", "id": 10, "member": "evelyn_allen", "date": "2025-05-06T10:18:21.147Z", "isEdt": false, "isRmv": false },
         ];
     }
+
+    private getChatMsg(mode: number, nickname: string, len: number): ChatMsg[] {
+        const result: ChatMsg[] = [];
+        const startId = 10 * (mode + 1);
+        const currDate = new Date();
+        currDate.setDate(currDate.getDate() - mode);
+        currDate.setTime(currDate.getTime() - (2 * 60 * 60 * 1000)); // minus 2 hours
+        for (let idx = 0; idx < len; idx++) {
+            let member = "Teodor_Nickols";
+            const d1 = new Date(currDate.getTime());
+            d1.setTime(d1.getTime() + (idx * 60 * 60 * 1000));
+            // let d1 = new Date((idx < (len / 2) ? -100000000 : 0) + Date.now());
+            let date = d1.toISOString();
+            let id = startId - idx;
+            let msg = "text_" + id + " This function can be used to pass through a successful result while handling an error.";
+            if (idx % 3 == 0) {
+                member = nickname;
+            } else if (idx % 2 == 0) {
+                member = "Snegana_Miller";
+            }
+            // const date1 = date.slice(20, 24) + '_' + date.slice(11, 19) + '_' + date.slice(0, 10);
+
+            result.push({ id, date, member, msg, isEdt: false, isRmv: false });
+
+        }
+        return result;
+    }
+
 }
