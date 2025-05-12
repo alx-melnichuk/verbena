@@ -1,18 +1,20 @@
 import {
-    afterNextRender, AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, inject, Injector, Input, OnChanges,
-    Output, SimpleChanges, ViewChild, ViewEncapsulation
+    afterNextRender, AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, HostListener, inject, Injector, Input,
+    OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
 import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { CommonModule, KeyValue } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { DateAdapter } from '@angular/material/core';
+import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling'
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
+import { debounceFn } from 'src/app/common/debounce';
 import { StringDateTime } from 'src/app/common/string-date-time';
 import { ChatMsg } from 'src/app/lib-stream/stream-chats.interface';
 import { DateUtil } from 'src/app/utils/date.utils';
@@ -26,6 +28,7 @@ interface MenuData {
 
 export const MIN_ROWS = 1;
 export const MAX_ROWS = 3;
+export const DEBOUNCE_DELAY = 60;
 
 // <mat-form-field subscriptSizing="dynamic"
 // it'll remove the space until an error or hint actually needs to get displayed and only then expands.
@@ -33,7 +36,7 @@ export const MAX_ROWS = 3;
 @Component({
     selector: 'app-panel-chat',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatMenuModule,
+    imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatMenuModule, ScrollingModule,
         TranslatePipe, DateTimeFormatPipe],
     templateUrl: './panel-chat.component.html',
     styleUrl: './panel-chat.component.scss',
@@ -79,6 +82,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @ViewChild('textareaElement')
     public textareaElem!: ElementRef<HTMLTextAreaElement>;
 
+    @ViewChild(CdkVirtualScrollViewport) viewport!: CdkVirtualScrollViewport;
+
     public listChatMsg: ChatMsg[] = [];
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ newMsg: this.formControl });
@@ -92,7 +97,11 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
     readonly formatTime: Intl.DateTimeFormatOptions = { timeStyle: 'short' };
-    readonly chatMsgMap: Map<number, ChatMsg> = new Map();
+    readonly dbncScrollItem = debounceFn((event: Event) => this.doScrollItem(event), DEBOUNCE_DELAY);
+    // readonly chatMsgMap: Map<number, ChatMsg> = new Map();
+    public chatMsgSet: Set<ChatMsg> = new Set();
+
+    public items: Array<string> = [];
 
     // ** OLD **
     // public isShowFaceSmilePanel = false;
@@ -107,6 +116,11 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     constructor() {
         // this.chatMsgs = this.getChatMsg('evelyn_allen', 18); // #
+    }
+
+    @HostListener('window:resize', ['$event'])
+    onResize(event: Event) {
+        this.viewport.checkViewportSize();
     }
 
     triggerResize() {
@@ -133,8 +147,12 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
         if (!!changes['chatMsgs']) {
             console.log(`PanelChat.OnChange('chatMsgs') chatMsgs: ${JSON.stringify(this.chatMsgs)}`);
-            this.loadChatMsgList(this.listChatMsg, this.chatMsgMap, this.chatMsgs);
+            this.items = Array.from({ length: 100 }).map((_, i) => `Item #${i}`);
+            // this.loadChatMsgList(this.listChatMsg, this.chatMsgMap, this.chatMsgs);
+            this.listChatMsg = this.loadChatMsgSet(this.chatMsgSet, this.chatMsgs);
+            this.chatMsgSet = new Set(this.listChatMsg);
             // this.listChatMsg.push(...this.chatMsgs);
+            console.log(`PanelChat.OnChange('chatMsgs') this.listChatMsg: ${JSON.stringify(this.listChatMsg)}`);
             this.scrollToBottom();
             Promise.resolve().then(() =>
                 this.scrollToBottom());
@@ -151,6 +169,16 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     }
     public isEnableMenu(chatMsg: ChatMsg | null, selfName: string | null): boolean {
         return !!selfName && selfName == chatMsg?.member && !chatMsg?.isRmv;
+    }
+    public doScrollItem(event: Event): void {
+        const viewportElem = this.viewport.elementRef.nativeElement;
+        const sDr = (event as any).deltaY > 0 ? 'down' : 'up';
+        const d = Math.round(viewportElem.clientHeight * 0.15);
+        console.log(`event:`, event);
+        console.log(`doScrollItem() scrollTop: ${viewportElem.scrollTop}, clientHeight: ${viewportElem.clientHeight}, d: ${d}, Dr: ${sDr}`);
+        if (viewportElem.scrollTop < Math.round(viewportElem.clientHeight * 0.15)) {
+            console.log(`doScrollItem() emmit`);
+        }
     }
 
     public getMenuDataByMap(chatMsg: ChatMsg | null): MenuData {
@@ -280,7 +308,16 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         );
     }
     */
-
+    private loadChatMsgSet(chatMsgSet: Set<ChatMsg>, chatMsgs: ChatMsg[]): ChatMsg[] {
+        const buffSet = new Set<ChatMsg>([...chatMsgs, ...Array.from(chatMsgSet)]);
+        console.log(`result:`); // #
+        // Array.from(new Set(["b","a","c"])).sort();
+        const result = Array.from(buffSet).sort((a, b) => a.id - b.id);
+        for (let idx = 0; idx < result.length; idx++) {
+            console.log(`result(${idx})= `, result[idx].id);
+        }
+        return result;
+    }
     private loadChatMsgList(listChatMsg: ChatMsg[], chatMsgMap: Map<number, ChatMsg>, chatMsgs: ChatMsg[]) {
         const newChatMsgs: ChatMsg[] = [];
 

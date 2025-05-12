@@ -5,8 +5,9 @@
 
 <div class="pc-sepr"></div>
 
-<div class="pc-middle global-scroll" #scrollItem>
-  @for (chatMsg of listChatMsg; track chatMsg.id) {    
+<cdk-virtual-scroll-viewport  class="pc-middle" #scrollItem
+  itemSize="50" (scroll)="dbncScrollItem($event)">
+  <ng-container *cdkVirtualFor="let chatMsg of listChatMsg; templateCacheSize: 0">
     <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : '')
       , (msgMarked==chatMsg || msgEditing==chatMsg ? 'pc-marked' : '')]"
       [matMenuTriggerFor]="isEnableMenu(chatMsg, nickname) ? menuItem : null"
@@ -27,22 +28,17 @@
             <div><i>{{ 'panel-chat.message_edited' | translate }}</i></div>
           }
         </div>
-        
       </div>
       
       @if (!chatMsg.isRmv) {
         <div [ngClass]="['pc-item-msg', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
           {{ chatMsg.msg }}
-          <sub style="color: var(--sys-secondary);">
-            id:{{ chatMsg.id }}<!-- date: {{ chatMsg.date }},--> E:{{ chatMsg.isEdt ? 1 : 0 }} R:{{ chatMsg.isRmv ? 1 : 0 }}
-          </sub>
+          <ng-container *ngTemplateOutlet="templateShowInfo; context: { chatMsg2: chatMsg }" />
         </div>
       } @else {
         <div class="pc-item-msg-rmv">
           <i>{{ 'panel-chat.message_deleted' | translate }}</i>
-          <sub style="color: var(--sys-secondary);">
-            id:{{ chatMsg.id }}<!-- date: {{ chatMsg.date }},--> E:{{ chatMsg.isEdt ? 1 : 0 }} R:{{ chatMsg.isRmv ? 1 : 0 }}
-          </sub>
+          <ng-container *ngTemplateOutlet="templateShowInfo; context: { chatMsg2: chatMsg }" />
         </div>
       }
       
@@ -51,8 +47,14 @@
       </div> -->
       
     </div>
-  }
-</div>
+  </ng-container>
+</cdk-virtual-scroll-viewport>
+
+<ng-template #templateShowInfo let-chatMsg="chatMsg2">
+  <sub style="color: var(--sys-secondary);">
+    id:{{ chatMsg.id }} <!-- date: {{ chatMsg.date }},--> E:{{ chatMsg.isEdt ? 1 : 0 }} R:{{ chatMsg.isRmv ? 1 : 0 }}
+  </sub>
+</ng-template> 
 
 @if (isEditable) {
   <div class="pc-sepr"></div>
