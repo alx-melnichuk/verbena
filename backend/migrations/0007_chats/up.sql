@@ -43,6 +43,73 @@ CREATE INDEX idx_chat_message_logs_chat_message_id ON chat_message_logs(chat_mes
 
 -- **
 
+/* Create a stored function that will filter "chat_message" entities by the specified parameters. */
+CREATE OR REPLACE FUNCTION filter_chat_messages(
+  INOUT id INTEGER,
+  INOUT stream_id INTEGER,
+  INOUT user_id INTEGER,
+  IN sort_des BOOLEAN,
+  IN id_more INTEGER,
+  IN id_less INTEGER,
+  IN rec_limit INTEGER,
+  OUT msg VARCHAR,
+  OUT date_update TIMESTAMP WITH TIME ZONE,
+  OUT is_changed BOOLEAN,
+  OUT is_removed BOOLEAN,
+  OUT created_at TIMESTAMP WITH TIME ZONE,
+  OUT updated_at TIMESTAMP WITH TIME ZONE
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+DECLARE
+  fields VARCHAR[] := ARRAY[]::VARCHAR[];
+  sql1 TEXT;
+BEGIN
+  raise notice '_';
+  IF rec_limit IS NULL THEN
+    rec_limit := 10;
+  END IF;
+
+  IF id IS NOT NULL THEN
+    fields := ARRAY_APPEND(fields, 'cm.id = ' || id);
+  END IF;
+  IF stream_id IS NOT NULL THEN
+    fields := ARRAY_APPEND(fields, 'cm.stream_id = ' || stream_id);
+  END IF;
+  IF user_id IS NOT NULL THEN
+    fields := ARRAY_APPEND(fields, 'cm.user_id = ' || user_id);
+  END IF;
+  id := NULL;
+  stream_id := NULL;
+  user_id := NULL;
+
+  IF ARRAY_LENGTH(fields, 1) > 0 THEN
+    raise notice 'ARRAY_LENGTH(fields, 1) > 0';
+    IF id_more IS NOT NULL THEN
+      fields := ARRAY_APPEND(fields, 'cm.id > ' || id_more);
+    END IF;
+    IF id_less IS NOT NULL THEN
+      fields := ARRAY_APPEND(fields, 'cm.id < ' || id_less);
+    END IF;
+
+    sql1 := 'SELECT cm.id, cm.stream_id, cm.user_id, cm.msg, cm.date_update,'
+      || ' cm.is_changed, cm.is_removed, cm.created_at, cm.updated_at'
+      || ' FROM chat_messages cm'
+      || ' WHERE ' || ARRAY_TO_STRING(fields, ' AND ')
+      || ' ORDER BY cm.id ' || CASE WHEN sort_des THEN 'DESC' ELSE 'ASC' END
+      || ' LIMIT ' || CASE WHEN rec_limit IS NOT NULL THEN rec_limit ELSE 10 END;
+
+    raise notice 'sql1: %', sql1;
+
+    RETURN QUERY EXECUTE sql1;
+    -- RETURN NEXT;
+  ELSE
+    raise notice 'ARRAY_LENGTH(fields, 1) : 0';
+  END IF;
+END;
+$$;
+
+-- **
+
 /* Create a stored function to add a new entry to "chat_messages". */
 CREATE OR REPLACE FUNCTION create_chat_message(
   OUT id INTEGER,
