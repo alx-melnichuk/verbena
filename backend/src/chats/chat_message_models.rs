@@ -181,6 +181,95 @@ impl Validator for ModifyChatMessage {
     }
 }
 
+// ** Model: "FilterChatMessage". Used: ChatMessageOrm::filter_chat_messages() **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct FilterChatMessage {
+    pub id: Option<i32>,
+    pub stream_id: Option<i32>,
+    pub user_id: Option<i32>,
+    pub is_sort_des: Option<bool>,
+    pub id_more: Option<i32>,
+    pub id_less: Option<i32>,
+    pub limit: Option<i32>,
+}
+
+impl FilterChatMessage {
+    pub fn new(id: Option<i32>, stream_id: Option<i32>, user_id: Option<i32>) -> FilterChatMessage {
+        FilterChatMessage {
+            id,
+            stream_id,
+            user_id,
+            is_sort_des: None,
+            id_more: None,
+            id_less: None,
+            limit: None,
+        }
+    }
+}
+
+impl FilterChatMessage {
+    pub fn convert(filter_chat_message: FilterChatMessageDto) -> Self {
+        FilterChatMessage {
+            id: filter_chat_message.id.clone(),
+            stream_id: filter_chat_message.stream_id.clone(),
+            user_id: filter_chat_message.user_id.clone(),
+            is_sort_des: filter_chat_message.is_sort_des.clone(),
+            id_more: filter_chat_message.id_more.clone(),
+            id_less: filter_chat_message.id_less.clone(),
+            limit: filter_chat_message.limit.clone(),
+        }
+    }
+}
+
+// * FilterChatMessageDto *
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct FilterChatMessageDto {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stream_id: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_sort_des: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id_more: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id_less: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i32>,
+}
+
+impl FilterChatMessageDto {
+    pub fn optional_fields<'a>() -> Vec<&'a str> {
+        vec!["id", "stream_id", "user_id"]
+    }
+}
+
+impl Validator for FilterChatMessageDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        let list_is_some = vec![self.id.is_some(), self.stream_id.is_some(), self.user_id.is_some()];
+        let fields = Self::optional_fields().join(",");
+        errors.push(
+            // Checking, one of the optional fields must be present.
+            ValidationChecks::one_optional_fields_must_present(
+                &list_is_some,
+                &fields,
+                err::MSG_ONE_OPTIONAL_FIELDS_MUST_PRESENT,
+            )
+            .err(),
+        );
+
+        self.filter_errors(errors)
+    }
+}
+
 // ** Model Dto: "CreateChatMessageDto". Used: in "chat_controller::post_chat_message()" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
