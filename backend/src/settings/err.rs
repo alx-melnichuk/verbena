@@ -58,6 +58,8 @@ pub const MSG_PARSING_TYPE_NOT_SUPPORTED: &str = "parsing_type_not_supported";
 pub const CD_VALIDATION: &str = "Validation"; /*+*/
 // 417 Expectation Failed - No fields specified for update.
 pub const MSG_NO_FIELDS_TO_UPDATE: &str = "no_fields_to_update";
+// 417 Expectation Failed - One of the optional fields must be present.
+pub const MSG_ONE_OPTIONAL_FIELDS_MUST_PRESENT: &str = "one_optional_fields_must_present";
 
 // 422 Unprocessable Entity (profile_auth_controller, user_registr_controller)
 pub const CD_UNPROCESSABLE_ENTITY: &str = "UnprocessableEntity";
