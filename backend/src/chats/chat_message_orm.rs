@@ -1,8 +1,13 @@
-use crate::chats::chat_message_models::{ChatMessage, ChatMessageLog, CreateChatMessage, ModifyChatMessage};
+use crate::chats::chat_message_models::{
+    ChatMessage, ChatMessageLog, CreateChatMessage, FilterChatMessage, ModifyChatMessage,
+};
 
 pub trait ChatMessageOrm {
     /// Get a list of "chat_message_log" for the specified "chat_message_id".
     fn get_chat_message_logs(&self, chat_message_id: i32) -> Result<Vec<ChatMessageLog>, String>;
+
+    /// Filter entities (chat_messages) by specified parameters.
+    fn filter_chat_messages(&self, filter_chat_message: FilterChatMessage) -> Result<Vec<ChatMessage>, String>;
 
     /// Add a new entry (chat_message).
     fn create_chat_message(&self, create_chat_message: CreateChatMessage) -> Result<ChatMessage, String>;
@@ -43,6 +48,7 @@ pub mod impls {
     use diesel::{self, prelude::*, sql_types};
 
     use crate::dbase;
+    use crate::settings::err;
     // use crate::schema;
 
     use super::*;
@@ -77,6 +83,37 @@ pub mod impls {
                 .map_err(|e| format!("get_chat_message_log: {}", e.to_string()))?;
 
             Ok(list)
+        }
+
+        /// Filter entities (chat_messages) by specified parameters.
+        fn filter_chat_messages(&self, flt_chat_msg: FilterChatMessage) -> Result<Vec<ChatMessage>, String> {
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let id = flt_chat_msg.id.clone();
+            let stream_id = flt_chat_msg.stream_id.clone();
+            let user_id = flt_chat_msg.user_id.clone();
+            if id.is_none() && stream_id.is_none() && user_id.is_none() {
+                return Err(err::MSG_ONE_OPTIONAL_FIELDS_MUST_PRESENT.to_owned());
+            }
+
+            let query = diesel::sql_query("select * from demo_filter_chat_messages($1,$2,$3);")
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.id) // $1
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.stream_id) //$2
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.user_id) // $3
+                .bind::<sql_types::Nullable<sql_types::Bool>, _>(flt_chat_msg.is_sort_des) // $4
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.id_more) // $5
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.id_less) // $6
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.rec_limit); // $7
+
+            // Run a query using Diesel to find a list of entities (ChatMessage) based on the given parameters.
+            let chat_messages: Vec<ChatMessage> = query
+                //.returning(ChatMessage::as_returning())
+                //.get_results::<ChatMessage>(&mut conn)
+                .load(&mut conn)
+                .map_err(|e| format!("filter_chat_messages: {}", e.to_string()))?;
+
+            Ok(chat_messages)
         }
 
         /// Add a new entry (chat_message).
@@ -252,6 +289,11 @@ pub mod tests {
             );
 
             Ok(chat_message)
+        }
+
+        /// Filter entities (chat_messages) by specified parameters.
+        fn filter_chat_messages(&self, flt_chat_msg: FilterChatMessage) -> Result<Vec<ChatMessage>, String> {
+            Ok(vec![])
         }
 
         /// Modify an entity (chat_message).
