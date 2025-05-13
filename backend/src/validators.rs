@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, to_value, Value};
 
 pub const NM_NO_FIELDS_TO_UPDATE: &str = "noFieldsToUpdate";
+pub const NM_ONE_OPTIONAL_FIELDS_MUST_PRESENT: &str = "oneOptionalFieldMustPresent";
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ValidationError {
@@ -184,6 +185,18 @@ impl ValidationChecks {
             let mut err = ValidationError::new(msg);
             let json = json!({ "validNames": valid_names });
             err.add_param(Cow::Borrowed(NM_NO_FIELDS_TO_UPDATE), &json);
+            return Err(err);
+        }
+        Ok(())
+    }
+    // Checking, one of the optional fields must be present.
+    #[rustfmt::skip]
+    pub fn one_optional_fields_must_present<'a>(list_is_some: &[bool], fields: &'a str, msg: &'a str) -> Result<(), ValidationError> {
+        let field_value_exists = list_is_some.iter().any(|&val| val == true);
+        if !field_value_exists {
+            let mut err = ValidationError::new(msg);
+            let json = json!({ "optionalFields": fields });
+            err.add_param(Cow::Borrowed(NM_ONE_OPTIONAL_FIELDS_MUST_PRESENT), &json);
             return Err(err);
         }
         Ok(())
