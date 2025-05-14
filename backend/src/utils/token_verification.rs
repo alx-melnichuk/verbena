@@ -1,4 +1,6 @@
-use log::{debug, error, log_enabled, Level::Debug};
+use std::time::Instant as tm;
+
+use log::{error, info, log_enabled, Level::Info};
 
 use crate::errors::AppError;
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -23,16 +25,13 @@ pub async fn check_token_and_get_profile(
     session_orm: &SessionOrmApp,
     profile_orm: &ProfileOrmApp,
 ) -> Result<Profile, AppError> {
-    #[rustfmt::skip]
-    let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
-    // let timer1 = std::time::Instant::now();
     // Find a session for a given user.
     let opt_session = session_orm.get_session_by_id(user_id).map_err(|e| {
         error!("{}: {}", err::CD_DATABASE, e.to_string());
         return AppError::database507(&e.to_string()); // 507
     })?;
-    // let timer1s = format!("{:.2?}", timer1.elapsed());
     let session = opt_session.ok_or_else(|| {
         // There is no session for this user.
         let message = format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id);
@@ -48,13 +47,10 @@ pub async fn check_token_and_get_profile(
         error!("{}: {}", err::CD_UNAUTHORIZED, &message);
         return Err(AppError::unauthorized401(&message)); // 401
     }
-    // let timer2 = std::time::Instant::now();
     let result = profile_orm.get_profile_user_by_id(user_id, false).map_err(|e| {
         error!("{}: {}", err::CD_DATABASE, e.to_string());
         AppError::database507(&e.to_string()) // 507
     })?;
-    // let timer2s = format!("{:.2?}", timer2.elapsed());
-    // eprintln!("## timer1: {}, timer2: {}", timer1s, timer2s);
 
     let profile = result.ok_or_else(|| {
         let message = format!("{}; user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id);
@@ -62,9 +58,10 @@ pub async fn check_token_and_get_profile(
         AppError::unauthorized401(&message) // 401+
     })?;
 
-    if let Some(timer0) = opt_timer0 {
+    if let Some(timer) = timer {
+        let s1 = format!("{:.2?}", timer.elapsed());
         #[rustfmt::skip]
-        debug!("timer0: {}, user_id: {}, nickname: {}", format!("{:.2?}", timer0.elapsed()), profile.user_id, &profile.nickname);
+        info!("check_token_and_get_profile() time: {}, user_id: {}, nickname: {}", s1, profile.user_id, &profile.nickname);
     }
     Ok(profile)
 }
