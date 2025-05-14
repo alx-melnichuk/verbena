@@ -1,3 +1,5 @@
+use std::time::Instant as tm;
+
 use log::{debug, error, log_enabled, Level::Debug};
 
 use actix::prelude::*;
@@ -269,14 +271,9 @@ impl ChatWsSession {
             let assistant = self.assistant.clone();
             // Start an additional asynchronous task.
             actix_web::rt::spawn(async move {
-                #[rustfmt::skip]
-                let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
                 // Check the token for correctness and get the user profile.
                 let result = assistant.check_num_token_and_get_profile(user_id, num_token).await;
-                if let Some(timer0) = opt_timer0 {
-                    #[rustfmt::skip]
-                    debug!("check_num_token_and_get_profile() lead_time: {}", format!("{:.2?}", timer0.elapsed()));
-                }
+
                 if let Err(err) = result {
                     return addr.do_send(AsyncResultError(err.to_string()));
                 }
@@ -335,14 +332,9 @@ impl ChatWsSession {
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
-            #[rustfmt::skip]
-            let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
             // Check the token for correctness and get the user profile.
             let result = assistant.execute_create_chat_message(create_chat_message).await;
-            if let Some(timer0) = opt_timer0 {
-                #[rustfmt::skip]
-                debug!("execute_create_chat_message() lead_time: {}", format!("{:.2?}", timer0.elapsed()));
-            }
+
             if let Err(err) = result {
                 return addr.do_send(AsyncResultError(err.to_string()));
             }
@@ -381,15 +373,14 @@ impl ChatWsSession {
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
-            #[rustfmt::skip]
-            let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
+            let timer = if log_enabled!(Debug) { Some(tm::now()) } else { None };
             // Check the token for correctness and get the user profile.
             let result = assistant
                 .execute_modify_chat_message(id, opt_user_id, modify_chat_message)
                 .await;
-            if let Some(timer0) = opt_timer0 {
+            if let Some(timer) = timer {
                 #[rustfmt::skip]
-                debug!("execute_modify_chat_message() lead_time: {}", format!("{:.2?}", timer0.elapsed()));
+                debug!("execute_modify_chat_message() time: {}", format!("{:.2?}", timer.elapsed()));
             }
             if let Err(err) = result {
                 return addr.do_send(AsyncResultError(err.to_string()));
@@ -441,14 +432,14 @@ impl ChatWsSession {
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
             #[rustfmt::skip]
-            let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
+            let timer = if log_enabled!(Debug) { Some(tm::now()) } else { None };
             // Check the token for correctness and get the user profile.
             let result = assistant
                 .execute_modify_chat_message(id, opt_user_id, modify_chat_message)
                 .await;
-            if let Some(timer0) = opt_timer0 {
+            if let Some(timer) = timer {
                 #[rustfmt::skip]
-                debug!("execute_modify_chat_message() lead_time: {}", format!("{:.2?}", timer0.elapsed()));
+                debug!("execute_modify_chat_message() time: {}", format!("{:.2?}", timer.elapsed()));
             }
             if let Err(err) = result {
                 return addr.do_send(AsyncResultError(err.to_string()));
