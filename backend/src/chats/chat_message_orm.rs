@@ -44,11 +44,13 @@ pub mod cfg {
 
 #[cfg(not(all(test, feature = "mockdata")))]
 pub mod impls {
+    use std::time::Instant as tm;
 
     use diesel::{self, prelude::*, sql_types};
+    use log::{info, log_enabled, Level::Info};
+    // use schema::chat_messages::dsl as ch_msgs_dsl;
 
     use crate::dbase;
-    use crate::settings::err;
     // use crate::schema;
 
     use super::*;
@@ -72,6 +74,7 @@ pub mod impls {
     impl ChatMessageOrm for ChatMessageOrmApp {
         /// Get a list of "chat_message_log" for the specified "chat_message_id".
         fn get_chat_message_logs(&self, chat_message_id: i32) -> Result<Vec<ChatMessageLog>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -82,29 +85,23 @@ pub mod impls {
                 .load(&mut conn)
                 .map_err(|e| format!("get_chat_message_log: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("get_chat_message_logs() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(list)
         }
 
         /// Filter entities (chat_messages) by specified parameters.
         fn filter_chat_messages(&self, flt_chat_msg: FilterChatMessage) -> Result<Vec<ChatMessage>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let id = flt_chat_msg.id.clone();
-            let stream_id = flt_chat_msg.stream_id.clone();
-            let user_id = flt_chat_msg.user_id.clone();
-            if id.is_none() && stream_id.is_none() && user_id.is_none() {
-                return Err(err::MSG_ONE_OPTIONAL_FIELDS_MUST_PRESENT.to_owned());
-            }
-
-            let query = diesel::sql_query("select * from demo_filter_chat_messages($1,$2,$3);")
-                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.id) // $1
-                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.stream_id) //$2
-                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.user_id) // $3
-                .bind::<sql_types::Nullable<sql_types::Bool>, _>(flt_chat_msg.is_sort_des) // $4
-                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.id_more) // $5
-                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.id_less) // $6
-                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.rec_limit); // $7
+            let query = diesel::sql_query("select * from filter_chat_messages($1,$2,$3,$4);")
+                .bind::<sql_types::Integer, _>(flt_chat_msg.stream_id) //$1
+                .bind::<sql_types::Nullable<sql_types::Bool>, _>(flt_chat_msg.is_sort_des) // $2
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.border_by_id) // $3
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.limit); // $4
 
             // Run a query using Diesel to find a list of entities (ChatMessage) based on the given parameters.
             let chat_messages: Vec<ChatMessage> = query
@@ -113,11 +110,15 @@ pub mod impls {
                 .load(&mut conn)
                 .map_err(|e| format!("filter_chat_messages: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("filter_chat_messages1() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(chat_messages)
         }
 
         /// Add a new entry (chat_message).
         fn create_chat_message(&self, create_chat_message: CreateChatMessage) -> Result<ChatMessage, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -131,6 +132,9 @@ pub mod impls {
                 .get_result::<ChatMessage>(&mut conn)
                 .map_err(|e| format!("create_chat_message: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("create_chat_message() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(chat_message)
         }
 
@@ -141,6 +145,7 @@ pub mod impls {
             opt_by_user_id: Option<i32>,
             modify_chat_message: ModifyChatMessage,
         ) -> Result<Option<ChatMessage>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -158,11 +163,15 @@ pub mod impls {
                 .optional()
                 .map_err(|e| format!("modify_chat_message: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("modify_chat_message() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(chat_message)
         }
 
         /// Delete an entity (chat_message).
         fn delete_chat_message(&self, id: i32) -> Result<Option<ChatMessage>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -174,6 +183,9 @@ pub mod impls {
                 .optional()
                 .map_err(|e| format!("delete_chat_message: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("delete_chat_message() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(opt_chat_message)
         }
     }
