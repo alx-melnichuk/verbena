@@ -1,12 +1,13 @@
-use std::ops::Deref;
+use std::{ops::Deref, time::Instant as tm};
 
 use actix_files::NamedFile;
 use actix_web::{get, post, put, web, HttpResponse, Responder};
 use actix_web_actors::ws;
-use log::error;
+use log::{error, info, log_enabled, Level::Info};
 
 use crate::chats::chat_message_models::{
-    ChatMessage, ChatMessageDto, CreateChatMessage, CreateChatMessageDto, ModifyChatMessage, ModifyChatMessageDto,
+    ChatMessageDto, CreateChatMessage, CreateChatMessageDto, FilterChatMessage, FilterChatMessageDto,
+    ModifyChatMessage, ModifyChatMessageDto,
 };
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
@@ -40,7 +41,9 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             // GET /ws
             .service(get_ws_chat)
             // GET /chat
-            .service(chat);
+            .service(chat)
+            // GET /api/chat_messages
+            .service(get_chat_message);
     }
 }
 
@@ -73,6 +76,39 @@ pub async fn get_ws_chat(
 #[get("/chat")]
 async fn chat() -> impl Responder {
     NamedFile::open_async("./static/chat_index.html").await.unwrap()
+}
+
+#[rustfmt::skip]
+#[get("/api/chat_messages", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn get_chat_message(
+    chat_message_orm: web::Data<ChatMessageOrmApp>,
+    query_params: web::Query<FilterChatMessageDto>,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+    // Get search parameters.
+    let filter_chat_message = FilterChatMessage::convert(query_params.into_inner());
+    
+    let res_data = web::block(move || {
+    // Find for an entity (stream event) by SearchStreamEvent.
+    let res_data =
+        chat_message_orm.filter_chat_messages(filter_chat_message)
+        .map_err(|e| {
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e)
+        });
+        res_data
+    })
+    .await
+    .map_err(|e| {
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
+
+    let chat_messages = match res_data { Ok(v) => v, Err(e) => return Err(e) };
+    if let Some(timer) = timer {
+        info!("get_chat_message1() time: {}", format!("{:.2?}", timer.elapsed()));
+    }
+    Ok(HttpResponse::Ok().json(chat_messages)) // 200
 }
 
 #[rustfmt::skip]
