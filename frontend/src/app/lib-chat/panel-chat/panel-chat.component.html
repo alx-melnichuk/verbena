@@ -6,7 +6,9 @@
 <div class="pc-sepr"></div>
 
 <cdk-virtual-scroll-viewport  class="pc-middle" #scrollItem
-  itemSize="50" (scroll)="dbncScrollItem($event)">
+  itemSize="50" 
+  (scroll)="dbncScrollItem()"
+  (scrolledIndexChange)="doScrolledIndexChange($event)">
   <ng-container *cdkVirtualFor="let chatMsg of listChatMsg; templateCacheSize: 0">
     <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : '')
       , (msgMarked==chatMsg || msgEditing==chatMsg ? 'pc-marked' : '')]"
