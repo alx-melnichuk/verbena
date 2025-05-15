@@ -235,6 +235,10 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         const currDate = new Date();
         currDate.setDate(currDate.getDate() - mode);
         currDate.setTime(currDate.getTime() - (2 * 60 * 60 * 1000)); // minus 2 hours
+        const txt = "This function can be used to pass through a successful result while handling an error.";
+        // const txt = "The Result pattern encapsulates the outcome of an operation in a Result object, which represents either a successful"
+        //     + " result (containing the expected data) or a failure (with an error message).";
+        // "Instead of throwing exceptions or returning null to indicate failure, you can use a Result to make each outcome clear and explicit."
         for (let idx = 0; idx < len; idx++) {
             let member = "Teodor_Nickols";
             const d1 = new Date(currDate.getTime());
@@ -242,7 +246,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             // let d1 = new Date((idx < (len / 2) ? -100000000 : 0) + Date.now());
             let date = d1.toISOString();
             let id = startId - idx;
-            let msg = "text_" + id + " This function can be used to pass through a successful result while handling an error.";
+            let msg = "text_" + id + " " + txt;  // txt.slice(Math.random() * txt.length)
             if (idx % 3 == 0) {
                 member = nickname;
             } else if (idx % 2 == 0) {
