@@ -9,8 +9,8 @@ export enum EWSType {
     Join = 'join',
     Leave = 'leave',
     Msg = 'msg',
-    MsgCut = 'msgCut', // -
-    MsgPut = 'msgPut', // -
+    MsgCut = 'msgCut',
+    MsgPut = 'msgPut',
     Name = 'name',
     Unblock = 'unblock', // -
 }
