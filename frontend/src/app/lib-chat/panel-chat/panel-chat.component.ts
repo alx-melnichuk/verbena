@@ -152,7 +152,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         if (!!changes['chatMsgs']) {
             console.log(`PanelChat.OnChange('chatMsgs') 1 chatMsgs.length: ${this.chatMsgs.length}`);
             this.listChatMsg = this.loadObjChatMsg(this.objChatMsg, this.chatMsgs);
-            console.log(`PanelChat.OnChange('chatMsgs') 2 chatMsgs.length: ${this.chatMsgs.length}`);
             this.scrollToBottom();
             Promise.resolve().then(() =>
                 this.scrollToBottom());
