@@ -105,10 +105,14 @@ pub async fn get_chat_message(
     })?;
 
     let chat_messages = match res_data { Ok(v) => v, Err(e) => return Err(e) };
+    let chat_message_dto_list: Vec<ChatMessageDto> = chat_messages.iter()
+        .map(|ch_msg| ChatMessageDto::convert(ch_msg.clone()))
+        .collect();
+
     if let Some(timer) = timer {
         info!("get_chat_message1() time: {}", format!("{:.2?}", timer.elapsed()));
     }
-    Ok(HttpResponse::Ok().json(chat_messages)) // 200
+    Ok(HttpResponse::Ok().json(chat_message_dto_list)) // 200
 }
 
 #[rustfmt::skip]
@@ -154,17 +158,7 @@ pub async fn post_chat_message(
 
     let chat_message2 = res_chat_message?;
 
-    let chat_message_dto = ChatMessageDto {
-        id: chat_message2.id,
-        stream_id: chat_message2.stream_id,
-        user_id: chat_message2.user_id,
-        msg: chat_message2.msg.unwrap_or("".to_owned()),
-        date_update: chat_message2.date_update.clone(),
-        is_changed: chat_message2.is_changed,
-        is_removed: chat_message2.is_removed,
-        created_at: chat_message2.created_at.clone(),
-        updated_at: chat_message2.updated_at.clone(),
-    };
+    let chat_message_dto = ChatMessageDto::convert(chat_message2);
 
     Ok(HttpResponse::Created().json(chat_message_dto)) // 201
 }
@@ -235,17 +229,7 @@ pub async fn put_chat_message(
     let opt_chat_message2 = res_chat_message?;
     
     if let Some(chat_message2) = opt_chat_message2 {
-        let chat_message_dto = ChatMessageDto {
-            id: chat_message2.id,
-            stream_id: chat_message2.stream_id,
-            user_id: chat_message2.user_id,
-            msg: chat_message2.msg.unwrap_or("".to_owned()),
-            date_update: chat_message2.date_update.clone(),
-            is_changed: chat_message2.is_changed,
-            is_removed: chat_message2.is_removed,
-            created_at: chat_message2.created_at.clone(),
-            updated_at: chat_message2.updated_at.clone(),
-        };
+        let chat_message_dto = ChatMessageDto::convert(chat_message2);
 
         Ok(HttpResponse::Ok().json(chat_message_dto)) // 200
     } else {

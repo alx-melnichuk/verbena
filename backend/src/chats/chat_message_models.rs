@@ -70,17 +70,25 @@ impl ChatMessage {
 #[serde(rename_all = "camelCase")]
 pub struct ChatMessageDto {
     pub id: i32,
-    pub stream_id: i32,
-    pub user_id: i32,
-    pub msg: String, // min_len=1 max_len=254 Nullable
     #[serde(with = "serial_datetime")]
-    pub date_update: DateTime<Utc>,
-    pub is_changed: bool,
-    pub is_removed: bool,
-    #[serde(with = "serial_datetime")]
-    pub created_at: DateTime<Utc>,
-    #[serde(with = "serial_datetime")]
-    pub updated_at: DateTime<Utc>,
+    pub date: DateTime<Utc>,
+    pub member: String,
+    pub msg: String,
+    pub is_edt: bool,
+    pub is_rmv: bool,
+}
+
+impl ChatMessageDto {
+    pub fn convert(chat_message: ChatMessage) -> Self {
+        ChatMessageDto {
+            id: chat_message.id,
+            date: chat_message.date_update.clone(),
+            member: chat_message.user_id.to_string(), // TODO !
+            msg: chat_message.msg.unwrap_or("".to_owned()),
+            is_edt: chat_message.is_changed,
+            is_rmv: chat_message.is_removed,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
