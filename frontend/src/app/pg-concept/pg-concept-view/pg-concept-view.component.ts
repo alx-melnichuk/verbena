@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 
 import { StringDateTime } from 'src/app/common/string-date-time';
+import { ChatMessageDto } from 'src/app/lib-chat/chat-message-api.interface';
 import { ChatSocketService } from 'src/app/lib-chat/chat-socket.service';
 import { ConceptViewComponent } from 'src/app/lib-concept/concept-view/concept-view.component';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
@@ -52,6 +53,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public chatRoom: string = '';
     public chatAccess: string | null = null;
     public chatMsgs: ChatMsg[] = [];
+    public chatMessageDtoList: ChatMessageDto[] = [];
 
     constructor(
         private changeDetector: ChangeDetectorRef,
@@ -66,6 +68,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.profileDto = this.route.snapshot.data['profileDto'];
         this.profileTokensDto = this.route.snapshot.data['profileTokensDto'];
         this.streamDto = this.route.snapshot.data['streamDto'];
+        this.chatMessageDtoList = this.route.snapshot.data['chatMessageDtoList'];
+        console.log(`PgConceptView() this.chatMessageDtoList:`, this.chatMessageDtoList); // #
         // =v
         if (!!this.streamDto) { // #
             // this.streamDto.state = StreamState.waiting; // # for demo
@@ -110,7 +114,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             };
             this.chatSocketService.handlReceive = (val: string) => {
                 const obj = JSON.parse(val);
-                if (!!obj['member'] && !!obj['msg']) {
+                if (!!obj['id'] && !!obj['member'] && !!obj['msg']) {
                     this.chatMsgs = [ChatMsgUtil.create(JSON.parse(val))];
                 }
                 console.log(`PgConceptView handlReceive(); changeDetector.markForCheck();${JSON.stringify(this.chatMsgs)}`); // #
