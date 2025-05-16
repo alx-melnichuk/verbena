@@ -3,15 +3,15 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
-import { StringDateTime } from 'src/app/common/string-date-time';
 
+import { StringDateTime } from 'src/app/common/string-date-time';
+import { ChatSocketService } from 'src/app/lib-chat/chat-socket.service';
 import { ConceptViewComponent } from 'src/app/lib-concept/concept-view/concept-view.component';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { ConfirmationData } from 'src/app/lib-dialog/confirmation/confirmation.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { ProfileDto, ProfileTokensDto } from 'src/app/lib-profile/profile-api.interface';
 import { EWSTypeUtil } from 'src/app/lib-socket/socket-chat.interface';
-import { SocketChatService } from 'src/app/lib-socket/socket-chat.service';
 import { StreamDto, StreamState, StreamStateUtil } from 'src/app/lib-stream/stream-api.interface';
 import { ChatMsg, ChatMsgUtil } from 'src/app/lib-stream/stream-chats.interface';
 import { StreamService } from 'src/app/lib-stream/stream.service';
@@ -29,7 +29,7 @@ const WS_CHAT_HOST: string | null = environment.wsChatHost || null;
     styleUrl: './pg-concept-view.component.scss',
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [SocketChatService],
+    providers: [ChatSocketService],
 })
 export class PgConceptViewComponent implements OnInit, OnDestroy {
 
@@ -60,7 +60,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         private alertService: AlertService,
         private dialogService: DialogService,
         private streamService: StreamService,
-        public socketChatService: SocketChatService,
+        public chatSocketService: ChatSocketService,
     ) {
         // this.showTimerBeforeStart = 120; // minutes
         this.profileDto = this.route.snapshot.data['profileDto'];
@@ -102,26 +102,23 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         const access = this.profileTokensDto?.accessToken;
 
         if (!!nickname && !!streamId && this.isStreamActive) {
-            this.socketChatService.config({ nickname, room: streamId, access });
+            this.chatSocketService.config({ nickname, room: streamId, access });
 
-            this.socketChatService.handlOnError = (err: string) => {
+            this.chatSocketService.handlOnError = (err: string) => {
                 console.log(`PgConceptView handlOnError(); changeDetector.markForCheck();`); // #
                 this.changeDetector.markForCheck();
             };
-            this.socketChatService.handlReceive = (val: string) => {
-                let s1 = ''; // #
+            this.chatSocketService.handlReceive = (val: string) => {
                 const obj = JSON.parse(val);
                 if (!!obj['member'] && !!obj['msg']) {
-                    const chatMsg: ChatMsg = ChatMsgUtil.create(JSON.parse(val));
-                    s1 = ` chatMsg: ${JSON.stringify(chatMsg)}`; // #
-                    this.chatMsgs = [chatMsg];
+                    this.chatMsgs = [ChatMsgUtil.create(JSON.parse(val))];
                 }
-                console.log(`PgConceptView handlReceive(); changeDetector.markForCheck();${s1}`); // #
+                console.log(`PgConceptView handlReceive(); changeDetector.markForCheck();${JSON.stringify(this.chatMsgs)}`); // #
                 this.changeDetector.markForCheck();
             };
             // Connect to the server web socket chat.
             console.log(`PgConceptView.openSocket() socketSrv.connect()`); // #
-            this.socketChatService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
+            this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
         }
     }
 
@@ -130,7 +127,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        this.socketChatService.disconnect();
+        this.chatSocketService.disconnect();
     }
 
     // ** Public API **
@@ -148,19 +145,19 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public doSendMessage(newMessage: string | null): void {
         const msgVal = (newMessage || '').trim();
         if (!!msgVal) {
-            this.socketChatService.sendData(EWSTypeUtil.getMsgEWS(msgVal));
+            this.chatSocketService.sendData(EWSTypeUtil.getMsgEWS(msgVal));
         }
     }
     public doEditMessage(keyValue: KeyValue<number, string> | null): void {
         const id = keyValue?.key;
         const msgPut = (keyValue?.value || '').trim();
         if (!!id && !!msgPut) {
-            this.socketChatService.sendData(EWSTypeUtil.getMsgPutEWS(msgPut, id));
+            this.chatSocketService.sendData(EWSTypeUtil.getMsgPutEWS(msgPut, id));
         }
     }
     public doRemoveMessage(id: number | null): void {
         if (!!id) {
-            this.socketChatService.sendData(EWSTypeUtil.getMsgCutEWS('', id));
+            this.chatSocketService.sendData(EWSTypeUtil.getMsgCutEWS('', id));
         }
     }
 
