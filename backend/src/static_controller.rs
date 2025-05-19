@@ -60,7 +60,7 @@ pub async fn index_root(config_app: web::Data<config_app::ConfigApp>) -> Result<
         "env_logger = \"0.11.8\"",
         "futures-util = \"0.3.31\"",
         "handlebars = \"6.3.2\"",
-        "image = \"0.24.9\"",
+        "image = \"0.25.6\"",
         "jsonwebtoken = \"9.3.1\"",
         "lettre = { version = \"0.11.16\", features = [\"tokio1\", \"tokio1-native-tls\"] }",
         "log = \"0.4.27\"",

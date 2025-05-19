@@ -20,6 +20,7 @@ pub fn convert_file(source: &str, extension: &str, max_width: u32, max_height: u
     if opt_receiver_type.is_none() {
         return Err(format!("{}\"{}\".", MSG_INVALID_RECEIVER_IMAGE_TYPE, extension));
     }
+    let receiver_format = opt_receiver_type.unwrap();
     // If the image type does not change and the maximum dimensions are not specified, then exit.
     if source_ext.eq(extension) && max_width == 0 && max_height == 0 {
         return Ok(source.to_string());
@@ -29,6 +30,14 @@ pub fn convert_file(source: &str, extension: &str, max_width: u32, max_height: u
 
     // Load the source image into memory.
     let mut image_source: DynamicImage = image::open(source).map_err(|err| err.to_string())?;
+    // The encoder or decoder for Jpeg does not support the color type "Rgba8"
+    // Therefore, we convert from "Rgba8" to "Rgb8".
+    // For "image" v0.24.9 this was done automatically.
+    if receiver_format.eq(&ImageFormat::Jpeg) {
+        if let Some(_val) = image_source.as_rgba8() {
+            image_source = image_source.to_rgb8().into();
+        }
+    }
     // Get the width and height of this image.
     let (curr_width, curr_height) = image_source.dimensions();
     #[rustfmt::skip]
@@ -69,8 +78,8 @@ mod tests {
     #[test]
     fn test_convert_file_bad_source_ext() {
         let source_ext: &str = "jpegQW";
-
-        let result = convert_file(&file_path("demo", source_ext), "", 0, 0);
+        let file_name = "test_convert_file_bad_source_ext";
+        let result = convert_file(&file_path(file_name, source_ext), "", 0, 0);
         assert!(result.is_err());
         #[rustfmt::skip]
         assert_eq!(result.unwrap_err(), format!("{}\"{}\".", MSG_INVALID_SOURCE_IMAGE_TYPE, &source_ext));
@@ -78,23 +87,22 @@ mod tests {
     #[test]
     fn test_convert_file_bad_receiver_ext() {
         let receiver_ext = "jpegQW";
-
-        let result = convert_file(&file_path("demo", "jpeg"), receiver_ext, 0, 0);
+        let file_name = "test_convert_file_bad_receiver_ext";
+        let result = convert_file(&file_path(file_name, "jpeg"), receiver_ext, 0, 0);
         assert!(result.is_err());
         #[rustfmt::skip]
         assert_eq!(result.unwrap_err(), format!("{}\"{}\".", MSG_INVALID_RECEIVER_IMAGE_TYPE, &receiver_ext));
     }
     #[test]
     fn test_convert_file_source_jpeg_receiver_jpeg_maxwd_0_maxhg_0() {
-        let source = file_path("demo", "jpeg");
-
+        let source = file_path("test_convert_file_source_jpeg_receiver_jpeg_maxwd_0_maxhg_0", "jpeg");
         let result = convert_file(&source, "jpeg", 0, 0);
         assert!(result.is_ok());
         assert_eq!(result.unwrap_or("".to_string()), source);
     }
     #[test]
     fn test_convert_file_source_no_exist() {
-        let source = file_path("demo01", "png");
+        let source = file_path("test_convert_file_source_no_exist", "png");
         if path::Path::new(&source).exists() {
             let _ = fs::remove_file(&source);
         }
@@ -105,7 +113,9 @@ mod tests {
     }
 
     fn create_file_png(path_file: &str) -> Result<String, String> {
+        // rgba8
         let header: Vec<u8> = vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+        let footer: Vec<u8> = vec![0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82];
         #[rustfmt::skip]
         let buf: Vec<u8> = vec![                             0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
             0x00, 0x00, 0x00, 0x17, 0x00, 0x00, 0x00, 0x13,  0x08, 0x06, 0x00, 0x00, 0x00, 0x7B, 0xBB, 0x96,
@@ -119,8 +129,6 @@ mod tests {
             0x15, 0x03, 0x14, 0x6F, 0x7E, 0x3F, 0xD1, 0x53,  0x5E, 0xC3, 0xC0, 0x78, 0x5C, 0x43, 0xDE, 0xC8,
             0x09, 0xFC, 0x22, 0xB8, 0x69, 0x88, 0xAE, 0x67,  0xA8 
         ];
-        let footer: Vec<u8> = vec![0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82];
-
         let mut file = fs::File::create(path_file).map_err(|e| e.to_string())?;
         file.write_all(header.as_ref()).map_err(|e| e.to_string())?;
         file.write_all(buf.as_ref()).map_err(|e| e.to_string())?;
@@ -140,15 +148,16 @@ mod tests {
         Ok(image_source.dimensions())
     }
     #[test]
-    fn test_convert_file_source_png_receiver_jpeg_maxwd_0_maxhg_0() {
-        let source = file_path("demo02", "png");
+    fn test_convert_file_png_to_jpeg_maxwd_0_maxhg_0() {
+        let file_name = "test_convert_file_png_to_jpeg_maxwd_0_maxhg_0";
+        let source = file_path(file_name, "png");
         create_file_png(&source).unwrap();
         let (source_wd, source_hg) = dimensions(&source).unwrap();
 
         let result = convert_file(&source, "jpeg", 0, 0);
         let _ = fs::remove_file(&source);
 
-        let receiver = file_path("demo02", "jpeg");
+        let receiver = file_path(file_name, "jpeg");
         let (receiver_wd, receiver_hg) = dimensions(&receiver).unwrap();
         let _ = fs::remove_file(&receiver);
 
@@ -158,8 +167,9 @@ mod tests {
         assert_eq!(source_hg, receiver_hg);
     }
     #[test]
-    fn test_convert_file_source_png_receiver_jpeg_maxwd_10_maxhg_10() {
-        let source = file_path("demo03", "png");
+    fn test_convert_file_png_to_jpeg_maxwd_10_maxhg_10() {
+        let file_name = "test_convert_file_png_to_jpeg_maxwd_10_maxhg_10";
+        let source = file_path(file_name, "png");
         create_file_png(&source).unwrap();
         let (source_wd, source_hg) = dimensions(&source).unwrap();
 
@@ -167,7 +177,7 @@ mod tests {
 
         let _ = fs::remove_file(&source);
 
-        let receiver = file_path("demo03", "jpeg");
+        let receiver = file_path(file_name, "jpeg");
         let (receiver_wd, receiver_hg) = dimensions(&receiver).unwrap();
         let _ = fs::remove_file(&receiver);
 
@@ -179,8 +189,8 @@ mod tests {
         assert!(10 >= receiver_hg);
     }
     #[test]
-    fn test_convert_file_source_png_receiver_png_maxwd_10_maxhg_10() {
-        let source = file_path("demo04", "png");
+    fn test_convert_file_png_to_png_maxwd_10_maxhg_10() {
+        let source = file_path("test_convert_file_png_to_png_maxwd_10_maxhg_10", "png");
         create_file_png(&source).unwrap();
         let (source_wd, source_hg) = dimensions(&source).unwrap();
 
@@ -199,8 +209,8 @@ mod tests {
         assert!(10 >= receiver_hg);
     }
     #[test]
-    fn test_convert_file_source_png_receiver_png_maxwd_30_maxhg_30() {
-        let source = file_path("demo05", "png");
+    fn test_convert_file_png_to_png_maxwd_30_maxhg_30() {
+        let source = file_path("test_convert_file_png_to_png_maxwd_30_maxhg_30", "png");
         create_file_png(&source).unwrap();
         let (source_wd, source_hg) = dimensions(&source).unwrap();
 
