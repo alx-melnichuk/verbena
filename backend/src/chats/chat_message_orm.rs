@@ -281,7 +281,7 @@ pub mod tests {
         /// Get a list of "chat_message_log" for the specified "chat_message_id".
         fn get_chat_message_logs(&self, chat_message_id: i32) -> Result<Vec<ChatMessageLog>, String> {
             let opt_chat_message = self.chat_message_vec.iter().find(|chat_msg| (*chat_msg).id == chat_message_id);
-            if let Some(chat_message) = opt_chat_message {}
+            if let Some(_chat_message) = opt_chat_message {}
             Ok(vec![])
         }
 
@@ -304,7 +304,7 @@ pub mod tests {
         }
 
         /// Filter entities (chat_messages) by specified parameters.
-        fn filter_chat_messages(&self, flt_chat_msg: FilterChatMessage) -> Result<Vec<ChatMessage>, String> {
+        fn filter_chat_messages(&self, _flt_chat_msg: FilterChatMessage) -> Result<Vec<ChatMessage>, String> {
             Ok(vec![])
         }
 
