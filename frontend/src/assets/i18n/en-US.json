@@ -183,7 +183,7 @@
   },
   "field-file-upload": {
     "drag_files_or_browse": "Select file or drag file here.",
-    "supported_file_types": "Supported file types: {{validTypes}}.",
+    "supported_file_types": "Supported file types: {{validTypes}} (without transparency).",
     "upload_up_to": "Upload up to {{maxFileSize}}.",
     "err_upload_images_use_valid_types": "Please upload images with valid format: {{validTypes}}.",
     "err_file_size_must_not_exceed_max": "The file size must not exceed the maximum {{maxFileSize}} B ({{maxFileSizeShort}})."

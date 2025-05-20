@@ -183,7 +183,7 @@
   },
   "field-file-upload": {
     "drag_files_or_browse": "Виберіть файл або перетягніть файл сюди.",
-    "supported_file_types": "Підтримувані типи файлів: {{validTypes}}.",
+    "supported_file_types": "Підтримувані типи файлів: {{validTypes}} (без прозорості).",
     "upload_up_to": "Завантажте до {{maxFileSize}}.",
     "err_upload_images_use_valid_types": "Завантажте зображення у правильному форматі: {{validTypes}}.",
     "err_file_size_must_not_exceed_max": "Розмір файлу не має перевищувати максимальний {{maxFileSize}} B ({{maxFileSizeShort}})."

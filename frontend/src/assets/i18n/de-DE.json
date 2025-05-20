@@ -183,7 +183,7 @@
   },
   "field-file-upload": {
     "drag_files_or_browse": "Wählen sie eine datei aus oder ziehen sie sie hierher.",
-    "supported_file_types": "Unterstützte dateitypen: {{validTypes}}.",
+    "supported_file_types": "Unterstützte dateitypen: {{validTypes}} (ohne transparenz).",
     "upload_up_to": "Laden Sie bis zu {{maxFileSize}} hoch.",
     "err_upload_images_use_valid_types": "Bitte laden sie bilder im gültigen format hoch: {{validTypes}}.",
     "err_file_size_must_not_exceed_max": "Die dateigröße darf das maximum von {{maxFileSize}} B ({{maxFileSizeShort}}) nicht überschreiten."
