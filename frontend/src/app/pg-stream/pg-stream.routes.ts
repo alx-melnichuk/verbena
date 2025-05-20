@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { deactivatePageGuard } from '../common/deactivate-page.guard';
 import { P_STREAM_ID, E_STREAM_EDIT, E_STREAM_CREATE, E_STREAM_LIST } from '../common/routes';
 
 import { PgStreamComponent } from './pg-stream.component';
@@ -25,7 +26,8 @@ export const PG_STREAM_ROUTES: Routes = [
                 resolve: {
                     streamDto: pgStreamResolver,
                     streamConfigDto: pgStreamConfigResolver,
-                }
+                },
+                canDeactivate: [deactivatePageGuard],
             },
             {
                 path: E_STREAM_CREATE, // 'ind/stream/create'
