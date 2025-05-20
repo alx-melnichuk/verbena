@@ -10,15 +10,6 @@ export interface ChatMessageDto {
 }
 
 
-/*export interface ChatMsg {
-    id: number;
-    date: StringDateTime;
-    member: string;
-    msg: string;
-    isEdt: boolean;
-    isRmv: boolean;
-};*/
-
 export class ChatMessageDtoUtil {
     public static create(obj: Partial<ChatMessageDto>): ChatMessageDto {
         let id: number = obj.id || 0;
