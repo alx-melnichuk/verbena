@@ -3,7 +3,7 @@
   [chatIsEditable]="isStreamActive && chatSocketService.isJoined()"
   [chatMaxRows]="chatMaxRows"
   [chatMinRows]="chatMinRows"
-  [chatMsgs]="chatMsgs"
+  [chatMsgs]="chatSocketService.chatMsgs"
   [countOfViewer]="chatSocketService.countOfMembers"
   [isLoadStream]="isLoadStream"
   [isShowTimer]="isShowTimer"

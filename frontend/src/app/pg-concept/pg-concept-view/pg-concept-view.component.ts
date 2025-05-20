@@ -1,11 +1,10 @@
 import { CommonModule, KeyValue } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 
-import { StringDateTime } from 'src/app/common/string-date-time';
-import { ChatMessageDto } from 'src/app/lib-chat/chat-message-api.interface';
+// # import { ChatMessageDto, ChatMessageDtoUtil } from 'src/app/lib-chat/chat-message-api.interface';
 import { ChatSocketService } from 'src/app/lib-chat/chat-socket.service';
 import { ConceptViewComponent } from 'src/app/lib-concept/concept-view/concept-view.component';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
@@ -14,7 +13,6 @@ import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { ProfileDto, ProfileTokensDto } from 'src/app/lib-profile/profile-api.interface';
 import { EWSTypeUtil } from 'src/app/lib-socket/socket-chat.interface';
 import { StreamDto, StreamState, StreamStateUtil } from 'src/app/lib-stream/stream-api.interface';
-import { ChatMsg, ChatMsgUtil } from 'src/app/lib-stream/stream-chats.interface';
 import { StreamService } from 'src/app/lib-stream/stream.service';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
 import { environment } from 'src/environments/environment';
@@ -34,42 +32,39 @@ const WS_CHAT_HOST: string | null = environment.wsChatHost || null;
 })
 export class PgConceptViewComponent implements OnInit, OnDestroy {
 
+    public chatAccess: string | null = null;
     public chatMaxRows: number = 4;
     public chatMinRows: number = 1;
+    public chatName: string = '';
+    public chatRoom: string = '';
+    public chatSocketService: ChatSocketService = inject(ChatSocketService);
     public isLoadStream = false;
     public isShowTimer: boolean = false;
     // An indication that the stream is in active status. ([preparing, started, paused]) 
     public isStreamActive: boolean = false;
     // An indication that this is the owner of the stream.
     public isStreamOwner = false;
-    // The interval for displaying the timer before starting (in minutes).
-    public showTimerBeforeStart: number | null | undefined;
-
     public profileDto: ProfileDto | null = null;
     public profileTokensDto: ProfileTokensDto | null = null;
+    // The interval for displaying the timer before starting (in minutes).
+    public showTimerBeforeStart: number | null | undefined;  // ??
     public streamDto: StreamDto | null = null;
 
-    public chatName: string = '';
-    public chatRoom: string = '';
-    public chatAccess: string | null = null;
-    public chatMsgs: ChatMsg[] = [];
-    public chatMessageDtoList: ChatMessageDto[] = [];
+    private alertService: AlertService = inject(AlertService);
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private dialogService: DialogService = inject(DialogService);
+    private route: ActivatedRoute = inject(ActivatedRoute);
+    private streamService: StreamService = inject(StreamService);
+    private translateService: TranslateService = inject(TranslateService);
 
-    constructor(
-        private changeDetector: ChangeDetectorRef,
-        private route: ActivatedRoute,
-        private translateService: TranslateService,
-        private alertService: AlertService,
-        private dialogService: DialogService,
-        private streamService: StreamService,
-        public chatSocketService: ChatSocketService,
-    ) {
+    constructor() {
         // this.showTimerBeforeStart = 120; // minutes
         this.profileDto = this.route.snapshot.data['profileDto'];
         this.profileTokensDto = this.route.snapshot.data['profileTokensDto'];
         this.streamDto = this.route.snapshot.data['streamDto'];
-        this.chatMessageDtoList = this.route.snapshot.data['chatMessageDtoList'];
-        console.log(`PgConceptView() this.chatMessageDtoList:`, this.chatMessageDtoList); // #
+        const chatMsgList = this.route.snapshot.data['chatMsgList'];
+        this.chatSocketService.setChatMsgs(chatMsgList);
+        console.log(`PgConceptView() chatMsgList:`, this.route.snapshot.data['chatMsgList']); // #
         // =v
         if (!!this.streamDto) { // #
             // this.streamDto.state = StreamState.waiting; // # for demo
@@ -86,16 +81,16 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.streamDto.title = this.streamDto.title + ' Invalid stream state transition from "waiting" to "stopped".'
                 + ' Invalid stream state transition from "waiting" to "stopped".';
         }
-        // this.chatMsgs = this.getChatMsgDemo(); // #
-        this.chatMsgs = this.getChatMsg(2, "evelyn_allen", 10); // #
-        // setTimeout(() => {
-        //     this.chatMsgs = this.getChatMsg(1, "evelyn_allen", 10); // #
-        //     this.changeDetector.markForCheck();
-        // }, 5000);
-        // setTimeout(() => {
-        //     this.chatMsgs = this.getChatMsg(0, "evelyn_allen", 10); // #
-        //     this.changeDetector.markForCheck();
-        // }, 10000);
+        // # this.chatMsgs = this.getChatMsgDemo(); // #
+        // # this.chatMsgs = this.getChatMsg(2, "evelyn_allen", 10); // #
+        // # setTimeout(() => {
+        // #     this.chatMsgs = this.getChatMsg(1, "evelyn_allen", 10); // #
+        // #     this.changeDetector.markForCheck();
+        // # }, 5000);
+        // # setTimeout(() => {
+        // #     this.chatMsgs = this.getChatMsg(0, "evelyn_allen", 10); // #
+        // #     this.changeDetector.markForCheck();
+        // # }, 10000);
         // =^
         // StreamState = [preparing, started, paused]
         this.isStreamActive = !!this.streamDto && StreamStateUtil.isActive(this.streamDto.state);
@@ -113,11 +108,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 this.changeDetector.markForCheck();
             };
             this.chatSocketService.handlReceive = (val: string) => {
-                const obj = JSON.parse(val);
-                if (!!obj['id'] && !!obj['member'] && !!obj['msg']) {
-                    this.chatMsgs = [ChatMsgUtil.create(JSON.parse(val))];
-                }
-                console.log(`PgConceptView handlReceive(); changeDetector.markForCheck();${JSON.stringify(this.chatMsgs)}`); // #
+                console.log(`PgConceptView handlReceive(); changeDetector.markForCheck();`); // #
                 this.changeDetector.markForCheck();
             };
             // Connect to the server web socket chat.
@@ -215,7 +206,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     }
 
-    private getChatMsgDemo(): ChatMsg[] {
+    /*private getChatMsgDemo(): ChatMessageDto[] {
         return [
             { "msg": "Demo msg Av1", "id": 1, "member": "emma_johnson", "date": "2025-04-28T09:10:30.727Z", "isEdt": false, "isRmv": false },
             { "msg": "Demo msg Bv2", "id": 2, "member": "evelyn_allen", "date": "2025-04-28T09:11:06.542Z", "isEdt": true, "isRmv": false },
@@ -228,10 +219,10 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             { "msg": "", "id": 9, "member": "evelyn_allen", "date": "2025-05-06T07:32:29.427Z", "isEdt": true, "isRmv": true },
             { "msg": "Demo02", "id": 10, "member": "evelyn_allen", "date": "2025-05-06T10:18:21.147Z", "isEdt": false, "isRmv": false },
         ];
-    }
+    }*/
 
-    private getChatMsg(mode: number, nickname: string, len: number): ChatMsg[] {
-        const result: ChatMsg[] = [];
+    /*private getChatMsg(mode: number, nickname: string, len: number): ChatMessageDto[] {
+        const result: ChatMessageDto[] = [];
         const startId = 10 * (mode + 1);
         const currDate = new Date();
         currDate.setDate(currDate.getDate() - mode);
@@ -259,6 +250,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
         }
         return result;
-    }
+    }*/
 
 }
