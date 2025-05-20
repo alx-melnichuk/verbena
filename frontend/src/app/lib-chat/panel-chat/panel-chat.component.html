@@ -7,9 +7,8 @@
 
 <cdk-virtual-scroll-viewport  class="pc-middle" #scrollItem
   itemSize="50" 
-  (scroll)="dbncScrollItem()"
-  (scrolledIndexChange)="doScrolledIndexChange($event)">
-  <ng-container *cdkVirtualFor="let chatMsg of listChatMsg; templateCacheSize: 0">
+  (scroll)="dbncScrollItem()">
+  <ng-container *cdkVirtualFor="let chatMsg of chatMsgList; templateCacheSize: 0">
     <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : '')
       , (msgMarked==chatMsg || msgEditing==chatMsg ? 'pc-marked' : '')]"
       [matMenuTriggerFor]="isEnableMenu(chatMsg, nickname) ? menuItem : null"
@@ -21,13 +20,13 @@
         <div [ngClass]="['pc-item-name', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
           {{ isSelf(chatMsg.member) ? ('panel-chat.you' | translate) : memberWithZero(chatMsg.member) }}
         </div>
-        <div class="pc-item-date">
+        <div [ngClass]="['pc-item-date', (chatMsg.isEdt || chatMsg.isRmv ? 'pc-item-modify' : '')]">
           @if (!isToday(chatMsg.date)) {
             <span>{{ chatMsg.date | dateTimeFormat:locale:formatDate }}</span>
           }
           <span>{{ chatMsg.date | dateTimeFormat:locale:formatTime }}</span>
           @if (chatMsg.isEdt && !chatMsg.isRmv) {
-            <div><i>{{ 'panel-chat.message_edited' | translate }}</i></div>
+            <div>{{ 'panel-chat.message_edited' | translate }}</div>
           }
         </div>
       </div>

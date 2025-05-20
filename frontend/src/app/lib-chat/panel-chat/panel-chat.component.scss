@@ -99,6 +99,10 @@ app-panel-chat {
         word-wrap: break-word;
     }
 
+    .pc-item-modify {
+        font-style: italic;
+    }
+
     .pc-item-msg-rmv {
         color: var(--pc-msg-rmv-cl, var(--sys-secondary));
     }

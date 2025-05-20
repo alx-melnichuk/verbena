@@ -6,7 +6,6 @@ import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { CommonModule, KeyValue } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { DateAdapter } from '@angular/material/core';
 import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling'
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -16,10 +15,11 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { debounceFn } from 'src/app/common/debounce';
 import { StringDateTime } from 'src/app/common/string-date-time';
-import { ChatMsg } from 'src/app/lib-stream/stream-chats.interface';
 import { DateUtil } from 'src/app/utils/date.utils';
 import { ReplaceWithZeroUtil } from 'src/app/utils/replace-with-zero.util';
 import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
+
+import { ChatMessageDto } from '../chat-message-api.interface';
 
 interface MenuData {
     isEdit: boolean;
@@ -31,7 +31,7 @@ export const MAX_ROWS = 3;
 export const DEBOUNCE_DELAY = 50;
 export const MIN_SCROLL_VALUE = 20;
 
-type ObjChatMsg = { [key: number]: ChatMsg };
+type ObjChatMsg = { [key: number]: ChatMessageDto };
 
 // <mat-form-field subscriptSizing="dynamic"
 // it'll remove the space until an error or hint actually needs to get displayed and only then expands.
@@ -48,7 +48,7 @@ type ObjChatMsg = { [key: number]: ChatMsg };
 })
 export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Input()
-    public chatMsgs: ChatMsg[] = [];
+    public chatMsgs: ChatMessageDto[] = [];
     @Input()
     public isEditable: boolean | null = null;
     @Input()
@@ -84,18 +84,18 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     private scrollItemContainer!: ElementRef<HTMLElement>;
     @ViewChild('textareaElement')
     public textareaElem!: ElementRef<HTMLTextAreaElement>;
-
     @ViewChild(CdkVirtualScrollViewport)
     public viewport!: CdkVirtualScrollViewport;
 
+    public chatMsgList: ChatMessageDto[] = [];
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ newMsg: this.formControl });
     public maxLen: number = 255;
     public maxRowsVal: number = MAX_ROWS;
     public minRowsVal: number = MIN_ROWS;
     public menuDataMap: Map<string, MenuData> = new Map();
-    public msgMarked: ChatMsg | null = null;
-    public msgEditing: ChatMsg | null = null;
+    public msgMarked: ChatMessageDto | null = null;
+    public msgEditing: ChatMessageDto | null = null;
     public initValue: string | null = null;
 
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
@@ -103,7 +103,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     readonly dbncScrollItem = debounceFn(() => this.doScrollItem(), DEBOUNCE_DELAY);
 
     readonly objChatMsg: ObjChatMsg = {};
-    public listChatMsg: ChatMsg[] = [];
 
     private lastScrollTop: number = 0;
 
@@ -115,10 +114,10 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     //     ...this.getEmojiPart2(),
     // ];
 
-    private readonly dateAdapter: DateAdapter<Date> = inject(DateAdapter);
-    private _injector = inject(Injector);
+    private readonly _injector = inject(Injector);
 
     constructor() {
+        console.log(`PanelChat();`); // #
         // this.chatMsgs = this.getChatMsg('evelyn_allen', 18); // #
     }
 
@@ -151,7 +150,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
         if (!!changes['chatMsgs']) {
             console.log(`PanelChat.OnChange('chatMsgs') 1 chatMsgs.length: ${this.chatMsgs.length}`);
-            this.listChatMsg = this.loadObjChatMsg(this.objChatMsg, this.chatMsgs);
+            this.chatMsgList = this.loadObjChatMsg(this.objChatMsg, this.chatMsgs);
             this.scrollToBottom();
             Promise.resolve().then(() =>
                 this.scrollToBottom());
@@ -160,13 +159,13 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     // ** Public API **
 
-    public trackById(index: number, item: ChatMsg): string {
+    public trackById(index: number, item: ChatMessageDto): string {
         return item.date;
     }
     public memberWithZero(value: string): string {
         return ReplaceWithZeroUtil.replace(value);
     }
-    public isEnableMenu(chatMsg: ChatMsg | null, selfName: string | null): boolean {
+    public isEnableMenu(chatMsg: ChatMessageDto | null, selfName: string | null): boolean {
         return !!selfName && selfName == chatMsg?.member && !chatMsg?.isRmv;
     }
     public doScrollItem(): void {
@@ -180,10 +179,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         //     + ` clientHeight: ${elem.clientHeight},`
         //     + ` scrollHeight: ${elem.scrollHeight}, delta: ${delta}, isMoveUp: ${isMoveUp}`);
     }
-    public doScrolledIndexChange(event: any): void {
-        console.log(`doScrolledIndexChange() event:`, event); // #
-    }
-    public getMenuDataByMap(chatMsg: ChatMsg | null): MenuData {
+
+    public getMenuDataByMap(chatMsg: ChatMessageDto | null): MenuData {
         let result: MenuData = this.getMenuData('_' + this.nickname, this.nickname || '');
         if (!!chatMsg && !!this.nickname) {
             result = this.getMenuData(chatMsg.member, this.nickname);
@@ -209,13 +206,13 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             this.scrollToBottom();
         }
     }
-    public doRemoveMessage(chatMsg: ChatMsg | null): void {
+    public doRemoveMessage(chatMsg: ChatMessageDto | null): void {
         if (this.isEditable && !!chatMsg && !!chatMsg.id && chatMsg.member == this.nickname && !chatMsg.isRmv) {
             const keyValue: KeyValue<number, string> = { key: chatMsg.id, value: chatMsg.msg };
             this.removeMsg.emit(keyValue);
         }
     }
-    public doSetValueForEditing(chatMsg: ChatMsg | null): void {
+    public doSetValueForEditing(chatMsg: ChatMessageDto | null): void {
         if (this.msgEditing != chatMsg) {
             this.msgEditing = chatMsg;
             this.setTextareaValue(chatMsg?.msg || null);
@@ -249,14 +246,14 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         if (!keyEvent.altKey && !keyEvent.shiftKey) {
             this.doSendMessage(newMsg);
         }
-        //const keyEvent: KeyboardEvent = (event as KeyboardEvent);
-        // const textArea: HTMLTextAreaElement = this.getTextArea();
-        //   && !!textArea.value && textArea.value.length > 0
-        // if (!keyEvent.altKey && !keyEvent.ctrlKey && !keyEvent.shiftKey && !!newMsg && newMsg.length > 0) {
-        // this.doSendMessage(textArea.value);
-        // this.doSendMessage(newMsg);
-        // this.cleanNewMsg();
-        // textArea.value = '';
+        // # const keyEvent: KeyboardEvent = (event as KeyboardEvent);
+        // # const textArea: HTMLTextAreaElement = this.getTextArea();
+        // #   && !!textArea.value && textArea.value.length > 0
+        // # if (!keyEvent.altKey && !keyEvent.ctrlKey && !keyEvent.shiftKey && !!newMsg && newMsg.length > 0) {
+        // # this.doSendMessage(textArea.value);
+        // # this.doSendMessage(newMsg);
+        // # this.cleanNewMsg();
+        // # textArea.value = '';
         //}
         event.preventDefault();
     }
@@ -315,42 +312,11 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         );
     }
     */
-    private loadObjChatMsg(objChatMsg: ObjChatMsg, chatMsgs: ChatMsg[]): ChatMsg[] {
+    private loadObjChatMsg(objChatMsg: ObjChatMsg, chatMsgs: ChatMessageDto[]): ChatMessageDto[] {
         for (let idx = 0; idx < chatMsgs.length; idx++) {
             objChatMsg[chatMsgs[idx].id] = chatMsgs[idx];
             console.log(`result(${idx})= `, chatMsgs[idx].id);
         }
-        const list = Object.values(objChatMsg);
-        // console.log(`loadObjChatMsg() 3 objChatMsg :`, { ...objChatMsg });
-        // console.log(`loadObjChatMsg() 4 list       :`, [...list]);
-        return list;
-    }
-
-    private getChatMsg(nickname: string, len: number): ChatMsg[] {
-        const result: ChatMsg[] = [];
-
-        for (let idx = 0; idx < len; idx++) {
-            let member = "Teodor_Nickols";
-            let d1 = new Date((idx < (len / 2) ? -100000000 : 0) + Date.now());
-            let date = d1.toISOString();
-            let msg = "text_" + idx + " This function can be used to pass through a successful result while handling an error.";
-            if (idx % 3 == 0) {
-                member = nickname;
-            } else if (idx % 2 == 0) {
-                member = "Snegana_Miller";
-            }
-            // const date1 = date.slice(20, 24) + '_' + date.slice(11, 19) + '_' + date.slice(0, 10);
-            result.push({ id: idx, date, member, msg, isEdt: false, isRmv: false });
-            this.wait(1);
-        }
-        return result;
-    }
-
-    wait(ms: number): void {
-        const start = Date.now();
-        let now = start;
-        while (now - start < ms) {
-            now = Date.now();
-        }
+        return Object.values(objChatMsg);
     }
 }
