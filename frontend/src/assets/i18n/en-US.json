@@ -266,6 +266,9 @@
       "edit": "Edit"
     }
   },
+  "pg-stream-edit": {
+    "have_unsaved_you_want_to_leave": "You have unsaved changes. Are you sure you want to leave ?"
+  },
   "panel-stream-editor": {
     "creating_stream": "Creating a Stream",
     "editing_stream": "Editing a Stream",
