@@ -26,7 +26,7 @@ export const PG_CONCEPT_ROUTES: Routes = [
                     profileDto: pgProfileResolver,
                     profileTokensDto: pgProfileTokensResolver,
                     streamDto: pgConceptResolver,
-                    chatMessageDtoList: pgChatMessagesResolver,
+                    chatMsgList: pgChatMessagesResolver,
                 }
             },
         ]
