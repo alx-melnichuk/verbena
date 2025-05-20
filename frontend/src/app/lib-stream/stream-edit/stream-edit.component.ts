@@ -30,12 +30,18 @@ export class StreamEditComponent {
     public streamConfigDto: StreamConfigDto | null = null;
 
     @Output()
+    readonly changeData: EventEmitter<void> = new EventEmitter();
+    @Output()
     readonly updateStream: EventEmitter<UpdateStreamFileDto> = new EventEmitter();
 
     constructor(public localeService: LocaleService) {
     }
 
     // ** Public API **
+
+    public doChangeData(): void {
+        this.changeData.emit();
+    }
 
     public doUpdateStream(updateStreamFileDto: UpdateStreamFileDto | null): void {
         if (!!updateStreamFileDto) {
