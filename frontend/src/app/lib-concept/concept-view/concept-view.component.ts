@@ -1,5 +1,5 @@
 import {
-    AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit,
+    AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, inject, Input, OnChanges, OnInit,
     Output, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule, KeyValue } from '@angular/common';
@@ -12,17 +12,15 @@ import { AvatarComponent } from 'src/app/components/avatar/avatar.component';
 import { SidebarHandlerDirective } from 'src/app/components/sidebar/sidebar-handler.directive';
 import { SidebarComponent } from 'src/app/components/sidebar/sidebar.component';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
+import { ChatMessageDto } from 'src/app/lib-chat/chat-message-api.interface';
 import { PanelChatComponent } from 'src/app/lib-chat/panel-chat/panel-chat.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
-import { ProfileService } from 'src/app/lib-profile/profile.service';
 import { StreamDto, StreamState } from 'src/app/lib-stream/stream-api.interface';
 import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
 
 import { PanelStreamActionsComponent } from '../panel-stream-actions/panel-stream-actions.component';
 import { PanelStreamParamsComponent } from '../panel-stream-params/panel-stream-params.component';
 import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-state.component';
-import { ChatMsg } from 'src/app/lib-stream/stream-chats.interface';
-
 
 @Component({
     selector: 'app-concept-view',
@@ -45,7 +43,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     @Input()
     public chatMinRows: number | null = null;
     @Input()
-    public chatMsgs: ChatMsg[] = [];
+    public chatMsgs: ChatMessageDto[] = [];
     @Input()
     public countOfViewer: number | null | undefined;
     @Input()
@@ -82,10 +80,8 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
 
     public isSidebarLfOpen: boolean = false;
     public isSidebarRgOpen: boolean = true; // false;
+    public localeService: LocaleService = inject(LocaleService);
 
-    // #An indication that the stream is in active status. ([preparing, started, paused]) 
-    // #public isStreamActive: boolean = false;
-    //   public streamSetStateForbbidenDTO: StreamSetStateForbbidenDTO | null = null;
     // To disable the jumping effect of the "stream-video" panel at startup.
     public isStreamVideo = false;
 
@@ -98,50 +94,21 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     // public settimeoutId: number | null = null;
 
     // Block "Chat"
-    // public isEditableChat = false;
     // public isUserBanned = false;
 
     // private sessionDTOSub: Subscription;
     // private routerNavigationStartSub: Subscription;
     // private targetsFirebaseSub: Subscription | undefined;
-    public isOverPanel: boolean = false;
 
-    constructor(
-        private changeDetector: ChangeDetectorRef,
-        // private router: Router,
-        public hostRef: ElementRef<HTMLElement>,
-        private translateService: TranslateService,
-        private dialogService: DialogService,
-        public initializationService: InitializationService,
-        public localeService: LocaleService,
-        // private streamService: StreamService,
-        // public firebaseService: FirebaseService,
-        // public streamInfoService: StreamInfoService,
-        public profileService: ProfileService,
-        // public followersService: FollowersService,
-        // public streamStateService: StreamStateService,
-    ) {
-        // this.routerNavigationStartSub = this.router.events
-        //   .pipe(filter(event => event instanceof NavigationStart))
-        //   .subscribe((event: NavigationEvent) => {
-        //     if (!!this.streamDto?.id) {
-        //       const currentUrl = ROUTE_VIEW + '/' + this.streamDto.id;
-        //       const routerEvent = (event as RouterEvent);
-        //       if (!routerEvent.url.startsWith(currentUrl)) {
-        //         // Disconnect from the list of viewers.
-        //         this.socketService.leaveFromViewerList();
-        //       }
-        //     }
-        //   });
+    private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private dialogService: DialogService = inject(DialogService);
+    private translateService: TranslateService = inject(TranslateService);
 
+    constructor() {
         // this.getFollowersAndPopular();
-        // this.chatMsgs = this.getChatMsg('evelyn_allen', 10);
-
+        console.log(`ConceptView()`);
     }
     ngOnChanges(changes: SimpleChanges): void {
-        // #if (!!changes['streamDto']) {
-        // #    this.isStreamActive = !!this.streamDto && StreamStateUtil.isActive(this.streamDto.state);
-        // #}
         if (!!changes['countOfViewer']) {
             console.log(`ConceptView.OnChanges() countOfViewer: ${this.countOfViewer}`); // #
         }
@@ -161,10 +128,6 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
             } else {
                 // this.viewerOnlyTargetsFirebaseSubscribe(this.streamDto.id);
             }
-            // Connecting to the list of viewers.
-            // this.socketService.joinViewerList(this.streamDto.id, this.profileService.getAccessToken());
-            // Subscribe to receive chat content.
-            // this.firebaseService.subscribingToChatContent(this.streamDto.id);
         }
         // this.broadcastDuration = '00';
     }
@@ -178,12 +141,6 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
         event.stopPropagation();
     }
 
-    // Section: "Panel stream info"
-    /*
-    public doActionSubscribe(isSubscribe: boolean): void {
-        this.actionSubscribe.emit(isSubscribe);
-    }
-    */
     // Section: "panel stream admin"
 
     public getDate(starttime: StringDateTime | null | undefined): Date | null {
@@ -193,7 +150,6 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     public doChangeState(newState: StreamState | undefined): void {
         console.log(`doChangeState(newState: ${newState})`) // #
         this.changeState.emit(newState);
-        // this.toggleStreamState(this.streamDto?.id || null, newState);
     }
 
     // Section: "Chat"
@@ -330,8 +286,8 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
         }
     }*/
 
-    private getChatMsg(nickname: string, len: number): ChatMsg[] {
-        const result: ChatMsg[] = [];
+    private getChatMsg(nickname: string, len: number): ChatMessageDto[] {
+        const result: ChatMessageDto[] = [];
 
         for (let idx = 0; idx < len; idx++) {
             let member = "Teodor_Nickols";

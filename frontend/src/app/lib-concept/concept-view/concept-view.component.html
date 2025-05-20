@@ -2,7 +2,7 @@
   <app-spinner isFillParent></app-spinner>
 }
 
-<app-sidebar class="cv-sidebar" mode="left"
+<app-sidebar class="cv-sidebar" mode="left" style="display: none;"
   [isOpen]="isSidebarLfOpen"
   (click)="isSidebarLfOpen=(isSidebarLfOpen==false ? true: isSidebarLfOpen)">
   <div sidebar-layer>
@@ -156,7 +156,7 @@
 
   <!-- <app-panel-right-chat
     [isEditable]="isStreamActive"
-    [userId]="profileService.getUserId()"
+    [userId]="profile Service.getUserId()"
     [chatMessages]="chatMessages"
     [isStreamOwner]="isStreamOwner"
     [isUserBanned]="isUserBanned || (socketService.userBanned$ | async)"
