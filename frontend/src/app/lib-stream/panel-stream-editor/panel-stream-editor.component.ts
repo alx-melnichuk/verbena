@@ -61,6 +61,8 @@ export class PanelStreamEditorComponent implements OnChanges {
     public errMsgs: string[] = [];
 
     @Output()
+    readonly changeData: EventEmitter<void> = new EventEmitter();
+    @Output()
     readonly updateStream: EventEmitter<UpdateStreamFileDto> = new EventEmitter();
 
     @HostBinding('class.global-scroll')
@@ -103,6 +105,7 @@ export class PanelStreamEditorComponent implements OnChanges {
     public formGroup: FormGroup = new FormGroup(this.controls);
 
     private origStreamDto: StreamDto = StreamDtoUtil.create();
+    private isChange: boolean = false;
 
     constructor(
         public hostRef: ElementRef<HTMLElement>,
@@ -149,6 +152,13 @@ export class PanelStreamEditorComponent implements OnChanges {
 
     public updateErrMsgs(errMsgs: string[] = []): void {
         this.errMsgs = errMsgs;
+    }
+
+    public doChangeData(): void {
+        if (!this.isChange) {
+            this.isChange = true;
+            this.changeData.emit();
+        }
     }
 
     public saveStream(formGroup: FormGroup): void {
@@ -228,6 +238,7 @@ export class PanelStreamEditorComponent implements OnChanges {
         if (isDuplicate) {
             this.formGroup.markAsDirty();
         }
+        this.isChange = false;
     }
     // '10:12'
     private getStartDateTime(startDate: Date | null, startTime: string | null): Date | null {

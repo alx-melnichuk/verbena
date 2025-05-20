@@ -7,7 +7,7 @@
       formControlName="title"
       [isRequired]="true"
       label="panel-stream-editor.title"
-      (input)="updateErrMsgs();">
+      (input)="updateErrMsgs();doChangeData();">
     </app-field-title>
 
     <app-field-descript wd100 pse-mr-tp-1
@@ -15,7 +15,7 @@
       [isRequired]="false"
       label="panel-stream-editor.descript"
       [numberRows]="5"
-      (input)="updateErrMsgs();">
+      (input)="updateErrMsgs();doChangeData();">
     </app-field-descript>
 
     <div pse-mr-tp-1 class="pse-logo">
@@ -26,8 +26,8 @@
         [accepts]="accepts"
         label="panel-stream-editor.thumbnail"
         [maxSize]="maxSize"
-        (addFile)="updateErrMsgs();addLogoFile($event);"
-        (deleteFile)="updateErrMsgs();deleteLogoFile();">
+        (addFile)="updateErrMsgs();addLogoFile($event);doChangeData();"
+        (deleteFile)="updateErrMsgs();deleteLogoFile();doChangeData();">
       </app-field-image-and-upload>
     </div>
 
@@ -42,8 +42,8 @@
       [minAmount]="tagMinAmount"
       [maxAmount]="tagMaxAmount"
       [hint]="'panel-stream-editor.tags_hint'"
-      (input)="updateErrMsgs();"
-      (removedChip)="updateErrMsgs();">
+      (input)="updateErrMsgs();doChangeData();"
+      (removedChip)="updateErrMsgs();doChangeData();">
     </app-field-chip-grid>
 
     <div pse-mr-tp-0_5>
@@ -62,8 +62,8 @@
         [locale]="locale"
         [minDate]="minDate"
         [maxDate]="maxDate"
-        (dateInput)="updateErrMsgs();"
-        (dateChange)="updateErrMsgs();">
+        (dateInput)="updateErrMsgs();doChangeData();"
+        (dateChange)="updateErrMsgs();doChangeData();">
       </app-field-date>
 
       <app-field-time pse-mr-tp-0_5 class="pse-start-time"
@@ -71,7 +71,7 @@
         [isRequired]="true"
         [min]="'00:00'"
         [max]="'23:59'"
-        (input)="updateErrMsgs();">
+        (input)="updateErrMsgs();doChangeData();">
       </app-field-time>
     </div>
 
