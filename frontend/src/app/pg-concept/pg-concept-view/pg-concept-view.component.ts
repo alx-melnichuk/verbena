@@ -4,6 +4,8 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnDestro
 import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 
+import { ChatMessageDto, ChatMessageDtoUtil } from 'src/app/lib-chat/chat-message-api.interface';
+import { ChatMessageService } from 'src/app/lib-chat/chat-message.service';
 // # import { ChatMessageDto, ChatMessageDtoUtil } from 'src/app/lib-chat/chat-message-api.interface';
 import { ChatSocketService } from 'src/app/lib-chat/chat-socket.service';
 import { ConceptViewComponent } from 'src/app/lib-concept/concept-view/concept-view.component';
@@ -35,10 +37,12 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public chatAccess: string | null = null;
     public chatMaxRows: number = 4;
     public chatMinRows: number = 1;
+    public chatMsgs: ChatMessageDto[] = [];
     public chatName: string = '';
     public chatRoom: string = '';
     public chatSocketService: ChatSocketService = inject(ChatSocketService);
     public isLoadStream = false;
+    public isLoadChatMsg = false;
     public isShowTimer: boolean = false;
     // An indication that the stream is in active status. ([preparing, started, paused]) 
     public isStreamActive: boolean = false;
@@ -52,6 +56,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     private alertService: AlertService = inject(AlertService);
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
+    private chatMessageService: ChatMessageService = inject(ChatMessageService);
     private dialogService: DialogService = inject(DialogService);
     private route: ActivatedRoute = inject(ActivatedRoute);
     private streamService: StreamService = inject(StreamService);
@@ -63,7 +68,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.profileTokensDto = this.route.snapshot.data['profileTokensDto'];
         this.streamDto = this.route.snapshot.data['streamDto'];
         const chatMsgList = this.route.snapshot.data['chatMsgList'];
-        this.chatSocketService.setChatMsgs(chatMsgList);
+        this.setChatMsgs(chatMsgList);
         console.log(`PgConceptView() chatMsgList:`, this.route.snapshot.data['chatMsgList']); // #
         // =v
         if (!!this.streamDto) { // #
@@ -109,6 +114,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             };
             this.chatSocketService.handlReceive = (val: string) => {
                 console.log(`PgConceptView handlReceive(); changeDetector.markForCheck();`); // #
+                this.loadDataFromSocket(val);
                 this.changeDetector.markForCheck();
             };
             // Connect to the server web socket chat.
@@ -155,6 +161,13 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.chatSocketService.sendData(EWSTypeUtil.getMsgCutEWS('', id));
         }
     }
+    public doQueryPastInfo(smallestId: number) {
+        if (!!smallestId) {
+            console.log(`PgConceptView.doQueryPastInfo(${smallestId});`); // #
+            const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
+            this.getChatMessages(streamId, true, smallestId, undefined);
+        }
+    }
 
     // ** Private API **
 
@@ -173,7 +186,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     // Stream for Owner
 
     private toggleStreamState(isStreamOwner: boolean, streamId: number | null, streamState: StreamState | null): void {
-        if (!isStreamOwner || !streamId || !streamState) {
+        if (!isStreamOwner || !streamId || streamId < 0 || !streamState) {
             return;
         }
         this.isLoadStream = true;
@@ -203,9 +216,41 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 this.isLoadStream = false;
                 this.changeDetector.markForCheck();
             });
-
     }
-
+    private loadDataFromSocket(val: string): void {
+        console.log(`PgConceptView.loadDataFromSocket(${val})`); // #
+        const obj = JSON.parse(val);
+        if (!!obj['id'] && !!obj['member'] && !!obj['date']) {
+            const chatMsg = ChatMessageDtoUtil.create(obj);
+            if (chatMsg.id > 0 && !!chatMsg.member && !!chatMsg.date) {
+                this.setChatMsgs([chatMsg]);
+            }
+        }
+    }
+    private setChatMsgs(chatMsgList: ChatMessageDto[]): void {
+        this.chatMsgs = chatMsgList.concat([]);
+        console.log(`PgConceptView.setChatMsgs()`); // #
+    }
+    private getChatMessages(streamId: number | null, isSortDes?: boolean, borderById?: number, limit?: number): void {
+        console.log(`PgConceptView.getChatMessages()...`); // #
+        if (!streamId || streamId < 0) {
+            return;
+        }
+        this.isLoadChatMsg = true;
+        this.chatMessageService.getChatMessages(streamId, isSortDes, borderById, limit)
+            .then((response: ChatMessageDto[] | HttpErrorResponse | undefined) => {
+                console.log(`PgConceptView.getChatMessages() this.setChatMsgs(response)`); // #
+                this.setChatMsgs(response as ChatMessageDto[]);
+            })
+            .catch((error: HttpErrorResponse) => {
+                const appError = (typeof (error?.error || '') == 'object' ? error.error : {});
+                console.log(`PgConceptView.getChatMessages() error:`, error); // #
+            })
+            .finally(() => {
+                this.isLoadChatMsg = false;
+                this.changeDetector.markForCheck();
+            });
+    }
     /*private getChatMsgDemo(): ChatMessageDto[] {
         return [
             { "msg": "Demo msg Av1", "id": 1, "member": "emma_johnson", "date": "2025-04-28T09:10:30.727Z", "isEdt": false, "isRmv": false },
