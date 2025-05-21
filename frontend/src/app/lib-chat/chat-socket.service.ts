@@ -17,7 +17,6 @@ export interface ChatConfig {
 })
 export class ChatSocketService {
 
-    public chatMsgs: ChatMessageDto[] = [];
     public countOfMembers: number = 0;
     public error: string = '';
 
@@ -96,10 +95,6 @@ export class ChatSocketService {
         return this.hasConnect() && this.hasJoined;
     }
 
-    public setChatMsgs(chatMsgs: ChatMessageDto[] = []): void {
-        this.chatMsgs = chatMsgs.concat([]);
-    }
-
     // ** Private API **
 
     /** Processing the "open" event of the Socket. */
@@ -138,14 +133,6 @@ export class ChatSocketService {
     private innHandlReceive = (val: string) => {
         console.log(`16_ChatSocketService.innHandlReceive(${val})`); // #
         this.eventAnalysis(EventWS.parse(val), this.chatConfig);
-
-        const obj = JSON.parse(val);
-        if (!!obj['id'] && !!obj['member'] && !!obj['msg']) {
-            this.chatMsgs = [ChatMessageDtoUtil.create(obj)];
-        } else {
-            console.log(`ChatSocketService.innHandlReceive() val: "${val}"`);
-        }
-
         !!this.handlReceive && this.handlReceive(val);
     };
 
