@@ -77,6 +77,8 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     readonly removeMessage: EventEmitter<number> = new EventEmitter();
     // @Output()
     // readonly bannedUser: EventEmitter<string> = new EventEmitter();
+    @Output()
+    readonly queryPastInfo: EventEmitter<number> = new EventEmitter();
 
     public isSidebarLfOpen: boolean = false;
     public isSidebarRgOpen: boolean = true; // false;
@@ -175,6 +177,9 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
         if (!!res) {
             this.removeMessage.emit(keyValue.key);
         }
+    }
+    public doQueryPastInfo(smallestId: number) {
+        this.queryPastInfo.emit(smallestId);
     }
 
     // ** Private API **
