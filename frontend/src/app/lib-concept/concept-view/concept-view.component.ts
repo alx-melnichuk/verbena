@@ -78,7 +78,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     // @Output()
     // readonly bannedUser: EventEmitter<string> = new EventEmitter();
     @Output()
-    readonly queryPastInfo: EventEmitter<number> = new EventEmitter();
+    readonly queryChatMsgs: EventEmitter<{ isSortDes: boolean, borderById: number }> = new EventEmitter();
 
     public isSidebarLfOpen: boolean = false;
     public isSidebarRgOpen: boolean = true; // false;
@@ -178,8 +178,8 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
             this.removeMessage.emit(keyValue.key);
         }
     }
-    public doQueryPastInfo(smallestId: number) {
-        this.queryPastInfo.emit(smallestId);
+    public doQueryChatMsgs(info: { isSortDes: boolean, borderById: number }) {
+        this.queryChatMsgs.emit(info);
     }
 
     // ** Private API **
