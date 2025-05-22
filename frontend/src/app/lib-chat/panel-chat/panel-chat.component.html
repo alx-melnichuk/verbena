@@ -5,10 +5,8 @@
 
 <div class="pc-sepr"></div>
 
-<cdk-virtual-scroll-viewport  class="pc-middle"
-  itemSize="50" 
-  (scroll)="dbncScrollItem()">
-  <ng-container *cdkVirtualFor="let chatMsg of chatMsgList; templateCacheSize: 0">
+<div class="pc-middle global-scroll" #scrollItem (scroll)="dbncScrollItem()">
+  @for (chatMsg of chatMsgList; track chatMsg.id) {
     <div class="pc-item-wrap"
       [matMenuTriggerFor]="!!menuDataMap.get(chatMsg.id) ? menuItem : null"
       [matMenuTriggerData]="menuDataMap.get(chatMsg.id)"
@@ -47,8 +45,8 @@
       </div> -->
       </div>
     </div>
-  </ng-container>
-</cdk-virtual-scroll-viewport>
+  }
+</div>
 
 <ng-template #templateShowInfo let-chatMsg="chatMsg2">
   <sub style="color: var(--sys-secondary);">
@@ -76,7 +74,7 @@
         formControlName="newMsg"
         autocomplete="new-password"
         autocapitalize="off"
-        [attr.maxlength]="(maxLen > 0 ? maxLen + 1 : null)"
+        [attr.maxlength]="(maxLenVal > 0 ? maxLenVal + 1 : null)"
         (keydown.enter)="doKeydownEnter($event, formControl.value)"
         (keydown.escape)="doKeydownEscape()"
         cdkTextareaAutosize
@@ -100,7 +98,7 @@
           <use href="assets/icons/lib-chat/panel-chat/send-bin.svg#send-bin"></use>
         </svg>
       </button>
-
+      <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
     </mat-form-field>
   </div>
 }
