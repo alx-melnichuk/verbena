@@ -68,8 +68,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.profileTokensDto = this.route.snapshot.data['profileTokensDto'];
         this.streamDto = this.route.snapshot.data['streamDto'];
         const chatMsgList = this.route.snapshot.data['chatMsgList'];
-        this.setChatMsgs(chatMsgList);
-        console.log(`PgConceptView() chatMsgList:`, this.route.snapshot.data['chatMsgList']); // #
+        this.chatMsgs = chatMsgList.concat([]);
+        console.log(`PgConceptView() 1 chatMsgs:`, this.chatMsgs); // #
         // =v
         if (!!this.streamDto) { // #
             // this.streamDto.state = StreamState.waiting; // # for demo
@@ -161,11 +161,11 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.chatSocketService.sendData(EWSTypeUtil.getMsgCutEWS('', id));
         }
     }
-    public doQueryPastInfo(smallestId: number) {
-        if (!!smallestId) {
-            console.log(`PgConceptView.doQueryPastInfo(${smallestId});`); // #
-            const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
-            this.getChatMessages(streamId, true, smallestId, undefined);
+    public doQueryChatMsgs(info: { isSortDes: boolean, borderById: number }) {
+        const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
+        if (streamId > 0 && !!info && info.isSortDes != null && info.borderById != null) {
+            console.log(`PgConceptView.doQueryPastInfo(${JSON.stringify(info)});`); // #
+            this.getChatMessages(streamId, info.isSortDes, info.borderById, undefined);
         }
     }
 
@@ -223,16 +223,13 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         if (!!obj['id'] && !!obj['member'] && !!obj['date']) {
             const chatMsg = ChatMessageDtoUtil.create(obj);
             if (chatMsg.id > 0 && !!chatMsg.member && !!chatMsg.date) {
-                this.setChatMsgs([chatMsg]);
+                this.chatMsgs = [chatMsg];
+                console.log(`PgConceptView() 2 chatMsgs:`, this.chatMsgs); // #
             }
         }
     }
-    private setChatMsgs(chatMsgList: ChatMessageDto[]): void {
-        this.chatMsgs = chatMsgList.concat([]);
-        console.log(`PgConceptView.setChatMsgs()`); // #
-    }
     private getChatMessages(streamId: number | null, isSortDes?: boolean, borderById?: number, limit?: number): void {
-        console.log(`PgConceptView.getChatMessages()...`); // #
+        console.log(`PgConceptView.getChatMessages(isSortDes: ${isSortDes}, borderById: ${borderById})...`); // #
         if (!streamId || streamId < 0) {
             return;
         }
@@ -240,7 +237,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.chatMessageService.getChatMessages(streamId, isSortDes, borderById, limit)
             .then((response: ChatMessageDto[] | HttpErrorResponse | undefined) => {
                 console.log(`PgConceptView.getChatMessages() this.setChatMsgs(response)`); // #
-                this.setChatMsgs(response as ChatMessageDto[]);
+                this.chatMsgs = (response as ChatMessageDto[]).concat([]);
+                console.log(`PgConceptView() 3 chatMsgs:`, this.chatMsgs); // #
             })
             .catch((error: HttpErrorResponse) => {
                 const appError = (typeof (error?.error || '') == 'object' ? error.error : {});
