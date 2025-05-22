@@ -140,7 +140,9 @@
     "locale:min_length" : "Поле \"locale\" має містити принаймні {{ minlength.requiredLength }} символів.",
     "locale:max_length" : "Поле \"locale\" не може містити більше {{ maxlength.requiredLength }} символів.",
     "user_role:invalid_value": "Недійсне значення для \"user role\" ({{ invalid.actualValue }}).",
-    "no_fields_to_update": "Немає полів для оновлення. Дійсні імена: {{ noRequiredFields.validNames }}."
+    "no_fields_to_update": "Немає полів для оновлення. Дійсні імена: {{ noRequiredFields.validNames }}.",
+    "message:min_length" : "Поле \"message\" має містити принаймні {{ minlength.requiredLength }} символів.",
+    "message:max_length" : "Поле \"message\" не може містити більше {{ maxlength.requiredLength }} символів."
   } ,
   "UnprocessableEntity": {
     "status": 422,
