@@ -26,13 +26,16 @@ pub fn validate_message(value: &str) -> Result<(), ValidationError> {
 
 // ** Model: "ChatMessage". Used to return "chat_message" data. **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable, QueryableByName)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
 #[diesel(table_name = schema::chat_messages)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ChatMessage {
     pub id: i32,
     pub stream_id: i32,
     pub user_id: i32,
+    #[diesel(sql_type = diesel::sql_types::Text)]
+    #[diesel(column_name = "user_name")]
+    pub user_name: String,
     pub msg: Option<String>, // min_len=1 max_len=254 Nullable
     pub date_update: DateTime<Utc>,
     pub is_changed: bool,
@@ -46,6 +49,7 @@ impl ChatMessage {
         id: i32,
         stream_id: i32,
         user_id: i32,
+        user_name: String,
         msg: Option<String>,
         date_update: DateTime<Utc>,
         is_changed: bool,
@@ -56,6 +60,7 @@ impl ChatMessage {
             id,
             stream_id,
             user_id,
+            user_name,
             msg: msg,
             date_update,
             is_changed,
@@ -83,7 +88,7 @@ impl ChatMessageDto {
         ChatMessageDto {
             id: chat_message.id,
             date: chat_message.date_update.clone(),
-            member: chat_message.user_id.to_string(), // TODO !
+            member: chat_message.user_name.clone(),
             msg: chat_message.msg.unwrap_or("".to_owned()),
             is_edt: chat_message.is_changed,
             is_rmv: chat_message.is_removed,
