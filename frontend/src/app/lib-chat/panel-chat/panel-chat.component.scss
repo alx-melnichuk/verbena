@@ -46,6 +46,10 @@ app-panel-chat {
         margin: var(--pc-itm-mr, 0.5rem 0px);
     }
 
+    .pc-item-load {
+        height: 30px;
+    }
+
     .pc-item {
         &.pc-self {
             ---itm-bg: var(---pc-itm-self-bg);

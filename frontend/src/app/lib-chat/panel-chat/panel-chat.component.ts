@@ -1,5 +1,5 @@
 import {
-    afterNextRender, AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, HostListener, inject, Injector, Input,
+    afterNextRender, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, inject, Injector, Input,
     OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
 import { CdkTextareaAutosize } from '@angular/cdk/text-field';
@@ -14,12 +14,14 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { debounceFn } from 'src/app/common/debounce';
 import { StringDateTime } from 'src/app/common/string-date-time';
+import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { DateUtil } from 'src/app/utils/date.utils';
 import { ReplaceWithZeroUtil } from 'src/app/utils/replace-with-zero.util';
 import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
+import { ValidatorUtils } from 'src/app/utils/validator.utils';
 
 import { ChatMessageDto } from '../chat-message-api.interface';
-import { ValidatorUtils } from 'src/app/utils/validator.utils';
+
 
 interface MenuData {
     isEdit: boolean;
@@ -32,7 +34,7 @@ export const MESSAGE_MIN_ROWS = 1;
 export const MESSAGE_MAX_LENGTH = 255;
 export const MESSAGE_MIN_LENGTH = 0;
 export const DEBOUNCE_DELAY = 50;
-export const MIN_SCROLL_VALUE = 30; // 20;
+export const MIN_SCROLL_VALUE = 20;
 
 type ObjChatMsg = { [key: number]: ChatMessageDto };
 type MenuDataMap = Map<number, MenuData>;
@@ -44,17 +46,19 @@ type MenuDataMap = Map<number, MenuData>;
     selector: 'app-panel-chat',
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatMenuModule,
-        TranslatePipe, DateTimeFormatPipe],
+        TranslatePipe, DateTimeFormatPipe, SpinnerComponent],
     templateUrl: './panel-chat.component.html',
     styleUrl: './panel-chat.component.scss',
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PanelChatComponent implements OnChanges, AfterViewInit {
+export class PanelChatComponent implements OnChanges {
     @Input()
     public chatMsgs: ChatMessageDto[] = [];
     @Input()
     public isEditable: boolean | null = null;
+    @Input()
+    public isLoadData = false;
     @Input()
     public locale: string | null = null;
     @Input()
@@ -113,6 +117,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     readonly objChatMsg: ObjChatMsg = {};
 
     private lastScrollTop: number = 0;
+    private lastScrollBottom: number = 0;
     private smallestId: number | null = null;
     private largestId: number | null = null;
 
@@ -130,21 +135,25 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             { injector: this._injector },
         );
     }
-    ngAfterViewInit(): void {
-        // this.demoSrollTop(this.scrollItemElem.nativeElement);
-        // Promise.resolve().then(() => this.scrollToBottom(this.scrollItemElem.nativeElement));
-    }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['chatMsgs']) {
             console.log(`PanelChat.OnChange('chatMsgs') 1 chatMsgs.length: ${this.chatMsgs.length}`);
-            this.chatMsgList = this.loadChatMsgs(this.objChatMsg, this.chatMsgs, this.menuDataMap, this.nickname || '');
-            this.smallestId = this.chatMsgList[0].id;
-            this.largestId = this.chatMsgList[this.chatMsgList.length - 1].id;
-            Promise.resolve().then(() => this.scrollToBottom(this.scrollItemElem.nativeElement));
+            const res = this.loadChatMsgs(this.objChatMsg, this.chatMsgs, this.menuDataMap, this.nickname || '');
+            this.chatMsgList = res.chatMsgs;
+            if (res.smallestId > -1 && res.largestId > -1) {
+                const isAddBefore = this.smallestId != null ? res.smallestId < this.smallestId : false;
+                const isAddAfter = this.largestId != null ? res.largestId > this.largestId : false;
+                const bottom = (isAddBefore && !isAddAfter ? this.lastScrollBottom : (!isAddBefore && isAddAfter ? 0 : -1));
+                if (bottom > -1) {
+                    Promise.resolve().then(() => this.setItemsScrollTo(this.scrollItemElem.nativeElement, { bottom }));
+                }
+                this.smallestId = res.smallestId;
+                this.largestId = res.largestId;
+            }
         }
-        if (!!changes['isEditable']) {
-            Promise.resolve().then(() => this.scrollToBottom(this.scrollItemElem.nativeElement));
+        if (!!changes['isEditable'] && !changes['isEditable'].firstChange) {
+            Promise.resolve().then(() => this.setItemsScrollTo(this.scrollItemElem.nativeElement, { bottom: 0 }));
         }
         if (!!changes['maxLen'] || !!changes['minLen']) {
             this.maxLenVal = (!!this.maxLen && this.maxLen > 0 ? this.maxLen : MESSAGE_MAX_LENGTH);
@@ -171,7 +180,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         const elem = this.scrollItemElem.nativeElement;
         const isMoveUp = this.lastScrollTop > elem.scrollTop;
         this.lastScrollTop = elem.scrollTop;
-        console.log(`PanelChat.doScrollItem() elem.scrollTop: ${elem.scrollTop}, this.deltaScroll(elem): ${this.deltaScroll(elem)}`);
+        this.lastScrollBottom = elem.scrollHeight - (elem.scrollTop + elem.clientHeight);
+        console.log(`PanelChat.doScrollItem() scrHeight: ${elem.scrollHeight}, clntHeight: ${elem.clientHeight},`
+            + ` scrTop: ${elem.scrollTop}, scrBottom: ${this.lastScrollBottom}`);
         if (isMoveUp) {
             if (this.deltaScroll(elem) < MIN_SCROLL_VALUE && this.smallestId != null) {
                 console.log(`PanelChat.doScrollItem() emmit`);
@@ -196,7 +207,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
                 this.sendMsg.emit(newMsgVal);
             }
             this.cleanNewMsg();
-            // this.scrollToBottom();
         }
     }
     public doRemoveMessage(chatMsg: ChatMessageDto | null): void {
@@ -303,23 +313,15 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
         return result;
     }
-    private scrollItems(mode: number): void {
-        const elem = this.scrollItemElem.nativeElement;
-        if (mode == -1) {
-
-        } else if (mode == 0) {
-            const isMoveUp = this.lastScrollTop > elem.scrollTop;
-            this.lastScrollTop = elem.scrollTop;
-
-        } else if (mode == 1) {
-
-        }
-    }
-    private scrollToBottom(elem: HTMLElement | null | undefined): void {
-        if (!!elem) {
-            // const d1 = elem.scrollTop;
-            // elem.scrollTop = elem.scrollHeight - elem.clientHeight;
-            // console.log(`scrollToBottom() scrollTop1: ${d1}, scrollTop2: ${elem.scrollTop}`); // #
+    private setItemsScrollTo(elem: HTMLElement | null | undefined, info: { top?: number, bottom?: number }): void {
+        if (!!elem && !!info) {
+            if (info.top != null && info?.top >= 0) {
+                elem.scrollTop = info.top;
+                console.log(`setItemsScrollTo() scrollTop = info.top); ${elem.scrollTop}`); // #
+            } else if (info.bottom != null && info.bottom >= 0) {
+                elem.scrollTop = elem.scrollHeight - (elem.clientHeight + info.bottom);
+                console.log(`setItemsScrollTo() scrollTop = scrollHeight - (clientHeight + info.bottom); ${elem.scrollTop}`); // #
+            }
         }
     }
     /*
@@ -329,7 +331,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         );
     }
     */
-    private loadChatMsgs(objChatMsg: ObjChatMsg, chatMsgs: ChatMessageDto[], menuDataMap: MenuDataMap, selfName: string): ChatMessageDto[] {
+    private loadChatMsgs(
+        objChatMsg: ObjChatMsg, chatMsgs: ChatMessageDto[], menuDataMap: MenuDataMap, selfName: string
+    ): { chatMsgs: ChatMessageDto[], smallestId: number, largestId: number } {
         for (let idx = 0; idx < chatMsgs.length; idx++) {
             const chatMsg = chatMsgs[idx];
             objChatMsg[chatMsg.id] = chatMsg;
@@ -339,6 +343,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             }
             console.log(`loadChatMsgs(${idx})`, JSON.stringify(chatMsg));
         }
-        return Object.values(objChatMsg);
+        const resChatMsgs = Object.values(objChatMsg)
+        const smallestId = resChatMsgs.length > 0 ? resChatMsgs[0].id : -1;
+        const largestId = resChatMsgs.length > 0 ? resChatMsgs[resChatMsgs.length - 1].id : -1;
+        return { chatMsgs: resChatMsgs, smallestId, largestId };
     }
 }

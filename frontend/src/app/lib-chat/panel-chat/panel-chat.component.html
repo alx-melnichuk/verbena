@@ -6,6 +6,11 @@
 <div class="pc-sepr"></div>
 
 <div class="pc-middle global-scroll" #scrollItem (scroll)="dbncScrollItem()">
+  @if (isLoadData) {
+    <div class="pc-item-load">
+      <app-spinner isFillParent9 [diameter]="30"></app-spinner>
+    </div>
+  }
   @for (chatMsg of chatMsgList; track chatMsg.id) {
     <div class="pc-item-wrap"
       [matMenuTriggerFor]="!!menuDataMap.get(chatMsg.id) ? menuItem : null"
