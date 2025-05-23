@@ -116,6 +116,7 @@ export class PanelChatComponent implements OnChanges {
     readonly menuDataMap: MenuDataMap = new Map();
     readonly objChatMsg: ObjChatMsg = {};
 
+    private isNoPastData: boolean = false;
     private lastScrollTop: number = 0;
     private lastScrollBottom: number = 0;
     private smallestId: number | null = null;
@@ -139,9 +140,14 @@ export class PanelChatComponent implements OnChanges {
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['chatMsgs']) {
             console.log(`PanelChat.OnChange('chatMsgs') 1 chatMsgs.length: ${this.chatMsgs.length}`);
-            const res = this.loadChatMsgs(this.objChatMsg, this.chatMsgs, this.menuDataMap, this.nickname || '');
-            this.chatMsgList = res.chatMsgs;
-            if (res.smallestId > -1 && res.largestId > -1) {
+            let res = null;
+            if (this.chatMsgs.length > 0) {
+                res = this.loadChatMsgs(this.objChatMsg, this.chatMsgs, this.menuDataMap, this.nickname || '');
+                this.chatMsgList = res.chatMsgs;
+            } else {
+                this.isNoPastData = true;
+            }
+            if (!!res && res.smallestId > -1 && res.largestId > -1) {
                 const isAddBefore = this.smallestId != null ? res.smallestId < this.smallestId : false;
                 const isAddAfter = this.largestId != null ? res.largestId > this.largestId : false;
                 const bottom = (isAddBefore && !isAddAfter ? this.lastScrollBottom : (!isAddBefore && isAddAfter ? 0 : -1));
@@ -183,7 +189,7 @@ export class PanelChatComponent implements OnChanges {
         this.lastScrollBottom = elem.scrollHeight - (elem.scrollTop + elem.clientHeight);
         console.log(`PanelChat.doScrollItem() scrHeight: ${elem.scrollHeight}, clntHeight: ${elem.clientHeight},`
             + ` scrTop: ${elem.scrollTop}, scrBottom: ${this.lastScrollBottom}`);
-        if (isMoveUp) {
+        if (isMoveUp && !this.isNoPastData) {
             if (this.deltaScroll(elem) < MIN_SCROLL_VALUE && this.smallestId != null) {
                 console.log(`PanelChat.doScrollItem() emmit`);
                 this.queryChatMsgs.emit({ isSortDes: true, borderById: this.smallestId });
