@@ -47,6 +47,8 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     @Input()
     public countOfViewer: number | null | undefined;
     @Input()
+    public isLoadChatMsg = false;
+    @Input()
     public isLoadStream = false;
     @Input()
     public isShowTimer: boolean = false;
