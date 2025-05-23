@@ -187,11 +187,8 @@ export class PanelChatComponent implements OnChanges {
         const isMoveUp = this.lastScrollTop > elem.scrollTop;
         this.lastScrollTop = elem.scrollTop;
         this.lastScrollBottom = elem.scrollHeight - (elem.scrollTop + elem.clientHeight);
-        console.log(`PanelChat.doScrollItem() scrHeight: ${elem.scrollHeight}, clntHeight: ${elem.clientHeight},`
-            + ` scrTop: ${elem.scrollTop}, scrBottom: ${this.lastScrollBottom}`);
         if (isMoveUp && !this.isNoPastData) {
             if (this.deltaScroll(elem) < MIN_SCROLL_VALUE && this.smallestId != null) {
-                console.log(`PanelChat.doScrollItem() emmit`);
                 this.queryChatMsgs.emit({ isSortDes: true, borderById: this.smallestId });
             }
         }
@@ -276,7 +273,6 @@ export class PanelChatComponent implements OnChanges {
     public doClickCheckSelection(event: Event): void {
         const selectionObj = window.getSelection();
         const selection = !!selectionObj ? selectionObj.toString() : null;
-        // # console.log(`doClickCheckSelection(); selection:"${selection}"`); // #
         if (!!selection) {
             event.preventDefault();
             event.stopPropagation();
@@ -314,7 +310,6 @@ export class PanelChatComponent implements OnChanges {
         let result: number = 0;
         if (!!elem) {
             const height = elem.scrollHeight - elem.clientHeight;
-            console.log(`deltaScroll() scrollTop: ${elem.scrollTop}, scrollHeight: ${elem.scrollHeight}, height: ${height}`);
             result = Math.round(Math.round(elem.scrollTop / height * 1000) / 10);
         }
         return result;
@@ -323,10 +318,8 @@ export class PanelChatComponent implements OnChanges {
         if (!!elem && !!info) {
             if (info.top != null && info?.top >= 0) {
                 elem.scrollTop = info.top;
-                console.log(`setItemsScrollTo() scrollTop = info.top); ${elem.scrollTop}`); // #
             } else if (info.bottom != null && info.bottom >= 0) {
                 elem.scrollTop = elem.scrollHeight - (elem.clientHeight + info.bottom);
-                console.log(`setItemsScrollTo() scrollTop = scrollHeight - (clientHeight + info.bottom); ${elem.scrollTop}`); // #
             }
         }
     }
@@ -345,9 +338,7 @@ export class PanelChatComponent implements OnChanges {
             objChatMsg[chatMsg.id] = chatMsg;
             if (!!selfName && selfName == chatMsg.member && !chatMsg.isRmv) {
                 menuDataMap.set(chatMsg.id, { "isEdit": true, "isRemove": true });
-                console.log(`loadChatMsgs() menuDataMap.get(${chatMsg.id},`, JSON.stringify(menuDataMap.get(chatMsg.id)), `)`);
             }
-            console.log(`loadChatMsgs(${idx})`, JSON.stringify(chatMsg));
         }
         const resChatMsgs = Object.values(objChatMsg)
         const smallestId = resChatMsgs.length > 0 ? resChatMsgs[0].id : -1;
