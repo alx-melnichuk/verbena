@@ -16,6 +16,9 @@ DROP FUNCTION IF EXISTS modify_chat_message;
 /* Remove stored function to add a new entry to "chat_messages". */
 DROP FUNCTION IF EXISTS create_chat_message;
 
+/* Remove stored function that will filter "chat_message" entities. */
+DROP FUNCTION IF EXISTS filter_chat_messages;
+
 -- **
 
 /* Remove the indexes on the "chat_message_logs" table. */

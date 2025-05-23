@@ -46,14 +46,23 @@ CREATE INDEX idx_chat_message_logs_chat_message_id ON chat_message_logs(chat_mes
 /* Create a stored function that will filter "chat_message" entities by the specified parameters. */
 CREATE OR REPLACE FUNCTION filter_chat_messages(
   IN _stream_id INTEGER,
-  IN _user_id INTEGER,
   IN _sort_des BOOLEAN,
   IN _border_by_id INTEGER,
-  IN _rec_limit INTEGER
-) RETURNS SETOF chat_messages LANGUAGE plpgsql
+  IN _rec_limit INTEGER,
+  OUT id INTEGER,
+  OUT stream_id INTEGER,
+  OUT user_id INTEGER,
+  OUT user_name VARCHAR,
+  OUT msg VARCHAR,
+  OUT date_update TIMESTAMP WITH TIME ZONE,
+  OUT is_changed BOOLEAN,
+  OUT is_removed BOOLEAN,
+  OUT created_at TIMESTAMP WITH TIME ZONE,
+  OUT updated_at TIMESTAMP WITH TIME ZONE
+) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE
-begin
+BEGIN
   
   IF _sort_des THEN
     IF _border_by_id IS NULL THEN
@@ -61,28 +70,28 @@ begin
     END IF;
   
     RETURN QUERY
-      SELECT cm.id, cm.stream_id, cm.user_id, cm.msg, cm.date_update,
+      SELECT cm.id, cm.stream_id, cm.user_id, u.nickname as user_name, cm.msg, cm.date_update,
         cm.is_changed, cm.is_removed, cm.created_at, cm.updated_at
-      FROM chat_messages cm
+      FROM chat_messages cm, users u
       WHERE cm.stream_id = _stream_id
-        AND cm.user_id = _user_id
+        AND u.id = cm.user_id
         AND cm.id < _border_by_id  
       ORDER BY cm.id DESC
-      LIMIT CASE WHEN _rec_limit IS NOT NULL THEN _rec_limit ELSE 10 END;
+      LIMIT CASE WHEN _rec_limit IS NOT NULL THEN _rec_limit ELSE 20 END;
   ELSE
     IF _border_by_id IS NULL THEN
       _border_by_id := -2147483648;
     END IF;
   
     RETURN QUERY
-      SELECT cm.id, cm.stream_id, cm.user_id, cm.msg, cm.date_update,
+      SELECT cm.id, cm.stream_id, cm.user_id, u.nickname as user_name, cm.msg, cm.date_update,
         cm.is_changed, cm.is_removed, cm.created_at, cm.updated_at
-      FROM chat_messages cm
+      FROM chat_messages cm, users u
       WHERE cm.stream_id = _stream_id
-        AND cm.user_id = _user_id
+        AND u.id = cm.user_id
         AND cm.id > _border_by_id
       ORDER BY cm.id ASC
-      LIMIT CASE WHEN _rec_limit IS NOT NULL THEN _rec_limit ELSE 10 END;
+      LIMIT CASE WHEN _rec_limit IS NOT NULL THEN _rec_limit ELSE 20 END;
   END IF;
 END;
 $$;
@@ -94,6 +103,7 @@ CREATE OR REPLACE FUNCTION create_chat_message(
   OUT id INTEGER,
   INOUT stream_id INTEGER,
   INOUT user_id INTEGER,
+  OUT user_name VARCHAR,
   INOUT msg VARCHAR,
   OUT date_update TIMESTAMP WITH TIME ZONE,
   OUT is_changed BOOLEAN,
@@ -120,10 +130,13 @@ BEGIN
     chat_messages.updated_at
     INTO rec1;
 
+  SELECT u.nickname FROM users u WHERE u.id = user_id INTO user_name;
+
   RETURN QUERY SELECT
     rec1.id,
     rec1.stream_id,
     rec1.user_id,
+    user_name,
     rec1.msg,
     rec1.date_update,
     rec1.is_changed,
@@ -140,6 +153,7 @@ CREATE OR REPLACE FUNCTION modify_chat_message(
   IN by_user_id INTEGER,
   INOUT stream_id INTEGER,
   INOUT user_id INTEGER,
+  OUT user_name VARCHAR,
   INOUT msg VARCHAR,
   OUT date_update TIMESTAMP WITH TIME ZONE,
   OUT is_changed BOOLEAN,
@@ -213,8 +227,10 @@ BEGIN
   END IF;
 
   IF id IS NOT NULL THEN
+    SELECT u.nickname FROM users u WHERE u.id = user_id INTO user_name;
+
     RETURN QUERY SELECT
-      id, stream_id, user_id, msg, date_update, is_changed, is_removed, created_at, updated_at;
+      id, stream_id, user_id, user_name, msg, date_update, is_changed, is_removed, created_at, updated_at;
   END IF;
 END;
 $$;
@@ -225,6 +241,7 @@ CREATE OR REPLACE FUNCTION delete_chat_message(
   INOUT id INTEGER,
   OUT stream_id INTEGER,
   OUT user_id INTEGER,
+  OUT user_name VARCHAR,
   OUT msg VARCHAR,
   OUT date_update TIMESTAMP WITH TIME ZONE,
   OUT is_changed BOOLEAN,
@@ -237,11 +254,10 @@ DECLARE
   _id INTEGER;
   rec1 RECORD;
 BEGIN
-  _id := id;
-  id := NULL;
-  IF _id IS NULL THEN
+  IF id IS NULL THEN
     RETURN;
   END IF;
+  _id := id;
 
   DELETE FROM chat_messages
   WHERE chat_messages.id = _id
@@ -255,8 +271,10 @@ BEGIN
     RETURN;
   END IF;
 
+  SELECT u.nickname FROM users u WHERE u.id = rec1.user_id INTO user_name;
+  
   RETURN QUERY SELECT
-    rec1.id, rec1.stream_id, rec1.user_id, rec1.msg, rec1.date_update, rec1.is_changed, rec1.is_removed,
+    rec1.id, rec1.stream_id, rec1.user_id, user_name, rec1.msg, rec1.date_update, rec1.is_changed, rec1.is_removed,
     rec1.created_at, rec1.updated_at;
 END;
 $$;
