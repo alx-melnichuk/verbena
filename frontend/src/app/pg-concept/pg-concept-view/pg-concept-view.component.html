@@ -1,5 +1,6 @@
 <app-concept-view
   [avatar]="profileDto?.avatar"
+  [blockedUsers]="blockedUsers"
   [chatIsEditable]="isStreamActive && chatSocketService.isJoined()"
   [chatMaxRows]="chatMaxRows"
   [chatMinRows]="chatMinRows"
@@ -12,6 +13,8 @@
   [nickname]="profileDto?.nickname"
   [streamDto]="streamDto"
   (changeState)="doChangeState(isStreamOwner, streamDto?.id, $event)"
+  (blockUser)="doBlockUser($event)"
+  (unblockUser)="doUnblockUser($event)"
   (sendMessage)="doSendMessage($event)"
   (editMessage)="doEditMessage($event)"
   (removeMessage)="doRemoveMessage($event)"

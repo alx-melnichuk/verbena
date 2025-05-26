@@ -34,12 +34,13 @@ const WS_CHAT_HOST: string | null = environment.wsChatHost || null;
 })
 export class PgConceptViewComponent implements OnInit, OnDestroy {
 
-    public chatAccess: string | null = null;
+    public blockedUsers: string[] = [];
+    // public chatAccess: string | null = null;
     public chatMaxRows: number = 4;
     public chatMinRows: number = 1;
     public chatMsgs: ChatMessageDto[] = [];
-    public chatName: string = '';
-    public chatRoom: string = '';
+    // public chatName: string = '';
+    // public chatRoom: string = '';
     public chatSocketService: ChatSocketService = inject(ChatSocketService);
     public isLoadStream = false;
     public isLoadChatMsg = false;
@@ -51,7 +52,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public profileDto: ProfileDto | null = null;
     public profileTokensDto: ProfileTokensDto | null = null;
     // The interval for displaying the timer before starting (in minutes).
-    public showTimerBeforeStart: number | null | undefined;  // ??
+    // public showTimerBeforeStart: number | null | undefined;  // ??
     public streamDto: StreamDto | null = null;
 
     private alertService: AlertService = inject(AlertService);
@@ -109,7 +110,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.chatSocketService.config({ nickname, room: streamId, access });
 
             this.chatSocketService.handlOnError = (err: string) => {
-                console.log(`PgConceptView handlOnError(); changeDetector.markForCheck();`); // #
+                console.error(`SocketErr:`, err);
+                this.alertService.showError(err, 'pg-concept-view.error_socket');
                 this.changeDetector.markForCheck();
             };
             this.chatSocketService.handlReceive = (val: string) => {
@@ -143,6 +145,16 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     // Section: "Chat"
 
+    public doBlockUser(user_name: string): void {
+        if (!!user_name) {
+            this.chatSocketService.sendData(EWSTypeUtil.getBlockEWS(user_name));
+        }
+    }
+    public doUnblockUser(user_name: string): void {
+        if (!!user_name) {
+            this.chatSocketService.sendData(EWSTypeUtil.getUnblockEWS(user_name));
+        }
+    }
     public doSendMessage(newMessage: string | null): void {
         const msgVal = (newMessage || '').trim();
         if (!!msgVal) {
@@ -183,7 +195,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.isStreamOwner = isStreamOwner;
     }
 
-    // Stream for Owner
+    // Section: "panel stream admin"
 
     private toggleStreamState(isStreamOwner: boolean, streamId: number | null, streamState: StreamState | null): void {
         if (!isStreamOwner || !streamId || streamId < 0 || !streamState) {
@@ -209,6 +221,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                     this.dialogService.openConfirmation(
                         '', title, { btnNameCancel: null, btnNameAccept: 'buttons.ok' }, { data: confirmData });
                 } else {
+                    console.error(`ToggleStreamStateErr:`, error);
                     this.alertService.showError(HttpErrorUtil.getMsgs(error)[0], title);
                 }
             })
@@ -217,6 +230,9 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 this.changeDetector.markForCheck();
             });
     }
+
+    // Section: "Chat"
+
     private loadDataFromSocket(val: string): void {
         console.log(`PgConceptView.loadDataFromSocket(${val})`); // #
         const obj = JSON.parse(val);
@@ -241,8 +257,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 console.log(`PgConceptView() 3 chatMsgs:`, this.chatMsgs); // #
             })
             .catch((error: HttpErrorResponse) => {
-                const appError = (typeof (error?.error || '') == 'object' ? error.error : {});
-                console.log(`PgConceptView.getChatMessages() error:`, error); // #
+                console.error(`ChatMessageError:`, error);
             })
             .finally(() => {
                 this.isLoadChatMsg = false;
