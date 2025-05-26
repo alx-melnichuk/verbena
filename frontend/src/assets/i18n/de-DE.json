@@ -397,7 +397,8 @@
   },
   "pg-concept-view": {
     "error_update_stream": "Fehler beim Aktualisieren des Streamstatus",
-    "exist_is_active_stream": "Der aktive Stream wird bereits ausgeführt <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
+    "exist_is_active_stream": "Der aktive Stream wird bereits ausgeführt <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
+    "error_socket": "Socket fehler"
   },
   "concept-view": {
     "chat_title": "Stream-Chat",
@@ -417,7 +418,9 @@
     "you": "du",
     "menu": {
         "edit": "Bearbeiten",
-        "remove": "Löschen"
+        "remove": "Löschen",
+        "block_user": "Block",
+        "unblock_user": "Entsperren"
     },
     "editing_msg": "Bearbeiten einer nachricht",
     "message_edited": "geändert",

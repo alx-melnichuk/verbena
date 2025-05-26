@@ -397,7 +397,8 @@
   },
   "pg-concept-view": {
     "error_update_stream": "Помилка оновлення стану потоку",
-    "exist_is_active_stream": "Ви вже запустили активний потік <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
+    "exist_is_active_stream": "Ви вже запустили активний потік <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
+    "error_socket": "Помилка сокета"
   },
   "concept-view": {
     "chat_title": "Чат трансляції",
@@ -417,7 +418,9 @@
     "you": "ви",
     "menu": {
         "edit": "Редагувати",
-        "remove": "Видалити"
+        "remove": "Видалити",
+        "block_user": "Блокувати",
+        "unblock_user": "Розблокувати"
     },
     "editing_msg": "Редагування повідомлення",
     "message_edited": "змінено",

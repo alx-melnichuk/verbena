@@ -395,7 +395,8 @@
   },
   "pg-concept-view": {
     "error_update_stream": "Error updating stream state",
-    "exist_is_active_stream": "You already have the active stream running <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>"
+    "exist_is_active_stream": "You already have the active stream running <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
+    "error_socket": "Socket error"
   },
   "concept-view": {
     "chat_title": "Stream chat",
@@ -421,7 +422,9 @@
     "you": "you",
     "menu": {
         "edit": "Edit",
-        "remove": "Remove"
+        "remove": "Remove",
+        "block_user": "Block",
+        "unblock_user": "Unblock"
     },
     "editing_msg": "Editing a message",
     "message_edited": "changed",
