@@ -109,7 +109,7 @@
 }
 
 <mat-menu #menuItem="matMenu" class="pc-menu-panel" xPosition="before" [overlapTrigger]="true">
-  <ng-template matMenuContent let-isEdit="isEdit" let-isRemove="isRemove">
+  <ng-template matMenuContent let-isEdit="isEdit" let-isRemove="isRemove" let-isBlock="isBlock" let-isUnblock="isUnblock">
     @if (isEdit) {
       <button mat-menu-item class="pn-menu-item" (click)="doSetValueForEditing(msgMarked)">
         <svg class="pc-svg-box">
@@ -124,6 +124,16 @@
           <use href="assets/icons/lib-chat/panel-chat/trash-bin.svg#trash-bin"></use>
         </svg>
         <span class="pc-menu-label">{{ 'panel-chat.menu.remove' | translate }}</span>
+      </button>
+    }
+    @if (isBlock) {
+      <button mat-menu-item class="pn-item-menu"  (click)="doBlockUser(msgMarked?.member, blockedUsers)">
+        <span class="pc-menu-label">{{ 'panel-chat.menu.block_user' | translate }}</span>
+      </button>
+    }
+    @if (isUnblock) {
+      <button mat-menu-item class="pn-item-menu"  (click)="doUnblockUser(msgMarked?.member, blockedUsers)">
+        <span class="pc-menu-label">{{ 'panel-chat.menu.unblock_user' | translate }}</span>
       </button>
     }
   </ng-template>

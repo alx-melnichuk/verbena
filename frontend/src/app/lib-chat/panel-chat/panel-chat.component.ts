@@ -26,6 +26,8 @@ import { ChatMessageDto } from '../chat-message-api.interface';
 interface MenuData {
     isEdit: boolean;
     isRemove: boolean;
+    isBlock: boolean;
+    isUnblock: boolean;
 }
 
 export const TITLE = 'message';
@@ -54,11 +56,15 @@ type MenuDataMap = Map<number, MenuData>;
 })
 export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Input()
+    public blockedUsers: string[] = [];
+    @Input()
     public chatMsgs: ChatMessageDto[] = [];
     @Input()
     public isEditable: boolean | null = null;
     @Input()
     public isLoadData = false;
+    @Input()
+    public isOwner: boolean | null = null;
     @Input()
     public locale: string | null = null;
     @Input()
@@ -75,20 +81,18 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public title = '';
     // -- old --
     @Input()
-    public isStreamOwner: boolean | null = true;
-    @Input()
     public isUserBanned: boolean | null = null;
-    @Input()
-    public bannedUserIds: string[] = [];
 
+    @Output()
+    readonly blockUser: EventEmitter<string> = new EventEmitter();
+    @Output()
+    readonly unblockUser: EventEmitter<string> = new EventEmitter();
     @Output()
     readonly sendMsg: EventEmitter<string> = new EventEmitter();
     @Output()
     readonly removeMsg: EventEmitter<KeyValue<number, string>> = new EventEmitter();
     @Output()
     readonly editMsg: EventEmitter<KeyValue<number, string>> = new EventEmitter();
-    //   @Output()
-    //   readonly bannedUser: EventEmitter<string> = new EventEmitter();
     @Output()
     readonly queryChatMsgs: EventEmitter<{ isSortDes: boolean, borderById: number }> = new EventEmitter();
 
@@ -142,7 +146,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             console.log(`PanelChat.OnChange('chatMsgs') 1 chatMsgs.length: ${this.chatMsgs.length}`);
             let res = null;
             if (this.chatMsgs.length > 0) {
-                res = this.loadChatMsgs(this.objChatMsg, this.chatMsgs, this.menuDataMap, this.nickname || '');
+                const blockedUsers = this.isOwner ? this.blockedUsers : null;
+                res = this.loadChatMsgs(this.objChatMsg, this.chatMsgs, this.menuDataMap, this.nickname || '', blockedUsers);
                 this.chatMsgList = res.chatMsgs;
             } else {
                 this.isNoPastData = true;
@@ -233,12 +238,16 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             this.textareaElem.nativeElement.focus();
         }
     }
-
-    // public doBannedUser(chatMessage: ChatMsg): void {
-    //     if (!!chatMessage && !!chatMessage.nickname) {
-    //           this.bannedUser.emit(chatMessage.nickname);
-    //     }
-    // }
+    public doBlockUser(member: string | null | undefined, blockedUsers: string[] | null): void {
+        if (!!member && !!blockedUsers && !blockedUsers.includes(member)) {
+            this.blockUser.emit(member);
+        }
+    }
+    public doUnblockUser(member: string | null | undefined, blockedUsers: string[] | null): void {
+        if (!!member && !!blockedUsers && blockedUsers.includes(member)) {
+            this.unblockUser.emit(member);
+        }
+    }
 
     public isSelf(nickname: string): boolean {
         return (this.nickname === nickname);
@@ -339,13 +348,19 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     }
     */
     private loadChatMsgs(
-        objChatMsg: ObjChatMsg, chatMsgs: ChatMessageDto[], menuDataMap: MenuDataMap, selfName: string
+        objChatMsg: ObjChatMsg, chatMsgs: ChatMessageDto[], menuDataMap: MenuDataMap, selfName: string, blockedUsers: string[] | null
     ): { chatMsgs: ChatMessageDto[], smallestId: number, largestId: number } {
         for (let idx = 0; idx < chatMsgs.length; idx++) {
             const chatMsg = chatMsgs[idx];
             objChatMsg[chatMsg.id] = chatMsg;
-            if (!!selfName && selfName == chatMsg.member && !chatMsg.isRmv) {
-                menuDataMap.set(chatMsg.id, { "isEdit": true, "isRemove": true });
+            const isEdit = !!selfName && selfName == chatMsg.member && !chatMsg.isRmv;
+            const isRemove = isEdit;
+            const isNoSelfName = !!selfName && selfName != chatMsg.member;
+            const isBlocked = (selfName == chatMsg.member || !blockedUsers) ? null : blockedUsers.includes(chatMsg.member);
+            const isBlock = isNoSelfName && isBlocked != null && !isBlocked;
+            const isUnblock = isNoSelfName && isBlocked != null && isBlocked;
+            if (isEdit || isBlock || isUnblock) {
+                menuDataMap.set(chatMsg.id, { isEdit, isRemove, isBlock, isUnblock });
             }
         }
         const resChatMsgs = Object.values(objChatMsg)
