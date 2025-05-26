@@ -6,7 +6,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { LogotypeComponent } from 'src/app/components/logotype/logotype.component';
-import { ScrollHasMaxUtil } from 'src/app/utils/scroll-has-max.util';
+import { ScrollElemUtil } from 'src/app/utils/scroll-elem.util';
 
 import { StreamDtoUtil, StreamEventDto } from '../stream-api.interface';
 
@@ -47,7 +47,7 @@ export class PanelStreamEventComponent {
         event.preventDefault();
         event.stopPropagation();
         const elem: Element | null = event.target as Element;
-        if (ScrollHasMaxUtil.check(elem?.scrollTop, elem?.clientHeight, elem?.scrollHeight)) {
+        if (ScrollElemUtil.relativeOffset(elem?.scrollTop, elem?.clientHeight, elem?.scrollHeight) > 0.98) {
             this.requestNextPage.emit();
         }
     }
