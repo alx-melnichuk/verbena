@@ -1,5 +1,5 @@
 import {
-    afterNextRender, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, inject, Injector, Input,
+    afterNextRender, AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, inject, Injector, Input,
     OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
 import { CdkTextareaAutosize } from '@angular/cdk/text-field';
@@ -52,7 +52,7 @@ type MenuDataMap = Map<number, MenuData>;
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PanelChatComponent implements OnChanges {
+export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Input()
     public chatMsgs: ChatMessageDto[] = [];
     @Input()
@@ -171,6 +171,14 @@ export class PanelChatComponent implements OnChanges {
         }
         if (!!changes['minRows']) {
             this.minRowsVal = (!!this.minRows && this.minRows > 0 ? this.minRows : MESSAGE_MIN_ROWS);
+        }
+    }
+
+    ngAfterViewInit(): void {
+        const elem = this.scrollItemElem?.nativeElement;
+        const isScroll = (elem?.scrollHeight || 0) > (elem?.clientHeight || 0);
+        if (!isScroll && this.chatMsgList.length > 0 && this.smallestId != null) {
+            this.queryChatMsgs.emit({ isSortDes: true, borderById: this.smallestId });
         }
     }
 
