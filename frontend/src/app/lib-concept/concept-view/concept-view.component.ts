@@ -37,6 +37,8 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     @Input()
     public avatar: string | null | undefined;
     @Input()
+    public blockedUsers: string[] = [];
+    @Input()
     public chatIsEditable: boolean | null = null;
     @Input()
     public chatMaxRows: number | null = null;
@@ -64,21 +66,21 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     //   public hasSubscriptionToAuthor: boolean | null = null;
     //   @Input()
     //   public subscribeLoading: boolean | null = null;
-    //   @Input()
-    //   public chatMessages: ChatMessage[] = [];
 
     @Output()
     readonly changeState: EventEmitter<StreamState> = new EventEmitter();
     // @Output()
     // readonly actionSubscribe: EventEmitter<boolean> = new EventEmitter();
     @Output()
+    readonly blockUser: EventEmitter<string> = new EventEmitter();
+    @Output()
+    readonly unblockUser: EventEmitter<string> = new EventEmitter();
+    @Output()
     readonly sendMessage: EventEmitter<string> = new EventEmitter();
     @Output()
     readonly editMessage: EventEmitter<KeyValue<number, string>> = new EventEmitter();
     @Output()
     readonly removeMessage: EventEmitter<number> = new EventEmitter();
-    // @Output()
-    // readonly bannedUser: EventEmitter<string> = new EventEmitter();
     @Output()
     readonly queryChatMsgs: EventEmitter<{ isSortDes: boolean, borderById: number }> = new EventEmitter();
 
@@ -158,6 +160,16 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
 
     // Section: "Chat"
 
+    public doBlockUser(user_name: string): void {
+        if (!!user_name) {
+            this.blockUser.emit(user_name);
+        }
+    }
+    public doUnblockUser(user_name: string): void {
+        if (!!user_name) {
+            this.unblockUser.emit(user_name);
+        }
+    }
     public doSendMessage(newMessage: string): void {
         if (!!newMessage) {
             this.sendMessage.emit(newMessage);
