@@ -2,7 +2,7 @@ import { StringDateTime } from "../common/string-date-time";
 
 
 export enum EWSType {
-    Block = 'block', // -
+    Block = 'block',
     Count = 'count',
     Echo = 'echo', // -
     Err = 'err',
@@ -12,7 +12,7 @@ export enum EWSType {
     MsgCut = 'msgCut',
     MsgPut = 'msgPut',
     Name = 'name',
-    Unblock = 'unblock', // -
+    Unblock = 'unblock',
 }
 
 export class EWSTypeUtil {
