@@ -318,8 +318,8 @@ DECLARE
   starttimes TIMESTAMP WITH TIME ZONE[] := ARRAY[]::TIMESTAMP WITH TIME ZONE[];
   len2 INTEGER;
   idx2 INTEGER;
-  len3 INTEGER;
-  idx3 INTEGER;
+  usr_len INTEGER;
+  usr_idx INTEGER;
   mark_id INTEGER;
   stream_id INTEGER;
   user_id INTEGER;
@@ -345,10 +345,11 @@ BEGIN
         ORDER BY s.starttime ASC
         LIMIT 6 -- Get 6 streams for each user.
       LOOP
-        -- raise notice 'idx1: %, rec.stream_id: %, rec.user_id: %, rec.starttime: %', idx1, rec1.stream_id, rec1.user_id, rec1.starttime;
         mark_id := rec1.stream_id;
         stream_ids := stream_ids || rec1.stream_id;
-        user_ids := user_ids || rec1.user_id;
+        IF rec1.user_id <> ALL(user_ids) THEN
+          user_ids := user_ids || rec1.user_id;
+        END IF;
         starttimes := starttimes || rec1.starttime;
       END LOOP;
       mark_ids := mark_ids || mark_id;
@@ -362,41 +363,39 @@ BEGIN
     len1 := ARRAY_LENGTH(mark_ids, 1);
     IF len1 >= 2 THEN
       mark_ids := ARRAY[]::INTEGER[] || mark_ids[len1 - 1] || mark_ids[len1];
-      -- raise notice 'mark_ids: %, LEN(mark_ids): %', mark_ids, ARRAY_LENGTH(mark_ids, 1);
     END IF;
     -- raise notice '_';
-
+    usr_len := ARRAY_LENGTH(user_ids, 1);
     len1 := ARRAY_LENGTH(stream_ids, 1);
     idx1 := 1;
     WHILE idx1 <= len1 LOOP
       stream_id := stream_ids[idx1];
-      user_id := user_ids[idx1];
-      len2 := CASE WHEN stream_id = ANY(mark_ids) THEN 100 ELSE 10 END;
+      usr_idx := 1;
+      len2 := CASE WHEN stream_id = ANY(mark_ids) THEN 140 ELSE 15 END;
       idx2 := 1;
       WHILE idx2 <= len2 LOOP
         starttime := (starttimes[idx1] + (idx2 * INTERVAL '1 hours'))::timestamp;
         msg1 := 'Demo message ' || idx2;
-        -- raise notice 'idx2: %, len2: %, stream_id: %, user_id: %, msg1: %, starttime: %', idx2, len2, stream_id, user_id, msg1, starttime;
+        user_id := user_ids[usr_idx];
 
         -- Add a new message for the specified user and their stream.
         INSERT INTO chat_messages(stream_id, user_id, msg, date_update)
         SELECT stream_id, user_id, msg1, starttime
         RETURNING chat_messages.id
         INTO ch_msg_id;
-        -- raise notice '    ch_msg_id: %', ch_msg_id;
+        -- raise notice 'ch_msg_id: %, stream_id: %, user_id: %, msg1: %, starttime: %', ch_msg_id, stream_id, user_id, msg1, starttime;
 
         IF MOD(ch_msg_id, 2) = 0  THEN
           -- Add message change.
           ch_msg_logs_ids := ARRAY(SELECT id FROM modify_chat_message(ch_msg_id, user_id, NULL, NULL, msg1 || ' ver.2'));
-          -- raise notice '    modify_chat_message(user_id: %, ch_msg_id: %, "ver2")= %', user_id, ch_msg_id, ch_msg_logs_ids;
         ELSE 
           IF MOD(ch_msg_id, 9) = 0  THEN
             -- Delete message contents.
             ch_msg_logs_ids := ARRAY(SELECT id FROM modify_chat_message(ch_msg_id, user_id, NULL, NULL, ''));
-            -- raise notice '    modify_chat_message(user_id: %, ch_msg_id: %, "")= %', user_id, ch_msg_id, ch_msg_logs_ids;
           END IF;
         END IF;
 
+        usr_idx := CASE WHEN usr_idx = usr_len THEN 1 ELSE usr_idx + 1 END;
         idx2 := idx2 + 1;
       END LOOP;
       idx1 := idx1 + 1;
