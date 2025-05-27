@@ -11,6 +11,15 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    blocked_users (id) {
+        id -> Int4,
+        user_id -> Int4,
+        blocked_id -> Int4,
+        block_date -> Timestamptz,
+    }
+}
+
+diesel::table! {
     chat_message_logs (id) {
         id -> Int4,
         chat_message_id -> Int4,
@@ -149,6 +158,7 @@ diesel::joinable!(streams -> users (user_id));
 diesel::joinable!(user_recovery -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    blocked_users,
     chat_message_logs,
     chat_messages,
     link_stream_tags_to_streams,
