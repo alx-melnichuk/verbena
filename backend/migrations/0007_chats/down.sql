@@ -1,6 +1,35 @@
--- Removing entities: "chat_messages", chat_message_logs.
+-- Removing entities: "blocked_users", "chat_messages", chat_message_logs.
 
 -- **
+
+-- Removing entities: "blocked_users".
+
+/* Remove stored function to get the entity from "blocked_users". */
+DROP FUNCTION IF EXISTS get_blocked_user;
+
+/* Remove stored function that will filter "blocked_user" entities by the specified parameters. */
+DROP FUNCTION IF EXISTS filter_blocked_users;
+
+/* Remove stored function to delete the entity in "blocked_users". */
+DROP FUNCTION IF EXISTS delete_blocked_user;
+
+/* Remove stored function to add a new entry to "blocked_users". */
+DROP FUNCTION IF EXISTS create_blocked_user;
+
+-- **
+
+/* Remove the indexes on the "blocked_users" table. */
+DROP INDEX IF EXISTS idx_blocked_users_blocked_id;
+
+/* Remove the indexes on the "blocked_users" table. */
+DROP INDEX IF EXISTS idx_blocked_users_user_id;
+
+/* Remove the "blocked_users" table. */
+DROP TABLE IF EXISTS blocked_users;
+
+-- **
+
+-- Removing entities: "chat_messages", chat_message_logs.
 
 /* Remove stored function to get an array of entities in "chat_message_logs". */
 DROP FUNCTION IF EXISTS get_chat_message_log;

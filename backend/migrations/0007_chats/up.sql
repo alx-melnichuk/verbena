@@ -63,7 +63,6 @@ CREATE OR REPLACE FUNCTION filter_chat_messages(
 AS $$
 DECLARE
 BEGIN
-  
   IF _sort_des THEN
     IF _border_by_id IS NULL THEN
       _border_by_id := +2147483647;
@@ -96,7 +95,6 @@ BEGIN
 END;
 $$;
 
--- **
 
 /* Create a stored function to add a new entry to "chat_messages". */
 CREATE OR REPLACE FUNCTION create_chat_message(
@@ -302,6 +300,240 @@ $$;
 
 -- **
 
+/* Create "blocked_users" table. */
+CREATE TABLE blocked_users (
+    id SERIAL PRIMARY KEY NOT NULL,
+    /* The user who performed the blocking. */
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    /* The user who was blocked. */
+    blocked_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    /* Date and time the blocking started. */
+    block_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_blocked_users_user_id ON blocked_users(user_id);
+CREATE INDEX idx_blocked_users_blocked_id ON blocked_users(blocked_id);
+
+-- **
+
+/* Create a stored function to add a new entry to "blocked_users". */
+CREATE OR REPLACE FUNCTION create_blocked_user(
+  OUT id INTEGER,
+  INOUT user_id INTEGER,
+  INOUT blocked_id INTEGER,
+  INOUT blocked_nickname VARCHAR,
+  OUT block_date TIMESTAMP WITH TIME ZONE
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+DECLARE 
+  rec1 RECORD;
+  bl_id INTEGER;
+  bl_nickname VARCHAR;
+BEGIN
+  IF (user_id IS NULL) THEN
+    RETURN;
+  END IF;
+
+  IF blocked_id IS NOT NULL THEN 
+    SELECT u.id, u.nickname
+    FROM users u 
+    WHERE u.id = blocked_id
+    INTO bl_id, bl_nickname;
+  ELSE
+    IF blocked_nickname IS NOT NULL THEN 
+      SELECT u.id, u.nickname 
+      FROM users u 
+      WHERE u.nickname = blocked_nickname
+      INTO bl_id, bl_nickname;
+    END IF;
+  END IF;
+
+  IF (bl_id IS NULL OR bl_nickname IS NULL)  THEN
+    RETURN;
+  END IF;
+
+  -- Add a new entry to the "blocked_user" table.
+  INSERT INTO blocked_users(user_id, blocked_id)
+  VALUES (user_id, bl_id)
+  RETURNING
+    blocked_users.id,
+    blocked_users.user_id,
+    blocked_users.blocked_id,
+    bl_nickname as blocked_nickname,
+    blocked_users.block_date
+    INTO rec1;
+
+  RETURN QUERY SELECT
+    rec1.id,
+    rec1.user_id,
+    rec1.blocked_id,
+    rec1.blocked_nickname,
+    rec1.block_date;
+END;
+$$;
+
+/* Create a stored function to delete the entity in "blocked_users". */
+CREATE OR REPLACE FUNCTION delete_blocked_user(
+  OUT id INTEGER,
+  INOUT user_id INTEGER,
+  INOUT blocked_id INTEGER,
+  INOUT blocked_nickname VARCHAR,
+  OUT block_date TIMESTAMP WITH TIME ZONE
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+DECLARE
+  rec1 RECORD;
+  bl_id INTEGER;
+  bl_nickname VARCHAR;
+BEGIN
+  IF (user_id IS NULL) THEN
+    RETURN;
+  END IF;
+
+  IF blocked_id IS NOT NULL THEN 
+    SELECT u.id, u.nickname
+    FROM users u 
+    WHERE u.id = blocked_id
+    INTO bl_id, bl_nickname;
+  ELSE
+    IF blocked_nickname IS NOT NULL THEN 
+      SELECT u.id, u.nickname 
+      FROM users u 
+      WHERE u.nickname = blocked_nickname
+      INTO bl_id, bl_nickname;
+    END IF;
+  END IF;
+
+  IF (bl_id IS NULL OR bl_nickname IS NULL)  THEN
+    RETURN;
+  END IF;
+
+  DELETE FROM blocked_users
+  WHERE blocked_users.id = user_id
+    AND blocked_users.blocked_id = bl_id
+  RETURNING 
+    blocked_users.id,
+    blocked_users.user_id,
+    blocked_users.blocked_id,
+    bl_nickname as blocked_nickname,
+    blocked_users.block_date
+  INTO rec1;
+
+  IF rec1.id IS NULL THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY SELECT
+    rec1.id,
+    rec1.user_id,
+    rec1.blocked_id,
+    rec1.blocked_nickname,
+    rec1.block_date;
+END;
+$$;
+
+/* Create a stored function that will filter "blocked_user" entities by the specified parameters. */
+CREATE OR REPLACE FUNCTION filter_blocked_users(
+  OUT id INTEGER,
+  INOUT user_id INTEGER,
+  INOUT blocked_id INTEGER,
+  OUT blocked_nickname VARCHAR,
+  OUT block_date TIMESTAMP WITH TIME ZONE
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+DECLARE
+  rec1 RECORD;
+  bl_id INTEGER;
+  bl_nickname VARCHAR;
+BEGIN
+  IF (user_id IS NULL) THEN
+    RETURN;
+  END IF;
+
+  IF (blocked_id IS NULL) THEN
+    RETURN QUERY
+      SELECT
+        bu.id,
+        bu.user_id,
+        bu.blocked_id,
+        u.nickname AS blocked_nickname,
+        bu.block_date
+      FROM
+        blocked_users bu, users u
+      WHERE
+        bu.user_id = user_id
+        AND bu.user_id = u.id
+      ORDER BY
+        u.nickname ASC;
+  ELSE
+
+    IF blocked_id IS NOT NULL THEN 
+      SELECT u.id, u.nickname
+      FROM users u 
+      WHERE u.id = blocked_id
+      INTO bl_id, bl_nickname;
+    ELSE
+      SELECT u.id, u.nickname 
+      FROM users u 
+      WHERE u.nickname = blocked_nickname
+      INTO bl_id, bl_nickname;
+    END IF;
+
+    IF (bl_id IS NULL OR bl_nickname IS NULL)  THEN
+      RETURN;
+    END IF;
+
+    RETURN QUERY
+      SELECT
+        bu.id,
+        bu.user_id,
+        bu.blocked_id,
+        bl_nickname AS blocked_nickname,
+        bu.block_date
+      FROM
+        blocked_users bu
+      WHERE
+        bu.user_id = user_id
+        AND bu.blocked_id = bl_id;
+  END IF;
+END;
+$$;
+
+
+/* Create a stored function to get the entity from "blocked_users". */
+CREATE OR REPLACE FUNCTION get_blocked_user(
+  OUT id INTEGER,
+  INOUT user_id INTEGER,
+  INOUT blocked_id INTEGER,
+  OUT blocked_nickname VARCHAR,
+  OUT block_date TIMESTAMP WITH TIME ZONE
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+DECLARE
+  rec1 RECORD;
+BEGIN
+  IF (user_id IS NULL OR blocked_id IS NULL) THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY
+    SELECT
+      bu.id,
+      bu.user_id,
+      bu.blocked_id,
+      u.nickname AS blocked_nickname,
+      bu.block_date
+    FROM
+      blocked_users bu, users u
+    WHERE
+      bu.user_id = user_id
+      AND bu.blocked_id = blocked_id
+      AND bu.user_id = u.id;
+END;
+$$;
+
+-- **
+
 /* Create a procedure that adds test data to the table: chat messages, chat_message logs. */
 CREATE OR REPLACE PROCEDURE add_chat_messages_test_data()
 LANGUAGE plpgsql 
@@ -415,3 +647,51 @@ DROP PROCEDURE IF EXISTS add_chat_messages_test_data;
 
 -- **
 
+/* Create a procedure that adds test data to the table: blocked_users. */
+CREATE OR REPLACE PROCEDURE add_blocked_users_test_data()
+LANGUAGE plpgsql 
+AS $$
+DECLARE
+  names VARCHAR[];
+  nameIds INTEGER[];
+  nickname1 VARCHAR;
+  len1 INTEGER;
+  idx1 INTEGER;
+  user_id1 INTEGER;
+  user_id2 INTEGER;
+BEGIN
+  -- raise notice 'Start';
+  names := ARRAY['ethan_brown', 'ava_wilson', 'james_miller', 'mila_davis', 'evelyn_allen'];
+
+  SELECT array_agg(u.id)
+  FROM users u
+  WHERE u.nickname IN (SELECT unnest(names))
+  INTO nameIds;
+  -- raise notice 'LEN(nameIds): %, nameIds: %', ARRAY_LENGTH(nameIds, 1), nameIds;
+
+  len1 := ARRAY_LENGTH(nameIds, 1);
+  user_id1 = nameIds[1];
+  idx1 := 2;
+  WHILE idx1 <= len1 LOOP
+    user_id2 = nameIds[idx1];
+    PERFORM create_blocked_user(user_id1, user_id2, NULL);
+    user_id1 = user_id2;
+    idx1 := idx1 + 1;
+  END LOOP;
+
+  IF (len1 > 1) THEN
+    PERFORM create_blocked_user(nameIds[len1], nameIds[1], NULL);
+  END IF;
+  -- raise notice 'Finish';
+END;
+$$;
+
+/*
+ * Add test data to the tables: blocked_users.
+ */
+CALL add_blocked_users_test_data();
+
+/* Removing the procedure that adds test data to the table: blocked_users. */
+DROP PROCEDURE IF EXISTS add_blocked_users_test_data;
+
+-- **
