@@ -1,3 +1,6 @@
+pub mod blocked_user_controller;
+pub mod blocked_user_models;
+pub mod blocked_user_orm;
 pub mod chat_controller;
 pub mod chat_event_ws;
 pub mod chat_message;
