@@ -48,12 +48,13 @@ pub mod impls {
 
     use diesel::{self, prelude::*, sql_types};
     use log::{info, log_enabled, Level::Info};
-    // use schema::chat_messages::dsl as ch_msgs_dsl;
 
+    use crate::chats::{
+        chat_message_models::{ChatMessage, ChatMessageLog, CreateChatMessage, FilterChatMessage, ModifyChatMessage},
+        chat_message_orm::ChatMessageOrm,
+    };
     use crate::dbase;
-    // use crate::schema;
-
-    use super::*;
+    use crate::validators::Validator;
 
     pub const CONN_POOL: &str = "ConnectionPool";
 
@@ -119,6 +120,13 @@ pub mod impls {
         /// Add a new entry (chat_message).
         fn create_chat_message(&self, create_chat_message: CreateChatMessage) -> Result<ChatMessage, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
+            let validation_res = create_chat_message.validate();
+            if let Err(validation_errors) = validation_res {
+                let buff: Vec<String> = validation_errors.into_iter().map(|v| v.message.to_string()).collect();
+                return Err(buff.join("','"));
+            }
+
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -146,6 +154,13 @@ pub mod impls {
             modify_chat_message: ModifyChatMessage,
         ) -> Result<Option<ChatMessage>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
+            let validation_res = modify_chat_message.validate();
+            if let Err(validation_errors) = validation_res {
+                let buff: Vec<String> = validation_errors.into_iter().map(|v| v.message.to_string()).collect();
+                return Err(buff.join("','"));
+            }
+
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -156,8 +171,7 @@ pub mod impls {
                 .bind::<sql_types::Nullable<sql_types::Integer>, _>(modify_chat_message.user_id) // $4
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_chat_message.msg); // $5
 
-            // TODO ??
-            // Run a query with Diesel to create a new user and return it.
+            // Run a query with Diesel to modify the entity and return it.
             let chat_message = query
                 .get_result::<ChatMessage>(&mut conn)
                 .optional()
@@ -177,7 +191,7 @@ pub mod impls {
 
             let query = diesel::sql_query("select * from delete_chat_message($1);").bind::<sql_types::Integer, _>(id);
 
-            // Run a query using Diesel to delete the "chat_message" entity by ID and return the data for that entity.
+            // Run a query using Diesel to delete the entity by ID and return it.
             let opt_chat_message = query
                 .get_result::<ChatMessage>(&mut conn)
                 .optional()
@@ -244,6 +258,7 @@ pub mod tests {
                     id,
                     chat_message.stream_id,
                     chat_message.user_id,
+                    chat_message.user_name.clone(),
                     chat_message.msg.clone(),
                     chat_message.date_update.clone(),
                     chat_message.is_changed,
