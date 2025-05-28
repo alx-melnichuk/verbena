@@ -5,17 +5,19 @@ use actix_web::{get, post, put, web, HttpResponse, Responder};
 use actix_web_actors::ws;
 use log::{error, info, log_enabled, Level::Info};
 
-use crate::chats::chat_message_models::{
-    ChatMessageDto, CreateChatMessage, CreateChatMessageDto, FilterChatMessage, FilterChatMessageDto,
-    ModifyChatMessage, ModifyChatMessageDto,
-};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::chats::chat_message_orm::tests::ChatMessageOrmApp;
-use crate::chats::chat_message_orm::ChatMessageOrm;
-use crate::chats::chat_ws_assistant::ChatWsAssistant;
-use crate::chats::chat_ws_session::ChatWsSession;
+use crate::chats::{
+    chat_message_models::{
+        ChatMessageDto, CreateChatMessage, CreateChatMessageDto, FilterChatMessage, FilterChatMessageDto,
+        ModifyChatMessage, ModifyChatMessageDto,
+    },
+    chat_message_orm::ChatMessageOrm,
+    chat_ws_assistant::ChatWsAssistant,
+    chat_ws_session::ChatWsSession,
+};
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -110,7 +112,7 @@ pub async fn get_chat_message(
         .collect();
 
     if let Some(timer) = timer {
-        info!("get_chat_message1() time: {}", format!("{:.2?}", timer.elapsed()));
+        info!("get_chat_message() time: {}", format!("{:.2?}", timer.elapsed()));
     }
     Ok(HttpResponse::Ok().json(chat_message_dto_list)) // 200
 }
@@ -125,7 +127,6 @@ pub async fn post_chat_message(
     // Get current user details.
     let profile = authenticated.deref();
     let user_id = profile.user_id;
-    let _nickname = profile.nickname.clone();
 
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
