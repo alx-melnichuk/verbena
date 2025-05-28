@@ -20,8 +20,6 @@ pub fn validate_message(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-// * * * * Section: "database". * * * *
-
 // * * * * Section: models for "ChatMessageOrm". * * * *
 
 // ** Model: "ChatMessage". Used to return "chat_message" data. **
@@ -147,6 +145,26 @@ impl Validator for CreateChatMessage {
     }
 }
 
+// ** Model Dto: "CreateChatMessageDto". Used: in "chat_controller::post_chat_message()" **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateChatMessageDto {
+    pub stream_id: i32,
+    pub msg: String, // min_len=1 max_len=255 Nullable
+}
+
+impl Validator for CreateChatMessageDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        errors.push(validate_message(&self.msg).err());
+
+        self.filter_errors(errors)
+    }
+}
+
 // ** Model: "ModifyChatMessage". Used: ChatMessageOrm::modify_chat_message() **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -164,9 +182,6 @@ impl ModifyChatMessage {
             msg: msg.clone(),
         }
     }
-}
-
-impl ModifyChatMessage {
     pub fn valid_names<'a>() -> Vec<&'a str> {
         vec!["stream_id", "user_id", "msg"]
     }
@@ -186,6 +201,42 @@ impl Validator for ModifyChatMessage {
 
         let list_is_some = vec![self.stream_id.is_some(), self.user_id.is_some(), self.msg.is_some()];
         let valid_names = Self::valid_names().join(",");
+        errors.push(
+            ValidationChecks::no_fields_to_update(&list_is_some, &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err(),
+        );
+
+        self.filter_errors(errors)
+    }
+}
+
+// ** Model Dto: "ModifyChatMessageDto". Used: in "chat_controller::put_chat_message()" **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ModifyChatMessageDto {
+    pub stream_id: Option<i32>,
+    pub user_id: Option<i32>,
+    pub msg: Option<String>, // min_len=1 max_len=255 Nullable
+}
+
+impl ModifyChatMessageDto {
+    pub fn valid_names<'a>() -> Vec<&'a str> {
+        vec!["stream_id", "user_id", "msg"]
+    }
+}
+
+impl Validator for ModifyChatMessageDto {
+    // Check the model against the required conditions.
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<Option<ValidationError>> = vec![];
+
+        if let Some(value) = &self.msg {
+            errors.push(validate_message(&value).err());
+        }
+
+        // Checking for at least one required field.
+        let list_is_some = vec![self.stream_id.is_some(), self.user_id.is_some(), self.msg.is_some()];
+        let valid_names = ModifyChatMessageDto::valid_names().join(",");
         errors.push(
             ValidationChecks::no_fields_to_update(&list_is_some, &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err(),
         );
@@ -243,62 +294,6 @@ pub struct FilterChatMessageDto {
     pub border_by_id: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i32>,
-}
-
-// ** Model Dto: "CreateChatMessageDto". Used: in "chat_controller::post_chat_message()" **
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateChatMessageDto {
-    pub stream_id: i32,
-    pub msg: String, // min_len=1 max_len=255 Nullable
-}
-
-impl Validator for CreateChatMessageDto {
-    // Check the model against the required conditions.
-    fn validate(&self) -> Result<(), Vec<ValidationError>> {
-        let mut errors: Vec<Option<ValidationError>> = vec![];
-
-        errors.push(validate_message(&self.msg).err());
-
-        self.filter_errors(errors)
-    }
-}
-
-// ** Model Dto: "ModifyChatMessageDto". Used: in "chat_controller::put_chat_message()" **
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct ModifyChatMessageDto {
-    pub stream_id: Option<i32>,
-    pub user_id: Option<i32>,
-    pub msg: Option<String>, // min_len=1 max_len=255 Nullable
-}
-
-impl ModifyChatMessageDto {
-    pub fn valid_names<'a>() -> Vec<&'a str> {
-        vec!["stream_id", "user_id", "msg"]
-    }
-}
-
-impl Validator for ModifyChatMessageDto {
-    // Check the model against the required conditions.
-    fn validate(&self) -> Result<(), Vec<ValidationError>> {
-        let mut errors: Vec<Option<ValidationError>> = vec![];
-
-        if let Some(value) = &self.msg {
-            errors.push(validate_message(&value).err());
-        }
-
-        // Checking for at least one required field.
-        let list_is_some = vec![self.stream_id.is_some(), self.user_id.is_some(), self.msg.is_some()];
-        let valid_names = ModifyChatMessageDto::valid_names().join(",");
-        errors.push(
-            ValidationChecks::no_fields_to_update(&list_is_some, &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err(),
-        );
-
-        self.filter_errors(errors)
-    }
 }
 
 // * * * *    * * * *
