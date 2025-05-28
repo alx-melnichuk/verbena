@@ -3,13 +3,13 @@
 // 204 No Content - Data not found.
 
 // 401 Unauthorized (profile_auth_controller, user_registr_controller)
-pub const CD_UNAUTHORIZED: &str = "Unauthorized"; /*+*/
+pub const CD_UNAUTHORIZED: &str = "Unauthorized";
 // 401 Unauthorized - Authorization token is missing. (authentication, profile_auth_controller, user_controller)
-pub const MSG_MISSING_TOKEN: &str = "token_missing"; /*+*/
+pub const MSG_MISSING_TOKEN: &str = "token_missing";
 // 401 Unauthorized - Error when decoding token or expired token (authentication, profile_auth_controller, user_registr_controller)
-pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token"; /*+*/
+pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token";
 // 401 Unauthorized - User's "num" does not match "num" from token. (authentication, profile_auth_controller)
-pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num"; /*+*/
+pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num";
 // 401 Unauthorized
 pub const MSG_WRONG_NICKNAME_EMAIL: &str = "nickname_or_email_incorrect";
 // 401 Unauthorized
@@ -24,14 +24,14 @@ pub const MSG_ACCESS_DENIED: &str = "access_denied";
 pub const CD_NOT_FOUND: &str = "NotFound";
 
 // 406 Not Acceptable (profile_auth_controller)
-pub const CD_NOT_ACCEPTABLE: &str = "NotAcceptable"; /*+*/
+pub const CD_NOT_ACCEPTABLE: &str = "NotAcceptable";
 // 406 Not Acceptable - There is no session for this user. (authentication, profile_auth_controller)
-pub const MSG_SESSION_NOT_FOUND: &str = "session_not_found"; /*+*/
+pub const MSG_SESSION_NOT_FOUND: &str = "session_not_found";
 // 406 None of the parameters are specified.
 pub const MSG_PARAMS_NOT_SPECIFIED: &str = "params_not_specified";
 
 // 409 Conflict (profile_auth_controller, user_registr_controller)
-pub const CD_CONFLICT: &str = "Conflict"; /*+*/
+pub const CD_CONFLICT: &str = "Conflict";
 // 409 Conflict - Error checking hash value.
 pub const MSG_INVALID_HASH: &str = "invalid_hash";
 // 409 Conflict - The specified "email" is already registered.
@@ -40,12 +40,12 @@ pub const MSG_EMAIL_ALREADY_USE: &str = "email_already_use";
 pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";
 
 // 413 Content too large // The request object exceeds the limits defined by the server.
-pub const CD_CONTENT_TOO_LARGE: &str = "ContentTooLarge"; /*+*/
+pub const CD_CONTENT_TOO_LARGE: &str = "ContentTooLarge";
 // 413 Content too large - File size exceeds max.
 pub const MSG_INVALID_FILE_SIZE: &str = "invalid_file_size";
 
 // 415 Unsupported Media Type (stream_controller)
-pub const CD_UNSUPPORTED_TYPE: &str = "UnsupportedType"; /*+*/
+pub const CD_UNSUPPORTED_TYPE: &str = "UnsupportedType";
 // 415 Unsupported Media Type - Uploading Image Files. Mime file type is not valid.
 pub const MSG_INVALID_FILE_TYPE: &str = "invalid_file_type";
 
@@ -55,7 +55,7 @@ pub const CD_RANGE_NOT_SATISFIABLE: &str = "RangeNotSatisfiable";
 pub const MSG_PARSING_TYPE_NOT_SUPPORTED: &str = "parsing_type_not_supported";
 
 // 417 Expectation Failed (profile_auth_controller, user_registr_controller)
-pub const CD_VALIDATION: &str = "Validation"; /*+*/
+pub const CD_VALIDATION: &str = "Validation";
 // 417 Expectation Failed - No fields specified for update.
 pub const MSG_NO_FIELDS_TO_UPDATE: &str = "no_fields_to_update";
 // 417 Expectation Failed - One of the optional fields must be present.
@@ -71,17 +71,17 @@ pub const MSG_ERROR_HASHING_PASSWORD: &str = "error_hashing_password";
 // 500 Internal Server Error - Error uploading file
 pub const MSG_ERROR_UPLOAD_FILE: &str = "error_upload_file";
 
-// 506 Variant Also Negotiates /*+*/
-pub const CD_BLOCKING: &str = "Blocking"; /*+*/
-// 506 Variant Also Negotiates - Error web::block for waiting for synchronous operations to complete. /*+*/
-pub const MSG_BLOCKING: &str = "error_waiting_for_operations"; /*+*/
+// 506 Variant Also Negotiates
+pub const CD_BLOCKING: &str = "Blocking";
+// 506 Variant Also Negotiates - Error web::block for waiting for synchronous operations to complete.
+pub const MSG_BLOCKING: &str = "error_waiting_for_operations";
 
-// 507 Insufficient Storage /*+*/
-pub const CD_DATABASE: &str = "Database"; /*+*/
-// 507 Insufficient Storage - An error occurred while executing a database query. /*+*/
-pub const MSG_DATABASE: &str = "database_query_error"; /*+*/
+// 507 Insufficient Storage
+pub const CD_DATABASE: &str = "Database";
+// 507 Insufficient Storage - An error occurred while executing a database query.
+pub const MSG_DATABASE: &str = "database_query_error";
 
 // 510 Not Extended (user_registr_controller)
-pub const CD_NOT_EXTENDED: &str = "NotExtended"; /*+*/
+pub const CD_NOT_EXTENDED: &str = "NotExtended";
 // 510 Not Extended - Error while converting file.
 pub const MSG_ERROR_CONVERT_FILE: &str = "error_convert_file";
