@@ -11,7 +11,7 @@ use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 
 use chats::{
-    blocked_user_controller, blocked_user_orm::cfg::get_blocked_user_orm_app, chat_controller,
+    blocked_user_controller, blocked_user_orm::cfg::get_blocked_user_orm_app, chat_message_controller,
     chat_message_orm::cfg::get_chat_message_orm_app,
 };
 use profiles::{
@@ -182,7 +182,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             .configure(stream_controller::configure())
             .configure(profile_controller::configure())
             .configure(static_controller::configure())
-            .configure(chat_controller::configure())
+            .configure(chat_message_controller::configure())
             .configure(blocked_user_controller::configure());
     }
 }
