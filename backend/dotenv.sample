@@ -4,12 +4,16 @@
 # RUST_LOG
 # -----------------------------------------------------------------------------
 # for release
-# RUST_LOG=warn,actix_web=info,verbena=info
+# RUST_LOG=warn,actix_web=info,verbena=warn
 
 # for debugging
-# LOG_AUTH=extractors::authentication=debug
-# verbena=info - Output "info!" messages from module src/lib.rs.
-RUST_LOG=warn,actix_web=info,verbena=info,${LOG_AUTH}
+# LOG01=extractors::authentication=debug
+# Section "chat_message" ORM, CTRL
+# LOG02a=verbena::chats::chat_message_orm=info,verbena::chats::blocked_user_orm=info
+# LOG02b=verbena::chats::chat_message_controller=info,verbena::chats::blocked_user_controller=info
+# LOG02=${LOG02a},${LOG02b}
+
+RUST_LOG=warn,actix_web=info,verbena=warn,${LOG01},${LOG02}
 
 # -----------------------------------------------------------------------------
 # Application properties
