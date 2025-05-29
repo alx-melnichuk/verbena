@@ -81,8 +81,8 @@ pub struct ChatMessageDto {
     pub is_rmv: bool,
 }
 
-impl ChatMessageDto {
-    pub fn convert(chat_message: ChatMessage) -> Self {
+impl From<ChatMessage> for ChatMessageDto {
+    fn from(chat_message: ChatMessage) -> Self {
         ChatMessageDto {
             id: chat_message.id,
             date: chat_message.date_update.clone(),
