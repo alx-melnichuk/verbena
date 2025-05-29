@@ -64,9 +64,12 @@ impl ChatWsAssistant {
     /** Create a new user message in the chat. */
     pub async fn execute_create_chat_message(
         &self,
-        create_chat_message: CreateChatMessage,
+        stream_id: i32,
+        user_id: i32,
+        msg: &str,
     ) -> Result<ChatMessage, AppError> {
         let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
+        let create_chat_message = CreateChatMessage::new(stream_id, user_id, msg);
         // Add a new entity (stream).
         chat_message_orm.create_chat_message(create_chat_message).map_err(|e| {
             error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
@@ -77,16 +80,19 @@ impl ChatWsAssistant {
     pub async fn execute_modify_chat_message(
         &self,
         id: i32,
-        opt_by_user_id: Option<i32>,
-        modify_chat_message: ModifyChatMessage,
+        user_id: i32,
+        new_msg: &str,
     ) -> Result<Option<ChatMessage>, AppError> {
         let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
+        let modify_chat_message = ModifyChatMessage::new(None, None, Some(new_msg.to_owned()));
         // Modify an entity (chat_message).
         chat_message_orm
-            .modify_chat_message(id, opt_by_user_id, modify_chat_message)
+            .modify_chat_message(id, Some(user_id), modify_chat_message)
             .map_err(|e| {
                 error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
             })
     }
+    /** Perform blocking/unblocking of a user. */
+    pub async fn execute_block_user() {}
 }

@@ -7,12 +7,13 @@ use serde_json::to_string;
 
 use crate::chats::chat_event_ws::{JoinEWS, LeaveEWS};
 use crate::chats::chat_message::{
-    /*BlockClients, BlockSsn,*/ ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage,
+    BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage,
 };
 
 type Client = Recipient<CommandSrv>; // ChatMessage
 
 pub struct ClientInfo {
+    user_id: i32,
     name: String,
     client: Client,
 }
@@ -94,7 +95,32 @@ impl Actor for ChatWsServer {
 
 // ** Blocking clients in a room by name. (Session -> Server) **
 
-// --
+impl Handler<BlockClient> for ChatWsServer {
+    type Result = MessageResult<BlockClient>;
+
+    fn handle(&mut self, msg: BlockClient, _ctx: &mut Self::Context) -> Self::Result {
+        let BlockClient(room_id, client_name, is_block) = msg.clone();
+        if room_id <= i32::default() || client_name.len() == 0 {
+            return MessageResult(Vec::new());
+        }
+        let mut client_ids: Vec<i32> = Vec::new();
+        // Get a chat room by its name.
+        if let Some(room) = self.room_map.get(&room_id) {
+            // Loop through all chat participants.
+            for (_id, client_info) in room {
+                // Checking the chat participant name with the name to block.
+                if client_info.name.eq(&client_name) {
+                    client_ids.push(client_info.user_id);
+                    client_info.client.do_send(CommandSrv::Block(BlockSsn(is_block)));
+                }
+            }
+        }
+        #[rustfmt::skip]
+        debug!("handler<BlockClient>() room_id: {}, client_name: \"{}\", is_block: {}, client_ids: {:?}"
+            , room_id, &client_name, is_block, client_ids);
+        MessageResult(client_ids)
+    }
+}
 
 // ** Count of clients in the room. (Session -> Server) **
 
@@ -115,16 +141,16 @@ impl Handler<JoinRoom> for ChatWsServer {
     type Result = MessageResult<JoinRoom>;
 
     fn handle(&mut self, msg: JoinRoom, _ctx: &mut Self::Context) -> Self::Result {
-        let JoinRoom(room_id, client_name, client) = msg;
-        let name = client_name.unwrap_or("".to_owned());
+        let JoinRoom(room_id, user_id, client_name, client) = msg;
+        let name = client_name.clone();
         let member = name.clone();
-        let id = self.add_client_to_room(room_id, None, ClientInfo { name, client });
+        let id = self.add_client_to_room(room_id, None, ClientInfo { user_id, name, client });
 
         // Get the number of clients in the room.
         let count = self.count_clients_in_room(room_id);
 
         #[rustfmt::skip]
-        debug!("handler<JoinRoom>() room_id: {}, client_name: \"{}\", count: {}", room_id, member.clone(), count);
+        debug!("handler<JoinRoom>() room_id: {}, user_id: {}, client_name: \"{}\", count: {}", room_id, user_id, member.clone(), count);
 
         let join = room_id;
         let join_str = to_string(&JoinEWS { join, member, count }).unwrap();
@@ -149,7 +175,7 @@ impl Handler<LeaveRoom> for ChatWsServer {
             // Remove the client from the room.
             let recipient_opt = room.remove(&client_id);
             let leave = room_id;
-            let member = user_name.unwrap_or("".to_owned());
+            let member = user_name.clone();
             // Get the number of clients in the room.
             let count = self.count_clients_in_room(room_id);
             let leave_str = to_string(&LeaveEWS { leave, member, count }).unwrap();

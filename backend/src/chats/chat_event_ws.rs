@@ -14,7 +14,7 @@ pub const SERIALIZATION: &str = "Serialization: ";
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum EWSType {
-    // Block,
+    Block,
     Count,
     Echo,
     Err,
@@ -24,13 +24,13 @@ pub enum EWSType {
     MsgCut,
     MsgPut,
     Name,
-    // Unblock,
+    Unblock,
 }
 
 impl EWSType {
     pub fn iterator() -> Iter<'static, EWSType> {
-        static LIST: [EWSType; 9] = [
-            // EWSType::Block,
+        static LIST: [EWSType; 11] = [
+            EWSType::Block,
             EWSType::Count,
             EWSType::Echo,
             EWSType::Err,
@@ -40,7 +40,7 @@ impl EWSType {
             EWSType::MsgCut,
             EWSType::MsgPut,
             EWSType::Name,
-            // EWSType::Unblock,
+            EWSType::Unblock,
         ];
         LIST.iter()
     }
@@ -154,11 +154,11 @@ fn parse_json_to_i32(json_value: &serde_json::Value) -> Result<i32, &'static str
 // ** **
 
 // ** Block clients in a room by name. **
-/*#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct BlockEWS {
     pub block: String,
     pub count: u32,
-}*/
+}
 
 // ** Count of clients in the room. **
 #[derive(Serialize, Deserialize, Clone)]
@@ -227,12 +227,12 @@ pub struct NameEWS {
 }
 
 // ** Unblock clients in a room by name. **
-/*#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct UnblockEWS {
     pub unblock: String,
     pub count: u32,
 }
-*/
+
 // ** **
 
 #[cfg(test)]
