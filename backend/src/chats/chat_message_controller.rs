@@ -108,7 +108,7 @@ pub async fn get_chat_message(
 
     let chat_messages = match res_data { Ok(v) => v, Err(e) => return Err(e) };
     let chat_message_dto_list: Vec<ChatMessageDto> = chat_messages.iter()
-        .map(|ch_msg| ChatMessageDto::convert(ch_msg.clone()))
+        .map(|ch_msg| ChatMessageDto::from(ch_msg.clone()))
         .collect();
 
     if let Some(timer) = timer {
@@ -124,6 +124,7 @@ pub async fn post_chat_message(
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     json_body: web::Json<CreateChatMessageDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
     let profile = authenticated.deref();
     let user_id = profile.user_id;
@@ -158,9 +159,11 @@ pub async fn post_chat_message(
     })?;
 
     let chat_message2 = res_chat_message?;
+    let chat_message_dto = ChatMessageDto::from(chat_message2);
 
-    let chat_message_dto = ChatMessageDto::convert(chat_message2);
-
+    if let Some(timer) = timer {
+        info!("post_chat_message() time: {}", format!("{:.2?}", timer.elapsed()));
+    }
     Ok(HttpResponse::Created().json(chat_message_dto)) // 201
 }
 
@@ -172,6 +175,7 @@ pub async fn put_chat_message(
     request: actix_web::HttpRequest,
     json_body: web::Json<ModifyChatMessageDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
     let profile = authenticated.deref();
     let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
@@ -227,11 +231,12 @@ pub async fn put_chat_message(
             AppError::blocking506(&e.to_string())
         })?;
     
-    let opt_chat_message2 = res_chat_message?;
+    let opt_chat_message_dto = res_chat_message?.map(|v| ChatMessageDto::from(v));
     
-    if let Some(chat_message2) = opt_chat_message2 {
-        let chat_message_dto = ChatMessageDto::convert(chat_message2);
-
+    if let Some(timer) = timer {
+        info!("put_chat_message() time: {}", format!("{:.2?}", timer.elapsed()));
+    }
+    if let Some(chat_message_dto) = opt_chat_message_dto {
         Ok(HttpResponse::Ok().json(chat_message_dto)) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204        
