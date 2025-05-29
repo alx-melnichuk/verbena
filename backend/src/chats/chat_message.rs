@@ -1,20 +1,20 @@
 use actix::prelude::*;
 
-// ** Blocking clients in a room by name. (Session -> Server) **
-/*#[derive(Clone, Message)]
-#[rtype(result = "u32")] // Count of chat room members. // MAX 4_294_967_295u32
-pub struct BlockClients(
-    pub String, // room_name
+// ** Blocking client in a room by name. (Session -> Server) **
+#[derive(Clone, Message)]
+#[rtype(result = "Vec<i32>")] // List of user IDs.
+pub struct BlockClient(
+    pub i32,    // room_id
     pub String, // client_name
-    pub bool,   // is_blocked
-);*/
+    pub bool,   // is_block
+);
 
 // ** Send a block to the client in the room. (Server -> Session) **
-/*#[derive(Clone, Message)]
+#[derive(Clone, Message)]
 #[rtype(result = "()")]
 pub struct BlockSsn(
-    pub bool, // is_blocked
-);*/
+    pub bool, // is_block
+);
 
 // ** Send a chat message to all clients in the room. (Server -> Session) **
 #[derive(Clone, Message)]
@@ -27,7 +27,7 @@ pub struct ChatMsgSsn(
 #[derive(Clone, Message)]
 #[rtype(result = "()")]
 pub enum CommandSrv {
-    /* Block(BlockSsn), */
+    Block(BlockSsn),
     Chat(ChatMsgSsn),
 }
 
@@ -43,7 +43,8 @@ pub struct CountMembers(
 #[rtype(result = "u64")] // id client  // MAX 18_446_744_073_709_551_615u64
 pub struct JoinRoom(
     pub i32,                   // room_id
-    pub Option<String>,        // client_name
+    pub i32,                   // user_id
+    pub String,                // client_name
     pub Recipient<CommandSrv>, // client_session: SessionCommand
 );
 
@@ -51,9 +52,9 @@ pub struct JoinRoom(
 #[derive(Clone, Message)]
 #[rtype(result = "()")]
 pub struct LeaveRoom(
-    pub i32,            // room_id
-    pub u64,            // id client
-    pub Option<String>, // client_name
+    pub i32,    // room_id
+    pub u64,    // id client
+    pub String, // client_name
 );
 
 // ** Send a text message to all clients in the room. (Server -> Session) **

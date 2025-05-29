@@ -66,9 +66,10 @@ pub async fn get_ws_chat(
 
     let chat_ws_session = ChatWsSession::new(
         u64::default(),    // id: u64,
-        Option::default(), // room_id: Option<i32>,
-        Option::default(), // user_id: Option<i32>,
-        Option::default(), // user_name: Option<String>,
+        i32::default(),    // room_id: i32,
+        i32::default(),    // user_id: i32,
+        String::default(), // user_name: String,
+        bool::default(),   // is_owner: bool,
         bool::default(),   // is_blocked: bool,
         assistant,         // assistant: ChatWsAssistant
     );
