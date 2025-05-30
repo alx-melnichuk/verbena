@@ -6,6 +6,10 @@ use actix_web_actors::ws;
 use log::{error, info, log_enabled, Level::Info};
 
 #[cfg(not(all(test, feature = "mockdata")))]
+use crate::chats::blocked_user_orm::impls::BlockedUserOrmApp;
+#[cfg(all(test, feature = "mockdata"))]
+use crate::chats::blocked_user_orm::tests::BlockedUserOrmApp;
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::chats::chat_message_orm::tests::ChatMessageOrmApp;
@@ -25,6 +29,7 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::sessions::config_jwt;
+
 #[cfg(not(feature = "mockdata"))]
 use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(feature = "mockdata")]
@@ -55,6 +60,7 @@ pub async fn get_ws_chat(
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     profile_orm: web::Data<ProfileOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
+    blocked_user_orm: web::Data<BlockedUserOrmApp>,
     request: actix_web::HttpRequest,
     stream: web::Payload,
 ) -> actix_web::Result<HttpResponse<actix_web::body::BoxBody>, actix_web::Error> {
@@ -62,7 +68,10 @@ pub async fn get_ws_chat(
     let chat_message_orm_app = chat_message_orm.get_ref().clone();
     let profile_orm_app = profile_orm.get_ref().clone();
     let session_orm_app = session_orm.get_ref().clone();
-    let assistant = ChatWsAssistant::new(config_jwt, chat_message_orm_app, profile_orm_app, session_orm_app);
+    let blocked_user_orm = blocked_user_orm.get_ref().clone();
+    #[rustfmt::skip]
+    let assistant = ChatWsAssistant::new(
+        config_jwt, chat_message_orm_app, profile_orm_app, session_orm_app, blocked_user_orm);
 
     let chat_ws_session = ChatWsSession::new(
         u64::default(),    // id: u64,
