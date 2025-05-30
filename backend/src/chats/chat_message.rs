@@ -2,7 +2,7 @@ use actix::prelude::*;
 
 // ** Blocking client in a room by name. (Session -> Server) **
 #[derive(Clone, Message)]
-#[rtype(result = "Vec<i32>")] // List of user IDs.
+#[rtype(result = "bool")] // is_in_chat
 pub struct BlockClient(
     pub i32,    // room_id
     pub String, // client_name
@@ -43,7 +43,6 @@ pub struct CountMembers(
 #[rtype(result = "u64")] // id client  // MAX 18_446_744_073_709_551_615u64
 pub struct JoinRoom(
     pub i32,                   // room_id
-    pub i32,                   // user_id
     pub String,                // client_name
     pub Recipient<CommandSrv>, // client_session: SessionCommand
 );
