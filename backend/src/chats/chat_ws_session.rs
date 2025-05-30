@@ -21,6 +21,7 @@ use crate::chats::chat_ws_server::ChatWsServer;
 pub const PARAMETER_NOT_DEFINED: &str = "parameter not defined";
 pub const THERE_WAS_ALREADY_JOIN_TO_ROOM: &str = "There was already a \"join\" to the room";
 pub const USERS_MSG_NOT_FOUND: &str = "Current user's message not found.";
+pub const SPECIFIED_USER_NOT_FOUND: &str = "The specified user was not found.";
 
 // ** ChatWsSession **
 
@@ -230,13 +231,13 @@ impl ChatWsSession {
             EWSType::Name => {
                 let new_name = event.get_string("name").unwrap_or("".to_owned());
                 // For an authorized user, id and name are defined.
-                let id = self.user_id.clone();
+                let id = self.user_id;
                 let user_name = self.user_name.clone();
                 if new_name.len() > 0 && (user_name.len() == 0 || !user_name.eq(&new_name)) {
                     self.user_name = new_name.clone();
                 }
                 let name = self.user_name.clone();
-                ctx.text(to_string(&NameEWS { id, name }).unwrap());
+                ctx.text(to_string(&NameEWS { name, id }).unwrap());
             }
             _ => {}
         }
@@ -249,34 +250,39 @@ impl ChatWsSession {
         is_block: bool,
         ctx: &mut ws::WebsocketContext<Self>,
     ) -> Result<(), String> {
+        // eprintln!("handle_ews_block(client_name: {client_name}, is_block: {is_block});");
         // Check if this field is required
         self.check_is_required_string(client_name, "block")?;
+        #[rustfmt::skip]
+        eprintln!("handle_ews_block(); .user_id: {}, .user_name: {}", self.user_id, self.user_name);
         // Checking the possibility of blocking a user.
         self.check_possibility_blocking()?;
 
-        let client_name = client_name.to_owned();
-        let block_client = BlockClient(self.room_id, client_name.clone(), is_block);
-
-        ChatWsServer::from_registry()
-            .send(block_client)
-            .into_actor(self)
-            .then(move |res, _act, ctx| {
-                if let Ok(client_ids) = res {
-                    // assistant.execute_block_user()
-
-                    let count = u32::try_from(client_ids.len()).unwrap();
-                    #[rustfmt:: skip]
-                    let str = if is_block {
-                        to_string(&BlockEWS { block: client_name, count }).unwrap()
-                    } else {
-                        to_string(&UnblockEWS { unblock: client_name, count }).unwrap()
-                    };
-                    ctx.text(str);
-                }
-                fut::ready(())
-            })
-            .wait(ctx);
-
+        let room_id = self.room_id;
+        let user_id = self.user_id;
+        let block_name = client_name.to_string();
+        // Spawn an async task.
+        let addr = ctx.address();
+        let assistant = self.assistant.clone();
+        // Start an additional asynchronous task.
+        actix_web::rt::spawn(async move {
+            // Perform blocking/unblocking of a user.
+            let result = assistant.execute_block_user(is_block, user_id, None, Some(block_name)).await;
+            if let Err(err) = result {
+                #[rustfmt::skip]
+                eprintln!("handle_ews_block(); err1: {}", err.to_string());
+                return addr.do_send(AsyncResultError(err.to_string()));
+            }
+            let opt_blocked_user = result.unwrap();
+            if opt_blocked_user.is_none() {
+                eprintln!("handle_ews_block(); err2: {SPECIFIED_USER_NOT_FOUND}");
+                return addr.do_send(AsyncResultError(SPECIFIED_USER_NOT_FOUND.to_owned()));
+            }
+            let blocked_user = opt_blocked_user.unwrap();
+            let blocked_name = blocked_user.blocked_nickname.clone();
+            #[rustfmt::skip]
+            addr.do_send(AsyncResultBlockClient(room_id, is_block, blocked_name));
+        });
         Ok(())
     }
 
@@ -318,7 +324,6 @@ impl ChatWsSession {
             let (user_id, num_token) = self.assistant.decode_and_verify_token(access)?;
             // Spawn an async task.
             let addr = ctx.address();
-            // Get a clone of the assistant.
             let assistant = self.assistant.clone();
             // Start an additional asynchronous task.
             actix_web::rt::spawn(async move {
@@ -376,7 +381,6 @@ impl ChatWsSession {
 
         // Spawn an async task.
         let addr = ctx.address();
-        // Get a clone of the assistant.
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
@@ -403,10 +407,9 @@ impl ChatWsSession {
         // Checking the possibility of sending a message.
         self.check_possibility_sending_message()?;
 
-        let user_id = self.user_id.clone();
+        let user_id = self.user_id;
         // Spawn an async task.
         let addr = ctx.address();
-        // Get a clone of the assistant.
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
@@ -444,10 +447,9 @@ impl ChatWsSession {
         // Checking the possibility of sending a message.
         self.check_possibility_sending_message()?;
 
-        let user_id = self.user_id.clone();
+        let user_id = self.user_id;
         // Spawn an async task.
         let addr = ctx.address();
-        // Get a clone of the assistant.
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
@@ -518,7 +520,7 @@ impl Handler<AsyncResultEwsJoin> for ChatWsSession {
         self.is_owner = msg.3;
 
         // Then send a join message for the new room
-        let join_room_srv = JoinRoom(room_id, self.user_id, self.user_name.clone(), ctx.address().recipient());
+        let join_room_srv = JoinRoom(room_id, self.user_name.clone(), ctx.address().recipient());
         // Send the "JoinRoom" command to the server.
         ChatWsServer::from_registry()
             .send(join_room_srv)
@@ -563,6 +565,50 @@ impl Handler<AsyncResultEwsMsg> for ChatWsSession {
 
         // issue_async comes from having the `BrokerIssue` trait in scope.
         self.issue_system_async(SendMessage(self.room_id, msg_str));
+    }
+}
+
+// * * * * Handler for asynchronous response to the "BlockClient" event * * * *
+
+struct AsyncResultBlockClient(
+    i32,    // room_id
+    bool,   // is_block
+    String, // blocked_name
+);
+
+impl Message for AsyncResultBlockClient {
+    type Result = ();
+}
+
+impl Handler<AsyncResultBlockClient> for ChatWsSession {
+    type Result = ();
+
+    fn handle(&mut self, info: AsyncResultBlockClient, ctx: &mut Self::Context) {
+        let AsyncResultBlockClient(room_id, is_block, blocked_name) = info;
+        #[rustfmt::skip]
+        eprintln!("handle<AsyncResultBlockClient>(); is_block: {}, blocked_name: {}", is_block, &blocked_name);
+
+        let block_client = BlockClient(room_id, blocked_name.clone(), is_block);
+
+        ChatWsServer::from_registry()
+            .send(block_client)
+            .into_actor(self)
+            .then(move |res, _act, ctx| {
+                eprintln!("handle<AsyncResultBlockClient>(); .send(block_client)");
+                if let Ok(is_in_chat) = res {
+                    eprintln!("handle<AsyncResultBlockClient>(); is_in_chat: {is_in_chat}");
+                    #[rustfmt::skip]
+                    let str = if is_block {
+                        to_string(&BlockEWS { block: blocked_name, is_in_chat }).unwrap()
+                    } else {
+                        to_string(&UnblockEWS { unblock: blocked_name, is_in_chat }).unwrap()
+                    };
+                    eprintln!("handler<AsyncResultBlockClient>; ctx.text({})", &str);
+                    ctx.text(str);
+                }
+                fut::ready(())
+            })
+            .wait(ctx);
     }
 }
 
