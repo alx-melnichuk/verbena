@@ -13,7 +13,6 @@ use crate::chats::chat_message::{
 type Client = Recipient<CommandSrv>; // ChatMessage
 
 pub struct ClientInfo {
-    user_id: i32,
     name: String,
     client: Client,
 }
@@ -99,26 +98,25 @@ impl Handler<BlockClient> for ChatWsServer {
     type Result = MessageResult<BlockClient>;
 
     fn handle(&mut self, msg: BlockClient, _ctx: &mut Self::Context) -> Self::Result {
+        let mut is_in_chat = false;
         let BlockClient(room_id, client_name, is_block) = msg.clone();
         if room_id <= i32::default() || client_name.len() == 0 {
-            return MessageResult(Vec::new());
+            return MessageResult(is_in_chat);
         }
-        let mut client_ids: Vec<i32> = Vec::new();
         // Get a chat room by its name.
         if let Some(room) = self.room_map.get(&room_id) {
             // Loop through all chat participants.
             for (_id, client_info) in room {
                 // Checking the chat participant name with the name to block.
                 if client_info.name.eq(&client_name) {
-                    client_ids.push(client_info.user_id);
+                    is_in_chat = true;
                     client_info.client.do_send(CommandSrv::Block(BlockSsn(is_block)));
                 }
             }
         }
-        #[rustfmt::skip]
-        debug!("handler<BlockClient>() room_id: {}, client_name: \"{}\", is_block: {}, client_ids: {:?}"
-            , room_id, &client_name, is_block, client_ids);
-        MessageResult(client_ids)
+        debug!("handler<BlockClient>() room_id:{room_id}, client_name:\"{client_name}\", is_block:{is_block}, is_in_chat:{is_in_chat}");
+
+        MessageResult(is_in_chat)
     }
 }
 
@@ -141,16 +139,16 @@ impl Handler<JoinRoom> for ChatWsServer {
     type Result = MessageResult<JoinRoom>;
 
     fn handle(&mut self, msg: JoinRoom, _ctx: &mut Self::Context) -> Self::Result {
-        let JoinRoom(room_id, user_id, client_name, client) = msg;
+        let JoinRoom(room_id, client_name, client) = msg;
         let name = client_name.clone();
         let member = name.clone();
-        let id = self.add_client_to_room(room_id, None, ClientInfo { user_id, name, client });
+        let id = self.add_client_to_room(room_id, None, ClientInfo { name, client });
 
         // Get the number of clients in the room.
         let count = self.count_clients_in_room(room_id);
 
         #[rustfmt::skip]
-        debug!("handler<JoinRoom>() room_id: {}, user_id: {}, client_name: \"{}\", count: {}", room_id, user_id, member.clone(), count);
+        debug!("handler<JoinRoom>() room_id: {}, client_name: \"{}\", count: {}", room_id, member.clone(), count);
 
         let join = room_id;
         let join_str = to_string(&JoinEWS { join, member, count }).unwrap();
