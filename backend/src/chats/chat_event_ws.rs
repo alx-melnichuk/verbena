@@ -157,7 +157,7 @@ fn parse_json_to_i32(json_value: &serde_json::Value) -> Result<i32, &'static str
 #[derive(Serialize, Deserialize, Clone)]
 pub struct BlockEWS {
     pub block: String,
-    pub count: u32,
+    pub is_in_chat: bool,
 }
 
 // ** Count of clients in the room. **
@@ -230,7 +230,7 @@ pub struct NameEWS {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct UnblockEWS {
     pub unblock: String,
-    pub count: u32,
+    pub is_in_chat: bool,
 }
 
 // ** **
