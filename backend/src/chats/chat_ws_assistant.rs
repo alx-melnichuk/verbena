@@ -1,10 +1,19 @@
 use log::error;
 
 #[cfg(not(all(test, feature = "mockdata")))]
+use crate::chats::blocked_user_orm::impls::BlockedUserOrmApp;
+#[cfg(all(test, feature = "mockdata"))]
+use crate::chats::blocked_user_orm::tests::BlockedUserOrmApp;
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::chats::chat_message_orm::tests::ChatMessageOrmApp;
-use crate::chats::chat_message_orm::ChatMessageOrm;
+use crate::chats::{
+    blocked_user_models::{BlockedUser, CreateBlockedUser, DeleteBlockedUser},
+    blocked_user_orm::BlockedUserOrm,
+    chat_message_models::{ChatMessage, CreateChatMessage, ModifyChatMessage},
+    chat_message_orm::ChatMessageOrm,
+};
 use crate::errors::AppError;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
@@ -16,8 +25,6 @@ use crate::sessions::config_jwt;
 use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-// use crate::sessions::session_orm::SessionOrm;
-use crate::chats::chat_message_models::{ChatMessage, CreateChatMessage, ModifyChatMessage};
 use crate::sessions::tokens::decode_token;
 use crate::settings::err;
 use crate::utils::token_verification::check_token_and_get_profile;
@@ -30,6 +37,7 @@ pub struct ChatWsAssistant {
     chat_message_orm: ChatMessageOrmApp,
     profile_orm: ProfileOrmApp,
     session_orm: SessionOrmApp,
+    blocked_user_orm: BlockedUserOrmApp,
 }
 
 // ** ChatWsAssistant implementation **
@@ -40,12 +48,14 @@ impl ChatWsAssistant {
         chat_message_orm: ChatMessageOrmApp,
         profile_orm: ProfileOrmApp,
         session_orm: SessionOrmApp,
+        blocked_user_orm: BlockedUserOrmApp,
     ) -> Self {
         ChatWsAssistant {
             config_jwt,
             chat_message_orm,
             profile_orm,
             session_orm,
+            blocked_user_orm,
         }
     }
     /** Decode the token. And unpack the two parameters from the token. */
@@ -94,5 +104,30 @@ impl ChatWsAssistant {
             })
     }
     /** Perform blocking/unblocking of a user. */
-    pub async fn execute_block_user() {}
+    pub async fn execute_block_user(
+        &self,
+        is_block: bool,
+        user_id: i32,
+        blocked_id: Option<i32>,
+        blocked_nickname: Option<String>,
+    ) -> Result<Option<BlockedUser>, AppError> {
+        let blocked_user_orm: BlockedUserOrmApp = self.blocked_user_orm.clone();
+        if is_block {
+            // Add a new entry (blocked_user).
+            blocked_user_orm
+                .create_blocked_user(CreateBlockedUser::new(user_id, blocked_id, blocked_nickname))
+                .map_err(|e| {
+                    error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                    AppError::database507(&e)
+                })
+        } else {
+            // Delete an entity (blocked_user).
+            blocked_user_orm
+                .delete_blocked_user(DeleteBlockedUser::new(user_id, blocked_id, blocked_nickname))
+                .map_err(|e| {
+                    error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                    AppError::database507(&e)
+                })
+        }
+    }
 }
