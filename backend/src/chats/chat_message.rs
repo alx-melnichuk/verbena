@@ -14,6 +14,7 @@ pub struct BlockClient(
 #[rtype(result = "()")]
 pub struct BlockSsn(
     pub bool, // is_block
+    pub bool, // is_in_chat
 );
 
 // ** Send a chat message to all clients in the room. (Server -> Session) **
@@ -63,10 +64,3 @@ pub struct SendMessage(
     pub i32,    // room_id
     pub String, // message
 );
-
-// **  (Session -> Session) **
-/*#[derive(Clone, Message)]
-#[rtype(result = "(i32)")]
-pub struct SaveMessageResult(
-    pub i32, // id message
-);*/
