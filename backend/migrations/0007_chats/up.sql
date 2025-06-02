@@ -312,7 +312,7 @@ CREATE TABLE blocked_users (
 );
 
 CREATE INDEX idx_blocked_users_user_id ON blocked_users(user_id);
-CREATE INDEX idx_blocked_users_blocked_id ON blocked_users(blocked_id);
+CREATE UNIQUE INDEX uq_idx_blocked_users_blocked_id_user_id ON blocked_users(blocked_id, user_id);
 
 -- **
 
@@ -383,6 +383,7 @@ CREATE OR REPLACE FUNCTION delete_blocked_user(
 AS $$
 DECLARE
   rec1 RECORD;
+  user_id2 INTEGER = user_id;
   bl_id INTEGER;
   bl_nickname VARCHAR;
 BEGIN
@@ -409,7 +410,7 @@ BEGIN
   END IF;
 
   DELETE FROM blocked_users
-  WHERE blocked_users.id = user_id
+  WHERE blocked_users.id = user_id2
     AND blocked_users.blocked_id = bl_id
   RETURNING 
     blocked_users.id,

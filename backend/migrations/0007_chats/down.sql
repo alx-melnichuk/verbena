@@ -19,7 +19,7 @@ DROP FUNCTION IF EXISTS create_blocked_user;
 -- **
 
 /* Remove the indexes on the "blocked_users" table. */
-DROP INDEX IF EXISTS idx_blocked_users_blocked_id;
+DROP INDEX IF EXISTS uq_idx_blocked_users_blocked_id_user_id;
 
 /* Remove the indexes on the "blocked_users" table. */
 DROP INDEX IF EXISTS idx_blocked_users_user_id;
