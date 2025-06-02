@@ -143,7 +143,7 @@ pub async fn get_stream_by_id(
 ) -> actix_web::Result<HttpResponse, AppError> {
     // Get current user details.
     let profile = authenticated.deref();
-    let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
+    // let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -156,7 +156,7 @@ pub async fn get_stream_by_id(
     let res_data = web::block(move || {
         // Get 'stream' by id.
         let res_data = stream_orm
-            .find_stream_by_params(Some(id), opt_user_id, None, true, &[])
+            .find_stream_by_params(Some(id), None, None, true, &[])
             .map_err(|e| {
                 error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e) // 507
