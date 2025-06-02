@@ -32,11 +32,11 @@ pub mod impls {
     use diesel::{self, prelude::*, sql_types};
     use log::{info, log_enabled, Level::Info};
 
-    use crate::dbase;
     use crate::chats::{
         blocked_user_models::{BlockedUser, CreateBlockedUser, DeleteBlockedUser},
         blocked_user_orm::BlockedUserOrm,
     };
+    use crate::dbase;
     use crate::validators::Validator;
 
     pub const CONN_POOL: &str = "ConnectionPool";
@@ -59,7 +59,7 @@ pub mod impls {
         /// Add a new entry (blocked_user).
         fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUser>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            
+
             let validation_res = create_blocked_user.validate();
             if let Err(validation_errors) = validation_res {
                 let buff: Vec<String> = validation_errors.into_iter().map(|v| v.message.to_string()).collect();
@@ -90,7 +90,11 @@ pub mod impls {
         #[rustfmt::skip]
         fn delete_blocked_user(&self, delete_blocked_user: DeleteBlockedUser) -> Result<Option<BlockedUser>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-            
+            let user_id = delete_blocked_user.user_id;
+            let blocked_id = delete_blocked_user.blocked_id.clone();
+            let nickname = delete_blocked_user.blocked_nickname.clone();
+            #[rustfmt::skip]
+            eprintln!("delete_blocked_user() user_id: {}, blocked_id: {:?}, blocked_nickname: {:?}", user_id, blocked_id, nickname);
             let validation_res = delete_blocked_user.validate();
             if let Err(validation_errors) = validation_res {
                 let buff: Vec<String> = validation_errors.into_iter().map(|v| v.message.to_string()).collect();
@@ -111,13 +115,13 @@ pub mod impls {
                 .optional()
                 .map_err(|e| format!("delete_blocked_user: {}", e.to_string()))?;
 
+            eprintln!("delete_blocked_user() res_blocked_user: {:?}", blocked_user);
             if let Some(timer) = timer {
                 info!("delete_blocked_user() time: {}", format!("{:.2?}", timer.elapsed()));
             }
             Ok(blocked_user)
 
         }
-
     }
 }
 
@@ -128,7 +132,7 @@ pub mod tests {
 
     use crate::chats::{
         blocked_user_models::{BlockedUser, CreateBlockedUser, DeleteBlockedUser},
-        blocked_user_orm::BlockedUserOrm
+        blocked_user_orm::BlockedUserOrm,
     };
     use crate::validators::Validator;
 
@@ -170,7 +174,10 @@ pub mod tests {
                 );
                 blocked_user_vec.push(new_blocked_user);
             }
-            BlockedUserOrmApp { blocked_user_vec, user_vec }
+            BlockedUserOrmApp {
+                blocked_user_vec,
+                user_vec,
+            }
         }
         pub fn find_user_by_id(&self, id: i32) -> Option<UserMini> {
             self.user_vec.iter().find(|v| v.id == id).map(|v| v.clone())
@@ -191,7 +198,7 @@ pub mod tests {
                 let buff: Vec<String> = validation_errors.into_iter().map(|v| v.message.to_string()).collect();
                 return Err(buff.join("','"));
             }
-            let mut opt_user_mini: Option<UserMini> = None; 
+            let mut opt_user_mini: Option<UserMini> = None;
             if let Some(blocked_id) = create_blocked_user.blocked_id {
                 opt_user_mini = self.find_user_by_id(blocked_id);
             } else if let Some(blocked_nickname) = create_blocked_user.blocked_nickname {
@@ -212,7 +219,7 @@ pub mod tests {
 
             Ok(result)
         }
-        
+
         /// Delete an entity (blocked_user).
         fn delete_blocked_user(&self, delete_blocked_user: DeleteBlockedUser) -> Result<Option<BlockedUser>, String> {
             if delete_blocked_user.blocked_id.is_none() && delete_blocked_user.blocked_nickname.is_none() {
@@ -225,17 +232,18 @@ pub mod tests {
             }
             let bl_id = delete_blocked_user.blocked_id;
             let bl_nickname = delete_blocked_user.blocked_nickname;
-            
-            let result = self.blocked_user_vec
-            .iter()
-            .find(|v| {
-                v.user_id == delete_blocked_user.user_id
-                && (v.blocked_id == bl_id.unwrap_or(v.blocked_id))
-                && (v.blocked_nickname == bl_nickname.clone().unwrap_or(v.blocked_nickname.clone()))
-            }).map(|v| v.clone());
+
+            let result = self
+                .blocked_user_vec
+                .iter()
+                .find(|v| {
+                    v.user_id == delete_blocked_user.user_id
+                        && (v.blocked_id == bl_id.unwrap_or(v.blocked_id))
+                        && (v.blocked_nickname == bl_nickname.clone().unwrap_or(v.blocked_nickname.clone()))
+                })
+                .map(|v| v.clone());
 
             Ok(result)
         }
-        
     }
 }
