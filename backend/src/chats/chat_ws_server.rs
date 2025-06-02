@@ -110,7 +110,7 @@ impl Handler<BlockClient> for ChatWsServer {
                 // Checking the chat participant name with the name to block.
                 if client_info.name.eq(&client_name) {
                     is_in_chat = true;
-                    client_info.client.do_send(CommandSrv::Block(BlockSsn(is_block)));
+                    client_info.client.do_send(CommandSrv::Block(BlockSsn(is_block, is_in_chat)));
                 }
             }
         }
@@ -146,10 +146,6 @@ impl Handler<JoinRoom> for ChatWsServer {
 
         // Get the number of clients in the room.
         let count = self.count_clients_in_room(room_id);
-
-        #[rustfmt::skip]
-        debug!("handler<JoinRoom>() room_id: {}, client_name: \"{}\", count: {}", room_id, member.clone(), count);
-
         let join = room_id;
         let join_str = to_string(&JoinEWS { join, member, count }).unwrap();
         // Send a chat message to all members.
