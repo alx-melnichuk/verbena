@@ -4,7 +4,7 @@ import { StringDateTime } from "../common/string-date-time";
 export enum EWSType {
     Block = 'block',
     Count = 'count',
-    Echo = 'echo', // -
+    Echo = 'echo',
     Err = 'err',
     Join = 'join',
     Leave = 'leave',
@@ -46,8 +46,8 @@ export class EWSTypeUtil {
         return result;
     }
 
-    public static getBlockEWS(block: string, count?: number): string {
-        return JSON.stringify({ ...{ block }, ...{ count } });
+    public static getBlockEWS(block: string, is_in_chat?: boolean): string {
+        return JSON.stringify({ ...{ block }, ...{ is_in_chat } });
     }
     public static getCountEWS(): string {
         return JSON.stringify({ count: -1 });
@@ -76,8 +76,8 @@ export class EWSTypeUtil {
     public static getNameEWS(name: string): string {
         return JSON.stringify({ name });
     }
-    public static getUnblockEWS(unblock: string, count?: number): string {
-        return JSON.stringify({ ...{ unblock }, ...{ count } });
+    public static getUnblockEWS(unblock: string, is_in_chat?: boolean): string {
+        return JSON.stringify({ ...{ unblock }, ...{ is_in_chat } });
     }
 }
 
