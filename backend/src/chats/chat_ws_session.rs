@@ -1,4 +1,4 @@
-use log::{debug, log_enabled, Level::Debug};
+use log::{debug, error, log_enabled, Level::Debug};
 
 use actix::prelude::*;
 use actix_broker::BrokerIssue;
@@ -12,8 +12,7 @@ use crate::chats::chat_event_ws::{
     NameEWS, UnblockEWS,
 };
 use crate::chats::chat_message::{
-    BlockClient, /*BlockSsn,*/ ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom,
-    /*SaveMessageResult,*/ SendMessage,
+    BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage,
 };
 use crate::chats::chat_ws_assistant::ChatWsAssistant;
 use crate::chats::chat_ws_server::ChatWsServer;
@@ -138,20 +137,20 @@ impl ChatWsSession {
     }
     // Checking the possibility of sending a message.
     fn check_possibility_sending_message(&self) -> Result<(), String> {
+        // Check if the member has a name or is anonymous
+        self.check_is_name()?;
         // Check if there is an joined room
         self.check_is_joined_room()?;
         // Check if there is a block on sending messages
         self.check_is_blocked()?;
-        // Check if the member has a name or is anonymous
-        self.check_is_name()?;
         Ok(())
     }
     // Checking the possibility of blocking a user.
     fn check_possibility_blocking(&self) -> Result<(), String> {
-        // Check if there is an joined room
-        self.check_is_joined_room()?;
         // Check if the member has a name or is anonymous
         self.check_is_name()?;
+        // Check if there is an joined room
+        self.check_is_joined_room()?;
         // Check if the user is the owner of the stream.
         if !self.is_owner {
             return Err("Stream owner rights are missing.".to_owned());
@@ -188,6 +187,7 @@ impl ChatWsSession {
                 }
             }
             EWSType::Count => {
+                // {"count": -1}
                 if let Err(err) = self.handle_ews_count(ctx) {
                     ctx.text(to_string(&ErrEWS { err }).unwrap());
                 }
@@ -229,6 +229,7 @@ impl ChatWsSession {
                 }
             }
             EWSType::Name => {
+                // {"name": "User1"}
                 let new_name = event.get_string("name").unwrap_or("".to_owned());
                 // For an authorized user, id and name are defined.
                 let id = self.user_id;
@@ -239,6 +240,14 @@ impl ChatWsSession {
                 let name = self.user_name.clone();
                 ctx.text(to_string(&NameEWS { name, id }).unwrap());
             }
+            EWSType::Unblock => {
+                // {"unblock": "User2"}
+                let block = event.get_string("unblock").unwrap_or("".to_owned());
+                if let Err(err) = self.handle_ews_block(&block, false, ctx) {
+                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                }
+            }
+
             _ => {}
         }
     }
@@ -250,11 +259,11 @@ impl ChatWsSession {
         is_block: bool,
         ctx: &mut ws::WebsocketContext<Self>,
     ) -> Result<(), String> {
-        // eprintln!("handle_ews_block(client_name: {client_name}, is_block: {is_block});");
-        // Check if this field is required
-        self.check_is_required_string(client_name, "block")?;
+        let tag_name = if is_block { "block" } else { "unblock" };
         #[rustfmt::skip]
-        eprintln!("handle_ews_block(); .user_id: {}, .user_name: {}", self.user_id, self.user_name);
+        eprintln!("handle_ews_block(user_id: {}, client_name: {client_name}, is_block: {is_block}); tag_name: {tag_name}",self.user_id);
+        // Check if this field is required
+        self.check_is_required_string(client_name, tag_name)?;
         // Checking the possibility of blocking a user.
         self.check_possibility_blocking()?;
 
@@ -269,13 +278,11 @@ impl ChatWsSession {
             // Perform blocking/unblocking of a user.
             let result = assistant.execute_block_user(is_block, user_id, None, Some(block_name)).await;
             if let Err(err) = result {
-                #[rustfmt::skip]
-                eprintln!("handle_ews_block(); err1: {}", err.to_string());
                 return addr.do_send(AsyncResultError(err.to_string()));
             }
             let opt_blocked_user = result.unwrap();
             if opt_blocked_user.is_none() {
-                eprintln!("handle_ews_block(); err2: {SPECIFIED_USER_NOT_FOUND}");
+                error!("handle_ews_block() err: {}", SPECIFIED_USER_NOT_FOUND);
                 return addr.do_send(AsyncResultError(SPECIFIED_USER_NOT_FOUND.to_owned()));
             }
             let blocked_user = opt_blocked_user.unwrap();
@@ -364,6 +371,8 @@ impl ChatWsSession {
         self.issue_system_sync(leave_room_srv, ctx);
         // Reset room name.
         self.room_id = i32::default();
+        self.is_owner = false;
+        self.is_blocked = false;
         Ok(())
     }
 
@@ -413,25 +422,10 @@ impl ChatWsSession {
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
-            // Check the token for correctness and get the user profile.
-            let result = assistant.execute_modify_chat_message(id, user_id, &msg_cut).await;
-            if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.to_string()));
-            }
-            let opt_chat_message = result.unwrap();
-            if opt_chat_message.is_none() {
-                return addr.do_send(AsyncResultError(format!("{} (msg_id: {})", USERS_MSG_NOT_FOUND, id)));
-            }
-            let ch_msg = opt_chat_message.unwrap();
-            let msg2 = ch_msg.msg.unwrap_or_default();
-            let date = ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true);
-            // Send the "AsyncResultEwsMsg" command for execution.
-            #[rustfmt::skip]
-            addr.do_send(AsyncResultEwsMsg(msg2, ch_msg.id, date, ch_msg.is_changed, ch_msg.is_removed));
+            Self::execute_modify_chat_message(addr, assistant, id, user_id, &msg_cut).await;
         });
         Ok(())
     }
-
     // * Send a correction to the message to everyone in the chat. (Server -> Session) *
     pub fn handle_ews_msg_put_add_task(
         &self,
@@ -453,23 +447,33 @@ impl ChatWsSession {
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
-            // Check the token for correctness and get the user profile.
-            let result = assistant.execute_modify_chat_message(id, user_id, &msg_put).await;
-            if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.to_string()));
-            }
-            let opt_chat_message = result.unwrap();
-            if opt_chat_message.is_none() {
-                return addr.do_send(AsyncResultError(format!("{} (msg_id: {})", USERS_MSG_NOT_FOUND, id)));
-            }
-            let ch_msg = opt_chat_message.unwrap();
-            let msg2 = ch_msg.msg.unwrap_or_default();
-            let date = ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true);
-            // Send the "AsyncResultEwsMsg" command for execution.
-            #[rustfmt::skip]
-            addr.do_send(AsyncResultEwsMsg(msg2, ch_msg.id, date, ch_msg.is_changed, ch_msg.is_removed));
+            Self::execute_modify_chat_message(addr, assistant, id, user_id, &msg_put).await;
         });
         Ok(())
+    }
+    // Perform an update to the value of a chat message.
+    async fn execute_modify_chat_message(
+        addr: Addr<ChatWsSession>,
+        assistant: ChatWsAssistant,
+        id: i32,
+        user_id: i32,
+        new_msg: &str,
+    ) {
+        // Check the token for correctness and get the user profile.
+        let result = assistant.execute_modify_chat_message(id, user_id, new_msg).await;
+        if let Err(err) = result {
+            return addr.do_send(AsyncResultError(err.to_string()));
+        }
+        let opt_chat_message = result.unwrap();
+        if opt_chat_message.is_none() {
+            return addr.do_send(AsyncResultError(format!("{} (msg_id: {})", USERS_MSG_NOT_FOUND, id)));
+        }
+        let ch_msg = opt_chat_message.unwrap();
+        let msg2 = ch_msg.msg.unwrap_or_default();
+        let date = ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true);
+        // Send the "AsyncResultEwsMsg" command for execution.
+        #[rustfmt::skip]
+        addr.do_send(AsyncResultEwsMsg(msg2, ch_msg.id, date, ch_msg.is_changed, ch_msg.is_removed));
     }
 }
 
@@ -518,6 +522,7 @@ impl Handler<AsyncResultEwsJoin> for ChatWsSession {
         self.user_id = msg.1;
         self.user_name = msg.2;
         self.is_owner = msg.3;
+        // TODO set value "is_block".
 
         // Then send a join message for the new room
         let join_room_srv = JoinRoom(room_id, self.user_name.clone(), ctx.address().recipient());
@@ -554,15 +559,15 @@ impl Handler<AsyncResultEwsMsg> for ChatWsSession {
     type Result = ();
 
     fn handle(&mut self, info: AsyncResultEwsMsg, _ctx: &mut Self::Context) {
-        let msg = info.0;
-        let id = info.1;
-        let member = self.user_name.clone();
-        let date = info.2;
-        let is_edt = info.3;
-        let is_rmv = info.4;
-        #[rustfmt::skip]
-        let msg_str = to_string(&MsgEWS { msg, id, member, date, is_edt, is_rmv }).unwrap();
-
+        let msg_str = to_string(&MsgEWS {
+            msg: info.0,
+            id: info.1,
+            member: self.user_name.clone(),
+            date: info.2,
+            is_edt: info.3,
+            is_rmv: info.4,
+        })
+        .unwrap();
         // issue_async comes from having the `BrokerIssue` trait in scope.
         self.issue_system_async(SendMessage(self.room_id, msg_str));
     }
@@ -621,9 +626,8 @@ impl Handler<CommandSrv> for ChatWsSession {
 
     fn handle(&mut self, command: CommandSrv, ctx: &mut Self::Context) -> Self::Result {
         match command {
-            // CommandSrv::Block(blocking) => self.handle_block_client(blocking, ctx),
+            CommandSrv::Block(block) => self.handle_block_client(block, ctx),
             CommandSrv::Chat(chat_msg) => self.handle_chat_message_ssn(chat_msg, ctx),
-            _ => {}
         }
 
         MessageResult(())
@@ -632,18 +636,21 @@ impl Handler<CommandSrv> for ChatWsSession {
 
 impl ChatWsSession {
     // Handler for "CommandSrv::Block(BlockSsn)".
-    /*fn handle_block_client(&mut self, blocking: BlockSsn, ctx: &mut <Self as actix::Actor>::Context) {
-        let BlockSsn(is_blocked) = blocking;
-        self.is_blocked = is_blocked;
-        let client_name = self.name.clone().unwrap_or("".to_owned());
+    fn handle_block_client(&mut self, block: BlockSsn, ctx: &mut <Self as actix::Actor>::Context) {
+        let BlockSsn(is_block, is_in_chat) = block;
         #[rustfmt::skip]
-        let str = if is_blocked {
-            to_string(& BlockEWS { block: client_name, count: 1 }).unwrap()
+        eprintln!("handle<BlockSsn>(); client_name: {} is_block: {is_block}, is_in_chat: {is_in_chat}", self.user_name);
+
+        self.is_blocked = is_block;
+        let user_name = self.user_name.clone();
+        #[rustfmt::skip]
+        let str = if is_block {
+            to_string(& BlockEWS { block: user_name, is_in_chat }).unwrap()
         } else {
-            to_string(& UnblockEWS { unblock: client_name, count: 1 }).unwrap()
+            to_string(& UnblockEWS { unblock: user_name, is_in_chat }).unwrap()
         };
         ctx.text(str);
-    }*/
+    }
 
     // Handler for "CommandSrv::Chat(ChatMessageSsn)".
     fn handle_chat_message_ssn(&mut self, chat_msg: ChatMsgSsn, ctx: &mut ws::WebsocketContext<Self>) {
@@ -652,14 +659,3 @@ impl ChatWsSession {
 }
 
 // ****  __  ****
-
-// **** ChatWsSession implementation "Handler<SaveMessageResult>" ****
-
-/*impl Handler<SaveMessageResult> for ChatWsSession {
-    type Result = MessageResult<SaveMessageResult>;
-
-    fn handle(&mut self, msg_res: SaveMessageResult, _ctx: &mut Self::Context) -> Self::Result {
-        debug!("#!_handler<SaveMessageResult>() msg_res: {:?}", msg_res.0);
-        MessageResult(msg_res.0)
-    }
-}*/
