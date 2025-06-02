@@ -23,11 +23,19 @@ import { ValidatorUtils } from 'src/app/utils/validator.utils';
 import { ChatMessageDto } from '../chat-message-api.interface';
 
 
-interface MenuData {
+interface MenuEdit {
     isEdit: boolean;
     isRemove: boolean;
+}
+interface MenuBlock {
     isBlock: boolean;
     isUnblock: boolean;
+}
+interface MenuItem {
+    isEdit?: boolean | undefined;
+    isRemove?: boolean | undefined;
+    isBlock?: boolean | undefined;
+    isUnblock?: boolean | undefined;
 }
 
 export const TITLE = 'message';
@@ -39,7 +47,8 @@ export const DEBOUNCE_DELAY = 50;
 export const MIN_SCROLL_VALUE = 20;
 
 type ObjChatMsg = { [key: number]: ChatMessageDto };
-type MenuDataMap = Map<number, MenuData>;
+type MenuEditMap = Map<number, MenuEdit>;
+type BlockedSet = Set<string>;
 
 // <mat-form-field subscriptSizing="dynamic"
 // it'll remove the space until an error or hint actually needs to get displayed and only then expands.
@@ -117,7 +126,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     readonly dbncScrollItem = debounceFn(() => this.doScrollItem(), DEBOUNCE_DELAY);
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
     readonly formatTime: Intl.DateTimeFormatOptions = { timeStyle: 'short' };
-    readonly menuDataMap: MenuDataMap = new Map();
+    readonly menuEditMap: MenuEditMap = new Map();
+    readonly blockedSet: BlockedSet = new Set();
     readonly objChatMsg: ObjChatMsg = {};
 
     private isNoPastData: boolean = false;
@@ -142,12 +152,21 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
+        if (!!changes['blockedUsers'] || !!changes['isOwner']) {
+            this.blockedSet.clear();
+            const selfName = this.nickname || ''
+            const blockedUsers = this.isOwner ? this.blockedUsers : [];
+            for (let idx = 0; idx < blockedUsers.length; idx++) {
+                if (selfName != blockedUsers[idx]) {
+                    this.blockedSet.add(blockedUsers[idx]);
+                }
+            }
+        }
         if (!!changes['chatMsgs']) {
             console.log(`PanelChat.OnChange('chatMsgs') 1 chatMsgs.length: ${this.chatMsgs.length}`);
             let res = null;
             if (this.chatMsgs.length > 0) {
-                const blockedUsers = this.isOwner ? this.blockedUsers : null;
-                res = this.loadChatMsgs(this.objChatMsg, this.chatMsgs, this.menuDataMap, this.nickname || '', blockedUsers);
+                res = this.loadChatMsgs(this.objChatMsg, this.chatMsgs, this.menuEditMap, this.nickname || '');
                 this.chatMsgList = res.chatMsgs;
             } else {
                 this.isNoPastData = true;
@@ -205,6 +224,23 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
                 this.queryChatMsgs.emit({ isSortDes: true, borderById: this.smallestId });
             }
         }
+    }
+    public getMenuBlock(nickname: string, isOwner: boolean | null, selfName: string | null): MenuBlock | null {
+        const isBlocked = !isOwner ? null : (nickname == selfName ? null : !!this.blockedSet.has(nickname));
+        const result = isBlocked != null ? { isBlock: !isBlocked, isUnblock: isBlocked } : null;
+        return result;
+    }
+    public getShowMenu(chatMsgId: number, member: string, isOwner: boolean | null, selfName: string | null): boolean {
+        // console.log(`getShowMenu() chatMsgId: ${chatMsgId}, member: ${member}`); // #
+        const result = !!this.menuEditMap.get(chatMsgId) || !!this.getMenuBlock(member, isOwner, selfName);
+        return result;
+    }
+    public getMenuItem(chatMsgId: number, member: string, isOwner: boolean | null, selfName: string | null): MenuItem | null {
+        const menuEdit = this.menuEditMap.get(chatMsgId);
+        const menuBlock = this.getMenuBlock(member, isOwner, selfName);
+        const result = !!menuEdit || !!menuBlock ? { ...menuEdit, ...menuBlock } : null;
+        // console.log(`selfName: ${selfName} getMenuItem(): ${JSON.stringify(result)}`); // #
+        return result;
     }
     public cleanNewMsg(): void {
         this.setTextareaValue(null);
@@ -348,19 +384,20 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     }
     */
     private loadChatMsgs(
-        objChatMsg: ObjChatMsg, chatMsgs: ChatMessageDto[], menuDataMap: MenuDataMap, selfName: string, blockedUsers: string[] | null
+        objChatMsg: ObjChatMsg, chatMsgs: ChatMessageDto[], menuEditMap: MenuEditMap, selfName: string
     ): { chatMsgs: ChatMessageDto[], smallestId: number, largestId: number } {
         for (let idx = 0; idx < chatMsgs.length; idx++) {
             const chatMsg = chatMsgs[idx];
             objChatMsg[chatMsg.id] = chatMsg;
-            const isEdit = !!selfName && selfName == chatMsg.member && !chatMsg.isRmv;
+            const isSelfNameEqMember = !!selfName && selfName == chatMsg.member;
+            const isEdit = isSelfNameEqMember && !chatMsg.isRmv;
             const isRemove = isEdit;
-            const isNoSelfName = !!selfName && selfName != chatMsg.member;
-            const isBlocked = (selfName == chatMsg.member || !blockedUsers) ? null : blockedUsers.includes(chatMsg.member);
-            const isBlock = isNoSelfName && isBlocked != null && !isBlocked;
-            const isUnblock = isNoSelfName && isBlocked != null && isBlocked;
-            if (isEdit || isBlock || isUnblock) {
-                menuDataMap.set(chatMsg.id, { isEdit, isRemove, isBlock, isUnblock });
+            const isSelfNameNoEqMember = !!selfName && selfName != chatMsg.member;
+            // const isBlocked = (isSelfNameEqMember || !blockedUsers) ? null : blockedUsers.includes(chatMsg.member);
+            // const isBlock = isSelfNameNoEqMember && isBlocked != null && !isBlocked;
+            // const isUnblock = isSelfNameNoEqMember && isBlocked != null && isBlocked;
+            if (isEdit) { // || isBlock || isUnblock) {
+                menuEditMap.set(chatMsg.id, { isEdit, isRemove, /*isBlock, isUnblock*/ });
             }
         }
         const resChatMsgs = Object.values(objChatMsg)
