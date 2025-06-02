@@ -28,6 +28,7 @@ export class ChatSocketService {
 
     private chatConfig: ChatConfig | null = null;
     private hasJoined: boolean = false;
+    private hasBlocked: boolean = false;
     private socketService = inject(SocketService);
 
     private oldHandlOnOpen: () => void = () => { };
@@ -95,6 +96,10 @@ export class ChatSocketService {
         return this.hasConnect() && this.hasJoined;
     }
 
+    public isBlocked(): boolean {
+        return this.hasConnect() && this.hasBlocked;
+    }
+
     // ** Private API **
 
     /** Processing the "open" event of the Socket. */
@@ -151,6 +156,12 @@ export class ChatSocketService {
             }
             const count: number = parseInt((eventWS.getStr('count') || '-1'), 10) || -1;
             this.countOfMembers = count > -1 ? count : this.countOfMembers;
+        } else if (eventWS.et == EWSType.Block) {
+            console.log(`ChatSocketService.eventAnalysis() EWSType.Block  eventWS.block==chatConfig.nickname hasBlocked = true`); // #
+            this.hasBlocked = (eventWS.getStr('block') || '') == chatConfig.nickname ? true : this.hasBlocked;
+        } else if (eventWS.et == EWSType.Unblock) {
+            console.log(`ChatSocketService.eventAnalysis() EWSType.Unblock  eventWS.unblock==chatConfig.nickname hasBlocked = false`); // #
+            this.hasBlocked = (eventWS.getStr('block') || '') == chatConfig.nickname ? false : this.hasBlocked;
         }
     }
 
