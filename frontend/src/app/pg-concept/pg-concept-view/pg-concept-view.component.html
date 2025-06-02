@@ -1,7 +1,7 @@
 <app-concept-view
   [avatar]="profileDto?.avatar"
   [blockedUsers]="blockedUsers"
-  [chatIsEditable]="isStreamActive && chatSocketService.isJoined()"
+  [chatIsEditable]="isStreamActive && chatSocketService.isJoined() && !chatSocketService.isBlocked()"
   [chatMaxRows]="chatMaxRows"
   [chatMinRows]="chatMinRows"
   [chatMsgs]="chatMsgs"

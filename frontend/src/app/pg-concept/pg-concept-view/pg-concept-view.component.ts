@@ -13,7 +13,7 @@ import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { ConfirmationData } from 'src/app/lib-dialog/confirmation/confirmation.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { ProfileDto, ProfileTokensDto } from 'src/app/lib-profile/profile-api.interface';
-import { EWSTypeUtil } from 'src/app/lib-socket/socket-chat.interface';
+import { EventWS, EWSType, EWSTypeUtil } from 'src/app/lib-socket/socket-chat.interface';
 import { StreamDto, StreamState, StreamStateUtil } from 'src/app/lib-stream/stream-api.interface';
 import { StreamService } from 'src/app/lib-stream/stream.service';
 import { HttpErrorUtil } from 'src/app/utils/http-error.util';
@@ -116,7 +116,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             };
             this.chatSocketService.handlReceive = (val: string) => {
                 console.log(`PgConceptView handlReceive(); changeDetector.markForCheck();`); // #
-                this.loadDataFromSocket(val);
+                this.handlReceiveChat(val);
                 this.changeDetector.markForCheck();
             };
             // Connect to the server web socket chat.
@@ -233,6 +233,28 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     // Section: "Chat"
 
+    private handlReceiveChat = (val: string): void => {
+        const eventWS = EventWS.parse(val);
+        if (!eventWS) {
+            return;
+        }
+        if (eventWS.et == EWSType.Err) {
+            const err = eventWS.getStr('err') || '';
+            console.error(`Socket-err:`, err);
+            this.alertService.showError(err, 'pg-concept-view.error_socket');
+        } else if (eventWS.et == EWSType.Echo) {
+            const err = eventWS.getStr('echo') || '';
+            console.log(`Socket-echo:`, err);
+        } else if (eventWS.et == EWSType.Msg) {
+            this.loadDataFromSocket(val);
+        } else if (eventWS.et == EWSType.Block || eventWS.et == EWSType.Unblock) {
+            const isBlock = eventWS.et == EWSType.Block;
+            const user = isBlock ? eventWS.getStr('block') : eventWS.getStr('unblock');
+            if (!!user && this.isStreamOwner) {
+                this.blockedUsers = this.updateBlockedUsers(this.blockedUsers, isBlock, user);
+            }
+        }
+    };
     private loadDataFromSocket(val: string): void {
         console.log(`PgConceptView.loadDataFromSocket(${val})`); // #
         const obj = JSON.parse(val);
@@ -243,6 +265,16 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 console.log(`PgConceptView() 2 chatMsgs:`, this.chatMsgs); // #
             }
         }
+    }
+    private updateBlockedUsers(blockedUsers: string[], isBlock: boolean, blockUser: string): string[] {
+        console.log(`PgConceptView.updateBlockedUsers(isBlock: ${isBlock}, blockUser: ${blockUser});`); // #
+        const userSet: Set<string> = new Set(blockedUsers);
+        if (isBlock) {
+            userSet.add(blockUser);
+        } else {
+            userSet.delete(blockUser);
+        }
+        return Array.from(userSet);
     }
     private getChatMessages(streamId: number | null, isSortDes?: boolean, borderById?: number, limit?: number): void {
         console.log(`PgConceptView.getChatMessages(isSortDes: ${isSortDes}, borderById: ${borderById})...`); // #
