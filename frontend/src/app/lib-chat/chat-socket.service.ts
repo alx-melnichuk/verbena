@@ -161,7 +161,7 @@ export class ChatSocketService {
             this.hasBlocked = (eventWS.getStr('block') || '') == chatConfig.nickname ? true : this.hasBlocked;
         } else if (eventWS.et == EWSType.Unblock) {
             console.log(`ChatSocketService.eventAnalysis() EWSType.Unblock  eventWS.unblock==chatConfig.nickname hasBlocked = false`); // #
-            this.hasBlocked = (eventWS.getStr('block') || '') == chatConfig.nickname ? false : this.hasBlocked;
+            this.hasBlocked = (eventWS.getStr('unblock') || '') == chatConfig.nickname ? false : this.hasBlocked;
         }
     }
 
