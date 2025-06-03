@@ -410,7 +410,7 @@ BEGIN
   END IF;
 
   DELETE FROM blocked_users
-  WHERE blocked_users.id = user_id2
+  WHERE blocked_users.user_id = user_id2
     AND blocked_users.blocked_id = bl_id
   RETURNING 
     blocked_users.id,
