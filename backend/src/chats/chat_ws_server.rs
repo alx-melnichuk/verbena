@@ -114,8 +114,7 @@ impl Handler<BlockClient> for ChatWsServer {
                 }
             }
         }
-        debug!("handler<BlockClient>() room_id:{room_id}, client_name:\"{client_name}\", is_block:{is_block}, is_in_chat:{is_in_chat}");
-
+        debug!("handler<BlockClient>() room_id:{room_id}, client_name: {client_name}, is_block: {is_block}, is_in_chat: {is_in_chat}");
         MessageResult(is_in_chat)
     }
 }
@@ -150,7 +149,7 @@ impl Handler<JoinRoom> for ChatWsServer {
         let join_str = to_string(&JoinEWS { join, member, count }).unwrap();
         // Send a chat message to all members.
         self.send_chat_message_to_clients(room_id, &join_str);
-
+        debug!("handler<JoinRoom>() room_id:{room_id}, client_name: {client_name}, count: {count}");
         MessageResult(id)
     }
 }
@@ -163,13 +162,13 @@ impl Handler<LeaveRoom> for ChatWsServer {
     fn handle(&mut self, msg: LeaveRoom, _ctx: &mut Self::Context) {
         let room_id = msg.0;
         let client_id = msg.1;
-        let user_name = msg.2;
+        let client_name = msg.2;
 
         if let Some(room) = self.room_map.get_mut(&room_id) {
             // Remove the client from the room.
             let recipient_opt = room.remove(&client_id);
             let leave = room_id;
-            let member = user_name.clone();
+            let member = client_name.clone();
             // Get the number of clients in the room.
             let count = self.count_clients_in_room(room_id);
             let leave_str = to_string(&LeaveEWS { leave, member, count }).unwrap();
@@ -180,6 +179,7 @@ impl Handler<LeaveRoom> for ChatWsServer {
                 let command_srv = CommandSrv::Chat(ChatMsgSsn(leave_str.to_owned()));
                 client_info.client.do_send(command_srv);
             }
+            debug!("handler<LeaveRoom>() room_id:{room_id}, client_name: {client_name}, count: {count}");
         }
     }
 }
