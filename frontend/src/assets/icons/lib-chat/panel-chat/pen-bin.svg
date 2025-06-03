@@ -4,4 +4,3 @@ id="pen-bin" fill="none" stroke="currentColor" stroke-width="6"
 stroke-linecap="round" stroke-linejoin="round">
 <path d="M72,40 l12,-12 l-16,-16 l-12,12 l16,16 l-40,40 h-16 v-16 l40,-40 z" />
 </svg>
-
