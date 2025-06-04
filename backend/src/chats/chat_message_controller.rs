@@ -29,12 +29,15 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::sessions::config_jwt;
-
 #[cfg(not(feature = "mockdata"))]
 use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::settings::err;
+#[cfg(not(feature = "mockdata"))]
+use crate::streams::stream_orm::impls::StreamOrmApp;
+#[cfg(feature = "mockdata")]
+use crate::streams::stream_orm::tests::StreamOrmApp;
 use crate::users::user_models::UserRole;
 use crate::utils::parser;
 use crate::validators::{msg_validation, Validator};
@@ -61,6 +64,7 @@ pub async fn get_ws_chat(
     profile_orm: web::Data<ProfileOrmApp>,
     session_orm: web::Data<SessionOrmApp>,
     blocked_user_orm: web::Data<BlockedUserOrmApp>,
+    stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
     stream: web::Payload,
 ) -> actix_web::Result<HttpResponse<actix_web::body::BoxBody>, actix_web::Error> {
@@ -69,9 +73,10 @@ pub async fn get_ws_chat(
     let profile_orm_app = profile_orm.get_ref().clone();
     let session_orm_app = session_orm.get_ref().clone();
     let blocked_user_orm = blocked_user_orm.get_ref().clone();
+    let stream_orm = stream_orm.get_ref().clone();
     #[rustfmt::skip]
     let assistant = ChatWsAssistant::new(
-        config_jwt, chat_message_orm_app, profile_orm_app, session_orm_app, blocked_user_orm);
+        config_jwt, chat_message_orm_app, profile_orm_app, session_orm_app, blocked_user_orm, stream_orm);
 
     let chat_ws_session = ChatWsSession::new(
         u64::default(),    // id: u64,
