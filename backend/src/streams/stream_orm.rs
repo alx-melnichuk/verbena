@@ -60,8 +60,11 @@ pub mod cfg {
 
 #[cfg(not(feature = "mockdata"))]
 pub mod impls {
+    use std::time::Instant as tm;
+
     use chrono::{Duration, Timelike};
     use diesel::{self, prelude::*, sql_types};
+    use log::{info, log_enabled, Level::Info};
     use schema::streams::dsl as streams_dsl;
 
     use crate::dbase;
@@ -133,6 +136,8 @@ pub mod impls {
         fn find_stream_by_params(
             &self, opt_id: Option<i32>, opt_user_id: Option<i32>, opt_live: Option<bool>, is_tags: bool, exclude_ids: &[i32],
         ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -161,23 +166,30 @@ pub mod impls {
                 .optional()
                 .map_err(|e| format!("find_stream_by_params: {}", e.to_string()))?;
 
-            if let Some(stream) = opt_stream {
-                let stream_tags: Vec<StreamTagStreamId> = match is_tags {
-                    true => self
-                        .get_stream_tags(&mut conn, &[stream.id])
-                        .map_err(|e| format!("get_stream_tags1: {}", e.to_string()))?,
-                    false => vec![],
-                };
-                Ok(Some((stream, stream_tags)))
-            } else {
-                Ok(None)
+            let result = match opt_stream {
+                Some(stream) => {
+                    let stream_tags: Vec<StreamTagStreamId> = match is_tags {
+                        true => self
+                            .get_stream_tags(&mut conn, &[stream.id])
+                            .map_err(|e| format!("get_stream_tags1: {}", e.to_string()))?,
+                        false => vec![],
+                    };
+                    Some((stream, stream_tags))
+                },
+                None => None,
+            };
+            if let Some(timer) = timer {
+                info!("find_stream_by_params() time: {}", format!("{:.2?}", timer.elapsed()));
             }
+            Ok(result)
         }
 
         /// Filter entities (streams) by specified parameters. Required parameter id or user_id.
         fn filter_streams_by_params(&self, opt_id: Option<i32>, opt_user_id: Option<i32>, opt_is_logo: Option<bool>,
             opt_live: Option<bool>, is_tags: bool, exclude_ids: &[i32]
         ) -> Result<(Vec<Stream>, Vec<StreamTagStreamId>), String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
             if opt_id.is_none() && opt_user_id.is_none() {
                 return Ok((vec![], vec![]));
             }
@@ -229,7 +241,9 @@ pub mod impls {
             } else {
                 vec![]
             };
-
+            if let Some(timer) = timer {
+                info!("filter_streams_by_params() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok((streams, stream_tags))
         }
 
@@ -237,6 +251,8 @@ pub mod impls {
         #[rustfmt::skip]
         fn find_streams_by_pages(&self, search_stream: SearchStream, is_tags: bool,
         ) -> Result<(u32, Vec<Stream>, Vec<StreamTagStreamId>), String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -314,11 +330,16 @@ pub mod impls {
                 true => self.get_stream_tags(&mut conn, &ids).map_err(|e| format!("get_stream_tags3: {}", e.to_string()))?,
                 false => vec![],
             };
+            if let Some(timer) = timer {
+                info!("find_streams_by_pages() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok((count, streams, stream_tags))
         }
 
         /// Find for an entity (stream event) by SearchStreamEvent.
         fn find_stream_events_by_pages(&self, search_event: SearchStreamEvent) -> Result<(u32, Vec<Stream>), String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -365,13 +386,17 @@ pub mod impls {
                 .load(&mut conn)
                 .map_err(|e| format!("find_stream_events_by_pages: (query_list) {}", e.to_string()))?;
             // lead time: 699.49µs
-
             // lead time: 2.14ms
+            if let Some(timer) = timer {
+                info!("find_stream_events_by_pages() time: {}", format!("{:.2?}", timer.elapsed()));
+            }            
             Ok((count, streams))
         }
 
         /// Find for an entity (stream period) by SearchStreamPeriod.
         fn find_streams_period(&self, search_period: SearchStreamPeriod) -> Result<Vec<DateTime<Utc>>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -392,8 +417,10 @@ pub mod impls {
                 .load(&mut conn)
                 .map_err(|e| format!("find_streams_period: {}", e.to_string()))?;
             // lead time: 704.62µs
-
             // lead time: 908.45µs
+            if let Some(timer) = timer {
+                info!("find_streams_period() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(list)
         }
 
@@ -402,6 +429,8 @@ pub mod impls {
         fn create_stream(
             &self, create_stream: CreateStream, tags: &[String],
         ) -> Result<(Stream, Vec<StreamTagStreamId>), String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             let mut err_table = "create_stream";
@@ -441,6 +470,9 @@ pub mod impls {
                 Ok((stream, stream_tags))
             });
             // lead time: 4.48ms
+            if let Some(timer) = timer {
+                info!("create_stream() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             match res_data {
                 Ok((stream, stream_tags)) => Ok((stream, stream_tags)),
                 Err(err) => Err(format!("{}: {}", err_table, err.to_string())),
@@ -448,6 +480,8 @@ pub mod impls {
         }
         /// Get the logo file name for an entity (stream) by ID.
         fn get_stream_logo_by_id(&self, id: i32) -> Result<Option<String>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -458,6 +492,9 @@ pub mod impls {
                 .optional()
                 .map_err(|e| format!("get_stream_logo_by_id: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("get_stream_logo_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             if let Some(stream) = opt_stream {
                 Ok(stream.logo)
             } else {
@@ -469,6 +506,8 @@ pub mod impls {
         fn modify_stream(
             &self, id: i32, opt_user_id: Option<i32>, modify_stream: ModifyStream, opt_tags: Option<Vec<String>>,
         ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -536,6 +575,9 @@ pub mod impls {
                 }
             });
             // lead time: 3.84ms
+            if let Some(timer) = timer {
+                info!("modify_stream() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             match res_data {
                 Ok(value) => Ok(value),
                 Err(err) => Err(format!("{}: {}", err_table, err.to_string())),
@@ -544,6 +586,8 @@ pub mod impls {
         /// Delete an entity (stream).
         #[rustfmt::skip]
         fn delete_stream(&self, id: i32, opt_user_id: Option<i32>) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -562,14 +606,16 @@ pub mod impls {
             let res_stream_info = query.returning(Stream::as_returning()).get_result(&mut conn).optional();
 
             let opt_stream = res_stream_info.map_err(|e| format!("delete_stream: {}", e.to_string()))?;
-            if let Some(stream) = opt_stream {
-                // Update the "stream_tags" data for user.
-                let _ = self.update_stream_tags_for_user(&mut conn, stream.user_id);
 
-                Ok(Some((stream, stream_tags)))
-            } else {
-                Ok(None)
+            let result = opt_stream.map(|v: Stream| {
+                // Update the "stream_tags" data for user.
+                let _ = self.update_stream_tags_for_user(&mut conn, v.user_id);
+                (v, stream_tags)
+            });
+            if let Some(timer) = timer {
+                info!("delete_stream() time: {}", format!("{:.2?}", timer.elapsed()));
             }
+            Ok(result)
         }
     }
 }
