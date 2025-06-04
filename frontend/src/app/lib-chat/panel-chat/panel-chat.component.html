@@ -128,11 +128,17 @@
     }
     @if (isBlock) {
       <button mat-menu-item class="pn-item-menu"  (click)="doBlockUser(msgMarked?.member, blockedUsers)">
+        <svg class="pc-svg-box">
+            <use href="assets/icons/lib-chat/panel-chat/lock-closed-bin.svg#lock-closed-bin"></use>
+        </svg>
         <span class="pc-menu-label">{{ 'panel-chat.menu.block_user' | translate }}</span>
       </button>
     }
     @if (isUnblock) {
       <button mat-menu-item class="pn-item-menu"  (click)="doUnblockUser(msgMarked?.member, blockedUsers)">
+        <svg class="pc-svg-box">
+            <use href="assets/icons/lib-chat/panel-chat/lock-open-bin.svg#lock-open-bin"></use>
+        </svg>
         <span class="pc-menu-label">{{ 'panel-chat.menu.unblock_user' | translate }}</span>
       </button>
     }
