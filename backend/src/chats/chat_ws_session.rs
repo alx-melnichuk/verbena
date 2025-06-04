@@ -21,6 +21,8 @@ pub const PARAMETER_NOT_DEFINED: &str = "parameter not defined";
 pub const THERE_WAS_ALREADY_JOIN_TO_ROOM: &str = "There was already a \"join\" to the room";
 pub const USERS_MSG_NOT_FOUND: &str = "Current user's message not found.";
 pub const SPECIFIED_USER_NOT_FOUND: &str = "The specified user was not found.";
+pub const STREAM_WITH_SPECIFIED_ID_NOT_FOUND: &str = "Stream with the specified id not found.";
+pub const STREAM_NOT_ACTIVE: &str = "This stream is not active.";
 
 // ** ChatWsSession **
 
@@ -341,11 +343,28 @@ impl ChatWsSession {
                 }
                 let profile = result.unwrap();
                 let user_id = profile.user_id.clone();
-                let user_name = profile.nickname.clone();
+                let nickname = profile.nickname.clone();
+                let user_name = nickname.clone();
+                // Find an entity (stream) by id.
+                let result2 = assistant.find_stream_by_id(room_id).await;
 
-                // Check the stream ID (room_id) and get the user_id of the stream owner.
-                // TODO??
-                let is_owner = profile.user_id == 18;
+                if let Err(err) = result2 {
+                    return addr.do_send(AsyncResultError(err.to_string()));
+                }
+                let opt_chat_stream = result2.unwrap();
+                // If the stream with id = room_id is not found, then an error occurs.
+                if opt_chat_stream.is_none() {
+                    return addr.do_send(AsyncResultError(STREAM_WITH_SPECIFIED_ID_NOT_FOUND.to_owned()));
+                }
+                let chat_stream = opt_chat_stream.unwrap();
+                // Check stream activity. (live = "state" IN ('preparing', 'started', 'paused'))
+                if !chat_stream.live {
+                    return addr.do_send(AsyncResultError(STREAM_NOT_ACTIVE.to_owned()));
+                }
+                // Whether the user is the owner of the stream.
+                let is_owner = profile.user_id == chat_stream.user_id;
+
+                debug!("handle_ews_join_add_task() room_id: {room_id}, user_name: {nickname}, is_owner: {is_owner}");
 
                 // Send the "AsyncResultEwsJoin" command for execution.
                 addr.do_send(AsyncResultEwsJoin(room_id, user_id, user_name, is_owner));
