@@ -56,8 +56,8 @@ export class PgForgotPasswordComponent {
                     window.setTimeout(() => this.router.navigateByUrl(ROUTE_LOGIN, { replaceUrl: true }), 0);
                 });
             })
-            .catch((error: HttpErrorResponse) => {
-                this.errMsgs = HttpErrorUtil.getMsgs(error);
+            .catch((err: HttpErrorResponse) => {
+                this.errMsgs = HttpErrorUtil.getMsg(err.error, `${err.status} ${err.statusText}`);
             })
             .finally(() => {
                 this.isDisabledSubmit = false;
