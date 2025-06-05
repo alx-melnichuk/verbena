@@ -296,4 +296,33 @@ pub struct FilterChatMessageDto {
     pub limit: Option<i32>,
 }
 
+// ** Model: "ChatAccess". Used: ChatMessageOrm::get_chat_access() **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
+pub struct ChatAccess {
+    #[diesel(sql_type = diesel::sql_types::Integer)]
+    #[diesel(column_name = "stream_id")]
+    pub stream_id: i32,
+    #[diesel(sql_type = diesel::sql_types::Integer)]
+    #[diesel(column_name = "stream_owner")]
+    pub stream_owner: i32,
+    #[diesel(sql_type = diesel::sql_types::Bool)]
+    #[diesel(column_name = "stream_live")]
+    pub stream_live: bool,
+    #[diesel(sql_type = diesel::sql_types::Bool)]
+    #[diesel(column_name = "is_blocked")]
+    pub is_blocked: bool,
+}
+
+impl ChatAccess {
+    pub fn new(stream_id: i32, stream_owner: i32, stream_live: bool, is_blocked: bool) -> ChatAccess {
+        ChatAccess {
+            stream_id,
+            stream_owner,
+            stream_live,
+            is_blocked,
+        }
+    }
+}
+
 // * * * *    * * * *
