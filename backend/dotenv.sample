@@ -7,12 +7,9 @@
 # RUST_LOG=warn,actix_web=info,verbena=warn
 
 # for debugging
-# LOG01=extractors::authentication=debug
+#LOG01=verbena::extractors=info
 # Section "chat_message" ORM, CTRL
-# LOG02a=verbena::chats::chat_message_orm=info,verbena::chats::blocked_user_orm=info
-# LOG02b=verbena::chats::chat_message_controller=info,verbena::chats::blocked_user_controller=info
-# LOG02=${LOG02a},${LOG02b}
-
+#LOG02=verbena::chats=info
 RUST_LOG=warn,actix_web=info,verbena=warn,${LOG01},${LOG02}
 
 # -----------------------------------------------------------------------------
