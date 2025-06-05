@@ -1,5 +1,5 @@
 use crate::chats::chat_message_models::{
-    ChatMessage, ChatMessageLog, CreateChatMessage, FilterChatMessage, ModifyChatMessage,
+    ChatAccess, ChatMessage, ChatMessageLog, CreateChatMessage, FilterChatMessage, ModifyChatMessage,
 };
 
 pub trait ChatMessageOrm {
@@ -22,6 +22,9 @@ pub trait ChatMessageOrm {
 
     /// Delete an entity (chat_message).
     fn delete_chat_message(&self, id: i32) -> Result<Option<ChatMessage>, String>;
+
+    /// Get chat access information. (ChatAccess)
+    fn get_chat_access(&self, stream_id: i32, user_id: i32) -> Result<Option<ChatAccess>, String>;
 }
 
 pub mod cfg {
@@ -50,7 +53,9 @@ pub mod impls {
     use log::{info, log_enabled, Level::Info};
 
     use crate::chats::{
-        chat_message_models::{ChatMessage, ChatMessageLog, CreateChatMessage, FilterChatMessage, ModifyChatMessage},
+        chat_message_models::{
+            ChatAccess, ChatMessage, ChatMessageLog, CreateChatMessage, FilterChatMessage, ModifyChatMessage,
+        },
         chat_message_orm::ChatMessageOrm,
     };
     use crate::dbase;
@@ -202,6 +207,27 @@ pub mod impls {
             }
             Ok(opt_chat_message)
         }
+
+        /// Get chat access information. (ChatAccess)
+        fn get_chat_access(&self, stream_id: i32, user_id: i32) -> Result<Option<ChatAccess>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let query = diesel::sql_query("select * from get_chat_access($1,$2);")
+                .bind::<sql_types::Integer, _>(stream_id)
+                .bind::<sql_types::Integer, _>(user_id);
+
+            let opt_chat_access = query
+                .get_result::<ChatAccess>(&mut conn)
+                .optional()
+                .map_err(|e| format!("get_chat_access: {}", e.to_string()))?;
+
+            if let Some(timer) = timer {
+                info!("get_chat_access() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
+            Ok(opt_chat_access)
+        }
     }
 }
 
@@ -212,7 +238,12 @@ pub mod tests {
 
     use chrono::Utc;
 
-    use super::*;
+    use crate::chats::{
+        chat_message_models::{
+            ChatAccess, ChatMessage, ChatMessageLog, CreateChatMessage, FilterChatMessage, ModifyChatMessage,
+        },
+        chat_message_orm::ChatMessageOrm,
+    };
 
     pub const CHAT_MESSAGE_ID: i32 = 1500;
     pub const CHAT_MESSAGE_LOG_ID: i32 = 1600;
@@ -373,6 +404,13 @@ pub mod tests {
         fn delete_chat_message(&self, id: i32) -> Result<Option<ChatMessage>, String> {
             let opt_chat_message = self.chat_message_vec.iter().find(|chat_msg| (*chat_msg).id == id);
             Ok(opt_chat_message.map(|u| u.clone()))
+        }
+
+        /// Get chat access information. (ChatAccess)
+        fn get_chat_access(&self, _stream_id: i32, _user_id: i32) -> Result<Option<ChatAccess>, String> {
+            let opt_chat_access = None;
+
+            Ok(opt_chat_access)
         }
     }
 }
