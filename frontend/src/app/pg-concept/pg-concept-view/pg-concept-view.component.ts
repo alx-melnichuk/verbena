@@ -71,35 +71,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         const chatMsgList = this.route.snapshot.data['chatMsgList'];
         this.chatMsgs = chatMsgList.concat([]);
         console.log(`PgConceptView() 1 chatMsgs:`, this.chatMsgs); // #
-        // =v
-        if (!!this.streamDto) { // #
-            // this.streamDto.state = StreamState.waiting; // # for demo
-            this.streamDto.state = StreamState.preparing; // # for demo
-            // this.streamDto.state = StreamState.started; // # for demo
-            // this.streamDto.state = StreamState.paused; // # for demo
-            // this.streamDto.state = StreamState.stopped; // # for demo
-            // this.streamDto.starttime = "2024-10-29T16:34:00.000Z";
-            // this.streamDto.starttime = "2025-04-10T12:00:00.000Z";
-            this.streamDto.tags = [this.streamDto.tags[0], 'tag_word02', 'tag_word03', 'tag_word04'];
-            // this.streamDto.tags = [this.streamDto.tags[0], 'tag02', 'tag03', 'tag04'];
-            // this.streamDto.started = "2025-04-07T14:05:00.000Z";
-            // this.streamDto.stopped = "2025-04-07T16:40:00.000Z";
-            this.streamDto.title = this.streamDto.title + ' Invalid stream state transition from "waiting" to "stopped".'
-                + ' Invalid stream state transition from "waiting" to "stopped".';
-        }
-        // # this.chatMsgs = this.getChatMsgDemo(); // #
-        // # this.chatMsgs = this.getChatMsg(2, "evelyn_allen", 10); // #
-        // # setTimeout(() => {
-        // #     this.chatMsgs = this.getChatMsg(1, "evelyn_allen", 10); // #
-        // #     this.changeDetector.markForCheck();
-        // # }, 5000);
-        // # setTimeout(() => {
-        // #     this.chatMsgs = this.getChatMsg(0, "evelyn_allen", 10); // #
-        // #     this.changeDetector.markForCheck();
-        // # }, 10000);
-        // =^
-        // StreamState = [preparing, started, paused]
-        this.isStreamActive = !!this.streamDto && StreamStateUtil.isActive(this.streamDto.state);
+        this.isStreamActive = !!this.streamDto?.live;
         console.log(`PgConceptView() this.isStreamActive: ${this.isStreamActive}`); // #
 
         const nickname: string = this.profileDto?.nickname || '';
@@ -111,11 +83,9 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
             this.chatSocketService.handlOnError = (err: string) => {
                 console.error(`SocketErr:`, err);
-                this.alertService.showError(err, 'pg-concept-view.error_socket');
                 this.changeDetector.markForCheck();
             };
             this.chatSocketService.handlReceive = (val: string) => {
-                console.log(`PgConceptView handlReceive(); changeDetector.markForCheck();`); // #
                 this.handlReceiveChat(val);
                 this.changeDetector.markForCheck();
             };
@@ -187,7 +157,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         let isShowTimer = false;
         let isStreamOwner = false;
         if (!!streamDto) {
-            isShowTimer = !!streamDto && StreamStateUtil.isActive(streamDto.state);
+            isShowTimer = streamDto.live;
             const currentUserId: number = profileDto?.id || -1;
             isStreamOwner = (streamDto.userId === currentUserId);
         }
@@ -241,7 +211,9 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         if (eventWS.et == EWSType.Err) {
             const err = eventWS.getStr('err') || '';
             console.error(`Socket-err:`, err);
-            this.alertService.showError(err, 'pg-concept-view.error_socket');
+            if (!!err) {
+                this.alertService.showError(HttpErrorUtil.getMsg(JSON.parse(err), ``)[0], 'pg-concept-view.error_socket');
+            }
         } else if (eventWS.et == EWSType.Echo) {
             const err = eventWS.getStr('echo') || '';
             console.log(`Socket-echo:`, err);
