@@ -182,6 +182,10 @@ pub struct JoinEWS {
     pub join: i32,
     pub member: String,
     pub count: usize,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_owner: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_blocked: Option<bool>,
 }
 
 // ** Leave the client from the chat room. **
