@@ -1,11 +1,10 @@
 import {
-    AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, inject, Input, OnChanges, OnInit,
+    AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, inject, Input, OnChanges, OnInit,
     Output, SimpleChanges, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule, KeyValue } from '@angular/common';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
-import { InitializationService } from 'src/app/common/initialization.service';
 import { LocaleService } from 'src/app/common/locale.service';
 import { StringDateTime } from 'src/app/common/string-date-time';
 import { AvatarComponent } from 'src/app/components/avatar/avatar.component';
@@ -299,7 +298,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
             console.log('#updateView() state=', streamDto.state);
             const src: string | null = streamDto.publicTarget;
             this.millicastViewer = (!!src ? ({ src } as MillicastViewerPrm) : null);
-            this.isEditableChat = StreamStateUtil.isActive(streamDto.state);
+            this.isEditableChat = StreamStateUtil. isActive(streamDto.state);
             this.starttimeValue = (streamDto.state === StreamState.started ? streamDto.starttime : null);
             this.setBroadcastDuration();
         }
