@@ -11,7 +11,7 @@ use crate::chats::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::chats::{
     blocked_user_models::{BlockedUser, CreateBlockedUser, DeleteBlockedUser},
     blocked_user_orm::BlockedUserOrm,
-    chat_message_models::{ChatMessage, CreateChatMessage, ModifyChatMessage},
+    chat_message_models::{ChatAccess, ChatMessage, CreateChatMessage, ModifyChatMessage},
     chat_message_orm::ChatMessageOrm,
 };
 use crate::errors::AppError;
@@ -27,11 +27,6 @@ use crate::sessions::session_orm::impls::SessionOrmApp;
 use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::tokens::decode_token;
 use crate::settings::err;
-#[cfg(not(feature = "mockdata"))]
-use crate::streams::stream_orm::impls::StreamOrmApp;
-#[cfg(feature = "mockdata")]
-use crate::streams::stream_orm::tests::StreamOrmApp;
-use crate::streams::stream_orm::StreamOrm;
 use crate::utils::token_verification::check_token_and_get_profile;
 
 #[derive(Debug, Clone)]
@@ -50,7 +45,6 @@ pub struct ChatWsAssistant {
     profile_orm: ProfileOrmApp,
     session_orm: SessionOrmApp,
     blocked_user_orm: BlockedUserOrmApp,
-    stream_orm: StreamOrmApp,
 }
 
 // ** ChatWsAssistant implementation **
@@ -62,7 +56,6 @@ impl ChatWsAssistant {
         profile_orm: ProfileOrmApp,
         session_orm: SessionOrmApp,
         blocked_user_orm: BlockedUserOrmApp,
-        stream_orm: StreamOrmApp,
     ) -> Self {
         ChatWsAssistant {
             config_jwt,
@@ -70,7 +63,6 @@ impl ChatWsAssistant {
             profile_orm,
             session_orm,
             blocked_user_orm,
-            stream_orm,
         }
     }
     /** Decode the token. And unpack the two parameters from the token. */
@@ -145,22 +137,14 @@ impl ChatWsAssistant {
                 })
         }
     }
-    /** Find an entity (stream) by id. */
-    pub async fn find_stream_by_id(&self, stream_id: i32) -> Result<Option<ChatStream>, AppError> {
-        let stream_orm: StreamOrmApp = self.stream_orm.clone();
-        // Get 'stream' by id.
-        stream_orm
-            .find_stream_by_params(Some(stream_id), None, None, false, &[])
-            .map_err(|e| {
-                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e) // 507
-            })
-            .map(|val| {
-                val.map(|v| ChatStream {
-                    id: v.0.id,
-                    user_id: v.0.user_id,
-                    live: v.0.live,
-                })
-            })
+
+    /** Get chat access information. (ChatAccess) */
+    pub async fn get_chat_access(&self, stream_id: i32, user_id: i32) -> Result<Option<ChatAccess>, AppError> {
+        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
+
+        chat_message_orm.get_chat_access(stream_id, user_id).map_err(|e| {
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e) // 507
+        })
     }
 }
