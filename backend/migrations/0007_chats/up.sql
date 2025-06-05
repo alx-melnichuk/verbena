@@ -533,6 +533,46 @@ BEGIN
 END;
 $$;
 
+/* Create a stored function to get chat access information. (ChatAccess) */
+CREATE OR REPLACE FUNCTION get_chat_access(
+  IN _stream_id INTEGER,
+  IN _user_id INTEGER,
+  OUT stream_id INTEGER,
+  OUT stream_owner INTEGER,
+  OUT stream_live BOOLEAN,
+  OUT is_blocked BOOLEAN
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+DECLARE 
+  rec1 RECORD;
+  blocked_id INTEGER;
+BEGIN
+  IF (_stream_id IS NULL OR _user_id IS NULL) THEN
+    RETURN;
+  END IF;
+
+  SELECT s.id AS stream_id, s.user_id AS stream_owner, s.live AS stream_live
+  FROM streams s 
+  WHERE s.id = _stream_id
+  INTO rec1;
+ 
+  IF rec1.stream_id IS NULL THEN 
+    RETURN;
+  END IF;
+
+  SELECT bu.id
+  FROM blocked_users bu 
+  WHERE bu.user_id = rec1.stream_owner AND bu.blocked_id = _user_id
+  INTO blocked_id;
+
+  RETURN QUERY SELECT
+    rec1.stream_id,
+    rec1.stream_owner,
+    rec1.stream_live,
+    CASE WHEN rec1.stream_owner = _user_id THEN FALSE ELSE (blocked_id IS NOT NULL) END AS is_blocked;
+END;
+$$;
+
 -- **
 
 /* Create a procedure that adds test data to the table: chat messages, chat_message logs. */

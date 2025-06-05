@@ -4,6 +4,9 @@
 
 -- Removing entities: "blocked_users".
 
+/* Remove stored function to get chat access information. (ChatAccess) */
+DROP FUNCTION IF EXISTS get_chat_access;
+
 /* Remove stored function to get the entity from "blocked_users". */
 DROP FUNCTION IF EXISTS get_blocked_user;
 
