@@ -41,7 +41,7 @@ pub struct CountMembers(
 
 // ** Join the client to the chat room. (Session -> Server) **
 #[derive(Clone, Message)]
-#[rtype(result = "u64")] // id client  // MAX 18_446_744_073_709_551_615u64
+#[rtype(result = "(u64, usize)")] // (client_id, count)  // MAX 18_446_744_073_709_551_615u64
 pub struct JoinRoom(
     pub i32,                   // room_id
     pub String,                // client_name
@@ -53,7 +53,7 @@ pub struct JoinRoom(
 #[rtype(result = "()")]
 pub struct LeaveRoom(
     pub i32,    // room_id
-    pub u64,    // id client
+    pub u64,    // client_id
     pub String, // client_name
 );
 
