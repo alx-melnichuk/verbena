@@ -8,8 +8,7 @@ use chrono::{SecondsFormat /*Utc*/};
 use serde_json::to_string;
 
 use crate::chats::chat_event_ws::{
-    BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, /*MsgCutEWS,*/ MsgEWS, /*MsgPutEWS,*/
-    NameEWS, UnblockEWS,
+    BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, MsgEWS, NameEWS, UnblockEWS,
 };
 use crate::chats::chat_message::{
     BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage,
@@ -257,20 +256,20 @@ impl ChatWsSession {
     // ** Blocking clients in a room by name. (Session -> Server) **
     pub fn handle_ews_block_add_task(
         &self,
-        client_name: &str,
+        user_name: &str,
         is_block: bool,
         ctx: &mut ws::WebsocketContext<Self>,
     ) -> Result<(), String> {
-        debug!("handle_ews_block_add_task() client_name: {client_name}, is_block: {is_block}");
+        debug!("handle_ews_block_add_task() user_name: {user_name}, is_block: {is_block}");
         let tag_name = if is_block { "block" } else { "unblock" };
         // Check if this field is required
-        self.check_is_required_string(client_name, tag_name)?;
+        self.check_is_required_string(user_name, tag_name)?;
         // Checking the possibility of blocking a user.
         self.check_possibility_blocking()?;
 
         let room_id = self.room_id;
         let user_id = self.user_id;
-        let block_name = client_name.to_string();
+        let block_name = user_name.to_string();
         // Spawn an async task.
         let addr = ctx.address();
         let assistant = self.assistant.clone();
@@ -345,35 +344,37 @@ impl ChatWsSession {
                 let user_id = profile.user_id.clone();
                 let nickname = profile.nickname.clone();
                 let user_name = nickname.clone();
-                // Find an entity (stream) by id.
-                let result2 = assistant.find_stream_by_id(room_id).await;
+                // Get chat access information.
+                let result2 = assistant.get_chat_access(room_id, user_id).await;
 
                 if let Err(err) = result2 {
                     return addr.do_send(AsyncResultError(err.to_string()));
                 }
-                let opt_chat_stream = result2.unwrap();
+                let opt_chat_access = result2.unwrap();
                 // If the stream with id = room_id is not found, then an error occurs.
-                if opt_chat_stream.is_none() {
+                if opt_chat_access.is_none() {
                     return addr.do_send(AsyncResultError(STREAM_WITH_SPECIFIED_ID_NOT_FOUND.to_owned()));
                 }
-                let chat_stream = opt_chat_stream.unwrap();
-                // Check stream activity. (live = "state" IN ('preparing', 'started', 'paused'))
-                if !chat_stream.live {
+                let chat_access = opt_chat_access.unwrap();
+                // Check stream activity. (live: "state" IN ('preparing', 'started', 'paused'))
+                if !chat_access.stream_live {
                     return addr.do_send(AsyncResultError(STREAM_NOT_ACTIVE.to_owned()));
                 }
-                // Whether the user is the owner of the stream.
-                let is_owner = profile.user_id == chat_stream.user_id;
+                // Determine if a user is the owner of a chat.
+                let is_owner = profile.user_id == chat_access.stream_owner;
+                // Get the "block" value for the given user.
+                let is_blocked = chat_access.is_blocked;
 
-                debug!("handle_ews_join_add_task() room_id: {room_id}, user_name: {nickname}, is_owner: {is_owner}");
-
+                debug!("handle_ews_join_add_task() room_id:{room_id}, user_name:{nickname}, is_owner:{is_owner}, is_blocked:{is_blocked}");
                 // Send the "AsyncResultEwsJoin" command for execution.
-                addr.do_send(AsyncResultEwsJoin(room_id, user_id, user_name, is_owner));
+                addr.do_send(AsyncResultEwsJoin(room_id, user_id, user_name, is_owner, is_blocked));
             });
         } else {
+            debug!("handle_ews_join_add_task() room_id: {room_id}, user_name: , is_owner: false, is_blocked: true");
             // Send the "AsyncResultEwsJoin" command for execution.
             #[rustfmt::skip]
             ctx.address()
-                .do_send(AsyncResultEwsJoin(room_id, i32::default(), self.user_name.clone(), false));
+                .do_send(AsyncResultEwsJoin(room_id, i32::default(), self.user_name.clone(), false, true));
         }
         Ok(())
     }
@@ -523,6 +524,7 @@ struct AsyncResultEwsJoin(
     i32,    // user_id
     String, // user_name
     bool,   // is_owner
+    bool,   // is_blocked
 );
 
 impl Message for AsyncResultEwsJoin {
@@ -538,12 +540,12 @@ impl Handler<AsyncResultEwsJoin> for ChatWsSession {
             // Send message about "leave"
             let _ = self.handle_ews_leave(ctx);
         }
-        let room_id = msg.0;
-        let client_name = msg.2;
-        self.user_id = msg.1;
-        self.user_name = client_name.clone();
-        self.is_owner = msg.3;
-        // TODO ??set value "is_block".
+        let AsyncResultEwsJoin(room_id, user_id, user_name, is_owner, is_blocked) = msg;
+
+        self.user_id = user_id;
+        self.user_name = user_name.clone();
+        self.is_owner = is_owner;
+        self.is_blocked = is_blocked;
 
         // Then send a join message for the new room
         let join_room_srv = JoinRoom(room_id, self.user_name.clone(), ctx.address().recipient());
@@ -551,11 +553,17 @@ impl Handler<AsyncResultEwsJoin> for ChatWsSession {
         ChatWsServer::from_registry()
             .send(join_room_srv)
             .into_actor(self)
-            .then(move |res, act, _ctx| {
-                if let Ok(id) = res {
+            .then(move |res, act, ctx| {
+                if let Ok((id, count)) = res {
                     act.id = id;
                     act.room_id = room_id;
-                    debug!("handler<AsyncResultEwsJoin>() room_id: {room_id}, user_name: {client_name}");
+                    if log_enabled!(Debug) {
+                        let s1 = format!("is_owner: {is_owner}, is_blocked: {is_blocked}");
+                        debug!("handler<AsyncResultEwsJoin>() room_id:{room_id}, user_name: {user_name}, count:{count}, {s1}");
+                    }
+                    #[rustfmt::skip]
+                    ctx.text(to_string(&JoinEWS {
+                        join: room_id, member: user_name, count, is_owner: Some(is_owner), is_blocked: Some(is_blocked) }).unwrap());
                 }
                 fut::ready(())
             })
@@ -625,7 +633,7 @@ impl Handler<AsyncResultBlockClient> for ChatWsSession {
                     } else {
                         to_string(&UnblockEWS { unblock: blocked_name, is_in_chat }).unwrap()
                     };
-                    debug!("handler<AsyncResultBlockClient>() is_block:{is_block}, str: {str}");
+                    debug!("handler<AsyncResultBlockClient>() is_block: {is_block}, str: {str}");
                     ctx.text(str);
                 }
                 fut::ready(())
@@ -663,7 +671,7 @@ impl ChatWsSession {
         } else {
             to_string(&UnblockEWS { unblock: user_name, is_in_chat }).unwrap()
         };
-        debug!("handler<CommandSrv::BlockSsn>() is_block:{is_block}, str: {str}");
+        debug!("handler<CommandSrv::BlockSsn>() is_block: {is_block}, str: {str}");
         ctx.text(str);
     }
 
