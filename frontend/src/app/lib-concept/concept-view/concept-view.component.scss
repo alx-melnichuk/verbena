@@ -220,11 +220,16 @@ app-concept-view {
 
     // ** **
 
-    @container cnt-concept-view (width<1024px) {
+    @container cnt-concept-view (width < 900px) {
+        .cv-cnt-actions {
+            max-width: var(--cv-cnt-act-mx-wd, 200px);
+        }
+    }
+
+    @container cnt-concept-view (width < 1024px) {
         .cv-sidebar {
             ---sb-ovr-wd: var(---sb-mn-wd);
             ---sb-panel-pos: absolute;
         }
     }
-
 }

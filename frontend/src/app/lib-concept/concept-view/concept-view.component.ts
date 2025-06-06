@@ -35,20 +35,28 @@ import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-st
 export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit {
     @Input()
     public avatar: string | null | undefined;
-    @Input()
-    public blockedUsers: string[] = [];
-    @Input()
+
+    @Input() // List of new blocked users.
+    public chatBlockedUsers: string[] = [];
+    @Input() // List of new messages.
+    public chatMsgs: ChatMessageDto[] = [];
+    @Input() // Indication that the user is blocked.
+    public chatIsBlocked: boolean | null = null;
+    @Input() // Indicates that the user can send messages to the chat.
     public chatIsEditable: boolean | null = null;
+    @Input() // Indicates that data is being loaded.
+    public chatIsLoadData: boolean | null = null;
+    @Input() // Indicates that the user is the owner of the chat.
+    public chatIsOwner: boolean | null = null;
     @Input()
     public chatMaxRows: number | null = null;
     @Input()
     public chatMinRows: number | null = null;
     @Input()
-    public chatMsgs: ChatMessageDto[] = [];
+    public chatNickname: string | null = null;
+
     @Input()
     public countOfViewer: number | null | undefined;
-    @Input()
-    public isLoadChatMsg = false;
     @Input()
     public isLoadStream = false;
     @Input()
@@ -56,7 +64,8 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     @Input()
     public isStreamOwner: boolean = false;
     @Input()
-    public nickname: string | null | undefined;
+    public nickname: string | null = null;
+
     @Input()
     public streamDto: StreamDto | null = null;
     //   @Input()

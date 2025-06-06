@@ -70,18 +70,7 @@
         </div>
       </div>
 
-      <div class="cv-cnt-prm" style9="outline: 1px dashed orangered;">
-      <app-panel-stream-params class="cv-params9"
-        [countOfViewer]="countOfViewer"
-        [isShowTimer]="isShowTimer"
-        [locale]="localeService.getLocale()"
-        [start]="getDate(streamDto?.starttime)"
-        [started]="getDate(streamDto?.started)"
-        [stopped]="getDate(streamDto?.stopped)">
-      </app-panel-stream-params>
-      </div>
-
-      <div class="cv-cnt-prm" style9="outline: 1px dashed green;">
+      <div class="cv-cnt-prm cv-cnt-actions" style9="outline: 1px dashed green;">
         @if (isStreamOwner) {
           <app-panel-stream-actions
             [state]="streamDto?.state"
@@ -89,6 +78,17 @@
             (changeState)="doChangeState($event)">
           </app-panel-stream-actions>
         }
+      </div>
+
+      <div class="cv-cnt-prm" style9="outline: 1px dashed orangered;">
+        <app-panel-stream-params
+          [countOfViewer]="countOfViewer"
+          [isShowTimer]="isShowTimer"
+          [locale]="localeService.getLocale()"
+          [start]="getDate(streamDto?.starttime)"
+          [started]="getDate(streamDto?.started)"
+          [stopped]="getDate(streamDto?.stopped)">
+        </app-panel-stream-params>
       </div>
 
     </div>
@@ -141,15 +141,16 @@
   </div>
   <div cv-hg100 cv-brd-bx cv-pd-lf0_5>
     <app-panel-chat class="cv-sdb-chat cv-sdb-brd cv-brd-lf"
-      [blockedUsers]="blockedUsers"
+      [blockedUsers]="chatBlockedUsers"
       [chatMsgs]="chatMsgs"
+      [isBlocked]="chatIsBlocked"
       [isEditable]="chatIsEditable"
-      [isLoadData]="isLoadChatMsg"
-      [isOwner]="isStreamOwner"  
+      [isLoadData]="chatIsLoadData"
+      [isOwner]="chatIsOwner"  
       [locale]="localeService.getLocale()"
       [maxRows]="chatMaxRows"
       [minRows]="chatMinRows"
-      [nickname]="nickname || ''"
+      [nickname]="chatNickname || ''"
       [title]="'concept-view.chat_title'"
       (blockUser)="doBlockUser($event)"
       (unblockUser)="doUnblockUser($event)"
