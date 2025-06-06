@@ -34,16 +34,19 @@ const WS_CHAT_HOST: string | null = environment.wsChatHost || null;
 })
 export class PgConceptViewComponent implements OnInit, OnDestroy {
 
-    public blockedUsers: string[] = [];
-    // public chatAccess: string | null = null;
-    public chatMaxRows: number = 4;
-    public chatMinRows: number = 1;
-    public chatMsgs: ChatMessageDto[] = [];
-    // public chatName: string = '';
-    // public chatRoom: string = '';
+    public chatBlockedUsers: string[] = []; // List of new blocked users.
+    public chatMsgs: ChatMessageDto[] = []; // List of new messages.
+    public chatIsBlocked: boolean | null = null; // Indication that the user is blocked.
+    public chatIsEditable: boolean | null = null; // Indicates that the user can send messages to the chat.
+    public chatIsLoadData: boolean | null = null; // Indicates that data is being loaded.
+    public chatIsOwner: boolean | null = null;  // Indicates that the user is the owner of the chat.
+    public chatMaxRows: number | null = 4;
+    public chatMinRows: number | null = 1;
+    public chatNickname: string | null = null;
+
     public chatSocketService: ChatSocketService = inject(ChatSocketService);
+
     public isLoadStream = false;
-    public isLoadChatMsg = false;
     public isShowTimer: boolean = false;
     // An indication that the stream is in active status. ([preparing, started, paused]) 
     public isStreamActive: boolean = false;
@@ -212,7 +215,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             const err = eventWS.getStr('err') || '';
             console.error(`Socket-err:`, err);
             if (!!err) {
-                this.alertService.showError(HttpErrorUtil.getMsg(JSON.parse(err), ``)[0], 'pg-concept-view.error_socket');
+                const errStr = (err[0] == '{' && err[-1] == '}') ? HttpErrorUtil.getMsg(JSON.parse(err), ``)[0] : err;
+                this.alertService.showError(errStr, 'pg-concept-view.error_socket');
             }
         } else if (eventWS.et == EWSType.Echo) {
             const err = eventWS.getStr('echo') || '';
@@ -223,7 +227,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             const isBlock = eventWS.et == EWSType.Block;
             const user = isBlock ? eventWS.getStr('block') : eventWS.getStr('unblock');
             if (!!user && this.isStreamOwner) {
-                this.blockedUsers = this.updateBlockedUsers(this.blockedUsers, isBlock, user);
+                this.chatBlockedUsers = this.updateBlockedUsers(this.chatBlockedUsers, isBlock, user);
             }
         }
     };
@@ -253,7 +257,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         if (!streamId || streamId < 0) {
             return;
         }
-        this.isLoadChatMsg = true;
+        this.chatIsLoadData = true;
         this.chatMessageService.getChatMessages(streamId, isSortDes, borderById, limit)
             .then((response: ChatMessageDto[] | HttpErrorResponse | undefined) => {
                 console.log(`PgConceptView.getChatMessages() this.setChatMsgs(response)`); // #
@@ -264,7 +268,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 console.error(`ChatMessageError:`, error);
             })
             .finally(() => {
-                this.isLoadChatMsg = false;
+                this.chatIsLoadData = false;
                 this.changeDetector.markForCheck();
             });
     }

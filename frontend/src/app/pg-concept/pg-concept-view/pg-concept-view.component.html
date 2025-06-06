@@ -1,16 +1,22 @@
 <app-concept-view
   [avatar]="profileDto?.avatar"
-  [blockedUsers]="blockedUsers"
-  [chatIsEditable]="isStreamActive && chatSocketService.isJoined() && !chatSocketService.isBlocked()"
+
+  [chatBlockedUsers]="chatBlockedUsers"
+  [chatMsgs]="chatMsgs"
+  [chatIsBlocked]="chatSocketService.isBlocked()"
+  [chatIsEditable]="isStreamActive && chatSocketService.isJoined()"
+  [chatIsLoadData]="chatIsLoadData"
+  [chatIsOwner]="chatSocketService.isOwner()"
   [chatMaxRows]="chatMaxRows"
   [chatMinRows]="chatMinRows"
-  [chatMsgs]="chatMsgs"
+  [chatNickname]="profileDto?.nickname || null"
+  
   [countOfViewer]="chatSocketService.countOfMembers"
-  [isLoadChatMsg]="isLoadChatMsg"
   [isLoadStream]="isLoadStream"
   [isShowTimer]="isShowTimer"
   [isStreamOwner]="isStreamOwner"
-  [nickname]="profileDto?.nickname"
+  [nickname]="profileDto?.nickname || null"
+  
   [streamDto]="streamDto"
   (changeState)="doChangeState(isStreamOwner, streamDto?.id, $event)"
   (blockUser)="doBlockUser($event)"
