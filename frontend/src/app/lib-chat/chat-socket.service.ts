@@ -28,6 +28,7 @@ export class ChatSocketService {
 
     private chatConfig: ChatConfig | null = null;
     private hasJoined: boolean = false;
+    private hasOwner: boolean = false;
     private hasBlocked: boolean = false;
     private socketService = inject(SocketService);
 
@@ -52,6 +53,10 @@ export class ChatSocketService {
     /** Connect to the server web socket chat. */
     public connect(pathName: string, host?: string | null): void {
         if (!!this.socketService) {
+            this.hasJoined = false;
+            this.hasOwner = false;
+            this.hasBlocked = false;
+
             this.oldHandlOnOpen = this.socketService.handlOnOpen;
             this.oldHandlOnClose = this.socketService.handlOnClose;
             this.oldHandlOnError = this.socketService.handlOnError;
@@ -72,13 +77,16 @@ export class ChatSocketService {
         if (!!this.socketService) {
             this.socketService.disconnect();
 
+            this.hasJoined = false;
+            this.hasOwner = false;
+            this.hasBlocked = false;
+
             this.socketService.handlOnOpen = this.oldHandlOnOpen;
             this.socketService.handlOnClose = this.oldHandlOnClose;
             this.socketService.handlOnError = this.oldHandlOnError;
             this.socketService.handlSend = this.oldHandlSend;
             this.socketService.handlReceive = this.oldHandlReceive;
         }
-
     }
     public hasConnect(): boolean {
         return this.socketService?.hasConnect();
@@ -95,7 +103,9 @@ export class ChatSocketService {
     public isJoined(): boolean {
         return this.hasConnect() && this.hasJoined;
     }
-
+    public isOwner(): boolean {
+        return this.hasConnect() && this.hasOwner;
+    }
     public isBlocked(): boolean {
         return this.hasConnect() && this.hasBlocked;
     }
@@ -149,10 +159,16 @@ export class ChatSocketService {
             const err: string = eventWS.getStr('err') || '';
             this.error = err;
         } else if (eventWS.et == EWSType.Count || eventWS.et == EWSType.Join || eventWS.et == EWSType.Leave) {
+            // If the user is not yet connected to the room
             if (eventWS.et == EWSType.Join && !this.hasJoined) {
                 const room = eventWS.getInt('join') || -1;
                 const member = eventWS.getStr('member') || '';
                 this.hasJoined = (room == chatConfig.room && member == chatConfig.nickname);
+                // If the user is successfully connected to the room
+                if (this.hasJoined) {
+                    this.hasOwner = eventWS.getBool('is_owner') || false;
+                    this.hasBlocked = eventWS.getBool('is_blocked') || false;
+                }
             }
             const count: number = parseInt((eventWS.getStr('count') || '-1'), 10) || -1;
             this.countOfMembers = count > -1 ? count : this.countOfMembers;
@@ -164,5 +180,4 @@ export class ChatSocketService {
             this.hasBlocked = (eventWS.getStr('unblock') || '') == chatConfig.nickname ? false : this.hasBlocked;
         }
     }
-
 }
