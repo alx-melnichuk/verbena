@@ -46,8 +46,8 @@ export class EWSTypeUtil {
         return result;
     }
 
-    public static getBlockEWS(block: string, is_in_chat?: boolean): string {
-        return JSON.stringify({ ...{ block }, ...{ is_in_chat } });
+    public static getBlockEWS(block: string): string {
+        return JSON.stringify({ block });
     }
     public static getCountEWS(): string {
         return JSON.stringify({ count: -1 });
@@ -76,8 +76,8 @@ export class EWSTypeUtil {
     public static getNameEWS(name: string): string {
         return JSON.stringify({ name });
     }
-    public static getUnblockEWS(unblock: string, is_in_chat?: boolean): string {
-        return JSON.stringify({ ...{ unblock }, ...{ is_in_chat } });
+    public static getUnblockEWS(unblock: string): string {
+        return JSON.stringify({ unblock });
     }
 }
 
@@ -124,6 +124,9 @@ export class EventWS {
     public getInt(name: string): number | undefined {
         const res = parseInt(this.params.get(name) || '0', 10);
         return !Number.isNaN(res) ? res : undefined;
+    }
+    public getBool(name: string): boolean | undefined {
+        return (this.params.get(name) || '').toLowerCase() == "true";
     }
 }
 
