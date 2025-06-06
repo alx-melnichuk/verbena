@@ -59,9 +59,8 @@
   </sub>
 </ng-template>
 
-@if (isEditable) {
-  <div class="pc-sepr"></div>
-
+<div class="pc-sepr"></div>
+@if (isEditable && !isBlocked) {
   <div class="pc-footer" [formGroup]="formGroup">
     <mat-form-field [ngClass]="['pc-new-msg', (!!msgEditing ? 'pc-editing' : '')]"
       appearance="outline"
@@ -106,6 +105,17 @@
       <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
     </mat-form-field>
   </div>
+}
+@if (isBlocked) {
+  <div class="pc-blocked">
+    <div class="pc-blk-title">
+      <svg class="pc-svg-block">
+        <use href="assets/icons/lib-chat/panel-chat/lock-closed-bin.svg#lock-closed-bin"></use>
+      </svg>
+      <p>{{ 'panel-chat.you_been_blocked' | translate }}</p>
+    </div>
+    <p>{{ 'panel-chat.you_not_allowed_chat' | translate }}</p>
+</div>
 }
 
 <mat-menu #menuItem="matMenu" class="pc-menu-panel" xPosition="before" [overlapTrigger]="true">

@@ -64,15 +64,17 @@ type BlockedSet = Set<string>;
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PanelChatComponent implements OnChanges, AfterViewInit {
-    @Input()
+    @Input() // List of new blocked users.
     public blockedUsers: string[] = [];
-    @Input()
+    @Input() // List of new messages.
     public chatMsgs: ChatMessageDto[] = [];
-    @Input()
+    @Input() // Indication that the user is blocked.
+    public isBlocked: boolean | null = null;
+    @Input() // Indicates that the user can send messages to the chat.
     public isEditable: boolean | null = null;
-    @Input()
-    public isLoadData = false;
-    @Input()
+    @Input() // Indicates that data is being loaded.
+    public isLoadData: boolean | null = null;
+    @Input() // Indicates that the user is the owner of the chat.
     public isOwner: boolean | null = null;
     @Input()
     public locale: string | null = null;
@@ -88,9 +90,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public nickname: string | null = null;
     @Input()
     public title = '';
-    // -- old --
-    @Input()
-    public isUserBanned: boolean | null = null;
 
     @Output()
     readonly blockUser: EventEmitter<string> = new EventEmitter();
