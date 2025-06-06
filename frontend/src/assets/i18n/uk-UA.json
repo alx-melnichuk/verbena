@@ -422,6 +422,8 @@
         "block_user": "Блокувати",
         "unblock_user": "Розблокувати"
     },
+    "you_not_allowed_chat": "Вам не дозволено користуватися публічним чатом.",
+    "you_been_blocked": "Вас заблокували.",
     "editing_msg": "Редагування повідомлення",
     "message_edited": "змінено",
     "message_deleted": "Це повідомлення видалено."

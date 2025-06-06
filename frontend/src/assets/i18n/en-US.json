@@ -426,6 +426,8 @@
         "block_user": "Block",
         "unblock_user": "Unblock"
     },
+    "you_not_allowed_chat": "You are not allowed to use the public chat.",
+    "you_been_blocked": "You have been blocked.",
     "editing_msg": "Editing a message",
     "message_edited": "changed",
     "message_deleted": "This message has been removed."

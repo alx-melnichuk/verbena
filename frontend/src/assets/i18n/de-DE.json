@@ -422,6 +422,8 @@
         "block_user": "Block",
         "unblock_user": "Entsperren"
     },
+    "you_not_allowed_chat": "Du darfst den öffentlichen chat nicht nutzen.",
+    "you_been_blocked": "Du wurdest gesperrt.",
     "editing_msg": "Bearbeiten einer nachricht",
     "message_edited": "geändert",
     "message_deleted": "Diese Nachricht wurde entfernt."
