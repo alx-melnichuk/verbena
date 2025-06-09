@@ -236,9 +236,10 @@ pub mod tests {
 
     use std::collections::HashMap;
 
-    use chrono::Utc;
+    use chrono::{DateTime, Utc};
 
     use crate::chats::{
+        blocked_user_models::BlockedUser,
         chat_message_models::{
             ChatAccess, ChatMessage, ChatMessageLog, CreateChatMessage, FilterChatMessage, ModifyChatMessage,
         },
@@ -247,11 +248,14 @@ pub mod tests {
 
     pub const CHAT_MESSAGE_ID: i32 = 1500;
     pub const CHAT_MESSAGE_LOG_ID: i32 = 1600;
+    // pub const USER_NAME: &str = "user_name_";
 
     #[derive(Debug, Clone)]
     pub struct ChatMessageOrmApp {
         pub chat_message_vec: Vec<ChatMessage>,
         pub chat_message_log_map: HashMap<i32, Vec<ChatMessageLog>>,
+        pub user_name_map: HashMap<i32, String>,
+        pub blocked_user_vec: Vec<BlockedUser>,
     }
 
     impl ChatMessageOrmApp {
@@ -260,10 +264,16 @@ pub mod tests {
             ChatMessageOrmApp {
                 chat_message_vec: Vec::new(),
                 chat_message_log_map: HashMap::new(),
+                user_name_map: HashMap::new(),
+                blocked_user_vec: Vec::new(),
             }
         }
         /// Create a new instance with the specified ChatMessage list.
-        pub fn create(chat_message_list: &[ChatMessage], chat_message_log_list: &[ChatMessageLog]) -> Self {
+        pub fn create(
+            chat_message_list: &[ChatMessage],
+            chat_message_log_list: &[ChatMessageLog],
+            blocked_user_list: &[BlockedUser],
+        ) -> Self {
             let mut chat_message_vec: Vec<ChatMessage> = Vec::new();
             let mut chat_message_log_map: HashMap<i32, Vec<ChatMessageLog>> = HashMap::new();
 
@@ -316,11 +326,27 @@ pub mod tests {
                     }
                 }
             }
+            let blocked_user_vec: Vec<BlockedUser> = Vec::from(blocked_user_list);
             ChatMessageOrmApp {
                 chat_message_vec,
                 chat_message_log_map,
+                user_name_map: get_user_name_map(),
+                blocked_user_vec,
             }
         }
+    }
+
+    // pub fn get_user_name(id: i32) -> String {
+    //     format!("{}{}", USER_NAME, id)
+    // }
+    pub fn get_user_name_map() -> HashMap<i32, String> {
+        let mut result = HashMap::new();
+        result.insert(1, "Oliver_Taylor".to_string());
+        result.insert(2, "Robert_Brown".to_string());
+        result.insert(3, "Mary_Williams".to_string());
+        result.insert(4, "Ava_Wilson".to_string());
+
+        result
     }
 
     impl ChatMessageOrm for ChatMessageOrmApp {
@@ -335,12 +361,13 @@ pub mod tests {
         fn create_chat_message(&self, create_chat_message: CreateChatMessage) -> Result<ChatMessage, String> {
             let idx: i32 = self.chat_message_vec.len().try_into().unwrap();
             let chat_message_id: i32 = CHAT_MESSAGE_ID + idx;
+            let user_name = self.user_name_map.get(&create_chat_message.user_id).unwrap().clone();
 
             let chat_message = ChatMessage::new(
                 chat_message_id,
                 create_chat_message.stream_id,
                 create_chat_message.user_id,
-                "user_name".to_owned(),
+                user_name,
                 Some(create_chat_message.msg.clone()),
                 Utc::now(),
                 false,
@@ -375,29 +402,31 @@ pub mod tests {
                 })
                 .map(|chat_msg| chat_msg.clone());
 
-            let opt_chat_message3: Option<ChatMessage> = if let Some(chat_message) = opt_chat_message {
-                #[rustfmt::skip]
-                let msg_len: i8 = match modify_chat_message.msg {
-                    Some(ref val) => if val.len() > 0 { 1 } else { 0 },
-                    None => -1,
-                };
-                let chat_message2 = ChatMessage {
-                    id: chat_message.id,
-                    stream_id: modify_chat_message.stream_id.unwrap_or(chat_message.stream_id),
-                    user_id: modify_chat_message.user_id.unwrap_or(chat_message.user_id),
-                    user_name: "user_name".to_owned(),
-                    msg: modify_chat_message.msg.clone(),
-                    date_update: Utc::now(),
-                    is_changed: if msg_len > 0 { true } else { chat_message.is_changed },
-                    is_removed: if msg_len == 0 { true } else { chat_message.is_removed },
-                    created_at: chat_message.created_at,
-                    updated_at: Utc::now(),
-                };
-                Some(chat_message2)
-            } else {
-                None
+            let opt_chat_message2: Option<ChatMessage> = match opt_chat_message {
+                Some(chat_message) => {
+                    let mut chat_message1 = chat_message.clone();
+                    if let Some(stream_id) = modify_chat_message.stream_id {
+                        chat_message1.stream_id = stream_id;
+                    }
+                    if let Some(user_id) = modify_chat_message.user_id {
+                        chat_message1.user_id = user_id;
+                        chat_message1.user_name = self.user_name_map.get(&user_id).unwrap().clone();
+                    }
+                    if let Some(msg) = modify_chat_message.msg {
+                        if msg.len() > 0 {
+                            chat_message1.is_changed = true;
+                        } else {
+                            chat_message1.is_removed = true;
+                        }
+                        chat_message1.msg = Some(msg.clone());
+                    }
+                    chat_message1.date_update = Utc::now();
+                    Some(chat_message1)
+                }
+                None => None,
             };
-            Ok(opt_chat_message3)
+
+            Ok(opt_chat_message2)
         }
 
         /// Delete an entity (chat_message).
