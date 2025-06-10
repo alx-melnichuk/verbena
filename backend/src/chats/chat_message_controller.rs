@@ -49,7 +49,11 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             // GET /chat
             .service(chat)
             // GET /api/chat_messages
-            .service(get_chat_message);
+            .service(get_chat_message)
+            // POST /api/chat_messages
+            .service(post_chat_message)
+            // PUT /api/chat_messages
+            .service(put_chat_message);
     }
 }
 
@@ -167,13 +171,18 @@ pub async fn post_chat_message(
         AppError::blocking506(&e.to_string())
     })?;
 
-    let chat_message2 = res_chat_message?;
-    let chat_message_dto = ChatMessageDto::from(chat_message2);
-
+    let opt_chat_message_dto = res_chat_message?.map(|v| ChatMessageDto::from(v));
+    
     if let Some(timer) = timer {
         info!("post_chat_message() time: {}", format!("{:.2?}", timer.elapsed()));
     }
-    Ok(HttpResponse::Created().json(chat_message_dto)) // 201
+    if let Some(chat_message_dto) = opt_chat_message_dto {
+        Ok(HttpResponse::Created().json(chat_message_dto)) // 201
+    } else {
+        let message = format!("{}: stream_id: {}", err::MSG_STREAM_NOT_FOUND, stream_id);
+        error!("{}: {}", err::CD_NOT_FOUND, &message);
+        Err(AppError::not_found404(&message)) // 404
+    }
 }
 
 #[rustfmt::skip]
@@ -249,7 +258,7 @@ pub async fn put_chat_message(
         Ok(HttpResponse::Ok().json(chat_message_dto)) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204        
-    }    
+    }
 }
 
 #[cfg(all(test, feature = "mockdata"))]
@@ -261,8 +270,8 @@ pub mod tests {
     use crate::chats::{
         blocked_user_models::BlockedUser,
         blocked_user_orm::tests::BlockedUserOrmApp,
-        chat_message_models::{ChatMessage, ChatMessageLog},
-        chat_message_orm::tests::{get_user_name_map, ChatMessageOrmApp},
+        chat_message_models::{tests::ChatMessageTest, ChatMessage, ChatMessageLog},
+        chat_message_orm::tests::ChatMessageOrmApp,
     };
     use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp};
     use crate::sessions::{
@@ -276,7 +285,7 @@ pub mod tests {
     /** 1-"Oliver_Taylor", 2-"Robert_Brown", 3-"Mary_Williams", 4-"Ava_Wilson" */
     fn create_profile(opt_user_id: Option<i32>) -> Profile {
         let user_id = opt_user_id.unwrap_or(1);
-        let nickname = get_user_name_map().get(&user_id).unwrap().clone();
+        let nickname = ChatMessageTest::get_user_name_map().get(&user_id).unwrap().clone();
         let role = UserRole::User;
         let profile = ProfileOrmApp::new_profile(user_id, &nickname, &format!("{}@gmail.com", &nickname), role);
         profile
@@ -335,7 +344,7 @@ pub mod tests {
             , session_vec, chat_message_vec, chat_message_log_vec, blocked_user_vec);
         (cfg_c, data_c, token)
     }
-    pub fn configure_ws_chat(
+    pub fn configure_chat_message(
         cfg_c: config_jwt::ConfigJwt,
         data_c: (
             Vec<Profile>,
