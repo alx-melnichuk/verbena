@@ -65,7 +65,9 @@
     "status": 404,
     "registration_not_found" : "An record for registering a new user was not found.",
     "user_not_found" : "User not found.",
-    "recovery_not_found" : "An record to recover the user's password was not found."
+    "recovery_not_found" : "An record to recover the user's password was not found.",
+    "chat_message_not_found": "Current user's message not found.",
+    "stream_not_found": "The specified stream was not found."
   },
   "NotAcceptable": {
     "status": 406,

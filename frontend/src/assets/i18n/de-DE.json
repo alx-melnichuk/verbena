@@ -65,7 +65,9 @@
     "status": 404,
     "registration_not_found" : "Es wurde kein datensatz zur registrierung eines neuen benutzers gefunden.",
     "user_not_found" : "Benutzer nicht gefunden.",
-    "recovery_not_found" : "Es wurde kein datensatz zum wiederherstellen des benutzerkennworts gefunden."
+    "recovery_not_found" : "Es wurde kein datensatz zum wiederherstellen des benutzerkennworts gefunden.",
+    "chat_message_not_found": "Die nachricht des aktuellen benutzers wurde nicht gefunden.",
+    "stream_not_found": "Der angegebene stream wurde nicht gefunden."
   },
   "NotAcceptable": {
     "status": 406,
