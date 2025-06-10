@@ -22,6 +22,8 @@ pub const MSG_ACCESS_DENIED: &str = "access_denied";
 
 // 404 Not Found (user_registr_controller)
 pub const CD_NOT_FOUND: &str = "NotFound";
+// 404 Not Found - Stream not found.
+pub const MSG_STREAM_NOT_FOUND: &str = "stream_not_found";
 
 // 406 Not Acceptable (profile_auth_controller)
 pub const CD_NOT_ACCEPTABLE: &str = "NotAcceptable";
