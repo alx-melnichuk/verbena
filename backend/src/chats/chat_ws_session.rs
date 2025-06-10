@@ -7,21 +7,23 @@ use actix_web_actors::ws;
 use chrono::{SecondsFormat /*Utc*/};
 use serde_json::to_string;
 
-use crate::chats::chat_event_ws::{
-    BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, MsgEWS, NameEWS, UnblockEWS,
+use crate::chats::{
+    chat_event_ws::{BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, MsgEWS, NameEWS, UnblockEWS},
+    chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},
+    chat_message_models::ChatMessage,
+    chat_ws_assistant::ChatWsAssistant,
+    chat_ws_server::ChatWsServer,
 };
-use crate::chats::chat_message::{
-    BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage,
-};
-use crate::chats::chat_ws_assistant::ChatWsAssistant;
-use crate::chats::chat_ws_server::ChatWsServer;
+use crate::errors::AppError;
+use crate::settings::err;
 
 pub const PARAMETER_NOT_DEFINED: &str = "parameter not defined";
 pub const THERE_WAS_ALREADY_JOIN_TO_ROOM: &str = "There was already a \"join\" to the room";
-pub const USERS_MSG_NOT_FOUND: &str = "Current user's message not found.";
 pub const SPECIFIED_USER_NOT_FOUND: &str = "The specified user was not found.";
 pub const STREAM_WITH_SPECIFIED_ID_NOT_FOUND: &str = "Stream with the specified id not found.";
 pub const STREAM_NOT_ACTIVE: &str = "This stream is not active.";
+// 404 Not Found - Stream not found.
+pub const MSG_CHAT_MESSAGE_NOT_FOUND: &str = "chat_message_not_found";
 
 // ** ChatWsSession **
 
@@ -419,12 +421,13 @@ impl ChatWsSession {
             if let Err(err) = result {
                 return addr.do_send(AsyncResultError(err.to_string()));
             }
-            let ch_msg = result.unwrap();
-            let msg2 = ch_msg.msg.unwrap_or_default();
-            let date = ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true);
+            let opt_chat_message = result.unwrap();
+            if opt_chat_message.is_none() {
+                let message = format!("{}: stream_id: {}", err::MSG_STREAM_NOT_FOUND, stream_id);
+                return addr.do_send(AsyncResultError(AppError::not_found404(&message).to_string()));
+            }
             // Send the "AsyncResultEwsMsg" command for execution.
-            #[rustfmt::skip]
-            addr.do_send(AsyncResultEwsMsg(msg2, ch_msg.id, date, ch_msg.is_changed, ch_msg.is_removed));
+            addr.do_send(Self::get_ews_msg(opt_chat_message.unwrap()));
         });
         Ok(())
     }
@@ -443,7 +446,18 @@ impl ChatWsSession {
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
-            Self::execute_modify_chat_message(addr, assistant, id, user_id, &msg_cut).await;
+            // Check the token for correctness and get the user profile.
+            let result = assistant.execute_modify_chat_message(id, user_id, &msg_cut).await;
+            if let Err(err) = result {
+                return addr.do_send(AsyncResultError(err.to_string()));
+            }
+            let opt_chat_message = result.unwrap();
+            if opt_chat_message.is_none() {
+                let message = format!("{}; ch_msg_id: {}", MSG_CHAT_MESSAGE_NOT_FOUND, id);
+                return addr.do_send(AsyncResultError(AppError::not_found404(&message).to_string()));
+            }
+            // Send the "AsyncResultEwsMsg" command for execution.
+            addr.do_send(Self::get_ews_msg(opt_chat_message.unwrap()));
         });
         Ok(())
     }
@@ -468,33 +482,25 @@ impl ChatWsSession {
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
-            Self::execute_modify_chat_message(addr, assistant, id, user_id, &msg_put).await;
+            // Check the token for correctness and get the user profile.
+            let result = assistant.execute_modify_chat_message(id, user_id, &msg_put).await;
+            if let Err(err) = result {
+                return addr.do_send(AsyncResultError(err.to_string()));
+            }
+            let opt_chat_message = result.unwrap();
+            if opt_chat_message.is_none() {
+                let message = format!("{}; ch_msg_id: {}", MSG_CHAT_MESSAGE_NOT_FOUND, id);
+                return addr.do_send(AsyncResultError(AppError::not_found404(&message).to_string()));
+            }
+            // Send the "AsyncResultEwsMsg" command for execution.
+            addr.do_send(Self::get_ews_msg(opt_chat_message.unwrap()));
         });
         Ok(())
     }
-    // Perform an update to the value of a chat message.
-    async fn execute_modify_chat_message(
-        addr: Addr<ChatWsSession>,
-        assistant: ChatWsAssistant,
-        id: i32,
-        user_id: i32,
-        new_msg: &str,
-    ) {
-        // Check the token for correctness and get the user profile.
-        let result = assistant.execute_modify_chat_message(id, user_id, new_msg).await;
-        if let Err(err) = result {
-            return addr.do_send(AsyncResultError(err.to_string()));
-        }
-        let opt_chat_message = result.unwrap();
-        if opt_chat_message.is_none() {
-            return addr.do_send(AsyncResultError(format!("{} (msg_id: {})", USERS_MSG_NOT_FOUND, id)));
-        }
-        let ch_msg = opt_chat_message.unwrap();
+    fn get_ews_msg(ch_msg: ChatMessage) -> AsyncResultEwsMsg {
         let msg2 = ch_msg.msg.unwrap_or_default();
         let date = ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true);
-        // Send the "AsyncResultEwsMsg" command for execution.
-        #[rustfmt::skip]
-        addr.do_send(AsyncResultEwsMsg(msg2, ch_msg.id, date, ch_msg.is_changed, ch_msg.is_removed));
+        AsyncResultEwsMsg(msg2, ch_msg.id, date, ch_msg.is_changed, ch_msg.is_removed)
     }
 }
 
