@@ -10,7 +10,7 @@ pub trait ChatMessageOrm {
     fn filter_chat_messages(&self, filter_chat_message: FilterChatMessage) -> Result<Vec<ChatMessage>, String>;
 
     /// Add a new entry (chat_message).
-    fn create_chat_message(&self, create_chat_message: CreateChatMessage) -> Result<ChatMessage, String>;
+    fn create_chat_message(&self, create_chat_message: CreateChatMessage) -> Result<Option<ChatMessage>, String>;
 
     /// Modify an entity (chat_message).
     fn modify_chat_message(
@@ -123,7 +123,7 @@ pub mod impls {
         }
 
         /// Add a new entry (chat_message).
-        fn create_chat_message(&self, create_chat_message: CreateChatMessage) -> Result<ChatMessage, String> {
+        fn create_chat_message(&self, create_chat_message: CreateChatMessage) -> Result<Option<ChatMessage>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             let validation_res = create_chat_message.validate();
@@ -141,14 +141,15 @@ pub mod impls {
                 .bind::<sql_types::Text, _>(create_chat_message.msg); // $3
 
             // Run a query with Diesel to create a new user and return it.
-            let chat_message = query
+            let opt_chat_message = query
                 .get_result::<ChatMessage>(&mut conn)
+                .optional()
                 .map_err(|e| format!("create_chat_message: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("create_chat_message() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(chat_message)
+            Ok(opt_chat_message)
         }
 
         /// Modify an entity (chat_message).
@@ -177,7 +178,7 @@ pub mod impls {
                 .bind::<sql_types::Nullable<sql_types::Text>, _>(modify_chat_message.msg); // $5
 
             // Run a query with Diesel to modify the entity and return it.
-            let chat_message = query
+            let opt_chat_message = query
                 .get_result::<ChatMessage>(&mut conn)
                 .optional()
                 .map_err(|e| format!("modify_chat_message: {}", e.to_string()))?;
@@ -185,7 +186,7 @@ pub mod impls {
             if let Some(timer) = timer {
                 info!("modify_chat_message() time: {}", format!("{:.2?}", timer.elapsed()));
             }
-            Ok(chat_message)
+            Ok(opt_chat_message)
         }
 
         /// Delete an entity (chat_message).
@@ -236,19 +237,19 @@ pub mod tests {
 
     use std::collections::HashMap;
 
-    use chrono::{DateTime, Utc};
+    use chrono::{/*DateTime,*/ Utc};
 
     use crate::chats::{
         blocked_user_models::BlockedUser,
         chat_message_models::{
-            ChatAccess, ChatMessage, ChatMessageLog, CreateChatMessage, FilterChatMessage, ModifyChatMessage,
+            tests::ChatMessageTest, ChatAccess, ChatMessage, ChatMessageLog, CreateChatMessage, FilterChatMessage,
+            ModifyChatMessage,
         },
         chat_message_orm::ChatMessageOrm,
     };
 
     pub const CHAT_MESSAGE_ID: i32 = 1500;
     pub const CHAT_MESSAGE_LOG_ID: i32 = 1600;
-    // pub const USER_NAME: &str = "user_name_";
 
     #[derive(Debug, Clone)]
     pub struct ChatMessageOrmApp {
@@ -330,23 +331,10 @@ pub mod tests {
             ChatMessageOrmApp {
                 chat_message_vec,
                 chat_message_log_map,
-                user_name_map: get_user_name_map(),
+                user_name_map: ChatMessageTest::get_user_name_map(),
                 blocked_user_vec,
             }
         }
-    }
-
-    // pub fn get_user_name(id: i32) -> String {
-    //     format!("{}{}", USER_NAME, id)
-    // }
-    pub fn get_user_name_map() -> HashMap<i32, String> {
-        let mut result = HashMap::new();
-        result.insert(1, "Oliver_Taylor".to_string());
-        result.insert(2, "Robert_Brown".to_string());
-        result.insert(3, "Mary_Williams".to_string());
-        result.insert(4, "Ava_Wilson".to_string());
-
-        result
     }
 
     impl ChatMessageOrm for ChatMessageOrmApp {
