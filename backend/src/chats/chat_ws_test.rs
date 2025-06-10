@@ -1,12 +1,12 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use actix_web::{ self, /*body,*/ dev, test, App};
+    use actix_web::{self, /*body,*/ dev, test, App};
     // use chrono::{DateTime, Datelike, Duration, Local, SecondsFormat, TimeZone, Timelike, Utc};
     // use serde_json;
 
     use crate::chats::chat_message_controller::{
         get_ws_chat,
-        tests::{configure_ws_chat, get_cfg_data, header_auth},
+        tests::{configure_chat_message, get_cfg_data, header_auth},
     };
 
     // ** get_stream_by_id **
@@ -19,7 +19,7 @@ mod tests {
         // let stream_id_bad = format!("{}a", stream_id);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_ws_chat).configure(configure_ws_chat(cfg_c, data_c))).await;
+            App::new().service(get_ws_chat).configure(configure_chat_message(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/ws")
             .insert_header(header_auth(&token)).to_request();
