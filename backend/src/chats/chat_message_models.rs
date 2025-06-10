@@ -8,9 +8,9 @@ use crate::settings::err;
 use crate::utils::serial_datetime;
 use crate::validators::{ValidationChecks, ValidationError, Validator};
 
-pub const MESSAGE_MIN: u8 = 1;
+pub const MESSAGE_MIN: u16 = 1;
 pub const MSG_MESSAGE_MIN_LENGTH: &str = "message:min_length";
-pub const MESSAGE_MAX: u8 = 255;
+pub const MESSAGE_MAX: u16 = 255;
 pub const MSG_MESSAGE_MAX_LENGTH: &str = "message:max_length";
 
 // MIN=1, MAX=255
@@ -326,3 +326,32 @@ impl ChatAccess {
 }
 
 // * * * *    * * * *
+
+#[cfg(all(test, feature = "mockdata"))]
+pub mod tests {
+    use std::collections::HashMap;
+
+    use super::{MESSAGE_MAX, MESSAGE_MIN};
+
+    pub struct ChatMessageTest {}
+
+    impl ChatMessageTest {
+        pub fn message_min() -> String {
+            (0..(MESSAGE_MIN - 1)).map(|_| 'a').collect()
+        }
+        pub fn message_max() -> String {
+            (0..(MESSAGE_MAX + 1)).map(|_| 'a').collect()
+        }
+        pub fn get_user_name_map() -> HashMap<i32, String> {
+            use std::collections::HashMap;
+
+            let mut result = HashMap::new();
+            result.insert(1, "Oliver_Taylor".to_string());
+            result.insert(2, "Robert_Brown".to_string());
+            result.insert(3, "Mary_Williams".to_string());
+            result.insert(4, "Ava_Wilson".to_string());
+
+            result
+        }
+    }
+}
