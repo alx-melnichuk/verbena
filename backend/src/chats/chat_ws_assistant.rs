@@ -84,7 +84,7 @@ impl ChatWsAssistant {
         stream_id: i32,
         user_id: i32,
         msg: &str,
-    ) -> Result<ChatMessage, AppError> {
+    ) -> Result<Option<ChatMessage>, AppError> {
         let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
         let create_chat_message = CreateChatMessage::new(stream_id, user_id, msg);
         // Add a new entity (stream).
