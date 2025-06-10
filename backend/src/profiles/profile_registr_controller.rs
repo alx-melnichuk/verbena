@@ -118,7 +118,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
         (status = 507, description = "Database error.", body = AppError, 
             example = json!(AppError::database507("Error while querying the database."))),
         (status = 510, description = "Error sending email.", body = AppError,
-            example = json!(AppError::not_extended510(&format!("{}: {}", MSG_ERROR_SENDING_EMAIL, "The mail server is overloaded.")))),
+            example = json!(AppError::not_extended510(&format!("{}; {}", MSG_ERROR_SENDING_EMAIL, "The mail server is overloaded.")))),
     ),
 )]
 #[post("/api/registration")]
@@ -219,7 +219,7 @@ pub async fn registration(
     let result = mailer.send_verification_code(&receiver, &domain, &subject, &nickname, &target, registr_duration);
 
     if result.is_err() {
-        let message = format!("{}: {}", MSG_ERROR_SENDING_EMAIL, result.unwrap_err());
+        let message = format!("{}; {}", MSG_ERROR_SENDING_EMAIL, result.unwrap_err());
         error!("{}: {}", err::CD_NOT_EXTENDED, &message);
         return Err(AppError::not_extended510(&message)); // 510
     }
@@ -254,7 +254,7 @@ pub async fn registration(
         (status = 401, description = "The token is invalid or expired.", body = AppError,
             example = json!(AppError::unauthorized401(&format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidToken")))),
         (status = 404, description = "An entry for registering a new user was not found.", body = AppError,
-            example = json!(AppError::not_found404(&format!("{}: user_registr_id: {}", MSG_REGISTR_NOT_FOUND, 123)))),
+            example = json!(AppError::not_found404(&format!("{}; user_registr_id: {}", MSG_REGISTR_NOT_FOUND, 123)))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -305,7 +305,7 @@ pub async fn confirm_registration(
 
     // If no such entry exists, then exit with code 404.
     let user_registr = opt_user_registr.ok_or_else(|| {
-        let message = format!("{}: user_registr_id: {}", MSG_REGISTR_NOT_FOUND, user_registr_id);
+        let message = format!("{}; user_registr_id: {}", MSG_REGISTR_NOT_FOUND, user_registr_id);
         error!("{}: {}", err::CD_NOT_FOUND, &message);
         AppError::not_found404(&message) // 404
     })?;
@@ -367,7 +367,7 @@ pub async fn confirm_registration(
                 id: 27, email: "James_Miller@gmail.us".to_string(), recovery_token: TOKEN_RECOVERY.to_string() })
         ),
         (status = 404, description = "An entry to recover the user's password was not found.", body = AppError,
-            example = json!(AppError::not_found404(&format!("{}: email: {}", MSG_USER_NOT_FOUND, "user@email")))),
+            example = json!(AppError::not_found404(&format!("{}; email: {}", MSG_USER_NOT_FOUND, "user@email")))),
         (status = 417, body = [AppError],
             description = "Validation error. `curl -i -X POST http://localhost:8080/api/recovery -d '{\"email\": \"us_email\" }'`",
             example = json!(AppError::validations((RecoveryProfileDto { email: "us_email".to_string() }).validate().err().unwrap()))),
@@ -378,7 +378,7 @@ pub async fn confirm_registration(
         (status = 507, description = "Database error.", body = AppError, 
             example = json!(AppError::database507("Error while querying the database."))),
         (status = 510, description = "Error sending email.", body = AppError,
-            example = json!(AppError::not_extended510(&format!("{}: {}", MSG_ERROR_SENDING_EMAIL, "The mail server is overloaded.")))),
+            example = json!(AppError::not_extended510(&format!("{}; {}", MSG_ERROR_SENDING_EMAIL, "The mail server is overloaded.")))),
     ),
 )]
 #[post("/api/recovery")]
@@ -421,7 +421,7 @@ pub async fn recovery(
     let profile = match opt_profile {
         Some(v) => v,
         None => {
-            let message = format!("{}: email: {}", MSG_USER_NOT_FOUND, recovery_profile_dto.email.clone());
+            let message = format!("{}; email: {}", MSG_USER_NOT_FOUND, recovery_profile_dto.email.clone());
             error!("{}: {}", err::CD_NOT_FOUND, &message);
             return Err(AppError::not_found404(&message)); // 404
         }
@@ -532,7 +532,7 @@ pub async fn recovery(
     );
 
     if result.is_err() {
-        let message = format!("{}: {}", MSG_ERROR_SENDING_EMAIL, result.unwrap_err());
+        let message = format!("{}; {}", MSG_ERROR_SENDING_EMAIL, result.unwrap_err());
         error!("{}: {}", err::CD_NOT_EXTENDED, &message);
         return Err(AppError::not_extended510(&message)); // 510
     }
@@ -578,10 +578,10 @@ pub async fn recovery(
         (status = 404, description = "Error: record not found.", body = AppError, examples(
             ("recovery" = (summary = "recovery_not_found",
                 description = "An record to recover the user's password was not found.",
-                value = json!(AppError::not_found404(&format!("{}: user_recovery_id: {}", MSG_RECOVERY_NOT_FOUND, 1234))))),
+                value = json!(AppError::not_found404(&format!("{}; user_recovery_id: {}", MSG_RECOVERY_NOT_FOUND, 1234))))),
             ("user" = (summary = "user_not_found",
                 description = "User not found.",
-                value = json!(AppError::not_found404(&format!("{}: user_id: {}", MSG_USER_NOT_FOUND, 123)))))
+                value = json!(AppError::not_found404(&format!("{}; user_id: {}", MSG_USER_NOT_FOUND, 123)))))
         )),
         (status = 417, body = [AppError],
             description = "Validation error. `curl -i -X PUT http://localhost:8080/api/recovery/1234 -d '{ \"password\": \"pas\" }'`",
@@ -656,7 +656,7 @@ pub async fn confirm_recovery(
 
     // If no such entry exists, then exit with code 404.
     let user_recovery = opt_user_recovery.ok_or_else(|| {
-        let message = format!("{}: user_recovery_id: {}", MSG_RECOVERY_NOT_FOUND, user_recovery_id);
+        let message = format!("{}; user_recovery_id: {}", MSG_RECOVERY_NOT_FOUND, user_recovery_id);
         error!("{}: {}", err::CD_NOT_FOUND, &message);
         AppError::not_found404(&message) // 404
     })?;
@@ -681,7 +681,7 @@ pub async fn confirm_recovery(
 
     // If no such entry exists, then exit with code 404.
     let profile = opt_profile.ok_or_else(|| {
-        let message = format!("{}: user_id: {}", MSG_USER_NOT_FOUND, user_id);
+        let message = format!("{}; user_id: {}", MSG_USER_NOT_FOUND, user_id);
         error!("{}: {}", err::CD_NOT_FOUND, &message);
         AppError::not_found404(&message) // 404
     })?;
@@ -719,7 +719,7 @@ pub async fn confirm_recovery(
         let profile_dto = ProfileDto::from(profile);
         Ok(HttpResponse::Ok().json(profile_dto)) // 200
     } else {
-        let message = format!("{}: user_id: {}", MSG_USER_NOT_FOUND, user_id);
+        let message = format!("{}; user_id: {}", MSG_USER_NOT_FOUND, user_id);
         error!("{}: {}", err::CD_NOT_FOUND, &message);
         Err(AppError::not_found404(&message)) // 404
     }
@@ -1491,7 +1491,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: user_registr_id: {}", MSG_REGISTR_NOT_FOUND, user_reg_id));
+        assert_eq!(app_err.message, format!("{}; user_registr_id: {}", MSG_REGISTR_NOT_FOUND, user_reg_id));
     }
     #[actix_web::test]
     async fn test_confirm_registration_exists_in_user_regist() {
@@ -1666,7 +1666,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
-        assert_eq!(app_err.message, format!("{}: email: {}", MSG_USER_NOT_FOUND, &email.to_lowercase()));
+        assert_eq!(app_err.message, format!("{}; email: {}", MSG_USER_NOT_FOUND, &email.to_lowercase()));
     }
     #[actix_web::test]
     async fn test_recovery_if_user_recovery_not_exist() {
@@ -1913,7 +1913,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: user_recovery_id: {}", MSG_RECOVERY_NOT_FOUND, user_recovery_id));
+        assert_eq!(app_err.message, format!("{}; user_recovery_id: {}", MSG_RECOVERY_NOT_FOUND, user_recovery_id));
     }
     #[actix_web::test]
     async fn test_confirm_recovery_no_exists_in_user() {
@@ -1943,7 +1943,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_FOUND);
-        assert_eq!(app_err.message, format!("{}: user_id: {}", MSG_USER_NOT_FOUND, user_id));
+        assert_eq!(app_err.message, format!("{}; user_id: {}", MSG_USER_NOT_FOUND, user_id));
     }
     #[actix_web::test]
     async fn test_confirm_recovery_success() {
