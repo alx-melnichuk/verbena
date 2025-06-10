@@ -36,17 +36,17 @@ mod tests {
     async fn test_post_stream_no_form() {
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
         assert!(body_str.contains(MSG_CONTENT_TYPE_NOT_FOUND));
@@ -58,17 +58,17 @@ mod tests {
 
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
         assert!(body_str.contains(MSG_MULTIPART_STREAM_INCOMPLETE));
@@ -82,17 +82,17 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
@@ -107,17 +107,17 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TITLE_MIN_LENGTH]);
@@ -131,17 +131,17 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TITLE_MAX_LENGTH]);
@@ -156,17 +156,17 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
@@ -182,17 +182,17 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
@@ -209,17 +209,17 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
@@ -235,17 +235,17 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
@@ -261,17 +261,17 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
@@ -287,16 +287,16 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams").insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
@@ -312,17 +312,17 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
@@ -338,17 +338,17 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TAG_MIN_LENGTH]);
@@ -363,17 +363,17 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TAG_MAX_LENGTH]);
@@ -386,22 +386,22 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
         #[rustfmt::skip]
-            assert_eq!(app_err.message, format!("{}; {}", MSG_INVALID_FIELD_TAG, "expected value at line 1 column 1"));
+        assert_eq!(app_err.message, format!("{}; {}", MSG_INVALID_FIELD_TAG, "expected value at line 1 column 1"));
     }
     #[actix_web::test]
     async fn test_post_stream_invalid_file_size() {
@@ -421,18 +421,18 @@ mod tests {
         config_strm.strm_logo_max_size = strm_logo_max_size;
         let cfg_c = (cfg_c.0, config_strm);
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(&path_name1_file);
         assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE); // 413
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_CONTENT_TOO_LARGE);
@@ -454,18 +454,18 @@ mod tests {
             .build();
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(&path_name1_file);
         assert_eq!(resp.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE); // 415
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
@@ -495,18 +495,18 @@ mod tests {
         let profile1 = data_c.0.get(0).unwrap().clone();
         let stream1 = data_c.2.get(0).unwrap().clone();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         assert_eq!(resp.status(), StatusCode::CREATED); // 201
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
@@ -516,7 +516,7 @@ mod tests {
         assert_eq!(stream_dto_res.descript, descript_s);
         assert!(stream_dto_res.logo.is_none());
         #[rustfmt::skip]
-            assert_eq!(stream_dto_res.starttime.to_rfc3339_opts(SecondsFormat::Millis, true), starttime_s);
+        assert_eq!(stream_dto_res.starttime.to_rfc3339_opts(SecondsFormat::Millis, true), starttime_s);
         assert_eq!(stream_dto_res.source, source_s);
         assert_eq!(stream_dto_res.tags, tags);
         assert_eq!(stream_dto_res.is_my_stream, true);
@@ -540,19 +540,19 @@ mod tests {
         let profile1 = data_c.0.get(0).unwrap().clone();
         let stream1 = data_c.2.get(0).unwrap().clone();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(path_name1_file);
 
         assert_eq!(resp.status(), StatusCode::CREATED); // 201
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
@@ -604,19 +604,19 @@ mod tests {
         let profile1 = data_c.0.get(0).unwrap().clone();
         let stream1 = data_c.2.get(0).unwrap().clone();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(path_name1_file);
 
         assert_eq!(resp.status(), StatusCode::CREATED); // 201
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(stream_dto_res.id, stream1.id + 1);
@@ -654,19 +654,19 @@ mod tests {
         let cfg_c = (cfg_c.0, config_strm);
 
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(post_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::post().uri("/api/streams")
-                .insert_header(header_auth(&token))
-                .insert_header(header).set_payload(body).to_request();
+        let req = test::TestRequest::post().uri("/api/streams")
+            .insert_header(header_auth(&token))
+            .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(path_name1_file);
 
         assert_eq!(resp.status(), StatusCode::CREATED); // 201
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
@@ -702,16 +702,16 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data();
         let stream_id_bad = format!("{}a", data_c.2.get(0).unwrap().id);
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(delete_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(delete_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_id_bad))
-                .insert_header(header_auth(&token)).to_request();
+        let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_id_bad))
+            .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
 
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
@@ -724,11 +724,11 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data();
         let stream_id = data_c.2.get(0).unwrap().id;
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(delete_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(delete_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_id + 1))
-                .insert_header(header_auth(&token)).to_request();
+        let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_id + 1))
+            .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
@@ -737,16 +737,16 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data();
         let stream = data_c.2.get(0).unwrap().clone();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(delete_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(delete_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream.id))
-                .insert_header(header_auth(&token)).to_request();
+        let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream.id))
+            .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         assert_eq!(resp.status(), StatusCode::OK); // 200
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json_stream = serde_json::json!(stream).to_string();
@@ -768,11 +768,11 @@ mod tests {
         stream.logo = Some(path_name0_alias);
         let stream2 = stream.clone();
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(delete_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(delete_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream2.id))
-                .insert_header(header_auth(&token)).to_request();
+        let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream2.id))
+            .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
@@ -781,7 +781,7 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::OK); // 200
         assert!(!is_exists_img_old);
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json_stream = serde_json::json!(stream2).to_string();
@@ -804,11 +804,11 @@ mod tests {
         let stream2 = stream.clone();
 
         #[rustfmt::skip]
-            let app = test::init_service(
-                App::new().service(delete_stream).configure(configure_stream(cfg_c, data_c))).await;
+        let app = test::init_service(
+            App::new().service(delete_stream).configure(configure_stream(cfg_c, data_c))).await;
         #[rustfmt::skip]
-            let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream2.id))
-                .insert_header(header_auth(&token)).to_request();
+        let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream2.id))
+            .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
@@ -817,7 +817,7 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::OK); // 200
         assert!(is_exists_img_old);
         #[rustfmt::skip]
-            assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let json_stream = serde_json::json!(stream2).to_string();
