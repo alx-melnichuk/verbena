@@ -331,6 +331,8 @@ impl ChatAccess {
 pub mod tests {
     use std::collections::HashMap;
 
+    use crate::profiles::profile_orm::tests::PROFILE_USER_ID;
+
     use super::{MESSAGE_MAX, MESSAGE_MIN};
 
     pub struct ChatMessageTest {}
@@ -339,18 +341,40 @@ pub mod tests {
         pub fn message_min() -> String {
             (0..(MESSAGE_MIN - 1)).map(|_| 'a').collect()
         }
+        pub fn message_norm() -> String {
+            (0..(MESSAGE_MIN + 1)).map(|_| 'a').collect()
+        }
         pub fn message_max() -> String {
             (0..(MESSAGE_MAX + 1)).map(|_| 'a').collect()
         }
+        pub fn stream_ids() -> Vec<i32> {
+            vec![1, 2, 3, 4]
+        }
+        pub fn user_ids() -> Vec<i32> {
+            vec![
+                PROFILE_USER_ID + 0,
+                PROFILE_USER_ID + 1,
+                PROFILE_USER_ID + 2,
+                PROFILE_USER_ID + 3,
+            ]
+        }
+        pub fn user_names() -> Vec<String> {
+            vec![
+                "oliver_taylor".to_string(),
+                "robert_brown".to_string(),
+                "mary_williams".to_string(),
+                "ava_wilson".to_string(),
+            ]
+        }
         pub fn get_user_name_map() -> HashMap<i32, String> {
             use std::collections::HashMap;
-
+            let user_ids = Self::user_ids();
+            let user_names = Self::user_names();
             let mut result = HashMap::new();
-            result.insert(1, "Oliver_Taylor".to_string());
-            result.insert(2, "Robert_Brown".to_string());
-            result.insert(3, "Mary_Williams".to_string());
-            result.insert(4, "Ava_Wilson".to_string());
-
+            for (idx, user_id) in user_ids.iter().enumerate() {
+                let user_name = user_names.get(idx).unwrap();
+                result.insert(user_id.clone(), user_name.clone());
+            }
             result
         }
     }
