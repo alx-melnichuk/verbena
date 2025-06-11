@@ -300,7 +300,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-            let msg = if tags_len == 0 { stream_models::MSG_TAG_REQUIRED } else { stream_models::MSG_TAG_MIN_AMOUNT };
+        let msg = if tags_len == 0 { stream_models::MSG_TAG_REQUIRED } else { stream_models::MSG_TAG_MIN_AMOUNT };
         check_app_err(app_err_vec, err::CD_VALIDATION, &[msg]);
     }
     #[actix_web::test]
@@ -471,7 +471,7 @@ mod tests {
         assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
         assert_eq!(app_err.message, err::MSG_INVALID_FILE_TYPE);
         #[rustfmt::skip]
-            let json = serde_json::json!({ "actualFileType": "image/bmp", "validFileType": "image/jpeg,image/png" });
+        let json = serde_json::json!({ "actualFileType": "image/bmp", "validFileType": "image/jpeg,image/png" });
         assert_eq!(*app_err.params.get("invalidFileType").unwrap(), json);
     }
     #[actix_web::test]
@@ -716,7 +716,7 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
         #[rustfmt::skip]
-            let msg = format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE);
+        let msg = format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
     }
     #[actix_web::test]
