@@ -257,6 +257,8 @@ pub mod tests {
         pub chat_message_log_map: HashMap<i32, Vec<ChatMessageLog>>,
         pub user_name_map: HashMap<i32, String>,
         pub blocked_user_vec: Vec<BlockedUser>,
+        pub stream_ids: Vec<i32>,
+        pub user_ids: Vec<i32>,
     }
 
     impl ChatMessageOrmApp {
@@ -265,8 +267,10 @@ pub mod tests {
             ChatMessageOrmApp {
                 chat_message_vec: Vec::new(),
                 chat_message_log_map: HashMap::new(),
-                user_name_map: HashMap::new(),
+                user_name_map: ChatMessageTest::get_user_name_map(),
                 blocked_user_vec: Vec::new(),
+                stream_ids: ChatMessageTest::stream_ids(),
+                user_ids: ChatMessageTest::user_ids(),
             }
         }
         /// Create a new instance with the specified ChatMessage list.
@@ -333,6 +337,22 @@ pub mod tests {
                 chat_message_log_map,
                 user_name_map: ChatMessageTest::get_user_name_map(),
                 blocked_user_vec,
+                stream_ids: ChatMessageTest::stream_ids(),
+                user_ids: ChatMessageTest::user_ids(),
+            }
+        }
+        pub fn is_stream_id_exists(&self, opt_stream_id: Option<i32>) -> bool {
+            if let Some(stream_id) = opt_stream_id {
+                self.stream_ids.contains(&stream_id)
+            } else {
+                true
+            }
+        }
+        pub fn is_user_id_exists(&self, opt_user_id: Option<i32>) -> bool {
+            if let Some(user_id) = opt_user_id {
+                self.user_ids.contains(&user_id)
+            } else {
+                true
             }
         }
     }
@@ -346,7 +366,14 @@ pub mod tests {
         }
 
         /// Add a new entry (chat_message).
-        fn create_chat_message(&self, create_chat_message: CreateChatMessage) -> Result<ChatMessage, String> {
+        fn create_chat_message(&self, create_chat_message: CreateChatMessage) -> Result<Option<ChatMessage>, String> {
+            let is_stream_id_exists = self.is_stream_id_exists(Some(create_chat_message.stream_id));
+            let is_user_id_exists = self.is_user_id_exists(Some(create_chat_message.user_id));
+
+            if create_chat_message.msg.len() == 0 || !is_stream_id_exists || !is_user_id_exists {
+                return Ok(None);
+            }
+
             let idx: i32 = self.chat_message_vec.len().try_into().unwrap();
             let chat_message_id: i32 = CHAT_MESSAGE_ID + idx;
             let user_name = self.user_name_map.get(&create_chat_message.user_id).unwrap().clone();
@@ -362,7 +389,7 @@ pub mod tests {
                 false,
             );
 
-            Ok(chat_message)
+            Ok(Some(chat_message))
         }
 
         /// Filter entities (chat_messages) by specified parameters.
@@ -390,31 +417,34 @@ pub mod tests {
                 })
                 .map(|chat_msg| chat_msg.clone());
 
-            let opt_chat_message2: Option<ChatMessage> = match opt_chat_message {
-                Some(chat_message) => {
-                    let mut chat_message1 = chat_message.clone();
-                    if let Some(stream_id) = modify_chat_message.stream_id {
-                        chat_message1.stream_id = stream_id;
-                    }
-                    if let Some(user_id) = modify_chat_message.user_id {
-                        chat_message1.user_id = user_id;
-                        chat_message1.user_name = self.user_name_map.get(&user_id).unwrap().clone();
-                    }
-                    if let Some(msg) = modify_chat_message.msg {
-                        if msg.len() > 0 {
-                            chat_message1.is_changed = true;
-                        } else {
-                            chat_message1.is_removed = true;
-                        }
-                        chat_message1.msg = Some(msg.clone());
-                    }
-                    chat_message1.date_update = Utc::now();
-                    Some(chat_message1)
-                }
-                None => None,
-            };
+            let is_stream_id_exists = self.is_stream_id_exists(modify_chat_message.stream_id);
+            let is_user_id_exists = self.is_user_id_exists(modify_chat_message.user_id);
 
-            Ok(opt_chat_message2)
+            if opt_chat_message.is_none() || !is_stream_id_exists || !is_user_id_exists {
+                return Ok(None);
+            }
+            let chat_message = opt_chat_message.unwrap();
+
+            let mut chat_message1 = chat_message.clone();
+
+            if let Some(stream_id) = modify_chat_message.stream_id {
+                chat_message1.stream_id = stream_id;
+            }
+            if let Some(user_id) = modify_chat_message.user_id {
+                chat_message1.user_id = user_id;
+                chat_message1.user_name = self.user_name_map.get(&user_id).unwrap().clone();
+            }
+            if let Some(msg) = modify_chat_message.msg {
+                if msg.len() > 0 {
+                    chat_message1.is_changed = true;
+                } else {
+                    chat_message1.is_removed = true;
+                }
+                chat_message1.msg = Some(msg.clone());
+            }
+            chat_message1.date_update = Utc::now();
+
+            Ok(Some(chat_message1))
         }
 
         /// Delete an entity (chat_message).
