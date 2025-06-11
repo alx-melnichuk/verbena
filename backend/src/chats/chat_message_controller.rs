@@ -1,4 +1,4 @@
-use std::{ops::Deref, time::Instant as tm};
+use std::{borrow::Cow, ops::Deref, time::Instant as tm};
 
 use actix_files::NamedFile;
 use actix_web::{get, post, put, web, HttpResponse, Responder};
@@ -179,14 +179,17 @@ pub async fn post_chat_message(
     if let Some(chat_message_dto) = opt_chat_message_dto {
         Ok(HttpResponse::Created().json(chat_message_dto)) // 201
     } else {
-        let message = format!("{}: stream_id: {}", err::MSG_STREAM_NOT_FOUND, stream_id);
-        error!("{}: {}", err::CD_NOT_FOUND, &message);
-        Err(AppError::not_found404(&message)) // 404
+        let json = serde_json::json!({ "stream_id": stream_id, "msg": &msg });
+        let message = format!("{}; stream_id: {}, msg: \"{}\"", err::MSG_PARAMETER_UNACCEPTABLE, stream_id, &msg);
+        error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
+        Err(AppError::not_acceptable406(&message) // 406
+            .add_param(Cow::Borrowed("invalidParams"), &json))
     }
 }
 
+// PUT /api/chat_messages/{id}
 #[rustfmt::skip]
-#[put("/api/chat_messages", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[put("/api/chat_messages/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_chat_message(
     authenticated: Authenticated,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
@@ -202,7 +205,7 @@ pub async fn put_chat_message(
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
         error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
         AppError::range_not_satisfiable416(&message) // 416
     })?;
@@ -221,6 +224,7 @@ pub async fn put_chat_message(
     let msg = modify_chat_message_dto.msg.clone();
 
     if let Some(user_id2) = user_id {
+        eprintln!("user_id2: {}, profile.user_id: {}, profile.role: {}", user_id2, profile.user_id, profile.role);
         if user_id2 != profile.user_id && profile.role != UserRole::Admin {
             let text = format!("curr_user_id: {}, user_id: {}", profile.user_id, user_id2);
             #[rustfmt::skip]
@@ -230,7 +234,7 @@ pub async fn put_chat_message(
         }
     }
     
-    let modify_chat_message = ModifyChatMessage::new(stream_id, user_id, msg);
+    let modify_chat_message = ModifyChatMessage::new(stream_id, user_id, msg.clone());
 
     let chat_message_orm2 = chat_message_orm.get_ref().clone();
     let res_chat_message = web::block(move || {
@@ -257,7 +261,16 @@ pub async fn put_chat_message(
     if let Some(chat_message_dto) = opt_chat_message_dto {
         Ok(HttpResponse::Ok().json(chat_message_dto)) // 200
     } else {
-        Ok(HttpResponse::NoContent().finish()) // 204        
+        let stream_id2 = if let Some(val) = stream_id { &val.to_string() } else { "" };
+        let user_id2 = if let Some(val) = user_id { &val.to_string() } else { "" };
+        let msg2 = if let Some(val) = msg { &val.clone() } else { "" };
+    
+        let json = serde_json::json!({ "id": id, "stream_id": stream_id2, "user_id": user_id2, "msg": msg2 });
+        let str1= format!("stream_id: {}, user_id: {}, msg: \"{}\"", stream_id2, user_id2, msg2);
+        let message = format!("{}; id: {}, {}", err::MSG_PARAMETER_UNACCEPTABLE, id, str1);
+        error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
+        Err(AppError::not_acceptable406(&message) // 406
+            .add_param(Cow::Borrowed("invalidParams"), &json))
     }
 }
 
@@ -265,7 +278,7 @@ pub async fn put_chat_message(
 pub mod tests {
 
     use actix_web::{http, web};
-    // use chrono::{DateTime, Utc};
+    use chrono::{DateTime, Utc};
 
     use crate::chats::{
         blocked_user_models::BlockedUser,
@@ -273,32 +286,54 @@ pub mod tests {
         chat_message_models::{tests::ChatMessageTest, ChatMessage, ChatMessageLog},
         chat_message_orm::tests::ChatMessageOrmApp,
     };
-    use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp};
+    use crate::profiles::{
+        profile_models::Profile, profile_orm::tests::ProfileOrmApp, profile_orm::tests::PROFILE_USER_ID as PROFILE_ID,
+    };
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
     };
     use crate::users::user_models::UserRole;
     use crate::utils::token::BEARER;
 
-    // use super::*;
+    pub const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
+    pub const MSG_JSON_MISSING_FIELD: &str = "Json deserialize error: missing field";
+    pub const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
+    pub const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
 
     /** 1-"Oliver_Taylor", 2-"Robert_Brown", 3-"Mary_Williams", 4-"Ava_Wilson" */
-    fn create_profile(opt_user_id: Option<i32>) -> Profile {
-        let user_id = opt_user_id.unwrap_or(1);
-        let nickname = ChatMessageTest::get_user_name_map().get(&user_id).unwrap().clone();
+    fn create_profile(user_id: i32) -> Profile {
+        let user_ids = ChatMessageTest::user_ids().clone();
+        #[rustfmt::skip]
+        let user_id1 = if user_id > 0 { user_id } else { user_ids.get(0).unwrap().clone() };
+        let idx_user_id = user_ids.iter().position(|&u| u == user_id1).unwrap();
+        let user_id = user_ids.get(idx_user_id).unwrap().clone();
+        let nickname = ChatMessageTest::user_names().get(idx_user_id).unwrap().clone();
         let role = UserRole::User;
         let profile = ProfileOrmApp::new_profile(user_id, &nickname, &format!("{}@gmail.com", &nickname), role);
         profile
     }
-    fn profile_with_id(profile: Profile) -> Profile {
-        let profile_orm = ProfileOrmApp::create(&vec![profile]);
+    /*fn profiles_with_id(profile: &[Profile]) -> Profile {
+        let profile_orm = ProfileOrmApp::create(profile);
         profile_orm.profile_vec.get(0).unwrap().clone()
-    }
-    /*pub fn create_stream(idx: i32, user_id: i32, title: &str, tags: &str, starttime: DateTime<Utc>) -> StreamInfoDto {
-        let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
-        let stream = Stream::new(STREAM_ID + idx, user_id, title, starttime);
-        StreamInfoDto::convert(stream, user_id, &tags1)
     }*/
+    pub fn create_chat_message(
+        id: i32,
+        stream_id: i32,
+        user_id: i32,
+        msg: &str,
+        date_update: DateTime<Utc>,
+    ) -> ChatMessage {
+        #[rustfmt::skip]
+        let stream_id = if stream_id > 0 { stream_id } else { ChatMessageTest::stream_ids().get(0).unwrap().clone() };
+        let user_ids = ChatMessageTest::user_ids().clone();
+        #[rustfmt::skip]
+        let user_id1 = if user_id > 0 { user_id } else { user_ids.get(0).unwrap().clone() };
+        let idx_user_id = user_ids.iter().position(|&u| u == user_id1).unwrap();
+        let user_id = user_ids.get(idx_user_id).unwrap().clone();
+        let user_name = ChatMessageTest::user_names().get(idx_user_id).unwrap().clone();
+        let msg = Some(msg.to_string());
+        ChatMessage::new(id, stream_id, user_id, user_name, msg, date_update, false, false)
+    }
     pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
@@ -307,9 +342,10 @@ pub mod tests {
     pub fn get_cfg_data() -> (config_jwt::ConfigJwt
     , (Vec<Profile>, Vec<Session>, Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>), String) {
         let mut session_vec: Vec<Session> = Vec::new();
-        
-        // Create a profile for the 1st user..
-        let profile1: Profile = profile_with_id(create_profile(Some(1)));
+        let profile_list = &vec![create_profile(PROFILE_ID + 0), create_profile(PROFILE_ID + 1)];
+        let profiles = ProfileOrmApp::create(&profile_list).profile_vec;
+        // Create a profile for the 1st user.
+        let profile1: Profile = profiles.get(0).unwrap().clone();
         let num_token1 = 40000 + profile1.user_id;
         let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token1));
         session_vec.push(session1);
@@ -320,10 +356,14 @@ pub mod tests {
         let token = encode_token(profile1.user_id, num_token1, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         // Create a profile for the 2st user.
-        let profile2: Profile = profile_with_id(create_profile(Some(2)));
+        let profile2: Profile = profiles.get(1).unwrap().clone();
         session_vec.push(SessionOrmApp::new_session(profile2.user_id, Some(40000 + profile2.user_id)));
 
-        let chat_message_list: Vec<ChatMessage> = Vec::new();
+        let date_update: DateTime<Utc> = Utc::now();
+        let chat_message1 = create_chat_message(1, -1, profile1.user_id, "msg101", date_update);
+        let chat_message2 = create_chat_message(2, -1, profile2.user_id, "msg201", date_update);
+
+        let chat_message_list: Vec<ChatMessage> = vec![chat_message1, chat_message2];
         let chat_message_log_list: Vec<ChatMessageLog> = Vec::new();
         let blocked_user_list: Vec<BlockedUser> = Vec::new();
 
@@ -340,7 +380,7 @@ pub mod tests {
         let blocked_user_vec: Vec<BlockedUser> = chat_message_orm.blocked_user_vec.clone();
 
         let cfg_c = config_jwt;
-        let data_c = (vec![profile1]
+        let data_c = (vec![profile1, profile2]
             , session_vec, chat_message_vec, chat_message_log_vec, blocked_user_vec);
         (cfg_c, data_c, token)
     }
