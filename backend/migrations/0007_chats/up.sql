@@ -98,11 +98,14 @@ $$;
 
 /* Create a stored function to add a new entry to "chat_messages". */
 CREATE OR REPLACE FUNCTION create_chat_message(
+  IN _stream_id INTEGER,
+  IN _user_id INTEGER,
+  IN _msg VARCHAR,
   OUT id INTEGER,
-  INOUT stream_id INTEGER,
-  INOUT user_id INTEGER,
+  OUT stream_id INTEGER,
+  OUT user_id INTEGER,
   OUT user_name VARCHAR,
-  INOUT msg VARCHAR,
+  OUT msg VARCHAR,
   OUT date_update TIMESTAMP WITH TIME ZONE,
   OUT is_changed BOOLEAN,
   OUT is_removed BOOLEAN,
@@ -115,7 +118,7 @@ DECLARE
 BEGIN
   -- Add a new entry to the "chat_messages" table.
   INSERT INTO chat_messages(stream_id, user_id, msg)
-  VALUES (stream_id, user_id, msg)
+  VALUES (_stream_id, _user_id, _msg)
   RETURNING
     chat_messages.id,
     chat_messages.stream_id,
@@ -128,7 +131,7 @@ BEGIN
     chat_messages.updated_at
     INTO rec1;
 
-  SELECT u.nickname FROM users u WHERE u.id = user_id INTO user_name;
+  SELECT u.nickname FROM users u WHERE u.id = _user_id INTO user_name;
 
   RETURN QUERY SELECT
     rec1.id,
@@ -147,12 +150,14 @@ $$;
 
 /* Create a stored function to modify the entry in "chat_messages". */
 CREATE OR REPLACE FUNCTION modify_chat_message(
-  INOUT id INTEGER,
-  IN by_user_id INTEGER,
-  INOUT stream_id INTEGER,
-  INOUT user_id INTEGER,
+  IN _id INTEGER,
+  IN _user_id INTEGER,
+  IN _msg VARCHAR,
+  OUT id INTEGER,
+  OUT stream_id INTEGER,
+  OUT user_id INTEGER,
   OUT user_name VARCHAR,
-  INOUT msg VARCHAR,
+  OUT msg VARCHAR,
   OUT date_update TIMESTAMP WITH TIME ZONE,
   OUT is_changed BOOLEAN,
   OUT is_removed BOOLEAN,
@@ -161,49 +166,34 @@ CREATE OR REPLACE FUNCTION modify_chat_message(
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE 
-  _id INTEGER;
   val1 VARCHAR;
-  date_update TIMESTAMP WITH TIME ZONE;
   sql1 TEXT;
   update_fields VARCHAR[];
 BEGIN
-  _id := id;
-  id := NULL;
   IF _id IS NULL THEN
-    stream_id := NULL;
-    user_id := NULL;
-    msg := NULL;
     RETURN;
   END IF;
 
   update_fields := ARRAY[]::VARCHAR[];
 
-  IF stream_id IS NOT NULL THEN
-    update_fields := ARRAY_APPEND(update_fields, 'stream_id = ' || stream_id);
-  END IF;
-
-  IF user_id IS NOT NULL THEN
-    update_fields := ARRAY_APPEND(update_fields, 'user_id = ' || user_id);
-  END IF;
-
-  IF msg IS NOT NULL THEN
-    update_fields := ARRAY_APPEND(update_fields, 'msg = ' || '''' || msg || '''');
+  IF _msg IS NOT NULL THEN
+    update_fields := ARRAY_APPEND(update_fields, 'msg = ' || '''' || _msg || '''');
 
     update_fields := ARRAY_APPEND(update_fields, 'date_update = CURRENT_TIMESTAMP');
 
-    IF LENGTH(msg) > 0 THEN
+    IF LENGTH(_msg) > 0 THEN
       sql1 := 'INSERT INTO chat_message_logs (chat_message_id, old_msg, date_update)'
         || ' SELECT chat_messages.id, chat_messages.msg, chat_messages.date_update'
         || ' FROM chat_messages'
-        || ' WHERE chat_messages.is_removed=FALSE'
-        || CASE WHEN by_user_id IS NOT NULL THEN ' AND chat_messages.user_id=' || by_user_id ELSE '' END
-        || ' AND chat_messages.id=' || _id;
+        || ' WHERE chat_messages.is_removed = FALSE'
+        || CASE WHEN _user_id IS NOT NULL THEN ' AND chat_messages.user_id = ' || _user_id ELSE '' END
+        || ' AND chat_messages.id = ' || _id;
 
       EXECUTE sql1;
 
       val1 := 'is_changed = TRUE';
     ELSE
-      -- LENGTH(msg) == 0
+      -- LENGTH(_msg) == 0
       val1 := 'is_removed = TRUE';
     END IF;
     update_fields := ARRAY_APPEND(update_fields, val1);
@@ -212,8 +202,8 @@ BEGIN
   IF ARRAY_LENGTH(update_fields, 1) > 0 THEN
     sql1 := 'UPDATE chat_messages SET '
       || ARRAY_TO_STRING(update_fields, ',')
-      || ' WHERE is_removed=FALSE'
-      || CASE WHEN by_user_id IS NOT NULL THEN ' AND user_id=' || by_user_id ELSE '' END
+      || ' WHERE is_removed = FALSE'
+      || CASE WHEN _user_id IS NOT NULL THEN ' AND user_id=' || _user_id ELSE '' END
       || ' AND id=' || _id
       || ' RETURNING '
       || ' chat_messages.id, chat_messages.stream_id, chat_messages.user_id, chat_messages.msg,'
@@ -236,7 +226,9 @@ $$;
 
 /* Create a stored function to delete the entity in "chat_messages". */
 CREATE OR REPLACE FUNCTION delete_chat_message(
-  INOUT id INTEGER,
+  IN _id INTEGER,
+  In _user_id INTEGER,
+  OUT id INTEGER,
   OUT stream_id INTEGER,
   OUT user_id INTEGER,
   OUT user_name VARCHAR,
@@ -249,21 +241,22 @@ CREATE OR REPLACE FUNCTION delete_chat_message(
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE
-  _id INTEGER;
+  sql1 TEXT;
   rec1 RECORD;
 BEGIN
-  IF id IS NULL THEN
+  IF _id IS NULL THEN
     RETURN;
   END IF;
-  _id := id;
 
-  DELETE FROM chat_messages
-  WHERE chat_messages.id = _id
-  RETURNING 
-    chat_messages.id, chat_messages.stream_id, chat_messages.user_id, chat_messages.msg,
-    chat_messages.date_update, chat_messages.is_changed, chat_messages.is_removed,
-    chat_messages.created_at, chat_messages.updated_at
-  INTO rec1;
+  sql1 := 'DELETE FROM chat_messages'
+    || ' WHERE chat_messages.id = _id'
+    || CASE WHEN _user_id IS NOT NULL THEN ' AND chat_messages.user_id = ' || _user_id ELSE '' END
+    || ' RETURNING '
+    || ' chat_messages.id, chat_messages.stream_id, chat_messages.user_id, chat_messages.msg,'
+    || ' chat_messages.date_update, chat_messages.is_changed, chat_messages.is_removed,'
+    || ' chat_messages.created_at, chat_messages.updated_at';
+
+  EXECUTE sql1 INTO rec1;
 
   IF rec1.id IS NULL THEN
     RETURN;
@@ -660,11 +653,11 @@ BEGIN
 
         IF MOD(ch_msg_id, 2) = 0  THEN
           -- Add message change.
-          ch_msg_logs_ids := ARRAY(SELECT id FROM modify_chat_message(ch_msg_id, user_id, NULL, NULL, msg1 || ' ver.2'));
+          ch_msg_logs_ids := ARRAY(SELECT id FROM modify_chat_message(ch_msg_id, user_id, msg1 || ' ver.2'));
         ELSE 
           IF MOD(ch_msg_id, 9) = 0  THEN
             -- Delete message contents.
-            ch_msg_logs_ids := ARRAY(SELECT id FROM modify_chat_message(ch_msg_id, user_id, NULL, NULL, ''));
+            ch_msg_logs_ids := ARRAY(SELECT id FROM modify_chat_message(ch_msg_id, user_id, ''));
           END IF;
         END IF;
 
