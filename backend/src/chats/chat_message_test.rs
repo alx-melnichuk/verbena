@@ -13,7 +13,7 @@ mod tests {
 
     use crate::chats::{
         chat_message_controller::{
-            post_chat_message, put_chat_message,
+            delete_chat_message, post_chat_message, put_chat_message,
             tests::{
                 configure_chat_message, get_cfg_data, header_auth, MSG_CASTING_TO_TYPE, MSG_CONTENT_TYPE_ERROR,
                 MSG_FAILED_DESER, MSG_JSON_MISSING_FIELD,
@@ -25,6 +25,7 @@ mod tests {
     };
     use crate::errors::AppError;
     use crate::settings::err;
+    use crate::users::user_models::UserRole;
 
     // GET /ws
     //.service(get_ws_chat)
@@ -200,6 +201,7 @@ mod tests {
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
@@ -211,13 +213,14 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data();
         let last_ch_msg = data_c.2.last().unwrap().clone();
         let ch_msg_id_bad = format!("{}a", last_ch_msg.id);
+        let msg = ChatMessageTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", ch_msg_id_bad))
             .insert_header(header_auth(&token))
-            .set_json(json!({}))
+            .set_json(ModifyChatMessageDto { msg })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
@@ -244,37 +247,13 @@ mod tests {
             .set_json(json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
 
         #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[err::MSG_NO_FIELDS_TO_UPDATE]);
-    }
-    #[actix_web::test]
-    async fn test_put_chat_message_msg_min() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        let last_ch_msg = data_c.2.last().unwrap().clone();
-        let msg = ChatMessageTest::message_min();
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_ch_msg.id))
-            .insert_header(header_auth(&token))
-            .set_json(ModifyChatMessageDto { stream_id: None, user_id: None, msg: Some(msg) })
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[chat_message_models::MSG_MESSAGE_MIN_LENGTH]);
+        let body_str = String::from_utf8_lossy(&body);
+        assert!(body_str.contains(MSG_JSON_MISSING_FIELD));
     }
     #[actix_web::test]
     async fn test_put_chat_message_msg_max() {
@@ -287,7 +266,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_ch_msg.id))
             .insert_header(header_auth(&token))
-            .set_json(ModifyChatMessageDto { stream_id: None, user_id: None, msg: Some(msg) })
+            .set_json(ModifyChatMessageDto { msg })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
@@ -299,44 +278,10 @@ mod tests {
         #[rustfmt::skip]
         check_app_err(app_err_vec, err::CD_VALIDATION, &[chat_message_models::MSG_MESSAGE_MAX_LENGTH]);
     }
-    //#[actix_web::test]
-    /*async fn test_put_chat_message_from_another_user() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        let ch_msg_user2 = data_c.2.get(1).unwrap().clone();
-        dbg!(&data_c.0);
-        dbg!(&data_c.2);
-        let msg = ChatMessageTest::message_norm();
-        let id = ch_msg_user2.id;
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", id))
-            .insert_header(header_auth(&token))
-            .set_json(ModifyChatMessageDto { stream_id: None, user_id: None, msg: Some(msg.clone()) })
-            .to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        dbg!(&resp);
-        assert_eq!(resp.status(), StatusCode::FORBIDDEN); // 403
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        dbg!(&body);
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
-        #[rustfmt::skip]
-        let str1 = format!("stream_id: {}, user_id: {}, msg: \"{}\"", "", "", msg);
-        #[rustfmt::skip]
-        let message = format!("{}; id: {}, {}", err::MSG_PARAMETER_UNACCEPTABLE, id, str1);
-        assert_eq!(app_err.message, message);
-        #[rustfmt::skip]
-        let json = serde_json::json!({ "id": id, "stream_id": "", "user_id": "", "msg": &msg });
-        assert_eq!(*app_err.params.get("invalidParams").unwrap(), json);
-    }*/
     #[actix_web::test]
     async fn test_put_chat_message_non_existent_id() {
         let (cfg_c, data_c, token) = get_cfg_data();
+        let user_id1 = data_c.0.get(0).unwrap().user_id;
         let last_ch_msg = data_c.2.last().unwrap().clone();
         let msg = ChatMessageTest::message_norm();
         let id_wrong = last_ch_msg.id + 1;
@@ -346,7 +291,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", id_wrong))
             .insert_header(header_auth(&token))
-            .set_json(ModifyChatMessageDto { stream_id: None, user_id: None, msg: Some(msg.clone()) })
+            .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
@@ -357,12 +302,255 @@ mod tests {
         let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
         #[rustfmt::skip]
-        let str1 = format!("stream_id: {}, user_id: {}, msg: \"{}\"", "", "", msg);
-        #[rustfmt::skip]
-        let message = format!("{}; id: {}, {}", err::MSG_PARAMETER_UNACCEPTABLE, id_wrong, str1);
+        let message = format!("{}; id: {}, user_id: {}, msg: \"{}\"", err::MSG_PARAMETER_UNACCEPTABLE, id_wrong, user_id1, msg);
         assert_eq!(app_err.message, message);
         #[rustfmt::skip]
-        let json = serde_json::json!({ "id": id_wrong, "stream_id": "", "user_id": "", "msg": &msg });
+        let json = serde_json::json!({ "id": id_wrong, "user_id": user_id1, "msg": &msg });
         assert_eq!(*app_err.params.get("invalidParams").unwrap(), json);
+    }
+    #[actix_web::test]
+    async fn test_put_chat_message_msg_another_user() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let user_id1 = data_c.0.get(0).unwrap().user_id;
+        #[rustfmt::skip]
+        let ch_msg = data_c.2.iter().find(|v| v.user_id != user_id1).unwrap().clone();
+        let msg = ChatMessageTest::message_norm();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", ch_msg.id))
+            .insert_header(header_auth(&token))
+            .set_json(ModifyChatMessageDto { msg: msg.clone() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        #[rustfmt::skip]
+        let message = format!("{}; id: {}, user_id: {}, msg: \"{}\"", err::MSG_PARAMETER_UNACCEPTABLE, ch_msg.id, user_id1, msg);
+        assert_eq!(app_err.message, message);
+        #[rustfmt::skip]
+        let json = serde_json::json!({ "id": ch_msg.id, "user_id": user_id1, "msg": &msg });
+        assert_eq!(*app_err.params.get("invalidParams").unwrap(), json);
+    }
+    #[actix_web::test]
+    async fn test_put_chat_message_valid_data() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let ch_msg = data_c.2.get(0).unwrap().clone();
+        let msg = ChatMessageTest::message_norm();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", ch_msg.id))
+            .insert_header(header_auth(&token))
+            .set_json(ModifyChatMessageDto { msg: msg.clone() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let chat_message_dto_res: ChatMessageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(chat_message_dto_res.id, ch_msg.id);
+        assert_eq!(chat_message_dto_res.member, ch_msg.user_name);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
+        let date_s = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
+        #[rustfmt::skip]
+        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Secs, true), date_s);
+        assert_eq!(chat_message_dto_res.msg, msg);
+        assert_eq!(chat_message_dto_res.is_edt, true);
+        assert_eq!(chat_message_dto_res.is_rmv, false);
+    }
+    #[actix_web::test]
+    async fn test_put_chat_message_admin_msg_another_user() {
+        let (cfg_c, mut data_c, token) = get_cfg_data();
+        data_c.0.get_mut(0).unwrap().role = UserRole::Admin;
+        let user_id1 = data_c.0.get(0).unwrap().user_id;
+        #[rustfmt::skip]
+        let ch_msg = data_c.2.iter().find(|v| v.user_id != user_id1).unwrap().clone();
+        let msg = ChatMessageTest::message_norm();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", ch_msg.id))
+            .insert_header(header_auth(&token))
+            .set_json(ModifyChatMessageDto { msg: msg.clone() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let chat_message_dto_res: ChatMessageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(chat_message_dto_res.id, ch_msg.id);
+        assert_eq!(chat_message_dto_res.member, ch_msg.user_name);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
+        let date_s = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
+        #[rustfmt::skip]
+        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Secs, true), date_s);
+        assert_eq!(chat_message_dto_res.msg, msg);
+        assert_eq!(chat_message_dto_res.is_edt, true);
+        assert_eq!(chat_message_dto_res.is_rmv, false);
+    }
+
+    // ** delete_chat_message **
+
+    #[actix_web::test]
+    async fn test_delete_chat_message_invald_id() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let last_ch_msg = data_c.2.last().unwrap().clone();
+        let ch_msg_id_bad = format!("{}a", last_ch_msg.id);
+        let msg = ChatMessageTest::message_norm();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}", ch_msg_id_bad))
+            .insert_header(header_auth(&token))
+            .set_json(ModifyChatMessageDto { msg })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
+        #[rustfmt::skip]
+        let msg = format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE);
+        assert!(app_err.message.starts_with(&msg));
+    }
+    #[actix_web::test]
+    async fn test_delete_chat_message_non_existent_id() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let user_id1 = data_c.0.get(0).unwrap().user_id;
+        let last_ch_msg = data_c.2.last().unwrap().clone();
+        let msg = ChatMessageTest::message_norm();
+        let id_wrong = last_ch_msg.id + 1;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}", id_wrong))
+            .insert_header(header_auth(&token))
+            .set_json(ModifyChatMessageDto { msg: msg.clone() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        #[rustfmt::skip]
+        let message = format!("{}; id: {}, user_id: {}", err::MSG_PARAMETER_UNACCEPTABLE, id_wrong, user_id1);
+        assert_eq!(app_err.message, message);
+        #[rustfmt::skip]
+        let json = serde_json::json!({ "id": id_wrong, "user_id": user_id1 });
+        assert_eq!(*app_err.params.get("invalidParams").unwrap(), json);
+    }
+    #[actix_web::test]
+    async fn test_delete_chat_message_msg_another_user() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        let user_id1 = data_c.0.get(0).unwrap().user_id;
+        #[rustfmt::skip]
+        let ch_msg = data_c.2.iter().find(|v| v.user_id != user_id1).unwrap().clone();
+        let msg = ChatMessageTest::message_norm();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}", ch_msg.id))
+            .insert_header(header_auth(&token))
+            .set_json(ModifyChatMessageDto { msg: msg.clone() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        #[rustfmt::skip]
+        let message = format!("{}; id: {}, user_id: {}", err::MSG_PARAMETER_UNACCEPTABLE, ch_msg.id, user_id1);
+        assert_eq!(app_err.message, message);
+        #[rustfmt::skip]
+        let json = serde_json::json!({ "id": ch_msg.id, "user_id": user_id1 });
+        assert_eq!(*app_err.params.get("invalidParams").unwrap(), json);
+    }
+    #[actix_web::test]
+    async fn test_delete_chat_message_valid_data() {
+        let (cfg_c, data_c, token) = get_cfg_data();
+        #[rustfmt::skip]
+        let ch_msg = data_c.2.get(0).unwrap().clone();
+        let msg = ChatMessageTest::message_norm();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}", ch_msg.id))
+            .insert_header(header_auth(&token))
+            .set_json(ModifyChatMessageDto { msg: msg.clone() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let chat_message_dto_res: ChatMessageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(chat_message_dto_res.id, ch_msg.id);
+        assert_eq!(chat_message_dto_res.member, ch_msg.user_name);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
+        #[rustfmt::skip]
+        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Millis, true)
+            , ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true));
+        assert_eq!(chat_message_dto_res.msg, ch_msg.msg.unwrap());
+        assert_eq!(chat_message_dto_res.is_edt, ch_msg.is_changed);
+        assert_eq!(chat_message_dto_res.is_rmv, ch_msg.is_removed);
+    }
+    #[actix_web::test]
+    async fn test_delete_chat_message_admin_msg_another_user() {
+        let (cfg_c, mut data_c, token) = get_cfg_data();
+        data_c.0.get_mut(0).unwrap().role = UserRole::Admin;
+        let user_id1 = data_c.0.get(0).unwrap().user_id;
+        #[rustfmt::skip]
+        let ch_msg = data_c.2.iter().find(|v| v.user_id != user_id1).unwrap().clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}", ch_msg.id))
+            .insert_header(header_auth(&token))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let chat_message_dto_res: ChatMessageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(chat_message_dto_res.id, ch_msg.id);
+        assert_eq!(chat_message_dto_res.member, ch_msg.user_name);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
+        #[rustfmt::skip]
+        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Millis, true)
+            , ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true));
+        assert_eq!(chat_message_dto_res.msg, ch_msg.msg.unwrap());
+        assert_eq!(chat_message_dto_res.is_edt, ch_msg.is_changed);
+        assert_eq!(chat_message_dto_res.is_rmv, ch_msg.is_removed);
     }
 }
