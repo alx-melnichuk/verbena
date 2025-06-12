@@ -1,7 +1,7 @@
 use std::{borrow::Cow, ops::Deref, time::Instant as tm};
 
 use actix_files::NamedFile;
-use actix_web::{get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use actix_web_actors::ws;
 use log::{error, info, log_enabled, Level::Info};
 
@@ -52,8 +52,10 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             .service(get_chat_message)
             // POST /api/chat_messages
             .service(post_chat_message)
-            // PUT /api/chat_messages
-            .service(put_chat_message);
+            // PUT /api/chat_messages/{id}
+            .service(put_chat_message)
+            // DELETE /api/chat_messages/{id}
+            .service(delete_chat_message);
     }
 }
 
@@ -200,7 +202,6 @@ pub async fn put_chat_message(
     // Get current user details.
     let profile = authenticated.deref();
     let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
-    let _nickname = profile.nickname.clone();
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -218,23 +219,9 @@ pub async fn put_chat_message(
     }
 
     let modify_chat_message_dto: ModifyChatMessageDto = json_body.into_inner();
-
-    let stream_id = modify_chat_message_dto.stream_id;
-    let user_id = modify_chat_message_dto.user_id;
     let msg = modify_chat_message_dto.msg.clone();
-
-    if let Some(user_id2) = user_id {
-        eprintln!("user_id2: {}, profile.user_id: {}, profile.role: {}", user_id2, profile.user_id, profile.role);
-        if user_id2 != profile.user_id && profile.role != UserRole::Admin {
-            let text = format!("curr_user_id: {}, user_id: {}", profile.user_id, user_id2);
-            #[rustfmt::skip]
-            let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_MODIFY_ANOTHER_USERS_CHAT_MESSAGE, &text);
-            error!("{}: {}", err::CD_FORBIDDEN, &message);
-            return Err(AppError::forbidden403(&message)); // 403
-        }
-    }
-    
-    let modify_chat_message = ModifyChatMessage::new(stream_id, user_id, msg.clone());
+   
+    let modify_chat_message = ModifyChatMessage::new(msg.clone());
 
     let chat_message_orm2 = chat_message_orm.get_ref().clone();
     let res_chat_message = web::block(move || {
@@ -261,13 +248,64 @@ pub async fn put_chat_message(
     if let Some(chat_message_dto) = opt_chat_message_dto {
         Ok(HttpResponse::Ok().json(chat_message_dto)) // 200
     } else {
-        let stream_id2 = if let Some(val) = stream_id { &val.to_string() } else { "" };
-        let user_id2 = if let Some(val) = user_id { &val.to_string() } else { "" };
-        let msg2 = if let Some(val) = msg { &val.clone() } else { "" };
+        let json = serde_json::json!({ "id": id, "user_id": profile.user_id, "msg": msg });
+        #[rustfmt::skip]
+        let message = format!("{}; id: {}, user_id: {}, msg: \"{}\"", err::MSG_PARAMETER_UNACCEPTABLE, id, profile.user_id, msg);
+        error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
+        Err(AppError::not_acceptable406(&message) // 406
+            .add_param(Cow::Borrowed("invalidParams"), &json))
+    }
+}
+
+// DELETE /api/chat_messages/{id}
+#[rustfmt::skip]
+#[delete("/api/chat_messages/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn delete_chat_message(
+    authenticated: Authenticated,
+    chat_message_orm: web::Data<ChatMessageOrmApp>,
+    request: actix_web::HttpRequest,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+    // Get current user details.
+    let profile = authenticated.deref();
+    let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
+
+    // Get data from request.
+    let id_str = request.match_info().query("id").to_string();
+    let id = parser::parse_i32(&id_str).map_err(|e| {
+        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        AppError::range_not_satisfiable416(&message) // 416
+    })?;
     
-        let json = serde_json::json!({ "id": id, "stream_id": stream_id2, "user_id": user_id2, "msg": msg2 });
-        let str1= format!("stream_id: {}, user_id: {}, msg: \"{}\"", stream_id2, user_id2, msg2);
-        let message = format!("{}; id: {}, {}", err::MSG_PARAMETER_UNACCEPTABLE, id, str1);
+    let chat_message_orm2 = chat_message_orm.get_ref().clone();
+    let res_chat_message = web::block(move || {
+            // Add a new entity (stream).
+            let res_chat_message1 = chat_message_orm2
+                .delete_chat_message(id, opt_user_id)
+                .map_err(|e| {
+                    error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                    AppError::database507(&e)
+                });
+            res_chat_message1
+        })
+        .await
+        .map_err(|e| {
+            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+            AppError::blocking506(&e.to_string())
+        })?;
+
+    let opt_chat_message_dto = res_chat_message?.map(|v| ChatMessageDto::from(v));
+
+    if let Some(timer) = timer {
+        info!("delete_chat_message() time: {}", format!("{:.2?}", timer.elapsed()));
+    }
+    if let Some(chat_message_dto) = opt_chat_message_dto {
+        Ok(HttpResponse::Ok().json(chat_message_dto)) // 200
+    } else {
+        let json = serde_json::json!({ "id": id, "user_id": profile.user_id });
+        #[rustfmt::skip]
+        let message = format!("{}; id: {}, user_id: {}", err::MSG_PARAMETER_UNACCEPTABLE, id, profile.user_id);
         error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
         Err(AppError::not_acceptable406(&message) // 406
             .add_param(Cow::Borrowed("invalidParams"), &json))
