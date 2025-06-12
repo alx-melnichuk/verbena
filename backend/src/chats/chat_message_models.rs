@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use crate::schema;
-use crate::settings::err;
 use crate::utils::serial_datetime;
 use crate::validators::{ValidationChecks, ValidationError, Validator};
 
@@ -169,21 +168,12 @@ impl Validator for CreateChatMessageDto {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ModifyChatMessage {
-    pub stream_id: Option<i32>,
-    pub user_id: Option<i32>,
-    pub msg: Option<String>, // min_len=1 max_len=255 Nullable
+    pub msg: String, // min_len=1 max_len=255
 }
 
 impl ModifyChatMessage {
-    pub fn new(stream_id: Option<i32>, user_id: Option<i32>, msg: Option<String>) -> ModifyChatMessage {
-        ModifyChatMessage {
-            stream_id,
-            user_id,
-            msg: msg.clone(),
-        }
-    }
-    pub fn valid_names<'a>() -> Vec<&'a str> {
-        vec!["stream_id", "user_id", "msg"]
+    pub fn new(msg: String) -> ModifyChatMessage {
+        ModifyChatMessage { msg: msg.clone() }
     }
 }
 
@@ -192,18 +182,10 @@ impl Validator for ModifyChatMessage {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        if let Some(value) = &self.msg {
-            if value.len() > 0 {
-                // If the string is empty, the DB will assign NULL.
-                errors.push(validate_message(&value).err());
-            }
+        if self.msg.len() > 0 {
+            // If the string is empty, the DB will assign NULL.
+            errors.push(validate_message(&self.msg).err());
         }
-
-        let list_is_some = vec![self.stream_id.is_some(), self.user_id.is_some(), self.msg.is_some()];
-        let valid_names = Self::valid_names().join(",");
-        errors.push(
-            ValidationChecks::no_fields_to_update(&list_is_some, &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err(),
-        );
 
         self.filter_errors(errors)
     }
@@ -214,15 +196,7 @@ impl Validator for ModifyChatMessage {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ModifyChatMessageDto {
-    pub stream_id: Option<i32>,
-    pub user_id: Option<i32>,
-    pub msg: Option<String>, // min_len=1 max_len=255 Nullable
-}
-
-impl ModifyChatMessageDto {
-    pub fn valid_names<'a>() -> Vec<&'a str> {
-        vec!["stream_id", "user_id", "msg"]
-    }
+    pub msg: String, // min_len=1 max_len=255
 }
 
 impl Validator for ModifyChatMessageDto {
@@ -230,16 +204,9 @@ impl Validator for ModifyChatMessageDto {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<Option<ValidationError>> = vec![];
 
-        if let Some(value) = &self.msg {
-            errors.push(validate_message(&value).err());
+        if self.msg.len() > 0 {
+            errors.push(validate_message(&self.msg).err());
         }
-
-        // Checking for at least one required field.
-        let list_is_some = vec![self.stream_id.is_some(), self.user_id.is_some(), self.msg.is_some()];
-        let valid_names = ModifyChatMessageDto::valid_names().join(",");
-        errors.push(
-            ValidationChecks::no_fields_to_update(&list_is_some, &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err(),
-        );
 
         self.filter_errors(errors)
     }
