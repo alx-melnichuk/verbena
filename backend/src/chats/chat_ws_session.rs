@@ -8,9 +8,10 @@ use chrono::{SecondsFormat /*Utc*/};
 use serde_json::to_string;
 
 use crate::chats::{
-    chat_event_ws::{BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, MsgEWS, NameEWS, UnblockEWS},
+    chat_event_ws::{
+        BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, MsgEWS, MsgRmvEWS, NameEWS, UnblockEWS,
+    },
     chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},
-    chat_message_models::ChatMessage,
     chat_ws_assistant::ChatWsAssistant,
     chat_ws_server::ChatWsServer,
 };
@@ -232,6 +233,13 @@ impl ChatWsSession {
                     ctx.text(to_string(&ErrEWS { err }).unwrap());
                 }
             }
+            EWSType::MsgRmv => {
+                // {"msgRmv": 1}
+                let msg_rmv = event.get_i32("msgRmv").unwrap_or_default();
+                if let Err(err) = self.handle_ews_msg_rmv_add_task(msg_rmv, ctx) {
+                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                }
+            }
             EWSType::Name => {
                 // {"name": "User1"}
                 let new_name = event.get_string("name").unwrap_or("".to_owned());
@@ -410,13 +418,13 @@ impl ChatWsSession {
         // Get room (stream) ID and user ID.
         let stream_id = self.room_id;
         let user_id = self.user_id;
-
+        let member = self.user_name.clone();
         // Spawn an async task.
         let addr = ctx.address();
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
-            // Check the token for correctness and get the user profile.
+            // Create a new user message in the chat.
             let result = assistant.execute_create_chat_message(stream_id, user_id, &msg).await;
             if let Err(err) = result {
                 return addr.do_send(AsyncResultError(err.to_string()));
@@ -426,8 +434,19 @@ impl ChatWsSession {
                 let message = format!("{}: stream_id: {}", err::MSG_STREAM_NOT_FOUND, stream_id);
                 return addr.do_send(AsyncResultError(AppError::not_found404(&message).to_string()));
             }
-            // Send the "AsyncResultEwsMsg" command for execution.
-            addr.do_send(Self::get_ews_msg(opt_chat_message.unwrap()));
+            let ch_msg = opt_chat_message.unwrap();
+            // Send the "AsyncResultSendText" command for execution.
+            addr.do_send(AsyncResultSendText(
+                to_string(&MsgEWS {
+                    msg: ch_msg.msg.unwrap_or_default(),
+                    id: ch_msg.id,
+                    member,
+                    date: ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true),
+                    is_edt: ch_msg.is_changed,
+                    is_rmv: ch_msg.is_removed,
+                })
+                .unwrap(),
+            ));
         });
         Ok(())
     }
@@ -441,23 +460,36 @@ impl ChatWsSession {
         self.check_possibility_sending_message()?;
 
         let user_id = self.user_id;
+        let opt_user_id = Some(self.user_id);
+        let member = self.user_name.clone();
         // Spawn an async task.
         let addr = ctx.address();
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
-            // Check the token for correctness and get the user profile.
-            let result = assistant.execute_modify_chat_message(id, user_id, &msg_cut).await;
+            // Change a user's message in a chat.
+            let result = assistant.execute_modify_chat_message(id, opt_user_id, &msg_cut).await;
             if let Err(err) = result {
                 return addr.do_send(AsyncResultError(err.to_string()));
             }
             let opt_chat_message = result.unwrap();
             if opt_chat_message.is_none() {
-                let message = format!("{}; ch_msg_id: {}", MSG_CHAT_MESSAGE_NOT_FOUND, id);
+                let message = format!("{}; id: {}, user_id: {}", MSG_CHAT_MESSAGE_NOT_FOUND, id, user_id);
                 return addr.do_send(AsyncResultError(AppError::not_found404(&message).to_string()));
             }
-            // Send the "AsyncResultEwsMsg" command for execution.
-            addr.do_send(Self::get_ews_msg(opt_chat_message.unwrap()));
+            let ch_msg = opt_chat_message.unwrap();
+            // Send the "AsyncResultSendText" command for execution.
+            addr.do_send(AsyncResultSendText(
+                to_string(&MsgEWS {
+                    msg: ch_msg.msg.unwrap_or_default(),
+                    id: ch_msg.id,
+                    member,
+                    date: ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true),
+                    is_edt: ch_msg.is_changed,
+                    is_rmv: ch_msg.is_removed,
+                })
+                .unwrap(),
+            ));
         });
         Ok(())
     }
@@ -477,30 +509,72 @@ impl ChatWsSession {
         self.check_possibility_sending_message()?;
 
         let user_id = self.user_id;
+        let opt_user_id = Some(self.user_id);
+        let member = self.user_name.clone();
         // Spawn an async task.
         let addr = ctx.address();
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
-            // Check the token for correctness and get the user profile.
-            let result = assistant.execute_modify_chat_message(id, user_id, &msg_put).await;
+            // Change a user's message in a chat.
+            let result = assistant.execute_modify_chat_message(id, opt_user_id, &msg_put).await;
             if let Err(err) = result {
                 return addr.do_send(AsyncResultError(err.to_string()));
             }
             let opt_chat_message = result.unwrap();
             if opt_chat_message.is_none() {
-                let message = format!("{}; ch_msg_id: {}", MSG_CHAT_MESSAGE_NOT_FOUND, id);
+                let message = format!("{}; id: {}, user_id: {}", MSG_CHAT_MESSAGE_NOT_FOUND, id, user_id);
                 return addr.do_send(AsyncResultError(AppError::not_found404(&message).to_string()));
             }
-            // Send the "AsyncResultEwsMsg" command for execution.
-            addr.do_send(Self::get_ews_msg(opt_chat_message.unwrap()));
+            let ch_msg = opt_chat_message.unwrap();
+            // Send the "AsyncResultSendText" command for execution.
+            addr.do_send(AsyncResultSendText(
+                to_string(&MsgEWS {
+                    msg: ch_msg.msg.unwrap_or_default(),
+                    id: ch_msg.id,
+                    member,
+                    date: ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true),
+                    is_edt: ch_msg.is_changed,
+                    is_rmv: ch_msg.is_removed,
+                })
+                .unwrap(),
+            ));
         });
         Ok(())
     }
-    fn get_ews_msg(ch_msg: ChatMessage) -> AsyncResultEwsMsg {
-        let msg2 = ch_msg.msg.unwrap_or_default();
-        let date = ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true);
-        AsyncResultEwsMsg(msg2, ch_msg.id, date, ch_msg.is_changed, ch_msg.is_removed)
+    // * Send a permanent deletion message to all chat members. *
+    pub fn handle_ews_msg_rmv_add_task(
+        &self,
+        msg_rmv: i32,
+        ctx: &mut ws::WebsocketContext<Self>,
+    ) -> Result<(), String> {
+        // Check if this field is required
+        self.check_is_required_i32(msg_rmv, "msgRmv")?;
+        // Checking the possibility of sending a message.
+        self.check_possibility_sending_message()?;
+
+        let user_id = self.user_id;
+        let opt_user_id = Some(self.user_id);
+        // Spawn an async task.
+        let addr = ctx.address();
+        let assistant = self.assistant.clone();
+        // Start an additional asynchronous task.
+        actix_web::rt::spawn(async move {
+            // Delete a user's message in a chat.
+            let result = assistant.execute_delete_chat_message(msg_rmv, opt_user_id).await;
+            if let Err(err) = result {
+                return addr.do_send(AsyncResultError(err.to_string()));
+            }
+            let opt_chat_message = result.unwrap();
+            if opt_chat_message.is_none() {
+                let message = format!("{}; id: {}, user_id: {}", MSG_CHAT_MESSAGE_NOT_FOUND, msg_rmv, user_id);
+                return addr.do_send(AsyncResultError(AppError::not_found404(&message).to_string()));
+            }
+            let text = to_string(&MsgRmvEWS { msg_rmv }).unwrap();
+            // Send the "AsyncResultSendText" command for execution.
+            addr.do_send(AsyncResultSendText(text));
+        });
+        Ok(())
     }
 }
 
@@ -577,35 +651,22 @@ impl Handler<AsyncResultEwsJoin> for ChatWsSession {
     }
 }
 
-// * * * * Handler for asynchronous response to the "MsgEWS" event * * * *
+// * * * * Handler for asynchronous response to the "SendText" event * * * *
 
-struct AsyncResultEwsMsg(
-    String, // message
-    i32,    // message_id
-    String, // message date
-    bool,   // edit flag
-    bool,   // delete flag
+struct AsyncResultSendText(
+    String, // text
 );
 
-impl Message for AsyncResultEwsMsg {
+impl Message for AsyncResultSendText {
     type Result = ();
 }
 
-impl Handler<AsyncResultEwsMsg> for ChatWsSession {
+impl Handler<AsyncResultSendText> for ChatWsSession {
     type Result = ();
 
-    fn handle(&mut self, info: AsyncResultEwsMsg, _ctx: &mut Self::Context) {
-        let msg_str = to_string(&MsgEWS {
-            msg: info.0,
-            id: info.1,
-            member: self.user_name.clone(),
-            date: info.2,
-            is_edt: info.3,
-            is_rmv: info.4,
-        })
-        .unwrap();
+    fn handle(&mut self, info: AsyncResultSendText, _ctx: &mut Self::Context) {
         // issue_async comes from having the `BrokerIssue` trait in scope.
-        self.issue_system_async(SendMessage(self.room_id, msg_str));
+        self.issue_system_async(SendMessage(self.room_id, info.0));
     }
 }
 
