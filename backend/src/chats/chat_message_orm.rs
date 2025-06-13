@@ -237,7 +237,7 @@ pub mod tests {
 
     use std::collections::HashMap;
 
-    use chrono::{/*DateTime,*/ Utc};
+    use chrono::Utc;
 
     use crate::chats::{
         blocked_user_models::BlockedUser,
