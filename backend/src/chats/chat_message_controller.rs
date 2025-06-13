@@ -43,11 +43,14 @@ pub const MSG_MODIFY_ANOTHER_USERS_CHAT_MESSAGE: &str = "modify_another_users_ch
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
+        if cfg!(debug_assertions) {
+            config
+                // GET /chat
+                .service(chat);
+        }
         config
             // GET /ws
             .service(get_ws_chat)
-            // GET /chat
-            .service(chat)
             // GET /api/chat_messages
             .service(get_chat_message)
             // POST /api/chat_messages
@@ -90,6 +93,7 @@ pub async fn get_ws_chat(
     ws::start(chat_ws_session, &request, stream)
 }
 
+#[cfg(debug_assertions)]
 #[get("/chat")]
 async fn chat() -> impl Responder {
     NamedFile::open_async("./static/chat_index.html").await.unwrap()
