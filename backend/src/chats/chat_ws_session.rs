@@ -243,6 +243,10 @@ impl ChatWsSession {
             EWSType::Name => {
                 // {"name": "User1"}
                 let new_name = event.get_string("name").unwrap_or("".to_owned());
+                // Check if this field is required
+                if let Err(err) = self.check_is_required_string(&new_name, "name") {
+                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                }
                 // For an authorized user, id and name are defined.
                 let id = self.user_id;
                 let user_name = self.user_name.clone();
