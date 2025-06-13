@@ -354,10 +354,6 @@ pub mod tests {
         let profile = ProfileOrmApp::new_profile(user_id, &nickname, &format!("{}@gmail.com", &nickname), role);
         profile
     }
-    /*fn profiles_with_id(profile: &[Profile]) -> Profile {
-        let profile_orm = ProfileOrmApp::create(profile);
-        profile_orm.profile_vec.get(0).unwrap().clone()
-    }*/
     pub fn create_chat_message(
         id: i32,
         stream_id: i32,
@@ -380,50 +376,88 @@ pub mod tests {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (http::header::AUTHORIZATION, header_value)
     }
-    #[rustfmt::skip]
-    pub fn get_cfg_data() -> (config_jwt::ConfigJwt
-    , (Vec<Profile>, Vec<Session>, Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>), String) {
-        let mut session_vec: Vec<Session> = Vec::new();
-        let profile_list = &vec![create_profile(PROFILE_ID + 0), create_profile(PROFILE_ID + 1)];
-        let profiles = ProfileOrmApp::create(&profile_list).profile_vec;
-        // Create a profile for the 1st user.
-        let profile1: Profile = profiles.get(0).unwrap().clone();
-        let num_token1 = 40000 + profile1.user_id;
-        let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token1));
-        session_vec.push(session1);
-
-        let config_jwt = config_jwt::get_test_config();
+    // get_num_token(profile1.user_id)
+    pub fn get_num_token(user_id: i32) -> i32 {
+        40000 + user_id
+    }
+    // get_token(config_jwt, profile1.user_id)
+    pub fn get_token(config_jwt: config_jwt::ConfigJwt, user_id: i32) -> String {
+        let num_token = get_num_token(user_id);
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
-        let token = encode_token(profile1.user_id, num_token1, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        token
+    }
+    pub fn get_profiles() -> (Vec<Profile>, Vec<Session>) {
+        let mut profile_vec: Vec<Profile> = Vec::new();
+        let mut session_vec: Vec<Session> = Vec::new();
+
+        let profile_list = &vec![create_profile(PROFILE_ID + 0), create_profile(PROFILE_ID + 1)];
+
+        let profiles = ProfileOrmApp::create(&profile_list).profile_vec;
+
+        // Create a profile for the 1st user.
+        let profile1: Profile = profiles.get(0).unwrap().clone();
+        #[rustfmt::skip]
+        session_vec.push(SessionOrmApp::new_session(profile1.user_id, Some(get_num_token(profile1.user_id))));
+        profile_vec.push(profile1);
 
         // Create a profile for the 2st user.
         let profile2: Profile = profiles.get(1).unwrap().clone();
-        session_vec.push(SessionOrmApp::new_session(profile2.user_id, Some(40000 + profile2.user_id)));
+        #[rustfmt::skip]
+        session_vec.push(SessionOrmApp::new_session(profile2.user_id, Some(get_num_token(profile2.user_id))));
+        profile_vec.push(profile2);
 
-        let date_update: DateTime<Utc> = Utc::now();
-        let chat_message1 = create_chat_message(1, -1, profile1.user_id, "msg101", date_update);
-        let chat_message2 = create_chat_message(2, -1, profile2.user_id, "msg201", date_update);
-
-        let chat_message_list: Vec<ChatMessage> = vec![chat_message1, chat_message2];
-        let chat_message_log_list: Vec<ChatMessageLog> = Vec::new();
-        let blocked_user_list: Vec<BlockedUser> = Vec::new();
-
-        let chat_message_orm = ChatMessageOrmApp::create(&chat_message_list, &chat_message_log_list, &blocked_user_list);
-
-        let chat_message_vec: Vec<ChatMessage> = chat_message_orm.chat_message_vec.clone();
-        let mut chat_message_log_vec: Vec<ChatMessageLog> = Vec::new();
+        (profile_vec, session_vec)
+    }
+    #[rustfmt::skip]
+    pub fn get_cfg_data(mode: i32) -> (config_jwt::ConfigJwt
+    , (Vec<Profile>, Vec<Session>, Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>), String) {
+        let config_jwt = config_jwt::get_test_config();
+        let mut token = "".to_string();
+        let mut user_id1 = i32::default();
+        let mut user_id2 = i32::default();
         
-        for (_key, value_vec) in chat_message_orm.chat_message_log_map.iter() {
-            for chat_message_log in value_vec {
-                chat_message_log_vec.push(chat_message_log.clone());
-            }
+        let mut profile_vec: Vec<Profile> = Vec::new();
+        let mut session_vec: Vec<Session> = Vec::new();
+        let mut chat_message_vec: Vec<ChatMessage> = Vec::new();
+        let mut chat_message_log_vec: Vec<ChatMessageLog> = Vec::new();
+        let mut blocked_user_vec: Vec<BlockedUser> = Vec::new();
+        // mode: 1
+        if mode > 0 {
+            let (profile_vec1, session_vec1) = get_profiles();
+            profile_vec = profile_vec1;
+            session_vec = session_vec1;
+            
+            user_id1 = profile_vec.get(0).unwrap().user_id;
+            user_id2 = profile_vec.get(1).unwrap().user_id;
+            
+            token = get_token(config_jwt.clone(), user_id1);
         }
-        let blocked_user_vec: Vec<BlockedUser> = chat_message_orm.blocked_user_vec.clone();
+        // mode: 2
+        if mode > 1 {
+            let date_update: DateTime<Utc> = Utc::now();
+            let chat_message1 = create_chat_message(1, -1, user_id1, "msg101", date_update);
+            let chat_message2 = create_chat_message(2, -1, user_id2, "msg201", date_update);
+    
+            let chat_message_list: Vec<ChatMessage> = vec![chat_message1, chat_message2];
+            let chat_message_log_list: Vec<ChatMessageLog> = Vec::new();
+            let blocked_user_list: Vec<BlockedUser> = Vec::new();
+    
+            let chat_message_orm = ChatMessageOrmApp::create(&chat_message_list, &chat_message_log_list, &blocked_user_list);
+    
+            chat_message_vec = chat_message_orm.chat_message_vec.clone();
+            
+            for (_key, value_vec) in chat_message_orm.chat_message_log_map.iter() {
+                for chat_message_log in value_vec {
+                    chat_message_log_vec.push(chat_message_log.clone());
+                }
+            }
+            blocked_user_vec = chat_message_orm.blocked_user_vec.clone();
+        }
 
         let cfg_c = config_jwt;
-        let data_c = (vec![profile1, profile2]
-            , session_vec, chat_message_vec, chat_message_log_vec, blocked_user_vec);
+        let data_c = (profile_vec, session_vec, chat_message_vec, chat_message_log_vec, blocked_user_vec);
         (cfg_c, data_c, token)
     }
     pub fn configure_chat_message(
@@ -451,12 +485,4 @@ pub mod tests {
                 .app_data(web::Data::clone(&data_blocked_user_orm));
         }
     }
-    /*pub fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {
-        assert_eq!(app_err_vec.len(), msgs.len());
-        for (idx, msg) in msgs.iter().enumerate() {
-            let app_err = app_err_vec.get(idx).unwrap();
-            assert_eq!(app_err.code, code);
-            assert_eq!(app_err.message, msg.to_string());
-        }
-    }*/
 }
