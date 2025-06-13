@@ -27,11 +27,6 @@ mod tests {
     use crate::settings::err;
     use crate::users::user_models::UserRole;
 
-    // GET /ws
-    //.service(get_ws_chat)
-    // GET /api/chat_messages
-    //.service(get_chat_message)
-
     fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
         for (idx, msg) in msgs.iter().enumerate() {
@@ -45,7 +40,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_post_chat_message_no_form() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -64,7 +59,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_chat_message_empty_json() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -84,7 +79,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_chat_message_msg_min() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(1);
         let stream_id = ChatMessageTest::stream_ids().get(0).unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -106,7 +101,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_chat_message_msg_max() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -127,7 +122,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_chat_message_stream_id_wrong() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(1);
         let stream_id_wrong = ChatMessageTest::stream_ids().get(0).unwrap().clone() - 1;
         let msg = ChatMessageTest::message_norm();
         #[rustfmt::skip]
@@ -155,7 +150,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_chat_message_valid_data() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(2);
         let user1_name = data_c.0.get(0).unwrap().nickname.clone();
         let last_ch_msg = data_c.2.last().unwrap().clone();
         let stream_id = ChatMessageTest::stream_ids().get(0).unwrap().clone();
@@ -190,7 +185,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_put_chat_message_no_form() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(2);
         let last_ch_msg = data_c.2.last().unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -210,7 +205,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_invald_id() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(2);
         let last_ch_msg = data_c.2.last().unwrap().clone();
         let ch_msg_id_bad = format!("{}a", last_ch_msg.id);
         let msg = ChatMessageTest::message_norm();
@@ -236,7 +231,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_empty_json() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(2);
         let last_ch_msg = data_c.2.last().unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
@@ -257,7 +252,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_msg_max() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(2);
         let last_ch_msg = data_c.2.last().unwrap().clone();
         let msg = ChatMessageTest::message_max();
         #[rustfmt::skip]
@@ -280,7 +275,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_non_existent_id() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(2);
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         let last_ch_msg = data_c.2.last().unwrap().clone();
         let msg = ChatMessageTest::message_norm();
@@ -310,7 +305,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_msg_another_user() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(2);
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         #[rustfmt::skip]
         let ch_msg = data_c.2.iter().find(|v| v.user_id != user_id1).unwrap().clone();
@@ -340,7 +335,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_valid_data() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(2);
         #[rustfmt::skip]
         let ch_msg = data_c.2.get(0).unwrap().clone();
         let msg = ChatMessageTest::message_norm();
@@ -371,7 +366,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_admin_msg_another_user() {
-        let (cfg_c, mut data_c, token) = get_cfg_data();
+        let (cfg_c, mut data_c, token) = get_cfg_data(2);
         data_c.0.get_mut(0).unwrap().role = UserRole::Admin;
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         #[rustfmt::skip]
@@ -407,7 +402,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_delete_chat_message_invald_id() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(2);
         let last_ch_msg = data_c.2.last().unwrap().clone();
         let ch_msg_id_bad = format!("{}a", last_ch_msg.id);
         let msg = ChatMessageTest::message_norm();
@@ -433,7 +428,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_non_existent_id() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(2);
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         let last_ch_msg = data_c.2.last().unwrap().clone();
         let msg = ChatMessageTest::message_norm();
@@ -463,7 +458,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_msg_another_user() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(2);
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         #[rustfmt::skip]
         let ch_msg = data_c.2.iter().find(|v| v.user_id != user_id1).unwrap().clone();
@@ -493,7 +488,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_valid_data() {
-        let (cfg_c, data_c, token) = get_cfg_data();
+        let (cfg_c, data_c, token) = get_cfg_data(2);
         #[rustfmt::skip]
         let ch_msg = data_c.2.get(0).unwrap().clone();
         let msg = ChatMessageTest::message_norm();
@@ -524,7 +519,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_admin_msg_another_user() {
-        let (cfg_c, mut data_c, token) = get_cfg_data();
+        let (cfg_c, mut data_c, token) = get_cfg_data(2);
         data_c.0.get_mut(0).unwrap().role = UserRole::Admin;
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         #[rustfmt::skip]
