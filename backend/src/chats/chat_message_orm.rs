@@ -23,6 +23,9 @@ pub trait ChatMessageOrm {
     /// Delete an entity (chat_message).
     fn delete_chat_message(&self, id: i32, opt_user_id: Option<i32>) -> Result<Option<ChatMessage>, String>;
 
+    /// Get information about the live of the stream.
+    fn get_stream_live(&self, stream_id: i32) -> Result<Option<bool>, String>;
+
     /// Get chat access information. (ChatAccess)
     fn get_chat_access(&self, stream_id: i32, user_id: i32) -> Result<Option<ChatAccess>, String>;
 }
@@ -54,7 +57,8 @@ pub mod impls {
 
     use crate::chats::{
         chat_message_models::{
-            ChatAccess, ChatMessage, ChatMessageLog, CreateChatMessage, FilterChatMessage, ModifyChatMessage,
+            ChatAccess, ChatMessage, ChatMessageLog, ChatStreamLive, CreateChatMessage, FilterChatMessage,
+            ModifyChatMessage,
         },
         chat_message_orm::ChatMessageOrm,
     };
@@ -209,6 +213,28 @@ pub mod impls {
             Ok(opt_chat_message)
         }
 
+        /// Get information about the live of the stream.
+        fn get_stream_live(&self, stream_id: i32) -> Result<Option<bool>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let query =
+                diesel::sql_query("select * from get_stream_live($1);").bind::<sql_types::Integer, _>(stream_id);
+
+            let opt_chat_stream_live = query
+                .get_result::<ChatStreamLive>(&mut conn)
+                .optional()
+                .map_err(|e| format!("get_stream_live: {}", e.to_string()))?;
+
+            let opt_stream_live = opt_chat_stream_live.map(|v| v.stream_live.clone());
+
+            if let Some(timer) = timer {
+                info!("get_stream_live() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
+            Ok(opt_stream_live)
+        }
+
         /// Get chat access information. (ChatAccess)
         fn get_chat_access(&self, stream_id: i32, user_id: i32) -> Result<Option<ChatAccess>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -242,14 +268,80 @@ pub mod tests {
     use crate::chats::{
         blocked_user_models::BlockedUser,
         chat_message_models::{
-            tests::ChatMessageTest, ChatAccess, ChatMessage, ChatMessageLog, CreateChatMessage, FilterChatMessage,
-            ModifyChatMessage,
+            ChatAccess, ChatMessage, ChatMessageLog, CreateChatMessage, FilterChatMessage, ModifyChatMessage,
+            MESSAGE_MAX, MESSAGE_MIN,
         },
         chat_message_orm::ChatMessageOrm,
     };
+    use crate::profiles::profile_orm::tests::PROFILE_USER_ID;
 
     pub const CHAT_MESSAGE_ID: i32 = 1500;
     pub const CHAT_MESSAGE_LOG_ID: i32 = 1600;
+    pub const BLOCKED_USER_ID: i32 = 1700;
+
+    pub struct ChatMsgTest {}
+
+    impl ChatMsgTest {
+        pub fn message_min() -> String {
+            (0..(MESSAGE_MIN - 1)).map(|_| 'a').collect()
+        }
+        pub fn message_norm() -> String {
+            (0..(MESSAGE_MIN + 1)).map(|_| 'a').collect()
+        }
+        pub fn message_max() -> String {
+            (0..(MESSAGE_MAX + 1)).map(|_| 'a').collect()
+        }
+        pub fn stream_ids() -> Vec<i32> {
+            vec![
+                1, // Owner user idx 0 (live: true)
+                2, // Owner user idx 1 (live: true)
+                3, // Owner user idx 2 (live: false)
+                4, // Owner user idx 3
+            ]
+        }
+        pub fn user_ids() -> Vec<i32> {
+            vec![
+                PROFILE_USER_ID + 0,
+                PROFILE_USER_ID + 1,
+                PROFILE_USER_ID + 2,
+                PROFILE_USER_ID + 3, // Blocked for everyone else.
+            ]
+        }
+        pub fn user_names() -> Vec<String> {
+            vec![
+                "oliver_taylor".to_string(),
+                "robert_brown".to_string(),
+                "mary_williams".to_string(),
+                "ava_wilson".to_string(),
+            ]
+        }
+        pub fn get_user_name_map() -> HashMap<i32, String> {
+            use std::collections::HashMap;
+            let user_ids = Self::user_ids();
+            let user_names = Self::user_names();
+            let mut result = HashMap::new();
+            for (idx, user_id) in user_ids.iter().enumerate() {
+                let user_name = user_names.get(idx).unwrap();
+                result.insert(user_id.clone(), user_name.clone());
+            }
+            result
+        }
+        pub fn get_blocked_user_vec() -> Vec<BlockedUser> {
+            let mut result: Vec<BlockedUser> = Vec::new();
+            let user_ids = Self::user_ids();
+            let user_names = Self::user_names();
+            let blocked_id = user_ids.last().unwrap().clone();
+            for (idx, user_id) in user_ids.iter().enumerate() {
+                if *user_id == blocked_id {
+                    continue;
+                }
+                let id = BLOCKED_USER_ID + i32::try_from(idx).unwrap();
+                let blocked_nickname = user_names.get(idx).unwrap().clone();
+                result.push(BlockedUser::new(id, *user_id, blocked_id, blocked_nickname, None));
+            }
+            result
+        }
+    }
 
     #[derive(Debug, Clone)]
     pub struct ChatMessageOrmApp {
@@ -267,10 +359,10 @@ pub mod tests {
             ChatMessageOrmApp {
                 chat_message_vec: Vec::new(),
                 chat_message_log_map: HashMap::new(),
-                user_name_map: ChatMessageTest::get_user_name_map(),
+                user_name_map: ChatMsgTest::get_user_name_map(),
                 blocked_user_vec: Vec::new(),
-                stream_ids: ChatMessageTest::stream_ids(),
-                user_ids: ChatMessageTest::user_ids(),
+                stream_ids: ChatMsgTest::stream_ids(),
+                user_ids: ChatMsgTest::user_ids(),
             }
         }
         /// Create a new instance with the specified ChatMessage list.
@@ -335,25 +427,19 @@ pub mod tests {
             ChatMessageOrmApp {
                 chat_message_vec,
                 chat_message_log_map,
-                user_name_map: ChatMessageTest::get_user_name_map(),
+                user_name_map: ChatMsgTest::get_user_name_map(),
                 blocked_user_vec,
-                stream_ids: ChatMessageTest::stream_ids(),
-                user_ids: ChatMessageTest::user_ids(),
+                stream_ids: ChatMsgTest::stream_ids(),
+                user_ids: ChatMsgTest::user_ids(),
             }
         }
+        #[rustfmt::skip]
         pub fn is_stream_id_exists(&self, opt_stream_id: Option<i32>) -> bool {
-            if let Some(stream_id) = opt_stream_id {
-                self.stream_ids.contains(&stream_id)
-            } else {
-                true
-            }
+            if let Some(stream_id) = opt_stream_id { self.stream_ids.contains(&stream_id) } else { true }
         }
+        #[rustfmt::skip]
         pub fn is_user_id_exists(&self, opt_user_id: Option<i32>) -> bool {
-            if let Some(user_id) = opt_user_id {
-                self.user_ids.contains(&user_id)
-            } else {
-                true
-            }
+            if let Some(user_id) = opt_user_id { self.user_ids.contains(&user_id) } else { true }
         }
     }
 
@@ -451,11 +537,32 @@ pub mod tests {
             Ok(opt_chat_message)
         }
 
-        /// Get chat access information. (ChatAccess)
-        fn get_chat_access(&self, _stream_id: i32, _user_id: i32) -> Result<Option<ChatAccess>, String> {
-            let opt_chat_access = None;
+        /// Get information about the live of the stream.
+        fn get_stream_live(&self, stream_id: i32) -> Result<Option<bool>, String> {
+            let idx_stream_id = self.stream_ids.iter().position(|v| *v == stream_id);
+            if idx_stream_id.is_none() {
+                return Ok(None);
+            }
+            let stream_live = stream_id != self.stream_ids.get(2).unwrap().clone();
 
-            Ok(opt_chat_access)
+            Ok(Some(stream_live))
+        }
+
+        /// Get chat access information. (ChatAccess)
+        fn get_chat_access(&self, stream_id: i32, user_id: i32) -> Result<Option<ChatAccess>, String> {
+            let idx_stream_id = self.stream_ids.iter().position(|v| *v == stream_id);
+            let idx_user_id = self.user_ids.iter().position(|v| *v == user_id);
+            if idx_stream_id.is_none() || idx_user_id.is_none() {
+                return Ok(None);
+            }
+            let idx_stream_id = idx_stream_id.unwrap();
+
+            let stream_owner = self.user_ids.get(idx_stream_id).unwrap().clone();
+            // let stream_live = idx_stream_id != 2;
+            let stream_live = stream_id != self.stream_ids.get(2).unwrap().clone();
+            let is_blocked = self.blocked_user_vec.iter().find(|v| v.blocked_id == user_id).is_some();
+
+            Ok(Some(ChatAccess::new(stream_id, stream_owner, stream_live, is_blocked)))
         }
     }
 }
