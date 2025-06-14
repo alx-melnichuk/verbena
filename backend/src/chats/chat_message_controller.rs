@@ -325,8 +325,8 @@ pub mod tests {
     use crate::chats::{
         blocked_user_models::BlockedUser,
         blocked_user_orm::tests::BlockedUserOrmApp,
-        chat_message_models::{tests::ChatMessageTest, ChatMessage, ChatMessageLog},
-        chat_message_orm::tests::ChatMessageOrmApp,
+        chat_message_models::{ChatMessage, ChatMessageLog},
+        chat_message_orm::tests::{ChatMessageOrmApp, ChatMsgTest},
     };
     use crate::profiles::{
         profile_models::Profile, profile_orm::tests::ProfileOrmApp, profile_orm::tests::PROFILE_USER_ID as PROFILE_ID,
@@ -344,12 +344,12 @@ pub mod tests {
 
     /** 1-"Oliver_Taylor", 2-"Robert_Brown", 3-"Mary_Williams", 4-"Ava_Wilson" */
     fn create_profile(user_id: i32) -> Profile {
-        let user_ids = ChatMessageTest::user_ids().clone();
+        let user_ids = ChatMsgTest::user_ids().clone();
         #[rustfmt::skip]
         let user_id1 = if user_id > 0 { user_id } else { user_ids.get(0).unwrap().clone() };
         let idx_user_id = user_ids.iter().position(|&u| u == user_id1).unwrap();
         let user_id = user_ids.get(idx_user_id).unwrap().clone();
-        let nickname = ChatMessageTest::user_names().get(idx_user_id).unwrap().clone();
+        let nickname = ChatMsgTest::user_names().get(idx_user_id).unwrap().clone();
         let role = UserRole::User;
         let profile = ProfileOrmApp::new_profile(user_id, &nickname, &format!("{}@gmail.com", &nickname), role);
         profile
@@ -362,13 +362,13 @@ pub mod tests {
         date_update: DateTime<Utc>,
     ) -> ChatMessage {
         #[rustfmt::skip]
-        let stream_id = if stream_id > 0 { stream_id } else { ChatMessageTest::stream_ids().get(0).unwrap().clone() };
-        let user_ids = ChatMessageTest::user_ids().clone();
+        let stream_id = if stream_id > 0 { stream_id } else { ChatMsgTest::stream_ids().get(0).unwrap().clone() };
+        let user_ids = ChatMsgTest::user_ids().clone();
         #[rustfmt::skip]
         let user_id1 = if user_id > 0 { user_id } else { user_ids.get(0).unwrap().clone() };
         let idx_user_id = user_ids.iter().position(|&u| u == user_id1).unwrap();
         let user_id = user_ids.get(idx_user_id).unwrap().clone();
-        let user_name = ChatMessageTest::user_names().get(idx_user_id).unwrap().clone();
+        let user_name = ChatMsgTest::user_names().get(idx_user_id).unwrap().clone();
         let msg = Some(msg.to_string());
         ChatMessage::new(id, stream_id, user_id, user_name, msg, date_update, false, false)
     }
@@ -422,7 +422,7 @@ pub mod tests {
         let mut session_vec: Vec<Session> = Vec::new();
         let mut chat_message_vec: Vec<ChatMessage> = Vec::new();
         let mut chat_message_log_vec: Vec<ChatMessageLog> = Vec::new();
-        let mut blocked_user_vec: Vec<BlockedUser> = Vec::new();
+        let mut blocked_user_vec: Vec<BlockedUser> = ChatMsgTest::get_blocked_user_vec();
         // mode: 1
         if mode > 0 {
             let (profile_vec1, session_vec1) = get_profiles();
@@ -437,12 +437,13 @@ pub mod tests {
         // mode: 2
         if mode > 1 {
             let date_update: DateTime<Utc> = Utc::now();
-            let chat_message1 = create_chat_message(1, -1, user_id1, "msg101", date_update);
-            let chat_message2 = create_chat_message(2, -1, user_id2, "msg201", date_update);
+            let stream_id = ChatMsgTest::stream_ids().get(0).unwrap().clone();
+            let chat_message1 = create_chat_message(1, stream_id, user_id1, "msg101", date_update);
+            let chat_message2 = create_chat_message(2, stream_id, user_id2, "msg201", date_update);
     
             let chat_message_list: Vec<ChatMessage> = vec![chat_message1, chat_message2];
             let chat_message_log_list: Vec<ChatMessageLog> = Vec::new();
-            let blocked_user_list: Vec<BlockedUser> = Vec::new();
+            let blocked_user_list: Vec<BlockedUser> = blocked_user_vec.clone(); 
     
             let chat_message_orm = ChatMessageOrmApp::create(&chat_message_list, &chat_message_log_list, &blocked_user_list);
     
