@@ -526,6 +526,35 @@ BEGIN
 END;
 $$;
 
+/* Create a stored function to get information about the live of the stream. */
+CREATE OR REPLACE FUNCTION get_stream_live(
+  IN _stream_id INTEGER,
+  OUT stream_id INTEGER,
+  OUT stream_live BOOLEAN
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+DECLARE 
+  rec1 RECORD;
+BEGIN
+  IF (_stream_id IS NULL) THEN
+    RETURN;
+  END IF;
+
+  SELECT s.id AS stream_id, s.live AS stream_live
+  FROM streams s 
+  WHERE s.id = _stream_id
+  INTO rec1;
+ 
+  IF rec1.stream_live IS NULL THEN 
+    RETURN;
+  END IF;
+
+  RETURN QUERY SELECT
+    rec1.stream_id,
+    rec1.stream_live;
+END;
+$$;
+
 /* Create a stored function to get chat access information. (ChatAccess) */
 CREATE OR REPLACE FUNCTION get_chat_access(
   IN _stream_id INTEGER,
