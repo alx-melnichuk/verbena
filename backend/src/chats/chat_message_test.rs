@@ -19,9 +19,8 @@ mod tests {
                 MSG_FAILED_DESER, MSG_JSON_MISSING_FIELD,
             },
         },
-        chat_message_models::{
-            self, tests::ChatMessageTest, ChatMessageDto, CreateChatMessageDto, ModifyChatMessageDto,
-        },
+        chat_message_models::{self, ChatMessageDto, CreateChatMessageDto, ModifyChatMessageDto},
+        chat_message_orm::tests::ChatMsgTest,
     };
     use crate::errors::AppError;
     use crate::settings::err;
@@ -80,14 +79,14 @@ mod tests {
     #[actix_web::test]
     async fn test_post_chat_message_msg_min() {
         let (cfg_c, data_c, token) = get_cfg_data(1);
-        let stream_id = ChatMessageTest::stream_ids().get(0).unwrap().clone();
+        let stream_id = ChatMsgTest::stream_ids().get(0).unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
             .insert_header(header_auth(&token))
-            .set_json(CreateChatMessageDto { stream_id, msg: ChatMessageTest::message_min() })
+            .set_json(CreateChatMessageDto { stream_id, msg: ChatMsgTest::message_min() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
@@ -108,7 +107,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
             .insert_header(header_auth(&token))
-            .set_json(CreateChatMessageDto { stream_id: 1, msg: ChatMessageTest::message_max() })
+            .set_json(CreateChatMessageDto { stream_id: 1, msg: ChatMsgTest::message_max() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
@@ -123,8 +122,8 @@ mod tests {
     #[actix_web::test]
     async fn test_post_chat_message_stream_id_wrong() {
         let (cfg_c, data_c, token) = get_cfg_data(1);
-        let stream_id_wrong = ChatMessageTest::stream_ids().get(0).unwrap().clone() - 1;
-        let msg = ChatMessageTest::message_norm();
+        let stream_id_wrong = ChatMsgTest::stream_ids().get(0).unwrap().clone() - 1;
+        let msg = ChatMsgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -153,8 +152,8 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data(2);
         let user1_name = data_c.0.get(0).unwrap().nickname.clone();
         let last_ch_msg = data_c.2.last().unwrap().clone();
-        let stream_id = ChatMessageTest::stream_ids().get(0).unwrap().clone();
-        let msg = ChatMessageTest::message_norm();
+        let stream_id = ChatMsgTest::stream_ids().get(0).unwrap().clone();
+        let msg = ChatMsgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -208,7 +207,7 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data(2);
         let last_ch_msg = data_c.2.last().unwrap().clone();
         let ch_msg_id_bad = format!("{}a", last_ch_msg.id);
-        let msg = ChatMessageTest::message_norm();
+        let msg = ChatMsgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -254,7 +253,7 @@ mod tests {
     async fn test_put_chat_message_msg_max() {
         let (cfg_c, data_c, token) = get_cfg_data(2);
         let last_ch_msg = data_c.2.last().unwrap().clone();
-        let msg = ChatMessageTest::message_max();
+        let msg = ChatMsgTest::message_max();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -278,7 +277,7 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data(2);
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         let last_ch_msg = data_c.2.last().unwrap().clone();
-        let msg = ChatMessageTest::message_norm();
+        let msg = ChatMsgTest::message_norm();
         let id_wrong = last_ch_msg.id + 1;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -309,7 +308,7 @@ mod tests {
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         #[rustfmt::skip]
         let ch_msg = data_c.2.iter().find(|v| v.user_id != user_id1).unwrap().clone();
-        let msg = ChatMessageTest::message_norm();
+        let msg = ChatMsgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -338,7 +337,7 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data(2);
         #[rustfmt::skip]
         let ch_msg = data_c.2.get(0).unwrap().clone();
-        let msg = ChatMessageTest::message_norm();
+        let msg = ChatMsgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -371,7 +370,7 @@ mod tests {
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         #[rustfmt::skip]
         let ch_msg = data_c.2.iter().find(|v| v.user_id != user_id1).unwrap().clone();
-        let msg = ChatMessageTest::message_norm();
+        let msg = ChatMsgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -405,7 +404,7 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data(2);
         let last_ch_msg = data_c.2.last().unwrap().clone();
         let ch_msg_id_bad = format!("{}a", last_ch_msg.id);
-        let msg = ChatMessageTest::message_norm();
+        let msg = ChatMsgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -431,7 +430,7 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data(2);
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         let last_ch_msg = data_c.2.last().unwrap().clone();
-        let msg = ChatMessageTest::message_norm();
+        let msg = ChatMsgTest::message_norm();
         let id_wrong = last_ch_msg.id + 1;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -462,7 +461,7 @@ mod tests {
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         #[rustfmt::skip]
         let ch_msg = data_c.2.iter().find(|v| v.user_id != user_id1).unwrap().clone();
-        let msg = ChatMessageTest::message_norm();
+        let msg = ChatMsgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -491,7 +490,7 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data(2);
         #[rustfmt::skip]
         let ch_msg = data_c.2.get(0).unwrap().clone();
-        let msg = ChatMessageTest::message_norm();
+        let msg = ChatMsgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
