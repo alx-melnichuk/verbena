@@ -151,6 +151,16 @@ impl ChatWsAssistant {
         }
     }
 
+    /** Get information about the live of the stream. */
+    pub async fn get_stream_live(&self, stream_id: i32) -> Result<Option<bool>, AppError> {
+        let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
+
+        chat_message_orm.get_stream_live(stream_id).map_err(|e| {
+            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+            AppError::database507(&e) // 507
+        })
+    }
+
     /** Get chat access information. (ChatAccess) */
     pub async fn get_chat_access(&self, stream_id: i32, user_id: i32) -> Result<Option<ChatAccess>, AppError> {
         let chat_message_orm: ChatMessageOrmApp = self.chat_message_orm.clone();
