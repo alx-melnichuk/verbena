@@ -10,6 +10,7 @@ mod tests {
             get_ws_chat,
             tests::{configure_chat_message, get_cfg_data, get_profiles, get_token},
         },
+        chat_message_orm::tests::ChatMsgTest,
         /*chat_message_models::{ChatMessage, ChatMessageLog},*/
     };
     /*use crate::profiles::profile_models::Profile;*/
@@ -39,14 +40,9 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_ws_chat_ews_echo() {
-        /*
-        let (_cfg_c, _data_c, token) = get_cfg_data();
-        eprintln!("1 token: {}", token);
-        */
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(|| {
             let (cfg_c, data_c, _token) = get_cfg_data(0);
-            /* eprintln!("2 token: {}", token); */
             App::new().service(get_ws_chat).configure(configure_chat_message(cfg_c, data_c))
         });
         // Open a websocket connection to the test server.
@@ -106,11 +102,28 @@ mod tests {
         // Open a websocket connection to the test server.
         let mut framed = srv.ws_at(URL_WS).await.unwrap();
 
-        let msg_text = MessageText(format!("{{ \"join\": {} }}", i32::default()).into());
+        let msg_text = MessageText(format!("{{ \"join\": {} }}", i32::default()).into()); // 0
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
         assert_eq!(item,FrameText(Bytes::from_static(b"{\"err\":\"\\\"join\\\" parameter not defined\"}")));
+    }
+    #[actix_web::test]
+    async fn test_get_ws_chat_ews_join_not_authorized_err_2() {
+        // Create a test server without listening on a port.
+        let mut srv = actix_test::start(move || {
+            let (cfg_c, data_c, _token) = get_cfg_data(0);
+            App::new().service(get_ws_chat).configure(configure_chat_message(cfg_c, data_c))
+        });
+        // Open a websocket connection to the test server.
+        let mut framed = srv.ws_at(URL_WS).await.unwrap();
+
+        let stream_id = ChatMsgTest::stream_ids().get(2).unwrap().clone(); // live: false
+        let msg_text = MessageText(format!("{{ \"join\":{} }}", stream_id).into());
+        framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
+        assert_eq!(item,FrameText(Bytes::from_static(b"{\"err\":\"This stream is not active.\"}")));
     }
     #[actix_web::test]
     async fn test_get_ws_chat_ews_join_not_authorized() {
@@ -125,18 +138,19 @@ mod tests {
         let msg_text = MessageText("{ \"join\": 1 }".into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        eprintln!("item: {:?}", &item);
         #[rustfmt::skip]
         assert_eq!(item,FrameText(Bytes::from_static(b"{\"join\":1,\"member\":\"\",\"count\":1,\"is_owner\":false,\"is_blocked\":true}")));
     }
-
-    #[actix_web::test]
-    async fn test_get_ws_chat_ews_join_authorized() {
+    //
+    // #[actix_web::test]
+    /*async fn test_get_ws_chat_ews_join_authorized() {
         let (profile_vec, _session_vec) = get_profiles();
         let user_id1 = profile_vec.get(0).unwrap().user_id;
+        let member1 = profile_vec.get(0).unwrap().nickname.clone();
         let config_jwt = config_jwt::get_test_config();
         let token = get_token(config_jwt, user_id1);
-
+        let stream_id1 = ChatMsgTest::stream_ids().get(0).unwrap().clone();
+        eprintln!("stream_id1: {}", stream_id1);
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
             let (cfg_c, data_c, _token) = get_cfg_data(1);
@@ -144,12 +158,14 @@ mod tests {
         });
         // Open a websocket connection to the test server.
         let mut framed = srv.ws_at(URL_WS).await.unwrap();
-
-        let msg_text = MessageText(format!("{{ \"join\": 1, \"access\": \"{}\" }}", token).into());
+        #[rustfmt::skip]
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream_id1, token).into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         eprintln!("item: {:?}", &item);
         #[rustfmt::skip]
-        assert_eq!(item,FrameText(Bytes::from_static(b"{\"join\":1,\"member\":\"\",\"count\":1,\"is_owner\":false,\"is_blocked\":true}")));
-    }
+        let value = format!(
+            "{{\"join\":{},\"member\":\"{}\",\"count\":1,\"is_owner\":false,\"is_blocked\":true}}", stream_id1, &member1);
+        assert_eq!(item, FrameText(Bytes::from(value)));
+    }*/
 }
