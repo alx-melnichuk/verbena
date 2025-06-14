@@ -339,18 +339,17 @@ impl ChatWsSession {
         if self.room_id == room_id {
             return Err(format!("{} {}.", THERE_WAS_ALREADY_JOIN_TO_ROOM, room_id));
         }
+        // Spawn an async task.
+        let addr = ctx.address();
+        let assistant = self.assistant.clone();
         // If "access" is specified, then get the user profile.
         if access.len() > 0 {
             // Decode the token. And unpack the two parameters from the token.
             let (user_id, num_token) = self.assistant.decode_and_verify_token(access)?;
-            // Spawn an async task.
-            let addr = ctx.address();
-            let assistant = self.assistant.clone();
             // Start an additional asynchronous task.
             actix_web::rt::spawn(async move {
                 // Check the token for correctness and get the user profile.
                 let result = assistant.check_num_token_and_get_profile(user_id, num_token).await;
-
                 if let Err(err) = result {
                     return addr.do_send(AsyncResultError(err.to_string()));
                 }
@@ -358,9 +357,9 @@ impl ChatWsSession {
                 let user_id = profile.user_id.clone();
                 let nickname = profile.nickname.clone();
                 let user_name = nickname.clone();
+
                 // Get chat access information.
                 let result2 = assistant.get_chat_access(room_id, user_id).await;
-
                 if let Err(err) = result2 {
                     return addr.do_send(AsyncResultError(err.to_string()));
                 }
@@ -384,11 +383,27 @@ impl ChatWsSession {
                 addr.do_send(AsyncResultEwsJoin(room_id, user_id, user_name, is_owner, is_blocked));
             });
         } else {
-            debug!("handle_ews_join_add_task() room_id: {room_id}, user_name: , is_owner: false, is_blocked: true");
-            // Send the "AsyncResultEwsJoin" command for execution.
-            #[rustfmt::skip]
-            ctx.address()
-                .do_send(AsyncResultEwsJoin(room_id, i32::default(), self.user_name.clone(), false, true));
+            let user_name = self.user_name.clone();
+            // Start an additional asynchronous task.
+            actix_web::rt::spawn(async move {
+                // Get information about the live of the stream.
+                let result = assistant.get_stream_live(room_id).await;
+                if let Err(err) = result {
+                    return addr.do_send(AsyncResultError(err.to_string()));
+                }
+                let opt_stream_live = result.unwrap();
+                if opt_stream_live.is_none() {
+                    return addr.do_send(AsyncResultError(STREAM_WITH_SPECIFIED_ID_NOT_FOUND.to_owned()));
+                }
+                let stream_live = opt_stream_live.unwrap();
+                // Check stream activity. (live: "state" IN ('preparing', 'started', 'paused'))
+                if !stream_live {
+                    return addr.do_send(AsyncResultError(STREAM_NOT_ACTIVE.to_owned()));
+                }
+                debug!("handle_ews_join_add_task() room_id: {room_id}, user_name:, is_owner: false, is_blocked: true");
+                // Send the "AsyncResultEwsJoin" command for execution.
+                addr.do_send(AsyncResultEwsJoin(room_id, i32::default(), user_name, false, true));
+            });
         }
         Ok(())
     }
