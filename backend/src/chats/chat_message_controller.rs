@@ -3,7 +3,9 @@ use std::{borrow::Cow, ops::Deref, time::Instant as tm};
 use actix_files::NamedFile;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use actix_web_actors::ws;
+use chrono::{DateTime, Duration, TimeZone, Utc};
 use log::{error, info, log_enabled, Level::Info};
+use utoipa;
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::chats::blocked_user_orm::impls::BlockedUserOrmApp;
@@ -99,6 +101,97 @@ async fn chat() -> impl Responder {
     NamedFile::open_async("./static/chat_index.html").await.unwrap()
 }
 
+fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
+    let mut result: Vec<ChatMessageDto> = Vec::new();
+    if 19 < start || 19 < finish {
+        return vec![];
+    }
+    let mut current: DateTime<Utc> = Utc.with_ymd_and_hms(2020, 7, 1, 10, 30, 0).unwrap();
+    let is_asc = start < finish;
+    let mut idx = start;
+    if idx > 0 {
+        current = current + Duration::minutes((idx * 5).into());
+    }
+    let dlt_minutes = if is_asc { 5 } else { -5 };
+    while is_asc && idx <= finish || !is_asc && idx >= finish {
+        #[rustfmt::skip]
+        let member = if idx % 2 == 0 { "ava_wilson" } else if idx % 3 == 0 { "ethan_brown" } else { "james_miller" };
+        result.push(ChatMessageDto {
+            id: 200 + i32::from(idx),
+            date: current.clone(),
+            member: member.into(),
+            msg: format!("Demo message {}", idx),
+            is_edt: false,
+            is_rmv: false,
+        });
+
+        current = current + Duration::minutes(dlt_minutes);
+        if !is_asc && idx == 0 {
+            break;
+        }
+        idx = if is_asc { idx + 1 } else { idx - 1 };
+    }
+    result
+}
+
+// ** Section: ChatMessage Get **
+
+/// get_chat_message
+///
+/// Get a list of messages from a chat.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1
+/// ```
+/// 
+/// The `stream_id` parameter (required) specifies the stream identifier.
+/// 
+/// The `is_sort_des` parameter is a descending sorting flag (default is false, i.e. the default sorting is "ascending").
+/// 
+/// ?? border_by_id
+/// 
+/// The `limit` parameter determines the number of records in the response.
+/// 
+/// Or you could call with the next curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1&is_sort_des=true&border_by_id=120&limit=20
+/// ```
+/// Returns the found list of chat messages (Vec<`ChatMessageDto`>) with status 200.
+///
+#[utoipa::path(
+    responses(
+        (status = 200, description = "The result is an array of chat messages.", body = Vec<ChatMessageDto>,
+        examples(
+            ("sort_ascending" = (description = "Chat messages are sorted in ascending order, number of entries 4. `curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1&is_sort_des=true&limit=4`",
+                summary = "sort ascending", value = json!(get_ch_msgs(0, 3))
+            )),
+            ("sort_ascending_part2" = (description = "Chat messages are sorted in ascending order, number of entries 4, starting with ID > 203 (part 2). `curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1&is_sort_des=true&limit=4&border_by_id=203`",
+                summary = "sort ascending part2", value = json!(get_ch_msgs(4, 7))
+            )),
+            ("sort_ascending_part3" = (description = "Chat messages are sorted in ascending order, number of entries 4, starting with ID > 207 (part 3). `curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1&is_sort_des=true&limit=4&border_by_id=207`",
+                summary = "sort ascending part3", value = json!(get_ch_msgs(8, 11))
+            )),
+            ("sort_descending" = (description = "Chat messages are sorted in descending order. `curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1&is_sort_des=false&limit=4`",
+                summary = "sort descending", value = json!(get_ch_msgs(11, 8))
+            )),
+            ("sort_descending_part2" = (description = "Chat messages are sorted in descending order, number of entries 4, starting with ID 203 (part 2). `curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1&is_sort_des=false&limit=4&border_by_id=208`",
+                summary = "sort descending part2", value = json!(get_ch_msgs(7, 4))
+            )),
+            ("sort_descending_part3" = (description = "Chat messages are sorted in descending order, number of entries 4, starting with ID 203 (part 3). `curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1&is_sort_des=false&limit=4&border_by_id=204`",
+                summary = "sort descending part3", value = json!(get_ch_msgs(7, 4))
+            )),
+        ),
+        ),
+        (status = 401, description = "An authorization token is required.", body = AppError,
+            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 506, description = "Blocking error.", body = AppError,
+            example = json!(AppError::blocking506("Error while blocking process."))),
+        (status = 507, description = "Database error.", body = AppError,
+            example = json!(AppError::database507("Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
 #[rustfmt::skip]
 #[get("/api/chat_messages", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_chat_message(
