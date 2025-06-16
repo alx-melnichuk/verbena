@@ -236,7 +236,6 @@ pub struct MsgRmvEWS {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct NameEWS {
     pub name: String, // user_name
-    pub id: i32,      // user id from users table
 }
 
 // ** Unblock clients in a room by name. **
