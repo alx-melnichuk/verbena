@@ -15,6 +15,7 @@ use crate::{
 #[openapi(
     paths(
         chat_message_controller::get_chat_message,
+        chat_message_controller::get_ws_chat,
         profile_controller::uniqueness_check,
         profile_controller::get_profile_by_id,
         profile_controller::get_profile_current,

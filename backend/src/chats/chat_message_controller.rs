@@ -64,6 +64,71 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
+// ** Section: get_ws_chat **
+
+/// get_ws_chat
+///
+/// Implementation of sending and receiving messages in chat.
+///
+/// When accessing the URL "wss://localhost:8080/ws" (GET), a web socket is opened and interaction with the server occurs.
+///
+/// Successful response status: 101 Switching Protocols.
+///
+/// The following commands are processed:
+///
+/// - ## The "echo" command.
+/// Checking the connection to the server (send text to receive it back).
+/// |         Client         |      Server          |
+/// | ---------------------- | -------------------- |
+/// | `{ "echo": "text echo" }` | `{"echo": "text echo"}` |
+/// | `{ "echo": "" }`         | `{"err":"\"echo\" parameter not defined"}` |
+///
+/// - ## The "name" command.
+/// Set user nickname (not required for authorized).
+/// |         Client         |      Server          |
+/// | ---------------------- | -------------------- |
+/// | `{ "name": "nickname" }` | `{"name": "nickname"}` |
+/// | `{ "name": "" }`         | `{"err":"\"name\" parameter not defined"}` |
+///
+/// - ## The "join" command.
+/// Perform join the chat room (without authentication).
+/// |      Client     |      Server          |
+/// | --------------- | -------------------- |
+/// | `{ "join": 1 }` | `{"join":1,"member":"","count":1,"is_owner":false,"is_blocked":true}` |
+/// | `{ "join": 0 }` | `{"err":"\"join\" parameter not defined"}` |
+/// | `{ "join": 3 }` | `{"err":"This stream is not active."}` |
+/// ```text
+/// {
+/// "join": number,        // Stream ID.
+/// "member": string,      // User nickname
+/// "count": number,       // Number of connected users.
+/// "is_owner": boolean,   // The user is the owner of the chat.
+/// "is_blocked": boolean, // The user has been blocked.
+/// }
+/// ```
+/// Perform join the chat room (with authentication).
+/// ```text
+/// Client: { "join": 10, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }
+/// ```
+/// Reply to the initiator
+/// ```text
+/// Server: {"join":10,"member":"evelyn_allen","count":1,"is_owner":false,"is_blocked":true}
+/// ```
+/// Reply to everyone else
+/// ```text
+/// Server: {"join":10,"member":"evelyn_allen","count":1}
+/// ```
+///
+/// |      Client     |      Server          |
+/// | --------------- | -------------------- |
+/// | `{ "join": 0 }` | `{"err":"\"join\" parameter not defined"}` |
+/// | `{ "join": 3 }` | `{"err":"This stream is not active."}` |
+///
+#[utoipa::path(
+    responses(
+        (status = 101, description = "Connecting a websocket to a server."),
+    ),
+)]
 #[get("/ws")]
 pub async fn get_ws_chat(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
