@@ -19,10 +19,14 @@ use crate::errors::AppError;
 use crate::settings::err;
 
 pub const PARAMETER_NOT_DEFINED: &str = "parameter not defined";
-pub const THERE_WAS_ALREADY_JOIN_TO_ROOM: &str = "There was already a \"join\" to the room";
+pub const THERE_WAS_ALREADY_JOIN_TO_ROOM: &str = "There was already a 'join' to the room.";
 pub const SPECIFIED_USER_NOT_FOUND: &str = "The specified user was not found.";
 pub const STREAM_WITH_SPECIFIED_ID_NOT_FOUND: &str = "Stream with the specified id not found.";
 pub const STREAM_NOT_ACTIVE: &str = "This stream is not active.";
+pub const THERE_WAS_NO_JOIN: &str = "There was no 'join' command.";
+pub const THERE_IS_BLOCK_ON_SEND: &str = "There is a block on sending messages.";
+pub const THERE_WAS_NO_NAME: &str = "There was no 'name' command.";
+pub const USER_ID_NOT_SPECIFIED: &str = "User ID not specified.";
 // 404 Not Found - Stream not found.
 pub const MSG_CHAT_MESSAGE_NOT_FOUND: &str = "chat_message_not_found";
 
@@ -113,29 +117,29 @@ impl ChatWsSession {
     // Check if this field is required
     #[rustfmt::skip]
     fn check_is_required_string(&self, value: &str, name: &str) -> Result<(), String> {
-        if value.len() == 0 { Err(format!("\"{}\" {}", name, PARAMETER_NOT_DEFINED)) } else { Ok(()) }
+        if value.len() == 0 { Err(format!("'{}' {}", name, PARAMETER_NOT_DEFINED)) } else { Ok(()) }
     }
     #[rustfmt::skip]
     fn check_is_required_i32(&self, value: i32, name: &str) -> Result<(), String> {
-        if value <= i32::default() { Err(format!("\"{}\" {}", name, PARAMETER_NOT_DEFINED)) } else { Ok(()) }
+        if value <= i32::default() { Err(format!("'{}' {}", name, PARAMETER_NOT_DEFINED)) } else { Ok(()) }
     }
     // Check if there is an joined room
     #[rustfmt::skip]
     fn check_is_joined_room(&self) -> Result<(), String> {
-        if self.room_id <= i32::default() { Err("There was no \"join\" command.".to_owned()) } else { Ok(()) }
+        if self.room_id <= i32::default() { Err(THERE_WAS_NO_JOIN.to_owned()) } else { Ok(()) }
     }
     // Check if there is a block on sending messages
     #[rustfmt::skip]
     fn check_is_blocked(&self) -> Result<(), String> {
-        if self.is_blocked { Err("There is a block on sending messages.".to_owned()) } else { Ok(()) }
+        if self.is_blocked { Err(THERE_IS_BLOCK_ON_SEND.to_owned()) } else { Ok(()) }
     }
     // Check if the member has a name or is anonymous
     fn check_is_name(&self) -> Result<(), String> {
         if self.user_name.len() == 0 {
-            return Err("There was no \"name\" command.".to_owned());
+            return Err(THERE_WAS_NO_NAME.to_owned());
         }
         if self.user_id <= i32::default() {
-            return Err("User ID not specified.".to_owned());
+            return Err(USER_ID_NOT_SPECIFIED.to_owned());
         }
         Ok(())
     }
@@ -335,7 +339,7 @@ impl ChatWsSession {
         self.check_is_required_i32(room_id, "join")?;
         // Check if there was a join to this room.
         if self.room_id == room_id {
-            return Err(format!("{} {}.", THERE_WAS_ALREADY_JOIN_TO_ROOM, room_id));
+            return Err(THERE_WAS_ALREADY_JOIN_TO_ROOM.into());
         }
         // Spawn an async task.
         let addr = ctx.address();
