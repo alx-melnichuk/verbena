@@ -78,51 +78,158 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// - ## The "echo" command.
 /// Checking the connection to the server (send text to receive it back).
-/// |         Client         |      Server          |
-/// | ---------------------- | -------------------- |
-/// | `{ "echo": "text echo" }` | `{"echo": "text echo"}` |
-/// | `{ "echo": "" }`         | `{"err":"\"echo\" parameter not defined"}` |
+///
+/// *Client* :<img width=200/>*Server* :<br/>
+/// `{ "echo": "text echo" }`<img width=35/>`{ "echo": "text echo" }`<br/>
+///
+/// *Client* :<img width=200/>*Server* :<br/>
+/// `{ "echo": "" }`<img width=110/>`{ "err": "'echo' parameter not defined" }`<br/>
 ///
 /// - ## The "name" command.
 /// Set user nickname (not required for authorized).
-/// |         Client         |      Server          |
-/// | ---------------------- | -------------------- |
-/// | `{ "name": "nickname" }` | `{"name": "nickname"}` |
-/// | `{ "name": "" }`         | `{"err":"\"name\" parameter not defined"}` |
+///
+/// *Client* :<img width=200/>*Server* :<br/>
+/// `{ "name": "nickname" }`<img width=43/>`{ "name": "nickname" }`<br/>
+///
+/// *Client* :<img width=200/>*Server* :<br/>
+/// `{ "name": "" }`<img width=110/>`{ "err": "'name' parameter not defined" }`<br/>
 ///
 /// - ## The "join" command.
-/// Perform join the chat room (without authentication).
-/// |      Client     |      Server          |
-/// | --------------- | -------------------- |
-/// | `{ "join": 1 }` | `{"join":1,"member":"","count":1,"is_owner":false,"is_blocked":true}` |
-/// | `{ "join": 0 }` | `{"err":"\"join\" parameter not defined"}` |
-/// | `{ "join": 3 }` | `{"err":"This stream is not active."}` |
+/// Perform join the chat room with authentication.
+///
+/// *Client* :<br/>
+/// `{ "join": 1, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
+///
 /// ```text
 /// {
-/// "join": number,        // Stream ID.
-/// "member": string,      // User nickname
-/// "count": number,       // Number of connected users.
-/// "is_owner": boolean,   // The user is the owner of the chat.
-/// "is_blocked": boolean, // The user has been blocked.
+///   "join": number,        // Stream ID.
+///   "access": string,      // Token received after authorization.
 /// }
 /// ```
-/// Perform join the chat room (with authentication).
-/// ```text
-/// Client: { "join": 10, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }
-/// ```
-/// Reply to the initiator
-/// ```text
-/// Server: {"join":10,"member":"evelyn_allen","count":1,"is_owner":false,"is_blocked":true}
-/// ```
-/// Reply to everyone else
-/// ```text
-/// Server: {"join":10,"member":"evelyn_allen","count":1}
-/// ```
+/// *Server* (Reply to the initiator):<br/>
+/// `{ "join": 1, "member": "evelyn_allen", "count": 1, "is_owner": false, "is_blocked": false }`<br/>
 ///
-/// |      Client     |      Server          |
-/// | --------------- | -------------------- |
-/// | `{ "join": 0 }` | `{"err":"\"join\" parameter not defined"}` |
-/// | `{ "join": 3 }` | `{"err":"This stream is not active."}` |
+/// *Server* (Reply to everyone else):<br/>
+/// `{ "join": 1, "member": "evelyn_allen", "count": 1 }`<br/>
+///
+/// ```text
+/// {
+///   "join": number,        // Stream ID.
+///   "member": string,      // User nickname.
+///   "count": number,       // Number of connected users.
+///   "is_owner": boolean,   // The user is the owner of the chat.
+///   "is_blocked": boolean, // The user has been blocked.
+/// }
+/// ```
+/// *Client* :<br/>
+/// `{ "join": 0, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
+/// *Server* :<br/>
+/// `{ "err": "'join' parameter not defined" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
+/// *Server* :<br/>
+/// `{ "err": "There was already a 'join' to the room." }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
+/// *Server* :<br/>
+/// `{ "err": "This stream is not active." }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "join": 999994, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
+/// *Server* :<br/>
+/// `{ "err": "Stream with the specified id not found." }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT...err" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": "invalid_or_expired_token; Base64Url must contain: 'A-Z','a-z','0-9','-','_' and have a length that is a multiple of 4." }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
+/// *Server* :<br/>
+/// `{ "err": "{\"code\":\"NotAcceptable\",\"message\":\"session_not_found; user_id: 1102\"}"}` 406<br/>
+///
+/// *Client* :<br/>
+/// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
+/// *Server* :<br/>
+/// `{ "err": "{\"code\":\"Unauthorized\",\"message\":\"unacceptable_token_num; user_id: 101\"}"}` 401<br/>
+///
+/// - ## The "join" command (without authentication).
+/// Perform join the chat room without authentication.
+///
+/// *Client* :<br/>
+/// `{ "join": 1 }`<br/>
+///
+/// ```text
+/// {
+///   "join": number,        // Stream ID.
+/// }
+/// ```
+/// *Server* (Reply to the initiator):<br/>
+/// `{ "join": 1, "member": "", "count": 1, "is_owner": false, "is_blocked": true }`<br/>
+///
+/// *Server* (Reply to everyone else):<br/>
+/// `{ "join": 1, "member": "", "count": 1 }`<br/>
+///
+/// ```text
+/// {
+///   "join": number,        // Stream ID.
+///   "member": string,      // User nickname.
+///   "count": number,       // Number of connected users.
+///   "is_owner": boolean,   // The user is the owner of the chat. Always false.
+///   "is_blocked": boolean, // The user has been blocked. Always true.
+/// }
+/// ```
+/// *Client* :<img width=200/>*Server* :<br/>
+/// `{ "join": 0 }`<img width=118/>`{ "err": "'join' parameter not defined" }`<br/>
+/// *Client* :<img width=200/>*Server* :<br/>
+/// `{ "join": 3 }`<img width=118/>`{ "err": "This stream is not active." }`<br/>
+///
+/// - ## The "leave" command.
+/// Leave from the chat room.
+///
+/// *Client* :<br/>
+/// `{ "leave": 0 }`<br/>
+///
+/// ```text
+/// {
+///   "leave": number,        // Stream ID.
+/// }
+/// ```
+/// *Server* :<br/>
+/// `{ "leave": 1, "member": "evelyn_allen", "count": 0 }`<br/>
+///
+//// ```text
+/// {
+///   "leave": number,        // Stream ID.
+///   "member": string,       // User nickname.
+///   "count": number,        // Number of connected users.
+/// }
+/// ```
+/// *Client* :<img width=200/>*Server* :<br/>
+/// `{ "leave": 0 }`<img width=118/>`{ "err": "There was no 'join' command." }`<br/>
+///
+/// - ## The "count" command.
+/// Request for number of connected users.
+///
+/// *Client* :<br/>
+/// `{ "count": 0 }`<br/>
+///
+/// ```text
+/// {
+///   "count": number,        // Number of connected users.
+/// }
+/// ```
+/// *Server* :<br/>
+/// `{ "count": 1 }`<br/>
+///
+//// ```text
+/// {
+///   "count": number,        // Number of connected users.
+/// }
+/// ```
 ///
 #[utoipa::path(
     responses(
@@ -546,26 +653,20 @@ pub mod tests {
         let token = encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         token
     }
-    pub fn get_profiles() -> (Vec<Profile>, Vec<Session>) {
-        let mut profile_vec: Vec<Profile> = Vec::new();
+    pub fn get_profiles(count: u8) -> (Vec<Profile>, Vec<Session>) {
         let mut session_vec: Vec<Session> = Vec::new();
 
-        let profile_list = &vec![create_profile(PROFILE_ID + 0), create_profile(PROFILE_ID + 1)];
+        let cnt = if count < 5 { count } else { 4 };
+        let mut profile_list: Vec<Profile> = Vec::new();
+        for idx in 0..cnt {
+            profile_list.push(create_profile(PROFILE_ID + i32::from(idx)));
+        }
+        let profile_vec = ProfileOrmApp::create(&profile_list).profile_vec;
 
-        let profiles = ProfileOrmApp::create(&profile_list).profile_vec;
-
-        // Create a profile for the 1st user.
-        let profile1: Profile = profiles.get(0).unwrap().clone();
-        #[rustfmt::skip]
-        session_vec.push(SessionOrmApp::new_session(profile1.user_id, Some(get_num_token(profile1.user_id))));
-        profile_vec.push(profile1);
-
-        // Create a profile for the 2st user.
-        let profile2: Profile = profiles.get(1).unwrap().clone();
-        #[rustfmt::skip]
-        session_vec.push(SessionOrmApp::new_session(profile2.user_id, Some(get_num_token(profile2.user_id))));
-        profile_vec.push(profile2);
-
+        for profile in profile_vec.iter() {
+            #[rustfmt::skip]
+            session_vec.push(SessionOrmApp::new_session(profile.user_id, Some(get_num_token(profile.user_id))));
+        }
         (profile_vec, session_vec)
     }
     #[rustfmt::skip]
@@ -581,9 +682,11 @@ pub mod tests {
         let mut chat_message_vec: Vec<ChatMessage> = Vec::new();
         let mut chat_message_log_vec: Vec<ChatMessageLog> = Vec::new();
         let mut blocked_user_vec: Vec<BlockedUser> = ChatMsgTest::get_blocked_user_vec();
-        // mode: 1
+        // mode: 1  count user: 2
+        // mode: 2  count user: 4
         if mode > 0 {
-            let (profile_vec1, session_vec1) = get_profiles();
+            let count_user = if mode == 1 { 2 } else { 4 };
+            let (profile_vec1, session_vec1) = get_profiles(count_user);
             profile_vec = profile_vec1;
             session_vec = session_vec1;
             
@@ -592,8 +695,8 @@ pub mod tests {
             
             token = get_token(config_jwt.clone(), user_id1);
         }
-        // mode: 2
-        if mode > 1 {
+        // mode: 3
+        if mode > 2 {
             let date_update: DateTime<Utc> = Utc::now();
             let stream_id = ChatMsgTest::stream_ids().get(0).unwrap().clone();
             let chat_message1 = create_chat_message(1, stream_id, user_id1, "msg101", date_update);
@@ -614,7 +717,6 @@ pub mod tests {
             }
             blocked_user_vec = chat_message_orm.blocked_user_vec.clone();
         }
-
         let cfg_c = config_jwt;
         let data_c = (profile_vec, session_vec, chat_message_vec, chat_message_log_vec, blocked_user_vec);
         (cfg_c, data_c, token)
