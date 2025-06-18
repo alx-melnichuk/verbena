@@ -58,3 +58,6 @@ mockdata = []
 actix-multipart-test = "0.0.3"
 # To perform testing of websocket interaction.
 actix-test = "0.1"
+
+[profile.dev]
+debug = 1
