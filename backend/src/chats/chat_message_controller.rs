@@ -107,10 +107,10 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// }
 /// ```
 /// *Server* (Reply to the initiator):<br/>
-/// `{ "join": 1, "member": "evelyn_allen", "count": 1, "is_owner": false, "is_blocked": false }`<br/>
+/// `{ "join": 1, "member": "oliver_taylor", "count": 1, "is_owner": false, "is_blocked": false }`<br/>
 ///
 /// *Server* (Reply to everyone else):<br/>
-/// `{ "join": 1, "member": "evelyn_allen", "count": 1 }`<br/>
+/// `{ "join": 1, "member": "oliver_taylor", "count": 1 }`<br/>
 ///
 /// ```text
 /// {
@@ -188,7 +188,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// `{ "join": 3 }`<img width=118/>`{ "err": "This stream is not active." }`<br/>
 ///
 /// - ## The "leave" command.
-/// Leave from the chat room.
+/// Leave from the chat room. You can only be present in one room. Therefore, when leaving the room, the ID value can be set to 0.
 ///
 /// *Client* :<br/>
 /// `{ "leave": 0 }`<br/>
@@ -199,9 +199,9 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// }
 /// ```
 /// *Server* :<br/>
-/// `{ "leave": 1, "member": "evelyn_allen", "count": 0 }`<br/>
+/// `{ "leave": 1, "member": "oliver_taylor", "count": 0 }`<br/>
 ///
-//// ```text
+/// ```text
 /// {
 ///   "leave": number,        // Stream ID.
 ///   "member": string,       // User nickname.
@@ -209,7 +209,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// }
 /// ```
 /// *Client* :<img width=200/>*Server* :<br/>
-/// `{ "leave": 0 }`<img width=118/>`{ "err": "There was no 'join' command." }`<br/>
+/// `{ "leave": 0 }`<img width=111/>`{ "err": "There was no 'join' command." }`<br/>
 ///
 /// - ## The "count" command.
 /// Request for number of connected users.
@@ -225,11 +225,116 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// *Server* :<br/>
 /// `{ "count": 1 }`<br/>
 ///
-//// ```text
+/// ```text
 /// {
 ///   "count": number,        // Number of connected users.
 /// }
 /// ```
+/// *Client* :<img width=200/>*Server* :<br/>
+/// `{ "count": 0 }`<img width=111/>`{ "err": "There was no 'join' command." }`<br/>
+///
+/// - ## The "msg" command.
+/// Send a message to the chat room. Available only to authorized users.
+///
+/// *Client* :<br/>
+/// `{ "msg": "message 1" }`<br/>
+///
+/// ```text
+/// {
+///   "msg": string,          // Message test.
+/// }
+/// ```
+/// *Server* :<br/>
+/// `{"msg":"message 1","id":1,"member":"ethan_brown","date":"2020-03-11T09:00:00.000Z","isEdt":false,"isRmv":false}`<br/>
+///
+/// ```text
+/// {
+///   "msg": string,          // Message test.
+///   "id": number,           // Message ID.
+///   "member": string,       // The nickname of the user who sent the message.
+///   "date": string,         // Date string in ISO 8601 format: YYYY-MM-DDTHH:mm:ss.sssZ
+///   "isEdt": boolean,       // Message editing indicator.
+///   "isRmv": boolean,       // Message deletion indicator.
+/// }
+/// ```
+/// *Client* :<img width=200/>*Server* :<br/>
+/// `{ "msg": "" }`<img width=118/>`{ "err": "'msg' parameter not defined" }`<br/>
+/// *Client* :<img width=200/>*Server* :<br/>
+/// `{ "msg": "text1" }`<img width=76/>`{ "err": "There was no 'join' command." }`<br/>
+/// *Client* :<img width=200/>*Server* :<br/>
+/// `{ "msg": "text2" }`<img width=76/>`{ "err": "There is a block on sending messages." }`<br/>
+///
+/// - ## The "msgPut" command.
+/// Correcting a message in a chat room. Available only to authorized users.
+///
+/// *Client* :<br/>
+/// `{ "msgPut": "message 2", "id": 1 }`<br/>
+///
+/// ```text
+/// {
+///   "msgPut": string,       // Message test.
+///   "id": number,           // Message ID.
+/// }
+/// ```
+/// *Server* :<br/>
+/// `{"msg":"message 2","id":1,"member":"oliver_taylor","date":"2020-03-11T09:10:00.000Z","isEdt":true,"isRmv":false}`<br/>
+///
+/// ```text
+/// {
+///   "msg": string,          // Message test.
+///   "id": number,           // Message ID.
+///   "member": string,       // The nickname of the user who sent the message.
+///   "date": string,         // Date string in ISO 8601 format: YYYY-MM-DDTHH:mm:ss.sssZ
+///   "isEdt": boolean,       // Message editing indicator.
+///   "isRmv": boolean,       // Message deletion indicator.
+/// }
+/// ```
+/// *Client* :<img width=240/>*Server* :<br/>
+/// `{ "msgPut": "", "id": 1 }`<img width=56/>`{ "err": "'msgPut' parameter not defined" }`<br/>
+/// *Client* :<img width=240/>*Server* :<br/>
+/// `{ "msgPut": "text1", "id": 0 }`<img width=14/>`{ "err": "'id' parameter not defined" }`<br/>
+/// *Client* :<img width=240/>*Server* :<br/>
+/// `{ "msgPut": "text1", "id": 1 }`<img width=14/>`{ "err": "There was no 'join' command." }`<br/>
+/// *Client* :<img width=240/>*Server* :<br/>
+/// `{ "msgPut": "text2", "id": 1 }`<img width=14/>`{ "err": "There is a block on sending messages." }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "msgPut": "text9", "id": 1 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": "{\"code\": \"NotFound\", \"message\": \"chat_message_not_found; id: 1, user_id: 1\" }" }`<br/>
+///
+/// - ## The "msgCut" command.
+/// Deleting the text of a message to the chat room. Available only to authorized users.
+///
+/// *Client* :<br/>
+/// `{ "msgCut": "", "id": 1 }`<br/>
+///
+/// ```text
+/// {
+///   "msgCut": string,       // Indication of deletion of message text.
+///   "id": number,           // Message ID.
+/// }
+/// ```
+/// *Server* :<br/>
+/// `{"msg":"","id":1,"member":"oliver_taylor","date":"2020-03-11T09:20:00.000Z","isEdt":false,"isRmv":true}`<br/>
+///
+/// ```text
+/// {
+///   "msg": string,          // Message test.
+///   "id": number,           // Message ID.
+///   "member": string,       // The nickname of the user who sent the message.
+///   "date": string,         // Date string in ISO 8601 format: YYYY-MM-DDTHH:mm:ss.sssZ
+///   "isEdt": boolean,       // Message editing indicator.
+///   "isRmv": boolean,       // Message deletion indicator.
+/// }
+/// ```
+/// *Client* :<img width=200/>*Server* :<br/>
+/// `{ "msgCut": "", "id": 0 }`<img width=16/>`{ "err": "'id' parameter not defined" }`<br/>
+/// *Client* :<img width=200/>*Server* :<br/>
+/// `{ "msgCut": "", "id": 1 }`<img width=16/>`{ "err": "There was no 'join' command." }`<br/>
+/// *Client* :<img width=200/>*Server* :<br/>
+/// `{ "msgCut": "", "id": 1 }`<img width=16/>`{ "err": "There is a block on sending messages." }`<br/>
+///
 ///
 #[utoipa::path(
     responses(
@@ -669,53 +774,62 @@ pub mod tests {
         }
         (profile_vec, session_vec)
     }
+    pub fn get_chat_messages() -> (Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>) {
+        let date_update: DateTime<Utc> = Utc::now();
+        let stream_id = ChatMsgTest::stream_ids().get(0).unwrap().clone();
+        let user_ids = ChatMsgTest::user_ids();
+        let user_id1 = user_ids.get(0).unwrap().clone();
+        let user_id2 = user_ids.get(1).unwrap().clone();
+
+        let chat_message1 = create_chat_message(1, stream_id, user_id1, "msg101", date_update);
+        let chat_message2 = create_chat_message(2, stream_id, user_id2, "msg201", date_update);
+
+        let chat_message_list: Vec<ChatMessage> = vec![chat_message1, chat_message2];
+        let chat_message_log_list: Vec<ChatMessageLog> = Vec::new();
+        let blocked_user_list: Vec<BlockedUser> = ChatMsgTest::get_blocked_user_vec();
+
+        let chat_message_orm =
+            ChatMessageOrmApp::create(&chat_message_list, &chat_message_log_list, &blocked_user_list);
+
+        let chat_message_vec = chat_message_orm.chat_message_vec.clone();
+        let mut chat_message_log_vec: Vec<ChatMessageLog> = Vec::new();
+
+        for (_key, value_vec) in chat_message_orm.chat_message_log_map.iter() {
+            for chat_message_log in value_vec {
+                chat_message_log_vec.push(chat_message_log.clone());
+            }
+        }
+        let blocked_user_vec = chat_message_orm.blocked_user_vec.clone();
+
+        (chat_message_vec, chat_message_log_vec, blocked_user_vec)
+    }
     #[rustfmt::skip]
     pub fn get_cfg_data(mode: i32) -> (config_jwt::ConfigJwt
     , (Vec<Profile>, Vec<Session>, Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>), String) {
         let config_jwt = config_jwt::get_test_config();
         let mut token = "".to_string();
-        let mut user_id1 = i32::default();
-        let mut user_id2 = i32::default();
         
         let mut profile_vec: Vec<Profile> = Vec::new();
         let mut session_vec: Vec<Session> = Vec::new();
         let mut chat_message_vec: Vec<ChatMessage> = Vec::new();
         let mut chat_message_log_vec: Vec<ChatMessageLog> = Vec::new();
         let mut blocked_user_vec: Vec<BlockedUser> = ChatMsgTest::get_blocked_user_vec();
-        // mode: 1  count user: 2
-        // mode: 2  count user: 4
         if mode > 0 {
             let count_user = if mode == 1 { 2 } else { 4 };
             let (profile_vec1, session_vec1) = get_profiles(count_user);
             profile_vec = profile_vec1;
             session_vec = session_vec1;
             
-            user_id1 = profile_vec.get(0).unwrap().user_id;
-            user_id2 = profile_vec.get(1).unwrap().user_id;
+            let user_id1 = profile_vec.get(0).unwrap().user_id;
             
             token = get_token(config_jwt.clone(), user_id1);
         }
         // mode: 3
         if mode > 2 {
-            let date_update: DateTime<Utc> = Utc::now();
-            let stream_id = ChatMsgTest::stream_ids().get(0).unwrap().clone();
-            let chat_message1 = create_chat_message(1, stream_id, user_id1, "msg101", date_update);
-            let chat_message2 = create_chat_message(2, stream_id, user_id2, "msg201", date_update);
-    
-            let chat_message_list: Vec<ChatMessage> = vec![chat_message1, chat_message2];
-            let chat_message_log_list: Vec<ChatMessageLog> = Vec::new();
-            let blocked_user_list: Vec<BlockedUser> = blocked_user_vec.clone(); 
-    
-            let chat_message_orm = ChatMessageOrmApp::create(&chat_message_list, &chat_message_log_list, &blocked_user_list);
-    
-            chat_message_vec = chat_message_orm.chat_message_vec.clone();
-            
-            for (_key, value_vec) in chat_message_orm.chat_message_log_map.iter() {
-                for chat_message_log in value_vec {
-                    chat_message_log_vec.push(chat_message_log.clone());
-                }
-            }
-            blocked_user_vec = chat_message_orm.blocked_user_vec.clone();
+            let res_data = get_chat_messages();
+            chat_message_vec = res_data.0;
+            chat_message_log_vec = res_data.1;
+            blocked_user_vec = res_data.2;
         }
         let cfg_c = config_jwt;
         let data_c = (profile_vec, session_vec, chat_message_vec, chat_message_log_vec, blocked_user_vec);
