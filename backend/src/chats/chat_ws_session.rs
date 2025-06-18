@@ -27,6 +27,7 @@ pub const THERE_WAS_NO_JOIN: &str = "There was no 'join' command.";
 pub const THERE_IS_BLOCK_ON_SEND: &str = "There is a block on sending messages.";
 pub const THERE_WAS_NO_NAME: &str = "There was no 'name' command.";
 pub const USER_ID_NOT_SPECIFIED: &str = "User ID not specified.";
+pub const STREAM_OWNER_RIGHTS_MISSING: &str = "Stream owner rights are missing.";
 // 404 Not Found - Stream not found.
 pub const MSG_CHAT_MESSAGE_NOT_FOUND: &str = "chat_message_not_found";
 
@@ -143,16 +144,6 @@ impl ChatWsSession {
         }
         Ok(())
     }
-    // Checking the possibility of sending a message.
-    fn check_possibility_sending_message(&self) -> Result<(), String> {
-        // Check if the member has a name or is anonymous
-        self.check_is_name()?;
-        // Check if there is an joined room
-        self.check_is_joined_room()?;
-        // Check if there is a block on sending messages
-        self.check_is_blocked()?;
-        Ok(())
-    }
     // Checking the possibility of blocking a user.
     fn check_possibility_blocking(&self) -> Result<(), String> {
         // Check if the member has a name or is anonymous
@@ -161,7 +152,7 @@ impl ChatWsSession {
         self.check_is_joined_room()?;
         // Check if the user is the owner of the stream.
         if !self.is_owner {
-            return Err("Stream owner rights are missing.".to_owned());
+            return Err(STREAM_OWNER_RIGHTS_MISSING.to_owned());
         }
         Ok(())
     }
@@ -433,8 +424,10 @@ impl ChatWsSession {
         let msg = msg.to_owned();
         // Check if this field is required
         self.check_is_required_string(&msg, "msg")?;
-        // Checking the possibility of sending a message.
-        self.check_possibility_sending_message()?;
+        // Check if there is an joined room
+        self.check_is_joined_room()?;
+        // Check if there is a block on sending messages
+        self.check_is_blocked()?;
 
         // Get room (stream) ID and user ID.
         let stream_id = self.room_id;
@@ -477,8 +470,10 @@ impl ChatWsSession {
         let msg_cut = "".to_owned();
         // Check if this field is required
         self.check_is_required_i32(id, "id")?;
-        // Checking the possibility of sending a message.
-        self.check_possibility_sending_message()?;
+        // Check if there is an joined room
+        self.check_is_joined_room()?;
+        // Check if there is a block on sending messages
+        self.check_is_blocked()?;
 
         let user_id = self.user_id;
         let opt_user_id = Some(self.user_id);
@@ -526,8 +521,10 @@ impl ChatWsSession {
         self.check_is_required_string(&msg_put, "msgPut")?;
         // Check if this field is required
         self.check_is_required_i32(id, "id")?;
-        // Checking the possibility of sending a message.
-        self.check_possibility_sending_message()?;
+        // Check if there is an joined room
+        self.check_is_joined_room()?;
+        // Check if there is a block on sending messages
+        self.check_is_blocked()?;
 
         let user_id = self.user_id;
         let opt_user_id = Some(self.user_id);
@@ -571,8 +568,10 @@ impl ChatWsSession {
     ) -> Result<(), String> {
         // Check if this field is required
         self.check_is_required_i32(msg_rmv, "msgRmv")?;
-        // Checking the possibility of sending a message.
-        self.check_possibility_sending_message()?;
+        // Check if there is an joined room
+        self.check_is_joined_room()?;
+        // Check if there is a block on sending messages
+        self.check_is_blocked()?;
 
         let user_id = self.user_id;
         let opt_user_id = Some(self.user_id);
