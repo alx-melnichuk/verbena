@@ -10,4 +10,5 @@ pub mod chat_message_test;
 pub mod chat_ws_assistant;
 pub mod chat_ws_server;
 pub mod chat_ws_session;
-pub mod chat_ws_test;
+pub mod chat_ws_test_1;
+pub mod chat_ws_test_2;
