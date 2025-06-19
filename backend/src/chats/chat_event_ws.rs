@@ -175,7 +175,9 @@ pub struct EchoEWS {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ErrEWS {
-    pub err: String,
+    pub err: u16,
+    pub code: String,
+    pub message: String,
 }
 
 // ** Join the client to the chat room. **
