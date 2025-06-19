@@ -15,21 +15,9 @@ use crate::chats::{
     chat_ws_assistant::ChatWsAssistant,
     chat_ws_server::ChatWsServer,
 };
-use crate::errors::AppError;
 use crate::settings::err;
 
-pub const PARAMETER_NOT_DEFINED: &str = "parameter not defined";
-pub const THERE_WAS_ALREADY_JOIN_TO_ROOM: &str = "There was already a 'join' to the room.";
 pub const SPECIFIED_USER_NOT_FOUND: &str = "The specified user was not found.";
-pub const STREAM_WITH_SPECIFIED_ID_NOT_FOUND: &str = "Stream with the specified id not found.";
-pub const STREAM_NOT_ACTIVE: &str = "This stream is not active.";
-pub const THERE_WAS_NO_JOIN: &str = "There was no 'join' command.";
-pub const THERE_IS_BLOCK_ON_SEND: &str = "There is a block on sending messages.";
-pub const THERE_WAS_NO_NAME: &str = "There was no 'name' command.";
-pub const USER_ID_NOT_SPECIFIED: &str = "User ID not specified.";
-pub const STREAM_OWNER_RIGHTS_MISSING: &str = "Stream owner rights are missing.";
-// 404 Not Found - Stream not found.
-pub const MSG_CHAT_MESSAGE_NOT_FOUND: &str = "chat_message_not_found";
 
 // ** ChatWsSession **
 
@@ -117,42 +105,42 @@ impl ChatWsSession {
     }
     // Check if this field is required
     #[rustfmt::skip]
-    fn check_is_required_string(&self, value: &str, name: &str) -> Result<(), String> {
-        if value.len() == 0 { Err(format!("'{}' {}", name, PARAMETER_NOT_DEFINED)) } else { Ok(()) }
+    fn check_is_required_string(&self, value: &str, name: &str) -> Result<(), ErrEWS> {
+        if value.len() == 0 { Err(get_err400(&format!("'{}' {}", name, err::MSG_PARAMETER_NOT_DEFINED))) } else { Ok(()) }
     }
     #[rustfmt::skip]
-    fn check_is_required_i32(&self, value: i32, name: &str) -> Result<(), String> {
-        if value <= i32::default() { Err(format!("'{}' {}", name, PARAMETER_NOT_DEFINED)) } else { Ok(()) }
+    fn check_is_required_i32(&self, value: i32, name: &str) -> Result<(), ErrEWS> {
+        if value <= i32::default() { Err(get_err400(&format!("'{}' {}", name, err::MSG_PARAMETER_NOT_DEFINED))) } else { Ok(()) }
     }
     // Check if there is an joined room
     #[rustfmt::skip]
-    fn check_is_joined_room(&self) -> Result<(), String> {
-        if self.room_id <= i32::default() { Err(THERE_WAS_NO_JOIN.to_owned()) } else { Ok(()) }
+    fn check_is_joined_room(&self) -> Result<(), ErrEWS> {
+        if self.room_id <= i32::default() { Err(get_err406(err::MSG_THERE_WAS_NO_JOIN)) } else { Ok(()) }
     }
     // Check if there is a block on sending messages
     #[rustfmt::skip]
-    fn check_is_blocked(&self) -> Result<(), String> {
-        if self.is_blocked { Err(THERE_IS_BLOCK_ON_SEND.to_owned()) } else { Ok(()) }
+    fn check_is_blocked(&self) -> Result<(), ErrEWS> {
+        if self.is_blocked { Err(get_err403(err::MSG_BLOCK_ON_SEND_MESSAGES)) } else { Ok(()) }
     }
     // Check if the member has a name or is anonymous
-    fn check_is_name(&self) -> Result<(), String> {
+    fn check_is_name(&self) -> Result<(), ErrEWS> {
         if self.user_name.len() == 0 {
-            return Err(THERE_WAS_NO_NAME.to_owned());
+            return Err(get_err406(err::MSG_THERE_WAS_NO_NAME));
         }
         if self.user_id <= i32::default() {
-            return Err(USER_ID_NOT_SPECIFIED.to_owned());
+            return Err(get_err404(err::MSG_USER_NOT_FOUND));
         }
         Ok(())
     }
     // Checking the possibility of blocking a user.
-    fn check_possibility_blocking(&self) -> Result<(), String> {
+    fn check_possibility_blocking(&self) -> Result<(), ErrEWS> {
         // Check if the member has a name or is anonymous
         self.check_is_name()?;
         // Check if there is an joined room
         self.check_is_joined_room()?;
         // Check if the user is the owner of the stream.
         if !self.is_owner {
-            return Err(STREAM_OWNER_RIGHTS_MISSING.to_owned());
+            return Err(get_err403(err::MSG_STREAM_OWNER_RIGHTS_MISSING));
         }
         Ok(())
     }
@@ -163,7 +151,7 @@ impl ChatWsSession {
         let res_event = EventWS::parsing(msg);
         if let Err(err) = res_event {
             debug!("websocket error: {:?} msg: \"{}\"", err, msg);
-            ctx.text(to_string(&ErrEWS { err }).unwrap());
+            ctx.text(to_string(&get_err500(&err)).unwrap());
             return;
         }
         let event = res_event.unwrap();
@@ -174,7 +162,7 @@ impl ChatWsSession {
                 let echo = event.get_string("echo").unwrap_or("".to_owned());
                 // Check if this field is required
                 if let Err(err) = self.check_is_required_string(&echo, "echo") {
-                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                    ctx.text(to_string(&err).unwrap());
                 } else {
                     ctx.text(to_string(&EchoEWS { echo }).unwrap());
                 }
@@ -183,13 +171,13 @@ impl ChatWsSession {
                 // {"block": "User2"}
                 let block = event.get_string("block").unwrap_or("".to_owned());
                 if let Err(err) = self.handle_ews_block_add_task(&block, true, ctx) {
-                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                    ctx.text(to_string(&err).unwrap());
                 }
             }
             EWSType::Count => {
                 // {"count": -1}
                 if let Err(err) = self.handle_ews_count(ctx) {
-                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                    ctx.text(to_string(&err).unwrap());
                 }
             }
             EWSType::Join => {
@@ -197,27 +185,27 @@ impl ChatWsSession {
                 let room_id = event.get_i32("join").unwrap_or_default();
                 let access = event.get_string("access").unwrap_or("".to_owned());
                 if let Err(err) = self.handle_ews_join_add_task(room_id, &access, ctx) {
-                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                    ctx.text(to_string(&err).unwrap());
                 }
             }
             EWSType::Leave => {
                 // {"leave": -1}
                 if let Err(err) = self.handle_ews_leave(ctx) {
-                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                    ctx.text(to_string(&err).unwrap());
                 }
             }
             EWSType::Msg => {
                 // {"msg":"text msg"}
                 let msg = event.get_string("msg").unwrap_or_default();
                 if let Err(err) = self.handle_ews_msg_add_task(&msg, ctx) {
-                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                    ctx.text(to_string(&err).unwrap());
                 }
             }
             EWSType::MsgCut => {
                 // {"msgCut": "", "id": 1}
                 let id = event.get_i32("id").unwrap_or_default();
                 if let Err(err) = self.handle_ews_msg_cut_add_task(id, ctx) {
-                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                    ctx.text(to_string(&err).unwrap());
                 }
             }
             EWSType::MsgPut => {
@@ -225,14 +213,14 @@ impl ChatWsSession {
                 let msg_put = event.get_string("msgPut").unwrap_or_default();
                 let id = event.get_i32("id").unwrap_or_default();
                 if let Err(err) = self.handle_ews_msg_put_add_task(&msg_put, id, ctx) {
-                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                    ctx.text(to_string(&err).unwrap());
                 }
             }
             EWSType::MsgRmv => {
                 // {"msgRmv": 1}
                 let msg_rmv = event.get_i32("msgRmv").unwrap_or_default();
                 if let Err(err) = self.handle_ews_msg_rmv_add_task(msg_rmv, ctx) {
-                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                    ctx.text(to_string(&err).unwrap());
                 }
             }
             EWSType::Name => {
@@ -240,7 +228,7 @@ impl ChatWsSession {
                 let new_name = event.get_string("name").unwrap_or("".to_owned());
                 // Check if this field is required
                 if let Err(err) = self.check_is_required_string(&new_name, "name") {
-                    return ctx.text(to_string(&ErrEWS { err }).unwrap());
+                    return ctx.text(to_string(&err).unwrap());
                 }
                 let user_name = self.user_name.clone();
                 if new_name.len() > 0 && !user_name.eq(&new_name) {
@@ -253,7 +241,7 @@ impl ChatWsSession {
                 // {"unblock": "User2"}
                 let block = event.get_string("unblock").unwrap_or("".to_owned());
                 if let Err(err) = self.handle_ews_block_add_task(&block, false, ctx) {
-                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                    ctx.text(to_string(&err).unwrap());
                 }
             }
             _ => {}
@@ -266,7 +254,7 @@ impl ChatWsSession {
         user_name: &str,
         is_block: bool,
         ctx: &mut ws::WebsocketContext<Self>,
-    ) -> Result<(), String> {
+    ) -> Result<(), ErrEWS> {
         debug!("handle_ews_block_add_task() user_name: {user_name}, is_block: {is_block}");
         let tag_name = if is_block { "block" } else { "unblock" };
         // Check if this field is required
@@ -285,11 +273,14 @@ impl ChatWsSession {
             // Perform blocking/unblocking of a user.
             let result = assistant.execute_block_user(is_block, user_id, None, Some(block_name)).await;
             if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.to_string()));
+                #[rustfmt::skip]        
+                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
             }
             let opt_blocked_user = result.unwrap();
             if opt_blocked_user.is_none() {
-                return addr.do_send(AsyncResultError(SPECIFIED_USER_NOT_FOUND.to_owned()));
+                let message = format!("{}; user_id: {}", err::MSG_USER_NOT_FOUND, user_id);
+                #[rustfmt::skip]
+                return addr.do_send(AsyncResultError(404, err::CD_NOT_FOUND.to_owned(), message.to_string()));
             }
             let blocked_user = opt_blocked_user.unwrap();
             let blocked_name = blocked_user.blocked_nickname.clone();
@@ -299,7 +290,7 @@ impl ChatWsSession {
     }
 
     // ** Count of clients in the room. (Session -> Server) **
-    pub fn handle_ews_count(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {
+    pub fn handle_ews_count(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), ErrEWS> {
         // Check if there is an joined room
         self.check_is_joined_room()?;
         let count_members = CountMembers(self.room_id);
@@ -323,14 +314,14 @@ impl ChatWsSession {
         room_id: i32,
         access: &str,
         ctx: &mut ws::WebsocketContext<Self>,
-    ) -> Result<(), String> {
+    ) -> Result<(), ErrEWS> {
         #[rustfmt::skip]
         debug!("handle_ews_join_add_task() room_id: {room_id}, access.len(): {}", access.len());
         // Check if this field is required
         self.check_is_required_i32(room_id, "join")?;
         // Check if there was a join to this room.
         if self.room_id == room_id {
-            return Err(THERE_WAS_ALREADY_JOIN_TO_ROOM.into());
+            return Err(get_err409(err::MSG_THERE_WAS_ALREADY_JOIN_TO_ROOM));
         }
         // Spawn an async task.
         let addr = ctx.address();
@@ -338,13 +329,15 @@ impl ChatWsSession {
         // If "access" is specified, then get the user profile.
         if access.len() > 0 {
             // Decode the token. And unpack the two parameters from the token.
-            let (user_id, num_token) = self.assistant.decode_and_verify_token(access)?;
+            let (user_id, num_token) =
+                self.assistant.decode_and_verify_token(access).map_err(|err| get_err401(&err))?;
             // Start an additional asynchronous task.
             actix_web::rt::spawn(async move {
                 // Check the token for correctness and get the user profile.
                 let result = assistant.check_num_token_and_get_profile(user_id, num_token).await;
                 if let Err(err) = result {
-                    return addr.do_send(AsyncResultError(err.to_string()));
+                    #[rustfmt::skip]
+                    return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
                 }
                 let profile = result.unwrap();
                 let user_id = profile.user_id.clone();
@@ -354,17 +347,21 @@ impl ChatWsSession {
                 // Get chat access information.
                 let result2 = assistant.get_chat_access(room_id, user_id).await;
                 if let Err(err) = result2 {
-                    return addr.do_send(AsyncResultError(err.to_string()));
+                    #[rustfmt::skip]
+                    return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
                 }
                 let opt_chat_access = result2.unwrap();
                 // If the stream with id = room_id is not found, then an error occurs.
                 if opt_chat_access.is_none() {
-                    return addr.do_send(AsyncResultError(STREAM_WITH_SPECIFIED_ID_NOT_FOUND.to_owned()));
+                    let message = format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, room_id);
+                    #[rustfmt::skip]
+                    return addr.do_send(AsyncResultError(404, err::CD_NOT_FOUND.to_owned(), message.to_string()));
                 }
                 let chat_access = opt_chat_access.unwrap();
                 // Check stream activity. (live: "state" IN ('preparing', 'started', 'paused'))
                 if !chat_access.stream_live {
-                    return addr.do_send(AsyncResultError(STREAM_NOT_ACTIVE.to_owned()));
+                    #[rustfmt::skip]
+                    return addr.do_send(AsyncResultError(409, err::CD_CONFLICT.to_owned(), err::MSG_STREAM_NOT_ACTIVE.to_owned()));
                 }
                 // Determine if a user is the owner of a chat.
                 let is_owner = profile.user_id == chat_access.stream_owner;
@@ -382,16 +379,20 @@ impl ChatWsSession {
                 // Get information about the live of the stream.
                 let result = assistant.get_stream_live(room_id).await;
                 if let Err(err) = result {
-                    return addr.do_send(AsyncResultError(err.to_string()));
+                    #[rustfmt::skip]
+                    return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
                 }
                 let opt_stream_live = result.unwrap();
                 if opt_stream_live.is_none() {
-                    return addr.do_send(AsyncResultError(STREAM_WITH_SPECIFIED_ID_NOT_FOUND.to_owned()));
+                    let message = format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, room_id);
+                    #[rustfmt::skip]
+                    return addr.do_send(AsyncResultError(404, err::CD_NOT_FOUND.to_owned(), message.to_string()));
                 }
                 let stream_live = opt_stream_live.unwrap();
                 // Check stream activity. (live: "state" IN ('preparing', 'started', 'paused'))
                 if !stream_live {
-                    return addr.do_send(AsyncResultError(STREAM_NOT_ACTIVE.to_owned()));
+                    #[rustfmt::skip]
+                    return addr.do_send(AsyncResultError(409, err::CD_CONFLICT.to_owned(), err::MSG_STREAM_NOT_ACTIVE.to_owned()));
                 }
                 debug!("handle_ews_join_add_task() room_id: {room_id}, user_name:, is_owner: false, is_blocked: true");
                 // Send the "AsyncResultEwsJoin" command for execution.
@@ -402,7 +403,7 @@ impl ChatWsSession {
     }
 
     // * Leave the client from the chat room. (Session -> Server) *
-    pub fn handle_ews_leave(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {
+    pub fn handle_ews_leave(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), ErrEWS> {
         #[rustfmt::skip]
         debug!("handle_ews_leave() room_id: {}, user_name: {}", self.room_id, self.user_name);
         // Check if there is an joined room
@@ -420,7 +421,7 @@ impl ChatWsSession {
     }
 
     // * Send a text message to all clients in the room. (Server -> Session) *
-    pub fn handle_ews_msg_add_task(&self, msg: &str, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {
+    pub fn handle_ews_msg_add_task(&self, msg: &str, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), ErrEWS> {
         let msg = msg.to_owned();
         // Check if this field is required
         self.check_is_required_string(&msg, "msg")?;
@@ -441,12 +442,14 @@ impl ChatWsSession {
             // Create a new user message in the chat.
             let result = assistant.execute_create_chat_message(stream_id, user_id, &msg).await;
             if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.to_string()));
+                #[rustfmt::skip]
+                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
             }
             let opt_chat_message = result.unwrap();
             if opt_chat_message.is_none() {
-                let message = format!("{}: stream_id: {}", err::MSG_STREAM_NOT_FOUND, stream_id);
-                return addr.do_send(AsyncResultError(AppError::not_found404(&message).to_string()));
+                let message = format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, stream_id);
+                #[rustfmt::skip]
+                return addr.do_send(AsyncResultError(404, err::CD_NOT_FOUND.to_owned(), message.to_string()));
             }
             let ch_msg = opt_chat_message.unwrap();
             // Send the "AsyncResultSendText" command for execution.
@@ -466,7 +469,7 @@ impl ChatWsSession {
     }
 
     // * Send a delete message to all chat members. (Server -> Session) *
-    pub fn handle_ews_msg_cut_add_task(&self, id: i32, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), String> {
+    pub fn handle_ews_msg_cut_add_task(&self, id: i32, ctx: &mut ws::WebsocketContext<Self>) -> Result<(), ErrEWS> {
         let msg_cut = "".to_owned();
         // Check if this field is required
         self.check_is_required_i32(id, "id")?;
@@ -486,12 +489,14 @@ impl ChatWsSession {
             // Change a user's message in a chat.
             let result = assistant.execute_modify_chat_message(id, opt_user_id, &msg_cut).await;
             if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.to_string()));
+                #[rustfmt::skip]
+                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
             }
             let opt_chat_message = result.unwrap();
             if opt_chat_message.is_none() {
-                let message = format!("{}; id: {}, user_id: {}", MSG_CHAT_MESSAGE_NOT_FOUND, id, user_id);
-                return addr.do_send(AsyncResultError(AppError::not_found404(&message).to_string()));
+                let message = format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, id, user_id);
+                #[rustfmt::skip]
+                return addr.do_send(AsyncResultError(404, err::CD_NOT_FOUND.to_owned(), message.to_string()));
             }
             let ch_msg = opt_chat_message.unwrap();
             // Send the "AsyncResultSendText" command for execution.
@@ -515,7 +520,7 @@ impl ChatWsSession {
         msg_put: &str,
         id: i32,
         ctx: &mut ws::WebsocketContext<Self>,
-    ) -> Result<(), String> {
+    ) -> Result<(), ErrEWS> {
         let msg_put = msg_put.to_owned();
         // Check if this field is required
         self.check_is_required_string(&msg_put, "msgPut")?;
@@ -537,12 +542,14 @@ impl ChatWsSession {
             // Change a user's message in a chat.
             let result = assistant.execute_modify_chat_message(id, opt_user_id, &msg_put).await;
             if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.to_string()));
+                #[rustfmt::skip]
+                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
             }
             let opt_chat_message = result.unwrap();
             if opt_chat_message.is_none() {
-                let message = format!("{}; id: {}, user_id: {}", MSG_CHAT_MESSAGE_NOT_FOUND, id, user_id);
-                return addr.do_send(AsyncResultError(AppError::not_found404(&message).to_string()));
+                let message = format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, id, user_id);
+                #[rustfmt::skip]
+                return addr.do_send(AsyncResultError(404, err::CD_NOT_FOUND.to_owned(), message.to_string()));
             }
             let ch_msg = opt_chat_message.unwrap();
             // Send the "AsyncResultSendText" command for execution.
@@ -565,7 +572,7 @@ impl ChatWsSession {
         &self,
         msg_rmv: i32,
         ctx: &mut ws::WebsocketContext<Self>,
-    ) -> Result<(), String> {
+    ) -> Result<(), ErrEWS> {
         // Check if this field is required
         self.check_is_required_i32(msg_rmv, "msgRmv")?;
         // Check if there is an joined room
@@ -583,12 +590,14 @@ impl ChatWsSession {
             // Delete a user's message in a chat.
             let result = assistant.execute_delete_chat_message(msg_rmv, opt_user_id).await;
             if let Err(err) = result {
-                return addr.do_send(AsyncResultError(err.to_string()));
+                #[rustfmt::skip]
+                return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
             }
             let opt_chat_message = result.unwrap();
             if opt_chat_message.is_none() {
-                let message = format!("{}; id: {}, user_id: {}", MSG_CHAT_MESSAGE_NOT_FOUND, msg_rmv, user_id);
-                return addr.do_send(AsyncResultError(AppError::not_found404(&message).to_string()));
+                let message = format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, msg_rmv, user_id);
+                #[rustfmt::skip]
+                return addr.do_send(AsyncResultError(404, err::CD_NOT_FOUND.to_owned(), message.to_string()));
             }
             let text = to_string(&MsgRmvEWS { msg_rmv }).unwrap();
             // Send the "AsyncResultSendText" command for execution.
@@ -602,7 +611,11 @@ impl ChatWsSession {
 
 // * * * * Handler for asynchronous response to the "error" command. * * * *
 
-struct AsyncResultError(String);
+struct AsyncResultError(
+    u16,    // err
+    String, // code
+    String, // message
+);
 
 impl Message for AsyncResultError {
     type Result = ();
@@ -612,8 +625,10 @@ impl Handler<AsyncResultError> for ChatWsSession {
     type Result = ();
 
     fn handle(&mut self, msg: AsyncResultError, ctx: &mut Self::Context) {
-        debug!("handle<AsyncResultError>() msg.0: {}", &msg.0);
-        ctx.text(to_string(&ErrEWS { err: msg.0 }).unwrap());
+        #[rustfmt::skip]
+        debug!("handle<AsyncResultError>() err: {}, code: {}, message: {}", msg.0, &msg.1, &msg.2);
+        #[rustfmt::skip]
+        ctx.text(to_string(&ErrEWS { err: msg.0, code: msg.1, message: msg.2 }).unwrap());
     }
 }
 
@@ -769,3 +784,32 @@ impl ChatWsSession {
 }
 
 // ****  __  ****
+
+#[rustfmt::skip]
+pub fn get_err400(message: &str) -> ErrEWS {
+    ErrEWS { err: 400, code: err::CD_BAD_REQUEST.to_owned(), message: message.to_owned() }
+}
+#[rustfmt::skip]
+pub fn get_err401(message: &str) -> ErrEWS {
+    ErrEWS { err: 401, code: err::CD_UNAUTHORIZED.to_owned(), message: message.to_owned() }
+}
+#[rustfmt::skip]
+pub fn get_err403(message: &str) -> ErrEWS {
+    ErrEWS { err: 403, code: err::CD_FORBIDDEN.to_owned(), message: message.to_owned() }
+}
+#[rustfmt::skip]
+pub fn get_err404(message: &str) -> ErrEWS {
+    ErrEWS { err: 404, code: err::CD_NOT_FOUND.to_owned(), message: message.to_owned() }
+}
+#[rustfmt::skip]
+pub fn get_err406(message: &str) -> ErrEWS {
+    ErrEWS { err: 406, code: err::CD_NOT_ACCEPTABLE.to_owned(), message: message.to_owned() }
+}
+#[rustfmt::skip]
+pub fn get_err409(message: &str) -> ErrEWS {
+    ErrEWS { err: 409, code: err::CD_CONFLICT.to_owned(), message: message.to_owned() }
+}
+#[rustfmt::skip]
+pub fn get_err500(message: &str) -> ErrEWS {
+    ErrEWS { err: 500, code: err::CD_INTERNAL_ERROR.to_owned(), message: message.to_owned() }
+}
