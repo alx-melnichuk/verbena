@@ -18,6 +18,7 @@ mod tests {
         chat_ws_session as session,
     };
     use crate::sessions::config_jwt;
+    use crate::settings::err;
 
     const URL_WS: &str = "/ws";
     const ERROR_PROCESSING_WS_FRAME_TEXT: &str = "Error processing websocket message Frame::Text(Bytes)";
@@ -50,14 +51,18 @@ mod tests {
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        assert_eq!(item, FrameText(Bytes::from(format!("{{\"err\":\"'{}' {}\"}}", "msg", session::PARAMETER_NOT_DEFINED))));
+        let err400 = format!(
+            "{{\"err\":400,\"code\":\"BadRequest\",\"message\":\"'{}' {}\"}}", "msg", err::MSG_PARAMETER_NOT_DEFINED);
+        assert_eq!(item, FrameText(Bytes::from(err400)));
 
         // -- Test: "There was no 'join' command." --
         let msg_text = MessageText("{ \"msg\": \"text1\" }".into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        assert_eq!(item, FrameText(Bytes::from(format!("{{\"err\":\"{}\"}}", session::THERE_WAS_NO_JOIN))));
+        let err406 = format!(
+            "{{\"err\":406,\"code\":\"NotAcceptable\",\"message\":\"{}\"}}", err::MSG_THERE_WAS_NO_JOIN);
+        assert_eq!(item, FrameText(Bytes::from(err406)));
 
         // -- Test: "There is a block on sending messages." --
         let (profile_vec, _session_vec) = get_profiles(4);
@@ -79,7 +84,9 @@ mod tests {
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        assert_eq!(item, FrameText(Bytes::from(format!("{{\"err\":\"{}\"}}", session::THERE_IS_BLOCK_ON_SEND))));
+        let err403 = format!(
+            "{{\"err\":403,\"code\":\"Forbidden\",\"message\":\"{}\"}}", err::MSG_BLOCK_ON_SEND_MESSAGES);
+        assert_eq!(item, FrameText(Bytes::from(err403)));
     }
     #[actix_web::test]
     async fn test_get_ws_chat_ews_msg_ok() {
@@ -176,21 +183,27 @@ mod tests {
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        assert_eq!(item, FrameText(Bytes::from(format!("{{\"err\":\"'{}' {}\"}}", "msgPut", session::PARAMETER_NOT_DEFINED))));
+        let err400 = format!(
+            "{{\"err\":400,\"code\":\"BadRequest\",\"message\":\"'{}' {}\"}}", "msgPut", err::MSG_PARAMETER_NOT_DEFINED);
+        assert_eq!(item, FrameText(Bytes::from(err400)));
 
         // -- Test: "'id' parameter not defined" --
         let msg_text = MessageText("{ \"msgPut\": \"text1\", \"id\": 0 }".into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        assert_eq!(item, FrameText(Bytes::from(format!("{{\"err\":\"'{}' {}\"}}", "id", session::PARAMETER_NOT_DEFINED))));
+        let err400 = format!(
+            "{{\"err\":400,\"code\":\"BadRequest\",\"message\":\"'{}' {}\"}}", "id", err::MSG_PARAMETER_NOT_DEFINED);
+        assert_eq!(item, FrameText(Bytes::from(err400)));
 
         // -- Test: "There was no 'join' command." --
         let msg_text = MessageText("{ \"msgPut\": \"text1\", \"id\": 1 }".into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        assert_eq!(item, FrameText(Bytes::from(format!("{{\"err\":\"{}\"}}", session::THERE_WAS_NO_JOIN))));
+        let err406 = format!(
+            "{{\"err\":406,\"code\":\"NotAcceptable\",\"message\":\"{}\"}}", err::MSG_THERE_WAS_NO_JOIN);
+        assert_eq!(item, FrameText(Bytes::from(err406)));
 
         // -- Test: "There is a block on sending messages." --
         let (profile_vec, _session_vec) = get_profiles(4);
@@ -212,7 +225,9 @@ mod tests {
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        assert_eq!(item, FrameText(Bytes::from(format!("{{\"err\":\"{}\"}}", session::THERE_IS_BLOCK_ON_SEND))));
+        let err403 = format!(
+            "{{\"err\":403,\"code\":\"Forbidden\",\"message\":\"{}\"}}", err::MSG_BLOCK_ON_SEND_MESSAGES);
+        assert_eq!(item, FrameText(Bytes::from(err403)));
 
         // -- Test: Editing another user's message. --
         let (profile_vec, _session_vec) = get_profiles(2);
@@ -240,7 +255,7 @@ mod tests {
         framed2.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let message = format!("{}; id: {}, user_id: {}", session::MSG_CHAT_MESSAGE_NOT_FOUND, ch_cmd_id, user_id1);
+        let message = format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, ch_cmd_id, user_id1);
         #[rustfmt::skip]
         let err404 = format!("{{\\\"code\\\":\\\"NotFound\\\",\\\"message\\\":\\\"{}\\\"}}", message);
         assert_eq!(item, FrameText(Bytes::from(format!("{{\"err\":\"{}\"}}", err404))));
@@ -340,21 +355,27 @@ mod tests {
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        assert_eq!(item, FrameText(Bytes::from(format!("{{\"err\":\"'{}' {}\"}}", "id", session::PARAMETER_NOT_DEFINED))));
+        let err400 = format!(
+            "{{\"err\":400,\"code\":\"BadRequest\",\"message\":\"'{}' {}\"}}", "id", err::MSG_PARAMETER_NOT_DEFINED);
+        assert_eq!(item, FrameText(Bytes::from(err400)));
 
         // -- Test: "'id' parameter not defined" --
         let msg_text = MessageText("{ \"msgCut\": \"\", \"id\": 0 }".into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        assert_eq!(item, FrameText(Bytes::from(format!("{{\"err\":\"'{}' {}\"}}", "id", session::PARAMETER_NOT_DEFINED))));
+        let err400 = format!(
+            "{{\"err\":400,\"code\":\"BadRequest\",\"message\":\"'{}' {}\"}}", "id", err::MSG_PARAMETER_NOT_DEFINED);
+        assert_eq!(item, FrameText(Bytes::from(err400)));
 
         // -- Test: "There was no 'join' command." --
         let msg_text = MessageText("{ \"msgCut\": \"\", \"id\": 1 }".into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        assert_eq!(item, FrameText(Bytes::from(format!("{{\"err\":\"{}\"}}", session::THERE_WAS_NO_JOIN))));
+        let err406 = format!(
+            "{{\"err\":406,\"code\":\"NotAcceptable\",\"message\":\"{}\"}}", err::MSG_THERE_WAS_NO_JOIN);
+        assert_eq!(item, FrameText(Bytes::from(err406)));
 
         // -- Test: "There is a block on sending messages." --
         let (profile_vec, _session_vec) = get_profiles(4);
@@ -376,7 +397,9 @@ mod tests {
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        assert_eq!(item, FrameText(Bytes::from(format!("{{\"err\":\"{}\"}}", session::THERE_IS_BLOCK_ON_SEND))));
+        let err403 = format!(
+            "{{\"err\":403,\"code\":\"Forbidden\",\"message\":\"{}\"}}", err::MSG_BLOCK_ON_SEND_MESSAGES);
+        assert_eq!(item, FrameText(Bytes::from(err403)));
 
         // -- Test: Cutting another user's message. --
         let (profile_vec, _session_vec) = get_profiles(2);
@@ -404,7 +427,7 @@ mod tests {
         framed2.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let message = format!("{}; id: {}, user_id: {}", session::MSG_CHAT_MESSAGE_NOT_FOUND, ch_cmd_id, user_id1);
+        let message = format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, ch_cmd_id, user_id1);
         #[rustfmt::skip]
         let err404 = format!("{{\\\"code\\\":\\\"NotFound\\\",\\\"message\\\":\\\"{}\\\"}}", message);
         assert_eq!(item, FrameText(Bytes::from(format!("{{\"err\":\"{}\"}}", err404))));
