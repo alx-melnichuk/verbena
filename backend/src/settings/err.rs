@@ -2,6 +2,11 @@
 // 201 Created - A new entry has been created.
 // 204 No Content - Data not found.
 
+// 400 Bad Request
+pub const CD_BAD_REQUEST: &str = "BadRequest";
+// 400 Bad Request - The parameter value is not defined.
+pub const MSG_PARAMETER_NOT_DEFINED: &str = "parameter_not_defined";
+
 // 401 Unauthorized (profile_auth_controller, user_registr_controller)
 pub const CD_UNAUTHORIZED: &str = "Unauthorized";
 // 401 Unauthorized - Authorization token is missing. (authentication, profile_auth_controller, user_controller)
@@ -19,11 +24,19 @@ pub const MSG_PASSWORD_INCORRECT: &str = "password_incorrect";
 pub const CD_FORBIDDEN: &str = "Forbidden";
 // 403 Forbidden - Access denied - insufficient rights (authentication)
 pub const MSG_ACCESS_DENIED: &str = "access_denied";
+// 403 Forbidden - There is a block on sending messages
+pub const MSG_BLOCK_ON_SEND_MESSAGES: &str = "block_on_sending_messages";
+// 403 Forbidden - Stream owner rights are missing
+pub const MSG_STREAM_OWNER_RIGHTS_MISSING: &str = "stream_owner_rights_missing";
 
 // 404 Not Found (user_registr_controller)
 pub const CD_NOT_FOUND: &str = "NotFound";
 // 404 Not Found - Stream not found.
 pub const MSG_STREAM_NOT_FOUND: &str = "stream_not_found";
+// 404 Not Found - User not found.
+pub const MSG_USER_NOT_FOUND: &str = "user_not_found";
+// 404 Not Found - ChatMessage not found
+pub const MSG_CHAT_MESSAGE_NOT_FOUND: &str = "chat_message_not_found";
 
 // 406 Not Acceptable (profile_auth_controller)
 pub const CD_NOT_ACCEPTABLE: &str = "NotAcceptable";
@@ -33,6 +46,12 @@ pub const MSG_SESSION_NOT_FOUND: &str = "session_not_found";
 pub const MSG_PARAMS_NOT_SPECIFIED: &str = "params_not_specified";
 // 406 Not Acceptable - The parameter value is unacceptable.
 pub const MSG_PARAMETER_UNACCEPTABLE: &str = "parameter_value_unacceptable";
+// 406 Not Acceptable - There was no 'join' command.
+pub const MSG_THERE_WAS_NO_JOIN: &str = "was_no_join_command";
+// 406 Not Acceptable - User ID not specified
+pub const MSG_USER_ID_NOT_SPECIFIED: &str = "user_id_not_specified"; // TODO replace MSG_USER_NOT_FOUND
+                                                                     // 406 Not Acceptable - There was no 'name' command
+pub const MSG_THERE_WAS_NO_NAME: &str = "was_no_name_command";
 
 // 409 Conflict (profile_auth_controller, user_registr_controller)
 pub const CD_CONFLICT: &str = "Conflict";
@@ -42,6 +61,10 @@ pub const MSG_INVALID_HASH: &str = "invalid_hash";
 pub const MSG_EMAIL_ALREADY_USE: &str = "email_already_use";
 // 409 Conflict - The specified "nickname" is already registered.
 pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";
+// 409 Conflict - There was already a 'join' to the room
+pub const MSG_THERE_WAS_ALREADY_JOIN_TO_ROOM: &str = "was_already_join_to_room";
+// 409 Conflict - This stream is not active
+pub const MSG_STREAM_NOT_ACTIVE: &str = "stream_not_active";
 
 // 413 Content too large // The request object exceeds the limits defined by the server.
 pub const CD_CONTENT_TOO_LARGE: &str = "ContentTooLarge";
