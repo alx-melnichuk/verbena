@@ -240,10 +240,10 @@ impl ChatWsSession {
                 let new_name = event.get_string("name").unwrap_or("".to_owned());
                 // Check if this field is required
                 if let Err(err) = self.check_is_required_string(&new_name, "name") {
-                    ctx.text(to_string(&ErrEWS { err }).unwrap());
+                    return ctx.text(to_string(&ErrEWS { err }).unwrap());
                 }
                 let user_name = self.user_name.clone();
-                if new_name.len() > 0 && (user_name.len() == 0 || !user_name.eq(&new_name)) {
+                if new_name.len() > 0 && !user_name.eq(&new_name) {
                     self.user_name = new_name.clone();
                 }
                 let name = self.user_name.clone();
