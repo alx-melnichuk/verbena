@@ -293,10 +293,10 @@ pub mod tests {
         }
         pub fn stream_ids() -> Vec<i32> {
             vec![
-                1, // Owner user idx 0 (live: true)
-                2, // Owner user idx 1 (live: true)
-                3, // Owner user idx 2 (live: false)
-                4, // Owner user idx 3
+                1, // Owner user idx 0 (live: true)  1100 oliver_taylor
+                2, // Owner user idx 1 (live: true)  1101 robert_brown
+                3, // Owner user idx 2 (live: false) 1102 mary_williams
+                4, // Owner user idx 3  blocked      1103 ava_wilson
             ]
         }
         pub fn user_ids() -> Vec<i32> {
@@ -331,12 +331,14 @@ pub mod tests {
             let user_ids = Self::user_ids();
             let user_names = Self::user_names();
             let blocked_id = user_ids.last().unwrap().clone();
+            let blocked_idx = user_ids.iter().position(|v| *v == blocked_id).unwrap();
+            let blocked_name = user_names.get(blocked_idx).unwrap().clone();
             for (idx, user_id) in user_ids.iter().enumerate() {
                 if *user_id == blocked_id {
                     continue;
                 }
                 let id = BLOCKED_USER_ID + i32::try_from(idx).unwrap();
-                let blocked_nickname = user_names.get(idx).unwrap().clone();
+                let blocked_nickname = blocked_name.clone();
                 result.push(BlockedUser::new(id, *user_id, blocked_id, blocked_nickname, None));
             }
             result
