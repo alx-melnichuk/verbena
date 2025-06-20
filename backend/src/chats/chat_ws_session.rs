@@ -122,27 +122,10 @@ impl ChatWsSession {
     fn check_is_blocked(&self) -> Result<(), ErrEWS> {
         if self.is_blocked { Err(get_err403(err::MSG_BLOCK_ON_SEND_MESSAGES)) } else { Ok(()) }
     }
-    // Check if the member has a name or is anonymous
-    fn check_is_name(&self) -> Result<(), ErrEWS> {
-        if self.user_name.len() == 0 {
-            return Err(get_err406(err::MSG_THERE_WAS_NO_NAME));
-        }
-        if self.user_id <= i32::default() {
-            return Err(get_err404(err::MSG_USER_NOT_FOUND));
-        }
-        Ok(())
-    }
-    // Checking the possibility of blocking a user.
-    fn check_possibility_blocking(&self) -> Result<(), ErrEWS> {
-        // Check if the member has a name or is anonymous
-        self.check_is_name()?;
-        // Check if there is an joined room
-        self.check_is_joined_room()?;
-        // Check if the user is the owner of the stream.
-        if !self.is_owner {
-            return Err(get_err403(err::MSG_STREAM_OWNER_RIGHTS_MISSING));
-        }
-        Ok(())
+    // Check if the user is the owner of the stream.
+    #[rustfmt::skip]
+    fn check_is_owner_room(&self) -> Result<(), ErrEWS> {
+        if !self.is_owner { Err(get_err403(err::MSG_STREAM_OWNER_RIGHTS_MISSING)) } else { Ok(()) }
     }
 
     /** Handle socket text messages. */
@@ -259,8 +242,10 @@ impl ChatWsSession {
         let tag_name = if is_block { "block" } else { "unblock" };
         // Check if this field is required
         self.check_is_required_string(user_name, tag_name)?;
-        // Checking the possibility of blocking a user.
-        self.check_possibility_blocking()?;
+        // Check if there is an joined room
+        self.check_is_joined_room()?;
+        // Check if the user is the owner of the stream.
+        self.check_is_owner_room()?;
 
         let room_id = self.room_id;
         let user_id = self.user_id;
@@ -270,6 +255,7 @@ impl ChatWsSession {
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
+            let blocked_nickname = block_name.clone();
             // Perform blocking/unblocking of a user.
             let result = assistant.execute_block_user(is_block, user_id, None, Some(block_name)).await;
             if let Err(err) = result {
@@ -278,7 +264,8 @@ impl ChatWsSession {
             }
             let opt_blocked_user = result.unwrap();
             if opt_blocked_user.is_none() {
-                let message = format!("{}; user_id: {}", err::MSG_USER_NOT_FOUND, user_id);
+                #[rustfmt::skip]
+                let message = format!("{}; blocked_nickname: \"{}\"", err::MSG_USER_NOT_FOUND, &blocked_nickname);
                 #[rustfmt::skip]
                 return addr.do_send(AsyncResultError(404, err::CD_NOT_FOUND.to_owned(), message.to_string()));
             }
