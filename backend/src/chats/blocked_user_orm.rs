@@ -207,7 +207,6 @@ pub mod tests {
             let mut result: Option<BlockedUser> = None;
             if let Some(user_mini) = opt_user_mini {
                 let idx: i32 = self.blocked_user_vec.len().try_into().unwrap();
-
                 result = Some(BlockedUser::new(
                     BLOCKED_USER_ID + idx,
                     create_blocked_user.user_id,
