@@ -694,7 +694,7 @@ pub mod tests {
 
     use crate::chats::{
         blocked_user_models::BlockedUser,
-        blocked_user_orm::tests::BlockedUserOrmApp,
+        blocked_user_orm::tests::{BlockedUserOrmApp, UserMini},
         chat_message_models::{ChatMessage, ChatMessageLog},
         chat_message_orm::tests::{ChatMessageOrmApp, ChatMsgTest},
     };
@@ -846,11 +846,13 @@ pub mod tests {
         ),
     ) -> impl FnOnce(&mut web::ServiceConfig) {
         move |config: &mut web::ServiceConfig| {
+            #[rustfmt::skip]
+            let user_mini_vec: Vec<UserMini> = data_c.0.iter().map(|v| UserMini { id: v.user_id, name: v.nickname.clone() }).collect();
             let data_config_jwt = web::Data::new(cfg_c);
             let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
             let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
             let data_chat_message_orm = web::Data::new(ChatMessageOrmApp::create(&data_c.2, &data_c.3, &data_c.4));
-            let data_blocked_user_orm = web::Data::new(BlockedUserOrmApp::create(&data_c.4, &[]));
+            let data_blocked_user_orm = web::Data::new(BlockedUserOrmApp::create(&data_c.4, &user_mini_vec));
 
             config
                 .app_data(web::Data::clone(&data_config_jwt))
