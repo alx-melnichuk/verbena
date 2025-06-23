@@ -24,6 +24,7 @@ mod tests {
     // ** get_ws_chat **
 
     // ** ews_msg_rmv **
+
     #[actix_web::test]
     async fn test_get_ws_chat_ews_msg_rmv_err() {
         // Create a test server without listening on a port.
@@ -100,7 +101,6 @@ mod tests {
         let err404 = get_err404(&format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, ch_cmd_id, user_id1));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
     }
-
     #[actix_web::test]
     async fn test_get_ws_chat_ews_msg_rmv_ok() {
         // Create a test server without listening on a port.
@@ -170,7 +170,7 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(value)));
     }
 
-    // ** ews_block **
+    // ** ews_block, ews_unblock **
 
     #[actix_web::test]
     async fn test_get_ws_chat_ews_block_ews_unblock_err() {
@@ -210,11 +210,12 @@ mod tests {
 
         let (profile_vec, _session_vec) = get_profiles(4);
 
-        // -- Test: "stream_owner_rights_missing" --
         let user_id2 = profile_vec.get(1).unwrap().user_id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
         let token2 = get_token(config_jwt::get_test_config(), user_id2);
         let stream_id1 = ChatMsgTest::stream_ids().get(0).unwrap().clone();
+
+        // -- Test: "stream_owner_rights_missing" --
         // Join user4.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream_id1, token2).into());
@@ -232,13 +233,13 @@ mod tests {
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err403 = get_err403(err::MSG_STREAM_OWNER_RIGHTS_MISSING);
         assert_eq!(item, FrameText(Bytes::from(to_string(&err403).unwrap()))); // 403:Forbidden
-
+        // Unblock user3.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"unblock\": \"{}\" }}", member3.clone()).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err403 = get_err403(err::MSG_STREAM_OWNER_RIGHTS_MISSING);
-        assert_eq!(item, FrameText(Bytes::from(to_string(&err403).unwrap()))); // 403:Forbidden
+        assert_eq!(item, FrameText(Bytes::from(to_string(&err403).unwrap()))); // 403:Forbidden        
     }
     #[actix_web::test]
     async fn test_get_ws_chat_ews_block_ews_unblock_ok() {
@@ -265,7 +266,46 @@ mod tests {
         let value = to_string(&JoinEWS { 
             join: stream_id1, member: member1.clone(), count: 1, is_owner: Some(true), is_blocked: Some(false) }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
+        
+        // -- Test: 1. Unblocking user2 who has not blocked and is not in the chat.
+        let member2 = profile_vec.get(1).unwrap().nickname.clone();
+        #[rustfmt::skip]
+        let msg_text = MessageText(format!("{{ \"unblock\": \"{}\" }}", member2.clone()).into());
+        framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        // Message to user1.
+        let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
+        let err404 = get_err404(&format!("{}; blocked_nickname: \"{}\"", err::MSG_USER_NOT_FOUND, &member2));
+        assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
 
+        // -- Test: 2. Blocking user2 who has not blocked and is not in the chat.
+        #[rustfmt::skip]
+        let msg_text = MessageText(format!("{{ \"block\": \"{}\" }}", member2.clone()).into());
+        framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        // Message to user1.
+        let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        let value = to_string(&BlockEWS { block: member2.clone(), is_in_chat: false }).unwrap();
+        assert_eq!(item, FrameText(Bytes::from(value.clone())));
+
+        // -- Test: 3. Unblocking user4 who was blocked and is not in the chat.
+        let member4 = profile_vec.get(3).unwrap().nickname.clone();
+        #[rustfmt::skip]
+        let msg_text = MessageText(format!("{{ \"unblock\": \"{}\" }}", member4.clone()).into());
+        framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        // Message to user1.
+        let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
+        let value = to_string(&UnblockEWS { unblock: member4.clone(), is_in_chat: false }).unwrap();
+        assert_eq!(item, FrameText(Bytes::from(value.clone())));
+
+        // -- Test: 4. Blocking user4 who was blocked and is not in the chat.
+        #[rustfmt::skip]
+        let msg_text = MessageText(format!("{{ \"block\": \"{}\" }}", member4.clone()).into());
+        framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        // Message to user1.
+        let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        let value = to_string(&BlockEWS { block: member4.clone(), is_in_chat: false }).unwrap();
+        assert_eq!(item, FrameText(Bytes::from(value.clone())));
 
         // Open a websocket connection to the test server.
         let mut framed2 = srv.ws_at(URL_WS).await.unwrap();
@@ -273,6 +313,7 @@ mod tests {
         let user_id2 = profile_vec.get(1).unwrap().user_id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
         let token2 = get_token(config_jwt::get_test_config(), user_id2);
+
         // Join user2.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream_id1, token2).into());
@@ -282,7 +323,6 @@ mod tests {
         let value = to_string(&JoinEWS { 
             join: stream_id1, member: member2.clone(), count: 2, is_owner: Some(false), is_blocked: Some(false) }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
-
         // Message about join user2.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
@@ -290,7 +330,17 @@ mod tests {
             join: stream_id1, member: member2.clone(), count: 2, is_owner: None, is_blocked: None }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
 
-        // Blocking a user2.
+        // -- Test: 5. Unblocking user2 who has not blocked and is in the chat.
+        #[rustfmt::skip]
+        let msg_text = MessageText(format!("{{ \"unblock\": \"{}\" }}", member2.clone()).into());
+        framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        // Message to user1.
+        let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
+        let err404 = get_err404(&format!("{}; blocked_nickname: \"{}\"", err::MSG_USER_NOT_FOUND, &member2));
+        assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
+
+        // -- Test: 6. Blocking user2 who has not blocked and is in the chat.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"block\": \"{}\" }}", member2.clone()).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
@@ -301,18 +351,7 @@ mod tests {
         // Message to user2.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         assert_eq!(item, FrameText(Bytes::from(value)));
-        
-        // Blocking user2 again.
-        #[rustfmt::skip]
-        let msg_text = MessageText(format!("{{ \"block\": \"{}\" }}", member2.clone()).into());
-        framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
-        // Message to user1.
-        let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        let value = to_string(&BlockEWS { block: member2.clone(), is_in_chat: true }).unwrap();
-        assert_eq!(item, FrameText(Bytes::from(value.clone())));
-        // Message to user2.
-        let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        assert_eq!(item, FrameText(Bytes::from(value)));
+
 
         // Leave user2.
         #[rustfmt::skip]
@@ -342,8 +381,8 @@ mod tests {
         let value = to_string(&JoinEWS { 
             join: stream_id1, member: member4.clone(), count: 2, is_owner: None, is_blocked: None }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
-                
-        // Unblocking a user4.
+
+        // -- Test: 7. Unblocking user4 who was blocked and is in the chat. 
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"unblock\": \"{}\" }}", member4.clone()).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
@@ -351,31 +390,20 @@ mod tests {
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let value = to_string(&UnblockEWS { unblock: member4.clone(), is_in_chat: true }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value.clone())));
-        // Message to user2.
+        // Message to user4.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         assert_eq!(item, FrameText(Bytes::from(value)));
-        
-        // Unblocking user2 again.
+
+        // -- Test: 8. Blocking user4 who was blocked and is in the chat.
         #[rustfmt::skip]
-        let msg_text = MessageText(format!("{{ \"unblock\": \"{}\" }}", member4.clone()).into());
+        let msg_text = MessageText(format!("{{ \"block\": \"{}\" }}", member4.clone()).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         // Message to user1.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        let value = to_string(&UnblockEWS { unblock: member4.clone(), is_in_chat: true }).unwrap();
+        let value = to_string(&BlockEWS { block: member4.clone(), is_in_chat: true }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value.clone())));
-        // Message to user2.
+        // Message to user4.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        assert_eq!(item, FrameText(Bytes::from(value)));
-        
-        // Leave user4.
-        #[rustfmt::skip]
-        framed2.send(MessageText("{ \"leave\": 0 }".into())).await.unwrap(); // Send a message to a websocket.
-        let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        #[rustfmt::skip]
-        let value = to_string(&LeaveEWS { leave: stream_id1, member: member4.clone(), count: 1 }).unwrap();
-        assert_eq!(item, FrameText(Bytes::from(value.clone())));
-        // Message to user1 about user2 leaving.
-        let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         assert_eq!(item, FrameText(Bytes::from(value)));
     }
 }
