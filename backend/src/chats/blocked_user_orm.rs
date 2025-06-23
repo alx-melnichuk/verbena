@@ -127,7 +127,6 @@ pub mod impls {
 
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
-
     use chrono::Utc;
 
     use crate::chats::{
@@ -206,16 +205,31 @@ pub mod tests {
             }
             let mut result: Option<BlockedUser> = None;
             if let Some(user_mini) = opt_user_mini {
-                let idx: i32 = self.blocked_user_vec.len().try_into().unwrap();
-                result = Some(BlockedUser::new(
-                    BLOCKED_USER_ID + idx,
-                    create_blocked_user.user_id,
-                    user_mini.id,
-                    user_mini.name.clone(),
-                    Some(Utc::now()),
-                ));
-            }
+                let opt_blocked_user = self
+                    .blocked_user_vec
+                    .iter()
+                    .find(|v| {
+                        (*v).user_id == create_blocked_user.user_id
+                            && (*v).blocked_id == user_mini.id
+                            && (*v).blocked_nickname.eq(&user_mini.name)
+                    })
+                    .map(|v| v.clone());
 
+                if let Some(blocked_user) = opt_blocked_user {
+                    result = Some(blocked_user);
+                } else {
+                    let cnt = self.blocked_user_vec.len();
+                    let idx: i32 = cnt.try_into().unwrap();
+                    let blocked_user = BlockedUser::new(
+                        BLOCKED_USER_ID + idx,
+                        create_blocked_user.user_id,
+                        user_mini.id,
+                        user_mini.name.clone(),
+                        Some(Utc::now()),
+                    );
+                    result = Some(blocked_user);
+                }
+            }
             Ok(result)
         }
 
@@ -229,19 +243,25 @@ pub mod tests {
                 let buff: Vec<String> = validation_errors.into_iter().map(|v| v.message.to_string()).collect();
                 return Err(buff.join("','"));
             }
-            let bl_id = delete_blocked_user.blocked_id;
-            let bl_nickname = delete_blocked_user.blocked_nickname;
+            let mut opt_user_mini: Option<UserMini> = None;
+            if let Some(blocked_id) = delete_blocked_user.blocked_id {
+                opt_user_mini = self.find_user_by_id(blocked_id);
+            } else if let Some(blocked_nickname) = delete_blocked_user.blocked_nickname {
+                opt_user_mini = self.find_user_by_name(&blocked_nickname);
+            }
 
-            let result = self
-                .blocked_user_vec
-                .iter()
-                .find(|v| {
-                    v.user_id == delete_blocked_user.user_id
-                        && (v.blocked_id == bl_id.unwrap_or(v.blocked_id))
-                        && (v.blocked_nickname == bl_nickname.clone().unwrap_or(v.blocked_nickname.clone()))
-                })
-                .map(|v| v.clone());
-
+            let mut result: Option<BlockedUser> = None;
+            if let Some(user_mini) = opt_user_mini {
+                let opt_index = self.blocked_user_vec.iter().position(|v| {
+                    (*v).user_id == delete_blocked_user.user_id
+                        && (*v).blocked_id == user_mini.id
+                        && (*v).blocked_nickname.eq(&user_mini.name)
+                });
+                if let Some(index) = opt_index {
+                    let blocked_user = self.blocked_user_vec.get(index).unwrap().clone();
+                    result = Some(blocked_user);
+                }
+            }
             Ok(result)
         }
     }
