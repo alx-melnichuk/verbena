@@ -82,8 +82,10 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// *Client* :<img width=200/>*Server* :<br/>
 /// `{ "echo": "text echo" }`<img width=35/>`{ "echo": "text echo" }`<br/>
 ///
-/// *Client* :<img width=200/>*Server* :<br/>
-/// `{ "echo": "" }`<img width=110/>`{ "err": "'echo' parameter not defined" }`<br/>
+/// *Client* :<br/>
+/// `{ "echo": "" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "'echo' parameter_not_defined" }`<br/>
 ///
 /// - ## The "name" command.
 /// Set user nickname (not required for authorized).
@@ -91,8 +93,10 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// *Client* :<img width=200/>*Server* :<br/>
 /// `{ "name": "nickname" }`<img width=43/>`{ "name": "nickname" }`<br/>
 ///
-/// *Client* :<img width=200/>*Server* :<br/>
-/// `{ "name": "" }`<img width=110/>`{ "err": "'name' parameter not defined" }`<br/>
+/// *Client* :<br/>
+/// `{ "name": "" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "'name' parameter_not_defined" }`<br/>
 ///
 /// - ## The "join" command.
 /// Perform join the chat room with authentication.
@@ -124,37 +128,37 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// *Client* :<br/>
 /// `{ "join": 0, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
 /// *Server* :<br/>
-/// `{ "err": "'join' parameter not defined" }`<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "'join' parameter_not_defined" }`<br/>
 ///
 /// *Client* :<br/>
 /// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
 /// *Server* :<br/>
-/// `{ "err": "There was already a 'join' to the room." }`<br/>
+/// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
 ///
 /// *Client* :<br/>
 /// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
 /// *Server* :<br/>
-/// `{ "err": "This stream is not active." }`<br/>
+/// `{ "err": 409, "code": "Conflict", "message": "was_already_join_to_room" }`<br/>
 ///
 /// *Client* :<br/>
-/// `{ "join": 999994, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
+/// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
 /// *Server* :<br/>
-/// `{ "err": "Stream with the specified id not found." }`<br/>
+/// `{ "err": 409, "code": "Conflict", "message": "stream_not_active" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "join": 999999, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 404, "code": "NotFound", "message": "stream_not_found; stream_id: 999999" }`<br/>
 ///
 /// *Client* :<br/>
 /// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT...err" }`<br/>
 /// *Server* :<br/>
-/// `{ "err": "invalid_or_expired_token; Base64Url must contain: 'A-Z','a-z','0-9','-','_' and have a length that is a multiple of 4." }`<br/>
+/// `{ "err": 401, "code": "Unauthorized", "message": "invalid_or_expired_token; Base64Url must contain: 'A-Z','a-z','0-9','-','_' and have a length that is a multiple of 4." }`<br/>
 ///
 /// *Client* :<br/>
 /// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
 /// *Server* :<br/>
-/// `{ "err": "{\"code\":\"NotAcceptable\",\"message\":\"session_not_found; user_id: 1102\"}"}` 406<br/>
-///
-/// *Client* :<br/>
-/// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
-/// *Server* :<br/>
-/// `{ "err": "{\"code\":\"Unauthorized\",\"message\":\"unacceptable_token_num; user_id: 101\"}"}` 401<br/>
+/// `{ "err": 406, "code": "NotAcceptable", "message": "session_not_found" }`<br/>
 ///
 /// - ## The "join" command (without authentication).
 /// Perform join the chat room without authentication.
@@ -182,10 +186,15 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///   "is_blocked": boolean, // The user has been blocked. Always true.
 /// }
 /// ```
-/// *Client* :<img width=200/>*Server* :<br/>
-/// `{ "join": 0 }`<img width=118/>`{ "err": "'join' parameter not defined" }`<br/>
-/// *Client* :<img width=200/>*Server* :<br/>
-/// `{ "join": 3 }`<img width=118/>`{ "err": "This stream is not active." }`<br/>
+/// *Client* :<br/>
+/// `{ "join": 0 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "'join' parameter_not_defined" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "join": 3 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 409, "code": "Conflict", "message": "stream_not_active" }`<br/>
 ///
 /// - ## The "leave" command.
 /// Leave from the chat room. You can only be present in one room. Therefore, when leaving the room, the ID value can be set to 0.
@@ -208,8 +217,10 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///   "count": number,        // Number of connected users.
 /// }
 /// ```
-/// *Client* :<img width=200/>*Server* :<br/>
-/// `{ "leave": 0 }`<img width=111/>`{ "err": "There was no 'join' command." }`<br/>
+/// *Client* :<br/>
+/// `{ "leave": 0 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
 ///
 /// - ## The "count" command.
 /// Request for number of connected users.
@@ -230,8 +241,10 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///   "count": number,        // Number of connected users.
 /// }
 /// ```
-/// *Client* :<img width=200/>*Server* :<br/>
-/// `{ "count": 0 }`<img width=111/>`{ "err": "There was no 'join' command." }`<br/>
+/// *Client* :<br/>
+/// `{ "count": 0 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
 ///
 /// - ## The "msg" command.
 /// Send a message to the chat room. Available only to authorized users.
@@ -257,12 +270,20 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///   "isRmv": boolean,       // Message deletion indicator.
 /// }
 /// ```
-/// *Client* :<img width=200/>*Server* :<br/>
-/// `{ "msg": "" }`<img width=118/>`{ "err": "'msg' parameter not defined" }`<br/>
-/// *Client* :<img width=200/>*Server* :<br/>
-/// `{ "msg": "text1" }`<img width=76/>`{ "err": "There was no 'join' command." }`<br/>
-/// *Client* :<img width=200/>*Server* :<br/>
-/// `{ "msg": "text2" }`<img width=76/>`{ "err": "There is a block on sending messages." }`<br/>
+/// *Client* :<br/>
+/// `{ "msg": "" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "'msg' parameter_not_defined" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "msg": "text1" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "msg": "text2" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 403, "code": "Forbidden", "message": "block_on_sending_messages" }`<br/>
 ///
 /// - ## The "msgPut" command.
 /// Correcting a message in a chat room. Available only to authorized users.
@@ -289,19 +310,30 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///   "isRmv": boolean,       // Message deletion indicator.
 /// }
 /// ```
-/// *Client* :<img width=240/>*Server* :<br/>
-/// `{ "msgPut": "", "id": 1 }`<img width=56/>`{ "err": "'msgPut' parameter not defined" }`<br/>
-/// *Client* :<img width=240/>*Server* :<br/>
-/// `{ "msgPut": "text1", "id": 0 }`<img width=14/>`{ "err": "'id' parameter not defined" }`<br/>
-/// *Client* :<img width=240/>*Server* :<br/>
-/// `{ "msgPut": "text1", "id": 1 }`<img width=14/>`{ "err": "There was no 'join' command." }`<br/>
-/// *Client* :<img width=240/>*Server* :<br/>
-/// `{ "msgPut": "text2", "id": 1 }`<img width=14/>`{ "err": "There is a block on sending messages." }`<br/>
+/// *Client* :<br/>
+/// `{ "msgPut": "", "id": 1 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "'msgPut' parameter_not_defined" }`<br/>
 ///
 /// *Client* :<br/>
-/// `{ "msgPut": "text9", "id": 1 }`<br/>
+/// `{ "msgPut": "text1", "id": 0 }`<br/>
 /// *Server* :<br/>
-/// `{ "err": "{\"code\": \"NotFound\", \"message\": \"chat_message_not_found; id: 1, user_id: 1\" }" }`<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "'id' parameter_not_defined" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "msgPut": "text1", "id": 1 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "msgPut": "text2", "id": 1 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 403, "code": "Forbidden", "message": "block_on_sending_messages" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "msgPut": "text9", "id": 999999 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 404, "code": "NotFound", "message": "chat_message_not_found; id: 999999, user_id: 1" }`<br/>
 ///
 /// - ## The "msgCut" command.
 /// Deleting the text of a message to the chat room. Available only to authorized users.
@@ -311,7 +343,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///
 /// ```text
 /// {
-///   "msgCut": string,       // Indication of deletion of message text.
+///   "msgCut": string,       // The ID of the message whose content you want to remove.
 ///   "id": number,           // Message ID.
 /// }
 /// ```
@@ -328,13 +360,144 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 ///   "isRmv": boolean,       // Message deletion indicator.
 /// }
 /// ```
-/// *Client* :<img width=200/>*Server* :<br/>
-/// `{ "msgCut": "", "id": 0 }`<img width=16/>`{ "err": "'id' parameter not defined" }`<br/>
-/// *Client* :<img width=200/>*Server* :<br/>
-/// `{ "msgCut": "", "id": 1 }`<img width=16/>`{ "err": "There was no 'join' command." }`<br/>
-/// *Client* :<img width=200/>*Server* :<br/>
-/// `{ "msgCut": "", "id": 1 }`<img width=16/>`{ "err": "There is a block on sending messages." }`<br/>
+/// *Client* :<br/>
+/// `{ "msgCut": "", "id": 0 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "'id' parameter_not_defined" }`<br/>
 ///
+/// *Client* :<br/>
+/// `{ "msgCut": "", "id": 1 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "msgCut": "", "id": 1 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 403, "code": "Forbidden", "message": "block_on_sending_messages" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "msgCut": "", "id": 999999 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 404, "code": "NotFound", "message": "chat_message_not_found; id: 999999, user_id: 1" }`<br/>
+///
+/// - ## The "msgRmv" command.
+/// Deleting a message in a chat. Available only to authorized users.
+///
+/// *Client* :<br/>
+/// `{ "msgRmv": 1 }`<br/>
+///
+/// ```text
+/// {
+///   "msgRmv": number,       // The ID of the message to be deleted.
+/// }
+/// ```
+/// *Server* :<br/>
+/// `{"msgRmv":1}`<br/>
+///
+/// ```text
+/// {
+///   "msgRmv": number,       // The ID of the message to be deleted.
+/// }
+/// ```
+/// *Client* :<br/>
+/// `{ "msgRmv": 0 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "'msgRmv' parameter_not_defined" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "msgRmv": 1 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "msgRmv": 1 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 403, "code": "Forbidden", "message": "block_on_sending_messages" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "msgRmv": 999999 }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 404, "code": "NotFound", "message": "chat_message_not_found; id: 999999, user_id: 1" }`<br/>
+///
+/// - ## The "block" command.
+/// The stream owner can block a user. Available only to authorized users.
+///
+/// *Client* :<br/>
+/// `{ "block": "nickname" }`<br/>
+///
+/// ```text
+/// {
+///   "block": string,       // The nickname of the user to be blocked.
+/// }
+/// ```
+/// *Server* :<br/>
+/// `{ "block": "nickname", "is_in_chat": false }`<br/>
+///
+/// ```text
+/// {
+///   "block": string,       // The nickname of the user who was blocked.
+///   "is_in_chat": boolean, // Indication that the user is in a chat.
+/// }
+/// ```
+/// *Client* :<br/>
+/// `{ "block": "" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "'block' parameter_not_defined" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "block": "nickname" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "block": "nickname" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 403, "code": "Forbidden", "message": "stream_owner_rights_missing" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "block": "nickname" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 404, "code": "NotFound", "message": "user_not_found; blocked_nickname: 'nickname'" }`<br/>
+///
+/// - ## The "unblock" command.
+/// The stream owner can unblock a user. Available only to authorized users.
+///
+/// *Client* :<br/>
+/// `{ "unblock": "nickname" }`<br/>
+///
+/// ```text
+/// {
+///   "unblock": string,     // The nickname of the user to be unblocked.
+/// }
+/// ```
+/// *Server* :<br/>
+/// `{ "unblock": "nickname", "is_in_chat": false }`<br/>
+///
+/// ```text
+/// {
+///   "unblock": string,     // The nickname of the user who was unblocked.
+///   "is_in_chat": boolean, // Indication that the user is in a chat.
+/// }
+/// ```
+/// *Client* :<br/>
+/// `{ "unblock": "" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "'unblock' parameter_not_defined" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "unblock": "nickname" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "unblock": "nickname" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 403, "code": "Forbidden", "message": "stream_owner_rights_missing" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "unblock": "nickname" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 404, "code": "NotFound", "message": "user_not_found; blocked_nickname: 'nickname'" }`<br/>
 ///
 #[utoipa::path(
     responses(
