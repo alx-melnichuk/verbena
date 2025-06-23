@@ -275,7 +275,7 @@ mod tests {
         // Message to user1.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let err404 = get_err404(&format!("{}; blocked_nickname: \"{}\"", err::MSG_USER_NOT_FOUND, &member2));
+        let err404 = get_err404(&format!("{}; blocked_nickname: '{}'", err::MSG_USER_NOT_FOUND, &member2));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
 
         // -- Test: 2. Blocking user2 who has not blocked and is not in the chat.
@@ -337,7 +337,7 @@ mod tests {
         // Message to user1.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let err404 = get_err404(&format!("{}; blocked_nickname: \"{}\"", err::MSG_USER_NOT_FOUND, &member2));
+        let err404 = get_err404(&format!("{}; blocked_nickname: '{}'", err::MSG_USER_NOT_FOUND, &member2));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
 
         // -- Test: 6. Blocking user2 who has not blocked and is in the chat.

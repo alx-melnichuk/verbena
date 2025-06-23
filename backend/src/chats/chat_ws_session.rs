@@ -265,7 +265,7 @@ impl ChatWsSession {
             let opt_blocked_user = result.unwrap();
             if opt_blocked_user.is_none() {
                 #[rustfmt::skip]
-                let message = format!("{}; blocked_nickname: \"{}\"", err::MSG_USER_NOT_FOUND, &blocked_nickname);
+                let message = format!("{}; blocked_nickname: '{}'", err::MSG_USER_NOT_FOUND, &blocked_nickname);
                 #[rustfmt::skip]
                 return addr.do_send(AsyncResultError(404, err::CD_NOT_FOUND.to_owned(), message.to_string()));
             }
