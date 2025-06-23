@@ -129,7 +129,7 @@ BEGIN
     chat_messages.is_removed,
     chat_messages.created_at,
     chat_messages.updated_at
-    INTO rec1;
+  INTO rec1;
 
   SELECT u.nickname FROM users u WHERE u.id = _user_id INTO user_name;
 
@@ -311,10 +311,13 @@ CREATE UNIQUE INDEX uq_idx_blocked_users_blocked_id_user_id ON blocked_users(blo
 
 /* Create a stored function to add a new entry to "blocked_users". */
 CREATE OR REPLACE FUNCTION create_blocked_user(
+  IN _user_id INTEGER,
+  IN _blocked_id INTEGER,
+  IN _blocked_nickname VARCHAR,
   OUT id INTEGER,
-  INOUT user_id INTEGER,
-  INOUT blocked_id INTEGER,
-  INOUT blocked_nickname VARCHAR,
+  OUT user_id INTEGER,
+  OUT blocked_id INTEGER,
+  OUT blocked_nickname VARCHAR,
   OUT block_date TIMESTAMP WITH TIME ZONE
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
@@ -323,77 +326,95 @@ DECLARE
   bl_id INTEGER;
   bl_nickname VARCHAR;
 BEGIN
-  IF (user_id IS NULL) THEN
+  IF (_user_id IS NULL) THEN
     RETURN;
   END IF;
 
-  IF blocked_id IS NOT NULL THEN 
+  IF _blocked_id IS NOT NULL THEN 
     SELECT u.id, u.nickname
     FROM users u 
-    WHERE u.id = blocked_id
+    WHERE u.id = _blocked_id
     INTO bl_id, bl_nickname;
   ELSE
-    IF blocked_nickname IS NOT NULL THEN 
+    IF _blocked_nickname IS NOT NULL THEN 
       SELECT u.id, u.nickname 
       FROM users u 
-      WHERE u.nickname = blocked_nickname
+      WHERE u.nickname = _blocked_nickname
       INTO bl_id, bl_nickname;
     END IF;
   END IF;
 
-  IF (bl_id IS NULL OR bl_nickname IS NULL)  THEN
+  IF (bl_id IS NULL OR bl_nickname IS NULL) THEN
     RETURN;
   END IF;
 
-  -- Add a new entry to the "blocked_user" table.
-  INSERT INTO blocked_users(user_id, blocked_id)
-  VALUES (user_id, bl_id)
-  RETURNING
+  -- Check for the presence of such a record.
+  SELECT
     blocked_users.id,
     blocked_users.user_id,
     blocked_users.blocked_id,
-    bl_nickname as blocked_nickname,
     blocked_users.block_date
-    INTO rec1;
+  FROM blocked_users
+  WHERE blocked_users.user_id = _user_id AND blocked_users.blocked_id = bl_id
+  INTO rec1;
+
+  -- If there is no such entry, add it.
+  IF rec1.id IS NULL THEN
+    -- Add a new entry to the "blocked_user" table.
+    INSERT INTO blocked_users(user_id, blocked_id)
+    VALUES (_user_id, bl_id)
+    RETURNING
+      blocked_users.id,
+      blocked_users.user_id,
+      blocked_users.blocked_id,
+      blocked_users.block_date
+      INTO rec1;
+  END IF;
+
+  IF rec1.id IS NULL THEN
+    RETURN;
+  END IF;
 
   RETURN QUERY SELECT
     rec1.id,
     rec1.user_id,
     rec1.blocked_id,
-    rec1.blocked_nickname,
+    bl_nickname as blocked_nickname,
     rec1.block_date;
 END;
 $$;
 
 /* Create a stored function to delete the entity in "blocked_users". */
 CREATE OR REPLACE FUNCTION delete_blocked_user(
+  IN _user_id INTEGER,
+  IN _blocked_id INTEGER,
+  IN _blocked_nickname VARCHAR,
   OUT id INTEGER,
-  INOUT user_id INTEGER,
-  INOUT blocked_id INTEGER,
-  INOUT blocked_nickname VARCHAR,
+  OUT user_id INTEGER,
+  OUT blocked_id INTEGER,
+  OUT blocked_nickname VARCHAR,
   OUT block_date TIMESTAMP WITH TIME ZONE
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE
   rec1 RECORD;
-  user_id2 INTEGER = user_id;
   bl_id INTEGER;
   bl_nickname VARCHAR;
 BEGIN
-  IF (user_id IS NULL) THEN
+  IF (_user_id IS NULL) THEN
     RETURN;
   END IF;
 
-  IF blocked_id IS NOT NULL THEN 
+  IF _blocked_id IS NOT NULL THEN 
     SELECT u.id, u.nickname
     FROM users u 
-    WHERE u.id = blocked_id
+    WHERE u.id = _blocked_id
     INTO bl_id, bl_nickname;
   ELSE
-    IF blocked_nickname IS NOT NULL THEN 
+    IF _blocked_nickname IS NOT NULL THEN 
       SELECT u.id, u.nickname 
       FROM users u 
-      WHERE u.nickname = blocked_nickname
+      WHERE u.nickname = _blocked_nickname
       INTO bl_id, bl_nickname;
     END IF;
   END IF;
@@ -403,13 +424,12 @@ BEGIN
   END IF;
 
   DELETE FROM blocked_users
-  WHERE blocked_users.user_id = user_id2
+  WHERE blocked_users.user_id = _user_id
     AND blocked_users.blocked_id = bl_id
   RETURNING 
     blocked_users.id,
     blocked_users.user_id,
     blocked_users.blocked_id,
-    bl_nickname as blocked_nickname,
     blocked_users.block_date
   INTO rec1;
 
@@ -421,7 +441,7 @@ BEGIN
     rec1.id,
     rec1.user_id,
     rec1.blocked_id,
-    rec1.blocked_nickname,
+    bl_nickname as blocked_nickname,
     rec1.block_date;
 END;
 $$;
