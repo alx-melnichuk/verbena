@@ -48,9 +48,7 @@ pub const MSG_PARAMS_NOT_SPECIFIED: &str = "params_not_specified";
 pub const MSG_PARAMETER_UNACCEPTABLE: &str = "parameter_value_unacceptable";
 // 406 Not Acceptable - There was no 'join' command.
 pub const MSG_THERE_WAS_NO_JOIN: &str = "was_no_join_command";
-// 406 Not Acceptable - User ID not specified
-pub const MSG_USER_ID_NOT_SPECIFIED: &str = "user_id_not_specified"; // TODO replace MSG_USER_NOT_FOUND
-                                                                     // 406 Not Acceptable - There was no 'name' command
+// 406 Not Acceptable - There was no 'name' command
 pub const MSG_THERE_WAS_NO_NAME: &str = "was_no_name_command";
 
 // 409 Conflict (profile_auth_controller, user_registr_controller)
