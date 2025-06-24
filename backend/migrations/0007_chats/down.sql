@@ -13,8 +13,8 @@ DROP FUNCTION IF EXISTS get_stream_live;
 /* Remove stored function to get the entity from "blocked_users". */
 DROP FUNCTION IF EXISTS get_blocked_user;
 
-/* Remove stored function that will filter "blocked_user" entities by the specified parameters. */
-DROP FUNCTION IF EXISTS filter_blocked_users;
+/* Remove stored function that will get the list of "blocked_user" by the specified parameter. */
+DROP FUNCTION IF EXISTS get_blocked_users;
 
 /* Remove stored function to delete the entity in "blocked_users". */
 DROP FUNCTION IF EXISTS delete_blocked_user;

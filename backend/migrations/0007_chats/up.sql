@@ -446,11 +446,12 @@ BEGIN
 END;
 $$;
 
-/* Create a stored function that will filter "blocked_user" entities by the specified parameters. */
-CREATE OR REPLACE FUNCTION filter_blocked_users(
+/* Create a stored function that will get the list of "blocked_user" by the specified parameter. */
+CREATE OR REPLACE FUNCTION get_blocked_users(
+  IN _user_id INTEGER,
   OUT id INTEGER,
-  INOUT user_id INTEGER,
-  INOUT blocked_id INTEGER,
+  OUT user_id INTEGER,
+  OUT blocked_id INTEGER,
   OUT blocked_nickname VARCHAR,
   OUT block_date TIMESTAMP WITH TIME ZONE
 ) RETURNS SETOF record LANGUAGE plpgsql
@@ -460,56 +461,24 @@ DECLARE
   bl_id INTEGER;
   bl_nickname VARCHAR;
 BEGIN
-  IF (user_id IS NULL) THEN
+  IF (_user_id IS NULL) THEN
     RETURN;
   END IF;
 
-  IF (blocked_id IS NULL) THEN
-    RETURN QUERY
-      SELECT
-        bu.id,
-        bu.user_id,
-        bu.blocked_id,
-        u.nickname AS blocked_nickname,
-        bu.block_date
-      FROM
-        blocked_users bu, users u
-      WHERE
-        bu.user_id = user_id
-        AND bu.user_id = u.id
-      ORDER BY
-        u.nickname ASC;
-  ELSE
-
-    IF blocked_id IS NOT NULL THEN 
-      SELECT u.id, u.nickname
-      FROM users u 
-      WHERE u.id = blocked_id
-      INTO bl_id, bl_nickname;
-    ELSE
-      SELECT u.id, u.nickname 
-      FROM users u 
-      WHERE u.nickname = blocked_nickname
-      INTO bl_id, bl_nickname;
-    END IF;
-
-    IF (bl_id IS NULL OR bl_nickname IS NULL)  THEN
-      RETURN;
-    END IF;
-
-    RETURN QUERY
-      SELECT
-        bu.id,
-        bu.user_id,
-        bu.blocked_id,
-        bl_nickname AS blocked_nickname,
-        bu.block_date
-      FROM
-        blocked_users bu
-      WHERE
-        bu.user_id = user_id
-        AND bu.blocked_id = bl_id;
-  END IF;
+  RETURN QUERY
+    SELECT
+      bu.id,
+      bu.user_id,
+      bu.blocked_id,
+      u.nickname AS blocked_nickname,
+      bu.block_date
+    FROM
+      blocked_users bu, users u
+    WHERE
+      bu.user_id = _user_id
+      AND bu.user_id = u.id
+    ORDER BY
+      u.nickname ASC;
 END;
 $$;
 
