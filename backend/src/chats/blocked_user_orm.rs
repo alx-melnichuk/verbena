@@ -1,6 +1,8 @@
 use crate::chats::blocked_user_models::{BlockedUser, CreateBlockedUser, DeleteBlockedUser};
 
 pub trait BlockedUserOrm {
+    /// Get a list of blocked users.
+    fn get_blocked_user(&self, user_id: i32) -> Result<Vec<BlockedUser>, String>;
     /// Add a new entry (blocked_user).
     fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUser>, String>;
     /// Delete an entity (blocked_user).
@@ -56,6 +58,27 @@ pub mod impls {
     }
 
     impl BlockedUserOrm for BlockedUserOrmApp {
+        /// Get a list of blocked users.
+        fn get_blocked_user(&self, user_id: i32) -> Result<Vec<BlockedUser>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let query =
+                diesel::sql_query("select * from get_blocked_users($1);").bind::<sql_types::Integer, _>(user_id); // $1
+
+            // Run a query with Diesel to create a new user and return it.
+            let blocked_user_list: Vec<BlockedUser> = query
+                .load(&mut conn)
+                .map_err(|e| format!("get_blocked_users: {}", e.to_string()))?;
+
+            if let Some(timer) = timer {
+                info!("get_blocked_users() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
+            Ok(blocked_user_list)
+        }
+
         /// Add a new entry (blocked_user).
         fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUser>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -189,6 +212,14 @@ pub mod tests {
     }
 
     impl BlockedUserOrm for BlockedUserOrmApp {
+        /// Get a list of blocked users.
+        fn get_blocked_user(&self, user_id: i32) -> Result<Vec<BlockedUser>, String> {
+            let mut vec = (*self.blocked_user_vec).borrow_mut();
+
+            let blocked_user_list = vec.iter().find(|v| (*v).user_id == user_id).map(|v| v.clone());
+
+            Ok(blocked_user_list)
+        }
         /// Add a new entry (blocked_user).
         fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUser>, String> {
             if create_blocked_user.blocked_id.is_none() && create_blocked_user.blocked_nickname.is_none() {
