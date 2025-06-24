@@ -85,7 +85,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// *Client* :<br/>
 /// `{ "echo": "" }`<br/>
 /// *Server* :<br/>
-/// `{ "err": 400, "code": "BadRequest", "message": "'echo' parameter_not_defined" }`<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'echo'" }`<br/>
 ///
 /// - ## The "name" command.
 /// Set user nickname (not required for authorized).
@@ -96,7 +96,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// *Client* :<br/>
 /// `{ "name": "" }`<br/>
 /// *Server* :<br/>
-/// `{ "err": 400, "code": "BadRequest", "message": "'name' parameter_not_defined" }`<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'name'" }`<br/>
 ///
 /// - ## The "join" command.
 /// Perform join the chat room with authentication.
@@ -128,12 +128,12 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// *Client* :<br/>
 /// `{ "join": 0, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
 /// *Server* :<br/>
-/// `{ "err": 400, "code": "BadRequest", "message": "'join' parameter_not_defined" }`<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'join'" }`<br/>
 ///
 /// *Client* :<br/>
 /// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
 /// *Server* :<br/>
-/// `{ "err": 406, "code": "NotAcceptable", "message": "was_no_join_command" }`<br/>
+/// `{ "err": 406, "code": "NotAcceptable", "message": "session_not_found; user_id: 1" }`<br/>
 ///
 /// *Client* :<br/>
 /// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
@@ -156,9 +156,14 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// `{ "err": 401, "code": "Unauthorized", "message": "invalid_or_expired_token; Base64Url must contain: 'A-Z','a-z','0-9','-','_' and have a length that is a multiple of 4." }`<br/>
 ///
 /// *Client* :<br/>
-/// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT..." }`<br/>
+/// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT...err" }`<br/>
 /// *Server* :<br/>
-/// `{ "err": 406, "code": "NotAcceptable", "message": "session_not_found" }`<br/>
+/// `{ "err": 401, "code": "Unauthorized", "message": "unacceptable_token_num; user_id: 1" }`<br/>
+///
+/// *Client* :<br/>
+/// `{ "join": 4, "access":"BP3Y6aQTyguP2Q0Jzm9rQ1wdyZpODpz2H3QwCKT...err" }`<br/>
+/// *Server* :<br/>
+/// `{ "err": 401, "code": "Unauthorized", "message": "unacceptable_token_id; user_id: 1" }`<br/>
 ///
 /// - ## The "join" command (without authentication).
 /// Perform join the chat room without authentication.
@@ -189,7 +194,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// *Client* :<br/>
 /// `{ "join": 0 }`<br/>
 /// *Server* :<br/>
-/// `{ "err": 400, "code": "BadRequest", "message": "'join' parameter_not_defined" }`<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'join'" }`<br/>
 ///
 /// *Client* :<br/>
 /// `{ "join": 3 }`<br/>
@@ -258,7 +263,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// }
 /// ```
 /// *Server* :<br/>
-/// `{"msg":"message 1","id":1,"member":"ethan_brown","date":"2020-03-11T09:00:00.000Z","isEdt":false,"isRmv":false}`<br/>
+/// `{ "msg": "message 1", "id":1, "member": "ethan_brown", "date": "2020-03-11T09:00:00.000Z", "isEdt": false, "isRmv": false }`<br/>
 ///
 /// ```text
 /// {
@@ -273,7 +278,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// *Client* :<br/>
 /// `{ "msg": "" }`<br/>
 /// *Server* :<br/>
-/// `{ "err": 400, "code": "BadRequest", "message": "'msg' parameter_not_defined" }`<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'msg'" }`<br/>
 ///
 /// *Client* :<br/>
 /// `{ "msg": "text1" }`<br/>
@@ -298,7 +303,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// }
 /// ```
 /// *Server* :<br/>
-/// `{"msg":"message 2","id":1,"member":"oliver_taylor","date":"2020-03-11T09:10:00.000Z","isEdt":true,"isRmv":false}`<br/>
+/// `{ "msg": "message 2", "id": 1, "member": "oliver_taylor", "date": "2020-03-11T09:10:00.000Z", "isEdt": true, "isRmv": false }`<br/>
 ///
 /// ```text
 /// {
@@ -313,12 +318,12 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// *Client* :<br/>
 /// `{ "msgPut": "", "id": 1 }`<br/>
 /// *Server* :<br/>
-/// `{ "err": 400, "code": "BadRequest", "message": "'msgPut' parameter_not_defined" }`<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'msgPut'" }`<br/>
 ///
 /// *Client* :<br/>
 /// `{ "msgPut": "text1", "id": 0 }`<br/>
 /// *Server* :<br/>
-/// `{ "err": 400, "code": "BadRequest", "message": "'id' parameter_not_defined" }`<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'id'" }`<br/>
 ///
 /// *Client* :<br/>
 /// `{ "msgPut": "text1", "id": 1 }`<br/>
@@ -348,7 +353,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// }
 /// ```
 /// *Server* :<br/>
-/// `{"msg":"","id":1,"member":"oliver_taylor","date":"2020-03-11T09:20:00.000Z","isEdt":false,"isRmv":true}`<br/>
+/// `{ "msg": "", "id": 1, "member": "oliver_taylor", "date": "2020-03-11T09:20:00.000Z", "isEdt": false, "isRmv": true }`<br/>
 ///
 /// ```text
 /// {
@@ -363,7 +368,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// *Client* :<br/>
 /// `{ "msgCut": "", "id": 0 }`<br/>
 /// *Server* :<br/>
-/// `{ "err": 400, "code": "BadRequest", "message": "'id' parameter_not_defined" }`<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'id'" }`<br/>
 ///
 /// *Client* :<br/>
 /// `{ "msgCut": "", "id": 1 }`<br/>
@@ -392,7 +397,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// }
 /// ```
 /// *Server* :<br/>
-/// `{"msgRmv":1}`<br/>
+/// `{ "msgRmv": 1 }`<br/>
 ///
 /// ```text
 /// {
@@ -402,7 +407,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// *Client* :<br/>
 /// `{ "msgRmv": 0 }`<br/>
 /// *Server* :<br/>
-/// `{ "err": 400, "code": "BadRequest", "message": "'msgRmv' parameter_not_defined" }`<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'msgRmv'" }`<br/>
 ///
 /// *Client* :<br/>
 /// `{ "msgRmv": 1 }`<br/>
@@ -442,7 +447,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// *Client* :<br/>
 /// `{ "block": "" }`<br/>
 /// *Server* :<br/>
-/// `{ "err": 400, "code": "BadRequest", "message": "'block' parameter_not_defined" }`<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'block'" }`<br/>
 ///
 /// *Client* :<br/>
 /// `{ "block": "nickname" }`<br/>
@@ -482,7 +487,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 /// *Client* :<br/>
 /// `{ "unblock": "" }`<br/>
 /// *Server* :<br/>
-/// `{ "err": 400, "code": "BadRequest", "message": "'unblock' parameter_not_defined" }`<br/>
+/// `{ "err": 400, "code": "BadRequest", "message": "parameter_not_defined; name: 'unblock" } } }`<br/>
 ///
 /// *Client* :<br/>
 /// `{ "unblock": "nickname" }`<br/>
