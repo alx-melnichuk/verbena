@@ -127,6 +127,8 @@ pub mod impls {
 
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
+    use std::cell::RefCell;
+
     use chrono::Utc;
 
     use crate::chats::{
@@ -145,7 +147,7 @@ pub mod tests {
 
     #[derive(Debug, Clone)]
     pub struct BlockedUserOrmApp {
-        pub blocked_user_vec: Vec<BlockedUser>,
+        pub blocked_user_vec: Box<RefCell<Vec<BlockedUser>>>,
         pub user_vec: Vec<UserMini>,
     }
 
@@ -153,7 +155,7 @@ pub mod tests {
         /// Create a new instance.
         pub fn new() -> Self {
             BlockedUserOrmApp {
-                blocked_user_vec: Vec::new(),
+                blocked_user_vec: Box::new(RefCell::new(Vec::new())),
                 user_vec: Vec::new(),
             }
         }
@@ -174,7 +176,7 @@ pub mod tests {
                 blocked_user_vec.push(new_blocked_user);
             }
             BlockedUserOrmApp {
-                blocked_user_vec,
+                blocked_user_vec: Box::new(RefCell::new(blocked_user_vec)),
                 user_vec,
             }
         }
@@ -204,9 +206,10 @@ pub mod tests {
                 opt_user_mini = self.find_user_by_name(&blocked_nickname);
             }
             let mut result: Option<BlockedUser> = None;
+            let mut vec = (*self.blocked_user_vec).borrow_mut();
+            // eprintln!("   @ create_blocked_user()           len: {}", vec.len()); // len: 3
             if let Some(user_mini) = opt_user_mini {
-                let opt_blocked_user = self
-                    .blocked_user_vec
+                let opt_blocked_user = vec
                     .iter()
                     .find(|v| {
                         (*v).user_id == create_blocked_user.user_id
@@ -218,7 +221,7 @@ pub mod tests {
                 if let Some(blocked_user) = opt_blocked_user {
                     result = Some(blocked_user);
                 } else {
-                    let cnt = self.blocked_user_vec.len();
+                    let cnt = vec.len();
                     let idx: i32 = cnt.try_into().unwrap();
                     let blocked_user = BlockedUser::new(
                         BLOCKED_USER_ID + idx,
@@ -227,7 +230,9 @@ pub mod tests {
                         user_mini.name.clone(),
                         Some(Utc::now()),
                     );
+                    vec.push(blocked_user.clone());
                     result = Some(blocked_user);
+                    // eprintln!("   @ create_blocked_user() .push()   len: {}", vec.len()); // len: 4
                 }
             }
             Ok(result)
@@ -251,15 +256,18 @@ pub mod tests {
             }
 
             let mut result: Option<BlockedUser> = None;
+            let mut vec = (*self.blocked_user_vec).borrow_mut();
+            // eprintln!("   @ delete_blocked_user()           len: {}", vec.len()); // len: 3
             if let Some(user_mini) = opt_user_mini {
-                let opt_index = self.blocked_user_vec.iter().position(|v| {
+                let opt_index = vec.iter().position(|v| {
                     (*v).user_id == delete_blocked_user.user_id
                         && (*v).blocked_id == user_mini.id
                         && (*v).blocked_nickname.eq(&user_mini.name)
                 });
                 if let Some(index) = opt_index {
-                    let blocked_user = self.blocked_user_vec.get(index).unwrap().clone();
+                    let blocked_user = vec.remove(index);
                     result = Some(blocked_user);
+                    // eprintln!("   @ delete_blocked_user() .remove() len: {}", vec.len()); // len: 2
                 }
             }
             Ok(result)
