@@ -212,15 +212,13 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             return;
         }
         if (eventWS.et == EWSType.Err) {
-            const err = eventWS.getStr('err') || '';
-            console.error(`Socket-err:`, err);
-            if (!!err) {
-                const errStr = (err[0] == '{' && err[-1] == '}') ? HttpErrorUtil.getMsg(JSON.parse(err), ``)[0] : err;
-                this.alertService.showError(errStr, 'pg-concept-view.error_socket');
-            }
+            console.error(`Socket-err:`, val);
+            const errHttp = new HttpErrorResponse({ error: { code: eventWS.getStr('code'), message: eventWS.getStr('message') } });
+            const errMsg = HttpErrorUtil.getMsgs(errHttp)[0];
+            this.alertService.showError(errMsg, 'pg-concept-view.error_socket');
         } else if (eventWS.et == EWSType.Echo) {
-            const err = eventWS.getStr('echo') || '';
-            console.log(`Socket-echo:`, err);
+            const echo = eventWS.getStr('echo') || '';
+            console.log(`Socket-echo:`, echo);
         } else if (eventWS.et == EWSType.Msg) {
             this.loadDataFromSocket(val);
         } else if (eventWS.et == EWSType.Block || eventWS.et == EWSType.Unblock) {
