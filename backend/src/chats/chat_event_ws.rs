@@ -1,5 +1,4 @@
-use std::slice::Iter;
-use std::{collections::HashMap, fmt};
+use std::{collections::HashMap, fmt, slice::Iter};
 
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -178,6 +177,19 @@ pub struct ErrEWS {
     pub err: u16,
     pub code: String,
     pub message: String,
+}
+
+impl fmt::Display for ErrEWS {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", serde_json::to_string(&self).unwrap())
+    }
+}
+
+impl ErrEWS {
+    #[rustfmt::skip]
+    pub fn new(err: u16, code: String, message: String) -> Self {
+        ErrEWS { err, code, message }
+    }
 }
 
 // ** Join the client to the chat room. **
