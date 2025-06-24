@@ -2,9 +2,8 @@ use log::{debug, log_enabled, Level::Debug};
 
 use actix::prelude::*;
 use actix_broker::BrokerIssue;
-// use actix_web::web;
 use actix_web_actors::ws;
-use chrono::{SecondsFormat /*Utc*/};
+use chrono::SecondsFormat;
 use serde_json::to_string;
 
 use crate::chats::{
@@ -106,11 +105,12 @@ impl ChatWsSession {
     // Check if this field is required
     #[rustfmt::skip]
     fn check_is_required_string(&self, value: &str, name: &str) -> Result<(), ErrEWS> {
-        if value.len() == 0 { Err(get_err400(&format!("'{}' {}", name, err::MSG_PARAMETER_NOT_DEFINED))) } else { Ok(()) }
+        if value.len() == 0 { Err(get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, name))) } else { Ok(()) }
     }
     #[rustfmt::skip]
     fn check_is_required_i32(&self, value: i32, name: &str) -> Result<(), ErrEWS> {
-        if value <= i32::default() { Err(get_err400(&format!("'{}' {}", name, err::MSG_PARAMETER_NOT_DEFINED))) } else { Ok(()) }
+        let val = i32::default();
+        if value <= val { Err(get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, name))) } else { Ok(()) }
     }
     // Check if there is an joined room
     #[rustfmt::skip]
