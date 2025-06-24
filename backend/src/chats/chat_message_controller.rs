@@ -648,8 +648,8 @@ pub async fn get_chat_message(
     let filter_chat_message = FilterChatMessage::convert(query_params.into_inner());
     
     let res_data = web::block(move || {
-    // Find for an entity (stream event) by SearchStreamEvent.
-    let res_data =
+        // Find for an entity (stream event) by SearchStreamEvent.
+        let res_data =
         chat_message_orm.filter_chat_messages(filter_chat_message)
         .map_err(|e| {
             error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
@@ -767,20 +767,20 @@ pub async fn put_chat_message(
 
     let chat_message_orm2 = chat_message_orm.get_ref().clone();
     let res_chat_message = web::block(move || {
-            // Add a new entity (stream).
-            let res_chat_message1 = chat_message_orm2
-                .modify_chat_message(id, opt_user_id, modify_chat_message)
-                .map_err(|e| {
-                    error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                    AppError::database507(&e)
-                });
-            res_chat_message1
-        })
-        .await
-        .map_err(|e| {
-            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-            AppError::blocking506(&e.to_string())
-        })?;
+        // Add a new entity (stream).
+        let res_chat_message1 = chat_message_orm2
+            .modify_chat_message(id, opt_user_id, modify_chat_message)
+            .map_err(|e| {
+                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            });
+        res_chat_message1
+    })
+    .await
+    .map_err(|e| {
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
     
     let opt_chat_message_dto = res_chat_message?.map(|v| ChatMessageDto::from(v));
     
@@ -822,20 +822,20 @@ pub async fn delete_chat_message(
     
     let chat_message_orm2 = chat_message_orm.get_ref().clone();
     let res_chat_message = web::block(move || {
-            // Add a new entity (stream).
-            let res_chat_message1 = chat_message_orm2
-                .delete_chat_message(id, opt_user_id)
-                .map_err(|e| {
-                    error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                    AppError::database507(&e)
-                });
-            res_chat_message1
-        })
-        .await
-        .map_err(|e| {
-            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-            AppError::blocking506(&e.to_string())
-        })?;
+        // Add a new entity (stream).
+        let res_chat_message1 = chat_message_orm2
+            .delete_chat_message(id, opt_user_id)
+            .map_err(|e| {
+                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            });
+        res_chat_message1
+    })
+    .await
+    .map_err(|e| {
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
 
     let opt_chat_message_dto = res_chat_message?.map(|v| ChatMessageDto::from(v));
 
