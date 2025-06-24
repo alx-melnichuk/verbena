@@ -48,9 +48,9 @@
     "dark-orange-magenta": "dunkles orange",
     "dark-magenta-cyan": "dunkles magenta"
   },
-  "Forbidden": {
-    "status": 403,
-    "access_denied" : "Der Zugriff wird verweigert."
+  "BadRequest": {
+    "status": 400,
+    "parameter_not_defined": "Parameter ist nicht definiert."
   },
   "Unauthorized": {
     "status": 401,
@@ -61,19 +61,26 @@
     "nickname_or_email_incorrect" : "Der spitzname oder die e-mail adresse ist falsch.",
     "password_incorrect" : "Das angegebene passwort ist falsch."
   },
+  "Forbidden": {
+    "status": 403,
+    "access_denied" : "Der Zugriff wird verweigert.",
+    "block_on_sending_messages": "Dem benutzer wurde das senden von nachrichten untersagt.",
+    "stream_owner_rights_missing": "Der benutzer verfügt nicht über die rechte eines stream-eigentümers."
+  },
   "NotFound": {
     "status": 404,
     "registration_not_found" : "Es wurde kein datensatz zur registrierung eines neuen benutzers gefunden.",
     "user_not_found" : "Benutzer nicht gefunden.",
     "recovery_not_found" : "Es wurde kein datensatz zum wiederherstellen des benutzerkennworts gefunden.",
-    "chat_message_not_found": "Die nachricht des aktuellen benutzers wurde nicht gefunden.",
-    "stream_not_found": "Der angegebene stream wurde nicht gefunden."
+    "stream_not_found": "Der angegebene stream wurde nicht gefunden.",
+    "chat_message_not_found": "Die nachricht des aktuellen benutzers wurde nicht gefunden."
   },
   "NotAcceptable": {
     "status": 406,
     "finish_date_less_start_date" : "Das enddatum \"{{ invalidPeriod.streamPeriodFinish }}\" ist später als das startdatum \"{{ invalidPeriod.streamPeriodStart }}\".",
     "invalid_field_tag" : "Fehler beim deserialisieren des felds \"tag\".",
-    "session_not_exist" : "Für diesen benutzer gibt es keine sitzung.",
+    "session_not_found": "Für diesen benutzer wurde keine sitzung gefunden.",
+    "was_no_join_command": "Der benutzer ist dem raum noch nicht beigetreten.",
     "params_not_specified": "Parameter nicht angegeben",
     "invalid_stream_state": "Ungültiger Stream-Statusübergang von \"{{ invalidState.oldState }}\" nach \"{{ invalidState.newState }}\"."
   },
@@ -81,7 +88,9 @@
     "status": 409,
     "invalid_hash" : "Ungültiger passwort hashwert.",
     "email_already_use" : "Diese e-mail wird bereits verwendet oder registriert.",
-    "nickname_already_use" : "Dieser spitzname wird bereits verwendet oder wird registriert."
+    "nickname_already_use" : "Dieser spitzname wird bereits verwendet oder wird registriert.",
+    "was_already_join_to_room": "Der benutzer ist dem raum bereits beigetreten.",
+    "stream_not_active": "Der angegebene stream ist nicht aktiv."
   },
   "ContentTooLarge": {
     "status": 413,

@@ -48,9 +48,9 @@
     "dark-orange-magenta": "dark orange",
     "dark-magenta-cyan": "dark magenta"
   },
-  "Forbidden": {
-    "status": 403,
-    "access_denied" : "Access is denied."
+  "BadRequest": {
+    "status": 400,
+    "parameter_not_defined": "Parameter is not defined."
   },
   "Unauthorized": {
     "status": 401,
@@ -61,19 +61,26 @@
     "nickname_or_email_incorrect" : "The nickname or email address is incorrect.",
     "password_incorrect" : "The password specified is incorrect."
   },
+  "Forbidden": {
+    "status": 403,
+    "access_denied" : "Access is denied.",
+    "block_on_sending_messages": "The user has been blocked from sending messages.",
+    "stream_owner_rights_missing": "The user does not have stream owner rights."
+  },  
   "NotFound": {
     "status": 404,
     "registration_not_found" : "An record for registering a new user was not found.",
     "user_not_found" : "User not found.",
     "recovery_not_found" : "An record to recover the user's password was not found.",
-    "chat_message_not_found": "Current user's message not found.",
-    "stream_not_found": "The specified stream was not found."
+    "stream_not_found": "The specified stream was not found.",
+    "chat_message_not_found": "Current user's message not found."
   },
   "NotAcceptable": {
     "status": 406,
     "finish_date_less_start_date" : "The finish date \"{{ invalidPeriod.streamPeriodFinish }}\" is less than the start date \"{{ invalidPeriod.streamPeriodStart }}\".",
     "invalid_field_tag" : "Error deserializing field \"tag\".",
-    "session_not_exist" : "There is no session for this user.",
+    "session_not_found": "Session not found for this user.",
+    "was_no_join_command": "The user has not joined the room yet.",
     "params_not_specified": "Parameters not specified",
     "invalid_stream_state": "Invalid stream state transition from \"{{ invalidState.oldState }}\" to \"{{ invalidState.newState }}\"."
   },
@@ -81,7 +88,9 @@
     "status": 409,
     "invalid_hash" : "Invalid password hash value.",
     "email_already_use" : "This email is already in use or is being registered.",
-    "nickname_already_use" : "This nickname is already in use or is being registered."
+    "nickname_already_use" : "This nickname is already in use or is being registered.",
+    "was_already_join_to_room": "The user has already joined the room.",
+    "stream_not_active": "The specified stream is not active."
   },
   "ContentTooLarge": {
     "status": 413,
