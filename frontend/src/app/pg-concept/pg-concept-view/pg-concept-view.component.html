@@ -3,6 +3,7 @@
 
   [chatBlockedUsers]="chatBlockedUsers"
   [chatMsgs]="chatMsgs"
+  [chatRmvMsgs]="chatRmvMsgs"
   [chatIsBlocked]="chatSocketService.isBlocked()"
   [chatIsEditable]="isStreamActive && chatSocketService.isJoined()"
   [chatIsLoadData]="chatIsLoadData"
@@ -23,6 +24,7 @@
   (unblockUser)="doUnblockUser($event)"
   (sendMessage)="doSendMessage($event)"
   (editMessage)="doEditMessage($event)"
-  (removeMessage)="doRemoveMessage($event)"
+  (cutMessage)="doCutMessage($event)"
+  (rmvMessage)="doRmvMessage($event)"
   (queryChatMsgs)="doQueryChatMsgs($event)">
 </app-concept-view>

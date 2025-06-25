@@ -36,6 +36,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     public chatBlockedUsers: string[] = []; // List of new blocked users.
     public chatMsgs: ChatMessageDto[] = []; // List of new messages.
+    public chatRmvMsgs: number[] = []; // List of permanently deleted messages.
     public chatIsBlocked: boolean | null = null; // Indication that the user is blocked.
     public chatIsEditable: boolean | null = null; // Indicates that the user can send messages to the chat.
     public chatIsLoadData: boolean | null = null; // Indicates that data is being loaded.
@@ -71,9 +72,17 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.profileDto = this.route.snapshot.data['profileDto'];
         this.profileTokensDto = this.route.snapshot.data['profileTokensDto'];
         this.streamDto = this.route.snapshot.data['streamDto'];
-        const chatMsgList = this.route.snapshot.data['chatMsgList'];
-        this.chatMsgs = chatMsgList.concat([]);
-        console.log(`PgConceptView() 1 chatMsgs:`, this.chatMsgs); // #
+        this.chatMsgs = this.route.snapshot.data['chatMsgList'];
+        const blockedUsers = this.route.snapshot.data['blockedUsers'];
+
+        for (let idx = 0; idx < blockedUsers.length; idx++) {
+            if (!!blockedUsers[idx].blockedNickname) {
+                this.chatBlockedUsers.push(blockedUsers[idx].blockedNickname);
+            }
+        }
+        console.log(`PgConceptView() 1 this.chatBlockedUsers:`, this.chatBlockedUsers); // #
+
+        console.log(`PgConceptView() 2 chatMsgs:`, this.chatMsgs); // #
         this.isStreamActive = !!this.streamDto?.live;
         console.log(`PgConceptView() this.isStreamActive: ${this.isStreamActive}`); // #
 
@@ -96,6 +105,10 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             console.log(`PgConceptView.openSocket() socketSrv.connect()`); // #
             this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
         }
+        /*setTimeout(() => {
+            this.chatRmvMsgs = [605, 603];
+            this.changeDetector.markForCheck();
+        }, 4000);*/
     }
 
     ngOnInit(): void {
@@ -141,9 +154,14 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.chatSocketService.sendData(EWSTypeUtil.getMsgPutEWS(msgPut, id));
         }
     }
-    public doRemoveMessage(id: number | null): void {
+    public doCutMessage(id: number | null): void {
         if (!!id) {
             this.chatSocketService.sendData(EWSTypeUtil.getMsgCutEWS('', id));
+        }
+    }
+    public doRmvMessage(id: number | null): void {
+        if (!!id) {
+            this.chatSocketService.sendData(EWSTypeUtil.getMsgRmvEWS(id));
         }
     }
     public doQueryChatMsgs(info: { isSortDes: boolean, borderById: number }) {
@@ -220,16 +238,27 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             const echo = eventWS.getStr('echo') || '';
             console.log(`Socket-echo:`, echo);
         } else if (eventWS.et == EWSType.Msg) {
-            this.loadDataFromSocket(val);
+            this.addChatMsg(val);
+        } else if (eventWS.et == EWSType.MsgRmv) {
+            this.removedChatMsg(eventWS.getInt('msgRmv') || -1);
         } else if (eventWS.et == EWSType.Block || eventWS.et == EWSType.Unblock) {
             const isBlock = eventWS.et == EWSType.Block;
-            const user = isBlock ? eventWS.getStr('block') : eventWS.getStr('unblock');
-            if (!!user && this.isStreamOwner) {
-                this.chatBlockedUsers = this.updateBlockedUsers(this.chatBlockedUsers, isBlock, user);
+            const username = isBlock ? eventWS.getStr('block') : eventWS.getStr('unblock');
+            if (!!username && this.isStreamOwner) {
+                this.chatBlockedUsers = this.updateBlockedUsers(this.chatBlockedUsers, isBlock, username);
+            }
+            const nickname = this.profileDto?.nickname || '';
+            if (!!username && (this.isStreamOwner || nickname == username)) {
+                const msg = this.translateService.instant(`pg-concept-view.user_${(!isBlock ? 'un' : '')}blocked`, { username });
+                if (isBlock) {
+                    this.alertService.showWarning(msg, 'pg-concept-view.chat_commands');
+                } else {
+                    this.alertService.showSuccess(msg, 'pg-concept-view.chat_commands');
+                }
             }
         }
     };
-    private loadDataFromSocket(val: string): void {
+    private addChatMsg(val: string): void {
         console.log(`PgConceptView.loadDataFromSocket(${val})`); // #
         const obj = JSON.parse(val);
         if (!!obj['id'] && !!obj['member'] && !!obj['date']) {
@@ -238,6 +267,12 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 this.chatMsgs = [chatMsg];
                 console.log(`PgConceptView() 2 chatMsgs:`, this.chatMsgs); // #
             }
+        }
+    }
+    private removedChatMsg(id: number): void {
+        if (id > 0) { // List of permanently deleted messages.
+            this.chatRmvMsgs = [id];
+            console.log(`PgConceptView() 4 chatRmvMsgs:`, this.chatRmvMsgs); // #
         }
     }
     private updateBlockedUsers(blockedUsers: string[], isBlock: boolean, blockUser: string): string[] {
