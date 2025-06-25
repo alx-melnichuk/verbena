@@ -1,5 +1,7 @@
 import { StringDateTime } from '../common/string-date-time';
 
+// ** ChatMessageDto **
+
 export interface ChatMessageDto {
     id: number;
     date: StringDateTime;
@@ -8,7 +10,6 @@ export interface ChatMessageDto {
     isEdt: boolean,
     isRmv: boolean,
 }
-
 
 export class ChatMessageDtoUtil {
     public static create(obj: Partial<ChatMessageDto>): ChatMessageDto {
@@ -31,6 +32,7 @@ export class ChatMessageDtoUtil {
     }
 }
 
+// ** FilterChatMessageDto **
 
 export interface FilterChatMessageDto {
     streamId: number;
@@ -38,3 +40,26 @@ export interface FilterChatMessageDto {
     borderById?: number;
     limit?: number;
 }
+
+// ** BlockedUserDto **
+
+export interface BlockedUserDto {
+    id: number;
+    userId: number;
+    blockedId: number;
+    blockedNickname: string;
+    blockDate: StringDateTime;
+}
+
+export class BlockedUserDtoUtil {
+    public static create(obj: Partial<BlockedUserDto>): BlockedUserDto {
+        let id: number = obj.id || 0;
+        let userId: number = obj.userId || 0;
+        let blockedId: number = obj.blockedId || 0;
+        let blockedNickname: string = obj.blockedNickname || '';
+        let blockDate: StringDateTime = obj.blockDate || '';
+        return { id, userId, blockedId, blockedNickname, blockDate };
+    }
+}
+
+// ** - **
