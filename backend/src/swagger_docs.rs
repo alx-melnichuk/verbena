@@ -4,7 +4,7 @@ use utoipa::{
 };
 
 use crate::{
-    chats::{chat_message_controller, chat_message_models},
+    chats::{chat_message_controller, chat_ws_controller, chat_message_models},
     errors,
     profiles::{profile_auth_controller, profile_controller, profile_models, profile_registr_controller}, 
     streams::{stream_controller, stream_models}, 
@@ -15,7 +15,7 @@ use crate::{
 #[openapi(
     paths(
         chat_message_controller::get_chat_message,
-        chat_message_controller::get_ws_chat,
+        chat_ws_controller::get_ws_chat,
         profile_controller::uniqueness_check,
         profile_controller::get_profile_by_id,
         profile_controller::get_profile_current,
@@ -82,7 +82,8 @@ use crate::{
         )
     ),
     tags(
-        (name = "chat_message_controller", description = "Manage messages in chat (Endpoints)."),
+        (name = "chat_message_controller", description = "Managing data for chat work (endpoints)."),
+        (name = "chat_ws_controller", description = "Manage messages in chat (Endpoints)."),
         (name = "profile_controller", description = "Managing user profile information (Endpoints)."),
         (name = "profile_auth_controller", description = "User authorization management (Endpoints)."),
         (name = "profile_registr_controller", description = "User registration management (Endpoints)."),
