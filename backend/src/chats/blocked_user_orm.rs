@@ -2,7 +2,7 @@ use crate::chats::blocked_user_models::{BlockedUser, CreateBlockedUser, DeleteBl
 
 pub trait BlockedUserOrm {
     /// Get a list of blocked users.
-    fn get_blocked_user(&self, user_id: i32) -> Result<Vec<BlockedUser>, String>;
+    fn get_blocked_user(&self, user_id: i32, stream_id: i32) -> Result<Vec<BlockedUser>, String>;
     /// Add a new entry (blocked_user).
     fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUser>, String>;
     /// Delete an entity (blocked_user).
@@ -59,14 +59,15 @@ pub mod impls {
 
     impl BlockedUserOrm for BlockedUserOrmApp {
         /// Get a list of blocked users.
-        fn get_blocked_user(&self, user_id: i32) -> Result<Vec<BlockedUser>, String> {
+        fn get_blocked_user(&self, user_id: i32, stream_id: i32) -> Result<Vec<BlockedUser>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query =
-                diesel::sql_query("select * from get_blocked_users($1);").bind::<sql_types::Integer, _>(user_id); // $1
+            let query = diesel::sql_query("select * from get_blocked_users($1,$2);")
+                .bind::<sql_types::Integer, _>(user_id) // $1
+                .bind::<sql_types::Integer, _>(stream_id); // $2
 
             // Run a query with Diesel to create a new user and return it.
             let blocked_user_list: Vec<BlockedUser> = query
@@ -157,6 +158,7 @@ pub mod tests {
     use crate::chats::{
         blocked_user_models::{BlockedUser, CreateBlockedUser, DeleteBlockedUser},
         blocked_user_orm::BlockedUserOrm,
+        chat_message_orm::tests::ChatMsgTest,
     };
     use crate::validators::Validator;
 
@@ -213,12 +215,17 @@ pub mod tests {
 
     impl BlockedUserOrm for BlockedUserOrmApp {
         /// Get a list of blocked users.
-        fn get_blocked_user(&self, user_id: i32) -> Result<Vec<BlockedUser>, String> {
-            let mut vec = (*self.blocked_user_vec).borrow_mut();
+        fn get_blocked_user(&self, user_id: i32, stream_id: i32) -> Result<Vec<BlockedUser>, String> {
+            let mut result: Vec<BlockedUser> = Vec::new();
+            let idx_user_id = ChatMsgTest::user_ids().iter().position(|v| *v == user_id).unwrap_or(-1);
+            let idx_stream_id = ChatMsgTest::stream_ids().iter().position(|v| *v == stream_id).unwrap_or(-1);
+            // Checking if the user is the owner of the stream.
+            if idx_user_id > -1 && idx_user_id == idx_stream_id {
+                let mut vec = (*self.blocked_user_vec).borrow_mut();
+                result = vec.iter().find(|v| (*v).user_id == user_id).map(|v| v.clone());
+            }
 
-            let blocked_user_list = vec.iter().find(|v| (*v).user_id == user_id).map(|v| v.clone());
-
-            Ok(blocked_user_list)
+            Ok(result)
         }
         /// Add a new entry (blocked_user).
         fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUser>, String> {
