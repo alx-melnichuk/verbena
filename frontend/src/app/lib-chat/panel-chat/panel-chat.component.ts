@@ -16,7 +16,6 @@ import { debounceFn } from 'src/app/common/debounce';
 import { StringDateTime } from 'src/app/common/string-date-time';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { DateUtil } from 'src/app/utils/date.utils';
-import { ReplaceWithZeroUtil } from 'src/app/utils/replace-with-zero.util';
 import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
 import { ValidatorUtils } from 'src/app/utils/validator.utils';
 
@@ -25,6 +24,7 @@ import { ChatMessageDto } from '../chat-message-api.interface';
 
 interface MenuEdit {
     isEdit: boolean;
+    isCut: boolean;
     isRemove: boolean;
 }
 interface MenuBlock {
@@ -33,6 +33,7 @@ interface MenuBlock {
 }
 interface MenuItem {
     isEdit?: boolean | undefined;
+    isCut?: boolean | undefined;
     isRemove?: boolean | undefined;
     isBlock?: boolean | undefined;
     isUnblock?: boolean | undefined;
@@ -68,6 +69,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public blockedUsers: string[] = [];
     @Input() // List of new messages.
     public chatMsgs: ChatMessageDto[] = [];
+    @Input() // List of permanently deleted messages.
+    public chatRmvMsgs: number[] = [];
     @Input() // Indication that the user is blocked.
     public isBlocked: boolean | null = null;
     @Input() // Indicates that the user can send messages to the chat.
@@ -98,9 +101,11 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Output()
     readonly sendMsg: EventEmitter<string> = new EventEmitter();
     @Output()
-    readonly removeMsg: EventEmitter<KeyValue<number, string>> = new EventEmitter();
-    @Output()
     readonly editMsg: EventEmitter<KeyValue<number, string>> = new EventEmitter();
+    @Output()
+    readonly cutMsg: EventEmitter<KeyValue<number, string>> = new EventEmitter();
+    @Output()
+    readonly rmvMsg: EventEmitter<number> = new EventEmitter();
     @Output()
     readonly queryChatMsgs: EventEmitter<{ isSortDes: boolean, borderById: number }> = new EventEmitter();
 
@@ -181,6 +186,10 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
                 this.largestId = res.largestId;
             }
         }
+        if (!!changes['chatRmvMsgs'] && this.chatRmvMsgs.length > 0 && this.chatMsgList.length > 0) {
+            this.chatMsgList = this.loadRmvChatMsgs(this.chatMsgList, this.chatRmvMsgs);
+            // Promise.resolve().then(() => this.checkScrollPosition());
+        }
         if (!!changes['isEditable'] && !changes['isEditable'].firstChange) {
             Promise.resolve().then(() => this.setItemsScrollTo(this.scrollItemElem.nativeElement, { bottom: 0 }));
         }
@@ -198,20 +207,13 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     }
 
     ngAfterViewInit(): void {
-        const elem = this.scrollItemElem?.nativeElement;
-        const isScroll = (elem?.scrollHeight || 0) > (elem?.clientHeight || 0);
-        if (!isScroll && this.chatMsgList.length > 0 && this.smallestId != null) {
-            this.queryChatMsgs.emit({ isSortDes: true, borderById: this.smallestId });
-        }
+        this.checkScrollPosition();
     }
 
     // ** Public API **
 
     public trackById(index: number, item: ChatMessageDto): number {
         return item.id;
-    }
-    public memberWithZero(value: string): string {
-        return ReplaceWithZeroUtil.replace(value);
     }
     public doScrollItem(): void {
         const elem = this.scrollItemElem.nativeElement;
@@ -260,10 +262,15 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             this.cleanNewMsg();
         }
     }
-    public doRemoveMessage(chatMsg: ChatMessageDto | null): void {
+    public doCutMessage(chatMsg: ChatMessageDto | null): void {
         if (this.isEditable && !!chatMsg && !!chatMsg.id && chatMsg.member == this.nickname && !chatMsg.isRmv) {
             const keyValue: KeyValue<number, string> = { key: chatMsg.id, value: chatMsg.msg };
-            this.removeMsg.emit(keyValue);
+            this.cutMsg.emit(keyValue);
+        }
+    }
+    public doRemoveMessage(chatMsg: ChatMessageDto | null): void {
+        if (this.isEditable && !!chatMsg && !!chatMsg.id && chatMsg.member == this.nickname && chatMsg.isRmv) {
+            this.rmvMsg.emit(chatMsg.id);
         }
     }
     public doSetValueForEditing(chatMsg: ChatMessageDto | null): void {
@@ -345,6 +352,13 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     */
     // ** Private API **
 
+    private checkScrollPosition(): void {
+        const elem = this.scrollItemElem?.nativeElement;
+        const isScroll = (elem?.scrollHeight || 0) > (elem?.clientHeight || 0);
+        if (!isScroll && this.chatMsgList.length > 0 && this.smallestId != null) {
+            this.queryChatMsgs.emit({ isSortDes: true, borderById: this.smallestId });
+        }
+    }
     private setTextareaValue(value: string | null): void {
         this.initValue = value;
         this.formControl.setValue(value);
@@ -382,26 +396,46 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         );
     }
     */
+    private createMenuEdit(selfName: string, chatMsg: ChatMessageDto): MenuEdit | null {
+        const isSelfNameEqMember = !!selfName && selfName == chatMsg.member;
+        const isEdit = isSelfNameEqMember && !chatMsg.isRmv;
+        const isCut = isEdit;
+        const isRemove = isSelfNameEqMember && chatMsg.isRmv;
+
+        return isSelfNameEqMember ? { isEdit, isCut, isRemove } : null;
+    }
     private loadChatMsgs(
         objChatMsg: ObjChatMsg, chatMsgs: ChatMessageDto[], menuEditMap: MenuEditMap, selfName: string
     ): { chatMsgs: ChatMessageDto[], smallestId: number, largestId: number } {
         for (let idx = 0; idx < chatMsgs.length; idx++) {
             const chatMsg = chatMsgs[idx];
             objChatMsg[chatMsg.id] = chatMsg;
-            const isSelfNameEqMember = !!selfName && selfName == chatMsg.member;
-            const isEdit = isSelfNameEqMember && !chatMsg.isRmv;
-            const isRemove = isEdit;
-            const isSelfNameNoEqMember = !!selfName && selfName != chatMsg.member;
-            // const isBlocked = (isSelfNameEqMember || !blockedUsers) ? null : blockedUsers.includes(chatMsg.member);
-            // const isBlock = isSelfNameNoEqMember && isBlocked != null && !isBlocked;
-            // const isUnblock = isSelfNameNoEqMember && isBlocked != null && isBlocked;
-            if (isEdit) { // || isBlock || isUnblock) {
-                menuEditMap.set(chatMsg.id, { isEdit, isRemove, /*isBlock, isUnblock*/ });
+            const itemMenu: MenuEdit | null = this.createMenuEdit(selfName, chatMsg);
+            if (!!itemMenu) {
+                menuEditMap.set(chatMsg.id, itemMenu);
             }
         }
         const resChatMsgs = Object.values(objChatMsg)
         const smallestId = resChatMsgs.length > 0 ? resChatMsgs[0].id : -1;
         const largestId = resChatMsgs.length > 0 ? resChatMsgs[resChatMsgs.length - 1].id : -1;
         return { chatMsgs: resChatMsgs, smallestId, largestId };
+    }
+    private loadRmvChatMsgs(chatMsgs: ChatMessageDto[], chatRmvIds: number[]): ChatMessageDto[] {
+        let idx0 = 0; const len = chatMsgs.length;
+        for (let idx1 = 0; idx1 < len; idx1++) {
+            const index = chatRmvIds.length > 0 ? chatRmvIds.indexOf(chatMsgs[idx1].id) : -1;
+            if (index > -1) {
+                chatRmvIds.splice(index, 1);
+            } else {
+                if (idx0 < idx1) {
+                    chatMsgs[idx0] = chatMsgs[idx1];
+                }
+                idx0++;
+            }
+        }
+        if (idx0 < len) {
+            chatMsgs.splice(idx0, len - idx0);
+        }
+        return chatMsgs.concat([]);
     }
 }

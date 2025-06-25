@@ -19,10 +19,11 @@
       (menuClosed)="msgMarked=null;">
       <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : '')
         , (msgMarked==chatMsg || msgEditing==chatMsg ? 'pc-marked' : '')]"
+        attr.ch-msg-id="{{chatMsg.id}}"
         (click)="doClickCheckSelection($event)">
         <div class="pc-item-name-date">
           <div [ngClass]="['pc-item-name', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
-            {{ isSelf(chatMsg.member) ? ('panel-chat.you' | translate) : memberWithZero(chatMsg.member) }}
+            {{ isSelf(chatMsg.member) ? ('panel-chat.you' | translate) : chatMsg.member }}
           </div>
           <div [ngClass]="['pc-item-date', (chatMsg.isEdt || chatMsg.isRmv ? 'pc-item-modify' : '')]">
             @if (!isToday(chatMsg.date)) {
@@ -45,9 +46,6 @@
             <ng-container *ngTemplateOutlet="templateShowInfo; context: { chatMsg2: chatMsg }" />
           </div>
         }
-      <!-- <div *ngIf="isBannedUserById(chatMsg.member)" class="prc-banned-user">
-        <div class="prc-msg-banned-orange"></div>
-      </div> -->
       </div>
     </div>
   }
@@ -55,7 +53,7 @@
 
 <ng-template #templateShowInfo let-chatMsg="chatMsg2">
   <sub style="color: var(--sys-secondary);">
-    id:{{ chatMsg.id }} <!-- date: {{ chatMsg.date }},--> E:{{ chatMsg.isEdt ? 1 : 0 }} R:{{ chatMsg.isRmv ? 1 : 0 }}
+    id:{{ chatMsg.id }} E:{{ chatMsg.isEdt ? 1 : 0 }} R:{{ chatMsg.isRmv ? 1 : 0 }}
   </sub>
 </ng-template>
 
@@ -119,7 +117,7 @@
 }
 
 <mat-menu #menuItem="matMenu" class="pc-menu-panel" xPosition="before" [overlapTrigger]="true">
-  <ng-template matMenuContent let-isEdit="isEdit" let-isRemove="isRemove" let-isBlock="isBlock" let-isUnblock="isUnblock">
+  <ng-template matMenuContent let-isEdit="isEdit" let-isCut="isCut" let-isRemove="isRemove" let-isBlock="isBlock" let-isUnblock="isUnblock">
     @if (isEdit) {
       <button mat-menu-item class="pn-menu-item" (click)="doSetValueForEditing(msgMarked)">
         <svg class="pc-svg-box">
@@ -128,13 +126,21 @@
         <span class="pc-menu-label">{{ 'panel-chat.menu.edit' | translate }}</span>
       </button>
     }
-    @if (isRemove) {
-      <button mat-menu-item class="pn-item-menu"  (click)="doRemoveMessage(msgMarked)">
+    @if (isCut) {
+      <button mat-menu-item class="pn-item-menu"  (click)="doCutMessage(msgMarked)">
         <svg class="pc-svg-box">
           <use href="assets/icons/lib-chat/panel-chat/trash-bin.svg#trash-bin"></use>
         </svg>
-        <span class="pc-menu-label">{{ 'panel-chat.menu.remove' | translate }}</span>
+        <span class="pc-menu-label">{{ 'panel-chat.menu.cut' | translate }}</span>
       </button>
+    }
+    @if (isRemove) {
+        <button mat-menu-item class="pn-item-menu"  (click)="doRemoveMessage(msgMarked)">
+          <svg class="pc-svg-box">
+            <use href="assets/icons/lib-chat/panel-chat/trash-bin.svg#trash-bin"></use>
+          </svg>
+          <span class="pc-menu-label">{{ 'panel-chat.menu.remove' | translate }}</span>
+        </button>
     }
     @if (isBlock) {
       <button mat-menu-item class="pn-item-menu"  (click)="doBlockUser(msgMarked?.member, blockedUsers)">

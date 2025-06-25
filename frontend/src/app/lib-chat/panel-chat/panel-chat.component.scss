@@ -88,6 +88,7 @@ app-panel-chat {
         display: inline-block;
         font-size: var(--pc-name-fn-sz, inherit);
         font-weight: 500;
+        min-width: 5rem;
         overflow-wrap: anywhere;
     }
 
