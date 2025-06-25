@@ -3,8 +3,6 @@ import { inject, Injectable } from '@angular/core';
 import { SocketService } from '../lib-socket/socket.service';
 import { EventWS, EWSType, EWSTypeUtil } from '../lib-socket/socket-chat.interface';
 
-import { ChatMessageDto, ChatMessageDtoUtil } from './chat-message-api.interface';
-
 
 export interface ChatConfig {
     nickname: string;
@@ -39,7 +37,6 @@ export class ChatSocketService {
     private oldHandlReceive: (val: string) => void = () => { };
 
     constructor() {
-        console.log(`ChatSocketService()`); // #
     }
 
     // ** Public API **
@@ -114,11 +111,7 @@ export class ChatSocketService {
 
     /** Processing the "open" event of the Socket. */
     private innHandlOnOpen = (): void => {
-        console.log(`12_ChatSocketService.innHandlOnOpen()`); // #
         if (!!this.chatConfig) {
-            // The username is taken from the authorization.
-            // // Set the chat username.
-            // this.sendData(EWSTypeUtil.getNameEWS(this.chatConfig.nickname));
             // Join the chat room.
             this.sendData(EWSTypeUtil.getJoinEWS(
                 this.chatConfig.room,
@@ -131,22 +124,18 @@ export class ChatSocketService {
     }
     /** Processing the "close" event of the Socket. */
     private innHandlOnClose = () => {
-        console.log(`13_ChatSocketService.innHandlOnClose()`); // #
         !!this.handlOnClose && this.handlOnClose();
     };
     /** Processing the "error" event of the Socket. */
     private innHandlOnError = (err: string) => {
-        console.log(`14_ChatSocketService.innHandlOnError()`); // #
         !!this.handlOnError && this.handlOnError(err);
     };
     /** Processing the "send data" event of the Socket. */
     private innHandlSend = (val: string) => {
-        console.log(`15_ChatSocketService.innHandlSend(${val})`); // #
         !!this.handlSend && this.handlSend(val);
     };
     /** Processing the "receive data" event of the Socket. */
     private innHandlReceive = (val: string) => {
-        console.log(`16_ChatSocketService.innHandlReceive(${val})`); // #
         this.eventAnalysis(EventWS.parse(val), this.chatConfig);
         !!this.handlReceive && this.handlReceive(val);
     };
@@ -172,11 +161,14 @@ export class ChatSocketService {
             }
             const count: number = parseInt((eventWS.getStr('count') || '-1'), 10) || -1;
             this.countOfMembers = count > -1 ? count : this.countOfMembers;
+        } else if (eventWS.et == EWSType.MsgRmv) {
+            const msgRmv = eventWS.getInt('msgRmv') || -1;
+            if (msgRmv > 0) {
+
+            }
         } else if (eventWS.et == EWSType.Block) {
-            console.log(`ChatSocketService.eventAnalysis() EWSType.Block  eventWS.block==chatConfig.nickname hasBlocked = true`); // #
             this.hasBlocked = (eventWS.getStr('block') || '') == chatConfig.nickname ? true : this.hasBlocked;
         } else if (eventWS.et == EWSType.Unblock) {
-            console.log(`ChatSocketService.eventAnalysis() EWSType.Unblock  eventWS.unblock==chatConfig.nickname hasBlocked = false`); // #
             this.hasBlocked = (eventWS.getStr('unblock') || '') == chatConfig.nickname ? false : this.hasBlocked;
         }
     }

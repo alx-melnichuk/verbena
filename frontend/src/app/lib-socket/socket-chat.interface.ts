@@ -11,6 +11,7 @@ export enum EWSType {
     Msg = 'msg',
     MsgCut = 'msgCut',
     MsgPut = 'msgPut',
+    MsgRmv = 'MsgRmv',
     Name = 'name',
     Unblock = 'unblock',
 }
@@ -27,6 +28,7 @@ export class EWSTypeUtil {
             EWSType.Msg,
             EWSType.MsgCut,
             EWSType.MsgPut,
+            EWSType.MsgRmv,
             EWSType.Name,
             EWSType.Unblock,
         ];
@@ -72,6 +74,9 @@ export class EWSTypeUtil {
     }
     public static getMsgCutEWS(msgCut: string, id?: number, member?: string, date?: StringDateTime): string {
         return JSON.stringify({ ...{ msgCut }, ...{ id }, ...{ member }, ...{ date } });
+    }
+    public static getMsgRmvEWS(msgRmv: number): string {
+        return JSON.stringify({ msgRmv });
     }
     public static getNameEWS(name: string): string {
         return JSON.stringify({ name });
