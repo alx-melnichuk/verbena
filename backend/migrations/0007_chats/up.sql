@@ -487,7 +487,7 @@ BEGIN
       blocked_users bu, users u
     WHERE
       bu.user_id = _user_id
-      AND bu.user_id = u.id
+      AND bu.blocked_id = u.id
     ORDER BY
       u.nickname ASC;
 END;
