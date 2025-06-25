@@ -38,6 +38,8 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
             .service(put_chat_message)
             // DELETE /api/chat_messages/{id}
             .service(delete_chat_message)
+            // GET /api/blocked_users/{stream_id}
+            .service(get_blocked_users)
             // POST /api/blocked_users
             .service(post_blocked_user)
             // DELETE /api/blocked_users
@@ -351,6 +353,52 @@ pub async fn delete_chat_message(
         Err(AppError::not_acceptable406(&message) // 406
             .add_param(Cow::Borrowed("invalidParams"), &json))
     }
+}
+
+#[rustfmt::skip]
+#[get("/api/blocked_users/{stream_id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+pub async fn get_blocked_users(
+    authenticated: Authenticated,
+    chat_message_orm: web::Data<ChatMessageOrmApp>,
+    request: actix_web::HttpRequest,
+) -> actix_web::Result<HttpResponse, AppError> {
+    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+    // Get current user details.
+    let profile = authenticated.deref();
+    let user_id = profile.user_id;
+
+    // Get data from request.
+    let stream_id_str = request.match_info().query("stream_id").to_string();
+    let stream_id = parser::parse_i32(&stream_id_str).map_err(|e| {
+        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "stream_id", &e);
+        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+        AppError::range_not_satisfiable416(&message) // 416
+    })?;
+
+    let chat_message_orm2 = chat_message_orm.get_ref().clone();
+    let res_blocked_users = web::block(move || {
+        // Get a list of blocked users.
+        let res_chat_message1 = chat_message_orm2
+            .get_blocked_user(user_id, stream_id)
+            .map_err(|e| {
+                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
+                AppError::database507(&e)
+            });
+        res_chat_message1
+    })
+    .await
+    .map_err(|e| {
+        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
+        AppError::blocking506(&e.to_string())
+    })?;
+
+    let blocked_user_vec = res_blocked_users?;
+    let blocked_user_dto_vec: Vec<BlockedUserDto> = blocked_user_vec.iter().map(|v| BlockedUserDto::from(v.clone())).collect();
+
+    if let Some(timer) = timer {
+        info!("get_blocked_users() time: {}", format!("{:.2?}", timer.elapsed()));
+    }
+    Ok(HttpResponse::Ok().json(blocked_user_dto_vec)) // 200
 }
 
 #[rustfmt::skip]
