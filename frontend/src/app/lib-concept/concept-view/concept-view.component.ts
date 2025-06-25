@@ -1,6 +1,6 @@
 import {
-    AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, inject, Input, OnChanges, OnInit,
-    Output, SimpleChanges, ViewEncapsulation
+    AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, inject, Input,
+    Output, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule, KeyValue } from '@angular/common';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -32,7 +32,7 @@ import { PanelStreamStateComponent } from '../panel-stream-state/panel-stream-st
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit {
+export class ConceptViewComponent implements AfterContentInit {
     @Input()
     public avatar: string | null | undefined;
 
@@ -40,6 +40,8 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     public chatBlockedUsers: string[] = [];
     @Input() // List of new messages.
     public chatMsgs: ChatMessageDto[] = [];
+    @Input() // List of permanently deleted messages.
+    public chatRmvMsgs: number[] = [];
     @Input() // Indication that the user is blocked.
     public chatIsBlocked: boolean | null = null;
     @Input() // Indicates that the user can send messages to the chat.
@@ -68,17 +70,9 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
 
     @Input()
     public streamDto: StreamDto | null = null;
-    //   @Input()
-    //   public extendedUserDTO: ExtendedUserDTO | null = null;
-    //   @Input()
-    //   public hasSubscriptionToAuthor: boolean | null = null;
-    //   @Input()
-    //   public subscribeLoading: boolean | null = null;
 
     @Output()
     readonly changeState: EventEmitter<StreamState> = new EventEmitter();
-    // @Output()
-    // readonly actionSubscribe: EventEmitter<boolean> = new EventEmitter();
     @Output()
     readonly blockUser: EventEmitter<string> = new EventEmitter();
     @Output()
@@ -88,7 +82,9 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     @Output()
     readonly editMessage: EventEmitter<KeyValue<number, string>> = new EventEmitter();
     @Output()
-    readonly removeMessage: EventEmitter<number> = new EventEmitter();
+    readonly cutMessage: EventEmitter<number> = new EventEmitter();
+    @Output()
+    readonly rmvMessage: EventEmitter<number> = new EventEmitter();
     @Output()
     readonly queryChatMsgs: EventEmitter<{ isSortDes: boolean, borderById: number }> = new EventEmitter();
 
@@ -99,51 +95,19 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
     // To disable the jumping effect of the "stream-video" panel at startup.
     public isStreamVideo = false;
 
-    // Block: "Stream Video". Contains a link to the Millicast frame.
-    // public millicastViewer: MillicastViewerPrm | null = null;
-
-    // Blocks: "Stream info" and "Stream info owner"
-    // public broadcastDuration: string | null = null;
-    // public starttimeValue: StringDateTime | null = null;
-    // public settimeoutId: number | null = null;
-
     // Block "Chat"
-    // public isUserBanned = false;
-
-    // private sessionDTOSub: Subscription;
-    // private routerNavigationStartSub: Subscription;
-    // private targetsFirebaseSub: Subscription | undefined;
 
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
     private dialogService: DialogService = inject(DialogService);
     private translateService: TranslateService = inject(TranslateService);
 
     constructor() {
-        // this.getFollowersAndPopular();
-        console.log(`ConceptView()`);
-    }
-    ngOnChanges(changes: SimpleChanges): void {
-        if (!!changes['countOfViewer']) {
-            console.log(`ConceptView.OnChanges() countOfViewer: ${this.countOfViewer}`); // #
-        }
     }
 
     // To disable the jumping effect of the "stream-video" panel at startup.
     ngAfterContentInit(): void {
         this.isStreamVideo = true;
         this.changeDetector.markForCheck();
-    }
-
-    ngOnInit(): void {
-        // "Stream Targets Subscribe"
-        if (!!this.streamDto?.id) {
-            if (this.isStreamOwner) {
-                // this.updateViewByStreamStatus(this.streamDto);
-            } else {
-                // this.viewerOnlyTargetsFirebaseSubscribe(this.streamDto.id);
-            }
-        }
-        // this.broadcastDuration = '00';
     }
 
     // ** Public API **
@@ -188,7 +152,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
             this.editMessage.emit(keyValue);
         }
     }
-    public async doRemoveMessage(keyValue: KeyValue<number, string>): Promise<void> {
+    public async doCutMessage(keyValue: KeyValue<number, string>): Promise<void> {
         if (!keyValue || !keyValue.key || !keyValue.value) {
             return Promise.resolve();
         }
@@ -197,7 +161,18 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
         const res = await this.dialogService.openConfirmation(
             message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
         if (!!res) {
-            this.removeMessage.emit(keyValue.key);
+            this.cutMessage.emit(keyValue.key);
+        }
+    }
+    public async doRmvMessage(chMsgId: number): Promise<void> {
+        if (!chMsgId || chMsgId < 0) {
+            return Promise.resolve();
+        }
+        const message = this.translateService.instant('concept-view.sure_you_want_permanently_delete_message');
+        const res = await this.dialogService.openConfirmation(
+            message, '', { btnNameCancel: 'buttons.no', btnNameAccept: 'buttons.yes' });
+        if (!!res) {
+            this.rmvMessage.emit(chMsgId);
         }
     }
     public doQueryChatMsgs(info: { isSortDes: boolean, borderById: number }) {
@@ -206,112 +181,7 @@ export class ConceptViewComponent implements AfterContentInit, OnChanges, OnInit
 
     // ** Private API **
 
-    // Section: "Followers And Popular"
-
-    /*private getFollowersAndPopular(): Promise<any/ *ExtendedUserDTO* /[] | HttpErrorResponse> {
-        return Promise.reject('Error19');
-        return this.followersService.getFollowsAndPopular()
-          .finally(() => this.changeDetector.markForCheck());
-    }*/
-
-    // Turn on/off the display of "Broadcast duration".
-    /*private setBroadcastDuration(): void {
-        this.broadcastDuration = '';
-        const startedDate: Date | null = StringDateTimeUtil.toDate(this.starttimeValue);
-        if (startedDate != null) {
-            // const startedDate: moment.Moment = moment(this.starttimeValue, MOMENT_ISO8601);
-            // const currentDate: moment.Moment = moment().clone();
-            // const duration = moment.duration(currentDate.diff(startedDate));
-
-            const currentDateSec = Math.floor((new Date()).getTime() / 1000);
-            const startedDateSec = Math.floor(startedDate.getTime() / 1000);
-
-            const duration = Math.floor(currentDateSec - startedDateSec); // in seconds
-
-            // const days = Math.floor(duration.asDays());
-            const days = Math.floor(duration / (24 * 60 * 60));            // (((sec / 60 :min) / 60 :hour) / 24 :day)
-            const daysInHours = days * 24;
-            // const hours = Math.floor(duration.asHours() - daysInHours);
-            const hours = Math.floor(duration / (60 * 60) - daysInHours);  // ((sec / 60 :min) / 60 :hour)
-            const hoursInMinutes = hours * 60;
-            const daysInMinutes = daysInHours * 60;
-            // const minutes = Math.floor(duration.asMinutes() - daysInMinutes - hoursInMinutes);
-            const minutes = Math.floor(duration / 60 - daysInMinutes - hoursInMinutes);  // (sec / 60 :min)
-            const minutesInSeconds = minutes * 60;
-            // const seconds = Math.floor(duration.asSeconds() - daysInMinutes * 60 - hoursInMinutes * 60 - minutesInSeconds);
-            const seconds = Math.floor(duration - daysInMinutes * 60 - hoursInMinutes * 60 - minutesInSeconds);
-
-            if (days > 0) {
-                this.broadcastDuration = '' + days + ' ' + (days > 1 ? 'days' : 'day') + ' ';
-            }
-            this.broadcastDuration += ('00' + hours).substr(-2) + ':' + ('00' + minutes).substr(-2) + ':' + ('00' + seconds).substr(-2);
-            console.log(`this.broadcastDuration: ${this.broadcastDuration}`); // #
-            //   this.settimeoutId = window.setTimeout(() => {
-            //     this.setBroadcastDuration();
-            //   }, 1000);
-        } else {
-            //   if (!this.settimeoutId) {
-            //     window.clearTimeout(this.settimeoutId as number);
-            //     this.settimeoutId = null;
-            //   }
-        }
-        this.changeDetector.markForCheck();
-    }*/
-
-    // Stream for Owner
-
-    /*private toggleStreamState(streamId: number | null, streamState: StreamState): void {}*/
-
-    // Stream for Reviewer
-
-    /*private viewerOnlyTargetsFirebaseSubscribe(streamId: number): void {
-        if (!streamId || this.isStreamOwner || !this.streamDto) {
-            return;
-        }
-        if (!!this.targetsFirebaseSub) {
-          this.targetsFirebaseSub.unsubscribe();
-        }
-        let isInit = true;
-
-        this.targetsFirebaseSub = this.firebaseService.subscribingToTargets(streamId)
-          .subscribe(async (event) => {
-            if (!!this.streamDto) {
-              let newStreamState: StreamState | null  = StreamStateUtil.create(event?.publicState);
-              // console .log('event?.publicState=', event?.publicState);
-              if (isInit) {
-                newStreamState = (newStreamState === null ? this.streamDto.state : newStreamState);
-                // console .log('isInit newStreamState=', newStreamState);
-                isInit = false;
-              }
-              if (newStreamState === null) {
-                const streamDTO: StreamDto = (await this.streamStateService.getStreamState(this.streamDto.id) as StreamDto);
-                newStreamState = streamDTO.state;
-                // console .log('getStreamState()=', streamDTO.state);
-              }
-
-              // If the event is "null", then the stream is stopped..
-              this.streamDto.state = newStreamState; // (StreamStateUtil.create(newState) as StreamState);
-              // Open the melikast frame to the viewer only for the "started" state.
-              this.streamDto.publicTarget = (this.streamDto.state === StreamState.Started && !!event ? event.publicTarget : null);
-
-              this.updateViewByStreamStatus(this.streamDto);
-              this.changeDetector.markForCheck();
-            }
-        });
-    }*/
-
     // Updating data by stream
-
-    /*private updateViewByStreamStatus(streamDto: StreamDto): void {
-        if (!!streamDto) {
-            console.log('#updateView() state=', streamDto.state);
-            const src: string | null = streamDto.publicTarget;
-            this.millicastViewer = (!!src ? ({ src } as MillicastViewerPrm) : null);
-            this.isEditableChat = StreamStateUtil. isActive(streamDto.state);
-            this.starttimeValue = (streamDto.state === StreamState.started ? streamDto.starttime : null);
-            this.setBroadcastDuration();
-        }
-    }*/
 
     private getChatMsg(nickname: string, len: number): ChatMessageDto[] {
         const result: ChatMessageDto[] = [];

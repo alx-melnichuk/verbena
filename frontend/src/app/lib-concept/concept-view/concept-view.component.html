@@ -16,16 +16,6 @@
     <div cv-hg100 class="cv-sdb-brd cv-brd-rg">
       bar-left 1 bar-left 2
 
-  <!-- <app-panel-left-followers
-    [isMiniSize]="!isSidebarLfOpen"
-    [isLoading]="followersService.followersAndPopularLoading"
-    [followerList]="followersService.followerDTOList"
-    [popularList]="followersService.popularDTOList"
-  >
-    <div class="ticker" [appTradMarketOverview]="{ isDarkTheme: isDarkTheme }">
-    </div>
-  </app-panel-left-followers> -->
-
     </div>
   </div>
 </app-sidebar>
@@ -95,38 +85,6 @@
 
   </div>
     
-  <!-- @if (!isStreamOwner) {
-    Is not Stream Owner
-    @if (subscribeLoading) {
-    <app-spinner [isFullOwner]="true" [diameter]="60"></app-spinner>
-    }
-    <app-panel-stream-info
-      [streamDTO]="streamDTO"
-      [extendedUserDTO]="extendedUserDTO"
-      [hasSubscribe]="hasSubscriptionToAuthor"
-      [countOfViewer]="socketService.countOfViewer$ | async"
-      [broadcastDuration]="broadcastDuration"
-      (actionSubscribe)="doActionSubscribe($event)">
-    </app-panel-stream-info>
-  } @else {
-    <div class="cv-stream-info">
-      <app-panel-stream-admin
-        countOfViewer9="socketService.countOfViewer$ | async"
-        [countOfViewer]="0"
-        [state]="streamDto?.state"
-        [startDate]="getDate(streamDto?.starttime)"
-        [title]="streamDto?.title"
-        (changeState)="doChangeState($event)">
-      </app-panel-stream-admin>
-    </div> 
-  }
-  <div class="user-portfolio">
-    <app-panel-portfolio-schedule class="details"
-      [isDarkTheme]="isDarkTheme"
-      [queryParamMap]="route.queryParamMap | async"
-      [userId]="streamDTO?.userId || null"
-    ></app-panel-portfolio-schedule>
-  </div> -->
 </div>
 
 <app-sidebar class="cv-sidebar" mode="right"
@@ -143,6 +101,7 @@
     <app-panel-chat class="cv-sdb-chat cv-sdb-brd cv-brd-lf"
       [blockedUsers]="chatBlockedUsers"
       [chatMsgs]="chatMsgs"
+      [chatRmvMsgs]="chatRmvMsgs"
       [isBlocked]="chatIsBlocked"
       [isEditable]="chatIsEditable"
       [isLoadData]="chatIsLoadData"
@@ -156,22 +115,11 @@
       (unblockUser)="doUnblockUser($event)"
       (sendMsg)="doSendMessage($event)"
       (editMsg)="doEditMessage($event)"
-      (removeMsg)="doRemoveMessage($event)"
+      (cutMsg)="doCutMessage($event)"
+      (rmvMsg)="doRmvMessage($event)"
       (queryChatMsgs)="doQueryChatMsgs($event)">
     </app-panel-chat>
   </div>
-
-  <!-- <app-panel-right-chat
-    [isEditable]="isStreamActive"
-    [userId]="profile Service.getUserId()"
-    [chatMessages]="chatMessages"
-    [isStreamOwner]="isStreamOwner"
-    [isUserBanned]="isUserBanned || (socketService.userBanned$ | async)"
-    (sendMessage)="doSendMessage($event)"
-    (removeMessage)="doRemoveMessage($event)"
-    (editMessage)="doEditMessage($event)"
-    (bannedUser)="doBannedUser($event)"
-  ></app-panel-right-chat> -->
 
 </app-sidebar>
 
