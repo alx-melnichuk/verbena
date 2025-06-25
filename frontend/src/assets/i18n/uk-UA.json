@@ -409,12 +409,16 @@
   "pg-concept-view": {
     "error_update_stream": "Помилка оновлення стану потоку",
     "exist_is_active_stream": "Ви вже запустили активний потік <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
+    "chat_commands": "Команди чату",
+    "user_blocked": "Користувач \"{{ username }}\" заблокований.",
+    "user_unblocked": "Користувач \"{{ username }}\" розблокований.",
     "error_socket": "Помилка сокета"
   },
   "concept-view": {
     "chat_title": "Чат трансляції",
     "title": "Назва:",
-    "sure_you_want_delete_message": "Ви впевнені, що хочете видалити повідомлення: \"{{message}}\" ?"
+    "sure_you_want_delete_message": "Ви впевнені, що хочете видалити повідомлення: \"{{message}}\" ?",
+    "sure_you_want_permanently_delete_message": "Ви впевнені, що хочете остаточно видалити повідомлення ?"
   },
   "panel-stream-params": {
     "tags": "Теги:",
@@ -429,7 +433,8 @@
     "you": "ви",
     "menu": {
         "edit": "Редагувати",
-        "remove": "Видалити",
+        "cut": "Видалити",
+        "remove": "Видалити остаточно",
         "block_user": "Блокувати",
         "unblock_user": "Розблокувати"
     },

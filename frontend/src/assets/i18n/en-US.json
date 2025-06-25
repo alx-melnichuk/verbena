@@ -407,12 +407,16 @@
   "pg-concept-view": {
     "error_update_stream": "Error updating stream state",
     "exist_is_active_stream": "You already have the active stream running <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
+    "chat_commands": "Chat commands",
+    "user_blocked": "User \"{{ username }}\" is blocked.",
+    "user_unblocked": "User \"{{ username }}\" is unblocked.",
     "error_socket": "Socket error"
   },
   "concept-view": {
     "chat_title": "Stream chat",
     "title": "Title:",
-    "sure_you_want_delete_message": "Are you sure you want to delete the message: \"{{message}}\" ?"
+    "sure_you_want_delete_message": "Are you sure you want to delete the message: \"{{message}}\" ?",
+    "sure_you_want_permanently_delete_message": "Are you sure you want to permanently delete the message?"
   },
   "panel-stream-params": {
     "tags": "Tags:",
@@ -433,7 +437,8 @@
     "you": "you",
     "menu": {
         "edit": "Edit",
-        "remove": "Remove",
+        "cut": "Remove",
+        "remove": "Remove permanently",
         "block_user": "Block",
         "unblock_user": "Unblock"
     },

@@ -409,12 +409,16 @@
   "pg-concept-view": {
     "error_update_stream": "Fehler beim Aktualisieren des Streamstatus",
     "exist_is_active_stream": "Der aktive Stream wird bereits ausgeführt <a href='{{ link }}' target='_blank'>\"{{ name }}\"</a>",
+    "chat_commands": "Chat befehle",
+    "user_blocked": "Benutzer \"{{ username }}\" ist gesperrt.",
+    "user_unblocked": "Benutzer \"{{ username }}\" ist entsperrt.",
     "error_socket": "Socket fehler"
   },
   "concept-view": {
     "chat_title": "Stream-Chat",
     "title": "Titel:",
-    "sure_you_want_delete_message": "Möchten sie die nachricht \"{{message}}\" wirklich löschen ?"
+    "sure_you_want_delete_message": "Möchten sie die nachricht \"{{message}}\" wirklich löschen ?",
+    "sure_you_want_permanently_delete_message": "Möchten sie die nachricht wirklich dauerhaft löschen?"
   },
   "panel-stream-params": {
     "tags": "Schlagwörter:",
@@ -429,7 +433,8 @@
     "you": "du",
     "menu": {
         "edit": "Bearbeiten",
-        "remove": "Löschen",
+        "cut": "Löschen",
+        "remove": "Endgültig löschen",
         "block_user": "Block",
         "unblock_user": "Entsperren"
     },
