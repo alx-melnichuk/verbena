@@ -1,6 +1,3 @@
-pub mod blocked_user_controller;
-pub mod blocked_user_models;
-pub mod blocked_user_orm;
 pub mod chat_event_ws;
 pub mod chat_message;
 pub mod chat_message_controller;
@@ -8,6 +5,7 @@ pub mod chat_message_models;
 pub mod chat_message_orm;
 pub mod chat_message_test;
 pub mod chat_ws_assistant;
+pub mod chat_ws_controller;
 pub mod chat_ws_server;
 pub mod chat_ws_session;
 pub mod chat_ws_test_1;
