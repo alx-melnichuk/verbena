@@ -20,7 +20,6 @@ use crate::chats::{
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::settings::err;
-use crate::users::user_models::UserRole;
 use crate::utils::parser;
 use crate::validators::{msg_validation, Validator};
 
@@ -67,8 +66,8 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
             date: current.clone(),
             member: member.into(),
             msg: format!("Demo message {}", idx),
-            is_edt: false,
-            is_rmv: false,
+            date_edt: None,
+            date_rmv: None,
         });
 
         current = current + Duration::minutes(dlt_minutes);
@@ -244,7 +243,7 @@ pub async fn put_chat_message(
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
     let profile = authenticated.deref();
-    let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
+    let user_id = profile.user_id;
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -270,7 +269,7 @@ pub async fn put_chat_message(
     let res_chat_message = web::block(move || {
         // Add a new entity (stream).
         let res_chat_message1 = chat_message_orm2
-            .modify_chat_message(id, opt_user_id, modify_chat_message)
+            .modify_chat_message(id, user_id, modify_chat_message)
             .map_err(|e| {
                 error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
@@ -311,7 +310,7 @@ pub async fn delete_chat_message(
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
     let profile = authenticated.deref();
-    let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
+    let user_id = profile.user_id;
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -325,7 +324,7 @@ pub async fn delete_chat_message(
     let res_chat_message = web::block(move || {
         // Add a new entity (stream).
         let res_chat_message1 = chat_message_orm2
-            .delete_chat_message(id, opt_user_id)
+            .delete_chat_message(id, user_id)
             .map_err(|e| {
                 error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
@@ -512,10 +511,8 @@ pub mod tests {
     use chrono::{DateTime, Utc};
 
     use crate::chats::{
-        blocked_user_models::BlockedUser,
-        blocked_user_orm::tests::{BlockedUserOrmApp, UserMini},
-        chat_message_models::{ChatMessage, ChatMessageLog},
-        chat_message_orm::tests::{ChatMessageOrmApp, ChatMsgTest},
+        chat_message_models::{BlockedUser, ChatMessage, ChatMessageLog},
+        chat_message_orm::tests::{ChatMessageOrmApp, ChatMsgTest, UserMini},
     };
     use crate::profiles::{
         profile_models::Profile, profile_orm::tests::ProfileOrmApp, profile_orm::tests::PROFILE_USER_ID as PROFILE_ID,
@@ -548,7 +545,7 @@ pub mod tests {
         stream_id: i32,
         user_id: i32,
         msg: &str,
-        date_update: DateTime<Utc>,
+        date_created: DateTime<Utc>,
     ) -> ChatMessage {
         #[rustfmt::skip]
         let stream_id = if stream_id > 0 { stream_id } else { ChatMsgTest::stream_ids().get(0).unwrap().clone() };
@@ -559,7 +556,7 @@ pub mod tests {
         let user_id = user_ids.get(idx_user_id).unwrap().clone();
         let user_name = ChatMsgTest::user_names().get(idx_user_id).unwrap().clone();
         let msg = Some(msg.to_string());
-        ChatMessage::new(id, stream_id, user_id, user_name, msg, date_update, false, false)
+        ChatMessage::new(id, stream_id, user_id, user_name, msg, date_created, None, None)
     }
     pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
@@ -607,8 +604,14 @@ pub mod tests {
         let chat_message_log_list: Vec<ChatMessageLog> = Vec::new();
         let blocked_user_list: Vec<BlockedUser> = ChatMsgTest::get_blocked_user_vec();
 
-        let chat_message_orm =
-            ChatMessageOrmApp::create(&chat_message_list, &chat_message_log_list, &blocked_user_list);
+        let user_mini_vec: Vec<UserMini> = ChatMsgTest::get_user_mini();
+
+        let chat_message_orm = ChatMessageOrmApp::create(
+            &chat_message_list,
+            &chat_message_log_list,
+            &blocked_user_list,
+            &user_mini_vec,
+        );
 
         let chat_message_vec = chat_message_orm.chat_message_vec.clone();
         let mut chat_message_log_vec: Vec<ChatMessageLog> = Vec::new();
@@ -618,7 +621,7 @@ pub mod tests {
                 chat_message_log_vec.push(chat_message_log.clone());
             }
         }
-        let blocked_user_vec = chat_message_orm.blocked_user_vec.clone();
+        let blocked_user_vec = (*chat_message_orm.blocked_user_vec).borrow().clone();
 
         (chat_message_vec, chat_message_log_vec, blocked_user_vec)
     }
@@ -670,15 +673,17 @@ pub mod tests {
             let data_config_jwt = web::Data::new(cfg_c);
             let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
             let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
-            let data_chat_message_orm = web::Data::new(ChatMessageOrmApp::create(&data_c.2, &data_c.3, &data_c.4));
-            let data_blocked_user_orm = web::Data::new(BlockedUserOrmApp::create(&data_c.4, &user_mini_vec));
-
+            let data_chat_message_orm = web::Data::new(ChatMessageOrmApp::create(
+                &data_c.2,
+                &data_c.3,
+                &data_c.4,
+                &user_mini_vec.clone(),
+            ));
             config
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_profile_orm))
                 .app_data(web::Data::clone(&data_session_orm))
-                .app_data(web::Data::clone(&data_chat_message_orm))
-                .app_data(web::Data::clone(&data_blocked_user_orm));
+                .app_data(web::Data::clone(&data_chat_message_orm));
         }
     }
 }
