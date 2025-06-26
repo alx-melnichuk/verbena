@@ -11,20 +11,17 @@ CREATE TABLE chat_messages (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     /* Message text. */
     msg VARCHAR(255) NULL,
-    /* Date and time of message creation/modification/deletion. */
-    date_update TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    /* Flag, message change. */
-    is_changed BOOLEAN DEFAULT FALSE NOT NULL,
-    /* Flag, message deletion. */
-    is_removed BOOLEAN DEFAULT FALSE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+    /* Date and time of message creation. */
+    date_created TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    /* Date and time the message was changed. */
+    date_changed TIMESTAMP WITH TIME ZONE NULL,
+    /* Date and time the message was removed. */
+    date_removed TIMESTAMP WITH TIME ZONE NULL
 );
-
-SELECT diesel_manage_updated_at('chat_messages');
 
 CREATE INDEX idx_chat_messages_stream_id ON chat_messages(stream_id);
 CREATE INDEX idx_chat_messages_user_id ON chat_messages(user_id);
+CREATE INDEX idx_chat_messages_date_created ON chat_messages(date_created);
 
 -- **
 
@@ -47,49 +44,47 @@ CREATE INDEX idx_chat_message_logs_chat_message_id ON chat_message_logs(chat_mes
 CREATE OR REPLACE FUNCTION filter_chat_messages(
   IN _stream_id INTEGER,
   IN _sort_des BOOLEAN,
-  IN _border_by_id INTEGER,
+  IN _border_date TIMESTAMP WITH TIME ZONE,
   IN _rec_limit INTEGER,
   OUT id INTEGER,
   OUT stream_id INTEGER,
   OUT user_id INTEGER,
   OUT user_name VARCHAR,
   OUT msg VARCHAR,
-  OUT date_update TIMESTAMP WITH TIME ZONE,
-  OUT is_changed BOOLEAN,
-  OUT is_removed BOOLEAN,
-  OUT created_at TIMESTAMP WITH TIME ZONE,
-  OUT updated_at TIMESTAMP WITH TIME ZONE
+  OUT date_created TIMESTAMP WITH TIME ZONE,
+  OUT date_changed TIMESTAMP WITH TIME ZONE,
+  OUT date_removed TIMESTAMP WITH TIME ZONE
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE
 BEGIN
   IF _sort_des THEN
-    IF _border_by_id IS NULL THEN
-      _border_by_id := +2147483647;
-    END IF;
-  
+    IF _border_date IS NULL THEN
+      _border_date := CURRENT_TIMESTAMP;
+    END IF;  
+
     RETURN QUERY
-      SELECT cm.id, cm.stream_id, cm.user_id, u.nickname as user_name, cm.msg, cm.date_update,
-        cm.is_changed, cm.is_removed, cm.created_at, cm.updated_at
+      SELECT cm.id, cm.stream_id, cm.user_id, u.nickname as user_name, cm.msg,
+        cm.date_created, cm.date_changed, cm.date_removed
       FROM chat_messages cm, users u
       WHERE cm.stream_id = _stream_id
         AND u.id = cm.user_id
-        AND cm.id < _border_by_id  
-      ORDER BY cm.id DESC
+        AND cm.date_created < _border_date
+      ORDER BY cm.date_created DESC
       LIMIT CASE WHEN _rec_limit IS NOT NULL THEN _rec_limit ELSE 20 END;
   ELSE
-    IF _border_by_id IS NULL THEN
-      _border_by_id := -2147483648;
-    END IF;
-  
+    IF _border_date IS NULL THEN
+      _border_date := TO_TIMESTAMP(0);
+    END IF;  
+
     RETURN QUERY
-      SELECT cm.id, cm.stream_id, cm.user_id, u.nickname as user_name, cm.msg, cm.date_update,
-        cm.is_changed, cm.is_removed, cm.created_at, cm.updated_at
+      SELECT cm.id, cm.stream_id, cm.user_id, u.nickname as user_name, cm.msg,
+        cm.date_created, cm.date_changed, cm.date_removed
       FROM chat_messages cm, users u
       WHERE cm.stream_id = _stream_id
         AND u.id = cm.user_id
-        AND cm.id > _border_by_id
-      ORDER BY cm.id ASC
+        AND cm.date_created > _border_date
+      ORDER BY cm.date_created ASC
       LIMIT CASE WHEN _rec_limit IS NOT NULL THEN _rec_limit ELSE 20 END;
   END IF;
 END;
@@ -106,11 +101,9 @@ CREATE OR REPLACE FUNCTION create_chat_message(
   OUT user_id INTEGER,
   OUT user_name VARCHAR,
   OUT msg VARCHAR,
-  OUT date_update TIMESTAMP WITH TIME ZONE,
-  OUT is_changed BOOLEAN,
-  OUT is_removed BOOLEAN,
-  OUT created_at TIMESTAMP WITH TIME ZONE,
-  OUT updated_at TIMESTAMP WITH TIME ZONE
+  OUT date_created TIMESTAMP WITH TIME ZONE,
+  OUT date_changed TIMESTAMP WITH TIME ZONE,
+  OUT date_removed TIMESTAMP WITH TIME ZONE
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE 
@@ -120,30 +113,19 @@ BEGIN
   INSERT INTO chat_messages(stream_id, user_id, msg)
   VALUES (_stream_id, _user_id, _msg)
   RETURNING
-    chat_messages.id,
-    chat_messages.stream_id,
-    chat_messages.user_id,
-    chat_messages.msg,
-    chat_messages.date_update,
-    chat_messages.is_changed,
-    chat_messages.is_removed,
-    chat_messages.created_at,
-    chat_messages.updated_at
+    chat_messages.id, chat_messages.stream_id, chat_messages.user_id, chat_messages.msg,
+    chat_messages.date_created, chat_messages.date_changed, chat_messages.date_removed
   INTO rec1;
+
+  IF rec1.id IS NULL THEN
+    RETURN;
+  END IF;
 
   SELECT u.nickname FROM users u WHERE u.id = _user_id INTO user_name;
 
   RETURN QUERY SELECT
-    rec1.id,
-    rec1.stream_id,
-    rec1.user_id,
-    user_name,
-    rec1.msg,
-    rec1.date_update,
-    rec1.is_changed,
-    rec1.is_removed,
-    rec1.created_at,
-    rec1.updated_at;
+    rec1.id, rec1.stream_id, rec1.user_id, user_name, rec1.msg,
+    rec1.date_created, rec1.date_changed, rec1.date_removed;
 END;
 $$;
 
@@ -158,68 +140,51 @@ CREATE OR REPLACE FUNCTION modify_chat_message(
   OUT user_id INTEGER,
   OUT user_name VARCHAR,
   OUT msg VARCHAR,
-  OUT date_update TIMESTAMP WITH TIME ZONE,
-  OUT is_changed BOOLEAN,
-  OUT is_removed BOOLEAN,
-  OUT created_at TIMESTAMP WITH TIME ZONE,
-  OUT updated_at TIMESTAMP WITH TIME ZONE
+  OUT date_created TIMESTAMP WITH TIME ZONE,
+  OUT date_changed TIMESTAMP WITH TIME ZONE,
+  OUT date_removed TIMESTAMP WITH TIME ZONE
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
-DECLARE 
-  val1 VARCHAR;
-  sql1 TEXT;
-  update_fields VARCHAR[];
+DECLARE
+  rec1 RECORD;
+  is_changed BOOLEAN;
 BEGIN
-  IF _id IS NULL THEN
+  IF (_id IS NULL OR _user_id IS NULL) THEN
     RETURN;
   END IF;
 
-  update_fields := ARRAY[]::VARCHAR[];
-
   IF _msg IS NOT NULL THEN
-    update_fields := ARRAY_APPEND(update_fields, 'msg = ' || '''' || _msg || '''');
-
-    update_fields := ARRAY_APPEND(update_fields, 'date_update = CURRENT_TIMESTAMP');
-
-    IF LENGTH(_msg) > 0 THEN
-      sql1 := 'INSERT INTO chat_message_logs (chat_message_id, old_msg, date_update)'
-        || ' SELECT chat_messages.id, chat_messages.msg, chat_messages.date_update'
-        || ' FROM chat_messages'
-        || ' WHERE chat_messages.is_removed = FALSE'
-        || CASE WHEN _user_id IS NOT NULL THEN ' AND chat_messages.user_id = ' || _user_id ELSE '' END
-        || ' AND chat_messages.id = ' || _id;
-
-      EXECUTE sql1;
-
-      val1 := 'is_changed = TRUE';
-    ELSE
-      -- LENGTH(_msg) == 0
-      val1 := 'is_removed = TRUE';
-    END IF;
-    update_fields := ARRAY_APPEND(update_fields, val1);
+    INSERT INTO chat_message_logs (chat_message_id, old_msg, date_update)
+    SELECT chat_messages.id, chat_messages.msg, CURRENT_TIMESTAMP
+    FROM chat_messages
+    WHERE chat_messages.date_removed IS NULL
+      AND chat_messages.id = _id
+      AND chat_messages.user_id = _user_id;
   END IF;
 
-  IF ARRAY_LENGTH(update_fields, 1) > 0 THEN
-    sql1 := 'UPDATE chat_messages SET '
-      || ARRAY_TO_STRING(update_fields, ',')
-      || ' WHERE is_removed = FALSE'
-      || CASE WHEN _user_id IS NOT NULL THEN ' AND user_id=' || _user_id ELSE '' END
-      || ' AND id=' || _id
-      || ' RETURNING '
-      || ' chat_messages.id, chat_messages.stream_id, chat_messages.user_id, chat_messages.msg,'
-      || ' chat_messages.date_update, chat_messages.is_changed, chat_messages.is_removed,'
-      || ' chat_messages.created_at, chat_messages.updated_at';
+  is_changed := _msg IS NOT NULL AND LENGTH(_msg) > 0;
+  
+  UPDATE chat_messages SET
+    msg = _msg,
+    date_changed = CASE WHEN is_changed THEN CURRENT_TIMESTAMP ELSE chat_messages.date_changed END,
+    date_removed = CASE WHEN (NOT is_changed) THEN CURRENT_TIMESTAMP ELSE chat_messages.date_removed END
+  WHERE chat_messages.date_removed IS NULL
+    AND chat_messages.id = _id
+    AND chat_messages.user_id = _user_id
+  RETURNING
+    chat_messages.id, chat_messages.stream_id, chat_messages.user_id, chat_messages.msg,
+    chat_messages.date_created, chat_messages.date_changed, chat_messages.date_removed
+  INTO rec1;
 
-    EXECUTE sql1 INTO
-      id, stream_id, user_id, msg, date_update, is_changed, is_removed, created_at, updated_at;
+  IF rec1.id IS NULL THEN
+    RETURN;
   END IF;
 
-  IF id IS NOT NULL THEN
-    SELECT u.nickname FROM users u WHERE u.id = user_id INTO user_name;
+  SELECT u.nickname FROM users u WHERE u.id = _user_id INTO user_name;
 
-    RETURN QUERY SELECT
-      id, stream_id, user_id, user_name, msg, date_update, is_changed, is_removed, created_at, updated_at;
-  END IF;
+  RETURN QUERY SELECT
+    rec1.id, rec1.stream_id, rec1.user_id, user_name, rec1.msg,
+    rec1.date_created, rec1.date_changed, rec1.date_removed;
 END;
 $$;
 
@@ -227,46 +192,41 @@ $$;
 /* Create a stored function to delete the entity in "chat_messages". */
 CREATE OR REPLACE FUNCTION delete_chat_message(
   IN _id INTEGER,
-  In _user_id INTEGER,
+  IN _user_id INTEGER,
   OUT id INTEGER,
   OUT stream_id INTEGER,
   OUT user_id INTEGER,
   OUT user_name VARCHAR,
   OUT msg VARCHAR,
-  OUT date_update TIMESTAMP WITH TIME ZONE,
-  OUT is_changed BOOLEAN,
-  OUT is_removed BOOLEAN,
-  OUT created_at TIMESTAMP WITH TIME ZONE,
-  OUT updated_at TIMESTAMP WITH TIME ZONE
+  OUT date_created TIMESTAMP WITH TIME ZONE,
+  OUT date_changed TIMESTAMP WITH TIME ZONE,
+  OUT date_removed TIMESTAMP WITH TIME ZONE
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE
-  sql1 TEXT;
   rec1 RECORD;
 BEGIN
-  IF _id IS NULL THEN
+  IF _id IS NULL OR _user_id IS NULL THEN
     RETURN;
   END IF;
 
-  sql1 := 'DELETE FROM chat_messages'
-    || ' WHERE chat_messages.id = _id'
-    || CASE WHEN _user_id IS NOT NULL THEN ' AND chat_messages.user_id = ' || _user_id ELSE '' END
-    || ' RETURNING '
-    || ' chat_messages.id, chat_messages.stream_id, chat_messages.user_id, chat_messages.msg,'
-    || ' chat_messages.date_update, chat_messages.is_changed, chat_messages.is_removed,'
-    || ' chat_messages.created_at, chat_messages.updated_at';
-
-  EXECUTE sql1 INTO rec1;
+  DELETE FROM chat_messages
+  WHERE chat_messages.id = _id
+    AND chat_messages.user_id = _user_id
+  RETURNING 
+    chat_messages.id, chat_messages.stream_id, chat_messages.user_id, chat_messages.msg,
+    chat_messages.date_created, chat_messages.date_changed, chat_messages.date_removed
+  INTO rec1;
 
   IF rec1.id IS NULL THEN
     RETURN;
   END IF;
 
-  SELECT u.nickname FROM users u WHERE u.id = rec1.user_id INTO user_name;
-  
+  SELECT u.nickname FROM users u WHERE u.id = _user_id INTO user_name;
+
   RETURN QUERY SELECT
-    rec1.id, rec1.stream_id, rec1.user_id, user_name, rec1.msg, rec1.date_update, rec1.is_changed, rec1.is_removed,
-    rec1.created_at, rec1.updated_at;
+    rec1.id, rec1.stream_id, rec1.user_id, user_name, rec1.msg,
+    rec1.date_created, rec1.date_changed, rec1.date_removed;
 END;
 $$;
 
@@ -274,8 +234,9 @@ $$;
 
 /* Create a stored function to get an array of entities in "chat_message_logs". */
 CREATE OR REPLACE FUNCTION get_chat_message_log(
+  IN _chat_message_id INTEGER,
   OUT id INTEGER,
-  INOUT chat_message_id INTEGER,
+  OUT chat_message_id INTEGER,
   OUT old_msg VARCHAR,
   OUT date_update TIMESTAMP WITH TIME ZONE
 ) RETURNS SETOF record LANGUAGE sql
@@ -286,7 +247,7 @@ AS $$
   FROM
     chat_message_logs
   WHERE
-    chat_message_logs.chat_message_id = chat_message_id
+    chat_message_logs.chat_message_id = _chat_message_id
   ORDER BY
     chat_message_logs.id ASC;
 $$;
@@ -368,7 +329,7 @@ BEGIN
       blocked_users.user_id,
       blocked_users.blocked_id,
       blocked_users.block_date
-      INTO rec1;
+    INTO rec1;
   END IF;
 
   IF rec1.id IS NULL THEN
@@ -496,9 +457,11 @@ $$;
 
 /* Create a stored function to get the entity from "blocked_users". */
 CREATE OR REPLACE FUNCTION get_blocked_user(
+  IN _user_id INTEGER,
+  IN _blocked_id INTEGER,
   OUT id INTEGER,
-  INOUT user_id INTEGER,
-  INOUT blocked_id INTEGER,
+  OUT user_id INTEGER,
+  OUT blocked_id INTEGER,
   OUT blocked_nickname VARCHAR,
   OUT block_date TIMESTAMP WITH TIME ZONE
 ) RETURNS SETOF record LANGUAGE plpgsql
@@ -506,7 +469,7 @@ AS $$
 DECLARE
   rec1 RECORD;
 BEGIN
-  IF (user_id IS NULL OR blocked_id IS NULL) THEN
+  IF (_user_id IS NULL OR _blocked_id IS NULL) THEN
     RETURN;
   END IF;
 
@@ -520,8 +483,8 @@ BEGIN
     FROM
       blocked_users bu, users u
     WHERE
-      bu.user_id = user_id
-      AND bu.blocked_id = blocked_id
+      bu.user_id = _user_id
+      AND bu.blocked_id = _blocked_id
       AND bu.user_id = u.id;
 END;
 $$;
@@ -674,7 +637,7 @@ BEGIN
         user_id := user_ids[usr_idx];
 
         -- Add a new message for the specified user and their stream.
-        INSERT INTO chat_messages(stream_id, user_id, msg, date_update)
+        INSERT INTO chat_messages(stream_id, user_id, msg, date_created)
         SELECT stream_id, user_id, msg1, starttime
         RETURNING chat_messages.id
         INTO ch_msg_id;
