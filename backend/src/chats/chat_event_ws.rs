@@ -1,7 +1,10 @@
 use std::{collections::HashMap, fmt, slice::Iter};
 
+use chrono::SecondsFormat;
 use serde::{Deserialize, Serialize};
 use serde_json;
+
+use crate::chats::chat_message_models::ChatMessage;
 
 pub const MISSING_STARTING_CURLY_BRACE: &str = "Serialization: missing \"{\".";
 pub const MISSING_ENDING_CURLY_BRACE: &str = "Serialization: missing \"}\".";
@@ -219,9 +222,26 @@ pub struct MsgEWS {
     pub msg: String,
     pub id: i32,
     pub member: String,
-    pub date: String,
-    pub is_edt: bool,
-    pub is_rmv: bool,
+    pub date: String,             // DateTime<Utc>
+    pub date_edt: Option<String>, // DateTime<Utc>
+    pub date_rmv: Option<String>, // DateTime<Utc>
+}
+
+impl From<ChatMessage> for MsgEWS {
+    fn from(chat_message: ChatMessage) -> Self {
+        MsgEWS {
+            msg: chat_message.msg.unwrap_or_default(),
+            id: chat_message.id,
+            member: chat_message.user_name.clone(),
+            date: chat_message.date_created.to_rfc3339_opts(SecondsFormat::Millis, true),
+            date_edt: chat_message
+                .date_changed
+                .map(|v| v.to_rfc3339_opts(SecondsFormat::Millis, true)),
+            date_rmv: chat_message
+                .date_removed
+                .map(|v| v.to_rfc3339_opts(SecondsFormat::Millis, true)),
+        }
+    }
 }
 
 // ** Send a message about deleting text to all chat members. **
