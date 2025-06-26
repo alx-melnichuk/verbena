@@ -17,12 +17,12 @@ pub trait ChatMessageOrm {
     fn modify_chat_message(
         &self,
         id: i32,
-        opt_user_id: Option<i32>,
+        user_id: i32,
         modify_chat_message: ModifyChatMessage,
     ) -> Result<Option<ChatMessage>, String>;
 
     /// Delete an entity (chat_message).
-    fn delete_chat_message(&self, id: i32, opt_user_id: Option<i32>) -> Result<Option<ChatMessage>, String>;
+    fn delete_chat_message(&self, id: i32, user_id: i32) -> Result<Option<ChatMessage>, String>;
 
     /// Get information about the live of the stream.
     fn get_stream_live(&self, stream_id: i32) -> Result<Option<bool>, String>;
@@ -120,7 +120,7 @@ pub mod impls {
             let query = diesel::sql_query("select * from filter_chat_messages($1,$2,$3,$4);")
                 .bind::<sql_types::Integer, _>(flt_chat_msg.stream_id) //$1
                 .bind::<sql_types::Nullable<sql_types::Bool>, _>(flt_chat_msg.is_sort_des) // $2
-                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.border_by_id) // $3
+                .bind::<sql_types::Nullable<sql_types::Timestamptz>, _>(flt_chat_msg.border_date) // $3
                 .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.limit); // $4
 
             // Run a query using Diesel to find a list of entities (ChatMessage) based on the given parameters.
@@ -170,7 +170,7 @@ pub mod impls {
         fn modify_chat_message(
             &self,
             id: i32,
-            opt_user_id: Option<i32>,
+            user_id: i32,
             modify_chat_message: ModifyChatMessage,
         ) -> Result<Option<ChatMessage>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -186,7 +186,7 @@ pub mod impls {
 
             let query = diesel::sql_query("select * from modify_chat_message($1,$2,$3);")
                 .bind::<sql_types::Integer, _>(id) // $1
-                .bind::<sql_types::Nullable<sql_types::Integer>, _>(opt_user_id) // $2
+                .bind::<sql_types::Integer, _>(user_id) // $2
                 .bind::<sql_types::Text, _>(modify_chat_message.msg); // $3
 
             // Run a query with Diesel to modify the entity and return it.
@@ -202,14 +202,14 @@ pub mod impls {
         }
 
         /// Delete an entity (chat_message).
-        fn delete_chat_message(&self, id: i32, opt_user_id: Option<i32>) -> Result<Option<ChatMessage>, String> {
+        fn delete_chat_message(&self, id: i32, user_id: i32) -> Result<Option<ChatMessage>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
             let query = diesel::sql_query("select * from delete_chat_message($1,$2);")
                 .bind::<sql_types::Integer, _>(id)
-                .bind::<sql_types::Nullable<sql_types::Integer>, _>(opt_user_id); // $2
+                .bind::<sql_types::Integer, _>(user_id); // $2
 
             // Run a query using Diesel to delete the entity by ID and return it.
             let opt_chat_message = query
@@ -419,6 +419,17 @@ pub mod tests {
                 "ava_wilson".to_string(),
             ]
         }
+        pub fn get_user_mini() -> Vec<UserMini> {
+            let user_names = ChatMsgTest::user_names();
+            ChatMsgTest::user_ids()
+                .iter()
+                .enumerate()
+                .map(|(i, v)| UserMini {
+                    id: *v,
+                    name: user_names.get(i).unwrap().clone(),
+                })
+                .collect()
+        }
         pub fn get_user_name_map() -> HashMap<i32, String> {
             use std::collections::HashMap;
             let user_ids = Self::user_ids();
@@ -503,13 +514,13 @@ pub mod tests {
                     chat_message.user_id,
                     chat_message.user_name.clone(),
                     chat_message.msg.clone(),
-                    chat_message.date_update.clone(),
-                    chat_message.is_changed,
-                    chat_message.is_removed,
+                    chat_message.date_created.clone(),
+                    chat_message.date_changed.clone(),
+                    chat_message.date_removed.clone(),
                 );
                 chat_message_vec.push(new_chat_message);
 
-                if chat_message.is_changed {
+                if chat_message.date_changed.is_some() {
                     if let Some(ch_msg_lg_vec) = tmp_ch_msg_lg_map.get(&chat_message.id) {
                         let mut ch_msg_log_list = Vec::<ChatMessageLog>::new();
 
@@ -595,8 +606,8 @@ pub mod tests {
                 user_name,
                 Some(create_chat_message.msg.clone()),
                 Utc::now(),
-                false,
-                false,
+                None,
+                None,
             );
 
             Ok(Some(chat_message))
@@ -611,19 +622,13 @@ pub mod tests {
         fn modify_chat_message(
             &self,
             id: i32,
-            opt_user_id: Option<i32>,
+            user_id: i32,
             modify_chat_message: ModifyChatMessage,
         ) -> Result<Option<ChatMessage>, String> {
             let opt_chat_message = self
                 .chat_message_vec
                 .iter()
-                .find(|chat_msg| {
-                    let check_user_id = match opt_user_id {
-                        Some(user_id) => (*chat_msg).user_id == user_id,
-                        None => true,
-                    };
-                    (*chat_msg).id == id && check_user_id
-                })
+                .find(|chat_msg| (*chat_msg).id == id && (*chat_msg).user_id == user_id)
                 .map(|chat_msg| chat_msg.clone());
 
             if opt_chat_message.is_none() {
@@ -633,29 +638,23 @@ pub mod tests {
 
             let mut chat_message1 = chat_message.clone();
 
+            let date = Utc::now();
             if modify_chat_message.msg.len() > 0 {
-                chat_message1.is_changed = true;
+                chat_message1.date_changed = Some(date);
             } else {
-                chat_message1.is_removed = true;
+                chat_message1.date_removed = Some(date);
             }
             chat_message1.msg = Some(modify_chat_message.msg.clone());
-            chat_message1.date_update = Utc::now();
 
             Ok(Some(chat_message1))
         }
 
         /// Delete an entity (chat_message).
-        fn delete_chat_message(&self, id: i32, opt_user_id: Option<i32>) -> Result<Option<ChatMessage>, String> {
+        fn delete_chat_message(&self, id: i32, user_id: i32) -> Result<Option<ChatMessage>, String> {
             let opt_chat_message = self
                 .chat_message_vec
                 .iter()
-                .find(|chat_msg| {
-                    let check_user_id = match opt_user_id {
-                        Some(user_id) => (*chat_msg).user_id == user_id,
-                        None => true,
-                    };
-                    (*chat_msg).id == id && check_user_id
-                })
+                .find(|chat_msg| (*chat_msg).id == id && (*chat_msg).user_id == user_id)
                 .map(|chat_msg| chat_msg.clone());
 
             Ok(opt_chat_message)
