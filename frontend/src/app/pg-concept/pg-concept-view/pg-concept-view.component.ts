@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
+import { StringDateTime } from 'src/app/common/string-date-time';
 
 import { ChatMessageDto, ChatMessageDtoUtil } from 'src/app/lib-chat/chat-message-api.interface';
 import { ChatMessageService } from 'src/app/lib-chat/chat-message.service';
@@ -164,11 +165,11 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.chatSocketService.sendData(EWSTypeUtil.getMsgRmvEWS(id));
         }
     }
-    public doQueryChatMsgs(info: { isSortDes: boolean, borderById: number }) {
+    public doQueryChatMsgs(info: { isSortDes: boolean, borderDate: StringDateTime }) {
         const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
-        if (streamId > 0 && !!info && info.isSortDes != null && info.borderById != null) {
+        if (streamId > 0 && !!info && info.isSortDes != null && info.borderDate != null) {
             console.log(`PgConceptView.doQueryPastInfo(${JSON.stringify(info)});`); // #
-            this.getChatMessages(streamId, info.isSortDes, info.borderById, undefined);
+            this.getChatMessages(streamId, info.isSortDes, info.borderDate, undefined);
         }
     }
 
@@ -285,13 +286,13 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         }
         return Array.from(userSet);
     }
-    private getChatMessages(streamId: number | null, isSortDes?: boolean, borderById?: number, limit?: number): void {
-        console.log(`PgConceptView.getChatMessages(isSortDes: ${isSortDes}, borderById: ${borderById})...`); // #
+    private getChatMessages(streamId: number | null, isSortDes?: boolean, borderDate?: StringDateTime, limit?: number): void {
+        console.log(`PgConceptView.getChatMessages(isSortDes: ${isSortDes}, borderDate: ${borderDate})...`); // #
         if (!streamId || streamId < 0) {
             return;
         }
         this.chatIsLoadData = true;
-        this.chatMessageService.getChatMessages(streamId, isSortDes, borderById, limit)
+        this.chatMessageService.getChatMessages(streamId, isSortDes, borderDate, limit)
             .then((response: ChatMessageDto[] | HttpErrorResponse | undefined) => {
                 console.log(`PgConceptView.getChatMessages() this.setChatMsgs(response)`); // #
                 this.chatMsgs = (response as ChatMessageDto[]).concat([]);

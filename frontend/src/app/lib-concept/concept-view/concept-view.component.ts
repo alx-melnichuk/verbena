@@ -86,7 +86,7 @@ export class ConceptViewComponent implements AfterContentInit {
     @Output()
     readonly rmvMessage: EventEmitter<number> = new EventEmitter();
     @Output()
-    readonly queryChatMsgs: EventEmitter<{ isSortDes: boolean, borderById: number }> = new EventEmitter();
+    readonly queryChatMsgs: EventEmitter<{ isSortDes: boolean, borderDate: StringDateTime }> = new EventEmitter();
 
     public isSidebarLfOpen: boolean = false;
     public isSidebarRgOpen: boolean = true; // false;
@@ -175,33 +175,13 @@ export class ConceptViewComponent implements AfterContentInit {
             this.rmvMessage.emit(chMsgId);
         }
     }
-    public doQueryChatMsgs(info: { isSortDes: boolean, borderById: number }) {
+    public doQueryChatMsgs(info: { isSortDes: boolean, borderDate: StringDateTime }) {
         this.queryChatMsgs.emit(info);
     }
 
     // ** Private API **
 
     // Updating data by stream
-
-    private getChatMsg(nickname: string, len: number): ChatMessageDto[] {
-        const result: ChatMessageDto[] = [];
-
-        for (let idx = 0; idx < len; idx++) {
-            let member = "Teodor_Nickols";
-            let d1 = new Date((idx < (len / 2) ? -100000000 : 0) + Date.now());
-            let date = d1.toISOString();
-            let msg = "text_" + idx + " This function can be used to pass through a successful result while handling an error.";
-            if (idx % 3 == 0) {
-                member = nickname;
-            } else if (idx % 2 == 0) {
-                member = "Snegana_Miller";
-            }
-            // const date1 = date.slice(20, 24) + '_' + date.slice(11, 19) + '_' + date.slice(0, 10);
-            result.push({ id: idx, date, member, msg, isEdt: false, isRmv: false });
-            this.wait(1);
-        }
-        return result;
-    }
 
     private wait(ms: number): void {
         const start = Date.now();
