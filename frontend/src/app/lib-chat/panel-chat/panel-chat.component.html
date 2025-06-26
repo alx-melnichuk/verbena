@@ -25,17 +25,17 @@
           <div [ngClass]="['pc-item-name', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
             {{ isSelf(chatMsg.member) ? ('panel-chat.you' | translate) : chatMsg.member }}
           </div>
-          <div [ngClass]="['pc-item-date', (chatMsg.isEdt || chatMsg.isRmv ? 'pc-item-modify' : '')]">
+          <div [ngClass]="['pc-item-date', (!!chatMsg.dateEdt || !!chatMsg.dateRmv ? 'pc-item-modify' : '')]">
             @if (!isToday(chatMsg.date)) {
               <span>{{ chatMsg.date | dateTimeFormat:locale:formatDate }}</span>
             }
             <span>{{ chatMsg.date | dateTimeFormat:locale:formatTime }}</span>
-            @if (chatMsg.isEdt && !chatMsg.isRmv) {
+            @if (!!chatMsg.dateEdt && !chatMsg.dateRmv) {
               <div>{{ 'panel-chat.message_edited' | translate }}</div>
             }
           </div>
         </div>
-        @if (!chatMsg.isRmv) {
+        @if (!chatMsg.dateRmv) {
           <div [ngClass]="['pc-item-msg', (isSelf(chatMsg.member) ? 'pc-myself' : '')]">
             {{ chatMsg.msg }}
             <ng-container *ngTemplateOutlet="templateShowInfo; context: { chatMsg2: chatMsg }" />
@@ -53,7 +53,7 @@
 
 <ng-template #templateShowInfo let-chatMsg="chatMsg2">
   <sub style="color: var(--sys-secondary);">
-    id:{{ chatMsg.id }} E:{{ chatMsg.isEdt ? 1 : 0 }} R:{{ chatMsg.isRmv ? 1 : 0 }}
+    id:{{ chatMsg.id }} E:{{ !!chatMsg.dateEdt ? 1 : 0 }} R:{{ !!chatMsg.dateRmv ? 1 : 0 }}
   </sub>
 </ng-template>
 

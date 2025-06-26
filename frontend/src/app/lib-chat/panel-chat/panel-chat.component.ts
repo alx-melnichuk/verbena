@@ -47,7 +47,7 @@ export const MESSAGE_MIN_LENGTH = 0;
 export const DEBOUNCE_DELAY = 50;
 export const MIN_SCROLL_VALUE = 20;
 
-type ObjChatMsg = { [key: number]: ChatMessageDto };
+type ChatMsgObj = { [key: number]: ChatMessageDto };
 type MenuEditMap = Map<number, MenuEdit>;
 type BlockedSet = Set<string>;
 
@@ -107,7 +107,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Output()
     readonly rmvMsg: EventEmitter<number> = new EventEmitter();
     @Output()
-    readonly queryChatMsgs: EventEmitter<{ isSortDes: boolean, borderById: number }> = new EventEmitter();
+    readonly queryChatMsgs: EventEmitter<{ isSortDes: boolean, borderDate: StringDateTime }> = new EventEmitter();
 
     @ViewChild('autosize')
     public autosize!: CdkTextareaAutosize;
@@ -132,7 +132,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     readonly formatTime: Intl.DateTimeFormatOptions = { timeStyle: 'short' };
     readonly menuEditMap: MenuEditMap = new Map();
     readonly blockedSet: BlockedSet = new Set();
-    readonly objChatMsg: ObjChatMsg = {};
+    readonly chatMsgObj: ChatMsgObj = {};
 
     private isNoPastData: boolean = false;
     private lastScrollTop: number = 0;
@@ -168,9 +168,18 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
         if (!!changes['chatMsgs']) {
             console.log(`PanelChat.OnChange('chatMsgs') 1 chatMsgs.length: ${this.chatMsgs.length}`);
+            this.isNoPastData = this.chatMsgs.length == 0;
+            if (this.chatMsgs.length > 0) {
+                this.chatMsgList = this.chatMsgs.concat(this.chatMsgList);
+                this.updateChatMsgObj(this.chatMsgObj, this.chatMsgList);
+
+                // this.smallestId = this.chatMsgList[0].id;
+                // this.largestId = this.chatMsgList[this.chatMsgList.length - 1].id;
+            }
+            /*
             let res = null;
             if (this.chatMsgs.length > 0) {
-                res = this.loadChatMsgs(this.objChatMsg, this.chatMsgs, this.menuEditMap, this.nickname || '');
+                res = this.loadChatMsgs(this.chatMsgObj, this.chatMsgs, this.menuEditMap, this.nickname || '');
                 this.chatMsgList = res.chatMsgs;
             } else {
                 this.isNoPastData = true;
@@ -185,11 +194,16 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
                 this.smallestId = res.smallestId;
                 this.largestId = res.largestId;
             }
+            */
         }
-        if (!!changes['chatRmvMsgs'] && this.chatRmvMsgs.length > 0 && this.chatMsgList.length > 0) {
-            this.chatMsgList = this.loadRmvChatMsgs(this.chatMsgList, this.chatRmvMsgs);
-            // Promise.resolve().then(() => this.checkScrollPosition());
-        }
+        // if (!!changes['chatRmvMsgs'] && this.chatRmvMsgs.length > 0 && this.chatMsgList.length > 0) {
+        //     this.chatMsgList = this.loadRmvChatMsgs(this.chatMsgList, this.chatRmvMsgs);
+        //     for (let idx = 0; idx < this.chatRmvMsgs.length; idx++) {
+        //         delete this.chatMsgObj[this.chatRmvMsgs[idx]];
+        //     }
+        //     this.updateChatMsgObj(this.chatMsgObj, this.chatMsgList);
+        //     // Promise.resolve().then(() => this.checkScrollPosition());
+        // }
         if (!!changes['isEditable'] && !changes['isEditable'].firstChange) {
             Promise.resolve().then(() => this.setItemsScrollTo(this.scrollItemElem.nativeElement, { bottom: 0 }));
         }
@@ -221,9 +235,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         this.lastScrollTop = elem.scrollTop;
         this.lastScrollBottom = elem.scrollHeight - (elem.scrollTop + elem.clientHeight);
         if (isMoveUp && !this.isNoPastData) {
-            if (this.deltaScroll(elem) < MIN_SCROLL_VALUE && this.smallestId != null) {
-                this.queryChatMsgs.emit({ isSortDes: true, borderById: this.smallestId });
-            }
+            // if (this.deltaScroll(elem) < MIN_SCROLL_VALUE && this.smallestId != null) {
+            //     this.queryChatMsgs.emit({ isSortDes: true, borderDate: this.smallestId });  // TODO !
+            // }
         }
     }
     public getMenuBlock(nickname: string, isOwner: boolean | null, selfName: string | null): MenuBlock | null {
@@ -253,7 +267,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public doSendMessage(newMsg: string): void {
         const newMsgVal = (newMsg || '').trim();
         if (this.isEditable && newMsgVal.length > 0) {
-            if (!!this.msgEditing && this.msgEditing.id > 0 && !this.msgEditing.isRmv) {
+            if (!!this.msgEditing && this.msgEditing.id > 0 && !this.msgEditing.dateRmv) {
                 const keyValue: KeyValue<number, string> = { key: this.msgEditing.id, value: newMsgVal };
                 this.editMsg.emit(keyValue);
             } else {
@@ -263,13 +277,13 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
     }
     public doCutMessage(chatMsg: ChatMessageDto | null): void {
-        if (this.isEditable && !!chatMsg && !!chatMsg.id && chatMsg.member == this.nickname && !chatMsg.isRmv) {
+        if (this.isEditable && !!chatMsg && !!chatMsg.id && chatMsg.member == this.nickname && !chatMsg.dateRmv) {
             const keyValue: KeyValue<number, string> = { key: chatMsg.id, value: chatMsg.msg };
             this.cutMsg.emit(keyValue);
         }
     }
     public doRemoveMessage(chatMsg: ChatMessageDto | null): void {
-        if (this.isEditable && !!chatMsg && !!chatMsg.id && chatMsg.member == this.nickname && chatMsg.isRmv) {
+        if (this.isEditable && !!chatMsg && !!chatMsg.id && chatMsg.member == this.nickname && !!chatMsg.dateRmv) {
             this.rmvMsg.emit(chatMsg.id);
         }
     }
@@ -290,7 +304,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             this.unblockUser.emit(member);
         }
     }
-
     public isSelf(nickname: string): boolean {
         return (this.nickname === nickname);
     }
@@ -301,34 +314,18 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
         return result;
     }
-
-    // public isBannedUserById(nickname: string): boolean {
-    //     return this.bannedUserIds.includes(nickname);
-    // }
-
     public doKeydownEnter(event: Event, newMsg: string): void {
         const keyEvent: KeyboardEvent = (event as KeyboardEvent);
-        if (!keyEvent.altKey && !keyEvent.shiftKey) {
+        if (this.isEditable && !!newMsg && !keyEvent.altKey && !keyEvent.shiftKey) {
             this.doSendMessage(newMsg);
         }
-        // # const keyEvent: KeyboardEvent = (event as KeyboardEvent);
-        // # const textArea: HTMLTextAreaElement = this.getTextArea();
-        // #   && !!textArea.value && textArea.value.length > 0
-        // # if (!keyEvent.altKey && !keyEvent.ctrlKey && !keyEvent.shiftKey && !!newMsg && newMsg.length > 0) {
-        // # this.doSendMessage(textArea.value);
-        // # this.doSendMessage(newMsg);
-        // # this.cleanNewMsg();
-        // # textArea.value = '';
-        //}
         event.preventDefault();
     }
-
     public doKeydownEscape(): void {
         if (!!this.msgEditing) {
             this.cleanNewMsg();
         }
     }
-
     public doClickCheckSelection(event: Event): void {
         const selectionObj = window.getSelection();
         const selection = !!selectionObj ? selectionObj.toString() : null;
@@ -355,9 +352,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     private checkScrollPosition(): void {
         const elem = this.scrollItemElem?.nativeElement;
         const isScroll = (elem?.scrollHeight || 0) > (elem?.clientHeight || 0);
-        if (!isScroll && this.chatMsgList.length > 0 && this.smallestId != null) {
-            this.queryChatMsgs.emit({ isSortDes: true, borderById: this.smallestId });
-        }
+        // if (!isScroll && this.chatMsgList.length > 0 && this.smallestId != null) {
+        //     this.queryChatMsgs.emit({ isSortDes: true, borderDate: this.smallestId }); // TODO !
+        // }
     }
     private setTextareaValue(value: string | null): void {
         this.initValue = value;
@@ -398,14 +395,19 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     */
     private createMenuEdit(selfName: string, chatMsg: ChatMessageDto): MenuEdit | null {
         const isSelfNameEqMember = !!selfName && selfName == chatMsg.member;
-        const isEdit = isSelfNameEqMember && !chatMsg.isRmv;
+        const isEdit = isSelfNameEqMember && !chatMsg.dateRmv;
         const isCut = isEdit;
-        const isRemove = isSelfNameEqMember && chatMsg.isRmv;
+        const isRemove = isSelfNameEqMember && !!chatMsg.dateRmv;
 
         return isSelfNameEqMember ? { isEdit, isCut, isRemove } : null;
     }
+    private updateChatMsgObj(chatMsgObj: ChatMsgObj, chatMsgs: ChatMessageDto[]): void {
+        for (let idx = 0; idx < chatMsgs.length; idx++) {
+            chatMsgObj[chatMsgs[idx].id] = chatMsgs[idx];
+        }
+    }
     private loadChatMsgs(
-        objChatMsg: ObjChatMsg, chatMsgs: ChatMessageDto[], menuEditMap: MenuEditMap, selfName: string
+        objChatMsg: ChatMsgObj, chatMsgs: ChatMessageDto[], menuEditMap: MenuEditMap, selfName: string
     ): { chatMsgs: ChatMessageDto[], smallestId: number, largestId: number } {
         for (let idx = 0; idx < chatMsgs.length; idx++) {
             const chatMsg = chatMsgs[idx];
@@ -420,6 +422,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         const largestId = resChatMsgs.length > 0 ? resChatMsgs[resChatMsgs.length - 1].id : -1;
         return { chatMsgs: resChatMsgs, smallestId, largestId };
     }
+
     private loadRmvChatMsgs(chatMsgs: ChatMessageDto[], chatRmvIds: number[]): ChatMessageDto[] {
         let idx0 = 0; const len = chatMsgs.length;
         for (let idx1 = 0; idx1 < len; idx1++) {
@@ -436,6 +439,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         if (idx0 < len) {
             chatMsgs.splice(idx0, len - idx0);
         }
-        return chatMsgs.concat([]);
+        return chatMsgs;
     }
 }
