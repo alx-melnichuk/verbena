@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use crate::schema;
-use crate::utils::serial_datetime;
+use crate::utils::{serial_datetime, serial_datetime_option};
 use crate::validators::{ValidationChecks, ValidationError, Validator};
 
 // ** Models: "CreateChatMessage", "ModifyChatMessage". **
@@ -51,11 +51,9 @@ pub struct ChatMessage {
     #[diesel(column_name = "user_name")]
     pub user_name: String,
     pub msg: Option<String>, // min_len=1 max_len=254 Nullable
-    pub date_update: DateTime<Utc>,
-    pub is_changed: bool,
-    pub is_removed: bool,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub date_created: DateTime<Utc>,
+    pub date_changed: Option<DateTime<Utc>>,
+    pub date_removed: Option<DateTime<Utc>>,
 }
 
 impl ChatMessage {
@@ -65,22 +63,19 @@ impl ChatMessage {
         user_id: i32,
         user_name: String,
         msg: Option<String>,
-        date_update: DateTime<Utc>,
-        is_changed: bool,
-        is_removed: bool,
+        date_created: DateTime<Utc>,
+        date_changed: Option<DateTime<Utc>>,
+        date_removed: Option<DateTime<Utc>>,
     ) -> ChatMessage {
-        let now = Utc::now();
         ChatMessage {
             id,
             stream_id,
             user_id,
             user_name,
             msg: msg,
-            date_update,
-            is_changed,
-            is_removed,
-            created_at: now.clone(),
-            updated_at: now.clone(),
+            date_created,
+            date_changed,
+            date_removed,
         }
     }
 }
@@ -93,19 +88,23 @@ pub struct ChatMessageDto {
     pub date: DateTime<Utc>,
     pub member: String,
     pub msg: String,
-    pub is_edt: bool,
-    pub is_rmv: bool,
+    #[rustfmt::skip]
+    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
+    pub date_edt: Option<DateTime<Utc>>,
+    #[rustfmt::skip]
+    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
+    pub date_rmv: Option<DateTime<Utc>>,
 }
 
 impl From<ChatMessage> for ChatMessageDto {
     fn from(chat_message: ChatMessage) -> Self {
         ChatMessageDto {
             id: chat_message.id,
-            date: chat_message.date_update.clone(),
+            date: chat_message.date_created.clone(),
             member: chat_message.user_name.clone(),
             msg: chat_message.msg.unwrap_or("".to_owned()),
-            is_edt: chat_message.is_changed,
-            is_rmv: chat_message.is_removed,
+            date_edt: chat_message.date_changed.clone(),
+            date_rmv: chat_message.date_removed.clone(),
         }
     }
 }
@@ -235,7 +234,7 @@ impl Validator for ModifyChatMessageDto {
 pub struct FilterChatMessage {
     pub stream_id: i32,
     pub is_sort_des: Option<bool>,
-    pub border_by_id: Option<i32>,
+    pub border_date: Option<DateTime<Utc>>,
     pub limit: Option<i32>,
 }
 
@@ -243,13 +242,13 @@ impl FilterChatMessage {
     pub fn new(
         stream_id: i32,
         is_sort_des: Option<bool>,
-        border_by_id: Option<i32>,
+        border_date: Option<DateTime<Utc>>,
         limit: Option<i32>,
     ) -> FilterChatMessage {
         FilterChatMessage {
             stream_id,
             is_sort_des,
-            border_by_id,
+            border_date,
             limit,
         }
     }
@@ -260,7 +259,7 @@ impl FilterChatMessage {
         FilterChatMessage {
             stream_id: filter_chat_message.stream_id,
             is_sort_des: filter_chat_message.is_sort_des.clone(),
-            border_by_id: filter_chat_message.border_by_id.clone(),
+            border_date: filter_chat_message.border_date.clone(),
             limit: filter_chat_message.limit.clone(),
         }
     }
@@ -274,8 +273,9 @@ pub struct FilterChatMessageDto {
     pub stream_id: i32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub is_sort_des: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub border_by_id: Option<i32>,
+    #[rustfmt::skip]
+    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
+    pub border_date: Option<DateTime<Utc>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i32>,
 }
