@@ -3,16 +3,12 @@ use log::{debug, log_enabled, Level::Debug};
 use actix::prelude::*;
 use actix_broker::BrokerIssue;
 use actix_web_actors::ws;
-use chrono::SecondsFormat;
 use serde_json::to_string;
 
 use crate::chats::{
     chat_event_ws::{
         BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, MsgEWS, MsgRmvEWS, NameEWS, UnblockEWS,
-    },
-    chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},
-    chat_ws_assistant::ChatWsAssistant,
-    chat_ws_server::ChatWsServer,
+    }, chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},  chat_ws_assistant::ChatWsAssistant, chat_ws_server::ChatWsServer
 };
 use crate::settings::err;
 
@@ -420,7 +416,6 @@ impl ChatWsSession {
         // Get room (stream) ID and user ID.
         let stream_id = self.room_id;
         let user_id = self.user_id;
-        let member = self.user_name.clone();
         // Spawn an async task.
         let addr = ctx.address();
         let assistant = self.assistant.clone();
@@ -440,17 +435,7 @@ impl ChatWsSession {
             }
             let ch_msg = opt_chat_message.unwrap();
             // Send the "AsyncResultSendText" command for execution.
-            addr.do_send(AsyncResultSendText(
-                to_string(&MsgEWS {
-                    msg: ch_msg.msg.unwrap_or_default(),
-                    id: ch_msg.id,
-                    member,
-                    date: ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true),
-                    is_edt: ch_msg.is_changed,
-                    is_rmv: ch_msg.is_removed,
-                })
-                .unwrap(),
-            ));
+            addr.do_send(AsyncResultSendText(to_string(&MsgEWS::from(ch_msg)).unwrap()));
         });
         Ok(())
     }
@@ -466,15 +451,13 @@ impl ChatWsSession {
         self.check_is_blocked()?;
 
         let user_id = self.user_id;
-        let opt_user_id = Some(self.user_id);
-        let member = self.user_name.clone();
         // Spawn an async task.
         let addr = ctx.address();
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
             // Change a user's message in a chat.
-            let result = assistant.execute_modify_chat_message(id, opt_user_id, &msg_cut).await;
+            let result = assistant.execute_modify_chat_message(id, user_id, &msg_cut).await;
             if let Err(err) = result {
                 #[rustfmt::skip]
                 return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
@@ -487,17 +470,7 @@ impl ChatWsSession {
             }
             let ch_msg = opt_chat_message.unwrap();
             // Send the "AsyncResultSendText" command for execution.
-            addr.do_send(AsyncResultSendText(
-                to_string(&MsgEWS {
-                    msg: ch_msg.msg.unwrap_or_default(),
-                    id: ch_msg.id,
-                    member,
-                    date: ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true),
-                    is_edt: ch_msg.is_changed,
-                    is_rmv: ch_msg.is_removed,
-                })
-                .unwrap(),
-            ));
+            addr.do_send(AsyncResultSendText(to_string(&MsgEWS::from(ch_msg)).unwrap()));
         });
         Ok(())
     }
@@ -519,15 +492,13 @@ impl ChatWsSession {
         self.check_is_blocked()?;
 
         let user_id = self.user_id;
-        let opt_user_id = Some(self.user_id);
-        let member = self.user_name.clone();
         // Spawn an async task.
         let addr = ctx.address();
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
             // Change a user's message in a chat.
-            let result = assistant.execute_modify_chat_message(id, opt_user_id, &msg_put).await;
+            let result = assistant.execute_modify_chat_message(id, user_id, &msg_put).await;
             if let Err(err) = result {
                 #[rustfmt::skip]
                 return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
@@ -540,17 +511,7 @@ impl ChatWsSession {
             }
             let ch_msg = opt_chat_message.unwrap();
             // Send the "AsyncResultSendText" command for execution.
-            addr.do_send(AsyncResultSendText(
-                to_string(&MsgEWS {
-                    msg: ch_msg.msg.unwrap_or_default(),
-                    id: ch_msg.id,
-                    member,
-                    date: ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true),
-                    is_edt: ch_msg.is_changed,
-                    is_rmv: ch_msg.is_removed,
-                })
-                .unwrap(),
-            ));
+            addr.do_send(AsyncResultSendText(to_string(&MsgEWS::from(ch_msg)).unwrap()));
         });
         Ok(())
     }
@@ -568,14 +529,13 @@ impl ChatWsSession {
         self.check_is_blocked()?;
 
         let user_id = self.user_id;
-        let opt_user_id = Some(self.user_id);
         // Spawn an async task.
         let addr = ctx.address();
         let assistant = self.assistant.clone();
         // Start an additional asynchronous task.
         actix_web::rt::spawn(async move {
             // Delete a user's message in a chat.
-            let result = assistant.execute_delete_chat_message(msg_rmv, opt_user_id).await;
+            let result = assistant.execute_delete_chat_message(msg_rmv, user_id).await;
             if let Err(err) = result {
                 #[rustfmt::skip]
                 return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
