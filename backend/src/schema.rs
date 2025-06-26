@@ -36,11 +36,9 @@ diesel::table! {
         user_id -> Int4,
         #[max_length = 255]
         msg -> Nullable<Varchar>,
-        date_update -> Timestamptz,
-        is_changed -> Bool,
-        is_removed -> Bool,
-        created_at -> Timestamptz,
-        updated_at -> Timestamptz,
+        date_created -> Timestamptz,
+        date_changed -> Nullable<Timestamptz>,
+        date_removed -> Nullable<Timestamptz>,
     }
 }
 
