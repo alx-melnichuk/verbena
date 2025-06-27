@@ -100,8 +100,9 @@
   <div cv-hg100 cv-brd-bx cv-pd-lf0_5>
     <app-panel-chat class="cv-sdb-chat cv-sdb-brd cv-brd-lf"
       [blockedUsers]="chatBlockedUsers"
-      [chatMsgs]="chatMsgs"
-      [chatRmvMsgs]="chatRmvMsgs"
+      [chatPastMsgs]="chatPastMsgs"
+      [chatNewMsgs]="chatNewMsgs"
+      [chatRmvIds]="chatRmvIds"
       [isBlocked]="chatIsBlocked"
       [isEditable]="chatIsEditable"
       [isLoadData]="chatIsLoadData"
@@ -117,7 +118,7 @@
       (editMsg)="doEditMessage($event)"
       (cutMsg)="doCutMessage($event)"
       (rmvMsg)="doRmvMessage($event)"
-      (queryChatMsgs)="doQueryChatMsgs($event)">
+      (queryPastMsgs)="doQueryPastMsgs($event)">
     </app-panel-chat>
   </div>
 

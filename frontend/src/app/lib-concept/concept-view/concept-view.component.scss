@@ -178,7 +178,7 @@ app-concept-view {
         --pc-itm-sh: var(---cv-brd-cl);
         --pc-brd-sz: var(---cv-brd-sz);
 
-        --pc-bg: var(--sys-surface);
+        // --pc-bg: var(--sys-surface); // Defines the background color of the panel for "panel-chat".
         --pc-mdl-fn-sz: 0.9rem;
         --pc-pd-lf: 0.25rem;
     }

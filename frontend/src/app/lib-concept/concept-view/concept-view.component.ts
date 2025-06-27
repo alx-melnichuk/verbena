@@ -11,7 +11,7 @@ import { AvatarComponent } from 'src/app/components/avatar/avatar.component';
 import { SidebarHandlerDirective } from 'src/app/components/sidebar/sidebar-handler.directive';
 import { SidebarComponent } from 'src/app/components/sidebar/sidebar.component';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
-import { ChatMessageDto } from 'src/app/lib-chat/chat-message-api.interface';
+import { ChatMessageDto, ParamQueryPastMsg } from 'src/app/lib-chat/chat-message-api.interface';
 import { PanelChatComponent } from 'src/app/lib-chat/panel-chat/panel-chat.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
 import { StreamDto, StreamState } from 'src/app/lib-stream/stream-api.interface';
@@ -38,10 +38,12 @@ export class ConceptViewComponent implements AfterContentInit {
 
     @Input() // List of new blocked users.
     public chatBlockedUsers: string[] = [];
-    @Input() // List of new messages.
-    public chatMsgs: ChatMessageDto[] = [];
-    @Input() // List of permanently deleted messages.
-    public chatRmvMsgs: number[] = [];
+    @Input() // List of past chat messages.
+    public chatPastMsgs: ChatMessageDto[] = [];
+    @Input() // List of new chat messages.
+    public chatNewMsgs: ChatMessageDto[] = [];
+    @Input() // List of IDs of permanently deleted chat messages.
+    public chatRmvIds: number[] = [];
     @Input() // Indication that the user is blocked.
     public chatIsBlocked: boolean | null = null;
     @Input() // Indicates that the user can send messages to the chat.
@@ -86,7 +88,7 @@ export class ConceptViewComponent implements AfterContentInit {
     @Output()
     readonly rmvMessage: EventEmitter<number> = new EventEmitter();
     @Output()
-    readonly queryChatMsgs: EventEmitter<{ isSortDes: boolean, borderDate: StringDateTime }> = new EventEmitter();
+    readonly queryPastMsgs: EventEmitter<ParamQueryPastMsg> = new EventEmitter();
 
     public isSidebarLfOpen: boolean = false;
     public isSidebarRgOpen: boolean = true; // false;
@@ -175,8 +177,8 @@ export class ConceptViewComponent implements AfterContentInit {
             this.rmvMessage.emit(chMsgId);
         }
     }
-    public doQueryChatMsgs(info: { isSortDes: boolean, borderDate: StringDateTime }) {
-        this.queryChatMsgs.emit(info);
+    public doQueryPastMsgs(info: ParamQueryPastMsg) {
+        this.queryPastMsgs.emit(info);
     }
 
     // ** Private API **
