@@ -38,6 +38,14 @@ export interface FilterChatMessageDto {
     limit?: number;
 }
 
+// ** ParamQueryPastMsg **
+
+export interface ParamQueryPastMsg {
+    isSortDes: boolean;
+    borderDate?: StringDateTime;
+    limit?: number;
+}
+
 // ** BlockedUserDto **
 
 export interface BlockedUserDto {
