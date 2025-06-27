@@ -13,8 +13,8 @@
   }
   @for (chatMsg of chatMsgList; track chatMsg.id) {
     <div class="pc-item-wrap"
-      [matMenuTriggerFor]="getShowMenu(chatMsg.id, chatMsg.member, isOwner, nickname) ? menuItem : null"
-      [matMenuTriggerData]="getMenuItem(chatMsg.id, chatMsg.member, isOwner, nickname)"
+      [matMenuTriggerFor]="!!getMenuItem(chatMsg, isOwner, nickname) ? menuItem : null"
+      [matMenuTriggerData]="getMenuItem(chatMsg, isOwner, nickname)"
       (menuOpened)="msgMarked=chatMsg;"
       (menuClosed)="msgMarked=null;">
       <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : '')

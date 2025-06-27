@@ -19,7 +19,7 @@ import { DateUtil } from 'src/app/utils/date.utils';
 import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
 import { ValidatorUtils } from 'src/app/utils/validator.utils';
 
-import { ChatMessageDto } from '../chat-message-api.interface';
+import { ChatMessageDto, ParamQueryPastMsg } from '../chat-message-api.interface';
 
 
 interface MenuEdit {
@@ -49,7 +49,6 @@ export const MIN_SCROLL_VALUE = 20;
 
 type ChatMsgObj = { [key: number]: ChatMessageDto };
 type MenuEditMap = Map<number, MenuEdit>;
-type BlockedSet = Set<string>;
 
 // <mat-form-field subscriptSizing="dynamic"
 // it'll remove the space until an error or hint actually needs to get displayed and only then expands.
@@ -67,10 +66,12 @@ type BlockedSet = Set<string>;
 export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Input() // List of new blocked users.
     public blockedUsers: string[] = [];
-    @Input() // List of new messages.
-    public chatMsgs: ChatMessageDto[] = [];
-    @Input() // List of permanently deleted messages.
-    public chatRmvMsgs: number[] = [];
+    @Input() // List of past chat messages.
+    public chatPastMsgs: ChatMessageDto[] = [];
+    @Input() // List of new chat messages.
+    public chatNewMsgs: ChatMessageDto[] = [];
+    @Input() // List of IDs of permanently deleted chat messages.
+    public chatRmvIds: number[] = [];
     @Input() // Indication that the user is blocked.
     public isBlocked: boolean | null = null;
     @Input() // Indicates that the user can send messages to the chat.
@@ -107,7 +108,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Output()
     readonly rmvMsg: EventEmitter<number> = new EventEmitter();
     @Output()
-    readonly queryChatMsgs: EventEmitter<{ isSortDes: boolean, borderDate: StringDateTime }> = new EventEmitter();
+    readonly queryPastMsgs: EventEmitter<ParamQueryPastMsg> = new EventEmitter();
 
     @ViewChild('autosize')
     public autosize!: CdkTextareaAutosize;
@@ -127,17 +128,23 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public msgEditing: ChatMessageDto | null = null;
     public initValue: string | null = null;
 
+    readonly blockedUserSet: Set<string> = new Set();
+    readonly chatMsgObj: ChatMsgObj = {};
     readonly dbncScrollItem = debounceFn(() => this.doScrollItem(), DEBOUNCE_DELAY);
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
     readonly formatTime: Intl.DateTimeFormatOptions = { timeStyle: 'short' };
     readonly menuEditMap: MenuEditMap = new Map();
-    readonly blockedSet: BlockedSet = new Set();
-    readonly chatMsgObj: ChatMsgObj = {};
+
+    private get scrollElem(): HTMLElement {
+        return this.scrollItemElem.nativeElement;
+    }
+    private set scrollElem(value: HTMLElement) { }
 
     private isNoPastData: boolean = false;
+    private isNoReactToScroll: boolean = false;
     private lastScrollTop: number = 0;
-    private lastScrollBottom: number = 0;
-    private smallestId: number | null = null;
+    private lastScrollBottom: number = 0; // TODO ?
+    private smallestDate: StringDateTime | undefined;
     private largestId: number | null = null;
 
     private readonly _injector = inject(Injector);
@@ -157,26 +164,33 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['blockedUsers'] || !!changes['isOwner']) {
-            this.blockedSet.clear();
+            this.blockedUserSet.clear();
             const selfName = this.nickname || ''
             const blockedUsers = this.isOwner ? this.blockedUsers : [];
             for (let idx = 0; idx < blockedUsers.length; idx++) {
                 if (selfName != blockedUsers[idx]) {
-                    this.blockedSet.add(blockedUsers[idx]);
+                    this.blockedUserSet.add(blockedUsers[idx]);
                 }
             }
         }
-        if (!!changes['chatMsgs']) {
+        if (!!changes['chatPastMsgs'] && this.chatPastMsgs.length > 0) {
+            // List of past chat messages.
+            if (this.chatPastMsgs.length > 0) {
+                this.chatMsgList = this.chatPastMsgs.reverse().concat(this.chatMsgList);
+                this.updateChatMsgObj(this.chatMsgObj, this.chatMsgList);
+                this.smallestDate = this.chatMsgList[0].date;
+            } else {
+                this.isNoPastData = true;
+            }
+        }
+        /*if (!!changes['chatMsgs']) {
             console.log(`PanelChat.OnChange('chatMsgs') 1 chatMsgs.length: ${this.chatMsgs.length}`);
             this.isNoPastData = this.chatMsgs.length == 0;
             if (this.chatMsgs.length > 0) {
                 this.chatMsgList = this.chatMsgs.concat(this.chatMsgList);
                 this.updateChatMsgObj(this.chatMsgObj, this.chatMsgList);
-
-                // this.smallestId = this.chatMsgList[0].id;
-                // this.largestId = this.chatMsgList[this.chatMsgList.length - 1].id;
             }
-            /*
+            /  *
             let res = null;
             if (this.chatMsgs.length > 0) {
                 res = this.loadChatMsgs(this.chatMsgObj, this.chatMsgs, this.menuEditMap, this.nickname || '');
@@ -189,23 +203,29 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
                 const isAddAfter = this.largestId != null ? res.largestId > this.largestId : false;
                 const bottom = (isAddBefore && !isAddAfter ? this.lastScrollBottom : (!isAddBefore && isAddAfter ? 0 : -1));
                 if (bottom > -1) {
-                    Promise.resolve().then(() => this.setItemsScrollTo(this.scrollItemElem.nativeElement, { bottom }));
+                    Promise.resolve().then(() => this.setItemsScrollTo(this.scrollElem, { bottom }));
                 }
                 this.smallestId = res.smallestId;
                 this.largestId = res.largestId;
             }
-            */
+            *  /
+        }*/
+        if (!!changes['chatNewMsgs'] && this.chatNewMsgs.length > 0) {
+            // List of new chat messages.
+            this.chatMsgList = this.chatMsgList.concat(this.chatNewMsgs);
+            this.updateChatMsgObj(this.chatMsgObj, this.chatMsgList);
+            if (!this.msgMarked) {
+                Promise.resolve().then(() => this.setItemsScrollTo(this.scrollElem, { bottom: 0 }));
+            }
         }
-        // if (!!changes['chatRmvMsgs'] && this.chatRmvMsgs.length > 0 && this.chatMsgList.length > 0) {
-        //     this.chatMsgList = this.loadRmvChatMsgs(this.chatMsgList, this.chatRmvMsgs);
-        //     for (let idx = 0; idx < this.chatRmvMsgs.length; idx++) {
-        //         delete this.chatMsgObj[this.chatRmvMsgs[idx]];
-        //     }
-        //     this.updateChatMsgObj(this.chatMsgObj, this.chatMsgList);
-        //     // Promise.resolve().then(() => this.checkScrollPosition());
-        // }
+        if (!!changes['chatRmvIds'] && this.chatRmvIds.length > 0) {
+            // List of IDs of permanently deleted chat messages.
+            this.chatMsgList = this.loadRmvIds(this.chatMsgList, this.chatRmvIds);
+            this.updateChatMsgObj(this.chatMsgObj, this.chatMsgList);
+            // Promise.resolve().then(() => this.checkScrollPosition());
+        }
         if (!!changes['isEditable'] && !changes['isEditable'].firstChange) {
-            Promise.resolve().then(() => this.setItemsScrollTo(this.scrollItemElem.nativeElement, { bottom: 0 }));
+            Promise.resolve().then(() => this.setItemsScrollTo(this.scrollElem, { bottom: 0 }));
         }
         if (!!changes['maxLen'] || !!changes['minLen']) {
             this.maxLenVal = (!!this.maxLen && this.maxLen > 0 ? this.maxLen : MESSAGE_MAX_LENGTH);
@@ -219,9 +239,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             this.minRowsVal = (!!this.minRows && this.minRows > 0 ? this.minRows : MESSAGE_MIN_ROWS);
         }
     }
-
     ngAfterViewInit(): void {
-        this.checkScrollPosition();
+        // this.checkScrollPosition();
     }
 
     // ** Public API **
@@ -229,30 +248,24 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public trackById(index: number, item: ChatMessageDto): number {
         return item.id;
     }
-    public doScrollItem(): void {
-        const elem = this.scrollItemElem.nativeElement;
+    public doScrollItem(elem: HTMLElement = this.scrollElem): void {
         const isMoveUp = this.lastScrollTop > elem.scrollTop;
         this.lastScrollTop = elem.scrollTop;
         this.lastScrollBottom = elem.scrollHeight - (elem.scrollTop + elem.clientHeight);
-        if (isMoveUp && !this.isNoPastData) {
-            // if (this.deltaScroll(elem) < MIN_SCROLL_VALUE && this.smallestId != null) {
-            //     this.queryChatMsgs.emit({ isSortDes: true, borderDate: this.smallestId });  // TODO !
-            // }
+        console.log(`_1a doScrollItem(); scrollHeight: ${elem.scrollHeight}, clientHeight: ${elem.clientHeight}`) // #
+        if (!this.isNoReactToScroll && isMoveUp && !this.isNoPastData && this.deltaScroll(elem) < MIN_SCROLL_VALUE) {
+            console.log('_1b this.runQueryPastMsgs();') // #
+            this.runQueryPastMsgs();
         }
     }
     public getMenuBlock(nickname: string, isOwner: boolean | null, selfName: string | null): MenuBlock | null {
-        const isBlocked = !isOwner ? null : (nickname == selfName ? null : !!this.blockedSet.has(nickname));
+        const isBlocked = !isOwner ? null : (nickname == selfName ? null : this.blockedUserSet.has(nickname));
         const result = isBlocked != null ? { isBlock: !isBlocked, isUnblock: isBlocked } : null;
         return result;
     }
-    public getShowMenu(chatMsgId: number, member: string, isOwner: boolean | null, selfName: string | null): boolean {
-        // console.log(`getShowMenu() chatMsgId: ${chatMsgId}, member: ${member}`); // #
-        const result = !!this.menuEditMap.get(chatMsgId) || !!this.getMenuBlock(member, isOwner, selfName);
-        return result;
-    }
-    public getMenuItem(chatMsgId: number, member: string, isOwner: boolean | null, selfName: string | null): MenuItem | null {
-        const menuEdit = this.menuEditMap.get(chatMsgId);
-        const menuBlock = this.getMenuBlock(member, isOwner, selfName);
+    public getMenuItem(chatMsg: ChatMessageDto, isOwner: boolean | null, selfName: string | null): MenuItem | null {
+        const menuEdit = this.createMenuEdit(selfName || '', chatMsg);
+        const menuBlock = this.getMenuBlock(chatMsg.member, isOwner, selfName);
         const result = !!menuEdit || !!menuBlock ? { ...menuEdit, ...menuBlock } : null;
         // console.log(`selfName: ${selfName} getMenuItem(): ${JSON.stringify(result)}`); // #
         return result;
@@ -349,13 +362,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     */
     // ** Private API **
 
-    private checkScrollPosition(): void {
-        const elem = this.scrollItemElem?.nativeElement;
-        const isScroll = (elem?.scrollHeight || 0) > (elem?.clientHeight || 0);
-        // if (!isScroll && this.chatMsgList.length > 0 && this.smallestId != null) {
-        //     this.queryChatMsgs.emit({ isSortDes: true, borderDate: this.smallestId }); // TODO !
-        // }
-    }
     private setTextareaValue(value: string | null): void {
         this.initValue = value;
         this.formControl.setValue(value);
@@ -369,6 +375,16 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj)]);
         this.formControl.updateValueAndValidity();
     }
+    private checkScrollPosition(elem: HTMLElement = this.scrollElem): void {
+        const isScroll = elem.scrollHeight > elem.clientHeight;
+        if (!isScroll && !this.isNoPastData) {
+            console.log('_2 this.runQueryPastMsgs();') // #
+            // this.runQueryPastMsgs();
+        }
+    }
+    private runQueryPastMsgs(borderDate: StringDateTime | undefined = this.smallestDate): void {
+        this.queryPastMsgs.emit({ isSortDes: true, borderDate });
+    }
     private deltaScroll(elem: HTMLElement | null | undefined): number {
         let result: number = 0;
         if (!!elem) {
@@ -378,12 +394,22 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         return result;
     }
     private setItemsScrollTo(elem: HTMLElement | null | undefined, info: { top?: number, bottom?: number }): void {
+        let scrollTop = -1;
         if (!!elem && !!info) {
             if (info.top != null && info?.top >= 0) {
-                elem.scrollTop = info.top;
+                scrollTop = info.top;
             } else if (info.bottom != null && info.bottom >= 0) {
-                elem.scrollTop = elem.scrollHeight - (elem.clientHeight + info.bottom);
+                scrollTop = elem.scrollHeight - (elem.clientHeight + info.bottom);
             }
+        }
+        if (!!elem && scrollTop > -1) {
+            this.isNoReactToScroll = true;
+            console.log(`_12a setItemsScrollTo() this.isNoReactToScroll: ${this.isNoReactToScroll}`) // #
+            elem.scrollTop = scrollTop;
+            setTimeout(() => {
+                this.isNoReactToScroll = false;
+                console.log(`_12b setItemsScrollTo() this.isNoReactToScroll: ${this.isNoReactToScroll}`) // #
+            }, 180);
         }
     }
     /*
@@ -406,24 +432,23 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             chatMsgObj[chatMsgs[idx].id] = chatMsgs[idx];
         }
     }
-    private loadChatMsgs(
-        objChatMsg: ChatMsgObj, chatMsgs: ChatMessageDto[], menuEditMap: MenuEditMap, selfName: string
+    /*private loadChatMsgs(
+        chatMsgObj: ChatMsgObj, chatMsgs: ChatMessageDto[], menuEditMap: MenuEditMap, selfName: string
     ): { chatMsgs: ChatMessageDto[], smallestId: number, largestId: number } {
         for (let idx = 0; idx < chatMsgs.length; idx++) {
             const chatMsg = chatMsgs[idx];
-            objChatMsg[chatMsg.id] = chatMsg;
+            chatMsgObj[chatMsg.id] = chatMsg;
             const itemMenu: MenuEdit | null = this.createMenuEdit(selfName, chatMsg);
             if (!!itemMenu) {
                 menuEditMap.set(chatMsg.id, itemMenu);
             }
         }
-        const resChatMsgs = Object.values(objChatMsg)
+        const resChatMsgs = Object.values(chatMsgObj)
         const smallestId = resChatMsgs.length > 0 ? resChatMsgs[0].id : -1;
         const largestId = resChatMsgs.length > 0 ? resChatMsgs[resChatMsgs.length - 1].id : -1;
         return { chatMsgs: resChatMsgs, smallestId, largestId };
-    }
-
-    private loadRmvChatMsgs(chatMsgs: ChatMessageDto[], chatRmvIds: number[]): ChatMessageDto[] {
+    }*/
+    private loadRmvIds(chatMsgs: ChatMessageDto[], chatRmvIds: number[]): ChatMessageDto[] {
         let idx0 = 0; const len = chatMsgs.length;
         for (let idx1 = 0; idx1 < len; idx1++) {
             const index = chatRmvIds.length > 0 ? chatRmvIds.indexOf(chatMsgs[idx1].id) : -1;
