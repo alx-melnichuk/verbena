@@ -2,8 +2,9 @@
   [avatar]="profileDto?.avatar"
 
   [chatBlockedUsers]="chatBlockedUsers"
-  [chatMsgs]="chatMsgs"
-  [chatRmvMsgs]="chatRmvMsgs"
+  [chatPastMsgs]="chatPastMsgs"
+  [chatNewMsgs]="chatNewMsgs"
+  [chatRmvIds]="chatRmvIds"
   [chatIsBlocked]="chatSocketService.isBlocked()"
   [chatIsEditable]="isStreamActive && chatSocketService.isJoined()"
   [chatIsLoadData]="chatIsLoadData"
@@ -26,5 +27,5 @@
   (editMessage)="doEditMessage($event)"
   (cutMessage)="doCutMessage($event)"
   (rmvMessage)="doRmvMessage($event)"
-  (queryChatMsgs)="doQueryChatMsgs($event)">
+  (queryPastMsgs)="doQueryPastMsgs($event)">
 </app-concept-view>

@@ -3,11 +3,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
-import { StringDateTime } from 'src/app/common/string-date-time';
 
-import { ChatMessageDto, ChatMessageDtoUtil } from 'src/app/lib-chat/chat-message-api.interface';
+import { StringDateTime } from 'src/app/common/string-date-time';
 import { ChatMessageService } from 'src/app/lib-chat/chat-message.service';
-// # import { ChatMessageDto, ChatMessageDtoUtil } from 'src/app/lib-chat/chat-message-api.interface';
+import { ChatMessageDto, ChatMessageDtoUtil, ParamQueryPastMsg } from 'src/app/lib-chat/chat-message-api.interface';
 import { ChatSocketService } from 'src/app/lib-chat/chat-socket.service';
 import { ConceptViewComponent } from 'src/app/lib-concept/concept-view/concept-view.component';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
@@ -36,8 +35,9 @@ const WS_CHAT_HOST: string | null = environment.wsChatHost || null;
 export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     public chatBlockedUsers: string[] = []; // List of new blocked users.
-    public chatMsgs: ChatMessageDto[] = []; // List of new messages.
-    public chatRmvMsgs: number[] = []; // List of permanently deleted messages.
+    public chatPastMsgs: ChatMessageDto[] = []; // List of past chat messages.
+    public chatNewMsgs: ChatMessageDto[] = []; // List of new chat messages.
+    public chatRmvIds: number[] = []; // List of IDs of permanently deleted chat messages.
     public chatIsBlocked: boolean | null = null; // Indication that the user is blocked.
     public chatIsEditable: boolean | null = null; // Indicates that the user can send messages to the chat.
     public chatIsLoadData: boolean | null = null; // Indicates that data is being loaded.
@@ -73,7 +73,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.profileDto = this.route.snapshot.data['profileDto'];
         this.profileTokensDto = this.route.snapshot.data['profileTokensDto'];
         this.streamDto = this.route.snapshot.data['streamDto'];
-        this.chatMsgs = this.route.snapshot.data['chatMsgList'];
+        this.chatPastMsgs = this.route.snapshot.data['chatMsgList'];
         const blockedUsers = this.route.snapshot.data['blockedUsers'];
 
         for (let idx = 0; idx < blockedUsers.length; idx++) {
@@ -83,7 +83,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         }
         console.log(`PgConceptView() 1 this.chatBlockedUsers:`, this.chatBlockedUsers); // #
 
-        console.log(`PgConceptView() 2 chatMsgs:`, this.chatMsgs); // #
+        console.log(`PgConceptView() 2 chatPastMsgs:`, this.chatPastMsgs); // #
         this.isStreamActive = !!this.streamDto?.live;
         console.log(`PgConceptView() this.isStreamActive: ${this.isStreamActive}`); // #
 
@@ -107,7 +107,16 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
         }
         /*setTimeout(() => {
-            this.chatRmvMsgs = [605, 603];
+            this.chatRmvIds = [605, 603];
+            this.changeDetector.markForCheck();
+        }, 2000);*/
+
+
+        /*setTimeout(() => {
+            this.chatNewMsgs = [
+                { id: 701, date: "2024-03-20T19:05:01.000Z", member: "ethan_brown", msg: "Demo message 701" },
+                { id: 702, date: "2024-03-20T19:05:02.000Z", member: "ethan_brown", msg: "Demo message 702" }
+            ];
             this.changeDetector.markForCheck();
         }, 4000);*/
     }
@@ -165,11 +174,11 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.chatSocketService.sendData(EWSTypeUtil.getMsgRmvEWS(id));
         }
     }
-    public doQueryChatMsgs(info: { isSortDes: boolean, borderDate: StringDateTime }) {
+    public doQueryPastMsgs(info: ParamQueryPastMsg) {
         const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
         if (streamId > 0 && !!info && info.isSortDes != null && info.borderDate != null) {
             console.log(`PgConceptView.doQueryPastInfo(${JSON.stringify(info)});`); // #
-            this.getChatMessages(streamId, info.isSortDes, info.borderDate, undefined);
+            this.getPastChatMsgs(streamId, info.isSortDes, info.borderDate);
         }
     }
 
@@ -262,18 +271,16 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     private addChatMsg(val: string): void {
         console.log(`PgConceptView.loadDataFromSocket(${val})`); // #
         const obj = JSON.parse(val);
-        if (!!obj['id'] && !!obj['member'] && !!obj['date']) {
-            const chatMsg = ChatMessageDtoUtil.create(obj);
-            if (chatMsg.id > 0 && !!chatMsg.member && !!chatMsg.date) {
-                this.chatMsgs = [chatMsg];
-                console.log(`PgConceptView() 2 chatMsgs:`, this.chatMsgs); // #
-            }
+        const chatMsg = ChatMessageDtoUtil.create(obj);
+        if (chatMsg.id > 0 && !!chatMsg.member && !!chatMsg.date) {
+            this.chatNewMsgs = [chatMsg]; // List of new chat messages.
+            console.log(`PgConceptView() 2 chatNewMsgs:`, this.chatNewMsgs); // #
         }
     }
     private removedChatMsg(id: number): void {
-        if (id > 0) { // List of permanently deleted messages.
-            this.chatRmvMsgs = [id];
-            console.log(`PgConceptView() 4 chatRmvMsgs:`, this.chatRmvMsgs); // #
+        if (id > 0) { // List of IDs of permanently deleted chat messages.
+            this.chatRmvIds = [id];
+            console.log(`PgConceptView() 4 chatRmvIds:`, this.chatRmvIds); // #
         }
     }
     private updateBlockedUsers(blockedUsers: string[], isBlock: boolean, blockUser: string): string[] {
@@ -286,17 +293,16 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         }
         return Array.from(userSet);
     }
-    private getChatMessages(streamId: number | null, isSortDes?: boolean, borderDate?: StringDateTime, limit?: number): void {
-        console.log(`PgConceptView.getChatMessages(isSortDes: ${isSortDes}, borderDate: ${borderDate})...`); // #
+    private getPastChatMsgs(streamId: number | null, isSortDes?: boolean, borderDate?: StringDateTime, limit?: number): void {
+        console.log(`PgConceptView.getPastChatMsgs(isSortDes: ${isSortDes}, borderDate: ${borderDate})...`); // #
         if (!streamId || streamId < 0) {
             return;
         }
         this.chatIsLoadData = true;
         this.chatMessageService.getChatMessages(streamId, isSortDes, borderDate, limit)
             .then((response: ChatMessageDto[] | HttpErrorResponse | undefined) => {
-                console.log(`PgConceptView.getChatMessages() this.setChatMsgs(response)`); // #
-                this.chatMsgs = (response as ChatMessageDto[]).concat([]);
-                console.log(`PgConceptView() 3 chatMsgs:`, this.chatMsgs); // #
+                this.chatPastMsgs = (response as ChatMessageDto[]); // List of past chat messages.
+                console.log(`PgConceptView() 3 chatPastMsgs:`, this.chatPastMsgs); // #
             })
             .catch((error: HttpErrorResponse) => {
                 console.error(`ChatMessageError:`, error);
