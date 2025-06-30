@@ -47,7 +47,7 @@ export const MESSAGE_MIN_LENGTH = 0;
 export const DEBOUNCE_DELAY = 50;
 export const MIN_SCROLL_VALUE = 20;
 
-type ChatMsgObj = { [key: number]: ChatMessageDto };
+type ChatMsgObj = { [key: number]: number };
 type MenuEditMap = Map<number, MenuEdit>;
 
 // <mat-form-field subscriptSizing="dynamic"
@@ -120,13 +120,14 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public chatMsgList: ChatMessageDto[] = [];
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ newMsg: this.formControl });
+    public initValue: string | null = null;
     public maxLenVal: number = MESSAGE_MAX_LENGTH;
     public minLenVal: number = MESSAGE_MIN_LENGTH;
     public maxRowsVal: number = MESSAGE_MAX_ROWS;
     public minRowsVal: number = MESSAGE_MIN_ROWS;
     public msgMarked: ChatMessageDto | null = null;
     public msgEditing: ChatMessageDto | null = null;
-    public initValue: string | null = null;
+    public notViewedCount: number = 0;
 
     readonly blockedUserSet: Set<string> = new Set();
     readonly chatMsgObj: ChatMsgObj = {};
@@ -211,11 +212,15 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             *  /
         }*/
         if (!!changes['chatNewMsgs'] && this.chatNewMsgs.length > 0) {
+            const len = this.chatNewMsgs.length;
             // List of new chat messages.
-            this.chatMsgList = this.chatMsgList.concat(this.chatNewMsgs);
-            this.updateChatMsgObj(this.chatMsgObj, this.chatMsgList);
-            if (!this.msgMarked) {
-                Promise.resolve().then(() => this.setItemsScrollTo(this.scrollElem, { bottom: 0 }));
+            const newCnt = this.loadNewEdtChatMsgs(this.chatMsgObj, this.chatMsgList, this.chatNewMsgs);
+            if (newCnt > 0) {
+                if (!this.msgMarked && this.checkScrollingAllowed()) {
+                    Promise.resolve().then(() => this.doScrollToLast());
+                } else {
+                    this.notViewedCount = len;
+                }
             }
         }
         if (!!changes['chatRmvIds'] && this.chatRmvIds.length > 0) {
@@ -225,7 +230,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             // Promise.resolve().then(() => this.checkScrollPosition());
         }
         if (!!changes['isEditable'] && !changes['isEditable'].firstChange) {
-            Promise.resolve().then(() => this.setItemsScrollTo(this.scrollElem, { bottom: 0 }));
+            Promise.resolve().then(() => this.doScrollToLast());
         }
         if (!!changes['maxLen'] || !!changes['minLen']) {
             this.maxLenVal = (!!this.maxLen && this.maxLen > 0 ? this.maxLen : MESSAGE_MAX_LENGTH);
@@ -253,9 +258,15 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         this.lastScrollTop = elem.scrollTop;
         this.lastScrollBottom = elem.scrollHeight - (elem.scrollTop + elem.clientHeight);
         console.log(`_1a doScrollItem(); scrollHeight: ${elem.scrollHeight}, clientHeight: ${elem.clientHeight}`) // #
-        if (!this.isNoReactToScroll && isMoveUp && !this.isNoPastData && this.deltaScroll(elem) < MIN_SCROLL_VALUE) {
+        /*if (!this.isNoReactToScroll && isMoveUp && !this.isNoPastData && this.deltaScroll(elem) < MIN_SCROLL_VALUE) {
             console.log('_1b this.runQueryPastMsgs();') // #
             this.runQueryPastMsgs();
+        }*/
+    }
+    public doScrollToLast(): void {
+        this.setItemsScrollTo(this.scrollElem, { bottom: 0 });
+        if (this.notViewedCount > 0) {
+            this.notViewedCount = 0;
         }
     }
     public getMenuBlock(nickname: string, isOwner: boolean | null, selfName: string | null): MenuBlock | null {
@@ -358,8 +369,8 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         item.selectionEnd = item.selectionStart;
         this.isShowFaceSmilePanel = false;
         this.messageInput?.focus();
-    }
-    */
+    }*/
+
     // ** Private API **
 
     private setTextareaValue(value: string | null): void {
@@ -427,9 +438,42 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
         return isSelfNameEqMember ? { isEdit, isCut, isRemove } : null;
     }
+    private checkScrollingAllowed(elem: HTMLElement = this.scrollElem): boolean {
+        const scrollBottom = elem.scrollHeight - (elem.scrollTop + elem.clientHeight);
+        console.log(`_3 checkScrollingCapability(): ${scrollBottom < elem.clientHeight}`); // #
+        return scrollBottom < elem.clientHeight;
+    }
+    private loadPastChatMsgs(): void {
+
+    }
+    private loadNewEdtChatMsgs(chatMsgObj: ChatMsgObj, chatMsgList: ChatMessageDto[], newEdtMsgs: ChatMessageDto[]): number {
+        let result: number = 0;
+        for (let idx = 0; idx < newEdtMsgs.length; idx++) {
+            const chatMsg = newEdtMsgs[idx];
+            if (!chatMsg.dateEdt && !chatMsg.dateRmv) {
+                const index = chatMsgList.push(chatMsg) - 1;
+                chatMsgObj[chatMsg.id] = index;
+                result++;
+            } else {
+                const index = chatMsgObj[chatMsg.id];
+                const chatMsgOld = !!index ? chatMsgList[index] : null;
+                if (chatMsgOld?.id == chatMsg.id) {
+                    chatMsgList[index] = chatMsg;
+                } else {
+                    console.log(`Error processing update - id: ${chatMsg.id}`);
+                }
+            }
+        }
+        return result;
+    }
+    private loadRmvChatMsgs(chatMsgObj: ChatMsgObj, chatMsgList: ChatMessageDto[], rmvMsgs: number[]): void {
+    }
+
+
     private updateChatMsgObj(chatMsgObj: ChatMsgObj, chatMsgs: ChatMessageDto[]): void {
+        chatMsgObj = {};
         for (let idx = 0; idx < chatMsgs.length; idx++) {
-            chatMsgObj[chatMsgs[idx].id] = chatMsgs[idx];
+            chatMsgObj[chatMsgs[idx].id] = idx;
         }
     }
     /*private loadChatMsgs(

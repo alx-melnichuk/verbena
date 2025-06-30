@@ -8,7 +8,7 @@
 <div class="pc-middle global-scroll" #scrollItem (scroll)="dbncScrollItem()">
   @if (isLoadData) {
     <div class="pc-item-load">
-      <app-spinner isFillParent9 [diameter]="30"></app-spinner>
+      <app-spinner [diameter]="30"></app-spinner>
     </div>
   }
   @for (chatMsg of chatMsgList; track chatMsg.id) {
@@ -50,6 +50,21 @@
     </div>
   }
 </div>
+@if (notViewedCount > 0) {
+  <div class="pc-notviewed-box">
+    <div class="pc-notviewed">
+      <div [ngClass]="['pc-notviewed-count', (notViewedCount>99?'pc-nvcnt-pd2':(notViewedCount>9?'pc-nvcnt-pd1':''))]"
+        (click)="doScrollToLast()">
+        {{ notViewedCount }}
+      </div>
+      <button class="pc-btn-notviewed" (click)="doScrollToLast()">
+        <svg class="pc-angle">
+          <use href="assets/icons/lib-chat/panel-chat/angle-down-3-bin.svg#angle-down-3-bin"></use>
+        </svg>
+      </button>
+    </div>
+  </div>
+}
 
 <ng-template #templateShowInfo let-chatMsg="chatMsg2">
   <sub style="color: var(--sys-secondary);">
