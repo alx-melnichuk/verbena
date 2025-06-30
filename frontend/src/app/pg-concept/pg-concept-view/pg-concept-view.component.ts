@@ -111,14 +111,22 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.changeDetector.markForCheck();
         }, 2000);*/
 
-
         /*setTimeout(() => {
             this.chatNewMsgs = [
-                { id: 701, date: "2024-03-20T19:05:01.000Z", member: "ethan_brown", msg: "Demo message 701" },
-                { id: 702, date: "2024-03-20T19:05:02.000Z", member: "ethan_brown", msg: "Demo message 702" }
+                //{ id: 611, date: "2024-03-20T19:05:01.000Z", member: "ethan_brown", msg: "Demo message 141" },
+                { id: 609, date: "2024-03-17T03:00:00.000Z", member: "mila_davis", msg: "Demo message 139ver.2", dateEdt: "2025-06-26T16:30:02.799Z" },
+                //{ id: 612, date: "2024-03-20T19:05:02.000Z", member: "ethan_brown", msg: "Demo message 142" }
             ];
             this.changeDetector.markForCheck();
         }, 4000);*/
+
+        setTimeout(() => {
+            this.chatNewMsgs = [
+                { id: 611, date: "2024-03-20T19:05:01.000Z", member: "ethan_brown", msg: "Demo message 141" },
+                { id: 612, date: "2024-03-20T19:05:02.000Z", member: "ethan_brown", msg: "Demo message 142" }
+            ];
+            this.changeDetector.markForCheck();
+        }, 6000);
     }
 
     ngOnInit(): void {
