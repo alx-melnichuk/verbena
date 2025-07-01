@@ -110,25 +110,36 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.chatRmvIds = [605, 603];
             this.changeDetector.markForCheck();
         }, 2000);*/
-
         /*setTimeout(() => {
-            this.chatNewMsgs = [
-                //{ id: 611, date: "2024-03-20T19:05:01.000Z", member: "ethan_brown", msg: "Demo message 141" },
-                { id: 609, date: "2024-03-17T03:00:00.000Z", member: "mila_davis", msg: "Demo message 139ver.2", dateEdt: "2025-06-26T16:30:02.799Z" },
-                //{ id: 612, date: "2024-03-20T19:05:02.000Z", member: "ethan_brown", msg: "Demo message 142" }
-            ];
+            this.chatPastMsgs = this.demo1();
             this.changeDetector.markForCheck();
         }, 4000);*/
-
-        setTimeout(() => {
+        /*setTimeout(() => {
             this.chatNewMsgs = [
+                { id: 607, date: "2024-03-17T01:00:00.000Z", member: "ava_wilson", msg: "Demo message 137ver.2", dateEdt: "2025-06-26T16:30:02.798Z" },
+                { id: 609, date: "2024-03-17T03:00:00.000Z", member: "mila_davis", msg: "Demo message 139ver.2", dateEdt: "2025-06-26T16:30:02.799Z" },
                 { id: 611, date: "2024-03-20T19:05:01.000Z", member: "ethan_brown", msg: "Demo message 141" },
                 { id: 612, date: "2024-03-20T19:05:02.000Z", member: "ethan_brown", msg: "Demo message 142" }
             ];
             this.changeDetector.markForCheck();
-        }, 6000);
+            console.log(`this.chatNewMsgs`); // #
+        }, 6000);*/
     }
 
+    demo1(): any[] {
+        return [
+            { "id": 600, "date": "2024-03-16T18:00:00.000Z", "member": "evelyn_allen", "msg": "Demo message 130ver.2", "dateEdt": "2025-06-26T16:30:02.799Z" },
+            { "id": 599, "date": "2024-03-16T17:00:00.000Z", "member": "mila_davis", "msg": "Demo message 129" },
+            { "id": 598, "date": "2024-03-16T16:00:00.000Z", "member": "james_miller", "msg": "Demo message 128ver.2", "dateEdt": "2025-06-26T16:30:02.799Z" },
+            { "id": 597, "date": "2024-03-16T15:00:00.000Z", "member": "ava_wilson", "msg": "Demo message 127" },
+            { "id": 596, "date": "2024-03-16T14:00:00.000Z", "member": "ethan_brown", "msg": "Demo message 126 ver.2", "dateEdt": "2025-06-26T16:30:02.799Z" },
+            { "id": 595, "date": "2024-03-16T13:00:00.000Z", "member": "evelyn_allen", "msg": "Demo message 125" },
+            { "id": 594, "date": "2024-03-16T12:00:00.000Z", "member": "mila_davis", "msg": "Demo message 124ver.2", "dateEdt": "2025-06-26T16:30:02.799Z" },
+            { "id": 593, "date": "2024-03-16T11:00:00.000Z", "member": "james_miller", "msg": "Demo message 123" },
+            { "id": 592, "date": "2024-03-16T10:00:00.000Z", "member": "ava_wilson", "msg": "Demo message 122 ver.2", "dateEdt": "2025-06-26T16:30:02.799Z" },
+            { "id": 591, "date": "2024-03-16T09:00:00.000Z", "member": "ethan_brown", "msg": "Demo message 121" },
+        ];
+    }
     ngOnInit(): void {
         this.updateParams(this.streamDto, this.profileDto);
     }
