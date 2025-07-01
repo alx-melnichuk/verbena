@@ -15,7 +15,7 @@
     <div class="pc-item-wrap"
       [matMenuTriggerFor]="!!getMenuItem(chatMsg, isOwner, nickname) ? menuItem : null"
       [matMenuTriggerData]="getMenuItem(chatMsg, isOwner, nickname)"
-      (menuOpened)="msgMarked=chatMsg;"
+      (menuOpened)="msgMarked=chatMsg;cleanNewMsg();"
       (menuClosed)="msgMarked=null;">
       <div [ngClass]="['pc-item', (isSelf(chatMsg.member) ? 'pc-self' : '')
         , (msgMarked==chatMsg || msgEditing==chatMsg ? 'pc-marked' : '')]"
@@ -50,14 +50,14 @@
     </div>
   }
 </div>
-@if (notViewedCount > 0) {
+@if (countNotViewed > 0) {
   <div class="pc-notviewed-box">
     <div class="pc-notviewed">
-      <div [ngClass]="['pc-notviewed-count', (notViewedCount>99?'pc-nvcnt-pd2':(notViewedCount>9?'pc-nvcnt-pd1':''))]"
-        (click)="doScrollToLast()">
-        {{ notViewedCount }}
+      <div [ngClass]="['pc-notviewed-count', (countNotViewed>99?'pc-nvcnt-pd2':(countNotViewed>9?'pc-nvcnt-pd1':''))]"
+        (click)="doScrollToBottom()">
+        {{ countNotViewed }}
       </div>
-      <button class="pc-btn-notviewed" (click)="doScrollToLast()">
+      <button class="pc-btn-notviewed" (click)="doScrollToBottom()">
         <svg class="pc-angle">
           <use href="assets/icons/lib-chat/panel-chat/angle-down-3-bin.svg#angle-down-3-bin"></use>
         </svg>
@@ -93,7 +93,7 @@
         autocapitalize="off"
         [attr.maxlength]="(maxLenVal > 0 ? maxLenVal + 1 : null)"
         (keydown.enter)="doKeydownEnter($event, formControl.value)"
-        (keydown.escape)="doKeydownEscape()"
+        (keydown.escape)="cleanNewMsg()"
         cdkTextareaAutosize
         #autosize="cdkTextareaAutosize"
         [cdkAutosizeMinRows]="minRowsVal"

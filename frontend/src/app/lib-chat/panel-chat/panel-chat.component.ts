@@ -47,8 +47,7 @@ export const MESSAGE_MIN_LENGTH = 0;
 export const DEBOUNCE_DELAY = 50;
 export const MIN_SCROLL_VALUE = 20;
 
-type ChatMsgObj = { [key: number]: number };
-type MenuEditMap = Map<number, MenuEdit>;
+type ChatMsgMap = Map<number, number>;
 
 // <mat-form-field subscriptSizing="dynamic"
 // it'll remove the space until an error or hint actually needs to get displayed and only then expands.
@@ -118,6 +117,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public textareaElem!: ElementRef<HTMLTextAreaElement>;
 
     public chatMsgList: ChatMessageDto[] = [];
+    public countNotViewed: number = 0;
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ newMsg: this.formControl });
     public initValue: string | null = null;
@@ -127,14 +127,12 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public minRowsVal: number = MESSAGE_MIN_ROWS;
     public msgMarked: ChatMessageDto | null = null;
     public msgEditing: ChatMessageDto | null = null;
-    public notViewedCount: number = 0;
 
     readonly blockedUserSet: Set<string> = new Set();
-    readonly chatMsgObj: ChatMsgObj = {};
+    readonly chatMsgMap: ChatMsgMap = new Map();
     readonly dbncScrollItem = debounceFn(() => this.doScrollItem(), DEBOUNCE_DELAY);
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
     readonly formatTime: Intl.DateTimeFormatOptions = { timeStyle: 'short' };
-    readonly menuEditMap: MenuEditMap = new Map();
 
     private get scrollElem(): HTMLElement {
         return this.scrollItemElem.nativeElement;
@@ -142,11 +140,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     private set scrollElem(value: HTMLElement) { }
 
     private isNoPastData: boolean = false;
-    private isNoReactToScroll: boolean = false;
+    private isForcedScroll: boolean = false;
     private lastScrollTop: number = 0;
-    private lastScrollBottom: number = 0; // TODO ?
     private smallestDate: StringDateTime | undefined;
-    private largestId: number | null = null;
 
     private readonly _injector = inject(Injector);
 
@@ -177,60 +173,32 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         if (!!changes['chatPastMsgs'] && this.chatPastMsgs.length > 0) {
             // List of past chat messages.
             if (this.chatPastMsgs.length > 0) {
-                this.chatMsgList = this.chatPastMsgs.reverse().concat(this.chatMsgList);
-                this.updateChatMsgObj(this.chatMsgObj, this.chatMsgList);
+                this.loadPastChatMsgs(this.chatMsgMap, this.chatMsgList, this.chatPastMsgs);
                 this.smallestDate = this.chatMsgList[0].date;
+                this.isForcedScroll = true;
+                console.log(`__OnChanges(chatPastMsgs); isForcedScroll: ${this.isForcedScroll}`) // #
             } else {
                 this.isNoPastData = true;
             }
         }
-        /*if (!!changes['chatMsgs']) {
-            console.log(`PanelChat.OnChange('chatMsgs') 1 chatMsgs.length: ${this.chatMsgs.length}`);
-            this.isNoPastData = this.chatMsgs.length == 0;
-            if (this.chatMsgs.length > 0) {
-                this.chatMsgList = this.chatMsgs.concat(this.chatMsgList);
-                this.updateChatMsgObj(this.chatMsgObj, this.chatMsgList);
-            }
-            /  *
-            let res = null;
-            if (this.chatMsgs.length > 0) {
-                res = this.loadChatMsgs(this.chatMsgObj, this.chatMsgs, this.menuEditMap, this.nickname || '');
-                this.chatMsgList = res.chatMsgs;
-            } else {
-                this.isNoPastData = true;
-            }
-            if (!!res && res.smallestId > -1 && res.largestId > -1) {
-                const isAddBefore = this.smallestId != null ? res.smallestId < this.smallestId : false;
-                const isAddAfter = this.largestId != null ? res.largestId > this.largestId : false;
-                const bottom = (isAddBefore && !isAddAfter ? this.lastScrollBottom : (!isAddBefore && isAddAfter ? 0 : -1));
-                if (bottom > -1) {
-                    Promise.resolve().then(() => this.setItemsScrollTo(this.scrollElem, { bottom }));
-                }
-                this.smallestId = res.smallestId;
-                this.largestId = res.largestId;
-            }
-            *  /
-        }*/
         if (!!changes['chatNewMsgs'] && this.chatNewMsgs.length > 0) {
-            const len = this.chatNewMsgs.length;
-            // List of new chat messages.
-            const newCnt = this.loadNewEdtChatMsgs(this.chatMsgObj, this.chatMsgList, this.chatNewMsgs);
+            // List of new and edited chat messages.
+            const newCnt = this.loadNewEdtChatMsgs(this.chatMsgMap, this.chatMsgList, this.chatNewMsgs).count;
             if (newCnt > 0) {
                 if (!this.msgMarked && this.checkScrollingAllowed()) {
-                    Promise.resolve().then(() => this.doScrollToLast());
+                    Promise.resolve().then(() => this.doScrollToBottom());
                 } else {
-                    this.notViewedCount = len;
+                    this.countNotViewed = newCnt;
                 }
             }
         }
         if (!!changes['chatRmvIds'] && this.chatRmvIds.length > 0) {
             // List of IDs of permanently deleted chat messages.
-            this.chatMsgList = this.loadRmvIds(this.chatMsgList, this.chatRmvIds);
-            this.updateChatMsgObj(this.chatMsgObj, this.chatMsgList);
+            this.loadRmvChatMsgs(this.chatMsgMap, this.chatMsgList, this.chatRmvIds);
             // Promise.resolve().then(() => this.checkScrollPosition());
         }
         if (!!changes['isEditable'] && !changes['isEditable'].firstChange) {
-            Promise.resolve().then(() => this.doScrollToLast());
+            Promise.resolve().then(() => this.doScrollToBottom());
         }
         if (!!changes['maxLen'] || !!changes['minLen']) {
             this.maxLenVal = (!!this.maxLen && this.maxLen > 0 ? this.maxLen : MESSAGE_MAX_LENGTH);
@@ -253,22 +221,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public trackById(index: number, item: ChatMessageDto): number {
         return item.id;
     }
-    public doScrollItem(elem: HTMLElement = this.scrollElem): void {
-        const isMoveUp = this.lastScrollTop > elem.scrollTop;
-        this.lastScrollTop = elem.scrollTop;
-        this.lastScrollBottom = elem.scrollHeight - (elem.scrollTop + elem.clientHeight);
-        console.log(`_1a doScrollItem(); scrollHeight: ${elem.scrollHeight}, clientHeight: ${elem.clientHeight}`) // #
-        /*if (!this.isNoReactToScroll && isMoveUp && !this.isNoPastData && this.deltaScroll(elem) < MIN_SCROLL_VALUE) {
-            console.log('_1b this.runQueryPastMsgs();') // #
-            this.runQueryPastMsgs();
-        }*/
-    }
-    public doScrollToLast(): void {
-        this.setItemsScrollTo(this.scrollElem, { bottom: 0 });
-        if (this.notViewedCount > 0) {
-            this.notViewedCount = 0;
-        }
-    }
     public getMenuBlock(nickname: string, isOwner: boolean | null, selfName: string | null): MenuBlock | null {
         const isBlocked = !isOwner ? null : (nickname == selfName ? null : this.blockedUserSet.has(nickname));
         const result = isBlocked != null ? { isBlock: !isBlocked, isUnblock: isBlocked } : null;
@@ -282,8 +234,10 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         return result;
     }
     public cleanNewMsg(): void {
-        this.setTextareaValue(null);
-        this.msgEditing = null;
+        if (!!this.msgEditing) {
+            this.setTextareaValue(null);
+            this.msgEditing = null;
+        }
     }
     public getErrorMsg(errors: ValidationErrors | null): string {
         return ValidatorUtils.getErrorMsg(errors, TITLE);
@@ -345,11 +299,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
         event.preventDefault();
     }
-    public doKeydownEscape(): void {
-        if (!!this.msgEditing) {
-            this.cleanNewMsg();
-        }
-    }
     public doClickCheckSelection(event: Event): void {
         const selectionObj = window.getSelection();
         const selection = !!selectionObj ? selectionObj.toString() : null;
@@ -358,18 +307,29 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             event.stopPropagation();
         }
     }
-    // ** **
-    /*
-    public clickFaceSmilePanel(code: string): void {
-        const item: HTMLTextAreaElement = this.getTextArea();
-        const start = item.selectionStart;
-        const value = item.value;
-        item.value = value.substr(0, start) + code + value.substr(start);
-        item.selectionStart = start + code.length;
-        item.selectionEnd = item.selectionStart;
-        this.isShowFaceSmilePanel = false;
-        this.messageInput?.focus();
-    }*/
+    public doScrollToBottom(bottom: number = 0): void {
+        console.log(`__doScrollToBottom()`); // #
+        this.setScrollTo(this.scrollElem, { bottom });
+        if (this.countNotViewed > 0) {
+            this.countNotViewed = 0;
+        }
+    }
+    public doScrollItem(elem: HTMLElement = this.scrollElem): void {
+        const isMoveUp = this.lastScrollTop > elem.scrollTop;
+        this.lastScrollTop = elem.scrollTop;
+        console.log(`__doScrollItem(); scrollHg: ${elem.scrollHeight}px, clientHg: ${elem.clientHeight}px, isForcedScroll: ${this.isForcedScroll}`) // #
+        if (this.isForcedScroll) {
+            this.isForcedScroll = false;
+            console.log(`__doScrollItem(); isForcedScroll: ${this.isForcedScroll}`) // #
+        } else if (isMoveUp && !this.isNoPastData) {
+            const deltaScroll = Math.round(Math.round(elem.scrollTop / (elem.scrollHeight - elem.clientHeight) * 1000) / 10);
+            console.log(`__doScrollItem(); deltaScroll: ${deltaScroll}`) // #
+            if (deltaScroll < MIN_SCROLL_VALUE) {
+                console.log(`__doScrollItem(); this.runQueryPastMsgs()`); // #
+                this.runQueryPastMsgs();
+            }
+        }
+    }
 
     // ** Private API **
 
@@ -386,50 +346,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj)]);
         this.formControl.updateValueAndValidity();
     }
-    private checkScrollPosition(elem: HTMLElement = this.scrollElem): void {
-        const isScroll = elem.scrollHeight > elem.clientHeight;
-        if (!isScroll && !this.isNoPastData) {
-            console.log('_2 this.runQueryPastMsgs();') // #
-            // this.runQueryPastMsgs();
-        }
-    }
-    private runQueryPastMsgs(borderDate: StringDateTime | undefined = this.smallestDate): void {
-        this.queryPastMsgs.emit({ isSortDes: true, borderDate });
-    }
-    private deltaScroll(elem: HTMLElement | null | undefined): number {
-        let result: number = 0;
-        if (!!elem) {
-            const height = elem.scrollHeight - elem.clientHeight;
-            result = Math.round(Math.round(elem.scrollTop / height * 1000) / 10);
-        }
-        return result;
-    }
-    private setItemsScrollTo(elem: HTMLElement | null | undefined, info: { top?: number, bottom?: number }): void {
-        let scrollTop = -1;
-        if (!!elem && !!info) {
-            if (info.top != null && info?.top >= 0) {
-                scrollTop = info.top;
-            } else if (info.bottom != null && info.bottom >= 0) {
-                scrollTop = elem.scrollHeight - (elem.clientHeight + info.bottom);
-            }
-        }
-        if (!!elem && scrollTop > -1) {
-            this.isNoReactToScroll = true;
-            console.log(`_12a setItemsScrollTo() this.isNoReactToScroll: ${this.isNoReactToScroll}`) // #
-            elem.scrollTop = scrollTop;
-            setTimeout(() => {
-                this.isNoReactToScroll = false;
-                console.log(`_12b setItemsScrollTo() this.isNoReactToScroll: ${this.isNoReactToScroll}`) // #
-            }, 180);
-        }
-    }
-    /*
-    private hexToUtf8(hex: string): string {
-        return decodeURIComponent(
-            '%' + ((hex || '').match(/.{1,2}/g) || []).join('%')
-        );
-    }
-    */
     private createMenuEdit(selfName: string, chatMsg: ChatMessageDto): MenuEdit | null {
         const isSelfNameEqMember = !!selfName && selfName == chatMsg.member;
         const isEdit = isSelfNameEqMember && !chatMsg.dateRmv;
@@ -443,71 +359,100 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         console.log(`_3 checkScrollingCapability(): ${scrollBottom < elem.clientHeight}`); // #
         return scrollBottom < elem.clientHeight;
     }
-    private loadPastChatMsgs(): void {
-
+    private loadPastChatMsgs(chatMsgMap: ChatMsgMap, chatMsgList: ChatMessageDto[], chatPastMsgs: ChatMessageDto[]): ChatMessageDto[] {
+        chatMsgMap.clear();
+        const list = chatPastMsgs.reverse().concat(chatMsgList);
+        chatMsgList.length = 0;
+        for (let idx = 0; idx < list.length; idx++) {
+            const chatMsg = list[idx];
+            const index = chatMsgList.push(chatMsg) - 1;
+            chatMsgMap.set(chatMsg.id, index);
+        }
+        return chatMsgList;
     }
-    private loadNewEdtChatMsgs(chatMsgObj: ChatMsgObj, chatMsgList: ChatMessageDto[], newEdtMsgs: ChatMessageDto[]): number {
-        let result: number = 0;
-        for (let idx = 0; idx < newEdtMsgs.length; idx++) {
-            const chatMsg = newEdtMsgs[idx];
+    private loadNewEdtChatMsgs(
+        chatMsgMap: ChatMsgMap, chatMsgList: ChatMessageDto[], chatNewEdtMsgs: ChatMessageDto[]
+    ): { count: number, list: ChatMessageDto[] } {
+        let count: number = 0;
+        for (let idx = 0; idx < chatNewEdtMsgs.length; idx++) {
+            const chatMsg = chatNewEdtMsgs[idx];
             if (!chatMsg.dateEdt && !chatMsg.dateRmv) {
                 const index = chatMsgList.push(chatMsg) - 1;
-                chatMsgObj[chatMsg.id] = index;
-                result++;
+                chatMsgMap.set(chatMsg.id, index);
+                count++;
             } else {
-                const index = chatMsgObj[chatMsg.id];
+                const index = chatMsgMap.get(chatMsg.id);
                 const chatMsgOld = !!index ? chatMsgList[index] : null;
-                if (chatMsgOld?.id == chatMsg.id) {
+                if (!!index && chatMsgOld?.id == chatMsg.id) {
                     chatMsgList[index] = chatMsg;
                 } else {
                     console.log(`Error processing update - id: ${chatMsg.id}`);
                 }
             }
         }
-        return result;
+        return { count, list: chatMsgList };
     }
-    private loadRmvChatMsgs(chatMsgObj: ChatMsgObj, chatMsgList: ChatMessageDto[], rmvMsgs: number[]): void {
-    }
-
-
-    private updateChatMsgObj(chatMsgObj: ChatMsgObj, chatMsgs: ChatMessageDto[]): void {
-        chatMsgObj = {};
-        for (let idx = 0; idx < chatMsgs.length; idx++) {
-            chatMsgObj[chatMsgs[idx].id] = idx;
-        }
-    }
-    /*private loadChatMsgs(
-        chatMsgObj: ChatMsgObj, chatMsgs: ChatMessageDto[], menuEditMap: MenuEditMap, selfName: string
-    ): { chatMsgs: ChatMessageDto[], smallestId: number, largestId: number } {
-        for (let idx = 0; idx < chatMsgs.length; idx++) {
-            const chatMsg = chatMsgs[idx];
-            chatMsgObj[chatMsg.id] = chatMsg;
-            const itemMenu: MenuEdit | null = this.createMenuEdit(selfName, chatMsg);
-            if (!!itemMenu) {
-                menuEditMap.set(chatMsg.id, itemMenu);
-            }
-        }
-        const resChatMsgs = Object.values(chatMsgObj)
-        const smallestId = resChatMsgs.length > 0 ? resChatMsgs[0].id : -1;
-        const largestId = resChatMsgs.length > 0 ? resChatMsgs[resChatMsgs.length - 1].id : -1;
-        return { chatMsgs: resChatMsgs, smallestId, largestId };
-    }*/
-    private loadRmvIds(chatMsgs: ChatMessageDto[], chatRmvIds: number[]): ChatMessageDto[] {
-        let idx0 = 0; const len = chatMsgs.length;
+    private loadRmvChatMsgs(chatMsgMap: ChatMsgMap, chatMsgList: ChatMessageDto[], rmvIds: number[]): ChatMessageDto[] {
+        let idx0 = 0;
+        const len = chatMsgList.length;
         for (let idx1 = 0; idx1 < len; idx1++) {
-            const index = chatRmvIds.length > 0 ? chatRmvIds.indexOf(chatMsgs[idx1].id) : -1;
+            const chatMsgId = chatMsgList[idx1].id;
+            const index = rmvIds.length > 0 ? rmvIds.indexOf(chatMsgId) : -1;
             if (index > -1) {
-                chatRmvIds.splice(index, 1);
+                rmvIds.splice(index, 1);
+                chatMsgMap.delete(chatMsgId);
             } else {
                 if (idx0 < idx1) {
-                    chatMsgs[idx0] = chatMsgs[idx1];
+                    chatMsgList[idx0] = chatMsgList[idx1];
                 }
                 idx0++;
             }
         }
         if (idx0 < len) {
-            chatMsgs.splice(idx0, len - idx0);
+            chatMsgList.splice(idx0, len - idx0);
         }
-        return chatMsgs;
+        return chatMsgList;
     }
+    private runQueryPastMsgs(borderDate: StringDateTime | undefined = this.smallestDate): void {
+        console.log(`__runQueryPastMsgs()`); // #
+        this.queryPastMsgs.emit({ isSortDes: true, borderDate });
+    }
+    private setScrollTo(elem: HTMLElement | null | undefined, info: { top?: number, bottom?: number }): void {
+        let scrollTop = -1;
+        if (!!elem && !!info) {
+            if (info.top != null && info?.top >= 0) {
+                scrollTop = info.top;
+            } else if (info.bottom != null && info.bottom >= 0) {
+                scrollTop = elem.scrollHeight - (elem.clientHeight + info.bottom);
+            }
+        }
+        if (!!elem && scrollTop > -1) {
+            this.isForcedScroll = true;
+            console.log(`__setScrollTo() isForcedScroll: ${this.isForcedScroll}`) // #
+            elem.scrollTop = scrollTop;
+        }
+    }
+
+    private checkScrollPosition(elem: HTMLElement = this.scrollElem): void {
+        const isScroll = elem.scrollHeight > elem.clientHeight;
+        if (!isScroll && !this.isNoPastData) {
+            console.log('_2 this.runQueryPastMsgs();') // #
+            // this.runQueryPastMsgs();
+        }
+    }
+    private deltaScroll(elem: HTMLElement | null | undefined): number {
+        let result: number = 0;
+        if (!!elem) {
+            const height = elem.scrollHeight - elem.clientHeight;
+            result = Math.round(Math.round(elem.scrollTop / height * 1000) / 10);
+        }
+        return result;
+    }
+    /*
+    private hexToUtf8(hex: string): string {
+        return decodeURIComponent(
+            '%' + ((hex || '').match(/.{1,2}/g) || []).join('%')
+        );
+    }
+    */
 }
