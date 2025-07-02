@@ -196,7 +196,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public doQueryPastMsgs(info: ParamQueryPastMsg) {
         const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
         if (streamId > 0 && !!info && info.isSortDes != null && info.borderDate != null) {
-            console.log(`PgConceptView.doQueryPastInfo(${JSON.stringify(info)});`); // #
+            // console.log(`PgConceptView.doQueryPastInfo(${JSON.stringify(info)});`); // #
             this.getPastChatMsgs(streamId, info.isSortDes, info.borderDate);
         }
     }
@@ -321,7 +321,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.chatMessageService.getChatMessages(streamId, isSortDes, borderDate, limit)
             .then((response: ChatMessageDto[] | HttpErrorResponse | undefined) => {
                 this.chatPastMsgs = (response as ChatMessageDto[]); // List of past chat messages.
-                console.log(`PgConceptView() 3 chatPastMsgs:`, this.chatPastMsgs); // #
+                // console.log(`PgConceptView() 3 chatPastMsgs:`, this.chatPastMsgs); // #
             })
             .catch((error: HttpErrorResponse) => {
                 console.error(`ChatMessageError:`, error);
