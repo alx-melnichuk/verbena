@@ -54,10 +54,10 @@
   <div class="pc-notviewed-box">
     <div class="pc-notviewed">
       <div [ngClass]="['pc-notviewed-count', (countNotViewed>99?'pc-nvcnt-pd2':(countNotViewed>9?'pc-nvcnt-pd1':''))]"
-        (click)="doScrollToBottom()">
+        (click)="setScrollTo({ bottom: 0 })">
         {{ countNotViewed }}
       </div>
-      <button class="pc-btn-notviewed" (click)="doScrollToBottom()">
+      <button class="pc-btn-notviewed" (click)="setScrollTo({ bottom: 0 })">
         <svg class="pc-angle">
           <use href="assets/icons/lib-chat/panel-chat/angle-down-3-bin.svg#angle-down-3-bin"></use>
         </svg>
