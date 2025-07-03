@@ -40,8 +40,10 @@ pub mod cfg {
 
 #[cfg(not(all(test, feature = "mockdata")))]
 pub mod impls {
+    use std::time::Instant as tm;
 
     use diesel::{self, prelude::*, sql_types};
+    use log::{info, log_enabled, Level::Info};
 
     use crate::dbase;
     use crate::schema;
@@ -67,6 +69,7 @@ pub mod impls {
     impl ProfileOrm for ProfileOrmApp {
         /// Get an entity (profile + user) by ID.
         fn get_profile_user_by_id(&self, user_id: i32, is_password: bool) -> Result<Option<Profile>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -80,6 +83,9 @@ pub mod impls {
                 .optional()
                 .map_err(|e| format!("find_profile_user: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("get_profile_user_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(opt_profile)
         }
         /// Find for an entity (profile) by nickname or email.
@@ -89,7 +95,9 @@ pub mod impls {
             email: Option<&str>,
             is_password: bool,
         ) -> Result<Option<Profile>, String> {
-            let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase(); // #?
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
+            let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase();
             let nickname2_len = nickname2.len();
             let email2 = email.unwrap_or(&"".to_string()).to_lowercase();
             let email2_len = email2.len();
@@ -110,10 +118,16 @@ pub mod impls {
                 .optional()
                 .map_err(|e| format!("find_profile_user: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                #[rustfmt::skip]
+                info!("find_profile_by_nickname_or_email() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(opt_profile)
         }
         /// Add a new entry (profile, user).
         fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
             let nickname = create_profile.nickname.to_lowercase(); // #?
             let email = create_profile.email.to_lowercase();
 
@@ -135,12 +149,16 @@ pub mod impls {
                 .get_result::<Profile>(&mut conn)
                 .map_err(|e| format!("create_profile_user: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("create_profile_user() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(profile_user)
         }
         /// Modify an entity (profile, user).
         fn modify_profile(&self, user_id: i32, modify_profile: ModifyProfile) -> Result<Option<Profile>, String> {
-            //
-            let nickname = modify_profile.nickname.map(|v| v.to_lowercase()); // #?
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+
+            let nickname = modify_profile.nickname.map(|v| v.to_lowercase());
             let email = modify_profile.email.map(|v| v.to_lowercase());
             let avatar = match modify_profile.avatar {
                 Some(value1) => match value1 {
@@ -170,10 +188,14 @@ pub mod impls {
                 .optional()
                 .map_err(|e| format!("modify_profile_user: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("modify_profile() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(profile_user)
         }
         /// Delete an entity (profile).
         fn delete_profile(&self, user_id: i32) -> Result<Option<Profile>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
@@ -186,6 +208,9 @@ pub mod impls {
                 .optional()
                 .map_err(|e| format!("delete_profile_user: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("delete_profile() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(opt_profile)
         }
     }
