@@ -41,9 +41,11 @@ pub mod cfg {
 
 #[cfg(not(feature = "mockdata"))]
 pub mod impls {
+    use std::time::Instant as tm;
 
     use chrono::{Duration, Utc};
     use diesel::{self, prelude::*};
+    use log::{info, log_enabled, Level::Info};
     use schema::user_recovery::dsl;
 
     use crate::dbase;
@@ -71,6 +73,7 @@ pub mod impls {
     impl UserRecoveryOrm for UserRecoveryOrmApp {
         /// Get an entity (user_recovery) by ID.
         fn get_user_recovery_by_id(&self, id: i32) -> Result<Option<UserRecovery>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to find user by id and return it.
@@ -80,11 +83,15 @@ pub mod impls {
                 .optional()
                 .map_err(|e| format!("find_user_recovery_by_id: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("get_user_recovery_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(result)
         }
 
         /// Find for an entity (user_recovery) by user_id.
         fn find_user_recovery_by_user_id(&self, user_id: i32) -> Result<Option<UserRecovery>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             let now = Utc::now();
@@ -95,11 +102,16 @@ pub mod impls {
                 .optional()
                 .map_err(|e| format!("find_user_recovery_by_user_id: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                #[rustfmt::skip]
+                info!("find_user_recovery_by_user_id() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(result)
         }
 
         /// Add a new entity (user_recovery).
         fn create_user_recovery(&self, create_user_recovery: CreateUserRecovery) -> Result<UserRecovery, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to add a new user entry.
@@ -109,6 +121,9 @@ pub mod impls {
                 .get_result(&mut conn)
                 .map_err(|e| format!("create_user_recovery: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("create_user_recovery() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(user_recovery)
         }
 
@@ -118,6 +133,7 @@ pub mod impls {
             id: i32,
             create_user_recovery: CreateUserRecovery,
         ) -> Result<Option<UserRecovery>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to full or partially modify the user entry.
@@ -128,11 +144,15 @@ pub mod impls {
                 .optional()
                 .map_err(|e| format!("modify_user_recovery: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("modify_user_recovery() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(result)
         }
 
         /// Delete an entity (user_recovery).
         fn delete_user_recovery(&self, id: i32) -> Result<usize, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to delete a entry (user_recovery).
@@ -140,11 +160,15 @@ pub mod impls {
                 .execute(&mut conn)
                 .map_err(|e| format!("delete_user_recovery: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("delete_user_recovery() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(count)
         }
 
         /// Delete all entities (user_recovery) with an inactive "final_date".
         fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             let now = Utc::now();
             let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
             let start_day_time = now - Duration::days(duration.into());
@@ -160,6 +184,10 @@ pub mod impls {
             .execute(&mut conn)
             .map_err(|e| format!("delete_inactive_final_date: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                #[rustfmt::skip]
+                info!("delete_inactive_final_date() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(count)
         }
     }
