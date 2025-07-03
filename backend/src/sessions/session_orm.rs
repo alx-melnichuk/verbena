@@ -28,8 +28,10 @@ pub mod cfg {
 
 #[cfg(not(feature = "mockdata"))]
 pub mod impls {
+    use std::time::Instant as tm;
 
     use diesel::{self, prelude::*};
+    use log::{info, log_enabled, Level::Info};
 
     use crate::dbase;
     use crate::schema;
@@ -55,6 +57,7 @@ pub mod impls {
     impl SessionOrm for SessionOrmApp {
         /// Get an entity (session) by ID.
         fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to find user by id and return it.
@@ -64,10 +67,14 @@ pub mod impls {
                 .optional()
                 .map_err(|e| format!("get_session_by_id: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("get_session_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(opt_session)
         }
         /// Perform a full or partial change to a session record.
         fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to full or partially modify the session entry.
@@ -78,6 +85,9 @@ pub mod impls {
                 .optional()
                 .map_err(|e| format!("modify_session: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("modify_session() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(result)
         }
     }
