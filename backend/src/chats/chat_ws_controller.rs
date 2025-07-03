@@ -1,5 +1,4 @@
-use actix_files::NamedFile;
-use actix_web::{get, web, HttpResponse, Responder};
+use actix_web::{get, web, HttpResponse};
 use actix_web_actors::ws;
 use utoipa;
 
@@ -20,11 +19,6 @@ use crate::sessions::session_orm::tests::SessionOrmApp;
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
-        if cfg!(debug_assertions) {
-            config
-                // GET /chat
-                .service(chat);
-        }
         config
             // GET /ws
             .service(get_ws_chat);
@@ -503,10 +497,4 @@ pub async fn get_ws_chat(
         assistant,         // assistant: ChatWsAssistant
     );
     ws::start(chat_ws_session, &request, stream)
-}
-
-#[cfg(debug_assertions)]
-#[get("/chat")]
-async fn chat() -> impl Responder {
-    NamedFile::open_async("./static/chat_index.html").await.unwrap()
 }
