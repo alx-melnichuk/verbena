@@ -5,16 +5,20 @@ pub const DURATION_IN_DAYS: u16 = 90;
 pub trait UserRegistrOrm {
     /// Find for an entity (user_registration) by id.
     fn find_user_registr_by_id(&self, id: i32) -> Result<Option<UserRegistr>, String>;
+
     /// Find for an entity (user_registration) by nickname or email.
     fn find_user_registr_by_nickname_or_email(
         &self,
         nickname: Option<&str>,
         email: Option<&str>,
     ) -> Result<Option<UserRegistr>, String>;
+
     /// Add a new entity (user_registration).
     fn create_user_registr(&self, create_user_registr_dto: CreateUserRegistr) -> Result<UserRegistr, String>;
+
     /// Delete an entity (user_registration).
     fn delete_user_registr(&self, id: i32) -> Result<usize, String>;
+
     /// Delete all entities (user_registration) with an inactive "final_date".
     fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String>;
 }
@@ -39,9 +43,11 @@ pub mod cfg {
 
 #[cfg(not(feature = "mockdata"))]
 pub mod impls {
+    use std::time::Instant as tm;
 
     use chrono::{Duration, Utc};
     use diesel::{self, prelude::*};
+    use log::{info, log_enabled, Level::Info};
     use schema::user_registration::dsl;
 
     use crate::dbase;
@@ -69,6 +75,7 @@ pub mod impls {
     impl UserRegistrOrm for UserRegistrOrmApp {
         /// Find for an entity (user_registration) by id.
         fn find_user_registr_by_id(&self, id: i32) -> Result<Option<UserRegistr>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to find user by id and return it.
@@ -78,6 +85,9 @@ pub mod impls {
                 .optional()
                 .map_err(|e| format!("find_user_registr_by_id: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("find_user_registr_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(result)
         }
 
@@ -87,6 +97,7 @@ pub mod impls {
             nickname: Option<&str>,
             email: Option<&str>,
         ) -> Result<Option<UserRegistr>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             let nickname2 = nickname.unwrap_or(&"".to_string()).to_lowercase();
             let nickname2_len = nickname2.len();
             let email2 = email.unwrap_or(&"".to_string()).to_lowercase();
@@ -132,17 +143,18 @@ pub mod impls {
                     sql_query.load(&mut conn).map_err(|e| format!("{}: {}", table, e.to_string()))?;
                 result_vec.extend(result_nickname_email_vec);
             }
-
-            let result = if result_vec.len() > 0 {
-                Some(result_vec[0].clone())
-            } else {
-                None
-            };
+            #[rustfmt::skip]
+            let result = if result_vec.len() > 0 { Some(result_vec[0].clone()) } else { None };
+            if let Some(timer) = timer {
+                #[rustfmt::skip]
+                info!("find_user_registr_by_nickname_or_email() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(result)
         }
 
         /// Add a new entity (user_registration).
         fn create_user_registr(&self, create_user_registr_dto: CreateUserRegistr) -> Result<UserRegistr, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             let mut create_user_registr_dto2 = create_user_registr_dto.clone();
             create_user_registr_dto2.nickname = create_user_registr_dto2.nickname.to_lowercase();
             create_user_registr_dto2.email = create_user_registr_dto2.email.to_lowercase();
@@ -156,11 +168,15 @@ pub mod impls {
                 .get_result(&mut conn)
                 .map_err(|e| format!("create_user_registr: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("create_user_registr() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(user_registr)
         }
 
         /// Delete an entity (user_registration).
         fn delete_user_registr(&self, id: i32) -> Result<usize, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to delete a entry (user_registration).
@@ -168,11 +184,15 @@ pub mod impls {
                 .execute(&mut conn)
                 .map_err(|e| format!("delete_user_registr: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                info!("delete_user_registr() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(count)
         }
 
         /// Delete all entities (user_registration) with an inactive "final_date".
         fn delete_inactive_final_date(&self, duration_in_days: Option<u16>) -> Result<usize, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             let now = Utc::now();
             let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
             let start_day_time = now - Duration::days(duration.into());
@@ -188,6 +208,10 @@ pub mod impls {
             .execute(&mut conn)
             .map_err(|e| format!("delete_inactive_final_date: {}", e.to_string()))?;
 
+            if let Some(timer) = timer {
+                #[rustfmt::skip]
+                info!("delete_inactive_final_date() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
             Ok(count)
         }
     }
