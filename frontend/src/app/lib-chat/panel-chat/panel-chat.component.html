@@ -54,10 +54,10 @@
   <div class="pc-notviewed-box">
     <div class="pc-notviewed">
       <div [ngClass]="['pc-notviewed-count', (countNotViewed>99?'pc-nvcnt-pd2':(countNotViewed>9?'pc-nvcnt-pd1':''))]"
-        (click)="setScrollTo({ bottom: 0 })">
+        (click)="setScrollBottom(0)">
         {{ countNotViewed }}
       </div>
-      <button class="pc-btn-notviewed" (click)="setScrollTo({ bottom: 0 })">
+      <button class="pc-btn-notviewed" (click)="setScrollBottom(0)">
         <svg class="pc-angle">
           <use href="assets/icons/lib-chat/panel-chat/angle-down-3-bin.svg#angle-down-3-bin"></use>
         </svg>
@@ -93,6 +93,7 @@
         autocapitalize="off"
         [attr.maxlength]="(maxLenVal > 0 ? maxLenVal + 1 : null)"
         (keydown.enter)="doKeydownEnter($event, formControl.value)"
+        (keydown.control.enter)="doKeydownEnter($event, formControl.value)"
         (keydown.escape)="cleanNewMsg()"
         cdkTextareaAutosize
         #autosize="cdkTextareaAutosize"

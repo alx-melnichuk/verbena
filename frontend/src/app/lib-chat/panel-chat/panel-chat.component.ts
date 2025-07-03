@@ -1,6 +1,6 @@
 import {
-    afterNextRender, AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, inject,
-    Injector, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation
+    afterNextRender, AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener,
+    inject, Injector, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
 import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { CommonModule, KeyValue } from '@angular/common';
@@ -132,6 +132,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     readonly blockedUserSet: Set<string> = new Set();
     readonly chatMsgMap: ChatMsgMap = new Map();
     readonly dbncScrollItem = debounceFn(() => { this.checkScrollBottom(); this.checkScrollTop(); }, DEBOUNCE_DELAY);
+    readonly dbncCheckExistScroll = debounceFn(() => { this.checkExistScroll(); }, DEBOUNCE_DELAY);
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
     readonly formatTime: Intl.DateTimeFormatOptions = { timeStyle: 'short' };
 
@@ -149,8 +150,12 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
 
     constructor() {
-        console.log(`PanelChat();`); // #
         this.prepareFormGroup(this.maxLenVal, this.minLenVal);
+    }
+
+    @HostListener('window:resize', ['$event'])
+    handlerResize() {
+        this.dbncCheckExistScroll();
     }
 
     triggerResize() {
@@ -183,7 +188,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
                 // In this case, the display of data will not be correct (scrolltop = 0).
                 // To correct, scrollBottom = 0.
                 if (this.scrollElem.scrollHeight == this.scrollElem.clientHeight) {
-                    Promise.resolve().then(() => this.setScrollTo({ bottom: 0 }));
+                    Promise.resolve().then(() => this.setScrollBottom(0));
                 }
             } else {
                 this.isPastMsgsHasEnded = true;
@@ -194,7 +199,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             const newCnt = this.loadNewEdtChatMsgs(this.chatMsgMap, this.chatMsgList, this.chatNewMsgs).count;
             if (newCnt > 0) {
                 if (!this.msgMarked && this.checkScrollingAllowed()) {
-                    Promise.resolve().then(() => this.setScrollTo({ bottom: 0 }));
+                    Promise.resolve().then(() => this.setScrollBottom(0));
                 } else {
                     this.countNotViewed = newCnt;
                 }
@@ -203,10 +208,18 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         if (!!changes['chatRmvIds'] && this.chatRmvIds.length > 0) {
             // List of IDs of permanently deleted chat messages.
             this.loadRmvChatMsgs(this.chatMsgMap, this.chatMsgList, this.chatRmvIds);
+            const msgMarkedIndex = !!this.msgMarked?.id ? this.chatRmvIds.indexOf(this.msgMarked.id) : -1;
+            if (msgMarkedIndex > -1) {
+                this.msgMarked = null;
+            }
+            const msgEditingIndex = !!this.msgEditing?.id ? this.chatRmvIds.indexOf(this.msgEditing.id) : -1;
+            if (msgEditingIndex > -1) {
+                this.cleanNewMsg();
+            }
             Promise.resolve().then(() => this.checkExistScroll());
         }
         if (!!changes['isEditable'] && !changes['isEditable'].firstChange) {
-            Promise.resolve().then(() => this.setScrollTo({ bottom: 0 }));
+            Promise.resolve().then(() => this.setScrollBottom(0));
         }
         if (!!changes['maxLen'] || !!changes['minLen']) {
             this.maxLenVal = (!!this.maxLen && this.maxLen > 0 ? this.maxLen : MESSAGE_MAX_LENGTH);
@@ -221,7 +234,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
     }
     ngAfterViewInit(): void {
-        // this.checkScrollPosition();
+        this.checkExistScroll();
     }
 
     // ** Public API **
@@ -238,12 +251,11 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         const menuEdit = this.createMenuEdit(selfName || '', chatMsg);
         const menuBlock = this.getMenuBlock(chatMsg.member, isOwner, selfName);
         const result = !!menuEdit || !!menuBlock ? { ...menuEdit, ...menuBlock } : null;
-        // console.log(`selfName: ${selfName} getMenuItem(): ${JSON.stringify(result)}`); // #
         return result;
     }
     public cleanNewMsg(): void {
+        this.setTextareaValue(null);
         if (!!this.msgEditing) {
-            this.setTextareaValue(null);
             this.msgEditing = null;
         }
     }
@@ -337,7 +349,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
                 minScrollTop = value2 > minScrollTop ? value2 : minScrollTop;
                 if (elem.scrollTop < minScrollTop) {
                     if (elem.scrollTop == 0) {
-                        this.setScrollTo({ top: 2 });
+                        this.setScrollTop(2);
                     }
                     this.runQueryPastMsgs();
                 }
@@ -350,17 +362,18 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             this.runQueryPastMsgs();
         }
     }
-    public setScrollTo(info: { top?: number, bottom?: number }, elem: HTMLElement = this.scrollElem): void {
-        let scrollTop = -1;
-        if (!!elem && !!info) {
-            const infoTop = info.top != null && info.top >= 0 ? info.top : -1;
-            scrollTop = infoTop >= 0 ? infoTop : scrollTop;
-            const infoBottom = info.bottom != null && info.bottom >= 0 ? elem.scrollHeight - elem.clientHeight - info.bottom : -1;
-            scrollTop = infoBottom >= 0 ? infoBottom : scrollTop;
-            if (scrollTop > -1) {
-                this.isIgnoreScroll = true;
-                elem.scrollTop = scrollTop;
-            }
+    public setScrollTop(top: number, elem: HTMLElement = this.scrollElem): void {
+        let scrollTop = !!elem && top != null && top >= 0 ? top : -1;
+        if (scrollTop > -1) {
+            this.isIgnoreScroll = true;
+            elem.scrollTop = scrollTop;
+        }
+    }
+    public setScrollBottom(bottom: number, elem: HTMLElement = this.scrollElem): void {
+        let scrollTop = !!elem && bottom != null && bottom >= 0 ? elem.scrollHeight - elem.clientHeight - bottom : -1;
+        if (scrollTop > -1) {
+            this.isIgnoreScroll = true;
+            elem.scrollTop = scrollTop;
         }
     }
 
@@ -452,11 +465,4 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     private runQueryPastMsgs(borderDate: StringDateTime | undefined = this.smallestDate): void {
         this.queryPastMsgs.emit({ isSortDes: true, borderDate });
     }
-    /*
-    private hexToUtf8(hex: string): string {
-        return decodeURIComponent(
-            '%' + ((hex || '').match(/.{1,2}/g) || []).join('%')
-        );
-    }
-    */
 }
