@@ -1,4 +1,11 @@
-
+/*
+    if (navigator.clipboard) {
+        await navigator.clipboard.writeText(value);
+    } else {
+        ClipboardUtil.copyMessage(value);
+    }
+    this.alertService.showInfo('panel-stream-editor.stream_link_copied_to_clipboard');
+ */
 export class ClipboardUtil {
     public static copyMessage(value: string): void {
         const selBox = document.createElement('textarea');

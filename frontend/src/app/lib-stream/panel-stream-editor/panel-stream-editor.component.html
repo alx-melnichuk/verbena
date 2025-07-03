@@ -86,7 +86,8 @@
           autocomplete="new-password"
           autocapitalize="off" />
         <mat-icon matSuffix matTooltipPosition="above"
-          [matTooltip]="'panel-stream-editor.copy_stream_link_to_clipboard' | translate">
+          [matTooltip]="'panel-stream-editor.copy_stream_link_to_clipboard' | translate"
+          (click)="doCopyToClipboard(linkForVisitors)" >
           <svg class="pse-file-copy-bin">
             <use href="assets/icons/lib-stream/panel-stream-editor/file-copy-bin.svg#file-copy-bin"></use>
           </svg>

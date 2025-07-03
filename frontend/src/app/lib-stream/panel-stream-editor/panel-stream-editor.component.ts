@@ -193,9 +193,13 @@ export class PanelStreamEditorComponent implements OnChanges {
         this.updateStream.emit(updateStreamFileDto);
     }
 
-    public doCopyToClipboard(value: string): void {
+    public async doCopyToClipboard(value: string): Promise<void> {
         if (!!value) {
-            ClipboardUtil.copyMessage(value);
+            if (navigator.clipboard) {
+                await navigator.clipboard.writeText(value);
+            } else {
+                ClipboardUtil.copyMessage(value);
+            }
             this.alertService.showInfo('panel-stream-editor.stream_link_copied_to_clipboard');
         }
     }
