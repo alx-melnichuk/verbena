@@ -74,7 +74,7 @@ mod tests {
         let user_id1 = profile_vec.get(0).unwrap().user_id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
         let token1 = get_token(config_jwt::get_test_config(), user_id1);
-        let ch_msgs = get_chat_messages();
+        let ch_msgs = get_chat_messages(2);
         let ch_cmd_id = ch_msgs.0.get(1).unwrap().id; // Message user2.
 
         // Open a websocket connection to the test server.
@@ -133,7 +133,7 @@ mod tests {
         let user_id2 = profile_vec.get(1).unwrap().user_id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
         let token2 = get_token(config_jwt::get_test_config(), user_id2);
-        let ch_msgs = get_chat_messages();
+        let ch_msgs = get_chat_messages(2);
         let ch_cmd_id = ch_msgs.0.first().unwrap().id;
 
         // Join user2.
