@@ -83,24 +83,43 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
 
 /// get_chat_message
 ///
-/// Get a list of messages from a chat.
+/// Get a list of messages from a chat (page by page).
+///
+/// Request structure:
+/// ```text
+/// {
+///   streamId: number,            // required
+///   isSortDes?: boolean,         // optional
+///   borderDate?: DateTime<Utc>,  // optional
+///   limit?: number,              // optional
+/// }
+/// Where:
+/// "streamId" - Chat ID (Stream ID).;
+/// "isSortDes" - descending sorting flag (default false, i.e. default sorting is "ascending");
+/// "borderDate" - The cutoff date for selecting chat messages;
+///               For isSortDes, this is less than the specified date, 
+///               otherwise it is greater than the specified date.
+/// "limit" - number of records on the page (20 by default);
+/// ```
+/// It is recommended to enter the date and time in ISO8601 format.
+/// ```text
+/// var d1 = new Date();
+/// { borderDate: d1.toISOString() } // "2020-01-20T20:10:57.000Z"
+/// ```
+/// It is allowed to specify the date and time with a time zone value.
+/// ```text
+/// { "borderDate": "2020-01-20T22:10:57+02:00" }
+/// ```
+///
 ///
 /// One could call with following curl.
 /// ```text
-/// curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1
+/// curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1
 /// ```
-/// 
-/// The `stream_id` parameter (required) specifies the stream identifier.
-/// 
-/// The `is_sort_des` parameter is a descending sorting flag (default is false, i.e. the default sorting is "ascending").
-/// 
-/// ?? border_by_id
-/// 
-/// The `limit` parameter determines the number of records in the response.
 /// 
 /// Or you could call with the next curl.
 /// ```text
-/// curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1&is_sort_des=true&border_by_id=120&limit=20
+/// curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&borderDate=120&limit=20
 /// ```
 /// Returns the found list of chat messages (Vec<`ChatMessageDto`>) with status 200.
 ///
@@ -108,22 +127,22 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
     responses(
         (status = 200, description = "The result is an array of chat messages.", body = Vec<ChatMessageDto>,
         examples(
-            ("sort_ascending" = (description = "Chat messages are sorted in ascending order, number of entries 4. `curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1&is_sort_des=true&limit=4`",
+            ("sort_ascending" = (description = "Chat messages are sorted in ascending order, number of entries 4. `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&limit=4`",
                 summary = "sort ascending", value = json!(get_ch_msgs(0, 3))
             )),
-            ("sort_ascending_part2" = (description = "Chat messages are sorted in ascending order, number of entries 4, starting with ID > 203 (part 2). `curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1&is_sort_des=true&limit=4&border_by_id=203`",
+            ("sort_ascending_part2" = (description = "Chat messages are sorted in ascending order, number of entries 4, starting with ID > 203 (part 2). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&limit=4&borderDate=203`",
                 summary = "sort ascending part2", value = json!(get_ch_msgs(4, 7))
             )),
-            ("sort_ascending_part3" = (description = "Chat messages are sorted in ascending order, number of entries 4, starting with ID > 207 (part 3). `curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1&is_sort_des=true&limit=4&border_by_id=207`",
+            ("sort_ascending_part3" = (description = "Chat messages are sorted in ascending order, number of entries 4, starting with ID > 207 (part 3). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&limit=4&borderDate=207`",
                 summary = "sort ascending part3", value = json!(get_ch_msgs(8, 11))
             )),
-            ("sort_descending" = (description = "Chat messages are sorted in descending order. `curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1&is_sort_des=false&limit=4`",
+            ("sort_descending" = (description = "Chat messages are sorted in descending order. `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&limit=4`",
                 summary = "sort descending", value = json!(get_ch_msgs(11, 8))
             )),
-            ("sort_descending_part2" = (description = "Chat messages are sorted in descending order, number of entries 4, starting with ID 203 (part 2). `curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1&is_sort_des=false&limit=4&border_by_id=208`",
+            ("sort_descending_part2" = (description = "Chat messages are sorted in descending order, number of entries 4, starting with ID 203 (part 2). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&limit=4&borderDate=208`",
                 summary = "sort descending part2", value = json!(get_ch_msgs(7, 4))
             )),
-            ("sort_descending_part3" = (description = "Chat messages are sorted in descending order, number of entries 4, starting with ID 203 (part 3). `curl -i -X GET http://localhost:8080/api/chat_messages?stream_id=1&is_sort_des=false&limit=4&border_by_id=204`",
+            ("sort_descending_part3" = (description = "Chat messages are sorted in descending order, number of entries 4, starting with ID 203 (part 3). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&limit=4&borderDate=204`",
                 summary = "sort descending part3", value = json!(get_ch_msgs(7, 4))
             )),
         ),
@@ -145,12 +164,14 @@ pub async fn get_chat_message(
 ) -> actix_web::Result<HttpResponse, AppError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get search parameters.
-    let filter_chat_message = SearchChatMessage::convert(query_params.into_inner());
+    let search_chat_message = SearchChatMessage::convert(query_params.into_inner());
     
+    let chat_message_orm2 = chat_message_orm.get_ref().clone();
+
     let res_data = web::block(move || {
         // Find for an entity (stream event) by SearchStreamEvent.
         let res_data =
-        chat_message_orm.filter_chat_messages(filter_chat_message)
+        chat_message_orm2.filter_chat_messages(search_chat_message)
         .map_err(|e| {
             error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e)
