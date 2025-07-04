@@ -114,7 +114,18 @@ mod tests {
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream2.id))
             .insert_header(header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+
+        let mut stream2b = stream2.clone();
+        stream2b.is_my_stream = false;
+        let json_stream = serde_json::json!(stream2b).to_string();
+        let stream_dto_ser: StreamInfoDto = serde_json::from_slice(json_stream.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(stream_dto_res, stream_dto_ser);
     }
     #[actix_web::test]
     async fn test_get_stream_by_id_another_user_by_admin() {

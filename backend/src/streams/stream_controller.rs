@@ -1468,7 +1468,7 @@ pub async fn delete_stream(
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
         error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
         AppError::range_not_satisfiable416(&message) // 416
     })?;
