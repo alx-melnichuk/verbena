@@ -6,14 +6,12 @@ mod tests {
     use serde_json::to_string;
 
     use crate::chats::{
-        chat_event_ws::{BlockEWS, JoinEWS, MsgRmvEWS, LeaveEWS, UnblockEWS},
-        chat_message_controller::{
-            get_ws_chat,
-            tests::{
-                configure_chat_message, get_cfg_data, get_chat_messages, get_profiles, get_token,
-            },
+        chat_event_ws::{BlockEWS, JoinEWS, LeaveEWS, MsgRmvEWS, UnblockEWS},
+        chat_message_controller::tests::{
+            configure_chat_message, get_cfg_data, get_chat_messages, get_profiles, get_token,
         },
         chat_message_orm::tests::ChatMsgTest,
+        chat_ws_controller::get_ws_chat,
         chat_ws_session::{get_err400, get_err403, get_err404, get_err406},
     };
     use crate::sessions::config_jwt;
@@ -39,7 +37,7 @@ mod tests {
         let msg_text = MessageText("{ \"msgRmv\": 0 }".into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        let err400 = get_err400(&format!("'{}' {}", "msgRmv", err::MSG_PARAMETER_NOT_DEFINED));
+        let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "msgRmv"));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
         // -- Test: "There was no 'join' command." --
@@ -186,13 +184,13 @@ mod tests {
         let msg_text = MessageText("{ \"block\": \"\" }".into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        let err400 = get_err400(&format!("'{}' {}", "block", err::MSG_PARAMETER_NOT_DEFINED));
+        let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "block"));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
         let msg_text = MessageText("{ \"unblock\": \"\" }".into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        let err400 = get_err400(&format!("'{}' {}", "unblock", err::MSG_PARAMETER_NOT_DEFINED));
+        let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "unblock"));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
         // -- Test: "There was no 'join' command." --
@@ -233,13 +231,14 @@ mod tests {
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err403 = get_err403(err::MSG_STREAM_OWNER_RIGHTS_MISSING);
         assert_eq!(item, FrameText(Bytes::from(to_string(&err403).unwrap()))); // 403:Forbidden
+
         // Unblock user3.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"unblock\": \"{}\" }}", member3.clone()).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err403 = get_err403(err::MSG_STREAM_OWNER_RIGHTS_MISSING);
-        assert_eq!(item, FrameText(Bytes::from(to_string(&err403).unwrap()))); // 403:Forbidden        
+        assert_eq!(item, FrameText(Bytes::from(to_string(&err403).unwrap()))); // 403:Forbidden
     }
     #[actix_web::test]
     async fn test_get_ws_chat_ews_block_ews_unblock_ok() {
@@ -266,12 +265,13 @@ mod tests {
         let value = to_string(&JoinEWS { 
             join: stream_id1, member: member1.clone(), count: 1, is_owner: Some(true), is_blocked: Some(false) }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
-        
+
         // -- Test: 1. Unblocking user2 who has not blocked and is not in the chat.
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"unblock\": \"{}\" }}", member2.clone()).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
+
         // Message to user1.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
@@ -282,8 +282,10 @@ mod tests {
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"block\": \"{}\" }}", member2.clone()).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
+
         // Message to user1.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
         let value = to_string(&BlockEWS { block: member2.clone(), is_in_chat: false }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value.clone())));
 
@@ -292,6 +294,7 @@ mod tests {
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"unblock\": \"{}\" }}", member4.clone()).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
+
         // Message to user1.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
@@ -302,8 +305,10 @@ mod tests {
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"block\": \"{}\" }}", member4.clone()).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
+
         // Message to user1.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
         let value = to_string(&BlockEWS { block: member4.clone(), is_in_chat: false }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value.clone())));
 
@@ -334,6 +339,7 @@ mod tests {
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"unblock\": \"{}\" }}", member2.clone()).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
+
         // Message to user1.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
@@ -344,14 +350,15 @@ mod tests {
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"block\": \"{}\" }}", member2.clone()).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
+
         // Message to user1.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
         let value = to_string(&BlockEWS { block: member2.clone(), is_in_chat: true }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value.clone())));
         // Message to user2.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         assert_eq!(item, FrameText(Bytes::from(value)));
-
 
         // Leave user2.
         #[rustfmt::skip]
@@ -382,12 +389,13 @@ mod tests {
             join: stream_id1, member: member4.clone(), count: 2, is_owner: None, is_blocked: None }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
 
-        // -- Test: 7. Unblocking user4 who was blocked and is in the chat. 
+        // -- Test: 7. Unblocking user4 who was blocked and is in the chat.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"unblock\": \"{}\" }}", member4.clone()).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
-        // Message to user1.
+                                               // Message to user1.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
         let value = to_string(&UnblockEWS { unblock: member4.clone(), is_in_chat: true }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value.clone())));
         // Message to user4.
@@ -398,8 +406,10 @@ mod tests {
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"block\": \"{}\" }}", member4.clone()).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
+
         // Message to user1.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
         let value = to_string(&BlockEWS { block: member4.clone(), is_in_chat: true }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value.clone())));
         // Message to user4.
