@@ -29,9 +29,9 @@ export class ChatMessageDtoUtil {
     }
 }
 
-// ** FilterChatMessageDto **
+// ** SearchChatMessageDto **
 
-export interface FilterChatMessageDto {
+export interface SearchChatMessageDto {
     streamId: number;
     isSortDes?: boolean;
     borderDate?: StringDateTime;
