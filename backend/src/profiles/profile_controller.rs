@@ -146,7 +146,7 @@ fn convert_avatar_file(file_img_path: &str, config_prfl: config_prfl::ConfigPrfl
             example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
         (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/users/2a`", 
             body = AppError, example = json!(AppError::range_not_satisfiable416(
-                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
+                &format!("{}; {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
         (status = 506, description = "Blocking error.", body = AppError, 
             example = json!(AppError::blocking506("Error while blocking process."))),
         (status = 507, description = "Database error.", body = AppError, 
@@ -164,7 +164,7 @@ pub async fn get_profile_by_id(
     let id_str = request.match_info().query("id").to_string();
 
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
         error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
         AppError::range_not_satisfiable416(&message) // 416
     })?;
@@ -689,7 +689,7 @@ pub async fn put_profile(
         (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
             example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
         (status = 409, description = "Error when comparing password hashes.", body = AppError,
-            example = json!(AppError::conflict409(&format!("{}: {}", err::MSG_INVALID_HASH, "Parameter is empty.")))),
+            example = json!(AppError::conflict409(&format!("{}; {}", err::MSG_INVALID_HASH, "Parameter is empty.")))),
         (status = 417, body = [AppError],
             description = "Validation error. `curl -i -X PUT http://localhost:8080/api/profiles_new_password \
             -d '{\"password\": \"pas\" \"new_password\": \"word\"}'`",
