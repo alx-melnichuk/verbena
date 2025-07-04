@@ -8,13 +8,11 @@ mod tests {
 
     use crate::chats::{
         chat_event_ws::{JoinEWS, MsgEWS},
-        chat_message_controller::{
-            get_ws_chat,
-            tests::{
-                configure_chat_message, get_cfg_data, get_chat_messages, get_profiles, get_token, MSG_FAILED_DESER,
-            },
+        chat_message_controller::tests::{
+            configure_chat_message, get_cfg_data, get_chat_messages, get_profiles, get_token, MSG_FAILED_DESER,
         },
         chat_message_orm::tests::ChatMsgTest,
+        chat_ws_controller::get_ws_chat,
         chat_ws_session::{get_err400, get_err403, get_err404, get_err406},
     };
     use crate::sessions::config_jwt;
@@ -28,8 +26,8 @@ mod tests {
             && msg_ews1.id == msg_ews2.id
             && msg_ews1.member == msg_ews2.member
             && msg_ews1.date[0..20] == msg_ews2.date[0..20]
-            && msg_ews1.is_edt == msg_ews2.is_edt
-            && msg_ews1.is_rmv == msg_ews2.is_rmv
+            && msg_ews1.date_edt == msg_ews2.date_edt
+            && msg_ews1.date_rmv == msg_ews2.date_rmv
     }
 
     // ** get_ws_chat **
@@ -50,7 +48,7 @@ mod tests {
         let msg_text = MessageText("{ \"msg\": \"\" }".into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        let err400 = get_err400(&format!("'{}' {}", "msg", err::MSG_PARAMETER_NOT_DEFINED));
+        let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "msg"));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
         // -- Test: "There was no 'join' command." --
@@ -143,7 +141,7 @@ mod tests {
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let date = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
         #[rustfmt::skip]
-        let msg_ews = MsgEWS { msg, id: ch_cmd_id, member: member1.clone(), date, is_edt: false, is_rmv: false };
+        let msg_ews = MsgEWS { msg, id: ch_cmd_id, member: member1.clone(), date, date_edt: None, date_rmv: None };
         let msg_ews2 = msg_ews.clone();
         if let FrameText(buf) = item {
             let msg_ews_res: MsgEWS = from_slice(&buf).expect(MSG_FAILED_DESER);
@@ -178,14 +176,14 @@ mod tests {
         let msg_text = MessageText("{ \"msgPut\": \"\", \"id\": 1 }".into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        let err400 = get_err400(&format!("'{}' {}", "msgPut", err::MSG_PARAMETER_NOT_DEFINED));
+        let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "msgPut"));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
         // -- Test: "'id' parameter not defined" --
         let msg_text = MessageText("{ \"msgPut\": \"text1\", \"id\": 0 }".into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        let err400 = get_err400(&format!("'{}' {}", "id", err::MSG_PARAMETER_NOT_DEFINED));
+        let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "id"));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
         // -- Test: "There was no 'join' command." --
@@ -310,8 +308,9 @@ mod tests {
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
 
         let date = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+        let date_edt = Some(date.clone());
         #[rustfmt::skip]
-        let msg_ews = MsgEWS { msg, id: ch_cmd_id, member: member1.clone(), date, is_edt: true, is_rmv: false };
+        let msg_ews = MsgEWS { msg, id: ch_cmd_id, member: member1.clone(), date, date_edt, date_rmv: None };
         let msg_ews2 = msg_ews.clone();
         if let FrameText(buf) = item {
             let msg_ews_res: MsgEWS = from_slice(&buf).expect(MSG_FAILED_DESER);
@@ -345,7 +344,7 @@ mod tests {
         let msg_text = MessageText("{ \"msgCut\": \"\", \"id\": 0 }".into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        let err400 = get_err400(&format!("'{}' {}", "id", err::MSG_PARAMETER_NOT_DEFINED));
+        let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "id"));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
         // -- Test: "There was no 'join' command." --
@@ -471,8 +470,9 @@ mod tests {
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
 
         let date = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+        let date_rmv = Some(date.clone());
         #[rustfmt::skip]
-        let msg_ews = MsgEWS { msg, id: ch_cmd_id, member: member1.clone(), date, is_edt: false, is_rmv: true };
+        let msg_ews = MsgEWS { msg, id: ch_cmd_id, member: member1.clone(), date, date_edt: None, date_rmv };
         let msg_ews2 = msg_ews.clone();
         if let FrameText(buf) = item {
             let msg_ews_res: MsgEWS = from_slice(&buf).expect(MSG_FAILED_DESER);
