@@ -92,7 +92,7 @@ mod tests {
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
         let token2 = get_token(config_jwt::get_test_config(), user_id2);
 
-        let ch_cmd_id = get_chat_messages().0.last().unwrap().id + 1;
+        let ch_cmd_id = get_chat_messages(2).0.last().unwrap().id + 1;
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
             let (cfg_c, data_c, _token) = get_cfg_data(3);
@@ -220,7 +220,7 @@ mod tests {
         let user_id1 = profile_vec.get(0).unwrap().user_id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
         let token1 = get_token(config_jwt::get_test_config(), user_id1);
-        let ch_msgs = get_chat_messages();
+        let ch_msgs = get_chat_messages(2);
         let ch_cmd_id = ch_msgs.0.get(1).unwrap().id; // Message user2.
 
         // Open a websocket connection to the test server.
@@ -246,7 +246,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_ws_chat_ews_msg_put_ok() {
-        let ch_msgs = get_chat_messages();
+        let ch_msgs = get_chat_messages(2);
         let ch_cmd_id = ch_msgs.0.first().unwrap().id;
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
@@ -381,7 +381,7 @@ mod tests {
         let user_id1 = profile_vec.get(0).unwrap().user_id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
         let token1 = get_token(config_jwt::get_test_config(), user_id1);
-        let ch_msgs = get_chat_messages();
+        let ch_msgs = get_chat_messages(2);
         let ch_cmd_id = ch_msgs.0.get(1).unwrap().id; // Message user2.
 
         // Open a websocket connection to the test server.
@@ -440,7 +440,7 @@ mod tests {
         let user_id2 = profile_vec.get(1).unwrap().user_id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
         let token2 = get_token(config_jwt::get_test_config(), user_id2);
-        let ch_msgs = get_chat_messages();
+        let ch_msgs = get_chat_messages(2);
         let ch_cmd_id = ch_msgs.0.first().unwrap().id;
 
         // Join user2.
