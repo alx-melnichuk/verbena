@@ -12,8 +12,8 @@ use crate::chats::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::chats::{
     chat_message_models::{
         BlockedUserDto, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage,
-        CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, FilterChatMessage, FilterChatMessageDto,
-        ModifyChatMessage, ModifyChatMessageDto,
+        CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, ModifyChatMessage, ModifyChatMessageDto,
+        SearchChatMessage, SearchChatMessageDto,
     },
     chat_message_orm::ChatMessageOrm,
 };
@@ -141,11 +141,11 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
 #[get("/api/chat_messages", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_chat_message(
     chat_message_orm: web::Data<ChatMessageOrmApp>,
-    query_params: web::Query<FilterChatMessageDto>,
+    query_params: web::Query<SearchChatMessageDto>,
 ) -> actix_web::Result<HttpResponse, AppError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get search parameters.
-    let filter_chat_message = FilterChatMessage::convert(query_params.into_inner());
+    let filter_chat_message = SearchChatMessage::convert(query_params.into_inner());
     
     let res_data = web::block(move || {
         // Find for an entity (stream event) by SearchStreamEvent.

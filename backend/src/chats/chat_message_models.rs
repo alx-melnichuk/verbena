@@ -228,24 +228,24 @@ impl Validator for ModifyChatMessageDto {
     }
 }
 
-// ** Model: "FilterChatMessage". Used: ChatMessageOrm::filter_chat_messages() **
+// ** Model: "SearchChatMessage". Used: ChatMessageOrm::filter_chat_messages() **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct FilterChatMessage {
+pub struct SearchChatMessage {
     pub stream_id: i32,
     pub is_sort_des: Option<bool>,
     pub border_date: Option<DateTime<Utc>>,
     pub limit: Option<i32>,
 }
 
-impl FilterChatMessage {
+impl SearchChatMessage {
     pub fn new(
         stream_id: i32,
         is_sort_des: Option<bool>,
         border_date: Option<DateTime<Utc>>,
         limit: Option<i32>,
-    ) -> FilterChatMessage {
-        FilterChatMessage {
+    ) -> SearchChatMessage {
+        SearchChatMessage {
             stream_id,
             is_sort_des,
             border_date,
@@ -254,22 +254,22 @@ impl FilterChatMessage {
     }
 }
 
-impl FilterChatMessage {
-    pub fn convert(filter_chat_message: FilterChatMessageDto) -> Self {
-        FilterChatMessage {
-            stream_id: filter_chat_message.stream_id,
-            is_sort_des: filter_chat_message.is_sort_des.clone(),
-            border_date: filter_chat_message.border_date.clone(),
-            limit: filter_chat_message.limit.clone(),
+impl SearchChatMessage {
+    pub fn convert(search_chat_message: SearchChatMessageDto) -> Self {
+        SearchChatMessage {
+            stream_id: search_chat_message.stream_id,
+            is_sort_des: search_chat_message.is_sort_des.clone(),
+            border_date: search_chat_message.border_date.clone(),
+            limit: search_chat_message.limit.clone(),
         }
     }
 }
 
-// * FilterChatMessageDto *
+// * SearchChatMessageDto *
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct FilterChatMessageDto {
+pub struct SearchChatMessageDto {
     pub stream_id: i32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub is_sort_des: Option<bool>,

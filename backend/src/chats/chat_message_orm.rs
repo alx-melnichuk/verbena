@@ -1,6 +1,6 @@
 use crate::chats::chat_message_models::{
     BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser,
-    FilterChatMessage, ModifyChatMessage,
+    ModifyChatMessage, SearchChatMessage,
 };
 
 pub trait ChatMessageOrm {
@@ -8,7 +8,7 @@ pub trait ChatMessageOrm {
     fn get_chat_message_logs(&self, chat_message_id: i32) -> Result<Vec<ChatMessageLog>, String>;
 
     /// Filter entities (chat_messages) by specified parameters.
-    fn filter_chat_messages(&self, filter_chat_message: FilterChatMessage) -> Result<Vec<ChatMessage>, String>;
+    fn filter_chat_messages(&self, search_chat_message: SearchChatMessage) -> Result<Vec<ChatMessage>, String>;
 
     /// Add a new entry (chat_message).
     fn create_chat_message(&self, create_chat_message: CreateChatMessage) -> Result<Option<ChatMessage>, String>;
@@ -68,7 +68,7 @@ pub mod impls {
     use crate::chats::{
         chat_message_models::{
             BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, ChatStreamLive, CreateBlockedUser, CreateChatMessage,
-            DeleteBlockedUser, FilterChatMessage, ModifyChatMessage,
+            DeleteBlockedUser, ModifyChatMessage, SearchChatMessage,
         },
         chat_message_orm::ChatMessageOrm,
     };
@@ -112,7 +112,7 @@ pub mod impls {
         }
 
         /// Filter entities (chat_messages) by specified parameters.
-        fn filter_chat_messages(&self, flt_chat_msg: FilterChatMessage) -> Result<Vec<ChatMessage>, String> {
+        fn filter_chat_messages(&self, flt_chat_msg: SearchChatMessage) -> Result<Vec<ChatMessage>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
@@ -366,7 +366,7 @@ pub mod tests {
     use crate::chats::{
         chat_message_models::{
             BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage,
-            DeleteBlockedUser, FilterChatMessage, ModifyChatMessage, MESSAGE_MAX, MESSAGE_MIN,
+            DeleteBlockedUser, ModifyChatMessage, SearchChatMessage, MESSAGE_MAX, MESSAGE_MIN,
         },
         chat_message_orm::ChatMessageOrm,
     };
@@ -614,7 +614,7 @@ pub mod tests {
         }
 
         /// Filter entities (chat_messages) by specified parameters.
-        fn filter_chat_messages(&self, _flt_chat_msg: FilterChatMessage) -> Result<Vec<ChatMessage>, String> {
+        fn filter_chat_messages(&self, _flt_chat_msg: SearchChatMessage) -> Result<Vec<ChatMessage>, String> {
             Ok(vec![])
         }
 
