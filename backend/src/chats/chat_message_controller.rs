@@ -1,6 +1,10 @@
-use std::{borrow::Cow, ops::Deref, time::Instant as tm};
+use std::{borrow::Cow, collections::HashMap, ops::Deref, time::Instant as tm};
 
-use actix_web::{delete, get, post, put, web, HttpResponse};
+use actix_web::{
+    delete, get, post, put,
+    web::{self, Query},
+    HttpResponse,
+};
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use log::{error, info, log_enabled, Level::Info};
 use utoipa;
@@ -20,6 +24,7 @@ use crate::chats::{
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::settings::err;
+use crate::users::user_models::UserRole;
 use crate::utils::parser;
 use crate::validators::{msg_validation, Validator};
 
@@ -264,7 +269,7 @@ pub async fn put_chat_message(
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
     let profile = authenticated.deref();
-    let user_id = profile.user_id;
+    let mut user_id = profile.user_id;
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -285,6 +290,18 @@ pub async fn put_chat_message(
     let msg = modify_chat_message_dto.msg.clone();
    
     let modify_chat_message = ModifyChatMessage::new(msg.clone());
+
+    if profile.role == UserRole::Admin {
+        let query_params = Query::<HashMap<String, String>>::from_query(request.query_string()).unwrap();
+        let user_id1 = query_params.get("userId").map(|v| v.clone()).unwrap_or("".to_string());
+        if user_id1.len() > 0 {
+            user_id = parser::parse_i32(&user_id1).map_err(|e| {
+                let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "userId", &e);
+                error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+                AppError::range_not_satisfiable416(&message) // 416
+            })?;    
+        }
+    }
 
     let chat_message_orm2 = chat_message_orm.get_ref().clone();
     let res_chat_message = web::block(move || {
@@ -331,7 +348,7 @@ pub async fn delete_chat_message(
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
     let profile = authenticated.deref();
-    let user_id = profile.user_id;
+    let mut user_id = profile.user_id;
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -341,6 +358,18 @@ pub async fn delete_chat_message(
         AppError::range_not_satisfiable416(&message) // 416
     })?;
     
+    if profile.role == UserRole::Admin {
+        let query_params = Query::<HashMap<String, String>>::from_query(request.query_string()).unwrap();
+        let user_id1 = query_params.get("userId").map(|v| v.clone()).unwrap_or("".to_string());
+        if user_id1.len() > 0 {
+            user_id = parser::parse_i32(&user_id1).map_err(|e| {
+                let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "userId", &e);
+                error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
+                AppError::range_not_satisfiable416(&message) // 416
+            })?;    
+        }
+    }
+
     let chat_message_orm2 = chat_message_orm.get_ref().clone();
     let res_chat_message = web::block(move || {
         // Add a new entity (stream).
@@ -611,7 +640,7 @@ pub mod tests {
         }
         (profile_vec, session_vec)
     }
-    pub fn get_chat_messages() -> (Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>) {
+    pub fn get_chat_messages(_count_msg: i32) -> (Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>) {
         let date_update: DateTime<Utc> = Utc::now();
         let stream_id = ChatMsgTest::stream_ids().get(0).unwrap().clone();
         let user_ids = ChatMsgTest::user_ids();
@@ -667,9 +696,10 @@ pub mod tests {
             
             token = get_token(config_jwt.clone(), user_id1);
         }
-        // mode: 3
+        // mode: 3, 4
         if mode > 2 {
-            let res_data = get_chat_messages();
+            let count_msg = if mode == 3 { 2 } else { 6 };
+            let res_data = get_chat_messages(count_msg);
             chat_message_vec = res_data.0;
             chat_message_log_vec = res_data.1;
             blocked_user_vec = res_data.2;
