@@ -176,8 +176,8 @@ mod tests {
         assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Secs, true), date_s);
         assert_eq!(chat_message_dto_res.member, user1_name);
         assert_eq!(chat_message_dto_res.msg, msg);
-        assert_eq!(chat_message_dto_res.is_edt, false);
-        assert_eq!(chat_message_dto_res.is_rmv, false);
+        assert_eq!(chat_message_dto_res.date_edt, None);
+        assert_eq!(chat_message_dto_res.date_rmv, None);
     }
 
     // ** put_chat_message **
@@ -360,8 +360,10 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Secs, true), date_s);
         assert_eq!(chat_message_dto_res.msg, msg);
-        assert_eq!(chat_message_dto_res.is_edt, true);
-        assert_eq!(chat_message_dto_res.is_rmv, false);
+        assert!(chat_message_dto_res.date_edt.is_some());
+        let date_edt = chat_message_dto_res.date_edt.unwrap();
+        assert_eq!(date_edt.to_rfc3339_opts(SecondsFormat::Secs, true), date_s);
+        assert_eq!(chat_message_dto_res.date_rmv, None);
     }
     #[actix_web::test]
     async fn test_put_chat_message_admin_msg_another_user() {
@@ -393,8 +395,10 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Secs, true), date_s);
         assert_eq!(chat_message_dto_res.msg, msg);
-        assert_eq!(chat_message_dto_res.is_edt, true);
-        assert_eq!(chat_message_dto_res.is_rmv, false);
+        assert!(chat_message_dto_res.date_edt.is_some());
+        let date_edt = chat_message_dto_res.date_edt.unwrap();
+        assert_eq!(date_edt.to_rfc3339_opts(SecondsFormat::Secs, true), date_s);
+        assert_eq!(chat_message_dto_res.date_rmv, None);
     }
 
     // ** delete_chat_message **
@@ -511,10 +515,10 @@ mod tests {
         // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
         #[rustfmt::skip]
         assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Millis, true)
-            , ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true));
+            , ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Millis, true));
         assert_eq!(chat_message_dto_res.msg, ch_msg.msg.unwrap());
-        assert_eq!(chat_message_dto_res.is_edt, ch_msg.is_changed);
-        assert_eq!(chat_message_dto_res.is_rmv, ch_msg.is_removed);
+        assert_eq!(chat_message_dto_res.date_edt, ch_msg.date_changed);
+        assert_eq!(chat_message_dto_res.date_rmv, ch_msg.date_removed);
     }
     #[actix_web::test]
     async fn test_delete_chat_message_admin_msg_another_user() {
@@ -542,9 +546,9 @@ mod tests {
         // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
         #[rustfmt::skip]
         assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Millis, true)
-            , ch_msg.date_update.to_rfc3339_opts(SecondsFormat::Millis, true));
+            , ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Millis, true));
         assert_eq!(chat_message_dto_res.msg, ch_msg.msg.unwrap());
-        assert_eq!(chat_message_dto_res.is_edt, ch_msg.is_changed);
-        assert_eq!(chat_message_dto_res.is_rmv, ch_msg.is_removed);
+        assert_eq!(chat_message_dto_res.date_edt, ch_msg.date_changed);
+        assert_eq!(chat_message_dto_res.date_rmv, ch_msg.date_removed);
     }
 }
