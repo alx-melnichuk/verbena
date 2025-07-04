@@ -11,11 +11,9 @@ mod tests {
     use crate::{
         chats::{
             chat_event_ws::{CountEWS, JoinEWS},
-            chat_message_controller::{
-                get_ws_chat,
-                tests::{configure_chat_message, get_cfg_data, get_profiles, get_token},
-            },
+            chat_message_controller::tests::{configure_chat_message, get_cfg_data, get_profiles, get_token},
             chat_message_orm::tests::ChatMsgTest,
+            chat_ws_controller::get_ws_chat,
             chat_ws_session::{get_err400, get_err401, get_err404, get_err406, get_err409},
         },
         utils::crypto::CRT_WRONG_STRING_BASE64URL,
@@ -41,7 +39,7 @@ mod tests {
         let msg_text = MessageText("{ \"echo\": \"\" }".into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        let err400 = get_err400(&format!("'{}' {}", "echo", err::MSG_PARAMETER_NOT_DEFINED));
+        let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "echo"));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
         // -- Test: "'echo' - ok" --
@@ -55,7 +53,7 @@ mod tests {
         let msg_text = MessageText("{ \"name\": \"\" }".into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        let err400 = get_err400(&format!("'{}' {}", "name", err::MSG_PARAMETER_NOT_DEFINED));
+        let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "name"));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
         // -- Test: "'name' - ok" --
@@ -86,7 +84,7 @@ mod tests {
         let msg_text = MessageText(format!("{{ \"join\": {} }}", i32::default()).into()); // 0
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-        let err400 = get_err400(&format!("'{}' {}", "join", err::MSG_PARAMETER_NOT_DEFINED));
+        let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "join"));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
         // -- Test: "Stream with the specified id not found." (unauthorized) --
