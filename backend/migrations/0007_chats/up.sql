@@ -44,7 +44,8 @@ CREATE INDEX idx_chat_message_logs_chat_message_id ON chat_message_logs(chat_mes
 CREATE OR REPLACE FUNCTION filter_chat_messages(
   IN _stream_id INTEGER,
   IN _sort_des BOOLEAN,
-  IN _border_date TIMESTAMP WITH TIME ZONE,
+  IN _min_date_created TIMESTAMP WITH TIME ZONE,
+  IN _max_date_created TIMESTAMP WITH TIME ZONE,
   IN _rec_limit INTEGER,
   OUT id INTEGER,
   OUT stream_id INTEGER,
@@ -58,35 +59,23 @@ CREATE OR REPLACE FUNCTION filter_chat_messages(
 AS $$
 DECLARE
 BEGIN
-  IF _sort_des THEN
-    IF _border_date IS NULL THEN
-      _border_date := CURRENT_TIMESTAMP;
+    IF _min_date_created IS NULL THEN
+      _min_date_created := TO_TIMESTAMP(0);
     END IF;  
-
-    RETURN QUERY
-      SELECT cm.id, cm.stream_id, cm.user_id, u.nickname as user_name, cm.msg,
-        cm.date_created, cm.date_changed, cm.date_removed
-      FROM chat_messages cm, users u
-      WHERE cm.stream_id = _stream_id
-        AND u.id = cm.user_id
-        AND cm.date_created < _border_date
-      ORDER BY cm.date_created DESC
-      LIMIT CASE WHEN _rec_limit IS NOT NULL THEN _rec_limit ELSE 20 END;
-  ELSE
-    IF _border_date IS NULL THEN
-      _border_date := TO_TIMESTAMP(0);
-    END IF;  
-
-    RETURN QUERY
-      SELECT cm.id, cm.stream_id, cm.user_id, u.nickname as user_name, cm.msg,
-        cm.date_created, cm.date_changed, cm.date_removed
-      FROM chat_messages cm, users u
-      WHERE cm.stream_id = _stream_id
-        AND u.id = cm.user_id
-        AND cm.date_created > _border_date
-      ORDER BY cm.date_created ASC
-      LIMIT CASE WHEN _rec_limit IS NOT NULL THEN _rec_limit ELSE 20 END;
+  IF _max_date_created IS NULL THEN
+    _max_date_created := CURRENT_TIMESTAMP;
   END IF;
+  
+  RETURN QUERY
+    SELECT cm.id, cm.stream_id, cm.user_id, u.nickname as user_name, cm.msg,
+      cm.date_created, cm.date_changed, cm.date_removed
+    FROM chat_messages cm, users u
+    WHERE cm.stream_id = _stream_id
+      AND u.id = cm.user_id
+      AND _min_date_created < cm.date_created
+      AND cm.date_created < _max_date_created
+    ORDER BY cm.date_created DESC
+    LIMIT CASE WHEN _rec_limit IS NOT NULL THEN _rec_limit ELSE 20 END;
 END;
 $$;
 
