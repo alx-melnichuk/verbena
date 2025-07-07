@@ -116,12 +116,14 @@ pub mod impls {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
+            let opt_limit = flt_chat_msg.limit.map(|v| i32::try_from(v).unwrap());
 
-            let query = diesel::sql_query("select * from filter_chat_messages($1,$2,$3,$4);")
+            let query = diesel::sql_query("select * from filter_chat_messages($1,$2,$3,$4,$5);")
                 .bind::<sql_types::Integer, _>(flt_chat_msg.stream_id) //$1
                 .bind::<sql_types::Nullable<sql_types::Bool>, _>(flt_chat_msg.is_sort_des) // $2
-                .bind::<sql_types::Nullable<sql_types::Timestamptz>, _>(flt_chat_msg.border_date) // $3
-                .bind::<sql_types::Nullable<sql_types::Integer>, _>(flt_chat_msg.limit); // $4
+                .bind::<sql_types::Nullable<sql_types::Timestamptz>, _>(flt_chat_msg.min_date_created) // $3
+                .bind::<sql_types::Nullable<sql_types::Timestamptz>, _>(flt_chat_msg.max_date_created) // $4
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(opt_limit); // $5
 
             // Run a query using Diesel to find a list of entities (ChatMessage) based on the given parameters.
             let chat_messages: Vec<ChatMessage> = query
@@ -361,7 +363,7 @@ pub mod tests {
 
     use std::{cell::RefCell, collections::HashMap};
 
-    use chrono::Utc;
+    use chrono::{DateTime, Utc};
 
     use crate::chats::{
         chat_message_models::{
@@ -614,8 +616,42 @@ pub mod tests {
         }
 
         /// Filter entities (chat_messages) by specified parameters.
-        fn filter_chat_messages(&self, _flt_chat_msg: SearchChatMessage) -> Result<Vec<ChatMessage>, String> {
-            Ok(vec![])
+        fn filter_chat_messages(&self, flt_chat_msg: SearchChatMessage) -> Result<Vec<ChatMessage>, String> {
+            let stream_id: i32 = flt_chat_msg.stream_id;
+            // let is_sort_des: bool = flt_chat_msg.is_sort_des.unwrap_or(false);
+            let opt_min_date_created: Option<DateTime<Utc>> = flt_chat_msg.min_date_created;
+            let opt_max_date_created: Option<DateTime<Utc>> = flt_chat_msg.max_date_created;
+            let limit = flt_chat_msg.limit.unwrap_or(20);
+            let mut list: Vec<ChatMessage> = Vec::new();
+
+            for ch_msg in self.chat_message_vec.iter() {
+                let mut is_add_value = true;
+
+                if ch_msg.stream_id != stream_id {
+                    is_add_value = false;
+                }
+                if is_add_value {
+                    if let Some(min_date_created) = opt_min_date_created {
+                        is_add_value = min_date_created < ch_msg.date_created;
+                    }
+                }
+                if is_add_value {
+                    if let Some(max_date_created) = opt_max_date_created {
+                        is_add_value = ch_msg.date_created < max_date_created;
+                    }
+                }
+
+                if is_add_value {
+                    list.push(ch_msg.clone());
+                }
+            }
+
+            list.sort_by_key(|k| k.date_created);
+            let mid = if limit <= list.len() { limit } else { list.len() };
+            let (left, _right) = list.split_at(mid);
+            let result = left.iter().map(|chat_msg| chat_msg.clone()).collect();
+
+            Ok(result)
         }
 
         /// Modify an entity (chat_message).

@@ -234,21 +234,24 @@ impl Validator for ModifyChatMessageDto {
 pub struct SearchChatMessage {
     pub stream_id: i32,
     pub is_sort_des: Option<bool>,
-    pub border_date: Option<DateTime<Utc>>,
-    pub limit: Option<i32>,
+    pub min_date_created: Option<DateTime<Utc>>,
+    pub max_date_created: Option<DateTime<Utc>>,
+    pub limit: Option<usize>,
 }
 
 impl SearchChatMessage {
     pub fn new(
         stream_id: i32,
         is_sort_des: Option<bool>,
-        border_date: Option<DateTime<Utc>>,
-        limit: Option<i32>,
+        min_date_created: Option<DateTime<Utc>>,
+        max_date_created: Option<DateTime<Utc>>,
+        limit: Option<usize>,
     ) -> SearchChatMessage {
         SearchChatMessage {
             stream_id,
             is_sort_des,
-            border_date,
+            min_date_created,
+            max_date_created,
             limit,
         }
     }
@@ -256,11 +259,20 @@ impl SearchChatMessage {
 
 impl SearchChatMessage {
     pub fn convert(search_chat_message: SearchChatMessageDto) -> Self {
+        let mut limit: Option<usize> = None;
+        if let Some(limit1) = search_chat_message.limit {
+            limit = if limit1 >= 0 {
+                Some(usize::try_from(limit1).unwrap())
+            } else {
+                None
+            }
+        }
         SearchChatMessage {
             stream_id: search_chat_message.stream_id,
             is_sort_des: search_chat_message.is_sort_des.clone(),
-            border_date: search_chat_message.border_date.clone(),
-            limit: search_chat_message.limit.clone(),
+            min_date_created: search_chat_message.min_date.clone(),
+            max_date_created: search_chat_message.max_date.clone(),
+            limit,
         }
     }
 }
@@ -275,7 +287,9 @@ pub struct SearchChatMessageDto {
     pub is_sort_des: Option<bool>,
     #[rustfmt::skip]
     #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
-    pub border_date: Option<DateTime<Utc>>,
+    pub min_date: Option<DateTime<Utc>>,
+    #[serde(default, with = "serial_datetime_option", skip_serializing_if = "Option::is_none")]
+    pub max_date: Option<DateTime<Utc>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i32>,
 }
