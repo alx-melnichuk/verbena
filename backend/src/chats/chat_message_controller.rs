@@ -558,7 +558,7 @@ pub async fn delete_blocked_user(
 pub mod tests {
 
     use actix_web::{http, web};
-    use chrono::{DateTime, Utc};
+    use chrono::{DateTime, Duration, Utc};
 
     use crate::chats::{
         chat_message_models::{BlockedUser, ChatMessage, ChatMessageLog},
@@ -640,21 +640,36 @@ pub mod tests {
         }
         (profile_vec, session_vec)
     }
-    pub fn get_chat_messages(_count_msg: i32) -> (Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>) {
-        let date_update: DateTime<Utc> = Utc::now();
+    pub fn get_chat_messages(count_msg: i32) -> (Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>) {
         let stream_id = ChatMsgTest::stream_ids().get(0).unwrap().clone();
         let user_ids = ChatMsgTest::user_ids();
         let user_id1 = user_ids.get(0).unwrap().clone();
         let user_id2 = user_ids.get(1).unwrap().clone();
 
-        let chat_message1 = create_chat_message(1, stream_id, user_id1, "msg101", date_update);
-        let chat_message2 = create_chat_message(2, stream_id, user_id2, "msg201", date_update);
+        let mut date_created: DateTime<Utc> = Utc::now() - Duration::minutes(i64::try_from(count_msg + 2).unwrap());
 
-        let chat_message_list: Vec<ChatMessage> = vec![chat_message1, chat_message2];
+        let mut chat_message_list: Vec<ChatMessage> = Vec::new();
+        chat_message_list.push(create_chat_message(1, stream_id, user_id1, "msg101", date_created));
+        date_created = date_created + Duration::minutes(1);
+        chat_message_list.push(create_chat_message(2, stream_id, user_id2, "msg201", date_created));
+        date_created = date_created + Duration::minutes(1);
+
         let chat_message_log_list: Vec<ChatMessageLog> = Vec::new();
         let blocked_user_list: Vec<BlockedUser> = ChatMsgTest::get_blocked_user_vec();
 
         let user_mini_vec: Vec<UserMini> = ChatMsgTest::get_user_mini();
+
+        if count_msg > 2 {
+            for idx in 1..=count_msg {
+                let s1 = if idx < 10 { "0" } else { "" };
+                let idx_s = format!("{}{}", s1, idx + 1);
+                let msg = format!("msg1{}", &idx_s);
+                let ch_msg = create_chat_message(idx, stream_id, user_id1, &msg, date_created);
+                // eprintln!("ch_msg: {:#?}", ch_msg.clone());
+                chat_message_list.push(ch_msg);
+                date_created = date_created + Duration::minutes(1);
+            }
+        }
 
         let chat_message_orm = ChatMessageOrmApp::create(
             &chat_message_list,
