@@ -113,7 +113,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @ViewChild('autosize')
     public autosize!: CdkTextareaAutosize;
     @ViewChild('scrollItem')
-    private scrollItemElem!: ElementRef<HTMLElement>;
+    private scrollItem: ElementRef<HTMLElement> | undefined;
     @ViewChild('textareaElement')
     public textareaElem!: ElementRef<HTMLTextAreaElement>;
 
@@ -135,11 +135,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     readonly dbncCheckExistScroll = debounceFn(() => { this.checkExistScroll(); }, DEBOUNCE_DELAY);
     readonly formatDate: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
     readonly formatTime: Intl.DateTimeFormatOptions = { timeStyle: 'short' };
-
-    private get scrollElem(): HTMLElement {
-        return this.scrollItemElem.nativeElement;
-    }
-    private set scrollElem(value: HTMLElement) { }
 
     private isPastMsgsHasEnded: boolean = false; // Flag, previous data has ended.
     private isIgnoreScroll: boolean = false; // Flag to ignore scroll event
@@ -180,15 +175,18 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         if (!!changes['chatPastMsgs']) {
             // List of past chat messages.
             if (this.chatPastMsgs.length > 0) {
-                this.loadPastChatMsgs(this.chatMsgMap, this.chatMsgList, this.chatPastMsgs);
+                this.chatMsgList = this.loadPastChatMsgs(this.chatMsgMap, this.chatMsgList, this.chatPastMsgs);
                 this.smallestDate = this.chatMsgList[0].date;
                 this.isIgnoreScroll = true;
                 // If the scroll disappears after deleting messages, the "PastMsgs" request is executed.
                 // If there is no scroll, then after adding new data, the scroll will appear.
                 // In this case, the display of data will not be correct (scrolltop = 0).
                 // To correct, scrollBottom = 0.
-                if (this.scrollElem.scrollHeight == this.scrollElem.clientHeight) {
-                    Promise.resolve().then(() => this.setScrollBottom(0));
+                if (!this.scrollItem || this.scrollItem.nativeElement.scrollHeight == this.scrollItem.nativeElement.clientHeight) {
+                    Promise.resolve().then(() => {
+                        console.log(`setScrollBottom(0);`);
+                        this.setScrollBottom(0);
+                    });
                 }
             } else {
                 this.isPastMsgsHasEnded = true;
@@ -239,7 +237,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     // ** Public API **
 
-    public trackById(index: number, item: ChatMessageDto): number {
+    public trackChatMsg(index: number, item: ChatMessageDto): number {
         return item.id;
     }
     public getMenuBlock(nickname: string, isOwner: boolean | null, selfName: string | null): MenuBlock | null {
@@ -327,53 +325,59 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             event.stopPropagation();
         }
     }
-    public checkScrollBottom(elem: HTMLElement = this.scrollElem): void {
-        const height = elem.scrollHeight - elem.clientHeight;
-        if (this.countNotViewed > 0 && height > 0 && (height - elem.scrollTop) < MIN_SCR_BOT_FOR_RESET_COUNTNOTVIEWED) {
+    public checkScrollBottom(elem: HTMLElement | undefined = this.scrollItem?.nativeElement): void {
+        const height = !!elem ? elem.scrollHeight - elem.clientHeight : 0;
+        if (this.countNotViewed > 0 && !!elem && height > 0 && (height - elem.scrollTop) < MIN_SCR_BOT_FOR_RESET_COUNTNOTVIEWED) {
             this.countNotViewed = 0;
             this.changeDetector.markForCheck();
         }
     }
-    public checkScrollTop(elem: HTMLElement = this.scrollElem): void {
-        const isMoveUp = this.lastScrollTop > elem.scrollTop;
-        this.lastScrollTop = elem.scrollTop;
+    public checkScrollTop(elem: HTMLElement | undefined = this.scrollItem?.nativeElement): void {
+        if (!!elem) {
+            const isMoveUp = this.lastScrollTop > elem.scrollTop;
+            this.lastScrollTop = elem.scrollTop;
 
-        if (this.isIgnoreScroll) {
-            this.isIgnoreScroll = false;
-        } else {
-            const height = elem.scrollHeight - elem.clientHeight;
-            if (isMoveUp && !this.isPastMsgsHasEnded && height > 0) {
-                const value1 = 0.1405325 * elem.scrollHeight - 78.356;
-                const value2 = Math.round(Math.round(value1 * 100) / 100);
-                let minScrollTop = 50;
-                minScrollTop = value2 > minScrollTop ? value2 : minScrollTop;
-                if (elem.scrollTop < minScrollTop) {
-                    if (elem.scrollTop == 0) {
-                        this.setScrollTop(2);
+            if (this.isIgnoreScroll) {
+                this.isIgnoreScroll = false;
+            } else {
+                const height = elem.scrollHeight - elem.clientHeight;
+                if (isMoveUp && !this.isPastMsgsHasEnded && height > 0) {
+                    const value1 = 0.1405325 * elem.scrollHeight - 78.356;
+                    const value2 = Math.round(Math.round(value1 * 100) / 100);
+                    let minScrollTop = 50;
+                    minScrollTop = value2 > minScrollTop ? value2 : minScrollTop;
+                    if (elem.scrollTop < minScrollTop) {
+                        if (elem.scrollTop == 0) {
+                            this.setScrollTop(2);
+                        }
+                        this.runQueryPastMsgs();
                     }
-                    this.runQueryPastMsgs();
                 }
             }
         }
     }
-    public checkExistScroll(elem: HTMLElement = this.scrollElem): void {
+    public checkExistScroll(elem: HTMLElement | undefined = this.scrollItem?.nativeElement): void {
         // If the scroll disappears after deleting messages, the "PastMsgs" request is executed.
-        if (elem.scrollHeight == elem.clientHeight && !this.isPastMsgsHasEnded) {
+        if (!!elem && elem.scrollHeight == elem.clientHeight && !this.isPastMsgsHasEnded) {
             this.runQueryPastMsgs();
         }
     }
-    public setScrollTop(top: number, elem: HTMLElement = this.scrollElem): void {
-        let scrollTop = !!elem && top != null && top >= 0 ? top : -1;
-        if (scrollTop > -1) {
-            this.isIgnoreScroll = true;
-            elem.scrollTop = scrollTop;
+    public setScrollTop(top: number, elem: HTMLElement | undefined = this.scrollItem?.nativeElement): void {
+        if (!!elem) {
+            let scrollTop = !!elem && top != null && top >= 0 ? top : -1;
+            if (scrollTop > -1) {
+                this.isIgnoreScroll = true;
+                elem.scrollTop = scrollTop;
+            }
         }
     }
-    public setScrollBottom(bottom: number, elem: HTMLElement = this.scrollElem): void {
-        let scrollTop = !!elem && bottom != null && bottom >= 0 ? elem.scrollHeight - elem.clientHeight - bottom : -1;
-        if (scrollTop > -1) {
-            this.isIgnoreScroll = true;
-            elem.scrollTop = scrollTop;
+    public setScrollBottom(bottom: number, elem: HTMLElement | undefined = this.scrollItem?.nativeElement): void {
+        if (!!elem) {
+            let scrollTop = !!elem && bottom != null && bottom >= 0 ? elem.scrollHeight - elem.clientHeight - bottom : -1;
+            if (scrollTop > -1) {
+                this.isIgnoreScroll = true;
+                elem.scrollTop = scrollTop;
+            }
         }
     }
 
@@ -400,7 +404,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
         return isSelfNameEqMember ? { isEdit, isCut, isRemove } : null;
     }
-    private checkScrollingAllowed(elem: HTMLElement = this.scrollElem): boolean {
+    private checkScrollingAllowed(elem: HTMLElement | undefined = this.scrollItem?.nativeElement): boolean {
         let result = true;
         if (!!elem) {
             const scrollBottom = elem.scrollHeight - elem.clientHeight - elem.scrollTop;
@@ -411,13 +415,13 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     private loadPastChatMsgs(chatMsgMap: ChatMsgMap, chatMsgList: ChatMessageDto[], chatPastMsgs: ChatMessageDto[]): ChatMessageDto[] {
         chatMsgMap.clear();
         const list = chatPastMsgs.reverse().concat(chatMsgList);
-        chatMsgList.length = 0;
+        const result: ChatMessageDto[] = [];
         for (let idx = 0; idx < list.length; idx++) {
             const chatMsg = list[idx];
-            const index = chatMsgList.push(chatMsg) - 1;
+            const index = result.push(chatMsg) - 1;
             chatMsgMap.set(chatMsg.id, index);
         }
-        return chatMsgList;
+        return result;
     }
     private loadNewEdtChatMsgs(
         chatMsgMap: ChatMsgMap, chatMsgList: ChatMessageDto[], chatNewEdtMsgs: ChatMessageDto[]
