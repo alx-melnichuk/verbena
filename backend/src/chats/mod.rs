@@ -3,7 +3,7 @@ pub mod chat_message;
 pub mod chat_message_controller;
 pub mod chat_message_models;
 pub mod chat_message_orm;
-pub mod chat_msg_test;
+pub mod chat_msg_post_put_delete_test;
 pub mod chat_ws_assistant;
 pub mod chat_ws_controller;
 pub mod chat_ws_server;
