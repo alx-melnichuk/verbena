@@ -34,7 +34,8 @@ export class ChatMessageDtoUtil {
 export interface SearchChatMessageDto {
     streamId: number;
     isSortDes?: boolean;
-    borderDate?: StringDateTime;
+    minDate?: StringDateTime;
+    maxDate?: StringDateTime;
     limit?: number;
 }
 

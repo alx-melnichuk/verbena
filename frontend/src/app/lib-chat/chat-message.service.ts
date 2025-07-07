@@ -13,9 +13,9 @@ export class ChatMessageService {
     constructor(private chatMessageApiService: ChatMessageApiService) { }
 
     public getChatMessages(
-        streamId: number, isSortDes?: boolean, borderDate?: StringDateTime, limit?: number
+        streamId: number, isSortDes?: boolean, minDate?: StringDateTime, limit?: number
     ): Promise<ChatMessageDto[] | HttpErrorResponse | undefined> {
-        return this.chatMessageApiService.getChatMessages({ streamId, isSortDes, borderDate, limit: 10 }) // TODO del "limit: 10"
+        return this.chatMessageApiService.getChatMessages({ streamId, isSortDes, minDate/*, limit: 10*/ }) // TODO del "limit: 10"
     }
 
     public getBlockedUsers(stream_id: number): Promise<BlockedUserDto[] | HttpErrorResponse | undefined> {
