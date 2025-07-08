@@ -65,17 +65,33 @@ BEGIN
   IF _max_date_created IS NULL THEN
     _max_date_created := CURRENT_TIMESTAMP;
   END IF;
+  IF _rec_limit IS NULL THEN
+    _rec_limit := 20;
+  END IF;
   
-  RETURN QUERY
-    SELECT cm.id, cm.stream_id, cm.user_id, u.nickname as user_name, cm.msg,
-      cm.date_created, cm.date_changed, cm.date_removed
-    FROM chat_messages cm, users u
-    WHERE cm.stream_id = _stream_id
-      AND u.id = cm.user_id
-      AND _min_date_created < cm.date_created
-      AND cm.date_created < _max_date_created
-    ORDER BY cm.date_created DESC
-    LIMIT CASE WHEN _rec_limit IS NOT NULL THEN _rec_limit ELSE 20 END;
+  IF _sort_des THEN
+    RETURN QUERY
+      SELECT cm.id, cm.stream_id, cm.user_id, u.nickname as user_name, cm.msg,
+        cm.date_created, cm.date_changed, cm.date_removed
+      FROM chat_messages cm, users u
+      WHERE cm.stream_id = _stream_id
+        AND u.id = cm.user_id
+        AND _min_date_created < cm.date_created
+        AND cm.date_created < _max_date_created
+      ORDER BY cm.date_created DESC
+      LIMIT _rec_limit;
+  ELSE
+    RETURN QUERY
+      SELECT cm.id, cm.stream_id, cm.user_id, u.nickname as user_name, cm.msg,
+        cm.date_created, cm.date_changed, cm.date_removed
+      FROM chat_messages cm, users u
+      WHERE cm.stream_id = _stream_id
+        AND u.id = cm.user_id
+        AND _min_date_created < cm.date_created
+        AND cm.date_created < _max_date_created
+      ORDER BY cm.date_created ASC
+      LIMIT _rec_limit;
+  END IF;
 END;
 $$;
 
