@@ -361,9 +361,9 @@ pub mod impls {
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
 
-    use std::{cell::RefCell, collections::HashMap};
+    use std::{cell::RefCell, cmp::Ordering, collections::HashMap};
 
-    use chrono::{DateTime, Utc};
+    use chrono::{DateTime, SubsecRound, Timelike, Utc};
 
     use crate::chats::{
         chat_message_models::{
@@ -471,6 +471,10 @@ pub mod tests {
         pub user_vec: Vec<UserMini>,
     }
 
+    fn round_subsecs(d1: DateTime<Utc>) -> DateTime<Utc> {
+        d1.with_nanosecond(d1.round_subsecs(3).nanosecond()).unwrap()
+    }
+
     impl ChatMessageOrmApp {
         /// Create a new instance.
         pub fn new() -> Self {
@@ -516,9 +520,9 @@ pub mod tests {
                     chat_message.user_id,
                     chat_message.user_name.clone(),
                     chat_message.msg.clone(),
-                    chat_message.date_created.clone(),
-                    chat_message.date_changed.clone(),
-                    chat_message.date_removed.clone(),
+                    round_subsecs(chat_message.date_created.clone()),
+                    chat_message.date_changed.clone().map(|d| round_subsecs(d)),
+                    chat_message.date_removed.clone().map(|d| round_subsecs(d)),
                 );
                 chat_message_vec.push(new_chat_message);
 
@@ -532,7 +536,7 @@ pub mod tests {
                                 id: log_id,
                                 chat_message_id: id,
                                 old_msg: ch_msg_lg.old_msg.clone(),
-                                date_update: ch_msg_lg.date_update.clone(),
+                                date_update: round_subsecs(ch_msg_lg.date_update.clone()),
                             };
                             ch_msg_log_list.push(new_ch_msg_log);
                         }
@@ -550,7 +554,7 @@ pub mod tests {
                     blocked_user.user_id,
                     blocked_user.blocked_id,
                     blocked_user.blocked_nickname.clone(),
-                    Some(blocked_user.block_date.clone()),
+                    Some(round_subsecs(blocked_user.block_date.clone())),
                 );
                 blocked_user_vec.push(new_blocked_user);
             }
@@ -618,10 +622,8 @@ pub mod tests {
         /// Filter entities (chat_messages) by specified parameters.
         fn filter_chat_messages(&self, flt_chat_msg: SearchChatMessage) -> Result<Vec<ChatMessage>, String> {
             let stream_id: i32 = flt_chat_msg.stream_id;
-            // let is_sort_des: bool = flt_chat_msg.is_sort_des.unwrap_or(false);
             let opt_min_date_created: Option<DateTime<Utc>> = flt_chat_msg.min_date_created;
             let opt_max_date_created: Option<DateTime<Utc>> = flt_chat_msg.max_date_created;
-            let limit = flt_chat_msg.limit.unwrap_or(20);
             let mut list: Vec<ChatMessage> = Vec::new();
 
             for ch_msg in self.chat_message_vec.iter() {
@@ -646,8 +648,22 @@ pub mod tests {
                 }
             }
 
-            list.sort_by_key(|k| k.date_created);
-            let mid = if limit <= list.len() { limit } else { list.len() };
+            let is_sort_des: bool = flt_chat_msg.is_sort_des.unwrap_or(false);
+            #[rustfmt::skip]
+            list.sort_by(|a, b| {
+                let res = if a.date_created < b.date_created {
+                    Ordering::Less
+                } else if a.date_created > b.date_created {
+                    Ordering::Greater
+                } else {
+                    Ordering::Equal
+                };
+                if is_sort_des { res.reverse() } else { res }
+            });
+
+            let limit = flt_chat_msg.limit.unwrap_or(20);
+
+            let mid = if limit < list.len() { limit } else { list.len() };
             let (left, _right) = list.split_at(mid);
             let result = left.iter().map(|chat_msg| chat_msg.clone()).collect();
 
@@ -779,7 +795,7 @@ pub mod tests {
                         create_blocked_user.user_id,
                         user_mini.id,
                         user_mini.name.clone(),
-                        Some(Utc::now()),
+                        Some(round_subsecs(Utc::now())),
                     );
                     vec.push(blocked_user.clone());
                     result = Some(blocked_user);
