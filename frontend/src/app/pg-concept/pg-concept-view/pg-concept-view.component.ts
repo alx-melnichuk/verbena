@@ -42,6 +42,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public chatIsEditable: boolean | null = null; // Indicates that the user can send messages to the chat.
     public chatIsLoadData: boolean | null = null; // Indicates that data is being loaded.
     public chatIsOwner: boolean | null = null;  // Indicates that the user is the owner of the chat.
+    public chatMaxLen: number | null = 255;
+    public chatMinLen: number | null = 0;
     public chatMaxRows: number | null = 4;
     public chatMinRows: number | null = 1;
     public chatNickname: string | null = null;
@@ -81,9 +83,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 this.chatBlockedUsers.push(blockedUsers[idx].blockedNickname);
             }
         }
-        console.log(`PgConceptView() 1 this.chatBlockedUsers:`, this.chatBlockedUsers); // #
-
-        console.log(`PgConceptView() 2 chatPastMsgs:`, this.chatPastMsgs); // #
+        this.isStreamOwner = (this.streamDto?.userId || -1) == (this.profileDto?.id || 0);
         this.isStreamActive = !!this.streamDto?.live;
         console.log(`PgConceptView() this.isStreamActive: ${this.isStreamActive}`); // #
 
@@ -91,21 +91,19 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
         const access = this.profileTokensDto?.accessToken;
 
-        if (!!nickname && !!streamId && this.isStreamActive) {
-            this.chatSocketService.config({ nickname, room: streamId, access });
+        this.chatSocketService.config({ nickname, room: streamId, access });
 
-            this.chatSocketService.handlOnError = (err: string) => {
-                console.error(`SocketErr:`, err);
-                this.changeDetector.markForCheck();
-            };
-            this.chatSocketService.handlReceive = (val: string) => {
-                this.handlReceiveChat(val);
-                this.changeDetector.markForCheck();
-            };
-            // Connect to the server web socket chat.
-            console.log(`PgConceptView.openSocket() socketSrv.connect()`); // #
-            this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
-        }
+        this.chatSocketService.handlOnError = (err: string) => {
+            console.error(`SocketErr:`, err);
+            this.changeDetector.markForCheck();
+        };
+        this.chatSocketService.handlReceive = (val: string) => {
+            this.handlReceiveChat(val);
+            this.changeDetector.markForCheck();
+        };
+        // Connect to the server web socket chat.
+        this.socketConnection(this.profileDto?.nickname, this.streamDto?.id, !!this.streamDto?.live);
+
         /*setTimeout(() => {
             this.chatRmvIds = [605, 603];
             this.changeDetector.markForCheck();
@@ -113,19 +111,18 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         /*setTimeout(() => {
             this.chatPastMsgs = this.demo1();
             this.changeDetector.markForCheck();
-        }, 4000);*/
+        }, 3000);*/
         /*setTimeout(() => {
             this.chatNewMsgs = [
-                { id: 607, date: "2024-03-17T01:00:00.000Z", member: "ava_wilson", msg: "Demo message 137ver.2", dateEdt: "2025-06-26T16:30:02.798Z" },
-                { id: 609, date: "2024-03-17T03:00:00.000Z", member: "mila_davis", msg: "Demo message 139ver.2", dateEdt: "2025-06-26T16:30:02.799Z" },
-                { id: 611, date: "2024-03-20T19:05:01.000Z", member: "ethan_brown", msg: "Demo message 141" },
-                { id: 612, date: "2024-03-20T19:05:02.000Z", member: "ethan_brown", msg: "Demo message 142" }
+                // { id: 607, date: "2024-03-17T01:00:00.000Z", member: "ava_wilson", msg: "Demo message 137ver.2", dateEdt: "2025-06-26T16:30:02.798Z" },
+                // { id: 609, date: "2024-03-17T03:00:00.000Z", member: "mila_davis", msg: "Demo message 139ver.2", dateEdt: "2025-06-26T16:30:02.799Z" },
+                { id: 51, date: "2024-03-20T19:05:01.000Z", member: "ethan_brown", msg: "Demo message 51" },
+                { id: 52, date: "2024-03-20T19:05:02.000Z", member: "ethan_brown", msg: "Demo message 52" }
             ];
             this.changeDetector.markForCheck();
             console.log(`this.chatNewMsgs`); // #
-        }, 6000);*/
+        }, 4000);*/
     }
-
     demo1(): any[] {
         return [
             { "id": 600, "date": "2024-03-16T18:00:00.000Z", "member": "evelyn_allen", "msg": "Demo message 130ver.2", "dateEdt": "2025-06-26T16:30:02.799Z" },
@@ -196,7 +193,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
     public doQueryPastMsgs(info: ParamQueryPastMsg) {
         const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
         if (streamId > 0 && !!info && info.isSortDes != null && info.maxDate != null) {
-            // console.log(`PgConceptView.doQueryPastInfo(${JSON.stringify(info)});`); // #
             this.getPastChatMsgs(streamId, info.isSortDes, info.maxDate);
         }
     }
@@ -205,14 +201,10 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     private updateParams(streamDto: StreamDto | null, profileDto: ProfileDto | null): void {
         let isShowTimer = false;
-        let isStreamOwner = false;
         if (!!streamDto) {
             isShowTimer = streamDto.live;
-            const currentUserId: number = profileDto?.id || -1;
-            isStreamOwner = (streamDto.userId === currentUserId);
         }
         this.isShowTimer = isShowTimer;
-        this.isStreamOwner = isStreamOwner;
     }
 
     // Section: "panel stream admin"
@@ -226,6 +218,8 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             .then((response: StreamDto | HttpErrorResponse) => {
                 this.streamDto = (response as StreamDto);
                 this.updateParams(this.streamDto, this.profileDto);
+                // Connect to the server web socket chat.
+                this.socketConnection(this.profileDto?.nickname, this.streamDto?.id, !!this.streamDto?.live);
             })
             .catch((error: HttpErrorResponse) => {
                 const appError = (typeof (error?.error || '') == 'object' ? error.error : {});
@@ -253,6 +247,13 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
 
     // Section: "Chat"
 
+    private socketConnection(nickname: string | undefined, streamId: number | undefined, isStreamActive: boolean) {
+        if (!this.chatSocketService.hasConnect() && nickname != null && !!nickname && streamId != null && streamId > 0 && isStreamActive) {
+            // Connect to the server web socket chat.
+            console.log(`PgConceptView.openSocket() socketSrv.connect()`); // #
+            this.chatSocketService.connect(WS_CHAT_PATHNAME, WS_CHAT_HOST);
+        }
+    }
     private handlReceiveChat = (val: string): void => {
         const eventWS = EventWS.parse(val);
         if (!eventWS) {
@@ -331,50 +332,18 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 this.changeDetector.markForCheck();
             });
     }
-    /*private getChatMsgDemo(): ChatMessageDto[] {
-        return [
-            { "msg": "Demo msg Av1", "id": 1, "member": "emma_johnson", "date": "2025-04-28T09:10:30.727Z", "isEdt": false, "isRmv": false },
-            { "msg": "Demo msg Bv2", "id": 2, "member": "evelyn_allen", "date": "2025-04-28T09:11:06.542Z", "isEdt": true, "isRmv": false },
-            { "msg": "", "id": 3, "member": "liam_smith", "date": "2025-04-28T09:15:15.353Z", "isEdt": false, "isRmv": true },
-            { "msg": "Demo msg Dv1", "id": 4, "member": "emma_johnson", "date": "2025-04-28T09:10:30.727Z", "isEdt": false, "isRmv": false },
-            { "msg": "demo", "id": 5, "member": "evelyn_allen", "date": "2025-04-30T12:39:33.405Z", "isEdt": false, "isRmv": false },
-            { "msg": "demo01", "id": 6, "member": "emma_johnson", "date": "2025-05-05T14:56:29.270Z", "isEdt": false, "isRmv": false },
-            { "msg": "Demo02", "id": 7, "member": "evelyn_allen", "date": "2025-05-06T10:18:21.147Z", "isEdt": false, "isRmv": false },
-            { "msg": "Demo03 v2", "id": 8, "member": "emma_johnson", "date": "2025-05-06T07:27:00.766Z", "isEdt": true, "isRmv": false },
-            { "msg": "", "id": 9, "member": "evelyn_allen", "date": "2025-05-06T07:32:29.427Z", "isEdt": true, "isRmv": true },
-            { "msg": "Demo02", "id": 10, "member": "evelyn_allen", "date": "2025-05-06T10:18:21.147Z", "isEdt": false, "isRmv": false },
-        ];
+    /*private getChatMsg(id: number): ChatMessageDto {
+        const msg = `Demo msg ${id}`;
+        const member = id % 5 == 0 ? 'evelyn_allen' : 'emma_johnson';
+        return { msg, id, member, "date": "2025-04-28T09:10:30.727Z" };
     }*/
-
-    /*private getChatMsg(mode: number, nickname: string, len: number): ChatMessageDto[] {
+    /*private getChatMsgDemo(idx: number, len: number): ChatMessageDto[] {
         const result: ChatMessageDto[] = [];
-        const startId = 10 * (mode + 1);
-        const currDate = new Date();
-        currDate.setDate(currDate.getDate() - mode);
-        currDate.setTime(currDate.getTime() - (2 * 60 * 60 * 1000)); // minus 2 hours
-        const txt = "This function can be used to pass through a successful result while handling an error.";
-        // const txt = "The Result pattern encapsulates the outcome of an operation in a Result object, which represents either a successful"
-        //     + " result (containing the expected data) or a failure (with an error message).";
-        // "Instead of throwing exceptions or returning null to indicate failure, you can use a Result to make each outcome clear and explicit."
-        for (let idx = 0; idx < len; idx++) {
-            let member = "Teodor_Nickols";
-            const d1 = new Date(currDate.getTime());
-            d1.setTime(d1.getTime() + (idx * 60 * 60 * 1000));
-            // let d1 = new Date((idx < (len / 2) ? -100000000 : 0) + Date.now());
-            let date = d1.toISOString();
-            let id = startId - idx;
-            let msg = "text_" + id + " " + txt;  // txt.slice(Math.random() * txt.length)
-            if (idx % 3 == 0) {
-                member = nickname;
-            } else if (idx % 2 == 0) {
-                member = "Snegana_Miller";
-            }
-            // const date1 = date.slice(20, 24) + '_' + date.slice(11, 19) + '_' + date.slice(0, 10);
-
-            result.push({ id, date, member, msg, isEdt: false, isRmv: false });
-
+        let index = idx * len;
+        const maxIndex = index + len;
+        for (; index < maxIndex; index++) {
+            result.push(this.getChatMsg(index));
         }
         return result;
     }*/
-
 }
