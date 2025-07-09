@@ -1,0 +1,30 @@
+/*# sourceURL=field-textarea.component.scss */
+
+app-field-textarea {
+    display: block;
+    background-color: var(--ft-bg, var(---pc-itm-self-bg));
+
+    &[wd100] {
+        width: 100%;
+    }
+
+    &[hg100] {
+        height: 100%;
+    }
+
+    &[is-suffix] .mat-mdc-text-field-wrapper {
+        padding-right: 0.4rem;
+        padding-left: 0.7rem;
+    }
+
+    &[scroll-thin] {
+        textarea.ft-textarea {
+            scrollbar-width: thin;
+        }
+    }
+
+    mat-form-field {
+        max-width: inherit;
+        width: inherit;
+    }
+}

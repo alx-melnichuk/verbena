@@ -1,0 +1,32 @@
+<ng-container [formGroup]="formGroup">
+  <mat-form-field 
+    appearance="outline"
+    color="primary"
+    [subscriptSizing]="subscriptSizing"
+    floatLabel="auto">
+    @if (!!label) {
+      <mat-label>{{ label | translate }}</mat-label>
+    }
+    <ng-content select="[ft-figure]"></ng-content>
+    <div matPrefix><ng-content select="[ft-prefix]"></ng-content></div>
+
+    <textarea matInput #messageInput #textareaElement
+      class="ft-textarea global-scroll"
+      formControlName="textarea"
+      autocomplete="new-password"
+      autocapitalize="off"
+      [attr.maxlength]="(maxLenVal > 0 ? maxLenVal + 1 : null)"
+      cdkTextareaAutosize
+      #autosize="cdkTextareaAutosize"
+      [cdkAutosizeMinRows]="minRowsVal"
+      [cdkAutosizeMaxRows]="2 + maxRowsVal">
+    </textarea>
+
+    <div matSuffix><ng-content select="[ft-suffix]"></ng-content></div>
+    @if (!!hint) {
+      <mat-hint>{{ hint | translate }}</mat-hint>
+    }
+    <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
+  </mat-form-field>
+</ng-container>
+    
