@@ -634,7 +634,7 @@ BEGIN
     WHILE idx1 <= len1 LOOP
       stream_id := stream_ids[idx1];
       usr_idx := 1;
-      len2 := CASE WHEN stream_id = ANY(mark_ids) THEN 140 ELSE 15 END;
+      len2 := CASE WHEN stream_id = mark_id THEN 140 ELSE 15 END;
       idx2 := 1;
       WHILE idx2 <= len2 LOOP
         starttime := (starttimes[idx1] + (idx2 * INTERVAL '1 hours'))::timestamp;
