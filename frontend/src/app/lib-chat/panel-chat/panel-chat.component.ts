@@ -1,8 +1,7 @@
 import {
-    afterNextRender, AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener,
+    AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener,
     inject, Injector, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
-import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { CommonModule, KeyValue } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, ValidationErrors } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,13 +13,13 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { debounceFn } from 'src/app/common/debounce';
 import { StringDateTime } from 'src/app/common/string-date-time';
+import { FieldTextareaComponent } from 'src/app/components/field-textarea/field-textarea.component';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { DateUtil } from 'src/app/utils/date.utils';
 import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
 import { ValidatorUtils } from 'src/app/utils/validator.utils';
 
 import { ChatMessageDto, ParamQueryPastMsg } from '../chat-message-api.interface';
-
 
 interface MenuEdit {
     isEdit: boolean;
@@ -57,7 +56,7 @@ type ChatMsgMap = Map<number, number>;
     selector: 'app-panel-chat',
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatMenuModule,
-        TranslatePipe, DateTimeFormatPipe, SpinnerComponent],
+        TranslatePipe, DateTimeFormatPipe, SpinnerComponent, FieldTextareaComponent],
     templateUrl: './panel-chat.component.html',
     styleUrl: './panel-chat.component.scss',
     encapsulation: ViewEncapsulation.None,
@@ -110,12 +109,10 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @Output()
     readonly queryPastMsgs: EventEmitter<ParamQueryPastMsg> = new EventEmitter();
 
-    @ViewChild('autosize')
-    public autosize!: CdkTextareaAutosize;
     @ViewChild('scrollItem')
     private scrollItem: ElementRef<HTMLElement> | undefined;
-    @ViewChild('textareaElement')
-    public textareaElem!: ElementRef<HTMLTextAreaElement>;
+    @ViewChild(FieldTextareaComponent)
+    public fieldTextareaComp!: FieldTextareaComponent;
 
     public chatMsgList: ChatMessageDto[] = [];
     public countNotViewed: number = 0;
@@ -151,14 +148,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     @HostListener('window:resize', ['$event'])
     handlerResize() {
         this.dbncCheckExistScroll();
-    }
-
-    triggerResize() {
-        // Wait for content to render, then trigger textarea resize.
-        afterNextRender(
-            () => { this.autosize.resizeToFitContent(true); },
-            { injector: this._injector },
-        );
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -237,9 +226,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     // ** Public API **
 
-    public trackChatMsg(index: number, item: ChatMessageDto): number {
-        return item.id;
-    }
     public getMenuBlock(nickname: string, isOwner: boolean | null, selfName: string | null): MenuBlock | null {
         const isBlocked = !isOwner ? null : (nickname == selfName ? null : this.blockedUserSet.has(nickname));
         const result = isBlocked != null ? { isBlock: !isBlocked, isUnblock: isBlocked } : null;
@@ -256,9 +242,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         if (!!this.msgEditing) {
             this.msgEditing = null;
         }
-    }
-    public getErrorMsg(errors: ValidationErrors | null): string {
-        return ValidatorUtils.getErrorMsg(errors, TITLE);
     }
     public doSendMessage(newMsg: string): void {
         const newMsgVal = (newMsg || '').trim();
@@ -287,7 +270,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         if (this.msgEditing != chatMsg) {
             this.msgEditing = chatMsg;
             this.setTextareaValue(chatMsg?.msg || null);
-            this.textareaElem.nativeElement.focus();
+            this.fieldTextareaComp.focus();
         }
     }
     public doBlockUser(member: string | null | undefined, blockedUsers: string[] | null): void {

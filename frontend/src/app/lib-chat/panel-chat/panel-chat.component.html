@@ -11,7 +11,7 @@
       <app-spinner [diameter]="30"></app-spinner>
     </div>
   }
-  @for (chatMsg of chatMsgList; track trackChatMsg) {
+  @for (chatMsg of chatMsgList; track chatMsg.id) {
     <div class="pc-item-wrap"
       [matMenuTriggerFor]="!!getMenuItem(chatMsg, isOwner, nickname) ? menuItem : null"
       [matMenuTriggerData]="getMenuItem(chatMsg, isOwner, nickname)"
@@ -75,51 +75,44 @@
 <div class="pc-sepr"></div>
 @if (isEditable && !isBlocked) {
   <div class="pc-footer" [formGroup]="formGroup">
-    <mat-form-field [ngClass]="['pc-new-msg', (!!msgEditing ? 'pc-editing' : '')]"
-      appearance="outline"
-      color="primary"
+    <app-field-textarea wd100 is-suffix scroll-thin
+      [ngClass]="['pc-new-msg', (!!msgEditing ? 'pc-editing' : '')]"
+      formControlName="newMsg"
+      gist="message"
+      [maxLen]="maxLen"
+      [minLen]="minLen"
+      [maxRows]="maxRows"
+      [minRows]="minRows"
       subscriptSizing="dynamic"
-      floatLabel="auto">
-      <div [ngClass]="['pc-nmsg-label', (!msgEditing ? 'hide' : '')]">
-        <svg class="pc-svg-mini">
-          <use href="assets/icons/lib-chat/panel-chat/pen-bin.svg#pen-bin"></use>
-        </svg>
-        <span>{{ 'panel-chat.editing_msg' | translate }}</span>
-      </div>
-      <textarea matInput #messageInput #textareaElement
-        class="pc-textarea global-scroll"
-        formControlName="newMsg"
-        autocomplete="new-password"
-        autocapitalize="off"
-        [attr.maxlength]="(maxLenVal > 0 ? maxLenVal + 1 : null)"
-        (keydown.enter)="doKeydownEnter($event, formControl.value)"
-        (keydown.control.enter)="doKeydownEnter($event, formControl.value)"
-        (keydown.escape)="cleanNewMsg()"
-        cdkTextareaAutosize
-        #autosize="cdkTextareaAutosize"
-        [cdkAutosizeMinRows]="minRowsVal"
-        [cdkAutosizeMaxRows]="2 + maxRowsVal">
-      </textarea>
+      (keydown.enter)="doKeydownEnter($event, formControl.value)"
+      (keydown.control.enter)="doKeydownEnter($event, formControl.value)"
+      (keydown.escape)="cleanNewMsg()">
 
       @if (!!msgEditing) {
-        <button mat-icon-button matSuffix class="pc-btn-cancel"
-          (click)="doSetValueForEditing(null)">
-          <svg class="pc-svg-send">
-            <use href="assets/icons/lib-chat/panel-chat/close-circle-bin.svg#close-circle-bin"></use>
+        <div ft-figure class="pc-nmsg-label">
+          <svg class="pc-svg-mini">
+            <use href="assets/icons/lib-chat/panel-chat/pen-bin.svg#pen-bin"></use>
           </svg>
+          <span>{{ 'panel-chat.editing_msg' | translate }}</span>
+        </div>
+      }
+
+      @if (!!msgEditing) {
+        <button ft-suffix  mat-icon-button matSuffix class="pc-msg-icon"
+          (click)="doSetValueForEditing(null)">
+          <svg><use href="assets/icons/lib-chat/panel-chat/close-circle-bin.svg#close-circle-bin"></use></svg>
         </button>
       }
-      <button mat-icon-button matSuffix class="pc-btn-send"
+      <button ft-suffix mat-icon-button matSuffix class="pc-msg-icon"
         [disabled]="initValue == (formControl.value?.trim() || null) ? '' : null"
         (click)="doSendMessage(formControl.value)">
-        <svg class="pc-svg-send">
-          <use href="assets/icons/lib-chat/panel-chat/send-bin.svg#send-bin"></use>
-        </svg>
+        <svg><use href="assets/icons/lib-chat/panel-chat/send-bin.svg#send-bin"></use></svg>
       </button>
-      <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
-    </mat-form-field>
+
+    </app-field-textarea>
   </div>
 }
+
 @if (isBlocked) {
   <div class="pc-blocked">
     <div class="pc-blk-title">

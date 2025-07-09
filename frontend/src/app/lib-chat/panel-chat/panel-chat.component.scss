@@ -119,7 +119,6 @@ app-panel-chat {
         color: var(---msg-cl, var(--pc-msg-cl, var(--sys-on-surface)));
         font-size: var(--pc-msg-fn-sz, inherit);
         position: relative;
-        // white-space: pre-wrap;
         word-wrap: break-word;
     }
 
@@ -192,48 +191,29 @@ app-panel-chat {
         width: 100%;
     }
 
-    .mat-mdc-form-field.pc-new-msg {
+    .pc-new-msg {
         --mat-form-field-container-vertical-padding: 0.75rem;
         --mat-form-field-container-text-size: var(--pc-mdl-fn-sz, 1rem);
         background-color: var(--pc-new-msg-bg, var(---pc-itm-self-bg));
-        border-radius: var(--mdc-outlined-text-field-container-shape);
-        width: 100%;
 
         &.pc-editing .mat-mdc-form-field-infix {
             padding-top: 0.25rem;
-        }
-
-        .mat-mdc-icon-button {
-            --mdc-icon-button-state-layer-size: 36px;
-            --mdc-icon-button-icon-size: 32px;
-            --mdc-icon-button-icon-color: var(--app-svg-icon-cl);
-        }
-
-        .mat-mdc-text-field-wrapper {
-            padding-right: 0.4rem;
-            padding-left: 0.7rem;
         }
 
         .mat-mdc-form-field-infix {
             --mat-form-field-container-height: 0px;
         }
 
-        .mdc-text-field--focused .pc-nmsg-label {
-            ---pc-nmsg-lbl-cl: var(--mdc-outlined-text-field-focus-outline-color);
+        .pc-msg-icon {
+            --mdc-icon-button-state-layer-size: 36px;
+            --mdc-icon-button-icon-size: 32px;
+            --mdc-icon-button-icon-color: var(--app-svg-icon-cl);
         }
 
         .pc-nmsg-label {
             font-size: calc(1rem - 4px);
             font-weight: 500;
             color: var(---pc-nmsg-lbl-cl, unset);
-
-            &.hide {
-                display: none;
-            }
-        }
-
-        textarea.pc-textarea {
-            scrollbar-width: thin;
         }
     }
 
