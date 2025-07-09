@@ -43,7 +43,8 @@ export interface SearchChatMessageDto {
 
 export interface ParamQueryPastMsg {
     isSortDes: boolean;
-    borderDate?: StringDateTime;
+    minDate?: StringDateTime;
+    maxDate?: StringDateTime;
     limit?: number;
 }
 

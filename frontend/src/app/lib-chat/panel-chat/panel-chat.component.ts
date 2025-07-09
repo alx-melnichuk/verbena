@@ -466,7 +466,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
         return chatMsgList;
     }
-    private runQueryPastMsgs(borderDate: StringDateTime | undefined = this.smallestDate): void {
-        this.queryPastMsgs.emit({ isSortDes: true, borderDate });
+    private runQueryPastMsgs(dateLimit: StringDateTime | undefined = this.smallestDate): void {
+        this.queryPastMsgs.emit({ isSortDes: true, maxDate: dateLimit });
     }
 }
