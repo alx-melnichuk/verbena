@@ -53,6 +53,10 @@ export class ConceptViewComponent implements AfterContentInit {
     @Input() // Indicates that the user is the owner of the chat.
     public chatIsOwner: boolean | null = null;
     @Input()
+    public chatMaxLen: number | null = null;
+    @Input()
+    public chatMinLen: number | null = null;
+    @Input()
     public chatMaxRows: number | null = null;
     @Input()
     public chatMinRows: number | null = null;
