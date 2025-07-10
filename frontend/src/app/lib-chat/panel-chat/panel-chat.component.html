@@ -73,44 +73,37 @@
 </ng-template>
 
 <div class="pc-sepr"></div>
+
 @if (isEditable && !isBlocked) {
-  <div class="pc-footer" [formGroup]="formGroup">
-    <app-field-textarea wd100 is-suffix scroll-thin
+  <form novalidate class="pc-footer" [formGroup]="formGroup">
+
+    <app-field-message wd100 is-suffix scroll-thin
       [ngClass]="['pc-new-msg', (!!msgEditing ? 'pc-editing' : '')]"
       formControlName="newMsg"
       gist="message"
+      [isEditing]="!!msgEditing"
       [maxLen]="maxLen"
       [minLen]="minLen"
       [maxRows]="maxRows"
       [minRows]="minRows"
-      subscriptSizing="dynamic"
-      (keydown.enter)="doKeydownEnter($event, formControl.value)"
-      (keydown.control.enter)="doKeydownEnter($event, formControl.value)"
+      (keydown.enter)="formGroup.valid ? doKeydownEnter($event, frmCtrlNewMsg.value) : null"
+      (keydown.control.enter)="formGroup.valid ? doKeydownEnter($event, frmCtrlNewMsg.value): null"
       (keydown.escape)="cleanNewMsg()">
 
       @if (!!msgEditing) {
-        <div ft-figure class="pc-nmsg-label">
-          <svg class="pc-svg-mini">
-            <use href="assets/icons/lib-chat/panel-chat/pen-bin.svg#pen-bin"></use>
-          </svg>
-          <span>{{ 'panel-chat.editing_msg' | translate }}</span>
-        </div>
-      }
-
-      @if (!!msgEditing) {
-        <button ft-suffix  mat-icon-button matSuffix class="pc-msg-icon"
+        <button matSuffix  mat-icon-button class="pc-msg-icon"
           (click)="doSetValueForEditing(null)">
           <svg><use href="assets/icons/lib-chat/panel-chat/close-circle-bin.svg#close-circle-bin"></use></svg>
         </button>
       }
-      <button ft-suffix mat-icon-button matSuffix class="pc-msg-icon"
-        [disabled]="initValue == (formControl.value?.trim() || null) ? '' : null"
-        (click)="doSendMessage(formControl.value)">
+      <button matSuffix mat-icon-button class="pc-msg-icon"
+        [disabled]="(initValue == frmCtrlNewMsg.value?.trim() || formGroup.invalid) ? '' : null"
+        (click)="doSendMessage(frmCtrlNewMsg.value)">
         <svg><use href="assets/icons/lib-chat/panel-chat/send-bin.svg#send-bin"></use></svg>
       </button>
+    </app-field-message>
 
-    </app-field-textarea>
-  </div>
+  </form>
 }
 
 @if (isBlocked) {

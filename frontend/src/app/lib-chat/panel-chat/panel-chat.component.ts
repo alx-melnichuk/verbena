@@ -1,9 +1,9 @@
 import {
     AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener,
-    inject, Injector, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation
+    inject, Input, OnChanges, Output, SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
 import { CommonModule, KeyValue } from '@angular/common';
-import { FormControl, FormGroup, ReactiveFormsModule, ValidationErrors } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -13,13 +13,12 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { DateTimeFormatPipe } from 'src/app/common/date-time-format.pipe';
 import { debounceFn } from 'src/app/common/debounce';
 import { StringDateTime } from 'src/app/common/string-date-time';
-import { FieldTextareaComponent } from 'src/app/components/field-textarea/field-textarea.component';
 import { SpinnerComponent } from 'src/app/components/spinner/spinner.component';
 import { DateUtil } from 'src/app/utils/date.utils';
 import { StringDateTimeUtil } from 'src/app/utils/string-date-time.util';
-import { ValidatorUtils } from 'src/app/utils/validator.utils';
 
 import { ChatMessageDto, ParamQueryPastMsg } from '../chat-message-api.interface';
+import { FieldMessageComponent } from '../field-message/field-message.component';
 
 interface MenuEdit {
     isEdit: boolean;
@@ -56,7 +55,7 @@ type ChatMsgMap = Map<number, number>;
     selector: 'app-panel-chat',
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatMenuModule,
-        TranslatePipe, DateTimeFormatPipe, SpinnerComponent, FieldTextareaComponent],
+        TranslatePipe, DateTimeFormatPipe, SpinnerComponent, FieldMessageComponent],
     templateUrl: './panel-chat.component.html',
     styleUrl: './panel-chat.component.scss',
     encapsulation: ViewEncapsulation.None,
@@ -111,18 +110,16 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     @ViewChild('scrollItem')
     private scrollItem: ElementRef<HTMLElement> | undefined;
-    @ViewChild(FieldTextareaComponent)
-    public fieldTextareaComp!: FieldTextareaComponent;
+    @ViewChild(FieldMessageComponent)
+    public fieldMessageComp!: FieldMessageComponent;
 
     public chatMsgList: ChatMessageDto[] = [];
     public countNotViewed: number = 0;
-    public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
-    public formGroup: FormGroup = new FormGroup({ newMsg: this.formControl });
+    public frmCtrlNewMsg = new FormControl<string | null>({ value: null, disabled: false }, []);
+    public formGroup: FormGroup = new FormGroup({ newMsg: this.frmCtrlNewMsg });
     public initValue: string | null = null;
     public maxLenVal: number = MESSAGE_MAX_LENGTH;
     public minLenVal: number = MESSAGE_MIN_LENGTH;
-    public maxRowsVal: number = MESSAGE_MAX_ROWS;
-    public minRowsVal: number = MESSAGE_MIN_ROWS;
     public msgMarked: ChatMessageDto | null = null;
     public msgEditing: ChatMessageDto | null = null;
 
@@ -138,11 +135,9 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     private lastScrollTop: number = 0;
     private smallestDate: StringDateTime | undefined;
 
-    private readonly _injector = inject(Injector);
     private changeDetector: ChangeDetectorRef = inject(ChangeDetectorRef);
 
     constructor() {
-        this.prepareFormGroup(this.maxLenVal, this.minLenVal);
     }
 
     @HostListener('window:resize', ['$event'])
@@ -208,17 +203,6 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         if (!!changes['isEditable'] && !changes['isEditable'].firstChange) {
             Promise.resolve().then(() => this.setScrollBottom(0));
         }
-        if (!!changes['maxLen'] || !!changes['minLen']) {
-            this.maxLenVal = (!!this.maxLen && this.maxLen > 0 ? this.maxLen : MESSAGE_MAX_LENGTH);
-            this.minLenVal = (!!this.minLen && this.minLen > 0 ? this.minLen : MESSAGE_MIN_LENGTH);
-            this.prepareFormGroup(this.maxLenVal, this.minLenVal);
-        }
-        if (!!changes['maxRows']) {
-            this.maxRowsVal = (!!this.maxRows && this.maxRows > 0 ? this.maxRows : MESSAGE_MAX_ROWS);
-        }
-        if (!!changes['minRows']) {
-            this.minRowsVal = (!!this.minRows && this.minRows > 0 ? this.minRows : MESSAGE_MIN_ROWS);
-        }
     }
     ngAfterViewInit(): void {
         this.checkExistScroll();
@@ -243,7 +227,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
             this.msgEditing = null;
         }
     }
-    public doSendMessage(newMsg: string): void {
+    public doSendMessage(newMsg: string | null): void {
         const newMsgVal = (newMsg || '').trim();
         if (this.isEditable && newMsgVal.length > 0) {
             if (!!this.msgEditing && this.msgEditing.id > 0 && !this.msgEditing.dateRmv) {
@@ -270,7 +254,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         if (this.msgEditing != chatMsg) {
             this.msgEditing = chatMsg;
             this.setTextareaValue(chatMsg?.msg || null);
-            this.fieldTextareaComp.focus();
+            this.fieldMessageComp.focus();
         }
     }
     public doBlockUser(member: string | null | undefined, blockedUsers: string[] | null): void {
@@ -293,7 +277,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
         }
         return result;
     }
-    public doKeydownEnter(event: Event, newMsg: string): void {
+    public doKeydownEnter(event: Event, newMsg: string | null): void {
         const keyEvent: KeyboardEvent = (event as KeyboardEvent);
         if (this.isEditable && !!newMsg && !keyEvent.altKey && !keyEvent.shiftKey) {
             this.doSendMessage(newMsg);
@@ -368,16 +352,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
 
     private setTextareaValue(value: string | null): void {
         this.initValue = value;
-        this.formControl.setValue(value);
-    }
-    private prepareFormGroup(maxLen: number, minLen: number): void {
-        this.formControl.clearValidators();
-        const paramsObj = {
-            ...(maxLen > 0 ? { "maxLength": maxLen } : {}),
-            ...(minLen > 0 ? { "minLength": minLen } : {}),
-        };
-        this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj)]);
-        this.formControl.updateValueAndValidity();
+        this.frmCtrlNewMsg.setValue(value);
     }
     private createMenuEdit(selfName: string, chatMsg: ChatMessageDto): MenuEdit | null {
         const isSelfNameEqMember = !!selfName && selfName == chatMsg.member;
