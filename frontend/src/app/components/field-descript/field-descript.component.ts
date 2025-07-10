@@ -67,7 +67,7 @@ export class FieldDescriptComponent implements OnChanges, ControlValueAccessor, 
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen']) {
-            this.prepareFormGroup();
+            this.prepareFormGroup(this.isRequired, this.maxLen, this.minLen);
         }
         if (!!changes['isDisabled']) {
             this.setDisabledState(this.isDisabled);
@@ -96,7 +96,13 @@ export class FieldDescriptComponent implements OnChanges, ControlValueAccessor, 
     }
 
     public setDisabledState(isDisabled: boolean): void {
-        isDisabled ? this.formGroup.disable() : this.formGroup.enable();
+        if (isDisabled != this.formGroup.disabled) {
+            if (isDisabled) {
+                this.formGroup.disable();
+            } else {
+                this.formGroup.enable();
+            }
+        }
     }
 
     // ** ControlValueAccessor - finish **
@@ -125,12 +131,12 @@ export class FieldDescriptComponent implements OnChanges, ControlValueAccessor, 
         const result = !!control && !!this.errorMsg ? { [CUSTOM_ERROR]: true } : null;
         return result;
     };
-    private prepareFormGroup(): void {
+    private prepareFormGroup(isRequired: boolean, maxLen: number, minLen: number): void {
         this.formControl.clearValidators();
         const paramsObj = {
-            ...(this.isRequired ? { "required": true } : {}),
-            ...(this.minLen > 0 ? { "minLength": this.minLen } : {}),
-            ...(this.maxLen > 0 ? { "maxLength": this.maxLen } : {}),
+            ...(isRequired ? { "required": true } : {}),
+            ...(minLen > 0 ? { "minLength": minLen } : {}),
+            ...(maxLen > 0 ? { "maxLength": maxLen } : {}),
         };
         this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj), this.errorMsgValidator]);
         this.formControl.updateValueAndValidity();
