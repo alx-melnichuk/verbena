@@ -1,12 +1,16 @@
 import { CommonModule } from '@angular/common';
 import {
-    ChangeDetectionStrategy, Component, forwardRef, Input, SimpleChanges, ViewChild, ViewEncapsulation
+    ChangeDetectionStrategy, Component, ContentChildren, forwardRef, Input, OnChanges,
+    QueryList, SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
 import {
     AbstractControl, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule, ValidationErrors
 } from '@angular/forms';
-import { MatFormFieldModule, SubscriptSizing } from '@angular/material/form-field';
+import {
+    MAT_PREFIX, MAT_SUFFIX, MatFormFieldModule, MatPrefix, MatSuffix, SubscriptSizing
+} from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
+import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { ValidatorUtils } from 'src/app/utils/validator.utils';
@@ -14,15 +18,15 @@ import { ValidatorUtils } from 'src/app/utils/validator.utils';
 export const TEXTAREA = "textarea";
 export const CUSTOM_ERROR = 'customError';
 export const TEXTAREA_MAX_ROWS = 6;
-export const TEXTAREA_MIN_ROWS = 3;
-export const TEXTAREA_MAX_LENGTH = 512;
-export const TEXTAREA_MIN_LENGTH = 0;
+export const TEXTAREA_MIN_ROWS = 2;
+export const TEXTAREA_MAX_LENGTH = 2048; // 2*1024
+export const TEXTAREA_MIN_LENGTH = 2;
 
 @Component({
     selector: 'app-field-textarea',
     exportAs: 'appFieldTextarea',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, TranslatePipe],
+    imports: [CommonModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, TranslatePipe, CdkTextareaAutosize],
     templateUrl: './field-textarea.component.html',
     styleUrl: './field-textarea.component.scss',
     encapsulation: ViewEncapsulation.None,
@@ -32,13 +36,15 @@ export const TEXTAREA_MIN_LENGTH = 0;
         { provide: NG_VALIDATORS, useExisting: forwardRef(() => FieldTextareaComponent), multi: true },
     ],
 })
-export class FieldTextareaComponent {
+export class FieldTextareaComponent implements OnChanges {
     @Input()
     public gist: string = TEXTAREA;
     @Input()
     public errorMsg: string | null | undefined;
     @Input()
-    public hint: string = '';
+    public hint: string | null | undefined;
+    @Input()
+    public isAutosize: boolean = false;
     @Input()
     public isDisabled: boolean = false;
     @Input()
@@ -63,6 +69,11 @@ export class FieldTextareaComponent {
     @ViewChild(MatInput, { static: false })
     public matInput: MatInput | null = null;
 
+    @ContentChildren(MAT_PREFIX, { descendants: true })
+    public prefixChildren?: QueryList<MatPrefix>;
+    @ContentChildren(MAT_SUFFIX, { descendants: true })
+    public suffixChildren?: QueryList<MatSuffix>;
+
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ textarea: this.formControl });
     public errMessage: string = '';
@@ -71,7 +82,8 @@ export class FieldTextareaComponent {
     public maxRowsVal: number = TEXTAREA_MAX_ROWS;
     public minRowsVal: number = TEXTAREA_MIN_ROWS;
 
-    constructor() { }
+    constructor() {
+    }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen']) {

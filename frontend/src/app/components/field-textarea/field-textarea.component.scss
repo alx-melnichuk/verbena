@@ -13,8 +13,8 @@ app-field-textarea {
     }
 
     &[is-suffix] .mat-mdc-text-field-wrapper {
-        padding-right: 0.4rem;
-        padding-left: 0.7rem;
+        padding-right: 4px;
+        // padding-left: 4px;
     }
 
     &[scroll-thin] {
@@ -23,8 +23,23 @@ app-field-textarea {
         }
     }
 
+    &[hide-error] .mat-mdc-form-field-error-wrapper {
+        display: none;
+    }
+
     mat-form-field {
         max-width: inherit;
         width: inherit;
     }
 }
+
+/*
+
+.mat-mdc-form-field-has-icon-suffix .mat-mdc-text-field-wrapper {
+    padding-right: 0;
+}
+.mat-mdc-form-field-has-icon-prefix .mat-mdc-text-field-wrapper {
+    padding-left: 0;
+    --mat-mdc-form-field-label-offset-x: -16px;
+}
+    */
