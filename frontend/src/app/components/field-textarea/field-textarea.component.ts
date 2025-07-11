@@ -1,14 +1,11 @@
 import { CommonModule } from '@angular/common';
 import {
-    ChangeDetectionStrategy, Component, ContentChildren, forwardRef, Input, OnChanges,
-    QueryList, SimpleChanges, ViewChild, ViewEncapsulation
+    ChangeDetectionStrategy, Component, forwardRef, Input, OnChanges, SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
 import {
     AbstractControl, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule, ValidationErrors
 } from '@angular/forms';
-import {
-    MAT_PREFIX, MAT_SUFFIX, MatFormFieldModule, MatPrefix, MatSuffix, SubscriptSizing
-} from '@angular/material/form-field';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -17,10 +14,6 @@ import { ValidatorUtils } from 'src/app/utils/validator.utils';
 
 export const TEXTAREA = "textarea";
 export const CUSTOM_ERROR = 'customError';
-export const TEXTAREA_MAX_ROWS = 6;
-export const TEXTAREA_MIN_ROWS = 2;
-export const TEXTAREA_MAX_LENGTH = 2048; // 2*1024
-export const TEXTAREA_MIN_LENGTH = 2;
 
 @Component({
     selector: 'app-field-textarea',
@@ -44,13 +37,11 @@ export class FieldTextareaComponent implements OnChanges {
     @Input()
     public hint: string | null | undefined;
     @Input()
-    public isAutosize: boolean = false;
-    @Input()
     public isDisabled: boolean = false;
     @Input()
     public isReadOnly: boolean = false;
     @Input()
-    public isRequired: boolean = false;
+    public isRequired: boolean | null | undefined;
     @Input()
     public isSpellcheck: boolean = false;
     @Input()
@@ -60,40 +51,21 @@ export class FieldTextareaComponent implements OnChanges {
     @Input()
     public minLen: number | null = null;
     @Input()
-    public maxRows: number | null = null;
-    @Input()
-    public minRows: number | null = null;
-    @Input()
-    public subscriptSizing: SubscriptSizing = 'fixed';
+    public numRows: number | null = null;
 
     @ViewChild(MatInput, { static: false })
     public matInput: MatInput | null = null;
 
-    @ContentChildren(MAT_PREFIX, { descendants: true })
-    public prefixChildren?: QueryList<MatPrefix>;
-    @ContentChildren(MAT_SUFFIX, { descendants: true })
-    public suffixChildren?: QueryList<MatSuffix>;
-
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ textarea: this.formControl });
     public errMessage: string = '';
-    public maxLenVal: number = TEXTAREA_MAX_LENGTH;
-    public minLenVal: number = TEXTAREA_MIN_LENGTH;
-    public maxRowsVal: number = TEXTAREA_MAX_ROWS;
-    public minRowsVal: number = TEXTAREA_MIN_ROWS;
 
     constructor() {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (!!changes['isRequired'] || !!changes['minLen'] || !!changes['maxLen']) {
-            if (!!changes['maxLen']) {
-                this.maxLenVal = (!!this.maxLen && this.maxLen > 0 ? this.maxLen : TEXTAREA_MAX_LENGTH);
-            }
-            if (!!changes['minLen']) {
-                this.minLenVal = (!!this.minLen && this.minLen > 0 ? this.minLen : TEXTAREA_MIN_LENGTH);
-            }
-            this.prepareFormGroup(this.isRequired, this.maxLenVal, this.minLenVal);
+            this.prepareFormGroup(this.isRequired || null, this.maxLen || null, this.minLen || null);
         }
         if (!!changes['isDisabled']) {
             this.setDisabledState(this.isDisabled);
@@ -101,12 +73,6 @@ export class FieldTextareaComponent implements OnChanges {
         if (!!changes['errorMsg']) {
             this.formControl.updateValueAndValidity();
             this.onChange(this.formControl.value);
-        }
-        if (!!changes['maxRows']) {
-            this.maxRowsVal = (this.maxRows != null && this.maxRows > 0 ? this.maxRows : TEXTAREA_MAX_ROWS);
-        }
-        if (!!changes['minRows']) {
-            this.minRowsVal = (this.minRows != null && this.minRows > 0 ? this.minRows : TEXTAREA_MIN_ROWS);
         }
     }
 
@@ -163,12 +129,12 @@ export class FieldTextareaComponent implements OnChanges {
         const result = !!control && !!this.errorMsg ? { [CUSTOM_ERROR]: true } : null;
         return result;
     };
-    private prepareFormGroup(isRequired: boolean, maxLen: number, minLen: number): void {
+    private prepareFormGroup(isRequired: boolean | null, maxLen: number | null, minLen: number | null): void {
         this.formControl.clearValidators();
         const paramsObj = {
-            ...(isRequired ? { "required": true } : {}),
-            ...(minLen > 0 ? { "minLength": minLen } : {}),
-            ...(maxLen > 0 ? { "maxLength": maxLen } : {}),
+            ...(!!isRequired ? { "required": true } : {}),
+            ...(minLen != null && minLen > 0 ? { "minLength": minLen } : {}),
+            ...(maxLen != null && maxLen > 0 ? { "maxLength": maxLen } : {}),
         };
         this.formControl.setValidators([...ValidatorUtils.prepare(paramsObj), this.errorMsgValidator]);
         this.formControl.updateValueAndValidity();
