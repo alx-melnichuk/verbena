@@ -4,17 +4,9 @@
     color="primary"
     subscriptSizing="dynamic"
     floatLabel="auto">
-
     @if (!!label) {
       <mat-label>{{ label | translate }}</mat-label>
     }  
-    @if (!!isEditing) {
-      <div class="fm-nmsg-label" [attr.is-focuse-msg]="isFocusMsg ? '': null">
-        <svg class="fm-svg-mini"><use href="assets/icons/lib-chat/field-message/pen-bin.svg#pen-bin"></use></svg>
-        <span>{{ 'field-message.editing_msg' | translate }}</span>
-      </div>
-    }
-
     <textarea matInput
       class="fm-textarea global-scroll"
       formControlName="textarea"
@@ -27,15 +19,11 @@
       [cdkAutosizeMinRows]="minRowsVal"
       [cdkAutosizeMaxRows]="2 + maxRowsVal"
       (input)="onChange(formControl.value)"
-      (blur)="onTouched()"
-      (focusin)="isFocusMsg=true"
-      (focusout)="isFocusMsg=false">
+      (blur)="onTouched()">
     </textarea>
-
-    <!-- @if ((suffixChildren?.length || 0) > 1) {
-      <div matSuffix><ng-content select="[matSuffix]"></ng-content></div>
-    } -->
-    
+    @if (!!hint) {
+        <mat-hint>{{ hint | translate }}</mat-hint>
+    }
     <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
   </mat-form-field>
 </ng-container>

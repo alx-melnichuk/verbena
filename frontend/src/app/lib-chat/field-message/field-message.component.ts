@@ -44,8 +44,6 @@ export class FieldMessageComponent implements OnChanges {
     @Input()
     public isDisabled: boolean = false;
     @Input()
-    public isEditing: boolean = false;
-    @Input()
     public isReadOnly: boolean = false;
     @Input()
     public isRequired: boolean = false;
@@ -68,7 +66,6 @@ export class FieldMessageComponent implements OnChanges {
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ textarea: this.formControl });
     public errMessage: string = '';
-    public isFocusMsg: boolean = false;
     public maxLenVal: number = MESSAGE_MAX_LENGTH;
     public minLenVal: number = MESSAGE_MIN_LENGTH;
     public maxRowsVal: number = MESSAGE_MAX_ROWS;
