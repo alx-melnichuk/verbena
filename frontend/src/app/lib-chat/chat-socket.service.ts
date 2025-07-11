@@ -42,7 +42,7 @@ export class ChatSocketService {
     // ** Public API **
 
     public config(chatConfig: ChatConfig): void {
-        if (!!chatConfig.nickname && !!chatConfig.room) {
+        if (!!chatConfig.nickname && chatConfig?.room > 0) {
             this.chatConfig = { ...chatConfig };
         }
     }
