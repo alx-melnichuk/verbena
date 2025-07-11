@@ -60,14 +60,17 @@
         </app-field-locale>
       </div>
     
-      <app-field-descript wd100 pp-mr-tp-0_5 class="pp-err-pd"
+      <app-field-textarea wd100 pp-mr-tp-0_5 class="pp-err-pd"
+        gist="descript"
         formControlName="descript"
         [isRequired]="false"
         label="panel-profile.descript"
-        [numberRows]="5"
+        [maxLen]="descriptMaxLen"
+        [minLen]="descriptMinLen"
+        [numRows]="5"
         (input)="updateErrMsgsProfile();">
-      </app-field-descript>
-        
+      </app-field-textarea>
+
       <div class="pp-actions">
         <button mat-stroked-button color="primary"
           class="app-infix app-ordinary pp-btn-save"

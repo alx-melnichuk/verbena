@@ -9,13 +9,13 @@ import { MatInputModule } from '@angular/material/input';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { IMAGE_VALID_FILE_TYPES, MAX_FILE_SIZE } from 'src/app/common/constants';
-import { FieldDescriptComponent } from 'src/app/components/field-descript/field-descript.component';
 import { FieldEmailComponent } from 'src/app/components/field-email/field-email.component';
 import { FieldFileUploadComponent } from 'src/app/components/field-file-upload/field-file-upload.component';
 import { FieldImageAndUploadComponent } from 'src/app/components/field-image-and-upload/field-image-and-upload.component';
 import { FieldLocaleComponent } from 'src/app/components/field-locale/field-locale.component';
 import { FieldNicknameComponent } from 'src/app/components/field-nickname/field-nickname.component';
 import { FieldPasswordComponent } from 'src/app/components/field-password/field-password.component';
+import { FieldTextareaComponent } from 'src/app/components/field-textarea/field-textarea.component';
 import { FieldThemeComponent } from 'src/app/components/field-theme/field-theme.component';
 import { UniquenessCheckComponent } from 'src/app/components/uniqueness-check/uniqueness-check.component';
 import { DialogService } from 'src/app/lib-dialog/dialog.service';
@@ -36,8 +36,8 @@ export const PPI_AVATAR_MX_WD = '---pp-avatar-mx-wd';
     exportAs: 'appPanelProfile',
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, TranslatePipe,
-        UniquenessCheckComponent, FieldNicknameComponent, FieldEmailComponent, FieldPasswordComponent,
-        FieldDescriptComponent, FieldFileUploadComponent, FieldImageAndUploadComponent, FieldThemeComponent, FieldLocaleComponent],
+        UniquenessCheckComponent, FieldNicknameComponent, FieldEmailComponent, FieldPasswordComponent, FieldTextareaComponent,
+        FieldFileUploadComponent, FieldImageAndUploadComponent, FieldThemeComponent, FieldLocaleComponent],
     templateUrl: './panel-profile.component.html',
     styleUrl: './panel-profile.component.scss',
     encapsulation: ViewEncapsulation.None,
@@ -94,6 +94,8 @@ export class PanelProfileComponent implements OnInit, OnChanges {
 
     public debounceDelay: number = PPI_DEBOUNCE_DELAY;
 
+    public descriptMaxLen = 2048; // 2*1024
+    public descriptMinLen = 2;
     // FieldImageAndUpload parameters
     public accepts = IMAGE_VALID_FILE_TYPES;
     public maxSize = MAX_FILE_SIZE;
