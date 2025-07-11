@@ -2,10 +2,7 @@
 mod tests {
     use actix_web::{
         self, body, dev,
-        http::{
-            header::{HeaderValue, CONTENT_TYPE},
-            StatusCode,
-        },
+        http::{ header::{HeaderValue, CONTENT_TYPE}, StatusCode },
         test, App,
     };
     use chrono::SecondsFormat;
@@ -13,19 +10,11 @@ mod tests {
 
     use crate::chats::{
         chat_message_controller::{
-            get_chat_message,
-            tests::{
-                configure_chat_message, get_cfg_data,
-                header_auth,      /*MSG_CASTING_TO_TYPE, MSG_CONTENT_TYPE_ERROR,*/
-                MSG_FAILED_DESER, /*MSG_JSON_MISSING_FIELD,*/
-            },
+            get_chat_message, tests::{ configure_chat_message, get_cfg_data, header_auth, MSG_FAILED_DESER },
         },
         chat_message_models::ChatMessageDto,
         chat_message_orm::tests::ChatMsgTest,
     };
-    // use crate::errors::AppError;
-    // use crate::settings::err;
-    // use crate::users::user_models::UserRole;
 
     // ** get_chat_message **
 
