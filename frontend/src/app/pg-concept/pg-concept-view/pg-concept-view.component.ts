@@ -85,7 +85,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         }
         this.isStreamOwner = (this.streamDto?.userId || -1) == (this.profileDto?.id || 0);
         this.isStreamActive = !!this.streamDto?.live;
-        console.log(`PgConceptView() this.isStreamActive: ${this.isStreamActive}`); // #
 
         const nickname: string = this.profileDto?.nickname || '';
         const streamId: number = (!!this.streamDto ? this.streamDto.id : -1);
@@ -123,7 +122,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             console.log(`this.chatNewMsgs`); // #
         }, 4000);*/
     }
-    demo1(): any[] {
+    /*demo1(): any[] {
         return [
             { "id": 600, "date": "2024-03-16T18:00:00.000Z", "member": "evelyn_allen", "msg": "Demo message 130ver.2", "dateEdt": "2025-06-26T16:30:02.799Z" },
             { "id": 599, "date": "2024-03-16T17:00:00.000Z", "member": "mila_davis", "msg": "Demo message 129" },
@@ -136,7 +135,7 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             { "id": 592, "date": "2024-03-16T10:00:00.000Z", "member": "ava_wilson", "msg": "Demo message 122 ver.2", "dateEdt": "2025-06-26T16:30:02.799Z" },
             { "id": 591, "date": "2024-03-16T09:00:00.000Z", "member": "ethan_brown", "msg": "Demo message 121" },
         ];
-    }
+    }*/
     ngOnInit(): void {
         this.updateParams(this.streamDto, this.profileDto);
     }
@@ -266,7 +265,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
             this.alertService.showError(errMsg, 'pg-concept-view.error_socket');
         } else if (eventWS.et == EWSType.Echo) {
             const echo = eventWS.getStr('echo') || '';
-            console.log(`Socket-echo:`, echo);
         } else if (eventWS.et == EWSType.Msg) {
             this.addChatMsg(val);
         } else if (eventWS.et == EWSType.MsgRmv) {
@@ -322,7 +320,6 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         this.chatMessageService.getChatMessages(streamId, isSortDes, undefined, maxDate, limit)
             .then((response: ChatMessageDto[] | HttpErrorResponse | undefined) => {
                 this.chatPastMsgs = (response as ChatMessageDto[]); // List of past chat messages.
-                // console.log(`PgConceptView() 3 chatPastMsgs:`, this.chatPastMsgs); // #
             })
             .catch((error: HttpErrorResponse) => {
                 console.error(`ChatMessageError:`, error);
@@ -332,18 +329,4 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
                 this.changeDetector.markForCheck();
             });
     }
-    /*private getChatMsg(id: number): ChatMessageDto {
-        const msg = `Demo msg ${id}`;
-        const member = id % 5 == 0 ? 'evelyn_allen' : 'emma_johnson';
-        return { msg, id, member, "date": "2025-04-28T09:10:30.727Z" };
-    }*/
-    /*private getChatMsgDemo(idx: number, len: number): ChatMessageDto[] {
-        const result: ChatMessageDto[] = [];
-        let index = idx * len;
-        const maxIndex = index + len;
-        for (; index < maxIndex; index++) {
-            result.push(this.getChatMsg(index));
-        }
-        return result;
-    }*/
 }
