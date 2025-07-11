@@ -93,27 +93,29 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
 /// Request structure:
 /// ```text
 /// {
-///   streamId: number,            // required
-///   isSortDes?: boolean,         // optional
-///   borderDate?: DateTime<Utc>,  // optional
-///   limit?: number,              // optional
+///   streamId: number,         // required
+///   isSortDes?: boolean,      // optional
+///   minDate?: DateTime<Utc>,  // optional
+///   maxDate?: DateTime<Utc>,  // optional
+///   limit?: number,           // optional
 /// }
 /// Where:
 /// "streamId" - Chat ID (Stream ID).;
 /// "isSortDes" - descending sorting flag (default false, i.e. default sorting is "ascending");
-/// "borderDate" - The cutoff date for selecting chat messages;
-///               For isSortDes, this is less than the specified date, 
-///               otherwise it is greater than the specified date.
+/// "minDate" - Minimum end date for chat message selection 
+///             (result is strictly greater than the specified date);
+/// "maxDate" - Maximum end date of selection of chat messages 
+///             (result is strictly less than the specified date);
 /// "limit" - number of records on the page (20 by default);
 /// ```
 /// It is recommended to enter the date and time in ISO8601 format.
 /// ```text
 /// var d1 = new Date();
-/// { borderDate: d1.toISOString() } // "2020-01-20T20:10:57.000Z"
+/// { minDate: d1.toISOString() } // "2020-01-20T20:10:57.000Z"
 /// ```
 /// It is allowed to specify the date and time with a time zone value.
 /// ```text
-/// { "borderDate": "2020-01-20T22:10:57+02:00" }
+/// { "minDate": "2020-01-20T22:10:57+02:00" }
 /// ```
 ///
 ///
@@ -124,7 +126,12 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
 /// 
 /// Or you could call with the next curl.
 /// ```text
-/// curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&borderDate=120&limit=20
+/// curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&maxDate=2020-07-01T10:45:00.000Z&limit=20
+/// ```
+///
+/// Or you could call with the next curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&minDate=2020-07-01T11:10:00.000Z&limit=20
 /// ```
 /// Returns the found list of chat messages (Vec<`ChatMessageDto`>) with status 200.
 ///
@@ -132,23 +139,23 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
     responses(
         (status = 200, description = "The result is an array of chat messages.", body = Vec<ChatMessageDto>,
         examples(
-            ("sort_ascending" = (description = "Chat messages are sorted in ascending order, number of entries 4. `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&limit=4`",
-                summary = "sort ascending", value = json!(get_ch_msgs(0, 3))
+            ("sort_ascending_part1" = (description = "Chat messages are sorted in ascending order, number of entries 4. `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&limit=4`",
+                summary = "sort ascending part1", value = json!(get_ch_msgs(0, 3))
             )),
-            ("sort_ascending_part2" = (description = "Chat messages are sorted in ascending order, number of entries 4, starting with ID > 203 (part 2). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&limit=4&borderDate=203`",
+            ("sort_ascending_part2" = (description = "Chat messages are sorted in ascending order, number of entries 4, starting with ID > 203 (part 2). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&maxDate=2020-07-01T10:45:00.000Z&limit=4`",
                 summary = "sort ascending part2", value = json!(get_ch_msgs(4, 7))
             )),
-            ("sort_ascending_part3" = (description = "Chat messages are sorted in ascending order, number of entries 4, starting with ID > 207 (part 3). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&limit=4&borderDate=207`",
+            ("sort_ascending_part3" = (description = "Chat messages are sorted in ascending order, number of entries 4, starting with ID > 207 (part 3). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&maxDate=2020-07-01T11:05:00.000Z&limit=4`",
                 summary = "sort ascending part3", value = json!(get_ch_msgs(8, 11))
             )),
-            ("sort_descending" = (description = "Chat messages are sorted in descending order. `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&limit=4`",
-                summary = "sort descending", value = json!(get_ch_msgs(11, 8))
+            ("sort_descending_part1" = (description = "Chat messages are sorted in descending order. `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&limit=4`",
+                summary = "sort descending part1", value = json!(get_ch_msgs(11, 8))
             )),
-            ("sort_descending_part2" = (description = "Chat messages are sorted in descending order, number of entries 4, starting with ID 203 (part 2). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&limit=4&borderDate=208`",
+            ("sort_descending_part2" = (description = "Chat messages are sorted in descending order, number of entries 4, starting with ID 203 (part 2). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&minDate=2020-07-01T11:10:00.000Z&limit=4`",
                 summary = "sort descending part2", value = json!(get_ch_msgs(7, 4))
             )),
-            ("sort_descending_part3" = (description = "Chat messages are sorted in descending order, number of entries 4, starting with ID 203 (part 3). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&limit=4&borderDate=204`",
-                summary = "sort descending part3", value = json!(get_ch_msgs(7, 4))
+            ("sort_descending_part3" = (description = "Chat messages are sorted in descending order, number of entries 4, starting with ID 203 (part 3). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&minDate=2020-07-01T10:50:00.000Z&limit=4`",
+                summary = "sort descending part3", value = json!(get_ch_msgs(3, 0))
             )),
         ),
         ),
