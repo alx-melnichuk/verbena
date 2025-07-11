@@ -1,5 +1,4 @@
 <div class="pc-header">
-  <!-- <div class="pc-icon prc-chat-stream"></div> -->
   <div class="pc-label">{{ (title | translate) }}</div>
 </div>
 
@@ -75,34 +74,45 @@
 <div class="pc-sepr"></div>
 
 @if (isEditable && !isBlocked) {
-  <form novalidate class="pc-footer" [formGroup]="formGroup">
+  <form novalidate class="pc-msg-frm" [formGroup]="formGroup">
+    <div class="pc-msg-edt">
+      @if (!!msgEditing) {
+        <div class="pc-nmsg-label" [attr.is-focuse-msg]="isFocusMsg ? '': null">
+          <svg class="pc-svg-mini"><use href="assets/icons/lib-chat/panel-chat/pen-bin.svg#pen-bin"></use></svg>
+          <span>{{ 'field-message.editing_msg' | translate }}</span>
+        </div>
+      }
+    
+      <app-field-message wd100 scroll-thin
+        [ngClass]="['pc-new-msg', (!!msgEditing ? 'pc-editing' : '')]"
+        formControlName="newMsg"
+        gist="message"
+        [maxLen]="maxLen"
+        [minLen]="minLen"
+        [maxRows]="maxRows"
+        [minRows]="minRows"
+        (keydown.enter)="formGroup.valid ? doKeydownEnter($event, frmCtrlNewMsg.value) : null"
+        (keydown.control.enter)="formGroup.valid ? doKeydownEnter($event, frmCtrlNewMsg.value): null"
+        (keydown.escape)="cleanNewMsg()"
+        (focusin)="isFocusMsg=true"
+        (focusout)="isFocusMsg=false">
+      </app-field-message>
+    </div>
 
-    <app-field-message wd100 is-suffix scroll-thin
-      [ngClass]="['pc-new-msg', (!!msgEditing ? 'pc-editing' : '')]"
-      formControlName="newMsg"
-      gist="message"
-      [isEditing]="!!msgEditing"
-      [maxLen]="maxLen"
-      [minLen]="minLen"
-      [maxRows]="maxRows"
-      [minRows]="minRows"
-      (keydown.enter)="formGroup.valid ? doKeydownEnter($event, frmCtrlNewMsg.value) : null"
-      (keydown.control.enter)="formGroup.valid ? doKeydownEnter($event, frmCtrlNewMsg.value): null"
-      (keydown.escape)="cleanNewMsg()">
-
+    <div class="pc-msg-btns">
       @if (!!msgEditing) {
         <button matSuffix  mat-icon-button class="pc-msg-icon"
           (click)="doSetValueForEditing(null)">
           <svg><use href="assets/icons/lib-chat/panel-chat/close-circle-bin.svg#close-circle-bin"></use></svg>
         </button>
+        <div class="pc-msg-btns-sepr"></div>
       }
       <button matSuffix mat-icon-button class="pc-msg-icon"
         [disabled]="(initValue == frmCtrlNewMsg.value?.trim() || formGroup.invalid) ? '' : null"
         (click)="doSendMessage(frmCtrlNewMsg.value)">
         <svg><use href="assets/icons/lib-chat/panel-chat/send-bin.svg#send-bin"></use></svg>
       </button>
-    </app-field-message>
-
+    </div>
   </form>
 }
 

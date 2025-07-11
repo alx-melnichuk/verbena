@@ -118,6 +118,7 @@ export class PanelChatComponent implements OnChanges, AfterViewInit {
     public frmCtrlNewMsg = new FormControl<string | null>({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ newMsg: this.frmCtrlNewMsg });
     public initValue: string | null = null;
+    public isFocusMsg: boolean = false;
     public maxLenVal: number = MESSAGE_MAX_LENGTH;
     public minLenVal: number = MESSAGE_MIN_LENGTH;
     public msgMarked: ChatMessageDto | null = null;
