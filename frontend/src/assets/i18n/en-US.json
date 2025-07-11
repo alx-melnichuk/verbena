@@ -186,9 +186,6 @@
   "field-date": {
     "label": "Date "
   },
-  "field-descript": {
-    "label": "Description"
-  },
   "field-email": {
     "err_minlength_symbol_search": "The symbol search should have {{value}} characters or more.",
     "err_maxlength_symbol_search": "The symbol search should be less than {{value}} characters.",

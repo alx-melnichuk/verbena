@@ -186,9 +186,6 @@
   "field-date": {
     "label": "Дата "
   },
-  "field-descript": {
-    "label": "Опис"
-  },
   "field-email": {
     "err_minlength_symbol_search": "Пошук символів має містити {{value}} символів або більше.",
     "err_maxlength_symbol_search": "Пошук символів має бути меншим ніж {{value}} символів.",
