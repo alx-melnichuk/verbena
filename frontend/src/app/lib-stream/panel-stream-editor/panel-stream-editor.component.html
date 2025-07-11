@@ -10,13 +10,16 @@
       (input)="updateErrMsgs();doChangeData();">
     </app-field-title>
 
-    <app-field-descript wd100 pse-mr-tp-1
+    <app-field-textarea wd100 pse-mr-tp-1
+      gist="descript"
       formControlName="descript"
       [isRequired]="false"
       label="panel-stream-editor.descript"
-      [numberRows]="5"
+      [maxLen]="descriptMaxLen"
+      [minLen]="descriptMinLen"
+      [numRows]="5"
       (input)="updateErrMsgs();doChangeData();">
-    </app-field-descript>
+    </app-field-textarea>
 
     <div pse-mr-tp-1 class="pse-logo">
       <app-field-image-and-upload hg100

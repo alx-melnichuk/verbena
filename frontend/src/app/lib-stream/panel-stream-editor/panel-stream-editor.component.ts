@@ -16,8 +16,8 @@ import { MAX_FILE_SIZE, IMAGE_VALID_FILE_TYPES } from 'src/app/common/constants'
 import { StringDateTime } from 'src/app/common/string-date-time';
 import { FieldChipGridComponent } from 'src/app/components/field-chip-grid/field-chip-grid.component';
 import { FieldDateComponent } from 'src/app/components/field-date/field-date.component';
-import { FieldDescriptComponent } from 'src/app/components/field-descript/field-descript.component';
 import { FieldImageAndUploadComponent } from 'src/app/components/field-image-and-upload/field-image-and-upload.component';
+import { FieldTextareaComponent } from 'src/app/components/field-textarea/field-textarea.component';
 import { FieldTimeComponent } from 'src/app/components/field-time/field-time.component';
 import { FieldTitleComponent } from 'src/app/components/field-title/field-title.component';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
@@ -40,7 +40,7 @@ export const PSE_LOGO_MX_WD = '---pse-logo-mx-wd';
     standalone: true,
     imports: [
         CommonModule, ReactiveFormsModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSlideToggleModule,
-        MatTooltipModule, TranslatePipe, FieldDescriptComponent, FieldChipGridComponent, FieldImageAndUploadComponent,
+        MatTooltipModule, TranslatePipe, FieldTextareaComponent, FieldChipGridComponent, FieldImageAndUploadComponent,
         FieldTimeComponent, FieldTitleComponent, FieldDateComponent,
     ],
     templateUrl: './panel-stream-editor.component.html',
@@ -71,6 +71,8 @@ export class PanelStreamEditorComponent implements OnChanges {
     public minDate: Date = new Date(Date.now());
     public maxDate: Date = new Date(this.minDate.getFullYear(), this.minDate.getMonth() + 7, 0);
 
+    public descriptMaxLen = 2048; // 2*1024
+    public descriptMinLen = 2;
     // FieldImageAndUpload parameters
     public accepts = IMAGE_VALID_FILE_TYPES;
     public maxSize = MAX_FILE_SIZE;
