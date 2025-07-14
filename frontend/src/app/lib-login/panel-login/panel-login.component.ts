@@ -12,10 +12,9 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { StrParams } from 'src/app/common/str-params';
 import { ROUTE_FORGOT_PASSWORD, ROUTE_SIGNUP } from 'src/app/common/routes';
-import { EMAIL_MAX_LENGTH, EMAIL_MIN_LENGTH } from 'src/app/components/field-email/field-email.component';
 import {
-    FieldNicknameComponent, NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH, NICKNAME_PATTERN
-} from 'src/app/components/field-nickname/field-nickname.component';
+    EMAIL_MAX_LENGTH, EMAIL_MIN_LENGTH, FieldInputComponent, NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH, NICKNAME_PATTERN
+} from 'src/app/components/field-input/field-input.component';
 import { FieldPasswordComponent } from 'src/app/components/field-password/field-password.component';
 
 @Component({
@@ -23,7 +22,7 @@ import { FieldPasswordComponent } from 'src/app/components/field-password/field-
     exportAs: 'appPanelLogin',
     standalone: true,
     imports: [CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe,
-        FieldNicknameComponent, FieldPasswordComponent,],
+        FieldInputComponent, FieldPasswordComponent,],
     templateUrl: './panel-login.component.html',
     styleUrl: './panel-login.component.scss',
     encapsulation: ViewEncapsulation.None,
