@@ -8,27 +8,37 @@
       #uniquenessCheckNickname="appUniquenessCheck"
       [debounceDelay]="debounceDelay"
       [checkUniquenessFn]="checkUniquenessNickname">
-      <app-field-nickname wd100
+      <app-field-input wd100
         formControlName="nickname"
+        gist="nickname"
         [isRequired]="true"
-        label="field-nickname.label"
-        hint="field-nickname.nickname_hint"
+        label="field-input.nickname_label"
+        hint="field-input.nickname_hint"
+        [maxLen]="nicknameMaxLen"
+        [minLen]="nicknameMinLen"
+        [pattern]="nicknamePattern"
+        type="text"
         [errorMsg]="uniquenessCheckNickname.isUniquenessError ? 'Conflict.nickname_already_use' : undefined"
         (input)="updateErrMsg(); uniquenessCheckNickname.checkParameter(controls.nickname.value);">
-      </app-field-nickname>
+      </app-field-input>
     </app-uniqueness-check>
-  
+
+    
     <app-uniqueness-check ps-mr-tp-1
       #uniquenessCheckEmail="appUniquenessCheck"
       [debounceDelay]="debounceDelay"
       [checkUniquenessFn]="checkUniquenessEmail">
-      <app-field-email wd100
+      <app-field-input wd100
         formControlName="email"
+        gist="email"
         [isRequired]="true"
-        label="field-email.label"
+        label="field-input.email_label"
+        [maxLen]="emailMaxLen"
+        [minLen]="emailMinLen"
+        type="email"
         [errorMsg]="uniquenessCheckEmail.isUniquenessError ? 'Conflict.email_already_use' : undefined"
         (input)="updateErrMsg(); uniquenessCheckEmail.checkParameter(controls.email.value);">
-      </app-field-email>
+      </app-field-input>
     </app-uniqueness-check>
 
     <app-field-password wd100 ps-mr-tp-1
