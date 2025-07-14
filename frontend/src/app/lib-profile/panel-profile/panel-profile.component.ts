@@ -9,11 +9,12 @@ import { MatInputModule } from '@angular/material/input';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { IMAGE_VALID_FILE_TYPES, MAX_FILE_SIZE } from 'src/app/common/constants';
-import { FieldEmailComponent } from 'src/app/components/field-email/field-email.component';
 import { FieldFileUploadComponent } from 'src/app/components/field-file-upload/field-file-upload.component';
 import { FieldImageAndUploadComponent } from 'src/app/components/field-image-and-upload/field-image-and-upload.component';
+import {
+    EMAIL_MAX_LENGTH, EMAIL_MIN_LENGTH, FieldInputComponent, NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH, NICKNAME_PATTERN
+} from 'src/app/components/field-input/field-input.component';
 import { FieldLocaleComponent } from 'src/app/components/field-locale/field-locale.component';
-import { FieldNicknameComponent } from 'src/app/components/field-nickname/field-nickname.component';
 import { FieldPasswordComponent } from 'src/app/components/field-password/field-password.component';
 import { FieldTextareaComponent } from 'src/app/components/field-textarea/field-textarea.component';
 import { FieldThemeComponent } from 'src/app/components/field-theme/field-theme.component';
@@ -36,7 +37,7 @@ export const PPI_AVATAR_MX_WD = '---pp-avatar-mx-wd';
     exportAs: 'appPanelProfile',
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatInputModule, TranslatePipe,
-        UniquenessCheckComponent, FieldNicknameComponent, FieldEmailComponent, FieldPasswordComponent, FieldTextareaComponent,
+        UniquenessCheckComponent, FieldInputComponent, FieldPasswordComponent, FieldTextareaComponent,
         FieldFileUploadComponent, FieldImageAndUploadComponent, FieldThemeComponent, FieldLocaleComponent],
     templateUrl: './panel-profile.component.html',
     styleUrl: './panel-profile.component.scss',
@@ -57,10 +58,10 @@ export class PanelProfileComponent implements OnInit, OnChanges {
     @Input()
     public errMsgsAccount: string[] = [];
 
-    @ViewChild(FieldNicknameComponent, { static: true })
-    public fieldNicknameComp!: FieldNicknameComponent;
-    @ViewChild(FieldEmailComponent, { static: true })
-    public fieldEmailComp!: FieldEmailComponent;
+    @ViewChild('fieldNickname', { static: true })
+    public fieldNicknameComp!: FieldInputComponent;
+    @ViewChild('fieldEmail', { static: true })
+    public fieldEmailComp!: FieldInputComponent;
 
     @Output()
     readonly updateProfile: EventEmitter<{ modifyProfile: ModifyProfileDto, avatarFile: File | null | undefined }> = new EventEmitter();
@@ -84,6 +85,13 @@ export class PanelProfileComponent implements OnInit, OnChanges {
         locale: new FormControl('', []),
     };
     public formGroupProfile: FormGroup = new FormGroup(this.cntlsProfile);
+
+    public emailMinLen: number = EMAIL_MIN_LENGTH;
+    public emailMaxLen: number = EMAIL_MAX_LENGTH;
+
+    public nicknameMinLen: number = NICKNAME_MIN_LENGTH;
+    public nicknameMaxLen: number = NICKNAME_MAX_LENGTH;
+    public nicknamePattern: string = NICKNAME_PATTERN;
 
     public cntlsPassword = {
         password: new FormControl(null, []),
@@ -120,9 +128,9 @@ export class PanelProfileComponent implements OnInit, OnChanges {
 
     ngOnInit(): void {
         this.cntlsProfile.nickname.markAsTouched();
-        this.fieldNicknameComp.getFormControl().markAsTouched();
+        this.fieldNicknameComp.markAsTouched();
         this.cntlsProfile.email.markAsTouched();
-        this.fieldEmailComp.getFormControl().markAsTouched();
+        this.fieldEmailComp.markAsTouched();
     }
 
     ngOnChanges(changes: SimpleChanges): void {

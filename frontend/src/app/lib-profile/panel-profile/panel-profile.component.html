@@ -22,29 +22,38 @@
         #uniquenessCheckNickname="appUniquenessCheck"
         [debounceDelay]="debounceDelay"
         [checkUniquenessFn]="checkUniquenessNickname">
-        <app-field-nickname wd100
+        <app-field-input wd100 #fieldNickname
           formControlName="nickname"
+          gist="nickname"
           [isRequired]="true"
-          label="field-nickname.label"
-          hint="field-nickname.nickname_hint"
+          label="field-input.nickname_label"
+          hint="field-input.nickname_hint"
+          [maxLen]="nicknameMaxLen"
+          [minLen]="nicknameMinLen"
+          [pattern]="nicknamePattern"
+          type="text"
           [errorMsg]="uniquenessCheckNickname.isUniquenessError ? 'Conflict.nickname_already_use' : undefined"
           (input)="updateErrMsgsProfile();
             uniquenessCheckNickname.checkParameter(cntlsProfile.nickname.value);">
-        </app-field-nickname>
+        </app-field-input>
       </app-uniqueness-check>
     
       <app-uniqueness-check pp-mr-tp-1
         #uniquenessCheckEmail="appUniquenessCheck"
         [debounceDelay]="debounceDelay"
         [checkUniquenessFn]="checkUniquenessEmail">
-        <app-field-email wd100 class="pp-err-pd"
+        <app-field-input wd100 #fieldEmail class="pp-err-pd"
+          gist="email"
           formControlName="email"
           [isRequired]="true"
-          label="field-email.label"
+          label="field-input.email_label"
+          [maxLen]="emailMaxLen"
+          [minLen]="emailMinLen"
+          type="email"
           [errorMsg]="uniquenessCheckEmail.isUniquenessError ? 'Conflict.email_already_use' : undefined"
           (input)="updateErrMsgsProfile();
             uniquenessCheckEmail.checkParameter(cntlsProfile.email.value);">
-        </app-field-email>
+        </app-field-input>
       </app-uniqueness-check>
         
       <div class="pp-theme-locale">
