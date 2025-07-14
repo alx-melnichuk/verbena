@@ -186,11 +186,6 @@
   "field-date": {
     "label": "Дата "
   },
-  "field-email": {
-    "err_minlength_symbol_search": "Пошук символів має містити {{value}} символів або більше.",
-    "err_maxlength_symbol_search": "Пошук символів має бути меншим ніж {{value}} символів.",
-    "label": "Електронна пошта "
-  },
   "field-file-upload": {
     "drag_files_or_browse": "Виберіть файл або перетягніть файл сюди.",
     "supported_file_types": "Підтримувані типи файлів: {{validTypes}} (без прозорості).",
@@ -202,8 +197,9 @@
     "label": "Файл зображення",
     "remove_image": "Видаліть це зображення"
   },
-  "field-nickname": {
-    "label": "Псевдонім ",
+  "field-input": {
+    "email_label": "Електронна пошта ",
+    "nickname_label": "Псевдонім ",
     "nickname_hint": "Використовуються: малі літери, великі літери, цифри та підкреслення. Мінімум 3 символи."
   },
   "field-password": {

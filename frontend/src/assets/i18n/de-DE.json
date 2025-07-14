@@ -186,11 +186,6 @@
   "field-date": {
     "label": "Date "
   },
-  "field-email": {
-    "err_minlength_symbol_search": "Die symbolsuche sollte {{value}} zeichen oder mehr enthalten.",
-    "err_maxlength_symbol_search": "Die symbolsuche sollte weniger als {{value}} zeichen umfassen.",
-    "label": "E-Mail "
-  },
   "field-file-upload": {
     "drag_files_or_browse": "Wählen sie eine datei aus oder ziehen sie sie hierher.",
     "supported_file_types": "Unterstützte dateitypen: {{validTypes}} (ohne transparenz).",
@@ -202,8 +197,9 @@
     "label": "Bilddatei",
     "remove_image": "Dieses Bild entfernen"
   },
-  "field-nickname": {
-    "label": "Spitzname ",
+  "field-input": {
+    "email_label": "E-Mail ",
+    "nickname_label": "Spitzname ",
     "nickname_hint": "Verwendet: kleinbuchstaben, großbuchstaben, zahlen und unterstriche. Mindestens 3 zeichen."
   },
   "field-password": {

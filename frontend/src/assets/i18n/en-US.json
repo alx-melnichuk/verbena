@@ -186,11 +186,6 @@
   "field-date": {
     "label": "Date "
   },
-  "field-email": {
-    "err_minlength_symbol_search": "The symbol search should have {{value}} characters or more.",
-    "err_maxlength_symbol_search": "The symbol search should be less than {{value}} characters.",
-    "label": "Email "
-  },
   "field-file-upload": {
     "drag_files_or_browse": "Select file or drag file here.",
     "supported_file_types": "Supported file types: {{validTypes}} (without transparency).",
@@ -202,8 +197,9 @@
     "label": "Image file",
     "remove_image": "Remove this image"
   },
-  "field-nickname": {
-    "label": "Nickname ",
+  "field-input": {
+    "email_label": "Email ",
+    "nickname_label": "Nickname ",
     "nickname_hint": "Used: lowercase letters, uppercase letters, numbers and underscores. Minimum 3 characters."
   },
   "field-password": {
