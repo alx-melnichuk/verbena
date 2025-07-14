@@ -17,9 +17,9 @@ import { StringDateTime } from 'src/app/common/string-date-time';
 import { FieldChipGridComponent } from 'src/app/components/field-chip-grid/field-chip-grid.component';
 import { FieldDateComponent } from 'src/app/components/field-date/field-date.component';
 import { FieldImageAndUploadComponent } from 'src/app/components/field-image-and-upload/field-image-and-upload.component';
+import { FieldInputComponent } from 'src/app/components/field-input/field-input.component';
 import { FieldTextareaComponent } from 'src/app/components/field-textarea/field-textarea.component';
 import { FieldTimeComponent } from 'src/app/components/field-time/field-time.component';
-import { FieldTitleComponent } from 'src/app/components/field-title/field-title.component';
 import { AlertService } from 'src/app/lib-dialog/alert.service';
 import { ClipboardUtil } from 'src/app/utils/clipboard.util';
 import { FileSizeUtil } from 'src/app/utils/file_size.util';
@@ -41,7 +41,7 @@ export const PSE_LOGO_MX_WD = '---pse-logo-mx-wd';
     imports: [
         CommonModule, ReactiveFormsModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSlideToggleModule,
         MatTooltipModule, TranslatePipe, FieldTextareaComponent, FieldChipGridComponent, FieldImageAndUploadComponent,
-        FieldTimeComponent, FieldTitleComponent, FieldDateComponent,
+        FieldTimeComponent, FieldInputComponent, FieldDateComponent,
     ],
     templateUrl: './panel-stream-editor.component.html',
     styleUrl: './panel-stream-editor.component.scss',
@@ -82,6 +82,9 @@ export class PanelStreamEditorComponent implements OnChanges {
     // FieldImageAndUpload FormControl
     public logoFile: File | null | undefined;
     public initIsLogo: boolean = false; // original has an logo.
+
+    readonly titleMaxLen: number = 255;
+    readonly titleMinLen: number = 2;
 
     readonly tagMaxLength: number = 255;
     readonly tagMinLength: number = 2;

@@ -3,12 +3,16 @@
         
     <div class="pse-title">{{(isCreate ? 'panel-stream-editor.creating_stream' : 'panel-stream-editor.editing_stream') | translate }}</div>
 
-    <app-field-title wd100 pse-mr-tp-0_5
+    <app-field-input wd100 pse-mr-tp-0_5
       formControlName="title"
+      gist="title"
       [isRequired]="true"
       label="panel-stream-editor.title"
+      [maxLen]="titleMaxLen"
+      [minLen]="titleMinLen"
+      type="text"
       (input)="updateErrMsgs();doChangeData();">
-    </app-field-title>
+    </app-field-input>
 
     <app-field-textarea wd100 pse-mr-tp-1
       gist="descript"
