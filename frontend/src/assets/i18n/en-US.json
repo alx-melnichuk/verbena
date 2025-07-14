@@ -215,9 +215,6 @@
   "field-time": {
     "label": "Time "
   },
-  "field-title": {
-    "label": "Title "
-  },
   "panel-login": {
     "title": "Log in",
     "email_or_nickname": "Email or Nickname ",

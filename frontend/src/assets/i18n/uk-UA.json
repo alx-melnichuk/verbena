@@ -215,9 +215,6 @@
   "field-time": {
     "label": "Час "
   },
-  "field-title": {
-    "label": "Назва "
-  },
   "panel-login": {
     "title": "Авторизація",
     "email_or_nickname": "Email або псевдонім ",

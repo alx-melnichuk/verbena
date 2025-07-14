@@ -215,9 +215,6 @@
   "field-time": {
     "label": "Zeit "
   },
-  "field-title": {
-    "label": "Titel "
-  },
   "panel-login": {
     "title": "Genehmigung",
     "email_or_nickname": "E-Mail oder Spitzname ",
