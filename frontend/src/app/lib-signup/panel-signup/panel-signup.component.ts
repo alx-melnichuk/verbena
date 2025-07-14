@@ -10,7 +10,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { TranslatePipe } from '@ngx-translate/core';
 
-import { FieldEmailComponent } from 'src/app/components/field-email/field-email.component';
 import {
     EMAIL_MAX_LENGTH, EMAIL_MIN_LENGTH, FieldInputComponent, NICKNAME_MAX_LENGTH, NICKNAME_MIN_LENGTH, NICKNAME_PATTERN
 } from 'src/app/components/field-input/field-input.component';
@@ -28,7 +27,7 @@ export const SG_DEBOUNCE_DELAY = 900;
     exportAs: 'appPanelSignup',
     standalone: true,
     imports: [CommonModule, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe,
-        FieldEmailComponent, FieldInputComponent, FieldPasswordComponent, UniquenessCheckComponent],
+        FieldInputComponent, FieldPasswordComponent, UniquenessCheckComponent],
     templateUrl: './panel-signup.component.html',
     styleUrl: './panel-signup.component.scss',
     encapsulation: ViewEncapsulation.None,
