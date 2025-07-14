@@ -3,9 +3,10 @@ import {
     ChangeDetectionStrategy, Component, forwardRef, Input, OnChanges, SimpleChanges, ViewChild, ViewEncapsulation
 } from '@angular/core';
 import {
-    AbstractControl, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule, ValidationErrors
+    AbstractControl, ControlValueAccessor, FormControl, FormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ReactiveFormsModule,
+    ValidationErrors, Validator
 } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatFormFieldModule, SubscriptSizing } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -29,7 +30,7 @@ export const CUSTOM_ERROR = 'customError';
         { provide: NG_VALIDATORS, useExisting: forwardRef(() => FieldTextareaComponent), multi: true },
     ],
 })
-export class FieldTextareaComponent implements OnChanges {
+export class FieldTextareaComponent implements OnChanges, ControlValueAccessor, Validator {
     @Input()
     public gist: string = TEXTAREA;
     @Input()
@@ -37,13 +38,13 @@ export class FieldTextareaComponent implements OnChanges {
     @Input()
     public hint: string | null | undefined;
     @Input()
-    public isDisabled: boolean = false;
+    public isDisabled: boolean | null | undefined;
     @Input()
-    public isReadOnly: boolean = false;
+    public isReadOnly: boolean | null | undefined;
     @Input()
     public isRequired: boolean | null | undefined;
     @Input()
-    public isSpellcheck: boolean = false;
+    public isSpellcheck: boolean | null | undefined;
     @Input()
     public label: string | null | undefined;
     @Input()
@@ -52,13 +53,14 @@ export class FieldTextareaComponent implements OnChanges {
     public minLen: number | null = null;
     @Input()
     public numRows: number | null = null;
+    @Input()
+    public subscriptSizing: SubscriptSizing = 'fixed';
 
     @ViewChild(MatInput, { static: false })
     public matInput: MatInput | null = null;
 
     public formControl: FormControl = new FormControl({ value: null, disabled: false }, []);
     public formGroup: FormGroup = new FormGroup({ textarea: this.formControl });
-    public errMessage: string = '';
 
     constructor() {
     }
@@ -68,7 +70,7 @@ export class FieldTextareaComponent implements OnChanges {
             this.prepareFormGroup(this.isRequired || null, this.maxLen || null, this.minLen || null);
         }
         if (!!changes['isDisabled']) {
-            this.setDisabledState(this.isDisabled);
+            this.setDisabledState(!!this.isDisabled);
         }
         if (!!changes['errorMsg']) {
             this.formControl.updateValueAndValidity();
@@ -123,11 +125,32 @@ export class FieldTextareaComponent implements OnChanges {
         return ValidatorUtils.getErrorMsg(errors, this.gist || TEXTAREA);
     }
 
+    public getFormControl(): FormControl {
+        return this.formControl;
+    }
+    public markAsTouched(opts?: { onlySelf?: boolean; emitEvent?: boolean; }): void {
+        this.formControl.markAsTouched(opts);
+    }
+    public markAllAsTouched(opts?: { emitEvent?: boolean; }): void {
+        this.formControl.markAllAsTouched(opts);
+    }
+    public markAsUntouched(opts?: { onlySelf?: boolean; emitEvent?: boolean; }): void {
+        this.formControl.markAsUntouched(opts);
+    }
+    public markAsDirty(opts?: { onlySelf?: boolean; emitEvent?: boolean; }): void {
+        this.formControl.markAsDirty(opts);
+    }
+    public markAsPristine(opts?: { onlySelf?: boolean; emitEvent?: boolean; }): void {
+        this.formControl.markAsPristine(opts);
+    }
+    public markAsPending(opts?: { onlySelf?: boolean; emitEvent?: boolean; }): void {
+        this.formControl.markAsPending(opts);
+    }
+
     // ** Private API **
 
     private errorMsgValidator = (control: AbstractControl): ValidationErrors | null => {
-        const result = !!control && !!this.errorMsg ? { [CUSTOM_ERROR]: true } : null;
-        return result;
+        return !!control && !!this.errorMsg ? { [CUSTOM_ERROR]: true } : null;
     };
     private prepareFormGroup(isRequired: boolean | null, maxLen: number | null, minLen: number | null): void {
         this.formControl.clearValidators();

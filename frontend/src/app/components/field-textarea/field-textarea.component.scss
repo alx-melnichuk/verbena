@@ -2,7 +2,6 @@
 
 app-field-textarea {
     display: block;
-    background-color: var(--ft-bg, var(---pc-itm-self-bg));
 
     &[wd100] {
         width: 100%;
@@ -12,19 +11,10 @@ app-field-textarea {
         height: 100%;
     }
 
-    &[is-suffix] .mat-mdc-text-field-wrapper {
-        padding-right: 4px;
-        // padding-left: 4px;
-    }
-
     &[scroll-thin] {
         textarea.ft-textarea {
             scrollbar-width: thin;
         }
-    }
-
-    &[hide-error] .mat-mdc-form-field-error-wrapper {
-        display: none;
     }
 
     mat-form-field {

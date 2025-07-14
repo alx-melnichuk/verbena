@@ -2,12 +2,11 @@
   <mat-form-field
     appearance="outline"
     color="primary"
-    floatLabel="auto">
+    [subscriptSizing]="subscriptSizing">
 
     @if (!!label) {
       <mat-label>{{ label | translate }}</mat-label>
     }
-
     <ng-content select="[ft-prefix]"></ng-content>
 
     <textarea matInput
@@ -24,10 +23,10 @@
     </textarea>
 
     <ng-content select="[ft-suffix]"></ng-content>
-
     @if (!!hint) {
       <mat-hint>{{ hint | translate }}</mat-hint>
     }
-    <mat-error>{{ getErrorMsg(formControl.errors) | translate : formControl.errors }}</mat-error>
+    <mat-error>{{ (errorMsg || getErrorMsg(formControl.errors)) | translate : formControl.errors }}</mat-error>
+
   </mat-form-field>
 </ng-container>
