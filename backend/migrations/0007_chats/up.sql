@@ -439,6 +439,7 @@ BEGIN
   INTO stream_id2;
 
   IF (stream_id2 IS NULL) THEN
+    -- If the user is not the owner of the stream, the result is an empty array.
     RETURN;
   END IF;
 
@@ -459,40 +460,6 @@ BEGIN
 END;
 $$;
 
-
-/* Create a stored function to get the entity from "blocked_users". */
-CREATE OR REPLACE FUNCTION get_blocked_user(
-  IN _user_id INTEGER,
-  IN _blocked_id INTEGER,
-  OUT id INTEGER,
-  OUT user_id INTEGER,
-  OUT blocked_id INTEGER,
-  OUT blocked_nickname VARCHAR,
-  OUT block_date TIMESTAMP WITH TIME ZONE
-) RETURNS SETOF record LANGUAGE plpgsql
-AS $$
-DECLARE
-  rec1 RECORD;
-BEGIN
-  IF (_user_id IS NULL OR _blocked_id IS NULL) THEN
-    RETURN;
-  END IF;
-
-  RETURN QUERY
-    SELECT
-      bu.id,
-      bu.user_id,
-      bu.blocked_id,
-      u.nickname AS blocked_nickname,
-      bu.block_date
-    FROM
-      blocked_users bu, users u
-    WHERE
-      bu.user_id = _user_id
-      AND bu.blocked_id = _blocked_id
-      AND bu.user_id = u.id;
-END;
-$$;
 
 /* Create a stored function to get information about the live of the stream. */
 CREATE OR REPLACE FUNCTION get_stream_live(
