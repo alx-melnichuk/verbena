@@ -8,7 +8,10 @@ use serde_json::to_string;
 use crate::chats::{
     chat_event_ws::{
         BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, MsgEWS, MsgRmvEWS, NameEWS, UnblockEWS,
-    }, chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},  chat_ws_assistant::ChatWsAssistant, chat_ws_server::ChatWsServer
+    },
+    chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage},
+    chat_ws_assistant::ChatWsAssistant,
+    chat_ws_server::ChatWsServer,
 };
 use crate::settings::err;
 
@@ -255,7 +258,7 @@ impl ChatWsSession {
             // Perform blocking/unblocking of a user.
             let result = assistant.execute_block_user(is_block, user_id, None, Some(block_name)).await;
             if let Err(err) = result {
-                #[rustfmt::skip]        
+                #[rustfmt::skip]
                 return addr.do_send(AsyncResultError(err.status, err.code.to_string(), err.message.to_string()));
             }
             let opt_blocked_user = result.unwrap();
@@ -542,6 +545,7 @@ impl ChatWsSession {
             }
             let opt_chat_message = result.unwrap();
             if opt_chat_message.is_none() {
+                #[rustfmt::skip]
                 let message = format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, msg_rmv, user_id);
                 #[rustfmt::skip]
                 return addr.do_send(AsyncResultError(404, err::CD_NOT_FOUND.to_owned(), message.to_string()));

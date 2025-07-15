@@ -548,7 +548,6 @@ mod tests {
         assert_eq!(chat_message_dto_res.date_edt, ch_msg.date_changed);
         assert_eq!(chat_message_dto_res.date_rmv, ch_msg.date_removed);
     }
-
     #[actix_web::test]
     async fn test_delete_chat_message_admin_msg_another_invald_user_id() {
         let (cfg_c, mut data_c, token) = get_cfg_data(3);
@@ -575,7 +574,6 @@ mod tests {
         let msg = format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "userId", MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
     }
-
     #[actix_web::test]
     async fn test_delete_chat_message_admin_msg_another_user() {
         let (cfg_c, mut data_c, token) = get_cfg_data(3);
