@@ -31,7 +31,7 @@ pub trait ChatMessageOrm {
     fn get_chat_access(&self, stream_id: i32, user_id: i32) -> Result<Option<ChatAccess>, String>;
 
     /// Get a list of blocked users.
-    fn get_blocked_user(&self, user_id: i32, stream_id: i32) -> Result<Vec<BlockedUser>, String>;
+    fn get_blocked_users(&self, user_id: i32, stream_id: i32) -> Result<Vec<BlockedUser>, String>;
 
     /// Add a new entry (blocked_user).
     fn create_blocked_user(&self, create_blocked_user: CreateBlockedUser) -> Result<Option<BlockedUser>, String>;
@@ -269,7 +269,7 @@ pub mod impls {
         }
 
         /// Get a list of blocked users.
-        fn get_blocked_user(&self, user_id: i32, stream_id: i32) -> Result<Vec<BlockedUser>, String> {
+        fn get_blocked_users(&self, user_id: i32, stream_id: i32) -> Result<Vec<BlockedUser>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
             // Get a connection from the P2D2 pool.
@@ -742,7 +742,7 @@ pub mod tests {
         }
 
         /// Get a list of blocked users.
-        fn get_blocked_user(&self, user_id: i32, stream_id: i32) -> Result<Vec<BlockedUser>, String> {
+        fn get_blocked_users(&self, user_id: i32, stream_id: i32) -> Result<Vec<BlockedUser>, String> {
             let mut result: Vec<BlockedUser> = Vec::new();
             let opt_idx_user_id = ChatMsgTest::user_ids().iter().position(|v| *v == user_id);
             let opt_idx_stream_id = ChatMsgTest::stream_ids().iter().position(|v| *v == stream_id);

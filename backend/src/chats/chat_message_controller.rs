@@ -435,7 +435,7 @@ pub async fn get_blocked_users(
     let res_blocked_users = web::block(move || {
         // Get a list of blocked users.
         let res_chat_message1 = chat_message_orm2
-            .get_blocked_user(user_id, stream_id)
+            .get_blocked_users(user_id, stream_id)
             .map_err(|e| {
                 error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
                 AppError::database507(&e)
@@ -571,6 +571,7 @@ pub mod tests {
         chat_message_models::{BlockedUser, ChatMessage, ChatMessageLog},
         chat_message_orm::tests::{ChatMessageOrmApp, ChatMsgTest, UserMini},
     };
+    use crate::errors::AppError;
     use crate::profiles::{
         profile_models::Profile, profile_orm::tests::ProfileOrmApp, profile_orm::tests::PROFILE_USER_ID as PROFILE_ID,
     };
@@ -757,6 +758,14 @@ pub mod tests {
                 .app_data(web::Data::clone(&data_profile_orm))
                 .app_data(web::Data::clone(&data_session_orm))
                 .app_data(web::Data::clone(&data_chat_message_orm));
+        }
+    }
+    pub fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {
+        assert_eq!(app_err_vec.len(), msgs.len());
+        for (idx, msg) in msgs.iter().enumerate() {
+            let app_err = app_err_vec.get(idx).unwrap();
+            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.message, msg.to_string());
         }
     }
 }
