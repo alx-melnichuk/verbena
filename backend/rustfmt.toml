@@ -1,3 +1,4 @@
+edition = "2021"
 reorder_imports = true
 attr_fn_like_width = 110
 max_width = 120
