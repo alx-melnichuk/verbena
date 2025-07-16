@@ -13,17 +13,20 @@ mod tests {
 
     use crate::chats::{
         chat_message_controller::{
-            get_blocked_users, post_blocked_user,
+            delete_blocked_user, get_blocked_users, post_blocked_user,
             tests::{
                 check_app_err, configure_chat_message, get_cfg_data, header_auth, MSG_CASTING_TO_TYPE,
                 MSG_CONTENT_TYPE_ERROR, MSG_FAILED_DESER,
             },
         },
-        chat_message_models::{self, BlockedUserDto, ChatMessageModelsTest, CreateBlockedUserDto},
+        chat_message_models::{
+            self, BlockedUserDto, ChatMessageModelsTest, CreateBlockedUserDto, DeleteBlockedUserDto,
+        },
         chat_message_orm::tests::ChatMsgTest,
     };
     use crate::errors::AppError;
     use crate::settings::err;
+    use crate::validators;
 
     // ** get_blocked_users **
 
@@ -169,7 +172,8 @@ mod tests {
         check_app_err(app_err_vec, err::CD_VALIDATION, &[chat_message_models::MSG_BLOCKED_ONE_OPTIONAL_MUST_PRESENT]);
         #[rustfmt::skip]
         let json = serde_json::json!({ "optionalFields": "blocked_id, blocked_nickname" });
-        assert_eq!(*app_err.params.get("oneOptionalFieldMustPresent").unwrap(), json);
+        #[rustfmt::skip]
+        assert_eq!(*app_err.params.get(validators::NM_ONE_OPTIONAL_FIELDS_MUST_PRESENT).unwrap(), json);
     }
     #[actix_web::test]
     async fn test_post_blocked_user_min_blocked_nickname() {
@@ -319,12 +323,8 @@ mod tests {
     async fn test_post_blocked_user_by_old_blocked_id() {
         let (cfg_c, data_c, token) = get_cfg_data(4);
         let user_id = data_c.0.get(0).unwrap().user_id;
-        // Find a user who is already blocked for user1.
-        let blocked_user = ChatMsgTest::get_blocked_user_vec()
-            .iter()
-            .find(|v| v.user_id == user_id)
-            .map(|v| v.clone())
-            .unwrap();
+        #[rustfmt::skip] // Find a user who is already blocked for user1.
+        let blocked_user = ChatMsgTest::get_blocked_user_vec().iter().find(|v| v.user_id == user_id).map(|v| v.clone()).unwrap();
         let blocked_id = blocked_user.blocked_id;
         let blocked_nickname = blocked_user.blocked_nickname.clone();
         #[rustfmt::skip]
@@ -341,7 +341,6 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        dbg!(&body);
         let blocked_user_res: BlockedUserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(blocked_user_res.user_id, user_id);
         assert_eq!(blocked_user_res.blocked_id, blocked_id);
@@ -355,12 +354,8 @@ mod tests {
     async fn test_post_blocked_user_by_old_blocked_nickname() {
         let (cfg_c, data_c, token) = get_cfg_data(4);
         let user_id = data_c.0.get(0).unwrap().user_id;
-        // Find a user who is already blocked for user1.
-        let blocked_user = ChatMsgTest::get_blocked_user_vec()
-            .iter()
-            .find(|v| v.user_id == user_id)
-            .map(|v| v.clone())
-            .unwrap();
+        #[rustfmt::skip] // Find a user who is already blocked for user1.
+        let blocked_user = ChatMsgTest::get_blocked_user_vec().iter().find(|v| v.user_id == user_id).map(|v| v.clone()).unwrap();
         let blocked_id = blocked_user.blocked_id;
         let blocked_nickname = blocked_user.blocked_nickname.clone();
         #[rustfmt::skip]
@@ -374,6 +369,232 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         assert_eq!(resp.status(), StatusCode::CREATED); // 201
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let blocked_user_res: BlockedUserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(blocked_user_res.user_id, user_id);
+        assert_eq!(blocked_user_res.blocked_id, blocked_id);
+        assert_eq!(blocked_user_res.blocked_nickname, blocked_nickname);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
+        #[rustfmt::skip]
+        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true),
+            Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true));
+    }
+
+    // ** delete_blocked_user **
+
+    #[actix_web::test]
+    async fn test_delete_blocked_user_no_form() {
+        let (cfg_c, data_c, token) = get_cfg_data(4);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_blocked_user).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/blocked_users")
+            .insert_header(header_auth(&token)).to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let body_str = String::from_utf8_lossy(&body);
+        assert!(body_str.contains(MSG_CONTENT_TYPE_ERROR));
+    }
+    #[actix_web::test]
+    async fn test_delete_blocked_user_empty_json() {
+        let (cfg_c, data_c, token) = get_cfg_data(4);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_blocked_user).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/blocked_users")
+            .insert_header(header_auth(&token))
+            .set_json(json!({}))
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err = app_err_vec.get(0).unwrap().clone();
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[chat_message_models::MSG_BLOCKED_ONE_OPTIONAL_MUST_PRESENT]);
+        #[rustfmt::skip]
+        let json = serde_json::json!({ "optionalFields": "blocked_id, blocked_nickname" });
+        #[rustfmt::skip]
+        assert_eq!(*app_err.params.get(validators::NM_ONE_OPTIONAL_FIELDS_MUST_PRESENT).unwrap(), json);
+    }
+    #[actix_web::test]
+    async fn test_delete_blocked_user_min_blocked_nickname() {
+        let (cfg_c, data_c, token) = get_cfg_data(4);
+        let blocked_nickname = ChatMessageModelsTest::blocked_nickname_min();
+        let len1 = blocked_nickname.len();
+        let blocked_nickname = Some(blocked_nickname);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_blocked_user).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/blocked_users")
+            .insert_header(header_auth(&token))
+            .set_json(DeleteBlockedUserDto { blocked_id: None, blocked_nickname })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err = app_err_vec.get(0).unwrap().clone();
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[chat_message_models::MSG_BLOCKED_NICKNAME_MIN_LENGTH]);
+        #[rustfmt::skip]
+        let json = serde_json::json!({ "actualLength": len1, "requiredLength": chat_message_models::BLOCKED_NICKNAME_MIN });
+        assert_eq!(*app_err.params.get("minlength").unwrap(), json);
+    }
+    #[actix_web::test]
+    async fn test_delete_blocked_user_max_blocked_nickname() {
+        let (cfg_c, data_c, token) = get_cfg_data(4);
+        let blocked_nickname = ChatMessageModelsTest::blocked_nickname_max();
+        let len1 = blocked_nickname.len();
+        let blocked_nickname = Some(blocked_nickname);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_blocked_user).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/blocked_users")
+            .insert_header(header_auth(&token))
+            .set_json(DeleteBlockedUserDto { blocked_id: None, blocked_nickname })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err = app_err_vec.get(0).unwrap().clone();
+        #[rustfmt::skip]
+        check_app_err(app_err_vec, err::CD_VALIDATION, &[chat_message_models::MSG_BLOCKED_NICKNAME_MAX_LENGTH]);
+        #[rustfmt::skip]
+        let json = serde_json::json!({ "actualLength": len1, "requiredLength": chat_message_models::BLOCKED_NICKNAME_MAX });
+        assert_eq!(*app_err.params.get("maxlength").unwrap(), json);
+    }
+    #[actix_web::test]
+    async fn test_delete_blocked_user_by_invalid_blocked_id() {
+        let (cfg_c, data_c, token) = get_cfg_data(4);
+        let user_id = data_c.0.last().unwrap().user_id + 9999;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_blocked_user).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/blocked_users")
+            .insert_header(header_auth(&token))
+            .set_json(DeleteBlockedUserDto { blocked_id: Some(user_id), blocked_nickname: None })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
+    }
+    #[actix_web::test]
+    async fn test_delete_blocked_user_by_invalid_blocked_nickname() {
+        let (cfg_c, data_c, token) = get_cfg_data(4);
+        let nickname = format!("{}a", data_c.0.last().unwrap().nickname);
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_blocked_user).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/blocked_users")
+            .insert_header(header_auth(&token))
+            .set_json(DeleteBlockedUserDto { blocked_id: None, blocked_nickname: Some(nickname) })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
+    }
+    #[actix_web::test]
+    async fn test_delete_blocked_user_by_unblocked_id() {
+        let (cfg_c, data_c, token) = get_cfg_data(4);
+        let user_id = data_c.0.get(1).unwrap().user_id;
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_blocked_user).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/blocked_users")
+            .insert_header(header_auth(&token))
+            .set_json(DeleteBlockedUserDto { blocked_id: Some(user_id), blocked_nickname: None })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
+    }
+    #[actix_web::test]
+    async fn test_delete_blocked_user_by_unblocked_nickname() {
+        let (cfg_c, data_c, token) = get_cfg_data(4);
+        let nickname = data_c.0.get(1).unwrap().nickname.clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_blocked_user).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/blocked_users")
+            .insert_header(header_auth(&token))
+            .set_json(DeleteBlockedUserDto { blocked_id: None, blocked_nickname: Some(nickname) })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
+    }
+    #[actix_web::test]
+    async fn test_delete_blocked_user_by_old_blocked_id() {
+        let (cfg_c, data_c, token) = get_cfg_data(4);
+        let user_id = data_c.0.get(0).unwrap().user_id;
+        #[rustfmt::skip] // Find a user who is already blocked for user1.
+        let blocked_user = ChatMsgTest::get_blocked_user_vec().iter().find(|v| v.user_id == user_id).map(|v| v.clone()).unwrap();
+        let blocked_id = blocked_user.blocked_id;
+        let blocked_nickname = blocked_user.blocked_nickname.clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_blocked_user).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/blocked_users")
+            .insert_header(header_auth(&token))
+            .set_json(DeleteBlockedUserDto { blocked_id: Some(blocked_id), blocked_nickname: None })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        dbg!(&body);
+        let blocked_user_res: BlockedUserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(blocked_user_res.user_id, user_id);
+        assert_eq!(blocked_user_res.blocked_id, blocked_id);
+        assert_eq!(blocked_user_res.blocked_nickname, blocked_nickname);
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
+        #[rustfmt::skip]
+        assert_eq!(blocked_user_res.block_date.to_rfc3339_opts(SecondsFormat::Secs, true),
+            Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true));
+    }
+    #[actix_web::test]
+    async fn test_delete_blocked_user_by_old_blocked_nickname() {
+        let (cfg_c, data_c, token) = get_cfg_data(4);
+        let user_id = data_c.0.get(0).unwrap().user_id;
+        #[rustfmt::skip] // Find a user who is already blocked for user1.
+        let blocked_user = ChatMsgTest::get_blocked_user_vec().iter().find(|v| v.user_id == user_id).map(|v| v.clone()).unwrap();
+        let blocked_id = blocked_user.blocked_id;
+        let blocked_nickname = blocked_user.blocked_nickname.clone();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(delete_blocked_user).configure(configure_chat_message(cfg_c, data_c))).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::delete().uri("/api/blocked_users")
+            .insert_header(header_auth(&token))
+            .set_json(DeleteBlockedUserDto { blocked_id: None, blocked_nickname: Some(blocked_nickname.clone()) })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK); // 200
+
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
