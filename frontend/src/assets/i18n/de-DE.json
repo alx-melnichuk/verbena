@@ -92,12 +92,12 @@
     "was_already_join_to_room": "Der benutzer ist dem raum bereits beigetreten.",
     "stream_not_active": "Der angegebene stream ist nicht aktiv."
   },
-  "ContentTooLarge": {
+  "PayloadTooLarge": {
     "status": 413,
     "finish_date_exceeds_limit" : "Das enddatum \"{{ periodTooLong.actualPeriodFinish }}\" des suchzeitraums überschreitet den grenzwert \"{{ periodTooLong.periodMaxNumberDays }}\".",
     "invalid_file_size" : "Die dateigröße ({{ invalidFileSize.actualFileSize }}) überschreitet das maximum ({{ invalidFileSize.maxFileSize }})."
   },
-  "UnsupportedType": {
+  "UnsupportedMediaType": {
     "status": 415,
     "invalid_file_type" : "Der dateityp MIME-upload ({{ invalidFileType.actualFileType }}) ist nicht in der liste der verfügbaren ({{ invalidFileType.validFileType }})."
   },
@@ -105,8 +105,9 @@
     "status": 416,
     "parsing_type_not_supported" : "Der datentyp wird beim parsen nicht unterstützt."
   },
-  "Validation": {
+  "ExpectationFailed": {
     "status": 417,
+    "description": "Validation",
     "new_password:required" : "Das feld \"newPassword\" ist erforderlich.",
     "new_password:min_length" : "Das feld \"newPassword\" muss mindestens {{ minlength.requiredLength }} zeichen haben.",
     "new_password:max_length" : "Das feld \"newPassword\" darf nicht mehr als {{ maxlength.requiredLength }} zeichen haben.",
@@ -166,12 +167,14 @@
     "error_upload_file" : "Fehler beim hochladen der datei",
     "error_hashing_password" : "Fehler beim hashen des passworts"
   },
-  "Blocking": {
+  "VariantAlsoNegotiates": {
     "status": 506,
+    "description": "Blocking",
     "error_waiting_for_operations" : "Beim warten auf den abschluss des vorgangs ist ein fehler aufgetreten."
   },
-  "Database": {
+  "InsufficientStorage": {
     "status": 507,
+    "description": "Database",
     "database_query_error" : "Fehler beim ausführen der datenbankabfrage."
   },
   "NotExtended": {

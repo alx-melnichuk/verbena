@@ -288,13 +288,13 @@
       function checkPassword(value) {
         let result = "";
         if (!value) {
-          result = getTranslate("Validation", "password:required");
+          result = getTranslate("ExpectationFailed", "password:required");
         } else if (value.length < minLengthPass) {
-          result = getTranslate("Validation", "password:min_length");
+          result = getTranslate("ExpectationFailed", "password:min_length");
         } else if (value.length > maxLengthPass) {
-          result = getTranslate("Validation", "password:max_length");
+          result = getTranslate("ExpectationFailed", "password:max_length");
         } else if (!(new RegExp(regexPassWordBasic)).test(value)) {
-          result = getTranslate("Validation", "password:regex");  
+          result = getTranslate("ExpectationFailed", "password:regex");  
         }
         return result;
       }

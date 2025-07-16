@@ -92,12 +92,12 @@
     "was_already_join_to_room": "Користувач вже приєднався до кімнати.",
     "stream_not_active": "Вказана трансляція неактивна."
   },
-  "ContentTooLarge": {
+  "PayloadTooLarge": {
     "status": 413,
     "finish_date_exceeds_limit" : "Кінцева дата \"{{ periodTooLong.actualPeriodFinish }}\" періоду пошуку перевищує обмеження \"{{ periodTooLong.periodMaxNumberDays }}\".",
     "invalid_file_size" : "Розмір файлу ({{ invalidFileSize.actualFileSize }}) перевищує максимальний ({{ invalidFileSize.maxFileSize }})."
   },
-  "UnsupportedType": {
+  "UnsupportedMediaType": {
     "status": 415,
     "invalid_file_type" : "Тип файлу завантаження MIME ({{ invalidFileType.actualFileType }}) відсутній у списку доступних ({{ invalidFileType.validFileType }})."
   },
@@ -105,8 +105,9 @@
     "status": 416,
     "parsing_type_not_supported" : "Тип даних не підтримується під час аналізу."
   },
-  "Validation": {
+  "ExpectationFailed": {
     "status": 417,
+    "description": "Validation",
     "new_password:required" : "Поле \"newPassword\" обов'язкове.",
     "new_password:min_length" : "Поле \"newPassword\" має містити принаймні {{ minlength.requiredLength }} символів.",
     "new_password:max_length" : "Поле \"newPassword\" не може містити більше {{ maxlength.requiredLength }} символів.",
@@ -166,12 +167,14 @@
     "error_upload_file" : "Помилка завантаження файлу",
     "error_hashing_password" : "Помилка під час хешування пароля"
   },
-  "Blocking": {
+  "VariantAlsoNegotiates": {
     "status": 506,
+    "description": "Blocking",
     "error_waiting_for_operations" : "Під час очікування завершення операції сталася помилка."
   },
-  "Database": {
+  "InsufficientStorage": {
     "status": 507,
+    "description": "Database",
     "database_query_error" : "Помилка виконання запиту до бази даних."
   },
   "NotExtended": {
