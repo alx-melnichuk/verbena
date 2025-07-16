@@ -2,14 +2,14 @@ use utoipa::{
     openapi::security::{/*ApiKey, ApiKeyValue,*/ HttpAuthScheme, HttpBuilder, SecurityScheme},
     Modify, OpenApi,
 };
+use api_error;
 
-use crate::{
-    chats::{chat_message_controller, chat_ws_controller, chat_message_models},
-    errors,
-    profiles::{profile_auth_controller, profile_controller, profile_models, profile_registr_controller}, 
-    streams::{stream_controller, stream_models}, 
-    users::user_models
-};
+use crate::chats::{chat_message_controller, chat_ws_controller, chat_message_models};
+use crate::errors;
+use crate::profiles::{profile_auth_controller, profile_controller, profile_models, profile_registr_controller};
+use crate::streams::{stream_controller, stream_models};
+use crate::users::user_models;
+
 
 #[derive(OpenApi)]
 #[openapi(
@@ -47,6 +47,7 @@ use crate::{
             //chat_message_controller
             chat_message_models::ChatMessageDto, // ::get_chat_message
             errors::AppError,
+            api_error::ApiError,
             // user model
             user_models::UserRole,
             // profile_controller
