@@ -211,7 +211,7 @@ mod tests {
     use chrono::{DateTime, Duration, SecondsFormat, Utc};
     use serde_json::{json, to_value};
 
-    use crate::validators::{ValidationChecks, ValidationError, NM_NO_FIELDS_TO_UPDATE};
+    use crate::validators::{self, ValidationChecks, ValidationError};
 
     // ** ValidationChecks::required **
     #[actix_web::test]
@@ -449,8 +449,29 @@ mod tests {
         assert!(result.is_err());
         let err: ValidationError = result.err().unwrap();
         assert_eq!(err.message, msg);
-        let param_name = &Cow::Borrowed(NM_NO_FIELDS_TO_UPDATE);
+        let param_name = &Cow::Borrowed(validators::NM_NO_FIELDS_TO_UPDATE);
         let json = json!({ "validNames": valid_names });
+        assert_eq!(err.params.get(param_name).unwrap(), &json);
+    }
+
+    // ** ValidationChecks::no_fields_to_update **
+    #[actix_web::test]
+    async fn test_validation_checks_one_optional_fields_must_present_valid() {
+        let fields = "field1, field2, field3";
+        let result = ValidationChecks::one_optional_fields_must_present(&[true, false, false], fields, "error");
+        assert!(result.is_ok());
+        assert_eq!(result.ok().unwrap(), ());
+    }
+    #[actix_web::test]
+    async fn test_validation_checks_one_optional_fields_must_present_invalid() {
+        let valid_names = "field1, field2, field3";
+        let msg = "error";
+        let result = ValidationChecks::one_optional_fields_must_present(&[false, false, false], valid_names, msg);
+        assert!(result.is_err());
+        let err: ValidationError = result.err().unwrap();
+        assert_eq!(err.message, msg);
+        let param_name = &Cow::Borrowed(validators::NM_ONE_OPTIONAL_FIELDS_MUST_PRESENT);
+        let json = json!({ "optionalFields": valid_names });
         assert_eq!(err.params.get(param_name).unwrap(), &json);
     }
 }
