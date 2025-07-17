@@ -6,8 +6,8 @@ use futures_util::{
     FutureExt,
 };
 use log::{debug, error, log_enabled, Level::Debug};
+use vrb_api_tools::api_error::ApiError;
 
-use crate::errors::AppError;
 use crate::profiles::profile_models::Profile;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
@@ -37,7 +37,8 @@ impl FromRequest for Authenticated {
         let result = match value {
             Some(profile) => Ok(Authenticated(profile)),
             #[rustfmt::skip]
-            None => Err(error::ErrorInternalServerError(AppError::internal_err500(MSG_USER_NOT_RECEIVED_FROM_REQUEST))),
+            None => Err(error::ErrorInternalServerError(
+                ApiError::new(500, MSG_USER_NOT_RECEIVED_FROM_REQUEST))),
         };
         ready(result)
     }
@@ -136,7 +137,7 @@ where
         // If token is missing, return unauthorized error
         if token.is_none() {
             error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_MISSING_TOKEN);
-            let json_error = AppError::unauthorized401(err::MSG_MISSING_TOKEN);
+            let json_error = ApiError::new(401, err::MSG_MISSING_TOKEN);
             return Box::pin(ready(Err(error::ErrorUnauthorized(json_error)))); // 401
         }
         let token = token.unwrap().clone();
@@ -149,7 +150,7 @@ where
         if let Err(e) = token_res {
             let message = format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
             error!("{}: {}", err::CD_UNAUTHORIZED, &message);
-            let json_error = AppError::unauthorized401(&message);
+            let json_error = ApiError::new(401, &message);
             return Box::pin(ready(Err(error::ErrorUnauthorized(json_error)))); // 401
         }
 
@@ -183,7 +184,7 @@ where
                 Ok(res)
             } else {
                 error!("{}: {}", err::CD_FORBIDDEN, err::MSG_ACCESS_DENIED);
-                let err_msg = AppError::forbidden403(err::MSG_ACCESS_DENIED);
+                let err_msg = ApiError::new(403, err::MSG_ACCESS_DENIED);
                 Err(error::ErrorForbidden(err_msg)) // 403
             }
         }
@@ -193,7 +194,13 @@ where
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
-    use actix_web::{cookie::Cookie, dev, get, http, test, web, App, HttpResponse};
+    use actix_web::{
+        cookie::Cookie,
+        dev, get,
+        http::{header, StatusCode},
+        test, web, App, HttpResponse,
+    };
+    use vrb_api_tools::api_error::code_to_str;
 
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
@@ -232,9 +239,9 @@ mod tests {
     fn cfg_jwt() -> config_jwt::ConfigJwt {
         config_jwt::get_test_config()
     }
-    fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
-        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
-        (http::header::AUTHORIZATION, header_value)
+    fn header_auth(token: &str) -> (header::HeaderName, header::HeaderValue) {
+        let header_value = header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (header::AUTHORIZATION, header_value)
     }
     #[rustfmt::skip]
     fn get_cfg_data(role: u8) -> (config_jwt::ConfigJwt, (Vec<Profile>, Vec<Session>), String) {
@@ -268,7 +275,7 @@ mod tests {
         }
     }
 
-    #[test]
+    #[actix_web::test]
     async fn test_authentication_middelware_valid_token() {
         let (cfg_c, data_c, token) = get_cfg_data(USER);
         #[rustfmt::skip]
@@ -279,10 +286,10 @@ mod tests {
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+        assert_eq!(resp.status(), StatusCode::OK); // 200
     }
 
-    #[test]
+    #[actix_web::test]
     async fn test_authentication_middelware_valid_token_with_cookie() {
         let (cfg_c, data_c, token) = get_cfg_data(USER);
         #[rustfmt::skip]
@@ -293,10 +300,10 @@ mod tests {
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+        assert_eq!(resp.status(), StatusCode::OK); // 200
     }
 
-    #[test]
+    #[actix_web::test]
     async fn test_authentication_middleware_access_admin_only_endpoint_success() {
         let (cfg_c, data_c, token) = get_cfg_data(ADMIN);
         #[rustfmt::skip]
@@ -307,10 +314,10 @@ mod tests {
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
-        assert_eq!(resp.status(), http::StatusCode::OK); // 200
+        assert_eq!(resp.status(), StatusCode::OK); // 200
     }
 
-    #[test]
+    #[actix_web::test]
     async fn test_authentication_middleware_missing_token() {
         let cfg_c = cfg_jwt();
         let data_c = (vec![], vec![]);
@@ -323,13 +330,13 @@ mod tests {
         let err = result.expect(MSG_ERROR_WAS_EXPECTED);
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED); // 401
+        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401
 
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
-        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
-        assert_eq!(app_err.message, err::MSG_MISSING_TOKEN);
+        let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
+        assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert_eq!(api_err.message, err::MSG_MISSING_TOKEN);
     }
-    #[test]
+    #[actix_web::test]
     async fn test_authentication_middleware_invalid_token() {
         let cfg_c = cfg_jwt();
         let data_c = (vec![], vec![]);
@@ -343,13 +350,13 @@ mod tests {
         let err = result.expect(MSG_ERROR_WAS_EXPECTED);
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED); // 401
+        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401
 
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
-        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
-        assert!(app_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
+        let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
+        assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
+        assert!(api_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_authentication_middelware_expired_token() {
         let (cfg_c, data_c, _token) = get_cfg_data(USER);
         let num_token = data_c.1.get(0).unwrap().num_token.unwrap_or(0); // session_vec
@@ -366,14 +373,14 @@ mod tests {
         let err = result.expect(MSG_ERROR_WAS_EXPECTED);
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED); // 401
+        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401
 
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
-        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
+        assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: ExpiredSignature", err::MSG_INVALID_OR_EXPIRED_TOKEN));
+        assert_eq!(api_err.message, format!("{}: ExpiredSignature", err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_authentication_middelware_valid_token_session_non_exist() {
         let (cfg_c, data_c, token) = get_cfg_data(USER);
 
@@ -392,14 +399,14 @@ mod tests {
         let err = result.expect(MSG_ERROR_WAS_EXPECTED);
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::NOT_ACCEPTABLE); // 406
+        assert_eq!(actual_status, StatusCode::NOT_ACCEPTABLE); // 406
 
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
+        assert_eq!(api_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id));
+        assert_eq!(api_err.message, format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_authentication_middelware_valid_token_non_existent_user() {
         // error1
         let (cfg_c, data_c, _token) = get_cfg_data(USER);
@@ -424,14 +431,14 @@ mod tests {
         let err = result.expect(MSG_ERROR_WAS_EXPECTED);
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED); // 401
+        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401
 
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
-        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
+        assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}; user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id_bad));
+        assert_eq!(api_err.message, format!("{}; user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user_id_bad));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_authentication_middelware_valid_token_non_existent_num() {
         let (cfg_c, data_c, _token) = get_cfg_data(USER);
         let num_token = data_c.1.get(0).unwrap().num_token.unwrap_or(0); // session_vec
@@ -448,14 +455,14 @@ mod tests {
         let err = result.expect(MSG_ERROR_WAS_EXPECTED);
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::UNAUTHORIZED); // 401
+        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401
 
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
-        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
+        assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id));
+        assert_eq!(api_err.message, format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user_id));
     }
-    #[test]
+    #[actix_web::test]
     async fn test_authentication_middleware_access_admin_only_endpoint_fail() {
         let (cfg_c, data_c, token) = get_cfg_data(USER);
         #[rustfmt::skip]
@@ -468,10 +475,10 @@ mod tests {
         let err = result.expect(MSG_ERROR_WAS_EXPECTED);
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, http::StatusCode::FORBIDDEN); // 403
+        assert_eq!(actual_status, StatusCode::FORBIDDEN); // 403
 
-        let app_err: AppError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
-        assert_eq!(app_err.message, err::MSG_ACCESS_DENIED);
+        let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
+        assert_eq!(api_err.code, code_to_str(StatusCode::FORBIDDEN));
+        assert_eq!(api_err.message, err::MSG_ACCESS_DENIED);
     }
 }
