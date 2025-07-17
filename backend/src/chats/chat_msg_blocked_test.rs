@@ -566,7 +566,6 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        dbg!(&body);
         let blocked_user_res: BlockedUserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(blocked_user_res.user_id, user_id);
         assert_eq!(blocked_user_res.blocked_id, blocked_id);
@@ -598,7 +597,6 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        dbg!(&body);
         let blocked_user_res: BlockedUserDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(blocked_user_res.user_id, user_id);
         assert_eq!(blocked_user_res.blocked_id, blocked_id);
