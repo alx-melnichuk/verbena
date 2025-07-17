@@ -2,7 +2,6 @@ use utoipa::{
     openapi::security::{/*ApiKey, ApiKeyValue,*/ HttpAuthScheme, HttpBuilder, SecurityScheme},
     Modify, OpenApi,
 };
-use api_error;
 
 use crate::chats::{chat_message_controller, chat_ws_controller, chat_message_models};
 use crate::errors;
@@ -47,7 +46,6 @@ use crate::users::user_models;
             //chat_message_controller
             chat_message_models::ChatMessageDto, // ::get_chat_message
             errors::AppError,
-            api_error::ApiError,
             // user model
             user_models::UserRole,
             // profile_controller
