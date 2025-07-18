@@ -6,7 +6,7 @@ use futures_util::{
     FutureExt,
 };
 use log::{debug, error, log_enabled, Level::Debug};
-use vrb_api_tools::api_error::ApiError;
+use vrb_tools::api_error::ApiError;
 
 use crate::profiles::profile_models::Profile;
 #[cfg(not(all(test, feature = "mockdata")))]
