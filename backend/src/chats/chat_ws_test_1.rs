@@ -4,20 +4,18 @@ mod tests {
     use actix_web_actors::ws::{Frame::Text as FrameText, Message::Text as MessageText};
     use futures_util::{SinkExt, StreamExt}; // this is needed for send method in Framed
     use serde_json::to_string;
-
+    use vrb_tools::crypto::CRT_WRONG_STRING_BASE64URL;
+    
     use crate::chats::chat_event_ws::LeaveEWS;
+    use crate::chats::{
+        chat_event_ws::{CountEWS, JoinEWS},
+        chat_message_controller::tests::{configure_chat_message, get_cfg_data, get_profiles, get_token},
+        chat_message_orm::tests::ChatMsgTest,
+        chat_ws_controller::get_ws_chat,
+        chat_ws_session::{get_err400, get_err401, get_err404, get_err406, get_err409},
+    };
     use crate::sessions::config_jwt;
     use crate::settings::err;
-    use crate::{
-        chats::{
-            chat_event_ws::{CountEWS, JoinEWS},
-            chat_message_controller::tests::{configure_chat_message, get_cfg_data, get_profiles, get_token},
-            chat_message_orm::tests::ChatMsgTest,
-            chat_ws_controller::get_ws_chat,
-            chat_ws_session::{get_err400, get_err401, get_err404, get_err406, get_err409},
-        },
-        utils::crypto::CRT_WRONG_STRING_BASE64URL,
-    };
 
     const URL_WS: &str = "/ws";
 
@@ -178,7 +176,7 @@ mod tests {
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&JoinEWS { 
+        let value = to_string(&JoinEWS {
             join: stream_id1, member: member1.clone(), count: 1, is_owner: Some(true), is_blocked: Some(false) }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
 
@@ -198,13 +196,13 @@ mod tests {
         framed2.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&JoinEWS { 
+        let value = to_string(&JoinEWS {
             join: stream_id1, member: "".into(), count: 2, is_owner: Some(false), is_blocked: Some(true) }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
         // Message to user1 about user2 joining.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&JoinEWS { 
+        let value = to_string(&JoinEWS {
             join: stream_id1, member: "".into(), count: 2, is_owner: None, is_blocked: None }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
 
@@ -213,13 +211,13 @@ mod tests {
         framed2.send(MessageText("{ \"leave\": 0 }".into())).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&LeaveEWS { leave: stream_id1, member: "".into(), count: 1 }).unwrap();
+        let value = to_string(&LeaveEWS {leave: stream_id1, member: "".into(), count: 1 }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
 
         // Message to user1 about user2 leaving.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&LeaveEWS { leave: stream_id1, member: "".into(), count: 1 }).unwrap();
+        let value = to_string(&LeaveEWS {leave: stream_id1, member: "".into(), count: 1 }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
 
         // -- Test: Join user2 authorized. --
@@ -231,13 +229,13 @@ mod tests {
         framed2.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&JoinEWS { 
+        let value = to_string(&JoinEWS {
             join: stream_id1, member: member2.clone(), count: 2, is_owner: Some(false), is_blocked: Some(false) }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
         // Message to user1 about user2 joining.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&JoinEWS { 
+        let value = to_string(&JoinEWS {
             join: stream_id1, member: member2.clone(), count: 2, is_owner: None, is_blocked: None }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
 
@@ -246,7 +244,7 @@ mod tests {
         framed2.send(MessageText("{ \"leave\": 0 }".into())).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&LeaveEWS { leave: stream_id1, member: member2.clone(), count: 1 }).unwrap();
+        let value = to_string(&LeaveEWS {leave: stream_id1, member: member2.clone(), count: 1 }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value.clone())));
         // Message to user1 about user2 leaving.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -261,13 +259,13 @@ mod tests {
         framed2.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&JoinEWS { 
+        let value = to_string(&JoinEWS {
             join: stream_id1, member: member4.clone(), count: 2, is_owner: Some(false), is_blocked: Some(true) }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
         // Message to user1 about user2 joining.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&JoinEWS { 
+        let value = to_string(&JoinEWS {
             join: stream_id1, member: member4.clone(), count: 2, is_owner: None, is_blocked: None }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
         // Leave user2.
@@ -275,7 +273,7 @@ mod tests {
         framed2.send(MessageText("{ \"leave\": 0 }".into())).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&LeaveEWS { leave: stream_id1, member: member4.clone(), count: 1 }).unwrap();
+        let value = to_string(&LeaveEWS {leave: stream_id1, member: member4.clone(), count: 1 }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value.clone())));
         // Message to user1 about user2 leaving.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -286,7 +284,7 @@ mod tests {
         framed1.send(MessageText("{ \"leave\": 0 }".into())).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&LeaveEWS { leave: stream_id1, member: member1.clone(), count: 0 }).unwrap();
+        let value = to_string(&LeaveEWS {leave: stream_id1, member: member1.clone(), count: 0 }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
     }
 
@@ -367,7 +365,7 @@ mod tests {
         framed2.send(MessageText("{ \"leave\": 0 }".into())).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&LeaveEWS { leave: stream_id1, member: member2.clone(), count: 1 }).unwrap();
+        let value = to_string(&LeaveEWS {leave: stream_id1, member: member2.clone(), count: 1 }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value.clone())));
         // Message to user1 about user2 leaving.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -378,7 +376,7 @@ mod tests {
         framed1.send(MessageText("{ \"leave\": 0 }".into())).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&LeaveEWS { leave: stream_id1, member: member1.clone(), count: 0 }).unwrap();
+        let value = to_string(&LeaveEWS {leave: stream_id1, member: member1.clone(), count: 0 }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
     }
 }
