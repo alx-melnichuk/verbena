@@ -12,7 +12,7 @@ path = "src/lib.rs"
 
 [dependencies]
 actix-web = { version = "4.11.0", features = ["openssl"] }
-argon2 = "0.5.3"
+argon2 = { version = "0.5.3", features = ["std"] }
 chrono = { version = "0.4.41", features = ["serde"] }
 mime = "0.3.17"
 openssl = "0.10.72"
