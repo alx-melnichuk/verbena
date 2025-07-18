@@ -28,6 +28,7 @@ backend/tmp/
 
 # The result of building the library is "vrb-tools".
 backend/vrb_tools/target/
+backend/vrb_tools/Cargo.lock
 
 
 # See http://help.github.com/ignore-files/ for more about ignoring files.
