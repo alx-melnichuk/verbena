@@ -9,6 +9,7 @@ use log::{info, log_enabled, Level::Info};
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
+use vrb_tools::ssl_acceptor;
 
 use chats::{chat_message_controller, chat_message_orm::cfg::get_chat_message_orm_app, chat_ws_controller};
 use profiles::{
@@ -20,7 +21,6 @@ use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
 use settings::config_app;
 use streams::{config_strm, stream_controller, stream_orm::cfg::get_stream_orm_app};
 use users::{user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_orm::cfg::get_user_registr_orm_app};
-use utils::ssl_acceptor;
 use utoipa::OpenApi;
 
 pub mod cdis;

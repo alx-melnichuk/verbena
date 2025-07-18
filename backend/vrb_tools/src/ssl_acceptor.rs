@@ -1,5 +1,6 @@
-use openssl::{pkey, ssl};
 use std::{fs, io::Read};
+
+use openssl::{pkey, ssl};
 
 pub fn create_ssl_acceptor_builder(
     path_certificate: &str,
