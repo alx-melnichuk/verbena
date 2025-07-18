@@ -1,6 +1,34 @@
+# https://github.com/rust-lang/rustfmt/blob/master/Configurations.md
+
+
+# Maximum width of the args of a function-like attributes before falling back to vertical formatting.
+# Default: 70 (%)
+#  attr_fn_like_width = 80
+
+# Maximum width of a chain to fit on one line.
+# Default: 60 (%)
+chain_width = 85
+
+# Specifies which edition is used by the parser.
+# Default: "2015"
 edition = "2021"
-reorder_imports = true
-attr_fn_like_width = 110
-max_width = 120
+
+# Maximum width of the args of a function call before falling back to vertical formatting.
+# Default: 60 (%)
+#  fn_call_width = 90
+
+# Maximum width of each line.
+# Default: 100
+max_width = 140
+
+# Number of spaces per tab.
+# Default: 4
 tab_spaces = 4
-chain_width = 80
+
+# Reorder import statements alphabetically.
+# Default: false
+reorder_imports = true
+
+# Maximum line length for single line if-else expressions.
+# Default: 50
+# single_line_if_else_max_width = 90
