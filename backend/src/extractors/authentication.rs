@@ -6,7 +6,7 @@ use futures_util::{
     FutureExt,
 };
 use log::{debug, error, log_enabled, Level::Debug};
-use vrb_tools::api_error::ApiError;
+use vrb_tools::{api_error::ApiError, token::get_token_from_cookie_or_header};
 
 use crate::profiles::profile_models::Profile;
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -20,7 +20,6 @@ use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::{config_jwt, tokens::decode_token};
 use crate::settings::err;
 use crate::users::user_models::UserRole;
-use crate::utils::token::get_token_from_cookie_or_header;
 use crate::utils::token_verification::check_token_and_get_profile;
 
 // 500 Internal Server Error - Authentication: The entity "user" was not received from the request.
@@ -73,11 +72,7 @@ impl RequireAuth {
 
 impl<S> dev::Transform<S, dev::ServiceRequest> for RequireAuth
 where
-    S: dev::Service<
-            dev::ServiceRequest,
-            Response = dev::ServiceResponse<actix_web::body::BoxBody>,
-            Error = actix_web::Error,
-        > + 'static,
+    S: dev::Service<dev::ServiceRequest, Response = dev::ServiceResponse<actix_web::body::BoxBody>, Error = actix_web::Error> + 'static,
 {
     /// The response type produced by the service.
     type Response = dev::ServiceResponse<actix_web::body::BoxBody>;
@@ -107,11 +102,7 @@ pub struct AuthMiddleware<S> {
 
 impl<S> dev::Service<dev::ServiceRequest> for AuthMiddleware<S>
 where
-    S: dev::Service<
-            dev::ServiceRequest,
-            Response = dev::ServiceResponse<actix_web::body::BoxBody>,
-            Error = actix_web::Error,
-        > + 'static,
+    S: dev::Service<dev::ServiceRequest, Response = dev::ServiceResponse<actix_web::body::BoxBody>, Error = actix_web::Error> + 'static,
 {
     /// The response type produced by the service.
     type Response = dev::ServiceResponse<actix_web::body::BoxBody>;
@@ -200,13 +191,10 @@ mod tests {
         http::{header, StatusCode},
         test, web, App, HttpResponse,
     };
-    use vrb_tools::api_error::code_to_str;
+    use vrb_tools::{api_error::code_to_str, token::BEARER};
 
-    use crate::sessions::{
-        config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
-    };
+    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
     use crate::users::user_models::UserRole;
-    use crate::utils::token::BEARER;
     use crate::utils::token_verification::MSG_UNACCEPTABLE_TOKEN_ID;
 
     use super::*;

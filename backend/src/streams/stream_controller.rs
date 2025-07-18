@@ -1512,6 +1512,7 @@ pub mod tests {
 
     use actix_web::http;
     use chrono::{DateTime, Utc};
+    use vrb_tools::token::BEARER;
 
     use crate::errors::AppError;
     use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp};
@@ -1524,7 +1525,6 @@ pub mod tests {
         stream_orm::tests::{StreamOrmApp, STREAM_ID},
     };
     use crate::users::user_models::UserRole;
-    use crate::utils::token::BEARER;
 
     use super::*;
 

@@ -998,6 +998,7 @@ pub mod tests {
 
     use actix_web::{http::header, web};
     use chrono::{DateTime, Duration, Utc};
+    use vrb_tools::token::BEARER;
 
     use crate::errors::AppError;
     use crate::hash_tools;
@@ -1008,8 +1009,7 @@ pub mod tests {
     };
     use crate::users::user_models::{UserRegistr, UserRole};
     use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
-    use crate::utils::token::BEARER;
-
+    
     pub const ADMIN: u8 = 0;
     pub const USER: u8 = 1;
     pub const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";

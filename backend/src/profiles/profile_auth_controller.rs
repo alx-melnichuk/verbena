@@ -1,19 +1,19 @@
 use std::ops::Deref;
 
 use actix_web::{cookie::time::Duration as ActixWebDuration, cookie::Cookie, post, web, HttpResponse};
-use utoipa;
 use log::{debug, error, log_enabled, Level::Debug};
+use utoipa;
 
-use crate::extractors::authentication::{RequireAuth, Authenticated};
 use crate::errors::AppError;
+use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::hash_tools;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
-    profile_models::{self, LoginProfileDto, TokenDto, LoginProfileResponseDto, ProfileTokensDto},
     profile_err as p_err,
+    profile_models::{self, LoginProfileDto, LoginProfileResponseDto, ProfileTokensDto, TokenDto},
     profile_orm::ProfileOrm,
 };
 #[cfg(not(feature = "mockdata"))]
@@ -65,7 +65,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
                 description = "The password is incorrect.",
                 value = json!(AppError::unauthorized401(err::MSG_PASSWORD_INCORRECT))))
         )),
-        (status = 417, body = [AppError], description = 
+        (status = 417, body = [AppError], description =
             "Validation error. `curl -i -X POST http://localhost:8080/api/login -d '{ \"nickname\": \"us\", \"password\": \"pas\" }'`",
             example = json!(AppError::validations(
                 (LoginProfileDto { nickname: "us".to_string(), password: "pas".to_string() }).validate().err().unwrap()) )),
@@ -102,7 +102,7 @@ pub async fn login(
     let nickname = login_profile_dto.nickname.clone();
     let email = login_profile_dto.nickname.clone();
     let password = login_profile_dto.password.clone();
-    
+
     let opt_profile_pwd = web::block(move || {
         // Find user's profile by nickname or email.
         let existing_profile = profile_orm
@@ -197,7 +197,6 @@ pub async fn login(
     Ok(HttpResponse::Ok().cookie(cookie).json(login_profile_response_dto)) // 200
 }
 
-
 /// logout
 ///
 /// Exit from the authorized state.
@@ -228,10 +227,7 @@ pub async fn login(
     security(("bearer_auth" = []))
 )]
 #[post("/api/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn logout(
-    authenticated: Authenticated,
-    session_orm: web::Data<SessionOrmApp>,
-) -> actix_web::Result<HttpResponse, AppError> {
+pub async fn logout(authenticated: Authenticated, session_orm: web::Data<SessionOrmApp>) -> actix_web::Result<HttpResponse, AppError> {
     // Get user ID.
     let profile_user = authenticated.deref().clone();
 
@@ -375,8 +371,7 @@ pub async fn update_token(
 
     let opt_session = web::block(move || {
         // Find a session for a given user.
-        let existing_session = session_orm.modify_session(user_id, Some(num_token))
-        .map_err(|e| {
+        let existing_session = session_orm.modify_session(user_id, Some(num_token)).map_err(|e| {
             error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
             AppError::database507(&e) // 507
         });
@@ -413,7 +408,6 @@ pub async fn update_token(
     Ok(HttpResponse::Ok().cookie(cookie).json(profile_tokens_dto)) // 200
 }
 
-
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{
@@ -423,8 +417,9 @@ mod tests {
     };
     use profile_models::{Profile, ProfileDto, ProfileTest};
     use serde_json::json;
+    use vrb_tools::token::BEARER;
 
-    use crate::{hash_tools, utils::token::BEARER};
+    use crate::hash_tools;
     use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
     use crate::users::user_models::UserRole;
 
@@ -1180,5 +1175,4 @@ mod tests {
 
         assert_eq!(token_value, access_token);
     }
-
 }

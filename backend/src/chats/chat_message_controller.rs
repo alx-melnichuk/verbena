@@ -16,9 +16,8 @@ use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
 use crate::chats::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::chats::{
     chat_message_models::{
-        BlockedUserDto, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage,
-        CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, ModifyChatMessage, ModifyChatMessageDto,
-        SearchChatMessage, SearchChatMessageDto,
+        BlockedUserDto, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage, CreateChatMessageDto,
+        DeleteBlockedUser, DeleteBlockedUserDto, ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage, SearchChatMessageDto,
     },
     chat_message_orm::ChatMessageOrm,
 };
@@ -566,20 +565,16 @@ pub mod tests {
 
     use actix_web::{http, web};
     use chrono::{DateTime, Duration, Utc};
+    use vrb_tools::token::BEARER;
 
     use crate::chats::{
         chat_message_models::{BlockedUser, ChatMessage, ChatMessageLog},
         chat_message_orm::tests::{ChatMessageOrmApp, ChatMsgTest, UserMini},
     };
     use crate::errors::AppError;
-    use crate::profiles::{
-        profile_models::Profile, profile_orm::tests::ProfileOrmApp, profile_orm::tests::PROFILE_USER_ID as PROFILE_ID,
-    };
-    use crate::sessions::{
-        config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
-    };
+    use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp, profile_orm::tests::PROFILE_USER_ID as PROFILE_ID};
+    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
     use crate::users::user_models::UserRole;
-    use crate::utils::token::BEARER;
 
     pub const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
     pub const MSG_JSON_MISSING_FIELD: &str = "Json deserialize error: missing field";
@@ -598,13 +593,7 @@ pub mod tests {
         let profile = ProfileOrmApp::new_profile(user_id, &nickname, &format!("{}@gmail.com", &nickname), role);
         profile
     }
-    pub fn create_chat_message(
-        id: i32,
-        stream_id: i32,
-        user_id: i32,
-        msg: &str,
-        date_created: DateTime<Utc>,
-    ) -> ChatMessage {
+    pub fn create_chat_message(id: i32, stream_id: i32, user_id: i32, msg: &str, date_created: DateTime<Utc>) -> ChatMessage {
         #[rustfmt::skip]
         let stream_id = if stream_id > 0 { stream_id } else { ChatMsgTest::stream_ids().get(0).unwrap().clone() };
         let user_ids = ChatMsgTest::user_ids().clone();
@@ -679,12 +668,7 @@ pub mod tests {
             }
         }
 
-        let chat_message_orm = ChatMessageOrmApp::create(
-            &chat_message_list,
-            &chat_message_log_list,
-            &blocked_user_list,
-            &user_mini_vec,
-        );
+        let chat_message_orm = ChatMessageOrmApp::create(&chat_message_list, &chat_message_log_list, &blocked_user_list, &user_mini_vec);
 
         let chat_message_vec = chat_message_orm.chat_message_vec.clone();
         let mut chat_message_log_vec: Vec<ChatMessageLog> = Vec::new();
@@ -703,7 +687,7 @@ pub mod tests {
     , (Vec<Profile>, Vec<Session>, Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>), String) {
         let config_jwt = config_jwt::get_test_config();
         let mut token = "".to_string();
-        
+
         let mut profile_vec: Vec<Profile> = Vec::new();
         let mut session_vec: Vec<Session> = Vec::new();
         let mut chat_message_vec: Vec<ChatMessage> = Vec::new();
@@ -733,13 +717,7 @@ pub mod tests {
     }
     pub fn configure_chat_message(
         cfg_c: config_jwt::ConfigJwt,
-        data_c: (
-            Vec<Profile>,
-            Vec<Session>,
-            Vec<ChatMessage>,
-            Vec<ChatMessageLog>,
-            Vec<BlockedUser>,
-        ),
+        data_c: (Vec<Profile>, Vec<Session>, Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>),
     ) -> impl FnOnce(&mut web::ServiceConfig) {
         move |config: &mut web::ServiceConfig| {
             #[rustfmt::skip]
@@ -747,12 +725,7 @@ pub mod tests {
             let data_config_jwt = web::Data::new(cfg_c);
             let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
             let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
-            let data_chat_message_orm = web::Data::new(ChatMessageOrmApp::create(
-                &data_c.2,
-                &data_c.3,
-                &data_c.4,
-                &user_mini_vec.clone(),
-            ));
+            let data_chat_message_orm = web::Data::new(ChatMessageOrmApp::create(&data_c.2, &data_c.3, &data_c.4, &user_mini_vec.clone()));
             config
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_profile_orm))

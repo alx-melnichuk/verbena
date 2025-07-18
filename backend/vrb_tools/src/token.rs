@@ -8,6 +8,7 @@ pub fn get_token_from_cookie(request: &HttpRequest) -> Option<String> {
     // Attempt to extract token from cookie.
     request.cookie(TOKEN_NAME).map(|c| c.value().to_string())
 }
+
 /** Extract the JWT token from the request header. */
 pub fn get_jwt_from_header(header_token: &str) -> Result<String, String> {
     const NO_AUTH_HEADER: &str = "No authentication header";
@@ -24,6 +25,7 @@ pub fn get_jwt_from_header(header_token: &str) -> Result<String, String> {
     }
     Ok(auth_header.trim_start_matches(BEARER).to_owned())
 }
+
 /** Get the token value from the header of the http-request. */
 pub fn get_token_from_header(request: &HttpRequest) -> Result<Option<String>, String> {
     // Attempt to extract token from authorization header.
@@ -39,6 +41,7 @@ pub fn get_token_from_header(request: &HttpRequest) -> Result<Option<String>, St
         Ok(None::<String>)
     }
 }
+
 /** Get the token value from the cookie (header) of the http-request. */
 pub fn get_token_from_cookie_or_header(request: &HttpRequest) -> Option<String> {
     let opt_token = get_token_from_cookie(request);

@@ -7,6 +7,7 @@ mod tests {
     };
     use chrono::{DateTime, Duration, Utc};
     use serde_json::json;
+    use vrb_tools::token::BEARER;
 
     use crate::errors::AppError;
     use crate::profiles::{
@@ -34,8 +35,7 @@ mod tests {
         user_recovery_orm::tests::UserRecoveryOrmApp,
         user_registr_orm::tests::UserRegistrOrmApp,
     };
-    use crate::utils::token::BEARER;
-
+    
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 
     fn create_profile() -> Profile {
