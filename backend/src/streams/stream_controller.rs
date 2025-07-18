@@ -7,6 +7,7 @@ use log::error;
 use mime::IMAGE;
 use serde_json::{self, json};
 use utoipa;
+use vrb_tools::parser;
 
 use crate::cdis::coding;
 use crate::errors::AppError;
@@ -27,7 +28,6 @@ use crate::streams::{
     stream_orm::StreamOrm,
 };
 use crate::users::user_models::UserRole;
-use crate::utils::parser;
 use crate::validators::{self, msg_validation, ValidationChecks, Validator};
 
 // Use: post_stream, put_stream, delete_stream

@@ -5,9 +5,7 @@ use jsonwebtoken::{self as jwt, errors};
 use log::error;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use vrb_tools::crypto;
-
-use crate::utils::parser;
+use vrb_tools::{crypto, parser};
 
 pub const CD_NUM_TOKEN_MIN: usize = 1;
 pub const CD_NUM_TOKEN_MAX: usize = 10000;
@@ -49,12 +47,11 @@ pub fn encode_token(
 
     let claims = TokenClaims { exp, iat, iss, sub };
     // Encode the header and claims given and sign the payload using the algorithm from the header and the key.
+    #[rustfmt::skip]
     let encoded = jwt::encode(
         &jwt::Header::new(jwt::Algorithm::HS256),
-        &claims,
-        &jwt::EncodingKey::from_secret(secret),
-    )
-    .map_err(|e| {
+        &claims, &jwt::EncodingKey::from_secret(secret)
+    ).map_err(|e| {
         let err = e.to_string();
         error!("{:?}", err);
         err
@@ -89,11 +86,11 @@ pub fn decode_token<T: Into<String>>(token: T, secret: &[u8]) -> Result<(i32, i3
         error!("{:?}", err.to_string());
         err.to_string()
     })?;
-
+    #[rustfmt::skip]
     let token_data = jwt::decode::<TokenClaims>(
         token_str,
         &jwt::DecodingKey::from_secret(secret),
-        &jwt::Validation::new(jwt::Algorithm::HS256),
+        &jwt::Validation::new(jwt::Algorithm::HS256)
     )
     .map_err(|err| {
         error!("{:?}", err.to_string());

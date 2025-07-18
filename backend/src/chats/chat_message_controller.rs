@@ -8,6 +8,7 @@ use actix_web::{
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use log::{error, info, log_enabled, Level::Info};
 use utoipa;
+use vrb_tools::parser;
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
@@ -25,7 +26,6 @@ use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::settings::err;
 use crate::users::user_models::UserRole;
-use crate::utils::parser;
 use crate::validators::{msg_validation, Validator};
 
 // 403 Access denied - insufficient user rights.

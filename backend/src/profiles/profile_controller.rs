@@ -1,12 +1,13 @@
 use std::{borrow::Cow, ops::Deref, path};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
-use actix_web::{get,delete, put, web, HttpResponse};
+use actix_web::{delete, get, put, web, HttpResponse};
 use chrono::{DateTime, Utc};
 use log::error;
 use mime::IMAGE;
 use serde_json::json;
 use utoipa;
+use vrb_tools::parser;
 
 use crate::cdis::coding;
 use crate::errors::AppError;
@@ -18,25 +19,28 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
-    config_prfl::{self, ConfigPrfl}, profile_checks,
+    config_prfl::{self, ConfigPrfl},
+    profile_checks,
     profile_models::{
-        ModifyProfile, ModifyProfileDto, NewPasswordProfileDto, Profile, ProfileDto, PROFILE_LOCALE_DEF,
-        PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF, ProfileConfigDto, UniquenessProfileDto, UniquenessProfileResponseDto,
+        ModifyProfile, ModifyProfileDto, NewPasswordProfileDto, Profile, ProfileConfigDto, ProfileDto, UniquenessProfileDto,
+        UniquenessProfileResponseDto, PROFILE_LOCALE_DEF, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF,
     },
     profile_orm::ProfileOrm,
 };
 use crate::settings::err;
-use crate::streams::{config_strm, stream_extra::{get_stream_logo_files, remove_stream_logo_files}};
 #[cfg(not(feature = "mockdata"))]
 use crate::streams::stream_orm::impls::StreamOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::streams::stream_orm::tests::StreamOrmApp;
+use crate::streams::{
+    config_strm,
+    stream_extra::{get_stream_logo_files, remove_stream_logo_files},
+};
 use crate::users::user_models::UserRole;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
 #[cfg(feature = "mockdata")]
 use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
-use crate::utils::parser;
 use crate::validators::{self, msg_validation, ValidationChecks, Validator};
 
 pub const ALIAS_AVATAR_FILES_DIR: &str = "/avatar";
@@ -245,8 +249,16 @@ pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web
     let max_size = if cfg_prfl.prfl_avatar_max_size > 0 { Some(cfg_prfl.prfl_avatar_max_size) } else { None };
     let valid_types = cfg_prfl.prfl_avatar_valid_types.clone();
     let ext = cfg_prfl.prfl_avatar_ext.clone();
-    let max_width = if cfg_prfl.prfl_avatar_max_width > 0 { Some(cfg_prfl.prfl_avatar_max_width) } else { None };
-    let max_height = if cfg_prfl.prfl_avatar_max_height > 0 { Some(cfg_prfl.prfl_avatar_max_height) } else { None };
+    let max_width = if cfg_prfl.prfl_avatar_max_width > 0 {
+        Some(cfg_prfl.prfl_avatar_max_width)
+    } else {
+        None
+    };
+    let max_height = if cfg_prfl.prfl_avatar_max_height > 0 {
+        Some(cfg_prfl.prfl_avatar_max_height)
+    } else {
+        None
+    };
     // Get configuration data.
     let profile_config_dto = ProfileConfigDto::new(max_size, valid_types, ext, max_width, max_height);
 
@@ -323,7 +335,7 @@ pub async fn get_profile_current(
 #[utoipa::path(
     responses(
         (status = 200, description = "The result of checking whether nickname (email) is already in use.", 
-            body = UniquenessProfileResponseDto, 
+            body = UniquenessProfileResponseDto,
             examples(
             ("already_use" = (summary = "already in use",  description = "If the nickname (email) is already in use.",
                 value = json!(UniquenessProfileResponseDto::new(false)))),
@@ -990,12 +1002,9 @@ pub mod tests {
     use crate::errors::AppError;
     use crate::hash_tools;
     use crate::profiles::{config_prfl, profile_models::Profile, profile_orm::tests::ProfileOrmApp};
-    use crate::sessions::{
-        config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
-    };
-    use crate::streams::{config_strm, stream_models::StreamInfoDto,
-        stream_controller::tests::create_stream,
-        stream_orm::tests::StreamOrmApp,
+    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
+    use crate::streams::{
+        config_strm, stream_controller::tests::create_stream, stream_models::StreamInfoDto, stream_orm::tests::StreamOrmApp,
     };
     use crate::users::user_models::{UserRegistr, UserRole};
     use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
@@ -1025,8 +1034,7 @@ pub mod tests {
         let now = Utc::now();
         let final_date: DateTime<Utc> = now + Duration::minutes(20);
 
-        let user_registr =
-            UserRegistrOrmApp::new_user_registr(1, "Robert_Brown", "Robert_Brown@gmail.com", "passwdR2B2", final_date);
+        let user_registr = UserRegistrOrmApp::new_user_registr(1, "Robert_Brown", "Robert_Brown@gmail.com", "passwdR2B2", final_date);
         user_registr
     }
     fn user_registr_with_id(user_registr: UserRegistr) -> UserRegistr {
@@ -1067,7 +1075,7 @@ pub mod tests {
     }
     pub fn configure_profile(
         cfg_c: (config_jwt::ConfigJwt, config_prfl::ConfigPrfl, config_strm::ConfigStrm), // configuration
-        data_c: (Vec<Profile>, Vec<Session>, Vec<UserRegistr>, Vec<StreamInfoDto>),  // data vectors
+        data_c: (Vec<Profile>, Vec<Session>, Vec<UserRegistr>, Vec<StreamInfoDto>),       // data vectors
     ) -> impl FnOnce(&mut web::ServiceConfig) {
         move |config: &mut web::ServiceConfig| {
             let data_config_jwt = web::Data::new(cfg_c.0);
