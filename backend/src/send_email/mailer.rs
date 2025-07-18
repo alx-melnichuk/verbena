@@ -41,12 +41,13 @@ pub mod cfg {
 
 #[cfg(not(feature = "mockdata"))]
 pub mod impls {
+    use std::{collections::HashMap, fs::File, io::Write, path::Path};
+    
     use lettre::{message::header::ContentType, transport::smtp, Message, SmtpTransport, Transport};
-    use std::{collections::HashMap, fs::File, io::Write};
+    use vrb_tools::template_rendering::render_template;
 
     use crate::send_email::config_smtp::ConfigSmtp;
-    use crate::tools::template_rendering::render_template;
-
+    
     use super::*;
 
     #[derive(Debug, Clone)]
@@ -131,8 +132,13 @@ pub mod impls {
             params.insert("target", target);
             let registr_duration_val = registr_duration.to_string();
             params.insert("registr_duration", &registr_duration_val);
+            
+            let tpl_vec = [
+                ("verification_code", Path::new("./templates/verification_code.hbs")),
+                ("base", Path::new("./templates/basic_layout.hbs"))
+            ];
             // Create a html_template to send.
-            let html_template = render_template("verification_code", params)?;
+            let html_template = render_template(&tpl_vec, params)?;
 
             if self.config_smtp.smtp_save_letter {
                 let path = "res_registration.html";
@@ -167,8 +173,12 @@ pub mod impls {
             let recovery_duration_val = recovery_duration.to_string();
             params.insert("recovery_duration", &recovery_duration_val);
 
+            let tpl_vec = [
+                ("password_recovery", Path::new("./templates/password_recovery.hbs")),
+                ("base", Path::new("./templates/basic_layout.hbs"))
+            ];
             // Create a html_template to send.
-            let html_template = render_template("password_recovery", params)?;
+            let html_template = render_template(&tpl_vec, params)?;
 
             if self.config_smtp.smtp_save_letter {
                 let path = "res_recovery.html";
@@ -188,11 +198,12 @@ pub mod impls {
 
 #[cfg(feature = "mockdata")]
 pub mod tests {
-    use std::{collections::HashMap, fs::File, io::Write};
+    use std::{collections::HashMap, fs::File, io::Write, path::Path};
+
+    use vrb_tools::template_rendering::render_template;
 
     use crate::send_email::config_smtp::ConfigSmtp;
-    use crate::tools::template_rendering::render_template;
-
+    
     use super::*;
 
     #[derive(Debug, Clone)]
@@ -242,8 +253,12 @@ pub mod tests {
             let registr_duration_val = registr_duration.to_string();
             params.insert("registr_duration", &registr_duration_val);
 
+            let tpl_vec = [
+                ("verification_code", Path::new("./templates/verification_code.hbs")),
+                ("base", Path::new("./templates/basic_layout.hbs"))
+            ];
             // Create a html_template to send.
-            let html_template = render_template("verification_code", params)?;
+            let html_template = render_template(&tpl_vec, params)?;
 
             if self.save_file && self.config_smtp.smtp_save_letter {
                 let path = "res_registration.html";
@@ -290,8 +305,12 @@ pub mod tests {
             let recovery_duration_val = recovery_duration.to_string();
             params.insert("recovery_duration", &recovery_duration_val);
 
+            let tpl_vec = [
+                ("password_recovery", Path::new("./templates/password_recovery.hbs")),
+                ("base", Path::new("./templates/basic_layout.hbs"))
+            ];
             // Create a html_template to send.
-            let html_template = render_template("password_recovery", params)?;
+            let html_template = render_template(&tpl_vec, params)?;
 
             if self.save_file && self.config_smtp.smtp_save_letter {
                 let path = "res_recovery_test.html";

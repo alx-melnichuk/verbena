@@ -37,7 +37,6 @@ pub mod settings;
 pub(crate) mod static_controller;
 pub mod streams;
 pub mod swagger_docs;
-pub(crate) mod tools;
 pub(crate) mod users;
 pub mod utils;
 pub mod validators;
