@@ -2,10 +2,10 @@ use actix_web::{get, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
 use log::error;
 use utoipa;
+use vrb_tools::hash_tools;
 
 use crate::errors::AppError;
 use crate::extractors::authentication::RequireAuth;
-use crate::hash_tools;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]

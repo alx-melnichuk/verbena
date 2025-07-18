@@ -7,12 +7,11 @@ use log::error;
 use mime::IMAGE;
 use serde_json::json;
 use utoipa;
-use vrb_tools::parser;
+use vrb_tools::{hash_tools, parser};
 
 use crate::cdis::coding;
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
-use crate::hash_tools;
 use crate::loading::dynamic_image;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
@@ -998,10 +997,9 @@ pub mod tests {
 
     use actix_web::{http::header, web};
     use chrono::{DateTime, Duration, Utc};
-    use vrb_tools::token::BEARER;
-
+    use vrb_tools::{hash_tools, token::BEARER};
+    
     use crate::errors::AppError;
-    use crate::hash_tools;
     use crate::profiles::{config_prfl, profile_models::Profile, profile_orm::tests::ProfileOrmApp};
     use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
     use crate::streams::{

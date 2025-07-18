@@ -3,10 +3,10 @@ use std::ops::Deref;
 use actix_web::{cookie::time::Duration as ActixWebDuration, cookie::Cookie, post, web, HttpResponse};
 use log::{debug, error, log_enabled, Level::Debug};
 use utoipa;
+use vrb_tools::hash_tools;
 
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
-use crate::hash_tools;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -417,9 +417,8 @@ mod tests {
     };
     use profile_models::{Profile, ProfileDto, ProfileTest};
     use serde_json::json;
-    use vrb_tools::token::BEARER;
-
-    use crate::hash_tools;
+    use vrb_tools::{hash_tools, token::BEARER};
+    
     use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
     use crate::users::user_models::UserRole;
 
