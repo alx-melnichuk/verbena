@@ -2,7 +2,7 @@ use utoipa::{
     openapi::security::{/*ApiKey, ApiKeyValue,*/ HttpAuthScheme, HttpBuilder, SecurityScheme},
     Modify, OpenApi,
 };
-use vrb_api_tools::api_error;
+use vrb_tools::api_error;
 
 use crate::chats::{chat_message_controller, chat_ws_controller, chat_message_models};
 use crate::errors;
