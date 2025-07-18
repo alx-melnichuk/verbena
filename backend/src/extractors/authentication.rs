@@ -200,7 +200,7 @@ mod tests {
         http::{header, StatusCode},
         test, web, App, HttpResponse,
     };
-    use vrb_api_tools::api_error::code_to_str;
+    use vrb_tools::api_error::code_to_str;
 
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
