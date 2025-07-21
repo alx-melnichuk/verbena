@@ -27,9 +27,9 @@ use crate::profiles::{
     profile_orm::ProfileOrm,
 };
 use crate::settings::err;
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::streams::stream_orm::impls::StreamOrmApp;
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 use crate::streams::stream_orm::tests::StreamOrmApp;
 use crate::streams::{
     config_strm,

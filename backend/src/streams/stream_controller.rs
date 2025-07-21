@@ -14,9 +14,9 @@ use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::loading::dynamic_image;
 use crate::settings::err;
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::streams::stream_orm::impls::StreamOrmApp;
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 use crate::streams::stream_orm::tests::StreamOrmApp;
 use crate::streams::{
     config_strm::{self, ConfigStrm},
