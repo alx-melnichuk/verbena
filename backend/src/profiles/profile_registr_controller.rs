@@ -19,9 +19,9 @@ use crate::profiles::{
     },
     profile_orm::ProfileOrm,
 };
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::send_email::mailer::impls::MailerApp;
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 use crate::send_email::mailer::tests::MailerApp;
 use crate::send_email::mailer::Mailer;
 use crate::sessions::{

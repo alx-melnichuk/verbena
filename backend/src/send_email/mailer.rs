@@ -24,22 +24,22 @@ pub trait Mailer {
 pub mod cfg {
     use crate::send_email::config_smtp::ConfigSmtp;
 
-    #[cfg(not(feature = "mockdata"))]
+    #[cfg(not(all(test, feature = "mockdata")))]
     use super::impls::MailerApp;
-    #[cfg(not(feature = "mockdata"))]
+    #[cfg(not(all(test, feature = "mockdata")))]
     pub fn get_mailer_app(config_smtp: ConfigSmtp) -> MailerApp {
         MailerApp::new(config_smtp)
     }
 
-    #[cfg(feature = "mockdata")]
+    #[cfg(all(test, feature = "mockdata"))]
     use super::tests::MailerApp;
-    #[cfg(feature = "mockdata")]
+    #[cfg(all(test, feature = "mockdata"))]
     pub fn get_mailer_app(config_smtp: ConfigSmtp) -> MailerApp {
         MailerApp::new(config_smtp)
     }
 }
 
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 pub mod impls {
     use std::{collections::HashMap, fs::File, io::Write, path::Path};
     
@@ -196,7 +196,7 @@ pub mod impls {
     }
 }
 
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
     use std::{collections::HashMap, fs::File, io::Write, path::Path};
 
