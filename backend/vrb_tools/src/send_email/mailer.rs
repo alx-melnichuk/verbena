@@ -21,25 +21,15 @@ pub trait Mailer {
     ) -> Result<(), String>;
 }
 
-pub mod cfg {
-    use crate::send_email::config_smtp::ConfigSmtp;
+/* use vrb_tools::send_email::config_smtp;
+ * #[cfg(not(feature = "mockdata"))]
+ * use vrb_tools::send_email::mailer::impls::MailerApp;
+ * #[cfg(feature = "mockdata")]
+ * use vrb_tools::send_email::mailer::tests::MailerApp;
+ * 
+ * MailerApp::new(config_smtp)
+ */
 
-    #[cfg(not(all(test, feature = "mockdata")))]
-    use super::impls::MailerApp;
-    #[cfg(not(all(test, feature = "mockdata")))]
-    pub fn get_mailer_app(config_smtp: ConfigSmtp) -> MailerApp {
-        MailerApp::new(config_smtp)
-    }
-
-    #[cfg(all(test, feature = "mockdata"))]
-    use super::tests::MailerApp;
-    #[cfg(all(test, feature = "mockdata"))]
-    pub fn get_mailer_app(config_smtp: ConfigSmtp) -> MailerApp {
-        MailerApp::new(config_smtp)
-    }
-}
-
-#[cfg(not(all(test, feature = "mockdata")))]
 pub mod impls {
     use std::{collections::HashMap, fs::File, io::Write, path::Path};
     
@@ -196,10 +186,9 @@ pub mod impls {
     }
 }
 
-#[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
     use std::{collections::HashMap, fs::File, io::Write, path::Path};
-
+    
     use crate::send_email::config_smtp::ConfigSmtp;
     use crate::template_rendering;
     

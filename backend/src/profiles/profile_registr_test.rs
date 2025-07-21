@@ -8,6 +8,7 @@ mod tests {
     use chrono::{DateTime, Duration, Utc};
     use serde_json::json;
     use vrb_tools::token::BEARER;
+    use vrb_tools::send_email::{config_smtp, mailer::tests::MailerApp};
 
     use crate::errors::AppError;
     use crate::profiles::{
@@ -22,7 +23,6 @@ mod tests {
             MSG_REGISTR_NOT_FOUND, MSG_USER_NOT_FOUND,
         },
     };
-    use crate::send_email::{config_smtp, mailer::tests::MailerApp};
     use crate::sessions::{
         config_jwt,
         session_models::Session,

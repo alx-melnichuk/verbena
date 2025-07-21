@@ -3,6 +3,7 @@ pub mod cdis;
 pub mod crypto;
 pub mod hash_tools;
 pub mod parser;
+pub mod send_email;
 pub mod serial_datetime_option;
 pub mod serial_datetime;
 pub mod ssl_acceptor;

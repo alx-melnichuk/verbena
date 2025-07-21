@@ -10,13 +10,17 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 use vrb_tools::ssl_acceptor;
+#[cfg(not(feature = "mockdata"))]
+use vrb_tools::send_email::mailer::impls::MailerApp;
+#[cfg(feature = "mockdata")]
+use vrb_tools::send_email::mailer::tests::MailerApp;
+use vrb_tools::send_email::config_smtp;
 
 use chats::{chat_message_controller, chat_message_orm::cfg::get_chat_message_orm_app, chat_ws_controller};
 use profiles::{
     config_prfl, profile_auth_controller, profile_controller, profile_orm::cfg::get_profile_orm_app,
     profile_registr_controller,
 };
-use send_email::{config_smtp, mailer};
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
 use settings::config_app;
 use streams::{config_strm, stream_controller, stream_orm::cfg::get_stream_orm_app};
@@ -30,7 +34,6 @@ pub(crate) mod extractors;
 pub mod loading;
 pub mod profiles;
 pub(crate) mod schema;
-pub mod send_email;
 pub(crate) mod sessions;
 pub mod settings;
 pub(crate) mod static_controller;
@@ -131,7 +134,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
 
         // Adding various entities.
         // used: profile_registr_controller
-        let mailer = web::Data::new(mailer::cfg::get_mailer_app(config_smtp0));
+        let mailer = web::Data::new(MailerApp::new(config_smtp0));
         // used: profile_registr_controller
         let user_registr_orm = web::Data::new(get_user_registr_orm_app(pool.clone()));
         // used: profile_registr_controller

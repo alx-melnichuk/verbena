@@ -45,8 +45,6 @@ impl ConfigSmtp {
     }
 }
 
-#[cfg(all(test, feature = "mockdata"))]
-#[allow(dead_code)]
 pub fn get_test_config() -> ConfigSmtp {
     ConfigSmtp {
         smtp_host: "127.0.0.1".to_string(),
