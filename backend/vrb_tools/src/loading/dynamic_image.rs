@@ -61,16 +61,14 @@ pub fn convert_file(source: &str, extension: &str, max_width: u32, max_height: u
     Ok(receiver.to_string())
 }
 
-#[cfg(all(test, feature = "mockdata"))]
+#[cfg(test)]
 mod tests {
     use std::{fs, io::Write, path};
-
-    use crate::streams::config_strm;
 
     use super::*;
 
     fn file_path(file_name: &str, file_ext: &str) -> String {
-        let logo_files_dir = config_strm::get_test_config().strm_logo_files_dir;
+        let logo_files_dir = "./".to_string();
         let path: path::PathBuf = [logo_files_dir, format!("{}.{}", file_name, file_ext)].iter().collect();
         path.to_str().unwrap().to_string()
     }
@@ -148,7 +146,7 @@ mod tests {
         Ok(image_source.dimensions())
     }
     #[test]
-    fn test_convert_file_png_to_jpeg_maxwd_0_maxhg_0() {
+    fn  test_convert_file_png_to_jpeg_maxwd_0_maxhg_0() {
         let file_name = "test_convert_file_png_to_jpeg_maxwd_0_maxhg_0";
         let source = file_path(file_name, "png");
         create_file_png(&source).unwrap();
@@ -167,7 +165,7 @@ mod tests {
         assert_eq!(source_hg, receiver_hg);
     }
     #[test]
-    fn test_convert_file_png_to_jpeg_maxwd_10_maxhg_10() {
+    fn  test_convert_file_png_to_jpeg_maxwd_10_maxhg_10() {
         let file_name = "test_convert_file_png_to_jpeg_maxwd_10_maxhg_10";
         let source = file_path(file_name, "png");
         create_file_png(&source).unwrap();
@@ -189,7 +187,7 @@ mod tests {
         assert!(10 >= receiver_hg);
     }
     #[test]
-    fn test_convert_file_png_to_png_maxwd_10_maxhg_10() {
+    fn  test_convert_file_png_to_png_maxwd_10_maxhg_10() {
         let source = file_path("test_convert_file_png_to_png_maxwd_10_maxhg_10", "png");
         create_file_png(&source).unwrap();
         let (source_wd, source_hg) = dimensions(&source).unwrap();
@@ -209,7 +207,7 @@ mod tests {
         assert!(10 >= receiver_hg);
     }
     #[test]
-    fn test_convert_file_png_to_png_maxwd_30_maxhg_30() {
+    fn  test_convert_file_png_to_png_maxwd_30_maxhg_30() {
         let source = file_path("test_convert_file_png_to_png_maxwd_30_maxhg_30", "png");
         create_file_png(&source).unwrap();
         let (source_wd, source_hg) = dimensions(&source).unwrap();

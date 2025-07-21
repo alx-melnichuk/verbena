@@ -7,11 +7,10 @@ use log::error;
 use mime::IMAGE;
 use serde_json::json;
 use utoipa;
-use vrb_tools::{cdis::coding, hash_tools, parser};
+use vrb_tools::{cdis::coding, hash_tools, loading::dynamic_image, parser};
 
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
-use crate::loading::dynamic_image;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]

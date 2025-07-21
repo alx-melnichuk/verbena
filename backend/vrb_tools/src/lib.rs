@@ -2,6 +2,7 @@ pub mod api_error;
 pub mod cdis;
 pub mod crypto;
 pub mod hash_tools;
+pub mod loading;
 pub mod parser;
 pub mod send_email;
 pub mod serial_datetime_option;

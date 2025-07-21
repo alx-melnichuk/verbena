@@ -31,7 +31,6 @@ pub mod chats;
 pub(crate) mod dbase;
 pub(crate) mod errors;
 pub(crate) mod extractors;
-pub mod loading;
 pub mod profiles;
 pub(crate) mod schema;
 pub(crate) mod sessions;

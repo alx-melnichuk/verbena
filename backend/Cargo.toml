@@ -32,7 +32,7 @@ env_logger = "0.11.8"
 futures-util = "0.3.31"
 # handlebars = "6.3.2" // use in "vrb_tools"
 #image = "0.24.9" # this is a working version. 0.25.1, 0.25.2 - bad
-image = "0.25.6"
+# image = "0.25.6"  // use in "vrb_tools"
 jsonwebtoken = "9.3.1"
 # lettre = { version = "0.11.16", features = ["tokio1", "tokio1-native-tls"] } // use in "vrb_tools"
 log = "0.4.27"
