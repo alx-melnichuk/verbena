@@ -12,9 +12,9 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::sessions::config_jwt;
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::sessions::session_orm::impls::SessionOrmApp;
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 use crate::sessions::session_orm::tests::SessionOrmApp;
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {

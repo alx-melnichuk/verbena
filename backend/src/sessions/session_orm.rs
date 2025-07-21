@@ -11,22 +11,22 @@ pub trait SessionOrm {
 pub mod cfg {
     use crate::dbase::DbPool;
 
-    #[cfg(not(feature = "mockdata"))]
+    #[cfg(not(all(test, feature = "mockdata")))]
     use super::impls::SessionOrmApp;
-    #[cfg(not(feature = "mockdata"))]
+    #[cfg(not(all(test, feature = "mockdata")))]
     pub fn get_session_orm_app(pool: DbPool) -> SessionOrmApp {
         SessionOrmApp::new(pool)
     }
 
-    #[cfg(feature = "mockdata")]
+    #[cfg(all(test, feature = "mockdata"))]
     use super::tests::SessionOrmApp;
-    #[cfg(feature = "mockdata")]
+    #[cfg(all(test, feature = "mockdata"))]
     pub fn get_session_orm_app(_: DbPool) -> SessionOrmApp {
         SessionOrmApp::new()
     }
 }
 
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 pub mod impls {
     use std::time::Instant as tm;
 
@@ -93,7 +93,7 @@ pub mod impls {
     }
 }
 
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
 
     use super::*;

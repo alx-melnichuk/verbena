@@ -8,9 +8,9 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{profile_models::Profile, profile_orm::ProfileOrm};
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::sessions::session_orm::impls::SessionOrmApp;
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::session_orm::SessionOrm;
 use crate::settings::err;

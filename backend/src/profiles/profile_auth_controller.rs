@@ -16,9 +16,9 @@ use crate::profiles::{
     profile_models::{self, LoginProfileDto, LoginProfileResponseDto, ProfileTokensDto, TokenDto},
     profile_orm::ProfileOrm,
 };
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::sessions::session_orm::impls::SessionOrmApp;
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::{config_jwt, session_orm::SessionOrm, tokens};
 use crate::settings::err;
