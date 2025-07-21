@@ -165,7 +165,6 @@ impl Stream {
             updated_at: now,
         }
     }
-    #[cfg(feature = "mockdata")]
     pub fn create(create_stream: CreateStream, id: i32) -> Stream {
         let now = Utc::now();
         Stream {
