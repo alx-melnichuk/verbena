@@ -1,4 +1,5 @@
 pub mod api_error;
+pub mod cdis;
 pub mod crypto;
 pub mod hash_tools;
 pub mod parser;
@@ -7,4 +8,3 @@ pub mod serial_datetime;
 pub mod ssl_acceptor;
 pub mod template_rendering;
 pub mod token;
-pub mod send_email;

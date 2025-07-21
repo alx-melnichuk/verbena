@@ -9,20 +9,20 @@ use log::{info, log_enabled, Level::Info};
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
-use vrb_tools::{ssl_acceptor, send_email::{config_smtp, mailer}};
+use vrb_tools::ssl_acceptor;
 
 use chats::{chat_message_controller, chat_message_orm::cfg::get_chat_message_orm_app, chat_ws_controller};
 use profiles::{
     config_prfl, profile_auth_controller, profile_controller, profile_orm::cfg::get_profile_orm_app,
     profile_registr_controller,
 };
+use send_email::{config_smtp, mailer};
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
 use settings::config_app;
 use streams::{config_strm, stream_controller, stream_orm::cfg::get_stream_orm_app};
 use users::{user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_orm::cfg::get_user_registr_orm_app};
 use utoipa::OpenApi;
 
-pub mod cdis;
 pub mod chats;
 pub(crate) mod dbase;
 pub(crate) mod errors;
@@ -30,6 +30,7 @@ pub(crate) mod extractors;
 pub mod loading;
 pub mod profiles;
 pub(crate) mod schema;
+pub mod send_email;
 pub(crate) mod sessions;
 pub mod settings;
 pub(crate) mod static_controller;

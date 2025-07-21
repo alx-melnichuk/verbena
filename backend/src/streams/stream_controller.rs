@@ -7,9 +7,8 @@ use log::error;
 use mime::IMAGE;
 use serde_json::{self, json};
 use utoipa;
-use vrb_tools::parser;
+use vrb_tools::{cdis::coding, parser};
 
-use crate::cdis::coding;
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::loading::dynamic_image;

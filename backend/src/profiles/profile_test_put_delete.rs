@@ -13,8 +13,8 @@ pub mod tests {
     };
     use chrono::{SecondsFormat, Utc};
     use serde_json;
+    use vrb_tools::cdis::coding;
 
-    use crate::cdis::coding;
     use crate::errors::AppError;
     use crate::profiles::{
         config_prfl,

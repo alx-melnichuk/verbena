@@ -13,8 +13,8 @@ mod tests {
     };
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json;
+    use vrb_tools::cdis::coding;
 
-    use crate::cdis::coding;
     use crate::errors::AppError;
     use crate::settings::err;
     use crate::streams::{

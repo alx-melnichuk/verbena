@@ -3,11 +3,6 @@ use chrono::{Duration, Utc};
 use log::error;
 use utoipa;
 use vrb_tools::hash_tools;
-#[cfg(not(all(test, feature = "mockdata")))]
-use vrb_tools::send_email::mailer::impls::MailerApp;
-#[cfg(all(test, feature = "mockdata"))]
-use vrb_tools::send_email::mailer::tests::MailerApp;
-use vrb_tools::send_email::mailer::Mailer;
 
 use crate::errors::AppError;
 use crate::extractors::authentication::RequireAuth;
@@ -43,6 +38,11 @@ use crate::users::{
     user_registr_orm::UserRegistrOrm,
 };
 use crate::validators::{msg_validation, Validator};
+#[cfg(not(all(test, feature = "mockdata")))]
+use crate::send_email::mailer::impls::MailerApp;
+#[cfg(all(test, feature = "mockdata"))]
+use crate::send_email::mailer::tests::MailerApp;
+use crate::send_email::mailer::Mailer;
 
 // 510 Not Extended - Error when sending email.
 pub const MSG_ERROR_SENDING_EMAIL: &str = "error_sending_email";
