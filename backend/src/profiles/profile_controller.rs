@@ -36,9 +36,9 @@ use crate::streams::{
     stream_extra::{get_stream_logo_files, remove_stream_logo_files},
 };
 use crate::users::user_models::UserRole;
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
 use crate::validators::{self, msg_validation, ValidationChecks, Validator};
 

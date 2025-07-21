@@ -26,22 +26,22 @@ pub trait UserRegistrOrm {
 pub mod cfg {
     use crate::dbase::DbPool;
 
-    #[cfg(not(feature = "mockdata"))]
+    #[cfg(not(all(test, feature = "mockdata")))]
     use super::impls::UserRegistrOrmApp;
-    #[cfg(not(feature = "mockdata"))]
+    #[cfg(not(all(test, feature = "mockdata")))]
     pub fn get_user_registr_orm_app(pool: DbPool) -> UserRegistrOrmApp {
         UserRegistrOrmApp::new(pool)
     }
 
-    #[cfg(feature = "mockdata")]
+    #[cfg(all(test, feature = "mockdata"))]
     use super::tests::UserRegistrOrmApp;
-    #[cfg(feature = "mockdata")]
+    #[cfg(all(test, feature = "mockdata"))]
     pub fn get_user_registr_orm_app(_: DbPool) -> UserRegistrOrmApp {
         UserRegistrOrmApp::new()
     }
 }
 
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 pub mod impls {
     use std::time::Instant as tm;
 
@@ -217,7 +217,7 @@ pub mod impls {
     }
 }
 
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
     use chrono::{DateTime, Duration, Utc};
 

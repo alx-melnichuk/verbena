@@ -9,9 +9,9 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::profile_orm::ProfileOrm;
 use crate::settings::err;
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
 use crate::users::user_registr_orm::UserRegistrOrm;
 

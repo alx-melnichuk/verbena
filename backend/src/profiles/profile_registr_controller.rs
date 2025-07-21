@@ -33,9 +33,9 @@ use crate::settings::{config_app, err};
 use crate::users::user_recovery_orm::impls::UserRecoveryOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::users::user_recovery_orm::tests::UserRecoveryOrmApp;
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
 use crate::users::{
     user_models::{self, UserRole},
