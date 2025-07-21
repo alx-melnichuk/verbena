@@ -1,6 +1,6 @@
 use std::env;
 
-use vrb_tools::parser::parse_bool;
+use crate::parser;
 
 pub const NOT_SEND_LETTER: &str = "false";
 pub const SAVE_LETTER: &str = "false";
@@ -29,9 +29,9 @@ impl ConfigSmtp {
         let smtp_pass = pass.to_string();
         let smtp_sender = smtp_user.clone();
         let not_send_letter = env::var("SMTP_NOT_SEND_LETTER").unwrap_or(NOT_SEND_LETTER.to_string());
-        let smtp_not_send_letter = parse_bool(&not_send_letter).unwrap();
+        let smtp_not_send_letter = parser::parse_bool(&not_send_letter).unwrap();
         let save_letter = env::var("SMTP_SAVE_LETTER").unwrap_or(SAVE_LETTER.to_string());
-        let smtp_save_letter = parse_bool(&save_letter).unwrap();
+        let smtp_save_letter = parser::parse_bool(&save_letter).unwrap();
 
         ConfigSmtp {
             smtp_host,

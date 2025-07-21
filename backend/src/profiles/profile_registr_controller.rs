@@ -3,6 +3,11 @@ use chrono::{Duration, Utc};
 use log::error;
 use utoipa;
 use vrb_tools::hash_tools;
+#[cfg(not(all(test, feature = "mockdata")))]
+use vrb_tools::send_email::mailer::impls::MailerApp;
+#[cfg(all(test, feature = "mockdata"))]
+use vrb_tools::send_email::mailer::tests::MailerApp;
+use vrb_tools::send_email::mailer::Mailer;
 
 use crate::errors::AppError;
 use crate::extractors::authentication::RequireAuth;
@@ -19,11 +24,6 @@ use crate::profiles::{
     },
     profile_orm::ProfileOrm,
 };
-#[cfg(not(all(test, feature = "mockdata")))]
-use crate::send_email::mailer::impls::MailerApp;
-#[cfg(all(test, feature = "mockdata"))]
-use crate::send_email::mailer::tests::MailerApp;
-use crate::send_email::mailer::Mailer;
 use crate::sessions::{
     config_jwt,
     tokens::{decode_token, encode_token, generate_num_token},

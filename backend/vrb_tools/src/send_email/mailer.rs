@@ -44,9 +44,9 @@ pub mod impls {
     use std::{collections::HashMap, fs::File, io::Write, path::Path};
     
     use lettre::{message::header::ContentType, transport::smtp, Message, SmtpTransport, Transport};
-    use vrb_tools::template_rendering::render_template;
 
     use crate::send_email::config_smtp::ConfigSmtp;
+    use crate::template_rendering;
     
     use super::*;
 
@@ -138,7 +138,7 @@ pub mod impls {
                 ("base", Path::new("./templates/basic_layout.hbs"))
             ];
             // Create a html_template to send.
-            let html_template = render_template(&tpl_vec, params)?;
+            let html_template = template_rendering::render_template(&tpl_vec, params)?;
 
             if self.config_smtp.smtp_save_letter {
                 let path = "res_registration.html";
@@ -178,7 +178,7 @@ pub mod impls {
                 ("base", Path::new("./templates/basic_layout.hbs"))
             ];
             // Create a html_template to send.
-            let html_template = render_template(&tpl_vec, params)?;
+            let html_template = template_rendering::render_template(&tpl_vec, params)?;
 
             if self.config_smtp.smtp_save_letter {
                 let path = "res_recovery.html";
@@ -200,9 +200,8 @@ pub mod impls {
 pub mod tests {
     use std::{collections::HashMap, fs::File, io::Write, path::Path};
 
-    use vrb_tools::template_rendering::render_template;
-
     use crate::send_email::config_smtp::ConfigSmtp;
+    use crate::template_rendering;
     
     use super::*;
 
@@ -258,7 +257,7 @@ pub mod tests {
                 ("base", Path::new("./templates/basic_layout.hbs"))
             ];
             // Create a html_template to send.
-            let html_template = render_template(&tpl_vec, params)?;
+            let html_template = template_rendering::render_template(&tpl_vec, params)?;
 
             if self.save_file && self.config_smtp.smtp_save_letter {
                 let path = "res_registration.html";
@@ -310,7 +309,7 @@ pub mod tests {
                 ("base", Path::new("./templates/basic_layout.hbs"))
             ];
             // Create a html_template to send.
-            let html_template = render_template(&tpl_vec, params)?;
+            let html_template = template_rendering::render_template(&tpl_vec, params)?;
 
             if self.save_file && self.config_smtp.smtp_save_letter {
                 let path = "res_recovery_test.html";
