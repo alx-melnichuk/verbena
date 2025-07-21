@@ -24,22 +24,22 @@ pub trait UserRecoveryOrm {
 pub mod cfg {
     use crate::dbase::DbPool;
 
-    #[cfg(not(feature = "mockdata"))]
+    #[cfg(not(all(test, feature = "mockdata")))]
     use super::impls::UserRecoveryOrmApp;
-    #[cfg(not(feature = "mockdata"))]
+    #[cfg(not(all(test, feature = "mockdata")))]
     pub fn get_user_recovery_orm_app(pool: DbPool) -> UserRecoveryOrmApp {
         UserRecoveryOrmApp::new(pool)
     }
 
-    #[cfg(feature = "mockdata")]
+    #[cfg(all(test, feature = "mockdata"))]
     use super::tests::UserRecoveryOrmApp;
-    #[cfg(feature = "mockdata")]
+    #[cfg(all(test, feature = "mockdata"))]
     pub fn get_user_recovery_orm_app(_: DbPool) -> UserRecoveryOrmApp {
         UserRecoveryOrmApp::new()
     }
 }
 
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 pub mod impls {
     use std::time::Instant as tm;
 
@@ -193,7 +193,7 @@ pub mod impls {
     }
 }
 
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
     use chrono::{DateTime, Duration, Utc};
 
@@ -215,6 +215,20 @@ pub mod tests {
                 user_recovery_vec: Vec::new(),
             }
         }
+        /// Create a new instance with the specified user recovery list.
+        pub fn create(user_recov_vec: &[UserRecovery]) -> Self {
+            let mut user_recovery_vec: Vec<UserRecovery> = Vec::new();
+            let mut idx: i32 = 0;
+            for user_reg in user_recov_vec.iter() {
+                user_recovery_vec.push(Self::new_user_recovery(
+                    USER_RECOVERY_ID + idx,
+                    user_reg.user_id,
+                    user_reg.final_date,
+                ));
+                idx = idx + 1;
+            }
+            UserRecoveryOrmApp { user_recovery_vec }
+        }        
         /// Create a new entity instance.
         pub fn new_user_recovery(id: i32, user_id: i32, final_date: DateTime<Utc>) -> UserRecovery {
             UserRecovery {

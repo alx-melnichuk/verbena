@@ -29,9 +29,9 @@ use crate::sessions::{
     tokens::{decode_token, encode_token, generate_num_token},
 };
 use crate::settings::{config_app, err};
-#[cfg(not(feature = "mockdata"))]
+#[cfg(not(all(test, feature = "mockdata")))]
 use crate::users::user_recovery_orm::impls::UserRecoveryOrmApp;
-#[cfg(feature = "mockdata")]
+#[cfg(all(test, feature = "mockdata"))]
 use crate::users::user_recovery_orm::tests::UserRecoveryOrmApp;
 #[cfg(not(feature = "mockdata"))]
 use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
