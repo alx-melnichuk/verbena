@@ -3,7 +3,7 @@ use std::ops::Deref;
 use actix_web::{cookie::time::Duration as ActixWebDuration, cookie::Cookie, post, web, HttpResponse};
 use log::{debug, error, log_enabled, Level::Debug};
 use utoipa;
-use vrb_tools::hash_tools;
+use vrb_tools::{hash_tools, validators::{msg_validation, Validator}};
 
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
@@ -22,7 +22,6 @@ use crate::sessions::session_orm::impls::SessionOrmApp;
 use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::{config_jwt, session_orm::SessionOrm, tokens};
 use crate::settings::err;
-use crate::validators::{msg_validation, Validator};
 
 pub const TOKEN_NAME: &str = "token";
 

@@ -4,12 +4,11 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use vrb_tools::serial_datetime;
+use vrb_tools::{serial_datetime, validators::{ValidationChecks, ValidationError, Validator}};
 
 use crate::schema;
 use crate::settings::err;
 use crate::users::user_models::UserRole;
-use crate::validators::{ValidationChecks, ValidationError, Validator};
 
 pub const NICKNAME_MIN: u8 = 3;
 pub const NICKNAME_MAX: u8 = 64;

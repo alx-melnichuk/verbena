@@ -5,8 +5,9 @@ use mime;
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
 use utoipa::ToSchema;
+use vrb_tools::validators::ValidationError;
 
-use crate::{settings::err, validators::ValidationError};
+use crate::settings::err;
 
 // 500 Internal Server Error - Internal error when accessing the server API.
 pub const MSG_INTER_SRV_ERROR: &str = "internal_error_accessing_server_api";

@@ -4,11 +4,10 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use vrb_tools::serial_datetime;
+use vrb_tools::{serial_datetime, validators::{ValidationError, Validator}};
 
 use crate::profiles::profile_models;
 use crate::schema;
-use crate::validators::{ValidationError, Validator};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, diesel_derive_enum::DbEnum, ToSchema)]
 #[ExistingTypePath = "crate::schema::sql_types::UserRole"]

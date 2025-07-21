@@ -5,11 +5,10 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use utoipa::ToSchema;
-use vrb_tools::{serial_datetime, serial_datetime_option};
+use vrb_tools::{serial_datetime, serial_datetime_option, validators::{ValidationChecks, ValidationError, Validator}};
 
 use crate::schema;
 use crate::settings::err;
-use crate::validators::{ValidationChecks, ValidationError, Validator};
 
 pub const MSG_TITLE_REQUIRED: &str = "title:required";
 pub const TITLE_MIN: u8 = 2;

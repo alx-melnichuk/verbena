@@ -7,7 +7,7 @@ use log::error;
 use mime::IMAGE;
 use serde_json::{self, json};
 use utoipa;
-use vrb_tools::{cdis::coding, loading::dynamic_image, parser};
+use vrb_tools::{cdis::coding, loading::dynamic_image, parser, validators::{self, msg_validation, ValidationChecks, Validator}};
 
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
@@ -26,7 +26,6 @@ use crate::streams::{
     stream_orm::StreamOrm,
 };
 use crate::users::user_models::UserRole;
-use crate::validators::{self, msg_validation, ValidationChecks, Validator};
 
 // Use: post_stream, put_stream, delete_stream
 pub const ALIAS_LOGO_FILES_DIR: &str = "/logo";

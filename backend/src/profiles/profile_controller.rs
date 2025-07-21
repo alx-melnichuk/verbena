@@ -7,7 +7,7 @@ use log::error;
 use mime::IMAGE;
 use serde_json::json;
 use utoipa;
-use vrb_tools::{cdis::coding, hash_tools, loading::dynamic_image, parser};
+use vrb_tools::{cdis::coding, hash_tools, loading::dynamic_image, parser, validators::{self, msg_validation, ValidationChecks, Validator}};
 
 use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
@@ -38,7 +38,6 @@ use crate::users::user_models::UserRole;
 use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
-use crate::validators::{self, msg_validation, ValidationChecks, Validator};
 
 pub const ALIAS_AVATAR_FILES_DIR: &str = "/avatar";
 

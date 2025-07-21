@@ -64,7 +64,8 @@ pub mod impls {
 
     use diesel::{self, prelude::*, sql_types};
     use log::{info, log_enabled, Level::Info};
-
+    use vrb_tools::validators::Validator;
+    
     use crate::chats::{
         chat_message_models::{
             BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, ChatStreamLive, CreateBlockedUser, CreateChatMessage,
@@ -73,7 +74,6 @@ pub mod impls {
         chat_message_orm::ChatMessageOrm,
     };
     use crate::dbase;
-    use crate::validators::Validator;
 
     pub const CONN_POOL: &str = "ConnectionPool";
 
@@ -364,7 +364,8 @@ pub mod tests {
     use std::{cell::RefCell, cmp::Ordering, collections::HashMap};
 
     use chrono::{DateTime, SubsecRound, Timelike, Utc};
-
+    use vrb_tools::validators::Validator;
+    
     use crate::chats::{
         chat_message_models::{
             BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage,
@@ -373,8 +374,7 @@ pub mod tests {
         chat_message_orm::ChatMessageOrm,
     };
     use crate::profiles::profile_orm::tests::PROFILE_USER_ID;
-    use crate::validators::Validator;
-
+    
     pub const CHAT_MESSAGE_ID: i32 = 1500;
     pub const CHAT_MESSAGE_LOG_ID: i32 = 1600;
     pub const BLOCKED_USER_ID: i32 = 1700;
