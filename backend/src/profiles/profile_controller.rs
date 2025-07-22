@@ -1,14 +1,19 @@
 use std::{borrow::Cow, ops::Deref, path};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
-use actix_web::{delete, get, put, web, HttpResponse, http::StatusCode};
+use actix_web::{delete, get, http::StatusCode, put, web, HttpResponse};
 use chrono::{DateTime, Utc};
 use log::error;
 use mime::IMAGE;
 use serde_json::json;
 use utoipa;
-use vrb_tools::{api_error::{ApiError, code_to_str}, cdis::coding, hash_tools, loading::dynamic_image, parser,
-    validators::{self, msg_validation, ValidationChecks, Validator}
+use vrb_tools::{
+    api_error::{code_to_str, ApiError},
+    cdis::coding,
+    hash_tools,
+    loading::dynamic_image,
+    parser,
+    validators::{self, msg_validation, ValidationChecks, Validator},
 };
 
 use crate::extractors::authentication::{Authenticated, RequireAuth};
@@ -243,6 +248,7 @@ pub async fn get_profile_by_id(
 #[get("/api/profiles_config", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web::Result<HttpResponse, ApiError> {
     let cfg_prfl = config_prfl;
+    #[rustfmt::skip]
     let max_size = if cfg_prfl.prfl_avatar_max_size > 0 { Some(cfg_prfl.prfl_avatar_max_size) } else { None };
     let valid_types = cfg_prfl.prfl_avatar_valid_types.clone();
     let ext = cfg_prfl.prfl_avatar_ext.clone();
@@ -995,7 +1001,7 @@ pub mod tests {
     use actix_web::{http::header, web};
     use chrono::{DateTime, Duration, Utc};
     use vrb_tools::{api_error::ApiError, hash_tools, token::BEARER};
-    
+
     use crate::profiles::{config_prfl, profile_models::Profile, profile_orm::tests::ProfileOrmApp};
     use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
     use crate::streams::{
@@ -1003,7 +1009,7 @@ pub mod tests {
     };
     use crate::users::user_models::{UserRegistr, UserRole};
     use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
-    
+
     pub const ADMIN: u8 = 0;
     pub const USER: u8 = 1;
     pub const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
