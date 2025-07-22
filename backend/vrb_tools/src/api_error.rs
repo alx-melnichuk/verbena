@@ -15,10 +15,7 @@ use crate::validators::ValidationError;
 pub const MSG_INTER_SRV_ERROR: &str = "internal_error_accessing_server_api";
 
 pub fn code_to_str(status_code: StatusCode) -> String {
-    status_code
-        .canonical_reason()
-        .map(|v| v.replace(" ", ""))
-        .unwrap_or("".to_string())
+    status_code.canonical_reason().map(|v| v.replace(" ", "")).unwrap_or("".to_string())
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]

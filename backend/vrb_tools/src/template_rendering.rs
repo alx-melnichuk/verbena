@@ -3,7 +3,8 @@ use std::{collections::HashMap, path::Path};
 use handlebars::Handlebars;
 
 pub fn render_template<P>(tpl_vec: &[(&str, P)], params: HashMap<&str, &str>) -> Result<String, String>
-    where P: AsRef<Path>,
+where
+    P: AsRef<Path>,
 {
     if tpl_vec.len() == 0 {
         return Err("The parameter 'tpl_vec' is empty.".to_string());
@@ -11,7 +12,7 @@ pub fn render_template<P>(tpl_vec: &[(&str, P)], params: HashMap<&str, &str>) ->
 
     let mut handlebars = Handlebars::new();
     let mut name = "";
-    
+
     for (tpl_name, tpl_path1) in tpl_vec.into_iter() {
         let tpl_path = (*tpl_path1).as_ref();
         if tpl_name.len() == 0 || tpl_path.to_string_lossy().len() == 0 {

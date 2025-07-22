@@ -26,18 +26,18 @@ pub trait Mailer {
  * use vrb_tools::send_email::mailer::impls::MailerApp;
  * #[cfg(feature = "mockdata")]
  * use vrb_tools::send_email::mailer::tests::MailerApp;
- * 
+ *
  * MailerApp::new(config_smtp)
  */
 
 pub mod impls {
     use std::{collections::HashMap, fs::File, io::Write, path::Path};
-    
+
     use lettre::{message::header::ContentType, transport::smtp, Message, SmtpTransport, Transport};
 
     use crate::send_email::config_smtp::ConfigSmtp;
     use crate::template_rendering;
-    
+
     use super::*;
 
     #[derive(Debug, Clone)]
@@ -51,10 +51,7 @@ pub mod impls {
         }
         // Create an instance of Credentials.
         pub fn get_credentials(&self) -> smtp::authentication::Credentials {
-            smtp::authentication::Credentials::new(
-                self.config_smtp.smtp_user.to_owned(),
-                self.config_smtp.smtp_pass.to_owned(),
-            )
+            smtp::authentication::Credentials::new(self.config_smtp.smtp_user.to_owned(), self.config_smtp.smtp_pass.to_owned())
         }
         // Create an instance of SmtpTransport.
         fn new_smtp_transport(&self) -> Result<SmtpTransport, lettre::transport::smtp::Error> {
@@ -122,10 +119,10 @@ pub mod impls {
             params.insert("target", target);
             let registr_duration_val = registr_duration.to_string();
             params.insert("registr_duration", &registr_duration_val);
-            
+
             let tpl_vec = [
                 ("verification_code", Path::new("./templates/verification_code.hbs")),
-                ("base", Path::new("./templates/basic_layout.hbs"))
+                ("base", Path::new("./templates/basic_layout.hbs")),
             ];
             // Create a html_template to send.
             let html_template = template_rendering::render_template(&tpl_vec, params)?;
@@ -165,7 +162,7 @@ pub mod impls {
 
             let tpl_vec = [
                 ("password_recovery", Path::new("./templates/password_recovery.hbs")),
-                ("base", Path::new("./templates/basic_layout.hbs"))
+                ("base", Path::new("./templates/basic_layout.hbs")),
             ];
             // Create a html_template to send.
             let html_template = template_rendering::render_template(&tpl_vec, params)?;
@@ -188,10 +185,10 @@ pub mod impls {
 
 pub mod tests {
     use std::{collections::HashMap, fs::File, io::Write, path::Path};
-    
+
     use crate::send_email::config_smtp::ConfigSmtp;
     use crate::template_rendering;
-    
+
     use super::*;
 
     #[derive(Debug, Clone)]
@@ -224,12 +221,7 @@ pub mod tests {
             if receiver.len() == 0 {
                 return Err("Recipient not specified.".to_string());
             }
-            if domain.len() == 0
-                || subject.len() == 0
-                || nickname.len() == 0
-                || target.len() == 0
-                || registr_duration == -999
-            {
+            if domain.len() == 0 || subject.len() == 0 || nickname.len() == 0 || target.len() == 0 || registr_duration == -999 {
                 return Err("Recipient params: domain, nickname, target.".to_string());
             }
             // subject: "Your account verification code";
@@ -243,7 +235,7 @@ pub mod tests {
 
             let tpl_vec = [
                 ("verification_code", Path::new("./templates/verification_code.hbs")),
-                ("base", Path::new("./templates/basic_layout.hbs"))
+                ("base", Path::new("./templates/basic_layout.hbs")),
             ];
             // Create a html_template to send.
             let html_template = template_rendering::render_template(&tpl_vec, params)?;
@@ -276,12 +268,7 @@ pub mod tests {
             if receiver.len() == 0 {
                 return Err("Recipient not specified.".to_string());
             }
-            if domain.len() == 0
-                || subject.len() == 0
-                || nickname.len() == 0
-                || target.len() == 0
-                || recovery_duration == -999
-            {
+            if domain.len() == 0 || subject.len() == 0 || nickname.len() == 0 || target.len() == 0 || recovery_duration == -999 {
                 return Err("Recipient params: domain, nickname, target.".to_string());
             }
             // subject: "Your password reset token (valid for only 10 minutes)";
@@ -295,7 +282,7 @@ pub mod tests {
 
             let tpl_vec = [
                 ("password_recovery", Path::new("./templates/password_recovery.hbs")),
-                ("base", Path::new("./templates/basic_layout.hbs"))
+                ("base", Path::new("./templates/basic_layout.hbs")),
             ];
             // Create a html_template to send.
             let html_template = template_rendering::render_template(&tpl_vec, params)?;

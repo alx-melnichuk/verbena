@@ -184,9 +184,7 @@ pub fn decode(value: &str, accuracy: u8) -> Result<DateTime<Utc>, String> {
 
     let year_s = format!("{}{}{}{}", &value[1..2], &value[4..5], &value[7..8], &value[9..10]);
 
-    let year = year_s
-        .parse::<i32>()
-        .map_err(|_| format!("{}: \"{}\"", MSG_INVALID_YEAR, year_s))?;
+    let year = year_s.parse::<i32>().map_err(|_| format!("{}: \"{}\"", MSG_INVALID_YEAR, year_s))?;
 
     let nano123 = nano123_s
         .parse::<i32>()

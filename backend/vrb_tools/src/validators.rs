@@ -37,10 +37,7 @@ impl ValidationError {
 }
 
 pub fn msg_validation(validation_errors: &Vec<ValidationError>) -> String {
-    validation_errors
-        .iter()
-        .map(|v| format!("{} # ", v.message.to_string()))
-        .collect()
+    validation_errors.iter().map(|v| format!("{} # ", v.message.to_string())).collect()
 }
 
 pub trait Validator {

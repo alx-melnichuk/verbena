@@ -6,8 +6,7 @@ use openssl::{
 };
 
 pub const CRT_MESSAGE_STRING_EMPTY: &str = "The encrypted message string is empty.";
-pub const CRT_WRONG_STRING_BASE64URL: &str =
-    "Base64Url must contain: 'A-Z','a-z','0-9','-','_' and have a length that is a multiple of 4.";
+pub const CRT_WRONG_STRING_BASE64URL: &str = "Base64Url must contain: 'A-Z','a-z','0-9','-','_' and have a length that is a multiple of 4.";
 
 // https://docs.rs/openssl/0.10.64/openssl/encrypt/index.html
 /// Encrypt data with the specified private key.

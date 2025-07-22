@@ -24,12 +24,10 @@ where
         Utc::now()
     } else {
         // rfc3339: '2023-11-14T14:01:56.323Z'
-        let datetime_fixed =
-            DateTime::parse_from_rfc3339(buff.as_str()).map_err(serde::de::Error::custom)?;
+        let datetime_fixed = DateTime::parse_from_rfc3339(buff.as_str()).map_err(serde::de::Error::custom)?;
         // let datetime_fixed =
         //     DateTime::parse_from_str(buff.as_str(), FORMAT).map_err(serde::de::Error::custom)?;
-        let datetime_utc =
-            DateTime::<Utc>::try_from(datetime_fixed).map_err(serde::de::Error::custom)?;
+        let datetime_utc = DateTime::<Utc>::try_from(datetime_fixed).map_err(serde::de::Error::custom)?;
         datetime_utc
     })
 }

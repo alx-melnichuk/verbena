@@ -40,8 +40,7 @@ pub fn compare_hash(param: impl Into<String>, hashed_param: &str) -> Result<bool
         return Err(format!("{}{}", ERR_PARAM_EXCEED_MAX_LEN, MAX_PARAM_LENGTH));
     }
 
-    let parsed_hash =
-        PasswordHash::new(hashed_param).map_err(|e| format!("{}{}", ERR_INVALID_HASH_FORMAT, e.to_string()))?;
+    let parsed_hash = PasswordHash::new(hashed_param).map_err(|e| format!("{}{}", ERR_INVALID_HASH_FORMAT, e.to_string()))?;
 
     let compare_res = Argon2::default().verify_password(param.as_bytes(), &parsed_hash);
 

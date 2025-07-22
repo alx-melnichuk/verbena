@@ -2,10 +2,7 @@ use std::{fs, io::Read};
 
 use openssl::{pkey, ssl};
 
-pub fn create_ssl_acceptor_builder(
-    path_certificate: &str,
-    path_private_key: &str,
-) -> ssl::SslAcceptorBuilder {
+pub fn create_ssl_acceptor_builder(path_certificate: &str, path_private_key: &str) -> ssl::SslAcceptorBuilder {
     // build TLS config from files
     let mut builder = ssl::SslAcceptor::mozilla_intermediate(ssl::SslMethod::tls()).unwrap();
 
