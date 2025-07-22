@@ -7,7 +7,7 @@
 
 # Maximum width of a chain to fit on one line.
 # Default: 60 (%)
-chain_width = 85
+chain_width = 90
 
 # Specifies which edition is used by the parser.
 # Default: "2015"
@@ -15,20 +15,28 @@ edition = "2021"
 
 # Maximum width of the args of a function call before falling back to vertical formatting.
 # Default: 60 (%)
-#  fn_call_width = 90
+fn_call_width = 97
 
 # Maximum width of each line.
 # Default: 100
 max_width = 140
 
-# Number of spaces per tab.
-# Default: 4
-tab_spaces = 4
-
 # Reorder import statements alphabetically.
 # Default: false
 reorder_imports = true
 
+# The width threshold for an array element to be considered "short".
+# Default: 10 (%)
+short_array_element_width_threshold = 70
+
 # Maximum line length for single line if-else expressions.
-# Default: 50
-# single_line_if_else_max_width = 90
+# Default: 50 (%)
+single_line_if_else_max_width = 80
+
+# Maximum line length for single line let-else statements.
+# Default: 50 (%)
+single_line_let_else_max_width = 80
+
+# Number of spaces per tab.
+# Default: 4
+tab_spaces = 4
