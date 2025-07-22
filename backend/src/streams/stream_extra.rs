@@ -1,7 +1,7 @@
-use actix_web::web;
+use actix_web::{web, http::StatusCode};
 use log::error;
+use vrb_tools::api_error::{ApiError, code_to_str};
 
-use crate::errors::AppError;
 use crate::settings::err;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::streams::stream_orm::impls::StreamOrmApp;
@@ -14,7 +14,7 @@ use crate::streams::{
 };
 
 /** Get a list of logo file names for streams of the user with the specified user_id. */
-pub async fn get_stream_logo_files(stream_orm: web::Data<StreamOrmApp>, user_id: i32) -> Result<Vec<String>, AppError> {
+pub async fn get_stream_logo_files(stream_orm: web::Data<StreamOrmApp>, user_id: i32) -> Result<Vec<String>, ApiError> {
     let opt_id: Option<i32> = None;
     let opt_user_id: Option<i32> = Some(user_id);
     let opt_is_logo: Option<bool> = Some(true);
@@ -25,15 +25,16 @@ pub async fn get_stream_logo_files(stream_orm: web::Data<StreamOrmApp>, user_id:
         let res_data = stream_orm
             .filter_streams_by_params(opt_id, opt_user_id, opt_is_logo, opt_live, false, &[])
             .map_err(|e| {
-                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
         res_data
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        #[rustfmt::skip]
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     // Extract data from the result.
