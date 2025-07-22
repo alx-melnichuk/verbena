@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{to_string, to_value, Value};
 use utoipa::ToSchema;
 
+use crate::validators::ValidationError;
+
 // 500 Internal Server Error - Internal error when accessing the server API.
 pub const MSG_INTER_SRV_ERROR: &str = "internal_error_accessing_server_api";
 
@@ -52,6 +54,10 @@ impl ApiError {
             status: status.as_u16(),
         }
     }
+    /// Create a new instance of the ApiError structure from the parameters.
+    pub fn create<'a>(status: u16, message: &'a str, text: &'a str) -> Self {
+        ApiError::new(status, &format!("{}; {}", message, text))
+    }
     /// Convert value from u16 to StatusCode (or default value).
     pub fn u16_to_status_code_or_default(status: u16) -> StatusCode {
         let default_value = StatusCode::INTERNAL_SERVER_ERROR;
@@ -90,7 +96,19 @@ impl ApiError {
     pub fn status_code(&self) -> StatusCode {
         Self::u16_to_status_code_or_default(self.status)
     }
-
+    /// List of errors when validating parameters.
+    pub fn validations(errors: Vec<ValidationError>) -> Vec<Self> {
+        let mut result: Vec<Self> = vec![];
+        for error in errors.into_iter() {
+            // let message = error.message.clone();
+            let mut app_error = ApiError::new(417, &error.message.clone());
+            for (key, val) in error.params.into_iter() {
+                app_error.add_param(key, &val);
+            }
+            result.push(app_error);
+        }
+        result
+    }
     /// Converting the error vector into http-response.
     pub fn to_response(errors: &[Self]) -> HttpResponse {
         let default = ApiError::new(Self::default_status(), Self::default_message());

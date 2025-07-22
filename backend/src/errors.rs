@@ -5,7 +5,7 @@ use mime;
 use serde::{Deserialize, Serialize};
 use serde_json::{to_value, Value};
 use utoipa::ToSchema;
-use vrb_tools::validators::ValidationError;
+use vrb_tools::{api_error::ApiError, validators::ValidationError};
 
 use crate::settings::err;
 
@@ -174,5 +174,15 @@ impl actix_web::ResponseError for AppError {
             .insert_header(http::header::ContentType(mime::APPLICATION_JSON))
             .insert_header((mime::CHARSET.as_str(), mime::UTF_8.as_str()))
             .json(self)
+    }
+}
+
+impl From<ApiError> for AppError {
+    fn from(api_error: ApiError) -> Self {
+        let mut app_error = AppError::new(&api_error.code, &api_error.message);
+        for (key, val) in api_error.params.into_iter() {
+            app_error.add_param(key, &val);
+        }
+        app_error
     }
 }
