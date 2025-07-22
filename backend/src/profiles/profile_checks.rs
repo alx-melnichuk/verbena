@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
 use actix_web::web;
+use vrb_tools::api_error::ApiError;
 
-use crate::errors::AppError;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -20,7 +20,7 @@ pub async fn uniqueness_nickname_or_email(
     opt_email: Option<String>,
     profile_orm: ProfileOrmApp,
     user_registr_orm: UserRegistrOrmApp,
-) -> Result<Option<(bool, bool)>, AppError> {
+) -> Result<Option<(bool, bool)>, ApiError> {
     let nickname = opt_nickname.unwrap_or("".to_string());
     let email = opt_email.unwrap_or("".to_string());
     #[rustfmt::skip]
@@ -29,7 +29,7 @@ pub async fn uniqueness_nickname_or_email(
 
     if opt_nickname.is_none() && opt_email.is_none() {
         let json = serde_json::json!({ "nickname": "null", "email": "null" });
-        return Err(AppError::not_acceptable406(err::MSG_PARAMS_NOT_SPECIFIED) // 406
+        return Err(ApiError::new(406, err::MSG_PARAMS_NOT_SPECIFIED) // 406
             .add_param(Cow::Borrowed("invalidParams"), &json));
     }
 
@@ -40,12 +40,12 @@ pub async fn uniqueness_nickname_or_email(
     let opt_profile = web::block(move || {
         let existing_profile = profile_orm
             .find_profile_by_nickname_or_email(opt_nickname2.as_deref(), opt_email2.as_deref(), false)
-            .map_err(|e| AppError::database507(&e)) // 507
+            .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
             .ok()?;
         existing_profile
     })
     .await
-    .map_err(|e| AppError::blocking506(&e.to_string()))?; // 506
+    .map_err(|e| ApiError::create(506, err::MSG_BLOCKING, &e.to_string()))?; // 506
 
     // If such an entry exists in the "profiles" table, then exit.
     if let Some(profile) = opt_profile {
@@ -56,12 +56,12 @@ pub async fn uniqueness_nickname_or_email(
     let opt_user_registr = web::block(move || {
         let existing_user_registr = user_registr_orm
             .find_user_registr_by_nickname_or_email(opt_nickname.as_deref(), opt_email.as_deref())
-            .map_err(|e| AppError::database507(&e)) // 507
+            .map_err(|e| ApiError::create(507, err::MSG_DATABASE, &e)) // 507
             .ok()?;
         existing_user_registr
     })
     .await
-    .map_err(|e| AppError::blocking506(&e.to_string()))?; // 506
+    .map_err(|e| ApiError::create(506, err::MSG_BLOCKING, &e.to_string()))?; // 506
 
     // If such a record exists in the "registration" table, then exit.
     if let Some(user_registr) = opt_user_registr {
@@ -73,7 +73,9 @@ pub async fn uniqueness_nickname_or_email(
 
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
+    use actix_web::http::StatusCode;
     use chrono::{DateTime, Duration, Utc};
+    use vrb_tools::api_error::code_to_str;
 
     use crate::profiles::profile_models::Profile;
     use crate::settings::err;
@@ -116,7 +118,7 @@ mod tests {
         let result = uniqueness_nickname_or_email(opt_nickname, opt_email, profile_orm, user_registr_orm).await;
         assert!(result.is_err());
         let app_err = result.err().unwrap();
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         assert_eq!(app_err.message, err::MSG_PARAMS_NOT_SPECIFIED);
         #[rustfmt::skip]
         let json = serde_json::json!({ "nickname": "null", "email": "null" });
@@ -132,7 +134,7 @@ mod tests {
         let result = uniqueness_nickname_or_email(opt_nickname, opt_email, profile_orm, user_registr_orm).await;
         assert!(result.is_err());
         let app_err = result.err().unwrap();
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         assert_eq!(app_err.message, err::MSG_PARAMS_NOT_SPECIFIED);
         #[rustfmt::skip]
         let json = serde_json::json!({ "nickname": "null", "email": "null" });
@@ -148,7 +150,7 @@ mod tests {
         let result = uniqueness_nickname_or_email(opt_nickname, opt_email, profile_orm, user_registr_orm).await;
         assert!(result.is_err());
         let app_err = result.err().unwrap();
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         assert_eq!(app_err.message, err::MSG_PARAMS_NOT_SPECIFIED);
         #[rustfmt::skip]
         let json = serde_json::json!({ "nickname": "null", "email": "null" });

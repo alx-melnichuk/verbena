@@ -1,15 +1,16 @@
 use std::{borrow::Cow, ops::Deref, path};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
-use actix_web::{delete, get, put, web, HttpResponse};
+use actix_web::{delete, get, put, web, HttpResponse, http::StatusCode};
 use chrono::{DateTime, Utc};
 use log::error;
 use mime::IMAGE;
 use serde_json::json;
 use utoipa;
-use vrb_tools::{cdis::coding, hash_tools, loading::dynamic_image, parser, validators::{self, msg_validation, ValidationChecks, Validator}};
+use vrb_tools::{api_error::{ApiError, code_to_str}, cdis::coding, hash_tools, loading::dynamic_image, parser,
+    validators::{self, msg_validation, ValidationChecks, Validator}
+};
 
-use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
@@ -140,17 +141,17 @@ fn convert_avatar_file(file_img_path: &str, config_prfl: config_prfl::ConfigPrfl
             )))),
         ),
         (status = 204, description = "The user with the specified ID was not found."),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
         (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/users/2a`", 
-            body = AppError, example = json!(AppError::range_not_satisfiable416(
-                &format!("{}; {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
+            body = ApiError, example = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
+                , "`id` - invalid digit found in string (2a)"))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     params(("id", description = "Unique user ID.")),
     security(("bearer_auth" = [])),
@@ -160,29 +161,29 @@ fn convert_avatar_file(file_img_path: &str, config_prfl: config_prfl::ConfigPrfl
 pub async fn get_profile_by_id(
     profile_orm: web::Data<ProfileOrmApp>,
     request: actix_web::HttpRequest,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     let id_str = request.match_info().query("id").to_string();
-
+    #[rustfmt::skip]
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
-        AppError::range_not_satisfiable416(&message) // 416
+        let msg = &format!("`{}` - {}", "id", &e);
+        error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
+        ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
 
     let opt_profile = web::block(move || {
         // Find profile by user id.
         let profile =
             profile_orm.get_profile_user_by_id(id, false).map_err(|e| {
-                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e) // 507
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
             }).ok()?;
 
         profile
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) //506
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     if let Some(profile_user) = opt_profile {
@@ -232,15 +233,15 @@ pub async fn get_profile_by_id(
                 value = json!(ProfileConfigDto::new(None, ConfigPrfl::image_types(), None, None, None))
             )), ),
         ),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
     ),
     security(("bearer_auth" = []))
 )]
 #[get("/api/profiles_config", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web::Result<HttpResponse, AppError> {
+pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web::Result<HttpResponse, ApiError> {
     let cfg_prfl = config_prfl;
     let max_size = if cfg_prfl.prfl_avatar_max_size > 0 { Some(cfg_prfl.prfl_avatar_max_size) } else { None };
     let valid_types = cfg_prfl.prfl_avatar_valid_types.clone();
@@ -293,10 +294,10 @@ pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web
                     Some(PROFILE_LOCALE_DEF)))
             )))),
         ),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
     ),
     security(("bearer_auth" = []))
 )]
@@ -304,7 +305,7 @@ pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web
 #[get("/api/profiles_current", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_profile_current(
     authenticated: Authenticated,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     let profile = authenticated.deref();
     let profile_dto = ProfileDto::from(profile.clone());
     Ok(HttpResponse::Ok().json(profile_dto)) // 200
@@ -338,13 +339,13 @@ pub async fn get_profile_current(
             ("not_use" = (summary = "not yet in use", description = "If the nickname (email) is not yet used.",
                 value = json!(UniquenessProfileResponseDto::new(true))))
         )),
-        (status = 406, description = "None of the parameters are specified.", body = AppError,
-            example = json!(AppError::not_acceptable406(err::MSG_PARAMS_NOT_SPECIFIED)
+        (status = 406, description = "None of the parameters are specified.", body = ApiError,
+            example = json!(ApiError::new(406, err::MSG_PARAMS_NOT_SPECIFIED)
                 .add_param(Cow::Borrowed("invalidParams"), &json!({ "nickname": "null", "email": "null" })))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
 )]
 #[get("/api/profiles_uniqueness")]
@@ -352,7 +353,7 @@ pub async fn uniqueness_check(
     profile_orm: web::Data<ProfileOrmApp>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     query_params: web::Query<UniquenessProfileDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     // Get search parameters.
     let uniqueness_user_dto: UniquenessProfileDto = query_params.clone().into_inner();
 
@@ -367,7 +368,7 @@ pub async fn uniqueness_check(
         .map_err(|err| {
             #[rustfmt::skip]
             let prm1 = match err.params.first_key_value() { Some((_, v)) => v.to_string(), None => "".to_string() };
-            error!("{}:{}; {}", &err.code, &err.message, &prm1);
+            error!("{}-{}; {}", &err.code, &err.message, &prm1);
             err
         })?;
     let uniqueness = res_search.is_none();
@@ -457,37 +458,36 @@ impl ModifyProfileForm {
             )))),    
         ),
         (status = 204, description = "The current user's profile was not found."),
-        (status = 409, description = "Error: nickname (email) is already in use.", body = AppError, examples(
+        (status = 409, description = "Error: nickname (email) is already in use.", body = ApiError, examples(
             ("Nickname" = (summary = "Nickname already used",
                 description = "The nickname value has already been used.",
-                value = json!(AppError::conflict409(err::MSG_NICKNAME_ALREADY_USE)))),
+                value = json!(ApiError::new(409, err::MSG_NICKNAME_ALREADY_USE)))),
             ("Email" = (summary = "Email already used", 
                 description = "The email value has already been used.",
-                value = json!(AppError::conflict409(err::MSG_EMAIL_ALREADY_USE))))
+                value = json!(ApiError::new(409, err::MSG_EMAIL_ALREADY_USE))))
         )),
         (status = 413, description = "Invalid image file size. `curl -i -X PUT http://localhost:8080/api/profiles
-            -F 'avatarfile=@image.jpg'`", body = AppError,
-            example = json!(AppError::content_large413(err::MSG_INVALID_FILE_SIZE).add_param(Cow::Borrowed("invalidFileSize"),
+            -F 'avatarfile=@image.jpg'`", body = ApiError,
+            example = json!(ApiError::new(413, err::MSG_INVALID_FILE_SIZE).add_param(Cow::Borrowed("invalidFileSize"),
                 &json!({ "actualFileSize": 186, "maxFileSize": 160 })))),
         (status = 415, description = "Uploading a file with an invalid type `svg`. `curl -i -X PUT http://localhost:8080/api/profiles
-            -F 'avatarfile=@image.svg'`", body = AppError,
-            example = json!(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE).add_param(Cow::Borrowed("invalidFileType"),
+            -F 'avatarfile=@image.svg'`", body = ApiError,
+            example = json!(ApiError::new(415, err::MSG_INVALID_FILE_TYPE).add_param(Cow::Borrowed("invalidFileType"),
                 &json!({ "actualFileType": "image/svg+xml", "validFileType": "image/jpeg,image/png" })))),
         (status = 417, description = "Validation error. `curl -X PUT http://localhost:8080/api/profiles
-            -F 'descript=Description' -F 'theme=light' -F 'avatarfile=@image.png'`", body = [AppError],
-            example = json!(AppError::validations(
+            -F 'descript=Description' -F 'theme=light' -F 'avatarfile=@image.png'`", body = [ApiError],
+            example = json!(ApiError::validations(
                 (ModifyProfileDto { nickname: None, email: None, role: None,
                     descript: Some("d".to_string()), theme: Some("light".to_string()), locale: None }).validate().err().unwrap()
             ) )),
-        (status = 500, description = "Error loading file.", body = AppError, example = json!(
-            AppError::internal_err500(&format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, "/tmp/demo.jpg", "File not found.")))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
-        (status = 510, description = "Error while converting file.", body = AppError,
-            example = json!(AppError::not_extended510(
-                &format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, "Invalid source file image type \"svg\"")))),
+        (status = 500, description = "Error loading file.", body = ApiError, example = json!(
+            ApiError::create(500, err::MSG_ERROR_UPLOAD_FILE, "/tmp/demo.jpg - File not found."))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
+        (status = 510, description = "Error while converting file.", body = ApiError,
+            example = json!(ApiError::create(510, err::MSG_ERROR_CONVERT_FILE, "Invalid source file image type \"svg\""))),
     ),
     security(("bearer_auth" = [])),
 )]
@@ -500,7 +500,7 @@ pub async fn put_profile(
     profile_orm: web::Data<ProfileOrmApp>,
     user_registr_orm: web::Data<UserRegistrOrmApp>,
     MultipartForm(modify_profile_form): MultipartForm<ModifyProfileForm>,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     // Get the current user's profile.
     let profile = authenticated.deref();
     let curr_user_id = profile.user_id;
@@ -526,8 +526,8 @@ pub async fn put_profile(
             }
         }).collect();
         if !is_no_fields_to_update || avatar_file.is_none() {
-            error!("{}: {}", err::CD_VALIDATION, msg_validation(&errors));
-            return Ok(AppError::to_response(&AppError::validations(errors))); // 417
+            error!("{}-{}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&errors));
+            return Ok(ApiError::to_response(&ApiError::validations(errors))); // 417
         }
     }
 
@@ -542,7 +542,7 @@ pub async fn put_profile(
             .map_err(|err| {
                 #[rustfmt::skip]
                 let prm1 = match err.params.first_key_value() { Some((_, v)) => v.to_string(), None => "".to_string() };
-                error!("{}:{}; {}", &err.code, &err.message, &prm1);
+                error!("{}-{}; {}", &err.code, &err.message, &prm1);
                 err
             })?;
 
@@ -550,8 +550,8 @@ pub async fn put_profile(
         if let Some((is_nickname, _)) = res_search {
             #[rustfmt::skip]
             let message = if is_nickname { err::MSG_NICKNAME_ALREADY_USE } else { err::MSG_EMAIL_ALREADY_USE };
-            error!("{}: {}", err::CD_CONFLICT, &message);
-            return Err(AppError::conflict409(&message)); // 409
+            error!("{}-{}", code_to_str(StatusCode::CONFLICT), &message);
+            return Err(ApiError::new(409, &message)); // 409
         }
     }
 
@@ -571,8 +571,9 @@ pub async fn put_profile(
         let avatar_max_size = usize::try_from(config_prfl.prfl_avatar_max_size).unwrap();
         if avatar_max_size > 0 && temp_file.size > avatar_max_size {
             let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": avatar_max_size });
-            error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
-            return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
+            #[rustfmt::skip]
+            error!("{}-{}: {}", code_to_str(StatusCode::PAYLOAD_TOO_LARGE), err::MSG_INVALID_FILE_SIZE, json.to_string());
+            return Err(ApiError::new(413, err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Cow::Borrowed("invalidFileSize"), &json));
         }
         
@@ -582,8 +583,9 @@ pub async fn put_profile(
         let valid_file_mime_types: Vec<String> = config_prfl.prfl_avatar_valid_types.clone();
         if !valid_file_mime_types.contains(&file_mime_type) {
             let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
-            error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
-            return Err(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE) // 415
+            #[rustfmt::skip]
+            error!("{}-{}; {}", code_to_str(StatusCode::UNSUPPORTED_MEDIA_TYPE), err::MSG_INVALID_FILE_TYPE, json.to_string());
+            return Err(ApiError::new(415, err::MSG_INVALID_FILE_TYPE) // 415
                 .add_param(Cow::Borrowed("invalidFileType"), &json));
         }
 
@@ -597,18 +599,17 @@ pub async fn put_profile(
         // Note: if a file exists at the target path, persist will atomically replace it.
         let res_upload = temp_file.file.persist(&full_path_file);
         if let Err(err) = res_upload {
-            let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &full_path_file, err.to_string());
-            error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
-            return Err(AppError::internal_err500(&message)); // 500
+            let msg = format!("{} - {}", &full_path_file, err.to_string());
+            error!("{}-{}; {}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), err::MSG_ERROR_UPLOAD_FILE, &msg);
+            return Err(ApiError::create(500, err::MSG_ERROR_UPLOAD_FILE, &msg)); // 500
         }
         path_new_avatar_file = full_path_file;
         
         // Convert the file to another mime type.
         let res_convert_img_file = convert_avatar_file(&path_new_avatar_file, config_prfl.clone(), "put_profile()")
         .map_err(|e| {
-            let message = format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, e);
-            error!("{}: {}", err::CD_NOT_EXTENDED, &message);
-            AppError::not_extended510(&message) // 510
+            error!("{}-{}; {}", code_to_str(StatusCode::NOT_EXTENDED), err::MSG_ERROR_CONVERT_FILE, &e);
+            ApiError::create(510, err::MSG_ERROR_CONVERT_FILE, &e) // 510
         })?;
         if let Some(new_path_file) = res_convert_img_file {
             path_new_avatar_file = new_path_file;
@@ -632,16 +633,16 @@ pub async fn put_profile(
         // Modify an entity (profile).
         let res_data_profile = profile_orm.modify_profile(curr_user_id, modify_profile)
         .map_err(|e| {
-            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e)
         });
 
         res_data_profile
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string())
     })?;
 
     let opt_profile = res_profile
@@ -692,23 +693,23 @@ pub async fn put_profile(
             )))),
         ),
         (status = 204, description = "The current user was not found."),
-        (status = 401, description = "The nickname or password is incorrect or the token is missing.", body = AppError, 
-            example = json!(AppError::unauthorized401(err::MSG_PASSWORD_INCORRECT))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
-        (status = 409, description = "Error when comparing password hashes.", body = AppError,
-            example = json!(AppError::conflict409(&format!("{}; {}", err::MSG_INVALID_HASH, "Parameter is empty.")))),
-        (status = 417, body = [AppError],
+        (status = 401, description = "The nickname or password is incorrect or the token is missing.", body = ApiError, 
+            example = json!(ApiError::new(401, err::MSG_PASSWORD_INCORRECT))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
+        (status = 409, description = "Error when comparing password hashes.", body = ApiError,
+            example = json!(ApiError::create(409, err::MSG_INVALID_HASH, "Parameter is empty."))),
+        (status = 417, body = [ApiError],
             description = "Validation error. `curl -i -X PUT http://localhost:8080/api/profiles_new_password \
             -d '{\"password\": \"pas\" \"new_password\": \"word\"}'`",
-            example = json!(AppError::validations(
+            example = json!(ApiError::validations(
                 (NewPasswordProfileDto {password: "pas".to_string(), new_password: "word".to_string()}).validate().err().unwrap()) )),
-        (status = 500, description = "Error while calculating the password hash.", body = AppError, 
-            example = json!(AppError::internal_err500(&format!("{}; {}", err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty.")))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
+        (status = 500, description = "Error while calculating the password hash.", body = ApiError, 
+            example = json!(ApiError::create(500, err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty."))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     security(("bearer_auth" = []))
 )]
@@ -718,7 +719,7 @@ pub async fn put_profile_new_password(
     authenticated: Authenticated,
     profile_orm: web::Data<ProfileOrmApp>,
     json_body: web::Json<NewPasswordProfileDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     // 1.308634s
     let profile = authenticated.deref();
     let profile_id = profile.user_id;
@@ -726,17 +727,17 @@ pub async fn put_profile_new_password(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
+        error!("{}-{}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&validation_errors));
+        return Ok(ApiError::to_response(&ApiError::validations(validation_errors))); // 417
     }
 
     let new_password_user: NewPasswordProfileDto = json_body.into_inner();
     let new_password = new_password_user.new_password.clone();
     // Get a hash of the new password.
     let new_password_hashed = hash_tools::encode_hash(&new_password).map_err(|e| {
-        let message = format!("{}; {}", err::MSG_ERROR_HASHING_PASSWORD, e.to_string());
-        error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
-        AppError::internal_err500(&message) // 500
+        #[rustfmt::skip]
+        error!("{}-{}; {}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), err::MSG_ERROR_HASHING_PASSWORD, &e.to_string());
+        ApiError::create(500, err::MSG_ERROR_HASHING_PASSWORD, &e.to_string()) // 500
     })?;
     
     let profile_orm2 = profile_orm.clone();
@@ -744,20 +745,20 @@ pub async fn put_profile_new_password(
         // Find user by nickname or email.
         let existing_profile = profile_orm2.get_profile_user_by_id(profile_id, true)
             .map_err(|e| {
-                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e) // 507
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
         existing_profile
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })??;
 
     let profile_pwd = opt_profile_pwd.ok_or_else(|| {
-        error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_WRONG_NICKNAME_EMAIL);
-        AppError::unauthorized401(err::MSG_WRONG_NICKNAME_EMAIL) // 401 (A)
+        error!("{}-{}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_WRONG_NICKNAME_EMAIL);
+        ApiError::new(401, err::MSG_WRONG_NICKNAME_EMAIL) // 401 (A)
     })?;
 
     // Get the value of the old password.
@@ -766,14 +767,13 @@ pub async fn put_profile_new_password(
     let profile_hashed_old_password = profile_pwd.password.to_string();
     // Check whether the hash for the specified password value matches the old password hash.
     let password_matches = hash_tools::compare_hash(&old_password, &profile_hashed_old_password).map_err(|e| {
-        let message = format!("{}; {}", err::MSG_INVALID_HASH, &e);
-        error!("{}: {}", err::CD_CONFLICT, &message);
-        AppError::conflict409(&message) // 409
+        error!("{}-{}; {}", code_to_str(StatusCode::CONFLICT), err::MSG_INVALID_HASH, &e);
+        ApiError::create(409, err::MSG_INVALID_HASH, &e) // 409
     })?;
     // If the hash for the specified password does not match the old password hash, then return an error.
     if !password_matches {
-        error!("{}: {}", err::CD_UNAUTHORIZED, err::MSG_PASSWORD_INCORRECT);
-        return Err(AppError::unauthorized401(err::MSG_PASSWORD_INCORRECT)); // 401 (B)
+        error!("{}-{}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_PASSWORD_INCORRECT);
+        return Err(ApiError::new(401, err::MSG_PASSWORD_INCORRECT)); // 401 (B)
     }
 
     // Set a new user password.
@@ -787,15 +787,15 @@ pub async fn put_profile_new_password(
     let opt_profile = web::block(move || {
         let opt_profile1 = profile_orm.modify_profile(profile_id, modify_profile)
         .map_err(|e| {
-            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e) // 507
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         opt_profile1
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })??;
 
     // If the user profile was updated successfully, return the user profile.
@@ -838,17 +838,17 @@ pub async fn put_profile_new_password(
             )))),
         ),
         (status = 204, description = "The specified user profile was not found."),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
         (status = 416, description = "Error parsing input parameter. `curl -i -X DELETE http://localhost:8080/api/users/2a`",
-            body = AppError, example = json!(AppError::range_not_satisfiable416(
-                &format!("{}; {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
+            body = ApiError, example = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
+                , "`id` - invalid digit found in string (2a)"))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     params(("id", description = "Unique user ID.")),
     security(("bearer_auth" = [])),
@@ -861,13 +861,13 @@ pub async fn delete_profile(
     profile_orm: web::Data<ProfileOrmApp>,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
-        AppError::range_not_satisfiable416(&message) // 416
+        let msg = &format!("`{}` - {}", "id", &e);
+        error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
+        ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
 
     // Get a list of logo file names for streams of the user with the specified user_id.
@@ -877,15 +877,15 @@ pub async fn delete_profile(
         // Delete an entity (profile).
         let res_profile = profile_orm.delete_profile(id)
         .map_err(|e| {
-            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e) // 507
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         res_profile
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })??;
 
     if let Some(profile) = opt_profile {
@@ -933,12 +933,12 @@ pub async fn delete_profile(
             )))),
         ),
         (status = 204, description = "The current user's profile was not found."),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_MISSING_TOKEN))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     security(("bearer_auth" = [])),
 )]
@@ -950,7 +950,7 @@ pub async fn delete_profile_current(
     config_strm: web::Data<config_strm::ConfigStrm>,
     profile_orm: web::Data<ProfileOrmApp>,
     stream_orm: web::Data<StreamOrmApp>,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
     let profile = authenticated.deref();
     let id = profile.user_id;
@@ -962,15 +962,15 @@ pub async fn delete_profile_current(
         // Delete an entity (profile).
         let res_profile = profile_orm.delete_profile(id)
         .map_err(|e| {
-            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e) // 507
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         res_profile
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) //506
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) //506
     })??;
 
     if let Some(profile) = opt_profile {
@@ -994,9 +994,8 @@ pub mod tests {
 
     use actix_web::{http::header, web};
     use chrono::{DateTime, Duration, Utc};
-    use vrb_tools::{hash_tools, token::BEARER};
+    use vrb_tools::{api_error::ApiError, hash_tools, token::BEARER};
     
-    use crate::errors::AppError;
     use crate::profiles::{config_prfl, profile_models::Profile, profile_orm::tests::ProfileOrmApp};
     use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
     use crate::streams::{
@@ -1092,7 +1091,7 @@ pub mod tests {
                 .app_data(web::Data::clone(&data_stream_orm));
         }
     }
-    pub fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {
+    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
         for (idx, msg) in msgs.iter().enumerate() {
             let app_err = app_err_vec.get(idx).unwrap();
