@@ -10,8 +10,8 @@ mod tests {
     };
     use chrono::{DateTime, Datelike, Duration, Local, SecondsFormat, TimeZone, Timelike, Utc};
     use serde_json;
+    use vrb_tools::api_error::{ApiError, code_to_str};
 
-    use crate::errors::AppError;
     use crate::profiles::profile_orm::tests::ProfileOrmApp;
     use crate::settings::err;
     use crate::streams::{
@@ -47,8 +47,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
         #[rustfmt::skip]
         let msg = format!("{}; `{}` - {} ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE, stream_id_bad);
         assert_eq!(app_err.message, msg);
@@ -328,11 +328,11 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::FORBIDDEN));
         let text = format!("curr_user_id: {}, user_id: {}", profile1_id, profile2_id);
         #[rustfmt::skip]
-        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS, &text);
+        let message = format!("{}; {}; {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS, &text);
         assert_eq!(app_err.message, message);
     }
     #[actix_web::test]
@@ -925,11 +925,11 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::FORBIDDEN));
         let text = format!("curr_user_id: {}, user_id: {}", profile1_id, profile2_id);
         #[rustfmt::skip]
-        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
+        let message = format!("{}; {}; {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
         assert_eq!(app_err.message, message);
     }
     #[actix_web::test]
@@ -1016,8 +1016,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         assert_eq!(app_err.message, MSG_FINISH_LESS_START);
         let json = serde_json::json!({ "streamPeriodStart": start_s, "streamPeriodFinish": finish_s });
         assert_eq!(*app_err.params.get("invalidPeriod").unwrap(), json);
@@ -1046,8 +1046,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_CONTENT_TOO_LARGE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::PAYLOAD_TOO_LARGE));
         assert_eq!(app_err.message, MSG_FINISH_EXCEEDS_LIMIT);
         let json = serde_json::json!({ "actualPeriodFinish": finish_s
             , "maxPeriodFinish": max_finish_s, "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS });
@@ -1155,11 +1155,11 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_FORBIDDEN);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::FORBIDDEN));
         let text = format!("curr_user_id: {}, user_id: {}", profile1_id, profile2_id);
         #[rustfmt::skip]
-        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
+        let message = format!("{}; {}; {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
         assert_eq!(app_err.message, message);
     }
     #[actix_web::test]

@@ -13,9 +13,8 @@ mod tests {
     };
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json;
-    use vrb_tools::cdis::coding;
+    use vrb_tools::{api_error::{ApiError, code_to_str}, cdis::coding, validators};
 
-    use crate::errors::AppError;
     use crate::profiles::profile_orm::tests::ProfileOrmApp;
     use crate::settings::err;
     use crate::streams::{
@@ -35,7 +34,6 @@ mod tests {
         stream_orm::tests::StreamOrmApp,
     };
     use crate::users::user_models::UserRole;
-    use crate::validators;
 
     // ** put_stream **
 
@@ -104,7 +102,7 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err_vec.len(), 1);
         let app_err = app_err_vec.get(0).unwrap();
         assert_eq!(app_err.message, err::MSG_NO_FIELDS_TO_UPDATE);
@@ -134,11 +132,11 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
         let error = format!("{} ({})", "invalid digit found in string", stream_id_bad);
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &error));
+        assert_eq!(app_err.message, format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &error));
     }
     #[actix_web::test]
     async fn test_put_stream_title_min() {
@@ -159,8 +157,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TITLE_MIN_LENGTH]);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TITLE_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_title_max() {
@@ -181,8 +179,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TITLE_MAX_LENGTH]);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TITLE_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_descript_min() {
@@ -203,9 +201,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_DESCRIPT_MIN_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_DESCRIPT_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_descript_max() {
@@ -226,9 +224,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_DESCRIPT_MAX_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_DESCRIPT_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_starttime_now() {
@@ -250,9 +248,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_MIN_VALID_STARTTIME]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_MIN_VALID_STARTTIME]);
     }
     #[actix_web::test]
     async fn test_put_stream_source_min() {
@@ -273,9 +271,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_SOURCE_MIN_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_SOURCE_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_source_max() {
@@ -296,9 +294,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_SOURCE_MAX_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_SOURCE_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_tags_min_amount() {
@@ -323,9 +321,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TAG_MIN_AMOUNT]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MIN_AMOUNT]);
     }
     #[actix_web::test]
     async fn test_put_stream_tags_max_amount() {
@@ -347,9 +345,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TAG_MAX_AMOUNT]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MAX_AMOUNT]);
     }
     #[actix_web::test]
     async fn test_put_stream_tag_name_min() {
@@ -371,9 +369,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TAG_MIN_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_tag_name_max() {
@@ -395,9 +393,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[stream_models::MSG_TAG_MAX_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[stream_models::MSG_TAG_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_stream_invalid_tag() {
@@ -418,8 +416,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         #[rustfmt::skip]
         let message = format!("{}; {}", MSG_INVALID_FIELD_TAG, "expected value at line 1 column 1");
         assert_eq!(app_err.message, message);
@@ -443,8 +441,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         #[rustfmt::skip]
         let message = format!("{}; {}", MSG_INVALID_FIELD_TAG, "EOF while parsing a list at line 1 column 6");
         assert_eq!(app_err.message, message);
@@ -478,8 +476,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_CONTENT_TOO_LARGE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::PAYLOAD_TOO_LARGE));
         assert_eq!(app_err.message, err::MSG_INVALID_FILE_SIZE);
         #[rustfmt::skip]
         let json = serde_json::json!({ "actualFileSize": size, "maxFileSize": strm_logo_max_size });
@@ -510,8 +508,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_UNSUPPORTED_TYPE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::UNSUPPORTED_MEDIA_TYPE));
         assert_eq!(app_err.message, err::MSG_INVALID_FILE_TYPE);
         #[rustfmt::skip]
         let json = serde_json::json!({ "actualFileType": "image/bmp", "validFileType": &valid_file_types.join(",") });
@@ -1032,8 +1030,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
         #[rustfmt::skip]
         let msg = format!("{}; `{}` - {} ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE, stream_id_bad);
         assert_eq!(app_err.message, msg);
@@ -1073,8 +1071,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         assert_eq!(&app_err.message, MSG_INVALID_STREAM_STATE);
         #[rustfmt::skip]
         let json = serde_json::json!({ "oldState": &old_state, "newState": &new_state });
@@ -1114,8 +1112,8 @@ mod tests {
             #[rustfmt::skip]
             assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
             let body = body::to_bytes(resp.into_body()).await.unwrap();
-            let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-            assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+            let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+            assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
             assert_eq!(&app_err.message, MSG_INVALID_STREAM_STATE);
             #[rustfmt::skip]
             let json = serde_json::json!({ "oldState": &old_state, "newState": &new_state });
@@ -1150,8 +1148,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_CONFLICT);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::CONFLICT));
         assert_eq!(&app_err.message, MSG_EXIST_IS_ACTIVE_STREAM);
         #[rustfmt::skip]
         let json = serde_json::json!({ "id": stream2_id, "title": &stream2_title });

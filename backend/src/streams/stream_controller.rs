@@ -1,15 +1,17 @@
 use std::{borrow::Cow, ops::Deref, path};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
-use actix_web::{delete, get, post, put, web, HttpResponse};
+use actix_web::{delete, get, post, put, web, HttpResponse, http::StatusCode,};
 use chrono::{DateTime, Duration, SecondsFormat::Millis, Utc};
 use log::error;
 use mime::IMAGE;
 use serde_json::{self, json};
 use utoipa;
-use vrb_tools::{cdis::coding, loading::dynamic_image, parser, validators::{self, msg_validation, ValidationChecks, Validator}};
+use vrb_tools::{
+    api_error::{ApiError, code_to_str}, cdis::coding, loading::dynamic_image, parser,
+    validators::{self, msg_validation, ValidationChecks, Validator}
+};
 
-use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::settings::err;
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -119,15 +121,15 @@ pub fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
     responses(
         (status = 200, description = "A stream with the specified ID was found.", body = StreamInfoDto),
         (status = 204, description = "The stream with the specified ID was not found."),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
         (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/streams/2a`", 
-            body = AppError, example = json!(AppError::range_not_satisfiable416(
-                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
+            body = ApiError, example = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
+                , "`id` - invalid digit found in string (2a)"))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     params(("id", description = "Unique stream ID.")),
     security(("bearer_auth" = [])),
@@ -137,7 +139,7 @@ pub async fn get_stream_by_id(
     authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
     let profile = authenticated.deref();
     // let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
@@ -146,8 +148,8 @@ pub async fn get_stream_by_id(
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
-        AppError::range_not_satisfiable416(&message) // 416
+        error!("{}-{}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), &message);
+        ApiError::new(416, &message) // 416
     })?;
 
     let res_data = web::block(move || {
@@ -155,15 +157,16 @@ pub async fn get_stream_by_id(
         let res_data = stream_orm
             .find_stream_by_params(Some(id), None, None, true, &[])
             .map_err(|e| {
-                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e) // 507
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
         res_data
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
+        #[rustfmt::skip]
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     let opt_data = match res_data { Ok(v) => v, Err(e) => return Err(e) };
@@ -258,15 +261,15 @@ pub async fn get_stream_by_id(
 #[utoipa::path(
     responses(
         (status = 200, description = "Result of the stream request.", body = StreamInfoPageDto),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED,
-                MSG_GET_LIST_OTHER_USER_STREAMS, "curr_user_id: 1, user_id: 2")))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
+            example = json!(ApiError::create(403, err::MSG_ACCESS_DENIED, 
+                &format!("{}; curr_user_id: 1, user_id: 2", MSG_GET_LIST_OTHER_USER_STREAMS)) )),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     security(("bearer_auth" = [])),
 )]
@@ -276,7 +279,7 @@ pub async fn get_streams(
     authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     query_params: web::Query<SearchStreamInfoDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
     let profile = authenticated.deref();
 
@@ -289,25 +292,25 @@ pub async fn get_streams(
 
     if search_stream.user_id != profile.user_id && profile.role != UserRole::Admin {
         let text = format!("curr_user_id: {}, user_id: {}", profile.user_id, search_stream.user_id);
-        #[rustfmt::skip]
-        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS, &text);
-        error!("{}: {}", err::CD_FORBIDDEN, &message);
-        return Err(AppError::forbidden403(&message)); // 403
+        let message = format!("{}; {}", MSG_GET_LIST_OTHER_USER_STREAMS, &text);
+        error!("{}-{}", code_to_str(StatusCode::FORBIDDEN), &message);
+        return Err(ApiError::create(403, err::MSG_ACCESS_DENIED, &message)); // 403
     }
 
     let res_data = web::block(move || {
         // A query to obtain a list of "streams" based on the specified search parameters.
         let res_data =
             stream_orm.find_streams_by_pages(search_stream, true).map_err(|e| {
-                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e)
             });
         res_data
         })
         .await
         .map_err(|e| {
-            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-            AppError::blocking506(&e.to_string())
+            #[rustfmt::skip]
+            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
         })?;
         
     let (count, streams, stream_tags) = match res_data { Ok(v) => v, Err(e) => return Err(e) };
@@ -359,16 +362,16 @@ pub async fn get_streams(
                 value = json!(StreamConfigDto::new(None, ConfigStrm::image_types(), None, None, None))
             )), ),
         ),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(err::MSG_ACCESS_DENIED))),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_ACCESS_DENIED))),
     ),
     security(("bearer_auth" = []))
 )]
 #[get("/api/streams_config", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 #[rustfmt::skip]
-pub async fn get_stream_config(config_strm: web::Data<ConfigStrm>) -> actix_web::Result<HttpResponse, AppError> {
+pub async fn get_stream_config(config_strm: web::Data<ConfigStrm>) -> actix_web::Result<HttpResponse, ApiError> {
     let cfg_strm = config_strm;
     let max_size = if cfg_strm.strm_logo_max_size > 0 { Some(cfg_strm.strm_logo_max_size) } else { None };
     let valid_types = cfg_strm.strm_logo_valid_types.clone();
@@ -439,15 +442,15 @@ pub async fn get_stream_config(config_strm: web::Data<ConfigStrm>) -> actix_web:
 #[utoipa::path(
     responses(
         (status = 200, description = "Result of the short stream request.", body = StreamEventPageDto),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED,
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
+            example = json!(ApiError::create(403, err::MSG_ACCESS_DENIED, &format!("{}; {}",
                 MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, "curr_user_id: 1, user_id: 2")))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     security(("bearer_auth" = [])),
 )]
@@ -457,7 +460,7 @@ pub async fn get_streams_events(
     authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     query_params: web::Query<SearchStreamEventDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
     let profile = authenticated.deref();
 
@@ -470,25 +473,25 @@ pub async fn get_streams_events(
 
     if search_event.user_id != profile.user_id && profile.role != UserRole::Admin {
         let text = format!("curr_user_id: {}, user_id: {}", profile.user_id, search_event.user_id);
-        #[rustfmt::skip]
-        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
-        error!("{}: {}", err::CD_FORBIDDEN, &message);
-        return Err(AppError::forbidden403(&message)); // 403
+        let message = format!("{}; {}", MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
+        error!("{}-{}", code_to_str(StatusCode::FORBIDDEN), &message);
+        return Err(ApiError::create(403, err::MSG_ACCESS_DENIED, &message)); // 403
     }
     
     let res_data = web::block(move || {
         // Find for an entity (stream event) by SearchStreamEvent.
         let res_data =
             stream_orm.find_stream_events_by_pages(search_event).map_err(|e| {
-                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e)
             });
         res_data
         })
         .await
         .map_err(|e| {
-            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-            AppError::blocking506(&e.to_string())
+            #[rustfmt::skip]
+            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
         })?;
 
     let (count, streams) = match res_data { Ok(v) => v, Err(e) => return Err(e) };
@@ -543,22 +546,22 @@ pub async fn get_streams_events(
     responses(
         (status = 200, description = "Result is an array with dates containing streams.", body = Vec<DateTime<Utc>>, example = 
             json!([ "2030-04-01T08:00:00.000Z", "2030-04-04T08:00:00.000Z", "2030-04-10T08:00:00.000Z", "2030-04-0T08:00:00.000Z" ])),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 403, description = "Access denied: insufficient user rights.", body = AppError,
-            example = json!(AppError::forbidden403(&format!("{}: {}: {}", err::MSG_ACCESS_DENIED, 
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
+        (status = 403, description = "Access denied: insufficient user rights.", body = ApiError,
+            example = json!(ApiError::create(403, err::MSG_ACCESS_DENIED, &format!("{}; {}", 
                 MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, "curr_user_id: 1, user_id: 2")))),
-        (status = 406, description = "The finish date is less than the start date.", body = AppError,
-            example = json!(AppError::not_acceptable406(MSG_FINISH_LESS_START).add_param(Cow::Borrowed("invalidPeriod"), &serde_json::json!(
-                { "streamPeriodStart": "2030-03-02T08:00:00.000Z", "streamPeriodFinish": "2030-03-01T08:00:00.000Z" })))),
-        (status = 413, description = "The finish date of the search period exceeds the limit.", body = AppError,
-            example = json!(AppError::content_large413(MSG_FINISH_EXCEEDS_LIMIT).add_param(Cow::Borrowed("periodTooLong"), &serde_json::json!(
-                { "actualPeriodFinish": "2030-04-01T08:00:00.000Z", "maxPeriodFinish": "2030-03-10T08:00:00.000Z" 
+        (status = 406, description = "The finish date is less than the start date.", body = ApiError,
+            example = json!(ApiError::new(406, MSG_FINISH_LESS_START).add_param(Cow::Borrowed("invalidPeriod"), &serde_json::json!(
+                { "streamPeriodStart": "2030-03-02T08:00:00.000Z", "streamPeriodFinish": "2030-03-01T08:00:00.000Z" })) )),
+        (status = 413, description = "The finish date of the search period exceeds the limit.", body = ApiError,
+            example = json!(ApiError::new(413, MSG_FINISH_EXCEEDS_LIMIT).add_param(Cow::Borrowed("periodTooLong"), 
+            &serde_json::json!({ "actualPeriodFinish": "2030-04-01T08:00:00.000Z", "maxPeriodFinish": "2030-03-10T08:00:00.000Z" 
                 , "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS })))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     security(("bearer_auth" = [])),
 )]
@@ -568,7 +571,7 @@ pub async fn get_streams_period(
     authenticated: Authenticated,
     stream_orm: web::Data<StreamOrmApp>,
     query_params: web::Query<SearchStreamPeriodDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
     let profile = authenticated.deref();
 
@@ -581,24 +584,25 @@ pub async fn get_streams_period(
 
     if search_period.user_id != profile.user_id && profile.role != UserRole::Admin {
         let text = format!("curr_user_id: {}, user_id: {}", profile.user_id, search_period.user_id);
-        #[rustfmt::skip]
-        let message = format!("{}: {}: {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
-        error!("{}: {}", err::CD_FORBIDDEN, &message);
-        return Err(AppError::forbidden403(&message)); // 403
+        let message = format!("{}; {}", MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
+        error!("{}-{}", code_to_str(StatusCode::FORBIDDEN), &message);
+        return Err(ApiError::create(403, err::MSG_ACCESS_DENIED, &message)); // 403
     }
     if finish < start {
         let json = serde_json::json!({ "streamPeriodStart": start.to_rfc3339_opts(Millis, true)
             , "streamPeriodFinish": finish.to_rfc3339_opts(Millis, true) });
-        error!("{}: {}: {}", err::CD_NOT_ACCEPTABLE, MSG_FINISH_LESS_START, json.to_string());
-        return Err(AppError::not_acceptable406(MSG_FINISH_LESS_START) // 406
+        #[rustfmt::skip]
+        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_FINISH_LESS_START, json.to_string());
+        return Err(ApiError::new(406, MSG_FINISH_LESS_START) // 406
             .add_param(Cow::Borrowed("invalidPeriod"), &json));
     }
     let max_finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
     if max_finish <= finish {
         let json = serde_json::json!({ "actualPeriodFinish": finish.to_rfc3339_opts(Millis, true)
             , "maxPeriodFinish": max_finish.to_rfc3339_opts(Millis, true), "periodMaxNumberDays": PERIOD_MAX_NUMBER_DAYS });
-        error!("{}: {}: {}", err::CD_CONTENT_TOO_LARGE, MSG_FINISH_EXCEEDS_LIMIT, json.to_string());
-        return Err(AppError::content_large413(MSG_FINISH_EXCEEDS_LIMIT) // 413
+        #[rustfmt::skip]
+        error!("{}-{}: {}", code_to_str(StatusCode::PAYLOAD_TOO_LARGE), MSG_FINISH_EXCEEDS_LIMIT, json.to_string());
+        return Err(ApiError::new(413, MSG_FINISH_EXCEEDS_LIMIT) // 413
             .add_param(Cow::Borrowed("periodTooLong"), &json));
     }
 
@@ -606,15 +610,16 @@ pub async fn get_streams_period(
         // Find for an entity (stream period) by SearchStreamEvent.
         let res_data =
             stream_orm.find_streams_period(search_period).map_err(|e| {
-                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)    
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e)    
             });
         res_data
         })
         .await
         .map_err(|e| {
-            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-            AppError::blocking506(&e.to_string())
+            #[rustfmt::skip]
+            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
         })?;
 
     let list: Vec<String> = match res_data {
@@ -771,29 +776,27 @@ impl CreateStreamForm {
             example = json!(new_stream_dto("Stream title", "Description of the stream.", "2020-01-20T20:10:57.000Z", "tag1,tag2")) ),
         (status = 406, description = "Error deserializing field \"tags\". `curl -X POST http://localhost:8080/api/streams
             -F 'title=title' -F 'tags=[\"tag\"'`",
-            body = AppError, example = json!(AppError::not_acceptable406(
-                &format!("{}; {}", MSG_INVALID_FIELD_TAG, "EOF while parsing a list at line 1 column 6")))),
+            body = ApiError, example = json!(ApiError::create(406, MSG_INVALID_FIELD_TAG, "EOF while parsing a list at line 1 column 6"))),
         (status = 413, description = "Invalid image file size. `curl -i -X POST http://localhost:8080/api/streams
-            -F 'title=title2'  -F 'tags=[\"tag1\"]' -F 'logofile=@image.jpg'`", body = AppError,
-            example = json!(AppError::content_large413(err::MSG_INVALID_FILE_SIZE).add_param(Cow::Borrowed("invalidFileSize"),
+            -F 'title=title2'  -F 'tags=[\"tag1\"]' -F 'logofile=@image.jpg'`", body = ApiError,
+            example = json!(ApiError::new(413, err::MSG_INVALID_FILE_SIZE).add_param(Cow::Borrowed("invalidFileSize"),
                 &json!({ "actualFileSize": 186, "maxFileSize": 160 })))),
         (status = 415, description = "Uploading a file with an invalid type `svg`. `curl -i -X POST http://localhost:8080/api/streams
-            -F 'title=title3'  -F 'tags=[\"tag3\"]' -F 'logofile=@image.svg'`", body = AppError,
-            example = json!(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE).add_param(Cow::Borrowed("invalidFileType"),
+            -F 'title=title3'  -F 'tags=[\"tag3\"]' -F 'logofile=@image.svg'`", body = ApiError,
+            example = json!(ApiError::new(415, err::MSG_INVALID_FILE_TYPE).add_param(Cow::Borrowed("invalidFileType"),
                 &json!({ "actualFileType": "image/svg+xml", "validFileType": "image/jpeg,image/png" })))),
         (status = 417, description = "Validation error. `curl -X POST http://localhost:8080/api/streams
-            -F 'title=t' -F 'descript=d' -F 'starttime=2020-01-20T20:10:57.000Z' -F 'tags=[]'`", body = [AppError],
-            example = json!(AppError::validations((new_stream_dto("u", "d", "2020-01-20T20:10:57.000Z", "")).validate().err().unwrap()))
+            -F 'title=t' -F 'descript=d' -F 'starttime=2020-01-20T20:10:57.000Z' -F 'tags=[]'`", body = [ApiError],
+            example = json!(ApiError::validations((new_stream_dto("u", "d", "2020-01-20T20:10:57.000Z", "")).validate().err().unwrap()))
         ),
-        (status = 500, description = "Error loading file.", body = AppError, example = json!(
-            AppError::internal_err500(&format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, "/tmp/demo.jpg", "File not found.")))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
-        (status = 510, description = "Error while converting file.", body = AppError,
-            example = json!(AppError::not_extended510(
-                &format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, "Invalid source file image type \"svg\"")))),
+        (status = 500, description = "Error loading file.", body = ApiError, example = json!(
+            ApiError::create(500, err::MSG_ERROR_UPLOAD_FILE, "/tmp/demo.jpg - File not found."))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
+        (status = 510, description = "Error while converting file.", body = ApiError,
+            example = json!(ApiError::create(510, err::MSG_ERROR_CONVERT_FILE, "Invalid source file image type \"svg\""))),
     ),
     security(("bearer_auth" = [])),
 )]
@@ -804,7 +807,7 @@ pub async fn post_stream(
     config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
     MultipartForm(create_stream_form): MultipartForm<CreateStreamForm>,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
     let profile = authenticated.deref();
     let curr_user_id = profile.user_id;
@@ -812,16 +815,15 @@ pub async fn post_stream(
     // Get data from MultipartForm.
     let (create_stream_info_dto, logo_file) = CreateStreamForm::convert(create_stream_form)
         .map_err(|e| {
-            let message = format!("{}; {}", MSG_INVALID_FIELD_TAG, e);
-            error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
-            AppError::not_acceptable406(&message) // 406
+            error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_INVALID_FIELD_TAG, &e);
+            ApiError::create(406, MSG_INVALID_FIELD_TAG, &e) // 406
         })?;
 
     // Checking the validity of the data model.
     let validation_res = create_stream_info_dto.validate();
     if let Err(validation_errors) = validation_res {
-        error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors)); // 417
-        return Ok(AppError::to_response(&AppError::validations(validation_errors)));
+        error!("{}-{}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&validation_errors));
+        return Ok(ApiError::to_response(&ApiError::validations(validation_errors))); // 417
     }
 
     let config_strm = config_strm.get_ref().clone();
@@ -836,8 +838,8 @@ pub async fn post_stream(
         let logo_max_size = usize::try_from(config_strm.strm_logo_max_size).unwrap();
         if logo_max_size > 0 && temp_file.size > logo_max_size {
             let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": logo_max_size });
-            error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
-            return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
+            error!("{}-{}; {}", code_to_str(StatusCode::PAYLOAD_TOO_LARGE), err::MSG_INVALID_FILE_SIZE, json.to_string());
+            return Err(ApiError::new(413, err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Cow::Borrowed("invalidFileSize"), &json));
         }
         // Checking the mime type file for valid mime types.
@@ -846,8 +848,8 @@ pub async fn post_stream(
         let valid_file_mime_types = config_strm.strm_logo_valid_types.clone();
         if !valid_file_mime_types.contains(&file_mime_type) {
             let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
-            error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
-            return Err(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE) // 415
+            error!("{}-{}; {}", code_to_str(StatusCode::UNSUPPORTED_MEDIA_TYPE), err::MSG_INVALID_FILE_TYPE, json.to_string());
+            return Err(ApiError::new(415, err::MSG_INVALID_FILE_TYPE) // 415
                 .add_param(Cow::Borrowed("invalidFileType"), &json));
         }
         // Get the file stem and extension for the new file.
@@ -861,17 +863,16 @@ pub async fn post_stream(
         let res_upload = temp_file.file.persist(&full_path_file);
         if let Err(err) = res_upload {
             let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &full_path_file, err.to_string());
-            error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
-            return Err(AppError::internal_err500(&message)) // 500
+            error!("{}-{}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), &message);
+            return Err(ApiError::new(500, &message)) // 500
         }
         path_new_logo_file = full_path_file;
 
         // Convert the file to another mime type.
         let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "post_stream()")
             .map_err(|e| {
-                let message = format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, e);
-                error!("{}: {}", err::CD_NOT_EXTENDED, &message);
-                AppError::not_extended510(&message) // 510
+                error!("{}-{}; {}", code_to_str(StatusCode::NOT_EXTENDED), err::MSG_ERROR_CONVERT_FILE, &e);
+                ApiError::create(510, err::MSG_ERROR_CONVERT_FILE, &e) // 510
             })?;
         if let Some(new_path_file) = res_convert_logo_file {
             path_new_logo_file = new_path_file;
@@ -890,15 +891,16 @@ pub async fn post_stream(
     let res_data = web::block(move || {
         // Add a new entity (stream).
         let res_data = stream_orm.create_stream(create_stream, &tags).map_err(|e| {
-            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e)
         });
         res_data
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        #[rustfmt::skip]
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     if res_data.is_err() {
@@ -1010,23 +1012,22 @@ impl ModifyStreamForm {
         (status = 204, description = "The stream with the specified ID was not found."),
         (status = 406, description = "Error deserializing field \"tags\". `curl -X PUT http://localhost:8080/api/streams/1
             -F 'title=title' -F 'tags=[\"tag\"'`",
-            body = AppError, example = json!(AppError::not_acceptable406(
-                &format!("{}; {}", MSG_INVALID_FIELD_TAG, "EOF while parsing a list at line 1 column 6")))),
+            body = ApiError, example = json!(ApiError::create(406, MSG_INVALID_FIELD_TAG, "EOF while parsing a list at line 1 column 6"))),
         (status = 413, description = "Invalid image file size. `curl -i -X PUT http://localhost:8080/api/streams/1
-            -F 'title=title2'  -F 'tags=[\"tag1\"]' -F 'logofile=@image.jpg'`", body = AppError,
-            example = json!(AppError::content_large413(err::MSG_INVALID_FILE_SIZE).add_param(Cow::Borrowed("invalidFileSize"),
+            -F 'title=title2'  -F 'tags=[\"tag1\"]' -F 'logofile=@image.jpg'`", body = ApiError,
+            example = json!(ApiError::new(413, err::MSG_INVALID_FILE_SIZE).add_param(Cow::Borrowed("invalidFileSize"),
                 &json!({ "actualFileSize": 186, "maxFileSize": 160 })))),
         (status = 415, description = "Uploading a file with an invalid type `svg`. `curl -i -X PUT http://localhost:8080/api/streams/1
-            -F 'title=title3'  -F 'tags=[\"tag3\"]' -F 'logofile=@image.svg'`", body = AppError,
-            example = json!(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE).add_param(Cow::Borrowed("invalidFileType"),
+            -F 'title=title3'  -F 'tags=[\"tag3\"]' -F 'logofile=@image.svg'`", body = ApiError,
+            example = json!(ApiError::new(415, err::MSG_INVALID_FILE_TYPE).add_param(Cow::Borrowed("invalidFileType"),
                 &json!({ "actualFileType": "image/svg+xml", "validFileType": "image/jpeg,image/png" })))),
         (status = 416, description = "Error parsing input parameter. `curl -i -X PUT http://localhost:8080/api/streams/2a
-                -F 'title=title3'  -F 'tags=[\"tag3\"]'`", body = AppError,
-            example = json!(AppError::range_not_satisfiable416(
-                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
+                -F 'title=title3'  -F 'tags=[\"tag3\"]'`", body = ApiError,
+            example = json!(ApiError::new(416, 
+                &format!("{}; {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
         (status = 417, description = "Validation error. `curl -X PUT http://localhost:8080/api/streams/1
-            -F 'title=t' -F 'descript=d' -F 'starttime=2020-01-20T20:10:57.000Z' -F 'tags=[]'`", body = [AppError],
-            example = json!(AppError::validations(
+            -F 'title=t' -F 'descript=d' -F 'starttime=2020-01-20T20:10:57.000Z' -F 'tags=[]'`", body = [ApiError],
+            example = json!(ApiError::validations(
                 (ModifyStreamInfoDto {
                     title: Some("u".to_string()),
                     descript: Some("d".to_string()),
@@ -1034,15 +1035,14 @@ impl ModifyStreamForm {
                     source: None,
                     tags: Some(vec!()),
                 }).validate().err().unwrap()) )),
-        (status = 500, description = "Error loading file.", body = AppError, example = json!(
-            AppError::internal_err500(&format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, "/tmp/demo.jpg", "File not found.")))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
-        (status = 510, description = "Error while converting file.", body = AppError,
-            example = json!(AppError::not_extended510(
-                &format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, "Invalid source file image type \"svg\"")))),
+        (status = 500, description = "Error loading file.", body = ApiError, example = json!(
+            ApiError::create(500, err::MSG_ERROR_UPLOAD_FILE, "/tmp/demo.jpg - File not found."))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
+        (status = 510, description = "Error while converting file.", body = ApiError,
+            example = json!(ApiError::create(510, err::MSG_ERROR_CONVERT_FILE, "Invalid source file image type \"svg\""))),
     ),
     security(("bearer_auth" = [])),
 )]
@@ -1055,7 +1055,7 @@ pub async fn put_stream(
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
     MultipartForm(modify_stream_form): MultipartForm<ModifyStreamForm>,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
     let profile = authenticated.deref();
     let curr_user_id = profile.user_id;
@@ -1063,17 +1063,16 @@ pub async fn put_stream(
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        let message = &format!("{}: `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
-        AppError::range_not_satisfiable416(&message) // 416
+        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
+        error!("{}-{}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), &message);
+        ApiError::new(416, &message) // 416
     })?;
 
     // Get data from MultipartForm.
     let (modify_stream_info_dto, logo_file) = ModifyStreamForm::convert(modify_stream_form)
     .map_err(|e| {
-        let message = format!("{}; {}", MSG_INVALID_FIELD_TAG, e);
-        error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message); // 406
-        AppError::not_acceptable406(&message)
+        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_INVALID_FIELD_TAG, &e);
+        ApiError::create(406, MSG_INVALID_FIELD_TAG, &e) // 406
     })?;
 
     // If there is not a single field in the MultipartForm, it gives an error 400 "Multipart stream is incomplete".
@@ -1092,8 +1091,8 @@ pub async fn put_stream(
             }
         }).collect();
         if !is_no_fields_to_update || logo_file.is_none() {
-            error!("{}: {}", err::CD_VALIDATION, msg_validation(&errors));
-            return Ok(AppError::to_response(&AppError::validations(errors))); // 417
+            error!("{}: {}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&errors));
+            return Ok(ApiError::to_response(&ApiError::validations(errors))); // 417
         }
     }
 
@@ -1112,8 +1111,8 @@ pub async fn put_stream(
         // Check file size for maximum value.
         if logo_max_size > 0 && temp_file.size > logo_max_size {
             let json = json!({ "actualFileSize": temp_file.size, "maxFileSize": logo_max_size });
-            error!("{}: {}; {}", err::CD_CONTENT_TOO_LARGE, err::MSG_INVALID_FILE_SIZE, json.to_string());
-            return Err(AppError::content_large413(err::MSG_INVALID_FILE_SIZE) // 413
+            error!("{}-{}; {}", code_to_str(StatusCode::PAYLOAD_TOO_LARGE), err::MSG_INVALID_FILE_SIZE, json.to_string());
+            return Err(ApiError::new(413, err::MSG_INVALID_FILE_SIZE) // 413
                 .add_param(Cow::Borrowed("invalidFileSize"), &json));
         }
 
@@ -1123,8 +1122,8 @@ pub async fn put_stream(
         let valid_file_mime_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
         if !valid_file_mime_types.contains(&file_mime_type) {
             let json = json!({ "actualFileType": &file_mime_type, "validFileType": &valid_file_mime_types.join(",") });
-            error!("{}: {}; {}", err::CD_UNSUPPORTED_TYPE, err::MSG_INVALID_FILE_TYPE, json.to_string());
-            return Err(AppError::unsupported_type415(err::MSG_INVALID_FILE_TYPE) // 415
+            error!("{}-{}; {}", code_to_str(StatusCode::UNSUPPORTED_MEDIA_TYPE), err::MSG_INVALID_FILE_TYPE, json.to_string());
+            return Err(ApiError::new(415, err::MSG_INVALID_FILE_TYPE) // 415
                 .add_param(Cow::Borrowed("invalidFileType"), &json));
         }
 
@@ -1139,17 +1138,16 @@ pub async fn put_stream(
         let res_upload = temp_file.file.persist(&full_path_file);
         if let Err(err) = res_upload {
             let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &full_path_file, err.to_string());
-            error!("{}: {}", err::CD_INTERNAL_ERROR, &message);
-            return Err(AppError::internal_err500(&message)); // 500
+            error!("{}-{}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), &message);
+            return Err(ApiError::new(500, &message)); // 500
         }
         path_new_logo_file = full_path_file;
 
         // Convert the file to another mime type.
         let res_convert_logo_file = convert_logo_file(&path_new_logo_file, config_strm.clone(), "put_stream()")
             .map_err(|e| {
-                let message = format!("{}; {}", err::MSG_ERROR_CONVERT_FILE, e);
-                error!("{}: {}", err::CD_NOT_EXTENDED, &message);
-                AppError::not_extended510(&message) // 510
+                error!("{}-{}; {}", code_to_str(StatusCode::NOT_EXTENDED), err::MSG_ERROR_CONVERT_FILE, &e);
+                ApiError::create(510, err::MSG_ERROR_CONVERT_FILE, &e) // 510
             })?;
         if let Some(new_path_file) = res_convert_logo_file {
             path_new_logo_file = new_path_file;
@@ -1171,8 +1169,8 @@ pub async fn put_stream(
             // Get the logo file name for an entity (stream) by ID.
             let res_get_stream_logo = stream_orm.get_stream_logo_by_id(id)
             .map_err(|e| {
-                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e)
             });
 
             if let Ok(Some(old_logo)) = res_get_stream_logo {
@@ -1182,16 +1180,17 @@ pub async fn put_stream(
         // Modify an entity (stream).
         let res_data_stream = stream_orm.modify_stream(id, opt_user_id, modify_stream, tags)
         .map_err(|e| {
-            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e)
         });
 
         (old_logo_file, res_data_stream)
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        #[rustfmt::skip]
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     let opt_data_stream = res_data_stream
@@ -1259,30 +1258,29 @@ pub async fn put_stream(
     responses(
         (status = 200, description = "Update the stream with new data.", body = StreamInfoDto),
         (status = 204, description = "The stream with the specified ID was not found."),
-        (status = 406, description = "Unacceptable stream state.", body = AppError,
+        (status = 406, description = "Unacceptable stream state.", body = ApiError,
             examples(
             ("old_equals_new" = (summary = "old state equals new", description = "Unacceptable transition: old flow state equals new.",
-                value = json!(AppError::not_acceptable406(MSG_INVALID_STREAM_STATE).add_param(Cow::Borrowed("invalidState"),
+                value = json!(ApiError::new(406, MSG_INVALID_STREAM_STATE).add_param(Cow::Borrowed("invalidState"),
                         &json!({ "oldState": StreamState::Preparing, "newState": StreamState::Preparing })) ) )
             ),
             ("unacceptable" = (
                 summary = "unacceptable state", description = "An unacceptable transition from an old state of flow to a new one.",
-                value = json!(AppError::not_acceptable406(MSG_INVALID_STREAM_STATE).add_param(Cow::Borrowed("invalidState"),
+                value = json!(ApiError::new(406, MSG_INVALID_STREAM_STATE).add_param(Cow::Borrowed("invalidState"),
                         &json!({ "oldState": StreamState::Started, "newState": StreamState::Preparing })) ) )
             ) ),
         ),
-        (status = 409, description = "There is already an active stream.", body = AppError,
-            example = json!(AppError::conflict409(MSG_EXIST_IS_ACTIVE_STREAM)
+        (status = 409, description = "There is already an active stream.", body = ApiError,
+            example = json!(ApiError::new(409, MSG_EXIST_IS_ACTIVE_STREAM)
                     .add_param(Cow::Borrowed("activeStream"), &json!({ "id": 123, "title": Cow::Borrowed("Trip to Greece.") })) )
         ),
         (status = 416, description = "Error parsing input parameter. `curl -i -X PUT http://localhost:8080/api/streams/toggle/2a 
-            -d '{\"state\": \"started\"}'`", body = AppError,
-            example = json!(AppError::range_not_satisfiable416(
-                &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
+            -d '{\"state\": \"started\"}'`", body = ApiError,
+            example = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)"))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     security(("bearer_auth" = [])),
 )]
@@ -1294,7 +1292,7 @@ pub async fn put_toggle_state(
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
     json_body: web::Json<ToggleStreamStateDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     let profile = authenticated.deref();
     let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
 
@@ -1302,8 +1300,8 @@ pub async fn put_toggle_state(
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
         let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
-        AppError::range_not_satisfiable416(&message) // 416
+        error!("{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), &message);
+        ApiError::new(416, &message) // 416
     })?;
 
     let new_state: StreamState = json_body.into_inner().state;
@@ -1314,15 +1312,16 @@ pub async fn put_toggle_state(
         let res_stream_tags = stream_orm2
             .find_stream_by_params(Some(id), opt_user_id, None, false, &[])
             .map_err(|e| {
-                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e)
             });
         res_stream_tags
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        #[rustfmt::skip]
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     let opt_stream_tags = match res_stream_tags { Ok(v) => v, Err(e) => return Err(e) };
@@ -1335,8 +1334,9 @@ pub async fn put_toggle_state(
 
     if stream.state == new_state {
         let json = json!({ "oldState": &stream.state, "newState": &new_state });
-        error!("{}: {}; {}", err::CD_NOT_ACCEPTABLE, MSG_INVALID_STREAM_STATE, json.to_string());
-        return Err(AppError::not_acceptable406(MSG_INVALID_STREAM_STATE) // 406
+        #[rustfmt::skip]
+        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_INVALID_STREAM_STATE, json.to_string());
+        return Err(ApiError::new(406, MSG_INVALID_STREAM_STATE) // 406
             .add_param(Cow::Borrowed("invalidState"), &json));
     }
 
@@ -1349,8 +1349,8 @@ pub async fn put_toggle_state(
     };
     if is_not_acceptable {
         let json = json!({ "oldState": &stream.state.to_string(), "newState": &new_state });
-        error!("{}: {}; {}", err::CD_NOT_ACCEPTABLE, MSG_INVALID_STREAM_STATE, json.to_string());
-        return Err(AppError::not_acceptable406(MSG_INVALID_STREAM_STATE) // 406
+        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), MSG_INVALID_STREAM_STATE, json.to_string());
+        return Err(ApiError::new(406, MSG_INVALID_STREAM_STATE) // 406
             .add_param(Cow::Borrowed("invalidState"), &json));
     }
     // If the stream goes into active state, then
@@ -1361,23 +1361,24 @@ pub async fn put_toggle_state(
             let res_stream2_tags = stream_orm2
                 .find_stream_by_params(None, opt_user_id, Some(true), false, &[id])
                 .map_err(|e| {
-                    error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                    AppError::database507(&e)
+                    error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                    ApiError::create(507, err::MSG_DATABASE, &e)
                 });
             res_stream2_tags
         })
         .await
         .map_err(|e| {
-            error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-            AppError::blocking506(&e.to_string())
+            #[rustfmt::skip]
+            error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+            ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
         })?;
         
         let opt_stream2_tags = match res_stream2_tags { Ok(v) => v, Err(e) => return Err(e) };
 
         if let Some((stream2, _tags)) = opt_stream2_tags {
             let json = json!({ "id": stream2.id, "title": &stream2.title });
-            error!("{}: {}; {}", err::CD_CONFLICT, MSG_EXIST_IS_ACTIVE_STREAM, json.to_string());
-            return Err(AppError::conflict409(MSG_EXIST_IS_ACTIVE_STREAM) // 409
+            error!("{}-{}; {}", code_to_str(StatusCode::CONFLICT), MSG_EXIST_IS_ACTIVE_STREAM, json.to_string());
+            return Err(ApiError::new(409, MSG_EXIST_IS_ACTIVE_STREAM) // 409
                 .add_param(Cow::Borrowed("activeStream"), &json));
         }
     }
@@ -1397,15 +1398,16 @@ pub async fn put_toggle_state(
         // Modify an entity (stream).
         let res_stream_tags = stream_orm.modify_stream(id, opt_user_id, modify_stream, None)
         .map_err(|e| {
-            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e)
         });
         res_stream_tags
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        #[rustfmt::skip]
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     let opt_stream_tags = match res_stream_tags { Ok(v) => v, Err(e) => return Err(e) };
@@ -1440,12 +1442,12 @@ pub async fn put_toggle_state(
         (status = 200, description = "The specified stream was deleted successfully.", body = StreamInfoDto),
         (status = 204, description = "The specified stream was not found."),
         (status = 416, description = "Error parsing input parameter. `curl -i -X DELETE http://localhost:8080/api/streams/2a`",
-            body = AppError, example = json!(AppError::range_not_satisfiable416(
-            &format!("{}: {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)")))),
-        (status = 506, description = "Blocking error.", body = AppError, 
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError, 
-            example = json!(AppError::database507("Error while querying the database."))),
+            body = ApiError, example = json!(ApiError::create(416, 
+                err::MSG_PARSING_TYPE_NOT_SUPPORTED, "`id` - invalid digit found in string (2a)"))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     params(("id", description = "Unique stream ID.")),
     security(("bearer_auth" = [])),
@@ -1457,7 +1459,7 @@ pub async fn delete_stream(
     config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
     let profile = authenticated.deref();
     let curr_user_id = profile.user_id;
@@ -1465,24 +1467,25 @@ pub async fn delete_stream(
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        error!("{}: {}", err::CD_UNSUPPORTED_TYPE, &message);
-        AppError::range_not_satisfiable416(&message) // 416
+        let msg = format!("`{}` - {}", "id", &e);
+        error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
+        ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
 
     let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
     let res_stream = web::block(move || {
         // Add a new entity (stream).
         let res_data = stream_orm.delete_stream(id, opt_user_id).map_err(|e| {
-            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e) // 507
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         res_data
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string()) // 506
+        #[rustfmt::skip]
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     let opt_stream = res_stream?;
@@ -1509,9 +1512,8 @@ pub mod tests {
 
     use actix_web::http;
     use chrono::{DateTime, Utc};
-    use vrb_tools::token::BEARER;
+    use vrb_tools::{api_error::ApiError, token::BEARER};
 
-    use crate::errors::AppError;
     use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp};
     use crate::sessions::{
         config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
@@ -1591,7 +1593,7 @@ pub mod tests {
                 .app_data(web::Data::clone(&data_stream_orm));
         }
     }
-    pub fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {
+    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
         for (idx, msg) in msgs.iter().enumerate() {
             let app_err = app_err_vec.get(idx).unwrap();
