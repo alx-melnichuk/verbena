@@ -1,15 +1,18 @@
 use std::{borrow::Cow, ops::Deref, path};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
-use actix_web::{delete, get, post, put, web, HttpResponse, http::StatusCode};
+use actix_web::{delete, get, http::StatusCode, post, put, web, HttpResponse};
 use chrono::{DateTime, Duration, SecondsFormat::Millis, Utc};
 use log::error;
 use mime::IMAGE;
 use serde_json::{self, json};
 use utoipa;
 use vrb_tools::{
-    api_error::{ApiError, code_to_str}, cdis::coding, loading::dynamic_image, parser,
-    validators::{self, msg_validation, ValidationChecks, Validator}
+    api_error::{code_to_str, ApiError},
+    cdis::coding,
+    loading::dynamic_image,
+    parser,
+    validators::{self, msg_validation, ValidationChecks, Validator},
 };
 
 use crate::extractors::authentication::{Authenticated, RequireAuth};
@@ -21,9 +24,8 @@ use crate::streams::stream_orm::tests::StreamOrmApp;
 use crate::streams::{
     config_strm::{self, ConfigStrm},
     stream_models::{
-        self, CreateStreamInfoDto, ModifyStream, ModifyStreamInfoDto, SearchStreamEventDto, SearchStreamInfoDto,
-        SearchStreamPeriodDto, StreamConfigDto, StreamEventPageDto, StreamInfoDto, StreamInfoPageDto, StreamState,
-        ToggleStreamStateDto,
+        self, CreateStreamInfoDto, ModifyStream, ModifyStreamInfoDto, SearchStreamEventDto, SearchStreamInfoDto, SearchStreamPeriodDto,
+        StreamConfigDto, StreamEventPageDto, StreamInfoDto, StreamInfoPageDto, StreamState, ToggleStreamStateDto,
     },
     stream_orm::StreamOrm,
 };
@@ -928,9 +930,7 @@ pub struct ModifyStreamForm {
 }
 
 impl ModifyStreamForm {
-    pub fn convert(
-        modify_stream_form: ModifyStreamForm,
-    ) -> Result<(stream_models::ModifyStreamInfoDto, Option<TempFile>), String> {
+    pub fn convert(modify_stream_form: ModifyStreamForm) -> Result<(stream_models::ModifyStreamInfoDto, Option<TempFile>), String> {
         let tags: Option<Vec<String>> = match modify_stream_form.tags {
             Some(v) => {
                 let val = v.into_inner();
@@ -1516,9 +1516,7 @@ pub mod tests {
     use vrb_tools::{api_error::ApiError, token::BEARER};
 
     use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp};
-    use crate::sessions::{
-        config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token,
-    };
+    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
     use crate::streams::{
         config_strm,
         stream_models::{Stream, StreamInfoDto},

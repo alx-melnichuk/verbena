@@ -2,26 +2,22 @@
 mod tests {
     use actix_web::{
         self, body, dev,
-        http::{
-            header::{HeaderValue, CONTENT_TYPE},
-            StatusCode,
-        },
+        http::header::{HeaderValue, CONTENT_TYPE},
+        http::StatusCode,
         test, App,
     };
     use chrono::{DateTime, Datelike, Duration, Local, SecondsFormat, TimeZone, Timelike, Utc};
     use serde_json;
-    use vrb_tools::api_error::{ApiError, code_to_str};
+    use vrb_tools::api_error::{code_to_str, ApiError};
 
     use crate::profiles::profile_orm::tests::ProfileOrmApp;
     use crate::settings::err;
     use crate::streams::{
         stream_controller::{
             get_stream_by_id, get_stream_config, get_streams, get_streams_events, get_streams_period,
-            tests::{
-                configure_stream, create_stream, get_cfg_data, header_auth, MSG_CASTING_TO_TYPE, MSG_FAILED_DESER,
-            },
-            MSG_FINISH_EXCEEDS_LIMIT, MSG_FINISH_LESS_START, MSG_GET_LIST_OTHER_USER_STREAMS,
-            MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, PERIOD_MAX_NUMBER_DAYS,
+            tests::{configure_stream, create_stream, get_cfg_data, header_auth, MSG_CASTING_TO_TYPE, MSG_FAILED_DESER},
+            MSG_FINISH_EXCEEDS_LIMIT, MSG_FINISH_LESS_START, MSG_GET_LIST_OTHER_USER_STREAMS, MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS,
+            MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, PERIOD_MAX_NUMBER_DAYS,
         },
         stream_models::{self, StreamConfigDto, StreamEventDto, StreamEventPageDto, StreamInfoDto, StreamInfoPageDto},
         stream_orm::tests::StreamOrmApp,
@@ -243,8 +239,7 @@ mod tests {
         let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
-        let stream1b_vec_ser: Vec<StreamInfoDto> =
-            serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
+        let stream1b_vec_ser: Vec<StreamInfoDto> = serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(response.list, stream1b_vec_ser);
         assert_eq!(response.list.len(), limit as usize);
@@ -286,8 +281,7 @@ mod tests {
         let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
         let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
-        let stream1b_vec_ser: Vec<StreamInfoDto> =
-            serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
+        let stream1b_vec_ser: Vec<StreamInfoDto> = serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
 
         assert_eq!(response.list, stream1b_vec_ser);
         assert_eq!(response.list.len(), limit as usize);
@@ -682,10 +676,7 @@ mod tests {
         streams.push(create_stream(3, profile1_id, "demo22", "tag24,tag25", to_utc(today + Duration::hours(24))));
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
-        let stream_vec = vec![
-            stream_orm_vec.get(1).unwrap().clone(),
-            stream_orm_vec.get(2).unwrap().clone(),
-        ];
+        let stream_vec = vec![stream_orm_vec.get(1).unwrap().clone(), stream_orm_vec.get(2).unwrap().clone()];
 
         let data_c = (data_c.0, data_c.1, stream_orm_vec);
         let starttime = to_utc(today).to_rfc3339_opts(SecondsFormat::Millis, true);
@@ -746,10 +737,7 @@ mod tests {
 
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
-        let stream_vec = vec![
-            stream_orm_vec.get(1).unwrap().clone(),
-            stream_orm_vec.get(4).unwrap().clone(),
-        ];
+        let stream_vec = vec![stream_orm_vec.get(1).unwrap().clone(), stream_orm_vec.get(4).unwrap().clone()];
 
         let data_c = (profile_vec, data_c.1, stream_orm_vec);
         let starttime = to_utc(today).to_rfc3339_opts(SecondsFormat::Millis, true);
@@ -806,10 +794,7 @@ mod tests {
 
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
-        let stream_vec = vec![
-            stream_orm_vec.get(4).unwrap().clone(),
-            stream_orm_vec.get(5).unwrap().clone(),
-        ];
+        let stream_vec = vec![stream_orm_vec.get(4).unwrap().clone(), stream_orm_vec.get(5).unwrap().clone()];
 
         let data_c = (profile_vec, data_c.1, stream_orm_vec);
         let starttime = to_utc(today).to_rfc3339_opts(SecondsFormat::Millis, true);
@@ -957,10 +942,7 @@ mod tests {
 
         let stream_orm = StreamOrmApp::create(&streams);
         let stream_orm_vec = stream_orm.stream_info_vec.clone();
-        let stream_vec = vec![
-            stream_orm_vec.get(2).unwrap().clone(),
-            stream_orm_vec.get(3).unwrap().clone(),
-        ];
+        let stream_vec = vec![stream_orm_vec.get(2).unwrap().clone(), stream_orm_vec.get(3).unwrap().clone()];
 
         let data_c = (profile_vec, data_c.1, stream_orm_vec);
         let starttime = to_utc(today).to_rfc3339_opts(SecondsFormat::Millis, true);

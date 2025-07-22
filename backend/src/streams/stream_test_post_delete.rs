@@ -5,15 +5,16 @@ mod tests {
     use actix_multipart_test::MultiPartFormDataBuilder;
     use actix_web::{
         self, body, dev,
-        http::{
-            header::{HeaderValue, CONTENT_TYPE},
-            StatusCode,
-        },
+        http::header::{HeaderValue, CONTENT_TYPE},
+        http::StatusCode,
         test, App,
     };
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json;
-    use vrb_tools::{api_error::{ApiError, code_to_str}, cdis::coding};
+    use vrb_tools::{
+        api_error::{code_to_str, ApiError},
+        cdis::coding,
+    };
 
     use crate::settings::err;
     use crate::streams::{
@@ -21,8 +22,8 @@ mod tests {
         stream_controller::{
             delete_stream, post_stream,
             tests::{
-                check_app_err, configure_stream, get_cfg_data, header_auth, save_empty_file, save_file_png,
-                MSG_CASTING_TO_TYPE, MSG_CONTENT_TYPE_NOT_FOUND, MSG_FAILED_DESER, MSG_MULTIPART_STREAM_INCOMPLETE,
+                check_app_err, configure_stream, get_cfg_data, header_auth, save_empty_file, save_file_png, MSG_CASTING_TO_TYPE,
+                MSG_CONTENT_TYPE_NOT_FOUND, MSG_FAILED_DESER, MSG_MULTIPART_STREAM_INCOMPLETE,
             },
             ALIAS_LOGO_FILES_DIR, MSG_INVALID_FIELD_TAG,
         },

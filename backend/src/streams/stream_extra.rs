@@ -1,6 +1,6 @@
-use actix_web::{web, http::StatusCode};
+use actix_web::{http::StatusCode, web};
 use log::error;
-use vrb_tools::api_error::{ApiError, code_to_str};
+use vrb_tools::api_error::{code_to_str, ApiError};
 
 use crate::settings::err;
 #[cfg(not(all(test, feature = "mockdata")))]

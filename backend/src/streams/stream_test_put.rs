@@ -5,15 +5,17 @@ mod tests {
     use actix_multipart_test::MultiPartFormDataBuilder;
     use actix_web::{
         self, body, dev,
-        http::{
-            header::{HeaderValue, CONTENT_TYPE},
-            StatusCode,
-        },
+        http::header::{HeaderValue, CONTENT_TYPE},
+        http::StatusCode,
         test, App,
     };
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json;
-    use vrb_tools::{api_error::{ApiError, code_to_str}, cdis::coding, validators};
+    use vrb_tools::{
+        api_error::{code_to_str, ApiError},
+        cdis::coding,
+        validators,
+    };
 
     use crate::profiles::profile_orm::tests::ProfileOrmApp;
     use crate::settings::err;
@@ -22,15 +24,12 @@ mod tests {
         stream_controller::{
             put_stream, put_toggle_state,
             tests::{
-                check_app_err, configure_stream, create_stream, get_cfg_data, header_auth, save_empty_file,
-                save_file_png, MSG_CASTING_TO_TYPE, MSG_CONTENT_TYPE_NOT_FOUND, MSG_FAILED_DESER,
-                MSG_MULTIPART_STREAM_INCOMPLETE,
+                check_app_err, configure_stream, create_stream, get_cfg_data, header_auth, save_empty_file, save_file_png,
+                MSG_CASTING_TO_TYPE, MSG_CONTENT_TYPE_NOT_FOUND, MSG_FAILED_DESER, MSG_MULTIPART_STREAM_INCOMPLETE,
             },
             ALIAS_LOGO_FILES_DIR, MSG_EXIST_IS_ACTIVE_STREAM, MSG_INVALID_FIELD_TAG, MSG_INVALID_STREAM_STATE,
         },
-        stream_models::{
-            self, ModifyStreamInfoDto, StreamInfoDto, StreamModelsTest, StreamState, ToggleStreamStateDto,
-        },
+        stream_models::{self, ModifyStreamInfoDto, StreamInfoDto, StreamModelsTest, StreamState, ToggleStreamStateDto},
         stream_orm::tests::StreamOrmApp,
     };
     use crate::users::user_models::UserRole;
@@ -140,9 +139,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_stream_title_min() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("title", StreamModelsTest::title_min())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("title", StreamModelsTest::title_min()).build();
 
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
@@ -162,9 +159,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_stream_title_max() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("title", StreamModelsTest::title_max())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("title", StreamModelsTest::title_max()).build();
 
         let (cfg_c, data_c, token) = get_cfg_data();
         #[rustfmt::skip]
