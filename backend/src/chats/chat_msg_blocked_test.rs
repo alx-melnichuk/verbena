@@ -10,6 +10,7 @@ mod tests {
     };
     use chrono::{SecondsFormat, Utc};
     use serde_json::{self, json};
+    use vrb_tools::validators;
 
     use crate::chats::{
         chat_message_controller::{
@@ -26,8 +27,7 @@ mod tests {
     };
     use crate::errors::AppError;
     use crate::settings::err;
-    use crate::validators;
-
+    
     // ** get_blocked_users **
 
     #[actix_web::test]
