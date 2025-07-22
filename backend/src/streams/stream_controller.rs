@@ -1,7 +1,7 @@
 use std::{borrow::Cow, ops::Deref, path};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
-use actix_web::{delete, get, post, put, web, HttpResponse, http::StatusCode,};
+use actix_web::{delete, get, post, put, web, HttpResponse, http::StatusCode};
 use chrono::{DateTime, Duration, SecondsFormat::Millis, Utc};
 use log::error;
 use mime::IMAGE;
@@ -157,6 +157,7 @@ pub async fn get_stream_by_id(
         let res_data = stream_orm
             .find_stream_by_params(Some(id), None, None, true, &[])
             .map_err(|e| {
+                #[rustfmt::skip]
                 error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
@@ -862,9 +863,9 @@ pub async fn post_stream(
         // If a file exists at the target path, persist will atomically replace it.
         let res_upload = temp_file.file.persist(&full_path_file);
         if let Err(err) = res_upload {
-            let message = format!("{}; {} - {}", err::MSG_ERROR_UPLOAD_FILE, &full_path_file, err.to_string());
-            error!("{}-{}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), &message);
-            return Err(ApiError::new(500, &message)) // 500
+            let msg = format!("{} - {}", &full_path_file, err.to_string());
+            error!("{}-{}; {}", code_to_str(StatusCode::INTERNAL_SERVER_ERROR), err::MSG_ERROR_UPLOAD_FILE, &msg);
+            return Err(ApiError::create(500, err::MSG_ERROR_UPLOAD_FILE, &msg)) // 500
         }
         path_new_logo_file = full_path_file;
 
