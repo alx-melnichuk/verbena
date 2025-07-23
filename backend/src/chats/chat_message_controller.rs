@@ -564,7 +564,7 @@ pub mod tests {
 
     use actix_web::{http, web};
     use chrono::{DateTime, Duration, Utc};
-    use vrb_tools::token_data::BEARER;
+    use vrb_tools::{token_data::BEARER, token_coding};
 
     use crate::chats::{
         chat_message_models::{BlockedUser, ChatMessage, ChatMessageLog},
@@ -572,7 +572,7 @@ pub mod tests {
     };
     use crate::errors::AppError;
     use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp, profile_orm::tests::PROFILE_USER_ID as PROFILE_ID};
-    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
+    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp};
     use crate::users::user_models::UserRole;
 
     pub const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
@@ -617,7 +617,7 @@ pub mod tests {
         let num_token = get_num_token(user_id);
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
-        let token = encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = token_coding::encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         token
     }
     pub fn get_profiles(count: u8) -> (Vec<Profile>, Vec<Session>) {

@@ -6,7 +6,7 @@ use futures_util::{
     FutureExt,
 };
 use log::{debug, error, log_enabled, Level::Debug};
-use vrb_tools::{api_error::ApiError, token_data};
+use vrb_tools::{api_error::ApiError, token_data, token_coding};
 
 use crate::profiles::profile_models::Profile;
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -17,7 +17,7 @@ use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::sessions::{config_jwt, tokens::decode_token};
+use crate::sessions::config_jwt;
 use crate::settings::err;
 use crate::users::user_models::UserRole;
 use crate::utils::token_verification::check_token_and_get_profile;
@@ -136,7 +136,7 @@ where
         let config_jwt = req.app_data::<web::Data<config_jwt::ConfigJwt>>().unwrap();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Decode the token.
-        let token_res = decode_token(&token, jwt_secret);
+        let token_res = token_coding::decode_token(&token, jwt_secret);
 
         if let Err(e) = token_res {
             let message = format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
@@ -191,9 +191,9 @@ mod tests {
         http::{header, StatusCode},
         test, web, App, HttpResponse,
     };
-    use vrb_tools::{api_error::code_to_str, token_data};
+    use vrb_tools::{api_error::code_to_str, token_data, token_coding};
 
-    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
+    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp};
     use crate::users::user_models::UserRole;
     use crate::utils::token_verification::MSG_UNACCEPTABLE_TOKEN_ID;
 
@@ -241,7 +241,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
-        let token = encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = token_coding::encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let data_c = (vec![profile1], vec![session1]);
 
@@ -350,7 +350,7 @@ mod tests {
         let num_token = data_c.1.get(0).unwrap().num_token.unwrap_or(0); // session_vec
         let user_id = data_c.0.get(0).unwrap().user_id; // profile_vec
         let jwt_secret: &[u8] = cfg_c.jwt_secret.as_bytes();
-        let token = encode_token(user_id, num_token, &jwt_secret, -cfg_c.jwt_access).unwrap();
+        let token = token_coding::encode_token(user_id, num_token, &jwt_secret, -cfg_c.jwt_access).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth).configure(configure_auth(cfg_c, data_c))).await;
@@ -406,7 +406,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
-        let token = encode_token(user_id_bad, num_token2, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = token_coding::encode_token(user_id_bad, num_token2, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let data_c = (data_c.0, vec![session1]);
         #[rustfmt::skip]
@@ -432,7 +432,7 @@ mod tests {
         let num_token = data_c.1.get(0).unwrap().num_token.unwrap_or(0); // session_vec
         let user_id = data_c.0.get(0).unwrap().user_id; // profile_vec
         let jwt_secret: &[u8] = cfg_c.jwt_secret.as_bytes();
-        let token = encode_token(user_id, num_token + 1, &jwt_secret, cfg_c.jwt_access).unwrap();
+        let token = token_coding::encode_token(user_id, num_token + 1, &jwt_secret, cfg_c.jwt_access).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(handler_with_auth).configure(configure_auth(cfg_c, data_c))).await;

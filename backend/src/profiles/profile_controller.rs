@@ -1000,10 +1000,10 @@ pub mod tests {
 
     use actix_web::{http::header, web};
     use chrono::{DateTime, Duration, Utc};
-    use vrb_tools::{api_error::ApiError, hash_tools, token_data::BEARER};
+    use vrb_tools::{api_error::ApiError, hash_tools, token_data::BEARER, token_coding};
 
     use crate::profiles::{config_prfl, profile_models::Profile, profile_orm::tests::ProfileOrmApp};
-    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
+    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp};
     use crate::streams::{
         config_strm, stream_controller::tests::create_stream, stream_models::StreamInfoDto, stream_orm::tests::StreamOrmApp,
     };
@@ -1060,7 +1060,7 @@ pub mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
-        let token = encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = token_coding::encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let user_registr_vec:Vec<UserRegistr> = if is_registr {
             vec![user_registr_with_id(create_user_registr())]

@@ -1,4 +1,5 @@
 use log::error;
+use vrb_tools::token_coding;
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
@@ -22,7 +23,6 @@ use crate::sessions::config_jwt;
 use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::sessions::tokens::decode_token;
 use crate::settings::err;
 use crate::utils::token_verification::check_token_and_get_profile;
 
@@ -63,7 +63,7 @@ impl ChatWsAssistant {
     pub fn decode_and_verify_token(&self, token: &str) -> Result<(i32, i32), String> {
         let jwt_secret: &[u8] = self.config_jwt.jwt_secret.as_bytes();
         // Decode the token. Unpack two parameters from the token.
-        decode_token(token, jwt_secret).map_err(|e| format!("{}; {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e))
+        token_coding::decode_token(token, jwt_secret).map_err(|e| format!("{}; {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e))
     }
     /** Check the number token for correctness and get the user profile. */
     pub async fn check_num_token_and_get_profile(&self, user_id: i32, num_token: i32) -> Result<Profile, AppError> {

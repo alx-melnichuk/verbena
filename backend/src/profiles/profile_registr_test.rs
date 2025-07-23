@@ -12,6 +12,7 @@ mod tests {
         api_error::{code_to_str, ApiError},
         send_email::{config_smtp, mailer::tests::MailerApp},
         token_data::BEARER,
+        token_coding,
     };
 
     use crate::profiles::{
@@ -30,7 +31,6 @@ mod tests {
         config_jwt,
         session_models::Session,
         session_orm::tests::SessionOrmApp,
-        tokens::{decode_token, encode_token},
     };
     use crate::settings::{config_app, err};
     use crate::users::{
@@ -87,7 +87,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
-        let token = encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = token_coding::encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let user_registr_vec:Vec<UserRegistr> = if is_registr {
             vec![user_registr_with_id(create_user_registr())]
@@ -610,7 +610,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let (user_registr_id, _) = decode_token(&registr_profile_resp.registr_token, jwt_secret).unwrap();
+        let (user_registr_id, _) = token_coding::decode_token(&registr_profile_resp.registr_token, jwt_secret).unwrap();
         assert_eq!(user_registr1.id, user_registr_id);
     }
 
@@ -646,7 +646,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let registr_token = encode_token(user_reg1_id, num_token, jwt_secret, -reg_duration).unwrap();
+        let registr_token = token_coding::encode_token(user_reg1_id, num_token, jwt_secret, -reg_duration).unwrap();
 
         #[rustfmt::skip]
         let app = test::init_service(
@@ -678,7 +678,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let user_reg_id = user_reg1_id + 1;
-        let registr_token = encode_token(user_reg_id, num_token, jwt_secret, reg_duration).unwrap();
+        let registr_token = token_coding::encode_token(user_reg_id, num_token, jwt_secret, reg_duration).unwrap();
 
         #[rustfmt::skip]
         let app = test::init_service(
@@ -711,7 +711,7 @@ mod tests {
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let registr_token = encode_token(user_reg1.id, num_token, jwt_secret, reg_duration).unwrap();
+        let registr_token = token_coding::encode_token(user_reg1.id, num_token, jwt_secret, reg_duration).unwrap();
 
         #[rustfmt::skip]
         let app = test::init_service(
@@ -902,7 +902,7 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = user_recov_res.recovery_token;
         // Check the signature and expiration date on the “recovery_token".
-        let (user_recovery_id, _) = decode_token(&recovery_token, jwt_secret).expect("decode_token error");
+        let (user_recovery_id, _) = token_coding::decode_token(&recovery_token, jwt_secret).expect("decode_token error");
         assert_eq!(user_recovery_id, user_recovery1_id);
     }
     #[actix_web::test]
@@ -933,7 +933,7 @@ mod tests {
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let recovery_token = user_recov_res.recovery_token;
         // Check the signature and expiration date on the “recovery_token".
-        let (user_recovery_id, _) = decode_token(&recovery_token, jwt_secret).expect("decode_token error");
+        let (user_recovery_id, _) = token_coding::decode_token(&recovery_token, jwt_secret).expect("decode_token error");
         assert_eq!(user_recovery1_id, user_recovery_id);
     }
     #[actix_web::test]
@@ -1070,7 +1070,7 @@ mod tests {
         let num_token = data_c.1.get(0).unwrap().clone().num_token.unwrap();
         let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
         let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
-        let recovery_token = encode_token(user_recovery1.id, num_token, jwt_secret, -recovery_duration).unwrap();
+        let recovery_token = token_coding::encode_token(user_recovery1.id, num_token, jwt_secret, -recovery_duration).unwrap();
 
         #[rustfmt::skip]
         let app = test::init_service(
@@ -1098,7 +1098,7 @@ mod tests {
         let num_token = data_c.1.get(0).unwrap().clone().num_token.unwrap();
         let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
         let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
-        let recovery_token = encode_token(user_recovery_id, num_token, jwt_secret, recovery_duration).unwrap();
+        let recovery_token = token_coding::encode_token(user_recovery_id, num_token, jwt_secret, recovery_duration).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
@@ -1127,7 +1127,7 @@ mod tests {
         let user_recovery1 = create_user_recovery_with_id(create_user_recovery(0, user_id, final_date_utc));
         let num_token = 1234;
         let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
-        let recovery_token = encode_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
+        let recovery_token = token_coding::encode_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
 
         let data_c = (data_c.0, data_c.1, data_c.2, vec![user_recovery1]);
         #[rustfmt::skip]
@@ -1156,7 +1156,7 @@ mod tests {
 
         let num_token = 1234;
         let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
-        let recovery_token = encode_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
+        let recovery_token = token_coding::encode_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;

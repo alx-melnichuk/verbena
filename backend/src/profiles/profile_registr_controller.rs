@@ -10,6 +10,7 @@ use vrb_tools::{
     api_error::{code_to_str, ApiError},
     hash_tools,
     send_email::mailer::Mailer,
+    token_coding,
     validators::{msg_validation, Validator},
 };
 
@@ -26,10 +27,7 @@ use crate::profiles::{
     },
     profile_orm::ProfileOrm,
 };
-use crate::sessions::{
-    config_jwt,
-    tokens::{decode_token, encode_token, generate_num_token},
-};
+use crate::sessions::config_jwt;
 use crate::settings::{config_app, err};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::users::user_recovery_orm::impls::UserRecoveryOrmApp;
@@ -200,13 +198,13 @@ pub async fn registration(
         ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })??;
 
-    let num_token = generate_num_token();
+    let num_token = token_coding::generate_num_token();
     let config_jwt = config_jwt.get_ref().clone();
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Pack two parameters (user_registr.id, num_token) into a registr_token.
     #[rustfmt::skip]
-    let registr_token = encode_token(user_registr.id, num_token, jwt_secret, app_registr_duration)
+    let registr_token = token_coding::encode_token(user_registr.id, num_token, jwt_secret, app_registr_duration)
     .map_err(|e| {
         error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
@@ -278,7 +276,7 @@ pub async fn confirm_registration(
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Check the signature and expiration date on the received “registr_token".
-    let dual_token = decode_token(&registr_token, jwt_secret).map_err(|e| {
+    let dual_token = token_coding::decode_token(&registr_token, jwt_secret).map_err(|e| {
         error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
         ApiError::create(401, err::MSG_INVALID_OR_EXPIRED_TOKEN, &e) // 401
     })?;
@@ -488,12 +486,12 @@ pub async fn recovery(
         user_recovery_id = user_recovery.id;
     }
 
-    let num_token = generate_num_token();
+    let num_token = token_coding::generate_num_token();
     let config_jwt = config_jwt.get_ref().clone();
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Pack two parameters (user_recovery_id, num_token) into a recovery_token.
-    let recovery_token = encode_token(user_recovery_id, num_token, jwt_secret, app_recovery_duration).map_err(|e| {
+    let recovery_token = token_coding::encode_token(user_recovery_id, num_token, jwt_secret, app_recovery_duration).map_err(|e| {
         error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
@@ -602,7 +600,7 @@ pub async fn confirm_recovery(
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Check the signature and expiration date on the received “recovery_token".
-    let dual_token = decode_token(&recovery_token, jwt_secret).map_err(|e| {
+    let dual_token = token_coding::decode_token(&recovery_token, jwt_secret).map_err(|e| {
         error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
         ApiError::create(401, err::MSG_INVALID_OR_EXPIRED_TOKEN, &e) // 401
     })?;

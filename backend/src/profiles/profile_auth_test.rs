@@ -12,9 +12,10 @@ mod tests {
         api_error::{code_to_str, ApiError},
         hash_tools,
         token_data::{BEARER, TOKEN_NAME},
+        token_coding,
     };
     
-    use crate::{sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token}};
+    use crate::{sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp}};
     use crate::users::user_models::UserRole;
     use crate::profiles::{
         profile_auth_controller::{login, logout, update_token},
@@ -56,7 +57,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
-        let token = encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = token_coding::encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         let data_c = (vec![profile1], vec![session1]);
 
@@ -687,7 +688,7 @@ mod tests {
         let jwt_secret = cfg_c.jwt_secret.as_bytes();
         let profile_id_bad = profile1_id + 1;
         let num_token = data_c.1.get(0).unwrap().num_token.unwrap();
-        let token_bad = encode_token(profile_id_bad, num_token, &jwt_secret, cfg_c.jwt_access).unwrap();
+        let token_bad = token_coding::encode_token(profile_id_bad, num_token, &jwt_secret, cfg_c.jwt_access).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token).configure(configure_profile(cfg_c, data_c))).await;
@@ -713,7 +714,7 @@ mod tests {
         let profile1_id = data_c.0.get(0).unwrap().user_id;
         let jwt_secret = cfg_c.jwt_secret.as_bytes();
         let num_token = data_c.1.get(0).unwrap().num_token.unwrap();
-        let token_bad = encode_token(profile1_id, num_token + 1, &jwt_secret, cfg_c.jwt_access).unwrap();
+        let token_bad = token_coding::encode_token(profile1_id, num_token + 1, &jwt_secret, cfg_c.jwt_access).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token).configure(configure_profile(cfg_c, data_c))).await;
@@ -740,7 +741,7 @@ mod tests {
         let jwt_access = cfg_c.jwt_access;
         let jwt_secret = cfg_c.jwt_secret.as_bytes();
         let num_token = data_c.1.get(0).unwrap().num_token.unwrap();
-        let token_refresh = encode_token(profile1_id, num_token, &jwt_secret, cfg_c.jwt_refresh).unwrap();
+        let token_refresh = token_coding::encode_token(profile1_id, num_token, &jwt_secret, cfg_c.jwt_refresh).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(update_token).configure(configure_profile(cfg_c, data_c))).await;

@@ -7,6 +7,7 @@ use vrb_tools::{
     api_error::{code_to_str, ApiError},
     hash_tools,
     validators::{msg_validation, Validator},
+    token_coding,
 };
 
 use crate::extractors::authentication::{Authenticated, RequireAuth};
@@ -23,7 +24,7 @@ use crate::profiles::{
 use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::sessions::{config_jwt, session_orm::SessionOrm, tokens};
+use crate::sessions::{config_jwt, session_orm::SessionOrm};
 use crate::settings::err;
 
 pub const TOKEN_NAME: &str = "token";
@@ -135,18 +136,18 @@ pub async fn login(
         return Err(ApiError::new(401, err::MSG_PASSWORD_INCORRECT)); // 401 (B)
     }
 
-    let num_token = tokens::generate_num_token();
+    let num_token = token_coding::generate_num_token();
     let config_jwt = config_jwt.get_ref().clone();
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Packing two parameters (user_id, num_token) into access_token.
-    let access_token = tokens::encode_token(profile_pwd.user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
+    let access_token = token_coding::encode_token(profile_pwd.user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
         error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
     // Packing two parameters (user_id, num_token) into refresh_token.
-    let refresh_token = tokens::encode_token(profile_pwd.user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
+    let refresh_token = token_coding::encode_token(profile_pwd.user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
         error!("{}-{}; {}", err::CD_UNPROCESSABLE_ENTITY, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e)
     })?;
@@ -309,7 +310,7 @@ pub async fn update_token(
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Get user ID.
-    let (user_id, num_token) = tokens::decode_token(&token, jwt_secret).map_err(|e| {
+    let (user_id, num_token) = token_coding::decode_token(&token, jwt_secret).map_err(|e| {
         error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
         ApiError::create(401, err::MSG_INVALID_OR_EXPIRED_TOKEN, &e) // 401
     })?;
@@ -347,18 +348,18 @@ pub async fn update_token(
         return Err(ApiError::create(401, err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg));
     }
 
-    let num_token = tokens::generate_num_token();
+    let num_token = token_coding::generate_num_token();
     let config_jwt = config_jwt.get_ref().clone();
     let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
     // Pack two parameters (user.id, num_token) into a access_token.
-    let access_token = tokens::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
+    let access_token = token_coding::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
         error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
-    let refresh_token = tokens::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
+    let refresh_token = token_coding::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
         error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
         ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;

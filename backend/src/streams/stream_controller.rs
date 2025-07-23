@@ -1513,10 +1513,10 @@ pub mod tests {
 
     use actix_web::http;
     use chrono::{DateTime, Utc};
-    use vrb_tools::{api_error::ApiError, token_data::BEARER};
+    use vrb_tools::{api_error::ApiError, token_data::BEARER, token_coding};
 
     use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp};
-    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
+    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp};
     use crate::streams::{
         config_strm,
         stream_models::{Stream, StreamInfoDto},
@@ -1560,7 +1560,7 @@ pub mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         // Create token values.
-        let token = encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+        let token = token_coding::encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
         // The "stream" value will be required for the "put_stream" method.
         let stream = create_stream(0, profile1.user_id, "title0", "tag01,tag02", Utc::now());
