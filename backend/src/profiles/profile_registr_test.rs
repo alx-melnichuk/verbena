@@ -11,7 +11,7 @@ mod tests {
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
         send_email::{config_smtp, mailer::tests::MailerApp},
-        token::BEARER,
+        token_data::BEARER,
     };
 
     use crate::profiles::{

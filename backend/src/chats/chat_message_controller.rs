@@ -564,7 +564,7 @@ pub mod tests {
 
     use actix_web::{http, web};
     use chrono::{DateTime, Duration, Utc};
-    use vrb_tools::token::BEARER;
+    use vrb_tools::token_data::BEARER;
 
     use crate::chats::{
         chat_message_models::{BlockedUser, ChatMessage, ChatMessageLog},

@@ -6,7 +6,7 @@ use futures_util::{
     FutureExt,
 };
 use log::{debug, error, log_enabled, Level::Debug};
-use vrb_tools::{api_error::ApiError, token::get_token_from_cookie_or_header};
+use vrb_tools::{api_error::ApiError, token_data};
 
 use crate::profiles::profile_models::Profile;
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -123,7 +123,7 @@ where
         let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
 
         // Attempt to extract token from cookie or authorization header
-        let token = get_token_from_cookie_or_header(req.request());
+        let token = token_data::get_token_from_cookie_or_header(req.request());
 
         // If token is missing, return unauthorized error
         if token.is_none() {
@@ -191,7 +191,7 @@ mod tests {
         http::{header, StatusCode},
         test, web, App, HttpResponse,
     };
-    use vrb_tools::{api_error::code_to_str, token::BEARER};
+    use vrb_tools::{api_error::code_to_str, token_data};
 
     use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp, tokens::encode_token};
     use crate::users::user_models::UserRole;
@@ -228,7 +228,7 @@ mod tests {
         config_jwt::get_test_config()
     }
     fn header_auth(token: &str) -> (header::HeaderName, header::HeaderValue) {
-        let header_value = header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        let header_value = header::HeaderValue::from_str(&format!("{}{}", token_data::BEARER, token)).unwrap();
         (header::AUTHORIZATION, header_value)
     }
     #[rustfmt::skip]
