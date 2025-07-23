@@ -2,31 +2,29 @@
 mod tests {
     use actix_web::{
         self, body, dev,
-        http::{
-            header::{HeaderValue, CONTENT_TYPE},
-            StatusCode,
-        },
+        http::header::{HeaderValue, CONTENT_TYPE},
+        http::StatusCode,
         test, App,
     };
     use chrono::{SecondsFormat, Utc};
     use serde_json::json;
+    use vrb_tools::api_error::{code_to_str, ApiError};
 
     use crate::chats::{
         chat_message_controller::{
             delete_chat_message, post_chat_message, put_chat_message,
             tests::{
-                configure_chat_message, get_cfg_data, header_auth, MSG_CASTING_TO_TYPE, MSG_CONTENT_TYPE_ERROR,
-                MSG_FAILED_DESER, MSG_JSON_MISSING_FIELD,
+                configure_chat_message, get_cfg_data, header_auth, MSG_CASTING_TO_TYPE, MSG_CONTENT_TYPE_ERROR, MSG_FAILED_DESER,
+                MSG_JSON_MISSING_FIELD,
             },
         },
         chat_message_models::{self, ChatMessageDto, CreateChatMessageDto, ModifyChatMessageDto},
         chat_message_orm::tests::ChatMsgTest,
     };
-    use crate::errors::AppError;
     use crate::settings::err;
     use crate::users::user_models::UserRole;
 
-    fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {
+    fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
         for (idx, msg) in msgs.iter().enumerate() {
             let app_err = app_err_vec.get(idx).unwrap();
@@ -94,9 +92,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[chat_message_models::MSG_MESSAGE_MIN_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_MESSAGE_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_post_chat_message_msg_max() {
@@ -115,9 +113,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[chat_message_models::MSG_MESSAGE_MAX_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_MESSAGE_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_post_chat_message_stream_id_wrong() {
@@ -138,8 +136,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         #[rustfmt::skip]
         let message = format!("{}; stream_id: {}, msg: \"{}\"", err::MSG_PARAMETER_UNACCEPTABLE, stream_id_wrong, &msg);
         assert_eq!(app_err.message, message);
@@ -222,8 +220,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
         #[rustfmt::skip]
         let msg = format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
@@ -268,9 +266,9 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err_vec: Vec<AppError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, err::CD_VALIDATION, &[chat_message_models::MSG_MESSAGE_MAX_LENGTH]);
+        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_MESSAGE_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_chat_message_non_existent_id() {
@@ -293,8 +291,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         #[rustfmt::skip]
         let message = format!("{}; id: {}, user_id: {}, msg: \"{}\"", err::MSG_PARAMETER_UNACCEPTABLE, id_wrong, user_id1, msg);
         assert_eq!(app_err.message, message);
@@ -323,8 +321,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         #[rustfmt::skip]
         let message = format!("{}; id: {}, user_id: {}, msg: \"{}\"", err::MSG_PARAMETER_UNACCEPTABLE, ch_msg.id, user_id1, msg);
         assert_eq!(app_err.message, message);
@@ -335,7 +333,6 @@ mod tests {
     #[actix_web::test]
     async fn test_put_chat_message_valid_data() {
         let (cfg_c, data_c, token) = get_cfg_data(3);
-        #[rustfmt::skip]
         let ch_msg = data_c.2.get(0).unwrap().clone();
         let msg = ChatMsgTest::message_norm();
         #[rustfmt::skip]
@@ -356,11 +353,13 @@ mod tests {
         assert_eq!(chat_message_dto_res.id, ch_msg.id);
         assert_eq!(chat_message_dto_res.member, ch_msg.user_name);
         // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
-        let date_s = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
+        let date_crt = ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
-        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Secs, true), date_s);
+        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Secs, true), date_crt);
         assert_eq!(chat_message_dto_res.msg, msg);
         assert!(chat_message_dto_res.date_edt.is_some());
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
+        let date_s = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         let date_edt = chat_message_dto_res.date_edt.unwrap();
         assert_eq!(date_edt.to_rfc3339_opts(SecondsFormat::Secs, true), date_s);
         assert_eq!(chat_message_dto_res.date_rmv, None);
@@ -387,8 +386,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
         #[rustfmt::skip]
         let msg = format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "userId", MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
@@ -419,11 +418,12 @@ mod tests {
         assert_eq!(chat_message_dto_res.id, ch_msg.id);
         assert_eq!(chat_message_dto_res.member, ch_msg.user_name);
         // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
-        let date_s = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
-        #[rustfmt::skip]
-        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Secs, true), date_s);
+        let date_crt = ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Secs, true);
+        assert_eq!(chat_message_dto_res.date.to_rfc3339_opts(SecondsFormat::Secs, true), date_crt);
         assert_eq!(chat_message_dto_res.msg, msg);
         assert!(chat_message_dto_res.date_edt.is_some());
+        // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
+        let date_s = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         let date_edt = chat_message_dto_res.date_edt.unwrap();
         assert_eq!(date_edt.to_rfc3339_opts(SecondsFormat::Secs, true), date_s);
         assert_eq!(chat_message_dto_res.date_rmv, None);
@@ -451,8 +451,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
         #[rustfmt::skip]
         let msg = format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));
@@ -478,8 +478,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         #[rustfmt::skip]
         let message = format!("{}; id: {}, user_id: {}", err::MSG_PARAMETER_UNACCEPTABLE, id_wrong, user_id1);
         assert_eq!(app_err.message, message);
@@ -508,8 +508,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         #[rustfmt::skip]
         let message = format!("{}; id: {}, user_id: {}", err::MSG_PARAMETER_UNACCEPTABLE, ch_msg.id, user_id1);
         assert_eq!(app_err.message, message);
@@ -568,8 +568,8 @@ mod tests {
         #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: AppError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_RANGE_NOT_SATISFIABLE);
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
         #[rustfmt::skip]
         let msg = format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "userId", MSG_CASTING_TO_TYPE);
         assert!(app_err.message.starts_with(&msg));

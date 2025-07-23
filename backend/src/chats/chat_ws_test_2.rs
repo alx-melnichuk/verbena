@@ -92,7 +92,7 @@ mod tests {
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
         let token2 = get_token(config_jwt::get_test_config(), user_id2);
 
-        let ch_cmd_id = get_chat_messages(2).0.last().unwrap().id + 1;
+        let ch_msg_id = get_chat_messages(2).0.last().unwrap().id + 1;
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
             let (cfg_c, data_c, _token) = get_cfg_data(3);
@@ -141,7 +141,7 @@ mod tests {
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let date = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
         #[rustfmt::skip]
-        let msg_ews = MsgEWS { msg, id: ch_cmd_id, member: member1.clone(), date, date_edt: None, date_rmv: None };
+        let msg_ews = MsgEWS { msg, id: ch_msg_id, member: member1.clone(), date, date_edt: None, date_rmv: None };
         let msg_ews2 = msg_ews.clone();
         if let FrameText(buf) = item {
             let msg_ews_res: MsgEWS = from_slice(&buf).expect(MSG_FAILED_DESER);
@@ -221,7 +221,7 @@ mod tests {
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
         let token1 = get_token(config_jwt::get_test_config(), user_id1);
         let ch_msgs = get_chat_messages(2);
-        let ch_cmd_id = ch_msgs.0.get(1).unwrap().id; // Message user2.
+        let ch_msg_id = ch_msgs.0.get(1).unwrap().id; // Message user2.
 
         // Open a websocket connection to the test server.
         let mut framed2 = srv.ws_at(URL_WS).await.unwrap();
@@ -237,17 +237,17 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(value)));
         // Send message.
         #[rustfmt::skip]
-        let msg_text = MessageText(format!("{{ \"msgPut\": \"text2\", \"id\": {} }}", ch_cmd_id).into());
+        let msg_text = MessageText(format!("{{ \"msgPut\": \"text2\", \"id\": {} }}", ch_msg_id).into());
         framed2.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let err404 = get_err404(&format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, ch_cmd_id, user_id1));
+        let err404 = get_err404(&format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, ch_msg_id, user_id1));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
     }
     #[actix_web::test]
     async fn test_get_ws_chat_ews_msg_put_ok() {
         let ch_msgs = get_chat_messages(2);
-        let ch_cmd_id = ch_msgs.0.first().unwrap().id;
+        let ch_msg = ch_msgs.0.first().unwrap().clone();
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
             let (cfg_c, data_c, _token) = get_cfg_data(3);
@@ -301,16 +301,16 @@ mod tests {
         // User1 sends a message.
         let msg = "text2".to_string();
         #[rustfmt::skip]
-        let msg_text = MessageText(format!("{{ \"msgPut\": \"{}\", \"id\": {} }}", &msg, ch_cmd_id).into());
+        let msg_text = MessageText(format!("{{ \"msgPut\": \"{}\", \"id\": {} }}", &msg, ch_msg.id).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
 
         // Message to user1.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
 
-        let date = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
-        let date_edt = Some(date.clone());
+        let date = ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Millis, true);
+        let date_edt = Some(Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true));
         #[rustfmt::skip]
-        let msg_ews = MsgEWS { msg, id: ch_cmd_id, member: member1.clone(), date, date_edt, date_rmv: None };
+        let msg_ews = MsgEWS { msg, id: ch_msg.id, member: member1.clone(), date, date_edt, date_rmv: None };
         let msg_ews2 = msg_ews.clone();
         if let FrameText(buf) = item {
             let msg_ews_res: MsgEWS = from_slice(&buf).expect(MSG_FAILED_DESER);
@@ -382,7 +382,7 @@ mod tests {
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
         let token1 = get_token(config_jwt::get_test_config(), user_id1);
         let ch_msgs = get_chat_messages(2);
-        let ch_cmd_id = ch_msgs.0.get(1).unwrap().id; // Message user2.
+        let ch_msg_id = ch_msgs.0.get(1).unwrap().id; // Message user2.
 
         // Open a websocket connection to the test server.
         let mut framed2 = srv.ws_at(URL_WS).await.unwrap();
@@ -398,12 +398,12 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(value)));
         // Send message.
         #[rustfmt::skip]
-        let msg_text = MessageText(format!("{{ \"msgCut\": \"\", \"id\": {} }}", ch_cmd_id).into());
+        let msg_text = MessageText(format!("{{ \"msgCut\": \"\", \"id\": {} }}", ch_msg_id).into());
         framed2.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
 
         #[rustfmt::skip]
-        let err404 = get_err404(&format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, ch_cmd_id, user_id1));
+        let err404 = get_err404(&format!("{}; id: {}, user_id: {}", err::MSG_CHAT_MESSAGE_NOT_FOUND, ch_msg_id, user_id1));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
     }
     #[actix_web::test]
@@ -441,7 +441,7 @@ mod tests {
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
         let token2 = get_token(config_jwt::get_test_config(), user_id2);
         let ch_msgs = get_chat_messages(2);
-        let ch_cmd_id = ch_msgs.0.first().unwrap().id;
+        let ch_msg = ch_msgs.0.first().unwrap().clone();
 
         // Join user2.
         #[rustfmt::skip]
@@ -463,16 +463,16 @@ mod tests {
         // User1 sends a message.
         let msg = "".to_string();
         #[rustfmt::skip]
-        let msg_text = MessageText(format!("{{ \"msgCut\": \"\", \"id\": {} }}", ch_cmd_id).into());
+        let msg_text = MessageText(format!("{{ \"msgCut\": \"\", \"id\": {} }}", ch_msg.id).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
 
         // Message to user1.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
 
-        let date = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
-        let date_rmv = Some(date.clone());
+        let date = ch_msg.date_created.to_rfc3339_opts(SecondsFormat::Millis, true);
+        let date_rmv = Some(Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true));
         #[rustfmt::skip]
-        let msg_ews = MsgEWS { msg, id: ch_cmd_id, member: member1.clone(), date, date_edt: None, date_rmv };
+        let msg_ews = MsgEWS { msg, id: ch_msg.id, member: member1.clone(), date, date_edt: None, date_rmv };
         let msg_ews2 = msg_ews.clone();
         if let FrameText(buf) = item {
             let msg_ews_res: MsgEWS = from_slice(&buf).expect(MSG_FAILED_DESER);

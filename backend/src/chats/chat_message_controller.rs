@@ -1,14 +1,20 @@
 use std::{borrow::Cow, collections::HashMap, ops::Deref, time::Instant as tm};
 
 use actix_web::{
-    delete, get, post, put,
+    delete, get,
+    http::StatusCode,
+    post, put,
     web::{self, Query},
     HttpResponse,
 };
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use log::{error, info, log_enabled, Level::Info};
 use utoipa;
-use vrb_tools::{parser, validators::{msg_validation, Validator}};
+use vrb_tools::{
+    api_error::{code_to_str, ApiError},
+    parser,
+    validators::{msg_validation, Validator},
+};
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
@@ -21,7 +27,6 @@ use crate::chats::{
     },
     chat_message_orm::ChatMessageOrm,
 };
-use crate::errors::AppError;
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::settings::err;
 use crate::users::user_models::UserRole;
@@ -157,12 +162,12 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
             )),
         ),
         ),
-        (status = 401, description = "An authorization token is required.", body = AppError,
-            example = json!(AppError::unauthorized401(err::MSG_MISSING_TOKEN))),
-        (status = 506, description = "Blocking error.", body = AppError,
-            example = json!(AppError::blocking506("Error while blocking process."))),
-        (status = 507, description = "Database error.", body = AppError,
-            example = json!(AppError::database507("Error while querying the database."))),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
+        (status = 506, description = "Blocking error.", body = ApiError,
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError,
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
     security(("bearer_auth" = [])),
 )]
@@ -171,7 +176,7 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
 pub async fn get_chat_message(
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     query_params: web::Query<SearchChatMessageDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get search parameters.
     let search_chat_message = SearchChatMessage::convert(query_params.into_inner());
@@ -183,15 +188,15 @@ pub async fn get_chat_message(
         let res_data =
         chat_message_orm2.filter_chat_messages(search_chat_message)
         .map_err(|e| {
-            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         res_data
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     let chat_messages = match res_data { Ok(v) => v, Err(e) => return Err(e) };
@@ -211,7 +216,7 @@ pub async fn post_chat_message(
     authenticated: Authenticated,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     json_body: web::Json<CreateChatMessageDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
     let profile = authenticated.deref();
@@ -220,8 +225,8 @@ pub async fn post_chat_message(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
+        error!("{}-{}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&validation_errors));
+        return Ok(ApiError::to_response(&ApiError::validations(validation_errors))); // 417
     }
 
     let create_chat_message_dto: CreateChatMessageDto = json_body.into_inner();
@@ -235,15 +240,15 @@ pub async fn post_chat_message(
     let res_chat_message = web::block(move || {
         // Add a new entity (stream).
         let res_chat_message1 = chat_message_orm2.create_chat_message(create_chat_message).map_err(|e| {
-            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         res_chat_message1
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     let opt_chat_message_dto = res_chat_message?.map(|v| ChatMessageDto::from(v));
@@ -255,9 +260,9 @@ pub async fn post_chat_message(
         Ok(HttpResponse::Created().json(chat_message_dto)) // 201
     } else {
         let json = serde_json::json!({ "stream_id": stream_id, "msg": &msg });
-        let message = format!("{}; stream_id: {}, msg: \"{}\"", err::MSG_PARAMETER_UNACCEPTABLE, stream_id, &msg);
-        error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
-        Err(AppError::not_acceptable406(&message) // 406
+        let msg = format!("stream_id: {}, msg: \"{}\"",  stream_id, &msg);
+        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_PARAMETER_UNACCEPTABLE, &msg);
+        Err(ApiError::create(406, err::MSG_PARAMETER_UNACCEPTABLE, &msg) // 406
             .add_param(Cow::Borrowed("invalidParams"), &json))
     }
 }
@@ -270,7 +275,7 @@ pub async fn put_chat_message(
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     request: actix_web::HttpRequest,
     json_body: web::Json<ModifyChatMessageDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
     let profile = authenticated.deref();
@@ -279,16 +284,16 @@ pub async fn put_chat_message(
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
-        AppError::range_not_satisfiable416(&message) // 416
+        let msg = &format!("`{}` - {}", "id", &e);
+        error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
+        ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
     
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
+        error!("{}-{}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&validation_errors));
+        return Ok(ApiError::to_response(&ApiError::validations(validation_errors))); // 417
     }
 
     let modify_chat_message_dto: ModifyChatMessageDto = json_body.into_inner();
@@ -301,9 +306,9 @@ pub async fn put_chat_message(
         let user_id1 = query_params.get("userId").map(|v| v.clone()).unwrap_or("".to_string());
         if user_id1.len() > 0 {
             user_id = parser::parse_i32(&user_id1).map_err(|e| {
-                let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "userId", &e);
-                error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
-                AppError::range_not_satisfiable416(&message) // 416
+                let msg = &format!("`userId` - {}", &e);
+                error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
+                ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
             })?;    
         }
     }
@@ -314,15 +319,15 @@ pub async fn put_chat_message(
         let res_chat_message1 = chat_message_orm2
             .modify_chat_message(id, user_id, modify_chat_message)
             .map_err(|e| {
-                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e)
             });
         res_chat_message1
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string())
     })?;
     
     let opt_chat_message_dto = res_chat_message?.map(|v| ChatMessageDto::from(v));
@@ -335,9 +340,9 @@ pub async fn put_chat_message(
     } else {
         let json = serde_json::json!({ "id": id, "user_id": profile.user_id, "msg": msg });
         #[rustfmt::skip]
-        let message = format!("{}; id: {}, user_id: {}, msg: \"{}\"", err::MSG_PARAMETER_UNACCEPTABLE, id, profile.user_id, msg);
-        error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
-        Err(AppError::not_acceptable406(&message) // 406
+        let msg = format!("id: {}, user_id: {}, msg: \"{}\"", id, profile.user_id, msg);
+        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_PARAMETER_UNACCEPTABLE, &msg);
+        Err(ApiError::create(406, err::MSG_PARAMETER_UNACCEPTABLE, &msg) // 406
             .add_param(Cow::Borrowed("invalidParams"), &json))
     }
 }
@@ -349,7 +354,7 @@ pub async fn delete_chat_message(
     authenticated: Authenticated,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     request: actix_web::HttpRequest,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
     let profile = authenticated.deref();
@@ -358,9 +363,9 @@ pub async fn delete_chat_message(
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
     let id = parser::parse_i32(&id_str).map_err(|e| {
-        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "id", &e);
-        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
-        AppError::range_not_satisfiable416(&message) // 416
+        let msg = &format!("`id` - {}", &e);
+        error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
+        ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
     
     if profile.role == UserRole::Admin {
@@ -368,9 +373,9 @@ pub async fn delete_chat_message(
         let user_id1 = query_params.get("userId").map(|v| v.clone()).unwrap_or("".to_string());
         if user_id1.len() > 0 {
             user_id = parser::parse_i32(&user_id1).map_err(|e| {
-                let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "userId", &e);
-                error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
-                AppError::range_not_satisfiable416(&message) // 416
+                let msg = &format!("`userId` - {}", &e);
+                error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
+                ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
             })?;    
         }
     }
@@ -381,15 +386,15 @@ pub async fn delete_chat_message(
         let res_chat_message1 = chat_message_orm2
             .delete_chat_message(id, user_id)
             .map_err(|e| {
-                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
         res_chat_message1
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     let opt_chat_message_dto = res_chat_message?.map(|v| ChatMessageDto::from(v));
@@ -402,9 +407,9 @@ pub async fn delete_chat_message(
     } else {
         let json = serde_json::json!({ "id": id, "user_id": profile.user_id });
         #[rustfmt::skip]
-        let message = format!("{}; id: {}, user_id: {}", err::MSG_PARAMETER_UNACCEPTABLE, id, profile.user_id);
-        error!("{}: {}", err::CD_NOT_ACCEPTABLE, &message);
-        Err(AppError::not_acceptable406(&message) // 406
+        let message = format!("id: {}, user_id: {}", id, profile.user_id);
+        error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_PARAMETER_UNACCEPTABLE, &message);
+        Err(ApiError::create(406, err::MSG_PARAMETER_UNACCEPTABLE, &message) // 406
             .add_param(Cow::Borrowed("invalidParams"), &json))
     }
 }
@@ -415,7 +420,7 @@ pub async fn get_blocked_users(
     authenticated: Authenticated,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     request: actix_web::HttpRequest,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
     let profile = authenticated.deref();
@@ -424,9 +429,9 @@ pub async fn get_blocked_users(
     // Get data from request.
     let stream_id_str = request.match_info().query("stream_id").to_string();
     let stream_id = parser::parse_i32(&stream_id_str).map_err(|e| {
-        let message = &format!("{}; `{}` - {}", err::MSG_PARSING_TYPE_NOT_SUPPORTED, "stream_id", &e);
-        error!("{}: {}", err::CD_RANGE_NOT_SATISFIABLE, &message);
-        AppError::range_not_satisfiable416(&message) // 416
+        let msg = &format!("`stream_id` - {}", &e);
+        error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
+        ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
 
     let chat_message_orm2 = chat_message_orm.get_ref().clone();
@@ -435,15 +440,15 @@ pub async fn get_blocked_users(
         let res_chat_message1 = chat_message_orm2
             .get_blocked_users(user_id, stream_id)
             .map_err(|e| {
-                error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-                AppError::database507(&e)
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
             });
         res_chat_message1
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     let blocked_user_vec = res_blocked_users?;
@@ -461,7 +466,7 @@ pub async fn post_blocked_user(
     authenticated: Authenticated,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     json_body: web::Json<CreateBlockedUserDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
     let profile = authenticated.deref();
@@ -470,8 +475,8 @@ pub async fn post_blocked_user(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
+        error!("{}-{}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&validation_errors));
+        return Ok(ApiError::to_response(&ApiError::validations(validation_errors))); // 417
     }
     
     let create_blocked_user_dto: CreateBlockedUserDto = json_body.into_inner();
@@ -484,15 +489,15 @@ pub async fn post_blocked_user(
     let res_blocked_user = web::block(move || {
         // Add a new entity (blocked_user).
         let res_blocked_user1 = chat_message_orm2.create_blocked_user(create_blocked_user).map_err(|e| {
-            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         res_blocked_user1
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     let opt_blocked_user_dto = res_blocked_user?.map(|v| BlockedUserDto::from(v));
@@ -513,7 +518,7 @@ pub async fn delete_blocked_user(
     authenticated: Authenticated,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     json_body: web::Json<DeleteBlockedUserDto>,
-) -> actix_web::Result<HttpResponse, AppError> {
+) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
     let profile = authenticated.deref();
@@ -522,8 +527,8 @@ pub async fn delete_blocked_user(
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
     if let Err(validation_errors) = validation_res {
-        error!("{}: {}", err::CD_VALIDATION, msg_validation(&validation_errors));
-        return Ok(AppError::to_response(&AppError::validations(validation_errors))); // 417
+        error!("{}-{}", code_to_str(StatusCode::EXPECTATION_FAILED), msg_validation(&validation_errors));
+        return Ok(ApiError::to_response(&ApiError::validations(validation_errors))); // 417
     }
     
     let delete_blocked_user_dto: DeleteBlockedUserDto = json_body.into_inner();
@@ -536,15 +541,15 @@ pub async fn delete_blocked_user(
     let res_blocked_user = web::block(move || {
         // Add a new entity (blocked_user).
         let res_blocked_user1 = chat_message_orm2.delete_blocked_user(delete_blocked_user).map_err(|e| {
-            error!("{}:{}; {}", err::CD_DATABASE, err::MSG_DATABASE, &e);
-            AppError::database507(&e)
+            error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+            ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
         res_blocked_user1
     })
     .await
     .map_err(|e| {
-        error!("{}:{}; {}", err::CD_BLOCKING, err::MSG_BLOCKING, &e.to_string());
-        AppError::blocking506(&e.to_string())
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
     })?;
 
     let opt_blocked_user_dto = res_blocked_user?.map(|v| BlockedUserDto::from(v));
@@ -564,13 +569,12 @@ pub mod tests {
 
     use actix_web::{http, web};
     use chrono::{DateTime, Duration, Utc};
-    use vrb_tools::{token_data::BEARER, token_coding};
+    use vrb_tools::{api_error::ApiError, token_coding, token_data::BEARER};
 
     use crate::chats::{
         chat_message_models::{BlockedUser, ChatMessage, ChatMessageLog},
         chat_message_orm::tests::{ChatMessageOrmApp, ChatMsgTest, UserMini},
     };
-    use crate::errors::AppError;
     use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp, profile_orm::tests::PROFILE_USER_ID as PROFILE_ID};
     use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp};
     use crate::users::user_models::UserRole;
@@ -732,7 +736,7 @@ pub mod tests {
                 .app_data(web::Data::clone(&data_chat_message_orm));
         }
     }
-    pub fn check_app_err(app_err_vec: Vec<AppError>, code: &str, msgs: &[&str]) {
+    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
         for (idx, msg) in msgs.iter().enumerate() {
             let app_err = app_err_vec.get(idx).unwrap();

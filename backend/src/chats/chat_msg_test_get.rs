@@ -2,10 +2,8 @@
 mod tests {
     use actix_web::{
         self, body, dev,
-        http::{
-            header::{HeaderValue, CONTENT_TYPE},
-            StatusCode,
-        },
+        http::header::{HeaderValue, CONTENT_TYPE},
+        http::StatusCode,
         test, App,
     };
     use chrono::SecondsFormat;
