@@ -29,7 +29,6 @@ use utoipa::OpenApi;
 
 pub mod chats;
 pub(crate) mod dbase;
-pub(crate) mod errors;
 pub(crate) mod extractors;
 pub mod profiles;
 pub(crate) mod schema;
