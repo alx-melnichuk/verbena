@@ -1,29 +1,29 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{
+        body,
         cookie::time::Duration as ActixWebDuration,
-        body, dev, http,
-        http::StatusCode,
+        dev, http,
         http::header::{HeaderValue, CONTENT_TYPE},
+        http::StatusCode,
         test, web, App,
     };
     use serde_json::json;
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
-        hash_tools,
+        hash_tools, token_coding,
         token_data::{BEARER, TOKEN_NAME},
-        token_coding,
     };
-    
-    use crate::{sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp}};
-    use crate::users::user_models::UserRole;
+
     use crate::profiles::{
         profile_auth_controller::{login, logout, update_token},
-        profile_models::{self, Profile, ProfileDto, ProfileTest, LoginProfileDto, LoginProfileResponseDto, TokenDto},
         profile_err as p_err,
+        profile_models::{self, LoginProfileDto, LoginProfileResponseDto, Profile, ProfileDto, ProfileTest, TokenDto},
         profile_orm::tests::ProfileOrmApp,
     };
-    
+    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp};
+    use crate::users::user_models::UserRole;
+
     use crate::settings::err;
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -98,7 +98,6 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
@@ -115,7 +114,6 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
@@ -130,14 +128,11 @@ mod tests {
             App::new().service(login).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
-            .set_json(LoginProfileDto {
-                nickname: "".to_string(), password: "passwordD1T1".to_string()
-            })
+            .set_json(LoginProfileDto { nickname: "".to_string(), password: "passwordD1T1".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -152,14 +147,11 @@ mod tests {
             App::new().service(login).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
-            .set_json(LoginProfileDto {
-                nickname: ProfileTest::nickname_min(), password: "passwordD1T1".to_string()
-            })
+            .set_json(LoginProfileDto { nickname: ProfileTest::nickname_min(), password: "passwordD1T1".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -174,14 +166,11 @@ mod tests {
             App::new().service(login).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
-            .set_json(LoginProfileDto {
-                nickname: ProfileTest::nickname_max(), password: "passwordD1T1".to_string()
-            })
+            .set_json(LoginProfileDto { nickname: ProfileTest::nickname_max(), password: "passwordD1T1".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -196,14 +185,11 @@ mod tests {
             App::new().service(login).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
-            .set_json(LoginProfileDto {
-                nickname: ProfileTest::nickname_wrong(), password: "passwordD1T1".to_string()
-            })
+            .set_json(LoginProfileDto { nickname: ProfileTest::nickname_wrong(), password: "passwordD1T1".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -218,14 +204,11 @@ mod tests {
             App::new().service(login).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
-            .set_json(LoginProfileDto {
-                nickname: ProfileTest::email_min(), password: "passwordD1T1".to_string()
-            })
+            .set_json(LoginProfileDto { nickname: ProfileTest::email_min(), password: "passwordD1T1".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -240,14 +223,11 @@ mod tests {
             App::new().service(login).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
-            .set_json(LoginProfileDto {
-                nickname: ProfileTest::email_max(), password: "passwordD1T1".to_string()
-            })
+            .set_json(LoginProfileDto { nickname: ProfileTest::email_max(), password: "passwordD1T1".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -262,14 +242,11 @@ mod tests {
             App::new().service(login).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
-            .set_json(LoginProfileDto {
-                nickname: ProfileTest::email_wrong(), password: "passwordD1T1".to_string()
-            })
+            .set_json(LoginProfileDto { nickname: ProfileTest::email_wrong(), password: "passwordD1T1".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -284,14 +261,11 @@ mod tests {
             App::new().service(login).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
-            .set_json(LoginProfileDto {
-                nickname: "James_Smith".to_string(), password: "".to_string()
-            })
+            .set_json(LoginProfileDto { nickname: "James_Smith".to_string(), password: "".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -306,14 +280,11 @@ mod tests {
             App::new().service(login).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
-            .set_json(LoginProfileDto {
-                nickname: "James_Smith".to_string(), password: ProfileTest::password_min()
-            })
+            .set_json(LoginProfileDto { nickname: "James_Smith".to_string(), password: ProfileTest::password_min() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -328,14 +299,11 @@ mod tests {
             App::new().service(login).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
-            .set_json(LoginProfileDto {
-                nickname: "James_Smith".to_string(), password: ProfileTest::password_max()
-            })
+            .set_json(LoginProfileDto { nickname: "James_Smith".to_string(), password: ProfileTest::password_max() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -350,14 +318,11 @@ mod tests {
             App::new().service(login).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
-            .set_json(LoginProfileDto {
-                nickname: "James_Smith".to_string(), password: ProfileTest::password_wrong()
-            })
+            .set_json(LoginProfileDto { nickname: "James_Smith".to_string(), password: ProfileTest::password_wrong() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -373,18 +338,15 @@ mod tests {
             App::new().service(login).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
-            .set_json(LoginProfileDto {
-                nickname: format!("a{}", nickname), password: "passwordD1T1".to_string()
-            })
+            .set_json(LoginProfileDto { nickname: format!("a{}", nickname), password: "passwordD1T1".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401 (A)
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        assert_eq!(app_err.code, code_to_str(StatusCode::UNAUTHORIZED));
         assert_eq!(app_err.message, err::MSG_WRONG_NICKNAME_EMAIL);
     }
     #[actix_web::test]
@@ -396,18 +358,15 @@ mod tests {
             App::new().service(login).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
-            .set_json(LoginProfileDto {
-                nickname: format!("a{}", email), password: "passwordD1T1".to_string()
-            })
+            .set_json(LoginProfileDto { nickname: format!("a{}", email), password: "passwordD1T1".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401 (A)
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        assert_eq!(app_err.code, code_to_str(StatusCode::UNAUTHORIZED));
         assert_eq!(app_err.message, err::MSG_WRONG_NICKNAME_EMAIL);
     }
     #[actix_web::test]
@@ -423,18 +382,15 @@ mod tests {
             App::new().service(login).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
-            .set_json(LoginProfileDto {
-                nickname: nickname.to_string(), password: password.to_string()
-            })
+            .set_json(LoginProfileDto { nickname: nickname.to_string(), password: password.to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::CONFLICT); // 409
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_CONFLICT);
+        assert_eq!(app_err.code, code_to_str(StatusCode::CONFLICT));
         assert!(app_err.message.starts_with(err::MSG_INVALID_HASH));
     }
     #[actix_web::test]
@@ -449,18 +405,15 @@ mod tests {
             App::new().service(login).configure(configure_profile(cfg_c, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
-            .set_json(LoginProfileDto {
-                nickname: nickname.to_string(), password: format!("{}b", password)
-            })
+            .set_json(LoginProfileDto { nickname: nickname.to_string(), password: format!("{}b", password) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401 (B)
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        assert_eq!(app_err.code, code_to_str(StatusCode::UNAUTHORIZED));
         assert_eq!(app_err.message, err::MSG_PASSWORD_INCORRECT);
     }
     #[actix_web::test]
@@ -481,12 +434,10 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY); // 422
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_UNPROCESSABLE_ENTITY);
-        #[rustfmt::skip]
+        assert_eq!(app_err.code, code_to_str(StatusCode::UNPROCESSABLE_ENTITY));
         assert_eq!(app_err.message, format!("{}; InvalidKeyFormat", p_err::MSG_JSON_WEB_TOKEN_ENCODE));
     }
     #[actix_web::test]
@@ -508,12 +459,10 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
-        #[rustfmt::skip]
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         assert_eq!(app_err.message, format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, profile1_id));
     }
     #[actix_web::test]
@@ -550,7 +499,6 @@ mod tests {
         assert_eq!(max_age_value, ActixWebDuration::new(jwt_access, 0));
         assert_eq!(true, token.http_only().unwrap());
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let login_resp: LoginProfileResponseDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
@@ -610,7 +558,6 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
@@ -631,7 +578,6 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("text/plain; charset=utf-8"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let body_str = String::from_utf8_lossy(&body);
@@ -652,12 +598,10 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
-        #[rustfmt::skip]
+        assert_eq!(app_err.code, code_to_str(StatusCode::UNAUTHORIZED));
         assert_eq!(app_err.message, format!("{}; {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, "InvalidSubject"));
     }
     #[actix_web::test]
@@ -674,11 +618,10 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
+        assert_eq!(app_err.code, code_to_str(StatusCode::UNAUTHORIZED));
         assert!(app_err.message.starts_with(err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
     #[actix_web::test]
@@ -700,12 +643,10 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_NOT_ACCEPTABLE);
-        #[rustfmt::skip]
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         assert_eq!(app_err.message, format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, profile_id_bad));
     }
     #[actix_web::test]
@@ -726,12 +667,10 @@ mod tests {
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, err::CD_UNAUTHORIZED);
-        #[rustfmt::skip]
+        assert_eq!(app_err.code, code_to_str(StatusCode::UNAUTHORIZED));
         assert_eq!(app_err.message, format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, profile1_id));
     }
     #[actix_web::test]
@@ -765,7 +704,6 @@ mod tests {
         assert_eq!(max_age_value, ActixWebDuration::new(jwt_access, 0));
         assert_eq!(true, token.http_only().unwrap());
 
-        #[rustfmt::skip]
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let profile_token_resp: profile_models::ProfileTokensDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
