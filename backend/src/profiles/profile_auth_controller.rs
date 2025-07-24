@@ -5,9 +5,8 @@ use log::{debug, error, log_enabled, Level::Debug};
 use utoipa;
 use vrb_tools::{
     api_error::{code_to_str, ApiError},
-    hash_tools,
+    hash_tools, token_coding,
     validators::{msg_validation, Validator},
-    token_coding,
 };
 
 use crate::extractors::authentication::{Authenticated, RequireAuth};
@@ -148,8 +147,8 @@ pub async fn login(
 
     // Packing two parameters (user_id, num_token) into refresh_token.
     let refresh_token = token_coding::encode_token(profile_pwd.user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        error!("{}-{}; {}", err::CD_UNPROCESSABLE_ENTITY, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
-        ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e)
+        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
     let opt_session = web::block(move || {
