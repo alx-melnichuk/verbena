@@ -106,9 +106,7 @@ pub mod tests {
     impl SessionOrmApp {
         /// Create a new instance.
         pub fn new() -> Self {
-            SessionOrmApp {
-                session_vec: Vec::new(),
-            }
+            SessionOrmApp { session_vec: Vec::new() }
         }
         /// Create a new instance with the specified session list.
         #[cfg(test)]

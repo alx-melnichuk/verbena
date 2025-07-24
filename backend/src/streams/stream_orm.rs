@@ -1,8 +1,6 @@
 use chrono::{DateTime, Utc};
 
-use super::stream_models::{
-    CreateStream, ModifyStream, SearchStream, SearchStreamEvent, SearchStreamPeriod, Stream, StreamTagStreamId,
-};
+use super::stream_models::{CreateStream, ModifyStream, SearchStream, SearchStreamEvent, SearchStreamPeriod, Stream, StreamTagStreamId};
 
 pub trait StreamOrm {
     /// Find an entity (stream) by parameters.
@@ -93,6 +91,7 @@ pub mod impls {
             conn: &mut dbase::DbPooledConnection,
             ids: &[i32],
         ) -> Result<Vec<StreamTagStreamId>, diesel::result::Error> {
+            #[rustfmt::skip]
             let query = diesel::sql_query("select * from get_stream_tags_names($1);")
                 .bind::<sql_types::Array<sql_types::Integer>, _>(ids);
 
@@ -116,14 +115,12 @@ pub mod impls {
             query.execute(conn)
         }
         /// Update the "stream_tags" data for user.
-        fn update_stream_tags_for_user(
-            &self,
-            conn: &mut dbase::DbPooledConnection,
-            user_id: i32,
-        ) -> Result<(), diesel::result::Error> {
+        fn update_stream_tags_for_user(&self, conn: &mut dbase::DbPooledConnection, user_id: i32) -> Result<(), diesel::result::Error> {
             // Run query using Diesel to update the list of "stream_tags" for the user.
+            #[rustfmt::skip]
             let query =
-                diesel::sql_query("CALL update_stream_tags_for_user($1);").bind::<sql_types::Integer, _>(user_id);
+                diesel::sql_query("CALL update_stream_tags_for_user($1);")
+                    .bind::<sql_types::Integer, _>(user_id);
 
             query.execute(conn)?;
             Ok(())
@@ -159,7 +156,7 @@ pub mod impls {
             if exclude_ids.len() > 0 {
                 query_list = query_list.filter(streams_dsl::user_id.ne_all(exclude_ids));
             }
-            
+
             // Run query using Diesel to find user by id (and user_id) and return it.
             let opt_stream = query_list
                 .first::<Stream>(&mut conn)
@@ -185,8 +182,14 @@ pub mod impls {
         }
 
         /// Filter entities (streams) by specified parameters. Required parameter id or user_id.
-        fn filter_streams_by_params(&self, opt_id: Option<i32>, opt_user_id: Option<i32>, opt_is_logo: Option<bool>,
-            opt_live: Option<bool>, is_tags: bool, exclude_ids: &[i32]
+        fn filter_streams_by_params(
+            &self,
+            opt_id: Option<i32>,
+            opt_user_id: Option<i32>,
+            opt_is_logo: Option<bool>,
+            opt_live: Option<bool>,
+            is_tags: bool,
+            exclude_ids: &[i32],
         ) -> Result<(Vec<Stream>, Vec<StreamTagStreamId>), String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
@@ -235,8 +238,7 @@ pub mod impls {
                 false => vec![],
             };
             let stream_tags: Vec<StreamTagStreamId> = if stream_ids.len() > 0 {
-                self
-                    .get_stream_tags(&mut conn, &stream_ids)
+                self.get_stream_tags(&mut conn, &stream_ids)
                     .map_err(|e| format!("get_stream_tags2: {}", e.to_string()))?
             } else {
                 vec![]
@@ -370,9 +372,7 @@ pub mod impls {
                 .filter(streams_dsl::starttime.lt(finish))
                 .filter(streams_dsl::user_id.eq(search_event.user_id));
 
-            query_list = query_list
-                .order_by(streams_dsl::starttime.asc())
-                .then_order_by(streams_dsl::id.asc());
+            query_list = query_list.order_by(streams_dsl::starttime.asc()).then_order_by(streams_dsl::id.asc());
 
             let amount_res = query_count.count().get_result::<i64>(&mut conn);
             // lead time: 1.14ms
@@ -389,7 +389,7 @@ pub mod impls {
             // lead time: 2.14ms
             if let Some(timer) = timer {
                 info!("find_stream_events_by_pages() time: {}", format!("{:.2?}", timer.elapsed()));
-            }            
+            }
             Ok((count, streams))
         }
 
@@ -627,6 +627,7 @@ pub mod tests {
     use chrono::{Duration, Timelike};
 
     use crate::streams::stream_models::{self, StreamInfoDto, StreamState};
+
     use super::*;
 
     pub const STREAM_ID: i32 = 1400;
@@ -721,7 +722,7 @@ pub mod tests {
                     let check_user_id = if let Some(user_id) = opt_user_id { stream.user_id == user_id } else { true };
                     let check_live = if let Some(live) = opt_live { stream.live == live } else { true };
                     let check_exclude_id = if exclude_ids.len() > 0 { !exclude_ids.contains(&stream.id) } else { true };
-                    
+
                     check_id && check_user_id && check_live && check_exclude_id
                 })
                 .map(|stream| stream.clone());
@@ -738,8 +739,14 @@ pub mod tests {
         }
 
         /// Filter entities (streams) by specified parameters. Required parameter id or user_id.
-        fn filter_streams_by_params(&self, opt_id: Option<i32>, opt_user_id: Option<i32>, opt_is_logo: Option<bool>,
-            opt_live: Option<bool>, is_tags: bool, exclude_ids: &[i32]
+        fn filter_streams_by_params(
+            &self,
+            opt_id: Option<i32>,
+            opt_user_id: Option<i32>,
+            opt_is_logo: Option<bool>,
+            opt_live: Option<bool>,
+            is_tags: bool,
+            exclude_ids: &[i32],
         ) -> Result<(Vec<Stream>, Vec<StreamTagStreamId>), String> {
             if opt_id.is_none() && opt_user_id.is_none() {
                 return Ok((vec![], vec![]));
@@ -752,29 +759,34 @@ pub mod tests {
                     let check_id = if let Some(id) = opt_id { stream.id == id } else { true };
                     let check_user_id = if let Some(user_id) = opt_user_id { stream.user_id == user_id } else { true };
                     let check_is_logo = if let Some(is_logo) = opt_is_logo {
+                        #[rustfmt::skip]
                         if is_logo { stream.logo.is_some() } else { stream.logo.is_none() }
-                    } else { true };
+                    } else {
+                        true
+                    };
                     let check_live = if let Some(live) = opt_live { stream.live == live } else { true };
                     let check_exclude_id = if exclude_ids.len() > 0 { !exclude_ids.contains(&stream.id) } else { true };
-                
+
                     check_id && check_user_id && check_is_logo && check_live && check_exclude_id
                 })
                 .map(|stream| stream.clone())
                 .collect();
 
             let mut stream_tags: Vec<StreamTagStreamId> = vec![];
-            let streams: Vec<Stream> = stream_info_list.iter().map(|stream_info| {
-                if is_tags {
-                    // Get a list of "tags" for the specified "stream".
-                    let strm_tag_list = self.get_tags(&stream_info);
-                    for strm_tag in strm_tag_list {
-                        stream_tags.push(strm_tag.clone());
+            let streams: Vec<Stream> = stream_info_list
+                .iter()
+                .map(|stream_info| {
+                    if is_tags {
+                        // Get a list of "tags" for the specified "stream".
+                        let strm_tag_list = self.get_tags(&stream_info);
+                        for strm_tag in strm_tag_list {
+                            stream_tags.push(strm_tag.clone());
+                        }
                     }
-                }
-                Self::to_stream(&stream_info)
-            })
-            .collect();
-            
+                    Self::to_stream(&stream_info)
+                })
+                .collect();
+
             Ok((streams, stream_tags))
         }
 
@@ -874,7 +886,7 @@ pub mod tests {
                     }
                 }
             }
-            
+
             Ok((count, streams, stream_tags))
         }
         /// Find for an entity (stream event) by SearchStreamEvent.
@@ -885,10 +897,9 @@ pub mod tests {
             let finish = start + Duration::hours(24);
 
             for stream in self.stream_info_vec.iter() {
+                #[rustfmt::skip]
                 if stream.user_id == search_stream_event.user_id
-                    && start <= stream.starttime
-                    && stream.starttime < finish
-                {
+                    && start <= stream.starttime && stream.starttime < finish {
                     streams_info.push(stream.clone());
                 }
             }
@@ -933,10 +944,9 @@ pub mod tests {
             let finish = search_stream_period.finish;
 
             for stream in self.stream_info_vec.iter() {
+                #[rustfmt::skip]
                 if stream.user_id == search_stream_period.user_id
-                    && start <= stream.starttime
-                    && stream.starttime <= finish
-                {
+                    && start <= stream.starttime && stream.starttime <= finish {
                     streams_info.push(stream.clone());
                 }
             }
@@ -960,11 +970,9 @@ pub mod tests {
         }
         /// Get the logo file name for an entity (stream) by ID.
         fn get_stream_logo_by_id(&self, id: i32) -> Result<Option<String>, String> {
-            let stream_info_opt = self
-                .stream_info_vec
-                .iter()
-                .find(|stream| stream.id == id)
-                .map(|stream| stream.clone());
+            #[rustfmt::skip]
+            let stream_info_opt = self.stream_info_vec.iter()
+                .find(|stream| stream.id == id).map(|stream| stream.clone());
 
             if let Some(stream_info) = stream_info_opt {
                 Ok(stream_info.logo)
@@ -997,7 +1005,7 @@ pub mod tests {
                 };
                 let new_state = modify_stream.state.unwrap_or(stream_info.state.clone());
                 let new_live = vec![StreamState::Preparing, StreamState::Started, StreamState::Paused].contains(&new_state);
-                
+
                 let stream_saved = Stream {
                     id: stream_info.id,
                     user_id: stream_info.user_id,

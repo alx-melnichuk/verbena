@@ -105,10 +105,7 @@ pub fn get_test_config() -> ConfigStrm {
     ConfigStrm {
         strm_logo_files_dir: "./tmp".to_string(),
         strm_logo_max_size: LOGO_MAX_SIZE.parse().unwrap(),
-        strm_logo_valid_types: vec![
-            IMAGE_JPEG.essence_str().to_string(),
-            IMAGE_PNG.essence_str().to_string(),
-        ],
+        strm_logo_valid_types: vec![IMAGE_JPEG.essence_str().to_string(), IMAGE_PNG.essence_str().to_string()],
         strm_logo_ext: None,
         strm_logo_max_width: LOGO_MAX_WIDTH.parse().unwrap(),
         strm_logo_max_height: LOGO_MAX_HEIGHT.parse().unwrap(),
