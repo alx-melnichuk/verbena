@@ -7,11 +7,7 @@ pub trait UserRegistrOrm {
     fn find_user_registr_by_id(&self, id: i32) -> Result<Option<UserRegistr>, String>;
 
     /// Find for an entity (user_registration) by nickname or email.
-    fn find_user_registr_by_nickname_or_email(
-        &self,
-        nickname: Option<&str>,
-        email: Option<&str>,
-    ) -> Result<Option<UserRegistr>, String>;
+    fn find_user_registr_by_nickname_or_email(&self, nickname: Option<&str>, email: Option<&str>) -> Result<Option<UserRegistr>, String>;
 
     /// Add a new entity (user_registration).
     fn create_user_registr(&self, create_user_registr_dto: CreateUserRegistr) -> Result<UserRegistr, String>;
@@ -125,14 +121,12 @@ pub mod impls {
             let mut result_vec: Vec<UserRegistr> = vec![];
             let table = "find_user_registr_by_nickname_or_email";
             if nickname2_len > 0 && email2_len == 0 {
-                let result_nickname_vec: Vec<UserRegistr> = sql_query_nickname
-                    .load(&mut conn)
-                    .map_err(|e| format!("{}: {}", table, e.to_string()))?;
+                let result_nickname_vec: Vec<UserRegistr> =
+                    sql_query_nickname.load(&mut conn).map_err(|e| format!("{}: {}", table, e.to_string()))?;
                 result_vec.extend(result_nickname_vec);
             } else if nickname2_len == 0 && email2_len > 0 {
-                let result_email_vec: Vec<UserRegistr> = sql_query_email
-                    .load(&mut conn)
-                    .map_err(|e| format!("{}: {}", table, e.to_string()))?;
+                let result_email_vec: Vec<UserRegistr> =
+                    sql_query_email.load(&mut conn).map_err(|e| format!("{}: {}", table, e.to_string()))?;
                 result_vec.extend(result_email_vec);
             } else {
                 // This design (union two queries) allows the use of two separate indexes.
@@ -201,6 +195,7 @@ pub mod impls {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to delete a entry (user_registration).
+            #[rustfmt::skip]
             let count: usize = diesel::delete(
                 schema::user_registration::table
                     .filter(dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time))),
@@ -255,13 +250,7 @@ pub mod tests {
             UserRegistrOrmApp { user_registr_vec }
         }
         /// Create a new entity instance.
-        pub fn new_user_registr(
-            id: i32,
-            nickname: &str,
-            email: &str,
-            password: &str,
-            final_date: DateTime<Utc>,
-        ) -> UserRegistr {
+        pub fn new_user_registr(id: i32, nickname: &str, email: &str, password: &str, final_date: DateTime<Utc>) -> UserRegistr {
             UserRegistr {
                 id,
                 nickname: nickname.to_lowercase(),
@@ -298,14 +287,13 @@ pub mod tests {
             }
 
             let now = Utc::now();
-
+            #[rustfmt::skip]
             let result: Option<UserRegistr> = self
                 .user_registr_vec
                 .iter()
-                .find(|user_registr| {
+                .find(|user_registr| 
                     user_registr.final_date > now
-                        && (user_registr.nickname == nickname2 || user_registr.email == email2)
-                })
+                        && (user_registr.nickname == nickname2 || user_registr.email == email2))
                 .map(|user_registr| user_registr.clone());
 
             Ok(result)
@@ -316,7 +304,7 @@ pub mod tests {
             let email = create_profile_registr_dto.email.clone();
             let password = create_profile_registr_dto.password.clone();
             let final_date = create_profile_registr_dto.final_date.clone();
-
+            #[rustfmt::skip]
             let opt_res_user1: Option<UserRegistr> =
                 self.find_user_registr_by_nickname_or_email(Some(&nickname), Some(&email))?;
             if opt_res_user1.is_some() {
@@ -327,7 +315,7 @@ pub mod tests {
             let new_id: i32 = USER_REGISTR_ID + idx;
             let nickname = create_profile_registr_dto.nickname.clone();
             let email = create_profile_registr_dto.email.clone();
-
+            #[rustfmt::skip]
             let user_registr_saved: UserRegistr =
                 UserRegistrOrmApp::new_user_registr(new_id, &nickname, &email, &password, final_date);
 
@@ -335,6 +323,7 @@ pub mod tests {
         }
         /// Delete an entity (user_registration).
         fn delete_user_registr(&self, id: i32) -> Result<usize, String> {
+            #[rustfmt::skip]
             let opt_user_registr: Option<&UserRegistr> =
                 self.user_registr_vec.iter().find(|user_registr| user_registr.id == id);
 
@@ -348,13 +337,12 @@ pub mod tests {
             let duration = duration_in_days.unwrap_or(DURATION_IN_DAYS.into());
             let start_day_time = now - Duration::days(duration.into());
             let end_day_time = now.clone();
-
+            #[rustfmt::skip]
             let result = self
                 .user_registr_vec
                 .iter()
-                .filter(|user_registr| {
-                    user_registr.final_date > start_day_time && user_registr.final_date < end_day_time
-                })
+                .filter(|user_registr|
+                    user_registr.final_date > start_day_time && user_registr.final_date < end_day_time)
                 .count();
 
             Ok(result)

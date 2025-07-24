@@ -198,7 +198,7 @@ pub mod impls {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-
+            #[rustfmt::skip]
             let query =
                 diesel::sql_query("select * from delete_profile_user($1);").bind::<sql_types::Integer, _>(user_id);
 
@@ -235,9 +235,7 @@ pub mod tests {
     impl ProfileOrmApp {
         /// Create a new instance.
         pub fn new() -> Self {
-            ProfileOrmApp {
-                profile_vec: Vec::new(),
-            }
+            ProfileOrmApp { profile_vec: Vec::new() }
         }
         /// Create a new instance with the specified profile list.
         pub fn create(profile_list: &[Profile]) -> Self {
@@ -263,16 +261,7 @@ pub mod tests {
         }
         /// Create a new entity instance.
         pub fn new_profile(user_id: i32, nickname: &str, email: &str, role: UserRole) -> Profile {
-            Profile::new(
-                user_id,
-                &nickname.to_lowercase(),
-                &email.to_lowercase(),
-                role.clone(),
-                None,
-                None,
-                None,
-                None,
-            )
+            Profile::new(user_id, &nickname.to_lowercase(), &email.to_lowercase(), role.clone(), None, None, None, None)
         }
     }
 
@@ -315,9 +304,7 @@ pub mod tests {
             let opt_profile = self
                 .profile_vec
                 .iter()
-                .find(|profile| {
-                    (nickname2_len > 0 && profile.nickname == nickname2) || (email2_len > 0 && profile.email == email2)
-                })
+                .find(|profile| (nickname2_len > 0 && profile.nickname == nickname2) || (email2_len > 0 && profile.email == email2))
                 .map(|user| user.clone());
 
             let result = match opt_profile {

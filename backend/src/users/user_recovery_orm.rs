@@ -10,11 +10,7 @@ pub trait UserRecoveryOrm {
     /// Add a new entity (user_recovery).
     fn create_user_recovery(&self, create_user_recovery: CreateUserRecovery) -> Result<UserRecovery, String>;
     /// Modify an entity (user_recovery).
-    fn modify_user_recovery(
-        &self,
-        id: i32,
-        modify_user_recovery: CreateUserRecovery,
-    ) -> Result<Option<UserRecovery>, String>;
+    fn modify_user_recovery(&self, id: i32, modify_user_recovery: CreateUserRecovery) -> Result<Option<UserRecovery>, String>;
     /// Delete an entity (user_recovery).
     fn delete_user_recovery(&self, id: i32) -> Result<usize, String>;
     /// Delete all entities (user_recovery) with an inactive "final_date".
@@ -128,11 +124,7 @@ pub mod impls {
         }
 
         /// Modify an entity (user_recovery).
-        fn modify_user_recovery(
-            &self,
-            id: i32,
-            create_user_recovery: CreateUserRecovery,
-        ) -> Result<Option<UserRecovery>, String> {
+        fn modify_user_recovery(&self, id: i32, create_user_recovery: CreateUserRecovery) -> Result<Option<UserRecovery>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
@@ -177,9 +169,10 @@ pub mod impls {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
             // Run query using Diesel to delete a entry (user_recovery).
+            #[rustfmt::skip]
             let count: usize = diesel::delete(
                 schema::user_recovery::table
-                    .filter(dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time))),
+                .filter(dsl::final_date.gt(start_day_time).and(dsl::final_date.lt(end_day_time))),
             )
             .execute(&mut conn)
             .map_err(|e| format!("delete_inactive_final_date: {}", e.to_string()))?;
@@ -220,22 +213,16 @@ pub mod tests {
             let mut user_recovery_vec: Vec<UserRecovery> = Vec::new();
             let mut idx: i32 = 0;
             for user_reg in user_recov_vec.iter() {
+                #[rustfmt::skip]
                 user_recovery_vec.push(Self::new_user_recovery(
-                    USER_RECOVERY_ID + idx,
-                    user_reg.user_id,
-                    user_reg.final_date,
-                ));
+                    USER_RECOVERY_ID + idx, user_reg.user_id, user_reg.final_date));
                 idx = idx + 1;
             }
             UserRecoveryOrmApp { user_recovery_vec }
-        }        
+        }
         /// Create a new entity instance.
         pub fn new_user_recovery(id: i32, user_id: i32, final_date: DateTime<Utc>) -> UserRecovery {
-            UserRecovery {
-                id,
-                user_id,
-                final_date,
-            }
+            UserRecovery { id, user_id, final_date }
         }
     }
 
@@ -281,21 +268,14 @@ pub mod tests {
         }
 
         /// Modify an entity (user_recovery).
-        fn modify_user_recovery(
-            &self,
-            id: i32,
-            modify_profile_recovery: CreateUserRecovery,
-        ) -> Result<Option<UserRecovery>, String> {
+        fn modify_user_recovery(&self, id: i32, modify_profile_recovery: CreateUserRecovery) -> Result<Option<UserRecovery>, String> {
             let user_recovery_opt = self.user_recovery_vec.iter().find(|user_recovery| user_recovery.id == id);
             if user_recovery_opt.is_none() {
                 return Ok(None);
             }
 
-            let user_recovery_saved: UserRecovery = UserRecoveryOrmApp::new_user_recovery(
-                id,
-                modify_profile_recovery.user_id,
-                modify_profile_recovery.final_date.clone(),
-            );
+            let user_recovery_saved: UserRecovery =
+                UserRecoveryOrmApp::new_user_recovery(id, modify_profile_recovery.user_id, modify_profile_recovery.final_date.clone());
 
             Ok(Some(user_recovery_saved))
         }
@@ -318,9 +298,7 @@ pub mod tests {
             let result = self
                 .user_recovery_vec
                 .iter()
-                .filter(|user_recovery| {
-                    user_recovery.final_date > start_day_time && user_recovery.final_date < end_day_time
-                })
+                .filter(|user_recovery| user_recovery.final_date > start_day_time && user_recovery.final_date < end_day_time)
                 .count();
 
             Ok(result)

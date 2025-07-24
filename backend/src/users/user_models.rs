@@ -4,7 +4,10 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use vrb_tools::{serial_datetime, validators::{ValidationError, Validator}};
+use vrb_tools::{
+    serial_datetime,
+    validators::{ValidationError, Validator},
+};
 
 use crate::profiles::profile_models;
 use crate::schema;

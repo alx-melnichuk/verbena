@@ -11,8 +11,8 @@ mod tests {
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
         send_email::{config_smtp, mailer::tests::MailerApp},
-        token_data::BEARER,
         token_coding,
+        token_data::BEARER,
     };
 
     use crate::profiles::{
@@ -27,11 +27,7 @@ mod tests {
             MSG_REGISTR_NOT_FOUND, MSG_USER_NOT_FOUND,
         },
     };
-    use crate::sessions::{
-        config_jwt,
-        session_models::Session,
-        session_orm::tests::SessionOrmApp,
-    };
+    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp};
     use crate::settings::{config_app, err};
     use crate::users::{
         user_models::{UserRecovery, UserRegistr, UserRole},
