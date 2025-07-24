@@ -4,11 +4,10 @@ use utoipa::{
 };
 use vrb_tools::api_error;
 
-use crate::chats::{chat_message_controller, chat_ws_controller, chat_message_models};
+use crate::chats::{chat_message_controller, chat_message_models, chat_ws_controller};
 use crate::profiles::{profile_auth_controller, profile_controller, profile_models, profile_registr_controller};
 use crate::streams::{stream_controller, stream_models};
 use crate::users::user_models;
-
 
 #[derive(OpenApi)]
 #[openapi(
