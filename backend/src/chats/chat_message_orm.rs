@@ -1,6 +1,6 @@
 use crate::chats::chat_message_models::{
-    BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser,
-    ModifyChatMessage, SearchChatMessage,
+    BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser, ModifyChatMessage,
+    SearchChatMessage,
 };
 
 pub trait ChatMessageOrm {
@@ -14,12 +14,7 @@ pub trait ChatMessageOrm {
     fn create_chat_message(&self, create_chat_message: CreateChatMessage) -> Result<Option<ChatMessage>, String>;
 
     /// Modify an entity (chat_message).
-    fn modify_chat_message(
-        &self,
-        id: i32,
-        user_id: i32,
-        modify_chat_message: ModifyChatMessage,
-    ) -> Result<Option<ChatMessage>, String>;
+    fn modify_chat_message(&self, id: i32, user_id: i32, modify_chat_message: ModifyChatMessage) -> Result<Option<ChatMessage>, String>;
 
     /// Delete an entity (chat_message).
     fn delete_chat_message(&self, id: i32, user_id: i32) -> Result<Option<ChatMessage>, String>;
@@ -65,11 +60,11 @@ pub mod impls {
     use diesel::{self, prelude::*, sql_types};
     use log::{info, log_enabled, Level::Info};
     use vrb_tools::validators::Validator;
-    
+
     use crate::chats::{
         chat_message_models::{
-            BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, ChatStreamLive, CreateBlockedUser, CreateChatMessage,
-            DeleteBlockedUser, ModifyChatMessage, SearchChatMessage,
+            BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, ChatStreamLive, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser,
+            ModifyChatMessage, SearchChatMessage,
         },
         chat_message_orm::ChatMessageOrm,
     };
@@ -98,12 +93,9 @@ pub mod impls {
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
 
-            let query = diesel::sql_query("select * from get_chat_message_log($1);")
-                .bind::<sql_types::Integer, _>(chat_message_id);
+            let query = diesel::sql_query("select * from get_chat_message_log($1);").bind::<sql_types::Integer, _>(chat_message_id);
 
-            let list: Vec<ChatMessageLog> = query
-                .load(&mut conn)
-                .map_err(|e| format!("get_chat_message_log: {}", e.to_string()))?;
+            let list: Vec<ChatMessageLog> = query.load(&mut conn).map_err(|e| format!("get_chat_message_log: {}", e.to_string()))?;
 
             if let Some(timer) = timer {
                 info!("get_chat_message_logs() time: {}", format!("{:.2?}", timer.elapsed()));
@@ -230,7 +222,7 @@ pub mod impls {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-
+            #[rustfmt::skip]
             let query =
                 diesel::sql_query("select * from get_stream_live($1);").bind::<sql_types::Integer, _>(stream_id);
 
@@ -280,6 +272,7 @@ pub mod impls {
                 .bind::<sql_types::Integer, _>(stream_id); // $2
 
             // Run a query with Diesel to create a new user and return it.
+            #[rustfmt::skip]
             let blocked_user_list: Vec<BlockedUser> = query
                 .load(&mut conn)
                 .map_err(|e| format!("get_blocked_users: {}", e.to_string()))?;
@@ -365,16 +358,16 @@ pub mod tests {
 
     use chrono::{DateTime, SubsecRound, Timelike, Utc};
     use vrb_tools::validators::Validator;
-    
+
     use crate::chats::{
         chat_message_models::{
-            BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage,
-            DeleteBlockedUser, ModifyChatMessage, SearchChatMessage, MESSAGE_MAX, MESSAGE_MIN,
+            BlockedUser, ChatAccess, ChatMessage, ChatMessageLog, CreateBlockedUser, CreateChatMessage, DeleteBlockedUser,
+            ModifyChatMessage, SearchChatMessage, MESSAGE_MAX, MESSAGE_MIN,
         },
         chat_message_orm::ChatMessageOrm,
     };
     use crate::profiles::profile_orm::tests::PROFILE_USER_ID;
-    
+
     pub const CHAT_MESSAGE_ID: i32 = 1500;
     pub const CHAT_MESSAGE_LOG_ID: i32 = 1600;
     pub const BLOCKED_USER_ID: i32 = 1700;

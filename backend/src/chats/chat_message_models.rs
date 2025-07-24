@@ -2,7 +2,10 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use vrb_tools::{serial_datetime, serial_datetime_option, validators::{ValidationChecks, ValidationError, Validator}};
+use vrb_tools::{
+    serial_datetime, serial_datetime_option,
+    validators::{ValidationChecks, ValidationError, Validator},
+};
 
 use crate::schema;
 
@@ -260,11 +263,7 @@ impl SearchChatMessage {
     pub fn convert(search_chat_message: SearchChatMessageDto) -> Self {
         let mut limit: Option<usize> = None;
         if let Some(limit1) = search_chat_message.limit {
-            limit = if limit1 >= 0 {
-                Some(usize::try_from(limit1).unwrap())
-            } else {
-                None
-            }
+            limit = if limit1 >= 0 { Some(usize::try_from(limit1).unwrap()) } else { None }
         }
         SearchChatMessage {
             stream_id: search_chat_message.stream_id,
@@ -360,13 +359,7 @@ pub struct BlockedUser {
 }
 
 impl BlockedUser {
-    pub fn new(
-        id: i32,
-        user_id: i32,
-        blocked_id: i32,
-        blocked_nickname: String,
-        opt_block_date: Option<DateTime<Utc>>,
-    ) -> BlockedUser {
+    pub fn new(id: i32, user_id: i32, blocked_id: i32, blocked_nickname: String, opt_block_date: Option<DateTime<Utc>>) -> BlockedUser {
         BlockedUser {
             id,
             user_id,

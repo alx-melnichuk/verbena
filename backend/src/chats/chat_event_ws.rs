@@ -103,6 +103,7 @@ impl EventWS {
 
         let mut params: HashMap<String, serde_json::Value> = HashMap::new();
         // Parse the input data.
+        #[rustfmt::skip]
         let parsed = serde_json::from_str::<serde_json::Value>(event)
             .map_err(|e| format!("{}{}", SERIALIZATION, e.to_string()))?;
 
@@ -234,12 +235,8 @@ impl From<ChatMessage> for MsgEWS {
             id: chat_message.id,
             member: chat_message.user_name.clone(),
             date: chat_message.date_created.to_rfc3339_opts(SecondsFormat::Millis, true),
-            date_edt: chat_message
-                .date_changed
-                .map(|v| v.to_rfc3339_opts(SecondsFormat::Millis, true)),
-            date_rmv: chat_message
-                .date_removed
-                .map(|v| v.to_rfc3339_opts(SecondsFormat::Millis, true)),
+            date_edt: chat_message.date_changed.map(|v| v.to_rfc3339_opts(SecondsFormat::Millis, true)),
+            date_rmv: chat_message.date_removed.map(|v| v.to_rfc3339_opts(SecondsFormat::Millis, true)),
         }
     }
 }

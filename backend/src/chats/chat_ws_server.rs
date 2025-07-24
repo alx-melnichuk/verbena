@@ -6,9 +6,7 @@ use log::debug;
 use serde_json::to_string;
 
 use crate::chats::chat_event_ws::{JoinEWS, LeaveEWS};
-use crate::chats::chat_message::{
-    BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage,
-};
+use crate::chats::chat_message::{BlockClient, BlockSsn, ChatMsgSsn, CommandSrv, CountMembers, JoinRoom, LeaveRoom, SendMessage};
 
 type Client = Recipient<CommandSrv>; // ChatMessage
 
