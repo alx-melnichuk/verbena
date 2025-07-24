@@ -21,7 +21,7 @@ pub trait ProfileOrm {
 }
 
 pub mod cfg {
-    use crate::dbase::DbPool;
+    use vrb_dbase::dbase::DbPool;
 
     #[cfg(not(all(test, feature = "mockdata")))]
     use super::impls::ProfileOrmApp;
@@ -44,9 +44,7 @@ pub mod impls {
 
     use diesel::{self, prelude::*, sql_types};
     use log::{info, log_enabled, Level::Info};
-
-    use crate::dbase;
-    use crate::schema;
+    use vrb_dbase::{dbase, schema};
 
     use super::*;
 
@@ -220,10 +218,9 @@ pub mod impls {
 pub mod tests {
 
     use chrono::Utc;
+    use vrb_dbase::db_enums::UserRole;
 
     use super::*;
-
-    use crate::users::user_models::UserRole;
 
     pub const PROFILE_USER_ID: i32 = 1100;
 

@@ -5,12 +5,11 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use utoipa::ToSchema;
+use vrb_dbase::{db_enums::StreamState, schema};
 use vrb_tools::{
     err, serial_datetime, serial_datetime_option,
     validators::{ValidationChecks, ValidationError, Validator},
 };
-
-use crate::schema;
 
 pub const MSG_TITLE_REQUIRED: &str = "title:required";
 pub const TITLE_MIN: u8 = 2;
@@ -94,30 +93,6 @@ pub fn validate_tag(tags: &[String]) -> Result<(), ValidationError> {
         validate_tag_name(tag_name)?;
     }
     Ok(())
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, diesel_derive_enum::DbEnum, ToSchema)]
-#[ExistingTypePath = "crate::schema::sql_types::StreamState"]
-#[DbValueStyle = "snake_case"] // BazQuxx => "baz_quxx"
-#[serde(rename_all = "lowercase")]
-pub enum StreamState {
-    Waiting,   // (default)
-    Preparing, // (is live)
-    Started,   // (is live)
-    Paused,    // (is live)
-    Stopped,
-}
-
-impl fmt::Display for StreamState {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", serde_json::to_string(&self).unwrap().replace("\"", ""))
-    }
-}
-
-impl StreamState {
-    pub fn is_live(stream_state: StreamState) -> bool {
-        stream_state == StreamState::Preparing || stream_state == StreamState::Started || stream_state == StreamState::Paused
-    }
 }
 
 // **  Section: table "streams" receiving data **

@@ -10,6 +10,7 @@ use actix_web::{
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use log::{error, info, log_enabled, Level::Info};
 use utoipa;
+use vrb_dbase::db_enums::UserRole;
 use vrb_tools::{
     api_error::{code_to_str, ApiError},
     err, parser,
@@ -28,7 +29,6 @@ use crate::chats::{
     chat_message_orm::ChatMessageOrm,
 };
 use crate::extractors::authentication::{Authenticated, RequireAuth};
-use crate::users::user_models::UserRole;
 
 // 403 Access denied - insufficient user rights.
 pub const MSG_MODIFY_ANOTHER_USERS_CHAT_MESSAGE: &str = "modify_another_users_chat_message";
@@ -568,6 +568,7 @@ pub mod tests {
 
     use actix_web::{http, web};
     use chrono::{DateTime, Duration, Utc};
+    use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{api_error::ApiError, token_coding, token_data::BEARER};
 
     use crate::chats::{
@@ -576,7 +577,6 @@ pub mod tests {
     };
     use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp, profile_orm::tests::PROFILE_USER_ID as PROFILE_ID};
     use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp};
-    use crate::users::user_models::UserRole;
 
     pub const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
     pub const MSG_JSON_MISSING_FIELD: &str = "Json deserialize error: missing field";

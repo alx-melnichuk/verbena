@@ -9,7 +9,7 @@ pub trait SessionOrm {
 }
 
 pub mod cfg {
-    use crate::dbase::DbPool;
+    use vrb_dbase::dbase::DbPool;
 
     #[cfg(not(all(test, feature = "mockdata")))]
     use super::impls::SessionOrmApp;
@@ -32,9 +32,7 @@ pub mod impls {
 
     use diesel::{self, prelude::*};
     use log::{info, log_enabled, Level::Info};
-
-    use crate::dbase;
-    use crate::schema;
+    use vrb_dbase::{dbase, schema};
 
     use super::*;
 

@@ -11,6 +11,7 @@ mod tests {
     };
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json;
+    use vrb_dbase::{db_enums::{UserRole, StreamState}};
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
         cdis::coding,
@@ -28,10 +29,9 @@ mod tests {
             },
             ALIAS_LOGO_FILES_DIR, MSG_EXIST_IS_ACTIVE_STREAM, MSG_INVALID_FIELD_TAG, MSG_INVALID_STREAM_STATE,
         },
-        stream_models::{self, ModifyStreamInfoDto, StreamInfoDto, StreamModelsTest, StreamState, ToggleStreamStateDto},
+        stream_models::{self, ModifyStreamInfoDto, StreamInfoDto, StreamModelsTest, ToggleStreamStateDto},
         stream_orm::tests::StreamOrmApp,
     };
-    use crate::users::user_models::UserRole;
 
     // ** put_stream **
 

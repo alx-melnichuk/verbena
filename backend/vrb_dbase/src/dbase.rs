@@ -1,4 +1,7 @@
-use diesel::{r2d2::{ConnectionManager, Pool, PooledConnection}, PgConnection};
+use diesel::{
+    r2d2::{ConnectionManager, Pool, PooledConnection},
+    PgConnection,
+};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 
 pub type Connection = PgConnection;

@@ -20,7 +20,7 @@ pub trait UserRegistrOrm {
 }
 
 pub mod cfg {
-    use crate::dbase::DbPool;
+    use vrb_dbase::dbase::DbPool;
 
     #[cfg(not(all(test, feature = "mockdata")))]
     use super::impls::UserRegistrOrmApp;
@@ -44,10 +44,8 @@ pub mod impls {
     use chrono::{Duration, Utc};
     use diesel::{self, prelude::*};
     use log::{info, log_enabled, Level::Info};
-    use schema::user_registration::dsl;
+    use vrb_dbase::{dbase, schema::{self, user_registration::dsl}};
 
-    use crate::dbase;
-    use crate::schema;
     use crate::users::user_registr_orm::DURATION_IN_DAYS;
 
     use super::*;
@@ -291,7 +289,7 @@ pub mod tests {
             let result: Option<UserRegistr> = self
                 .user_registr_vec
                 .iter()
-                .find(|user_registr| 
+                .find(|user_registr|
                     user_registr.final_date > now
                         && (user_registr.nickname == nickname2 || user_registr.email == email2))
                 .map(|user_registr| user_registr.clone());

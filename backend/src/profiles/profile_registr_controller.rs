@@ -2,6 +2,7 @@ use actix_web::{get, http::StatusCode, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
 use log::error;
 use utoipa;
+use vrb_dbase::db_enums::UserRole; 
 #[cfg(not(all(test, feature = "mockdata")))]
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -37,7 +38,7 @@ use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
 use crate::users::{
-    user_models::{self, UserRole},
+    user_models,
     user_recovery_orm::UserRecoveryOrm,
     user_registr_orm::UserRegistrOrm,
 };

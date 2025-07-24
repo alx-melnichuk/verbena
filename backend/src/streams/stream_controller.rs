@@ -7,6 +7,7 @@ use log::error;
 use mime::IMAGE;
 use serde_json::{self, json};
 use utoipa;
+use vrb_dbase::db_enums::{StreamState, UserRole};
 use vrb_tools::{
     api_error::{code_to_str, ApiError},
     cdis::coding,
@@ -25,11 +26,10 @@ use crate::streams::{
     config_strm::{self, ConfigStrm},
     stream_models::{
         self, CreateStreamInfoDto, ModifyStream, ModifyStreamInfoDto, SearchStreamEventDto, SearchStreamInfoDto, SearchStreamPeriodDto,
-        StreamConfigDto, StreamEventPageDto, StreamInfoDto, StreamInfoPageDto, StreamState, ToggleStreamStateDto,
+        StreamConfigDto, StreamEventPageDto, StreamInfoDto, StreamInfoPageDto, ToggleStreamStateDto,
     },
     stream_orm::StreamOrm,
 };
-use crate::users::user_models::UserRole;
 
 // Use: post_stream, put_stream, delete_stream
 pub const ALIAS_LOGO_FILES_DIR: &str = "/logo";
@@ -1513,6 +1513,7 @@ pub mod tests {
 
     use actix_web::http;
     use chrono::{DateTime, Utc};
+    use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{api_error::ApiError, token_coding, token_data::BEARER};
 
     use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp};
@@ -1522,7 +1523,6 @@ pub mod tests {
         stream_models::{Stream, StreamInfoDto},
         stream_orm::tests::{StreamOrmApp, STREAM_ID},
     };
-    use crate::users::user_models::UserRole;
 
     use super::*;
 

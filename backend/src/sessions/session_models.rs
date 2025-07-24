@@ -1,7 +1,6 @@
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-
-use crate::schema;
+use vrb_dbase::schema;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = schema::sessions)]

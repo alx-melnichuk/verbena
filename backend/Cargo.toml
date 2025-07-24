@@ -41,9 +41,9 @@ openssl = "0.10.72"
 r2d2 = "0.8.10" # use in "vrb_dbase"
 rand = "0.9.1" # // use in "vrb_tools"
 # regex = "1.11.1" # // use in "vrb_tools"
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
-utoipa = { version = "5.3.1", features = ["chrono", "actix_extras"] }
+serde = { version = "1.0.219", features = ["derive"] } # use in "vrb_dbase"
+serde_json = "1.0.140" # use in "vrb_dbase"
+utoipa = { version = "5.3.1", features = ["chrono", "actix_extras"] } # use in "vrb_dbase"
 utoipa-swagger-ui = { version = "9.0.0", features = ["actix-web"] }
 utoipa-redoc = { version = "6.0.0", features = ["actix-web"] }
 utoipa-rapidoc = { version = "6.0.0", features = ["actix-web"] }

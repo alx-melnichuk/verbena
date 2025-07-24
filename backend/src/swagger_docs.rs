@@ -2,12 +2,12 @@ use utoipa::{
     openapi::security::{/*ApiKey, ApiKeyValue,*/ HttpAuthScheme, HttpBuilder, SecurityScheme},
     Modify, OpenApi,
 };
+use vrb_dbase::db_enums;
 use vrb_tools::api_error;
 
 use crate::chats::{chat_message_controller, chat_message_models, chat_ws_controller};
 use crate::profiles::{profile_auth_controller, profile_controller, profile_models, profile_registr_controller};
 use crate::streams::{stream_controller, stream_models};
-use crate::users::user_models;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -24,7 +24,7 @@ use crate::users::user_models;
         profile_controller::delete_profile_current,
         profile_auth_controller::login,
         profile_auth_controller::logout,
-        profile_auth_controller::update_token,        
+        profile_auth_controller::update_token,
         profile_registr_controller::registration,
         profile_registr_controller::confirm_registration,
         profile_registr_controller::recovery,
@@ -46,7 +46,7 @@ use crate::users::user_models;
             chat_message_models::ChatMessageDto, // ::get_chat_message
             api_error::ApiError,
             // user model
-            user_models::UserRole,
+            db_enums::UserRole,
             // profile_controller
             profile_models::UniquenessProfileDto, // ::uniqueness_check
             profile_models::UniquenessProfileResponseDto, // ::uniqueness_check
@@ -73,7 +73,7 @@ use crate::users::user_models;
             stream_models::StreamEventDto, stream_models::StreamEventPageDto, // ::get_streams_events
             stream_models::SearchStreamPeriodDto, // ::get_streams_period
             // stream_controller
-            stream_models::StreamState, 
+            db_enums::StreamState,
             stream_models::CreateStreamInfoDto, // ::post_stream
             stream_models::ModifyStreamInfoDto, // ::put_stream
             stream_models::ToggleStreamStateDto, // ::put_toggle_state

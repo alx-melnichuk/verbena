@@ -39,7 +39,7 @@ pub trait StreamOrm {
 }
 
 pub mod cfg {
-    use crate::dbase::DbPool;
+    use vrb_dbase::dbase::DbPool;
 
     #[cfg(not(all(test, feature = "mockdata")))]
     use super::impls::StreamOrmApp;
@@ -63,10 +63,9 @@ pub mod impls {
     use chrono::{Duration, Timelike};
     use diesel::{self, prelude::*, sql_types};
     use log::{info, log_enabled, Level::Info};
-    use schema::streams::dsl as streams_dsl;
+    use vrb_dbase::dbase;
+    use vrb_dbase:: schema::{self, streams::dsl as streams_dsl};
 
-    use crate::dbase;
-    use crate::schema;
     use crate::streams::stream_models::{self, CreateStream, SearchStreamPeriod};
 
     use super::*;

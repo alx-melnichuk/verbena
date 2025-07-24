@@ -36,7 +36,7 @@ pub trait ChatMessageOrm {
 }
 
 pub mod cfg {
-    use crate::dbase::DbPool;
+    use vrb_dbase::dbase::DbPool;
 
     #[cfg(not(all(test, feature = "mockdata")))]
     use super::impls::ChatMessageOrmApp;
@@ -59,6 +59,7 @@ pub mod impls {
 
     use diesel::{self, prelude::*, sql_types};
     use log::{info, log_enabled, Level::Info};
+    use vrb_dbase::dbase;
     use vrb_tools::validators::Validator;
 
     use crate::chats::{
@@ -68,7 +69,6 @@ pub mod impls {
         },
         chat_message_orm::ChatMessageOrm,
     };
-    use crate::dbase;
 
     pub const CONN_POOL: &str = "ConnectionPool";
 

@@ -7,6 +7,7 @@ mod tests {
         test, App,
     };
     use serde_json;
+    use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
         err,
@@ -21,7 +22,6 @@ mod tests {
         profile_models::{ProfileConfigDto, ProfileDto},
         profile_orm::tests::ProfileOrmApp,
     };
-    use crate::users::user_models::UserRole;
 
     // ** get_profile_by_id **
 

@@ -15,6 +15,9 @@ diesel = { version = "2.2.10", features = ["postgres", "r2d2", "chrono"] }
 diesel-derive-enum = { version = "2.1.0", features = ["postgres"] }
 diesel_migrations = "2.2.0"
 r2d2 = "0.8.10"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+utoipa = { version = "5.3.1", features = ["chrono", "actix_extras"] }
 
 [profile.dev]
 debug = 1

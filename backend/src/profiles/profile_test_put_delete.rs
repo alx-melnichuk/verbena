@@ -11,6 +11,7 @@ pub mod tests {
     };
     use chrono::{SecondsFormat, Utc};
     use serde_json;
+    use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
         cdis::coding,
@@ -29,7 +30,6 @@ pub mod tests {
         },
         profile_models::{self, ModifyProfileDto, NewPasswordProfileDto, Profile, ProfileDto, ProfileTest},
     };
-    use crate::users::user_models::UserRole;
 
     // ** put_profile **
 

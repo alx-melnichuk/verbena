@@ -18,7 +18,7 @@ pub trait UserRecoveryOrm {
 }
 
 pub mod cfg {
-    use crate::dbase::DbPool;
+    use vrb_dbase::dbase::DbPool;
 
     #[cfg(not(all(test, feature = "mockdata")))]
     use super::impls::UserRecoveryOrmApp;
@@ -42,10 +42,11 @@ pub mod impls {
     use chrono::{Duration, Utc};
     use diesel::{self, prelude::*};
     use log::{info, log_enabled, Level::Info};
-    use schema::user_recovery::dsl;
+    use vrb_dbase::{
+        dbase,
+        schema::{self, user_recovery::dsl},
+    };
 
-    use crate::dbase;
-    use crate::schema;
     use crate::users::{user_models::UserRecovery, user_recovery_orm::DURATION_IN_DAYS};
 
     use super::*;

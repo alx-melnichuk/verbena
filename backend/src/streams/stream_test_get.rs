@@ -8,6 +8,7 @@ mod tests {
     };
     use chrono::{DateTime, Datelike, Duration, Local, SecondsFormat, TimeZone, Timelike, Utc};
     use serde_json;
+    use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
         err,
@@ -24,7 +25,6 @@ mod tests {
         stream_models::{self, StreamConfigDto, StreamEventDto, StreamEventPageDto, StreamInfoDto, StreamInfoPageDto},
         stream_orm::tests::StreamOrmApp,
     };
-    use crate::users::user_models::UserRole;
 
     // ** get_stream_by_id **
 

@@ -7,6 +7,7 @@ use log::error;
 use mime::IMAGE;
 use serde_json::json;
 use utoipa;
+use vrb_dbase::db_enums::UserRole;
 use vrb_tools::{
     api_error::{code_to_str, ApiError},
     cdis::coding,
@@ -38,7 +39,6 @@ use crate::streams::{
     config_strm,
     stream_extra::{get_stream_logo_files, remove_stream_logo_files},
 };
-use crate::users::user_models::UserRole;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
 #[cfg(all(test, feature = "mockdata"))]

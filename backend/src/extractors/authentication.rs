@@ -6,6 +6,7 @@ use futures_util::{
     FutureExt,
 };
 use log::{debug, error, log_enabled, Level::Debug};
+use vrb_dbase::db_enums::UserRole;
 use vrb_tools::{
     api_error::{code_to_str, ApiError},
     err, token_coding, token_data,
@@ -21,7 +22,6 @@ use crate::sessions::config_jwt;
 use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::users::user_models::UserRole;
 use crate::utils::token_verification::check_token_and_get_profile;
 
 // 500 Internal Server Error - Authentication: The entity "user" was not received from the request.
@@ -189,10 +189,10 @@ mod tests {
         http::{header, StatusCode},
         test, web, App, HttpResponse,
     };
+    use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{api_error::code_to_str, token_coding, token_data};
 
     use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp};
-    use crate::users::user_models::UserRole;
     use crate::utils::token_verification::MSG_UNACCEPTABLE_TOKEN_ID;
 
     use super::*;

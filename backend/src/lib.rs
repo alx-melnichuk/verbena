@@ -9,6 +9,7 @@ use log::{info, log_enabled, Level::Info};
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
+use vrb_dbase::dbase;
 #[cfg(not(feature = "mockdata"))]
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(feature = "mockdata")]
@@ -26,10 +27,8 @@ use users::{user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_orm:
 use utoipa::OpenApi;
 
 pub mod chats;
-pub(crate) mod dbase;
 pub(crate) mod extractors;
 pub mod profiles;
-pub(crate) mod schema;
 pub(crate) mod sessions;
 pub(crate) mod static_controller;
 pub mod streams;

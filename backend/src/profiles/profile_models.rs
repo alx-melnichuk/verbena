@@ -4,13 +4,12 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+use vrb_dbase::schema;
+use vrb_dbase::db_enums::UserRole;
 use vrb_tools::{
     err, serial_datetime,
     validators::{ValidationChecks, ValidationError, Validator},
 };
-
-use crate::schema;
-use crate::users::user_models::UserRole;
 
 pub const NICKNAME_MIN: u8 = 3;
 pub const NICKNAME_MAX: u8 = 64;
@@ -170,7 +169,7 @@ pub struct Profile {
     #[diesel(sql_type = diesel::sql_types::Text)]
     #[diesel(column_name = "password")]
     pub password: String,
-    #[diesel(sql_type = crate::schema::sql_types::UserRole)]
+    #[diesel(sql_type = schema::sql_types::UserRole)]
     #[diesel(column_name = "role")]
     pub role: UserRole,
     pub avatar: Option<String>,

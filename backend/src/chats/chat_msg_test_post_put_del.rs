@@ -8,6 +8,7 @@ mod tests {
     };
     use chrono::{SecondsFormat, Utc};
     use serde_json::json;
+    use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
         err,
@@ -24,7 +25,6 @@ mod tests {
         chat_message_models::{self, ChatMessageDto, CreateChatMessageDto, ModifyChatMessageDto},
         chat_message_orm::tests::ChatMsgTest,
     };
-    use crate::users::user_models::UserRole;
 
     fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
