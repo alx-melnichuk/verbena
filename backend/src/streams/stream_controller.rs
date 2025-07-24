@@ -10,13 +10,13 @@ use utoipa;
 use vrb_tools::{
     api_error::{code_to_str, ApiError},
     cdis::coding,
+    err,
     loading::dynamic_image,
     parser,
     validators::{self, msg_validation, ValidationChecks, Validator},
 };
 
 use crate::extractors::authentication::{Authenticated, RequireAuth};
-use crate::settings::err;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::streams::stream_orm::impls::StreamOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -1513,7 +1513,7 @@ pub mod tests {
 
     use actix_web::http;
     use chrono::{DateTime, Utc};
-    use vrb_tools::{api_error::ApiError, token_data::BEARER, token_coding};
+    use vrb_tools::{api_error::ApiError, token_coding, token_data::BEARER};
 
     use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp};
     use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp};

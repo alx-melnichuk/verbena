@@ -11,7 +11,7 @@ mod tests {
     use serde_json::json;
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
-        hash_tools, token_coding,
+        err, hash_tools, token_coding,
         token_data::{BEARER, TOKEN_NAME},
     };
 
@@ -23,8 +23,6 @@ mod tests {
     };
     use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp};
     use crate::users::user_models::UserRole;
-
-    use crate::settings::err;
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 

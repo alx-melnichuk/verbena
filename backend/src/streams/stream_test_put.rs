@@ -14,11 +14,10 @@ mod tests {
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
         cdis::coding,
-        validators,
+        err, validators,
     };
 
     use crate::profiles::profile_orm::tests::ProfileOrmApp;
-    use crate::settings::err;
     use crate::streams::{
         config_strm,
         stream_controller::{

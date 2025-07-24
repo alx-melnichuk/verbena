@@ -1,8 +1,10 @@
 use actix_web::{http::StatusCode, web};
 use log::error;
-use vrb_tools::api_error::{code_to_str, ApiError};
+use vrb_tools::{
+    api_error::{code_to_str, ApiError},
+    err,
+};
 
-use crate::settings::err;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::streams::stream_orm::impls::StreamOrmApp;
 #[cfg(all(test, feature = "mockdata"))]

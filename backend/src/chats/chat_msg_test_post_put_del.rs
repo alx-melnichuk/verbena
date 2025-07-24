@@ -8,7 +8,10 @@ mod tests {
     };
     use chrono::{SecondsFormat, Utc};
     use serde_json::json;
-    use vrb_tools::api_error::{code_to_str, ApiError};
+    use vrb_tools::{
+        api_error::{code_to_str, ApiError},
+        err,
+    };
 
     use crate::chats::{
         chat_message_controller::{
@@ -21,7 +24,6 @@ mod tests {
         chat_message_models::{self, ChatMessageDto, CreateChatMessageDto, ModifyChatMessageDto},
         chat_message_orm::tests::ChatMsgTest,
     };
-    use crate::settings::err;
     use crate::users::user_models::UserRole;
 
     fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {

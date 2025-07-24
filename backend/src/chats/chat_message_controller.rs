@@ -12,7 +12,7 @@ use log::{error, info, log_enabled, Level::Info};
 use utoipa;
 use vrb_tools::{
     api_error::{code_to_str, ApiError},
-    parser,
+    err, parser,
     validators::{msg_validation, Validator},
 };
 
@@ -28,7 +28,6 @@ use crate::chats::{
     chat_message_orm::ChatMessageOrm,
 };
 use crate::extractors::authentication::{Authenticated, RequireAuth};
-use crate::settings::err;
 use crate::users::user_models::UserRole;
 
 // 403 Access denied - insufficient user rights.

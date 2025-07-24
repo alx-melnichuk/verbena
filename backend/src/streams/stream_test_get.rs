@@ -8,10 +8,12 @@ mod tests {
     };
     use chrono::{DateTime, Datelike, Duration, Local, SecondsFormat, TimeZone, Timelike, Utc};
     use serde_json;
-    use vrb_tools::api_error::{code_to_str, ApiError};
+    use vrb_tools::{
+        api_error::{code_to_str, ApiError},
+        err,
+    };
 
     use crate::profiles::profile_orm::tests::ProfileOrmApp;
-    use crate::settings::err;
     use crate::streams::{
         stream_controller::{
             get_stream_by_id, get_stream_config, get_streams, get_streams_events, get_streams_period,

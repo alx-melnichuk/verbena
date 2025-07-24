@@ -10,7 +10,7 @@ mod tests {
     use serde_json::{self, json};
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
-        validators,
+        err, validators,
     };
 
     use crate::chats::{
@@ -24,7 +24,6 @@ mod tests {
         chat_message_models::{self, BlockedUserDto, ChatMessageModelsTest, CreateBlockedUserDto, DeleteBlockedUserDto},
         chat_message_orm::tests::ChatMsgTest,
     };
-    use crate::settings::err;
 
     // ** get_blocked_users **
 

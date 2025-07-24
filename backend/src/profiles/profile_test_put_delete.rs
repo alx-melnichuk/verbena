@@ -4,25 +4,31 @@ pub mod tests {
 
     use actix_multipart_test::MultiPartFormDataBuilder;
     use actix_web::{
-        body, dev, http::{header::{HeaderValue, CONTENT_TYPE}, StatusCode}, test, App,
+        body, dev,
+        http::header::{HeaderValue, CONTENT_TYPE},
+        http::StatusCode,
+        test, App,
     };
     use chrono::{SecondsFormat, Utc};
     use serde_json;
-    use vrb_tools::{api_error::{ApiError, code_to_str}, cdis::coding, validators};
+    use vrb_tools::{
+        api_error::{code_to_str, ApiError},
+        cdis::coding,
+        err, validators,
+    };
 
     use crate::profiles::{
         config_prfl,
         profile_controller::{
             delete_profile, delete_profile_current, put_profile, put_profile_new_password,
             tests::{
-                check_app_err, configure_profile, create_profile, get_cfg_data, header_auth, save_empty_file,
-                save_file_png, ADMIN, MSG_CONTENT_TYPE_ERROR, MSG_FAILED_DESER, MSG_MULTIPART_STREAM_INCOMPLETE, USER,
+                check_app_err, configure_profile, create_profile, get_cfg_data, header_auth, save_empty_file, save_file_png, ADMIN,
+                MSG_CONTENT_TYPE_ERROR, MSG_FAILED_DESER, MSG_MULTIPART_STREAM_INCOMPLETE, USER,
             },
             ALIAS_AVATAR_FILES_DIR,
         },
         profile_models::{self, ModifyProfileDto, NewPasswordProfileDto, Profile, ProfileDto, ProfileTest},
     };
-    use crate::settings::err;
     use crate::users::user_models::UserRole;
 
     // ** put_profile **
@@ -104,9 +110,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_nickname_min() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("nickname", ProfileTest::nickname_min())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", ProfileTest::nickname_min()).build();
 
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         #[rustfmt::skip]
@@ -128,9 +132,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_nickname_max() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("nickname", ProfileTest::nickname_max())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", ProfileTest::nickname_max()).build();
 
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         #[rustfmt::skip]
@@ -175,9 +177,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_email_min() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("email", ProfileTest::email_min())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileTest::email_min()).build();
 
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         #[rustfmt::skip]
@@ -199,9 +199,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_email_max() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("email", ProfileTest::email_max())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileTest::email_max()).build();
 
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         #[rustfmt::skip]
@@ -223,9 +221,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_email_wrong() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("email", ProfileTest::email_wrong())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileTest::email_wrong()).build();
 
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         #[rustfmt::skip]
@@ -247,9 +243,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_role_wrong() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("role", ProfileTest::role_wrong())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("role", ProfileTest::role_wrong()).build();
 
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         #[rustfmt::skip]
@@ -271,9 +265,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_descript_min() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("descript", ProfileTest::descript_min())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileTest::descript_min()).build();
 
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         #[rustfmt::skip]
@@ -295,9 +287,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_descript_max() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("descript", ProfileTest::descript_max())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileTest::descript_max()).build();
 
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         #[rustfmt::skip]
@@ -319,9 +309,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_theme_min() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("theme", ProfileTest::theme_min())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("theme", ProfileTest::theme_min()).build();
 
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         #[rustfmt::skip]
@@ -343,9 +331,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_theme_max() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("theme", ProfileTest::theme_max())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("theme", ProfileTest::theme_max()).build();
 
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         #[rustfmt::skip]
@@ -367,9 +353,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_locale_min() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("locale", ProfileTest::locale_min())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("locale", ProfileTest::locale_min()).build();
 
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         #[rustfmt::skip]
@@ -391,9 +375,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_locale_max() {
-        let (header, body) = MultiPartFormDataBuilder::new()
-            .with_text("locale", ProfileTest::locale_max())
-            .build();
+        let (header, body) = MultiPartFormDataBuilder::new().with_text("locale", ProfileTest::locale_max()).build();
 
         let (cfg_c, data_c, token) = get_cfg_data(false, USER);
         #[rustfmt::skip]

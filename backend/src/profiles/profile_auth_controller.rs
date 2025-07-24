@@ -5,7 +5,7 @@ use log::{debug, error, log_enabled, Level::Debug};
 use utoipa;
 use vrb_tools::{
     api_error::{code_to_str, ApiError},
-    hash_tools, token_coding,
+    err, hash_tools, token_coding,
     validators::{msg_validation, Validator},
 };
 
@@ -24,7 +24,6 @@ use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::{config_jwt, session_orm::SessionOrm};
-use crate::settings::err;
 
 pub const TOKEN_NAME: &str = "token";
 

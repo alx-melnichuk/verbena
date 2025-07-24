@@ -4,10 +4,12 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use vrb_tools::{serial_datetime, validators::{ValidationChecks, ValidationError, Validator}};
+use vrb_tools::{
+    err, serial_datetime,
+    validators::{ValidationChecks, ValidationError, Validator},
+};
 
 use crate::schema;
-use crate::settings::err;
 use crate::users::user_models::UserRole;
 
 pub const NICKNAME_MIN: u8 = 3;
@@ -428,8 +430,9 @@ impl Validator for ModifyProfileDto {
             self.locale.is_some(),
         ];
         let valid_names = ModifyProfileDto::valid_names().join(",");
+        #[rustfmt::skip]
         errors.push(
-            ValidationChecks::no_fields_to_update(&list_is_some, &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err(),
+            ValidationChecks::no_fields_to_update(&list_is_some, &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err()
         );
 
         self.filter_errors(errors)

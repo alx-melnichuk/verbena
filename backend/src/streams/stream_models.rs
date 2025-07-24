@@ -5,10 +5,12 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use utoipa::ToSchema;
-use vrb_tools::{serial_datetime, serial_datetime_option, validators::{ValidationChecks, ValidationError, Validator}};
+use vrb_tools::{
+    err, serial_datetime, serial_datetime_option,
+    validators::{ValidationChecks, ValidationError, Validator},
+};
 
 use crate::schema;
-use crate::settings::err;
 
 pub const MSG_TITLE_REQUIRED: &str = "title:required";
 pub const TITLE_MIN: u8 = 2;
@@ -114,9 +116,7 @@ impl fmt::Display for StreamState {
 
 impl StreamState {
     pub fn is_live(stream_state: StreamState) -> bool {
-        stream_state == StreamState::Preparing
-            || stream_state == StreamState::Started
-            || stream_state == StreamState::Paused
+        stream_state == StreamState::Preparing || stream_state == StreamState::Started || stream_state == StreamState::Paused
     }
 }
 
@@ -234,11 +234,7 @@ impl StreamInfoDto {
         }
     }
     /// Merge a "stream" and a corresponding list of "tags".
-    pub fn merge_streams_and_tags(
-        streams: &[Stream],
-        stream_tags: &[StreamTagStreamId],
-        user_id: i32,
-    ) -> Vec<StreamInfoDto> {
+    pub fn merge_streams_and_tags(streams: &[Stream], stream_tags: &[StreamTagStreamId], user_id: i32) -> Vec<StreamInfoDto> {
         let mut result: Vec<StreamInfoDto> = Vec::new();
 
         let mut tags_map: HashMap<i32, Vec<String>> = HashMap::new();
@@ -469,9 +465,7 @@ impl Validator for ModifyStreamInfoDto {
             self.tags.is_some(),
         ];
         let valid_names = ModifyStreamInfoDto::valid_names().join(",");
-        errors.push(
-            ValidationChecks::no_fields_to_update(&list_is_some, &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err(),
-        );
+        errors.push(ValidationChecks::no_fields_to_update(&list_is_some, &valid_names, err::MSG_NO_FIELDS_TO_UPDATE).err());
 
         self.filter_errors(errors)
     }

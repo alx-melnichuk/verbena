@@ -8,7 +8,7 @@ use futures_util::{
 use log::{debug, error, log_enabled, Level::Debug};
 use vrb_tools::{
     api_error::{code_to_str, ApiError},
-    token_coding, token_data,
+    err, token_coding, token_data,
 };
 
 use crate::profiles::profile_models::Profile;
@@ -21,7 +21,6 @@ use crate::sessions::config_jwt;
 use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::settings::err;
 use crate::users::user_models::UserRole;
 use crate::utils::token_verification::check_token_and_get_profile;
 

@@ -14,9 +14,9 @@ mod tests {
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
         cdis::coding,
+        err,
     };
 
-    use crate::settings::err;
     use crate::streams::{
         config_strm,
         stream_controller::{

@@ -2,7 +2,7 @@ use actix_web::http::StatusCode;
 use log::error;
 use vrb_tools::{
     api_error::{code_to_str, ApiError},
-    token_coding,
+    err, token_coding,
 };
 
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -25,7 +25,6 @@ use crate::sessions::config_jwt;
 use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::settings::err;
 use crate::utils::token_verification::check_token_and_get_profile;
 
 #[derive(Debug, Clone)]

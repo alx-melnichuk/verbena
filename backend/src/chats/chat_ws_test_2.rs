@@ -5,6 +5,7 @@ mod tests {
     use chrono::{SecondsFormat, Utc};
     use futures_util::{SinkExt, StreamExt}; // this is needed for send method in Framed
     use serde_json::{from_slice, to_string};
+    use vrb_tools::err;
 
     use crate::chats::{
         chat_event_ws::{JoinEWS, MsgEWS},
@@ -16,7 +17,6 @@ mod tests {
         chat_ws_session::{get_err400, get_err403, get_err404, get_err406},
     };
     use crate::sessions::config_jwt;
-    use crate::settings::err;
 
     const URL_WS: &str = "/ws";
     const ERROR_PROCESSING_WS_FRAME_TEXT: &str = "Error processing websocket message Frame::Text(Bytes)";

@@ -1,10 +1,16 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{
-        body, dev, http::{header::{HeaderValue, CONTENT_TYPE}, StatusCode}, test, App,
+        body, dev,
+        http::header::{HeaderValue, CONTENT_TYPE},
+        http::StatusCode,
+        test, App,
     };
     use serde_json;
-    use vrb_tools::api_error::{ApiError, code_to_str};
+    use vrb_tools::{
+        api_error::{code_to_str, ApiError},
+        err,
+    };
 
     use crate::profiles::{
         profile_controller::{
@@ -15,7 +21,6 @@ mod tests {
         profile_models::{ProfileConfigDto, ProfileDto},
         profile_orm::tests::ProfileOrmApp,
     };
-    use crate::settings::err;
     use crate::users::user_models::UserRole;
 
     // ** get_profile_by_id **

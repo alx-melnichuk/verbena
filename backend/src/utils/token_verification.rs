@@ -2,7 +2,10 @@ use std::time::Instant as tm;
 
 use actix_web::http::StatusCode;
 use log::{error, info, log_enabled, Level::Info};
-use vrb_tools::api_error::{code_to_str, ApiError};
+use vrb_tools::{
+    api_error::{code_to_str, ApiError},
+    err,
+};
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
@@ -14,7 +17,6 @@ use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::sessions::session_orm::SessionOrm;
-use crate::settings::err;
 
 // 401 Unauthorized - According to "user_id" in the token, the user was not found.
 pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
