@@ -1,9 +1,9 @@
 use actix_files::Files;
 use actix_web::{get, http, web, HttpRequest, HttpResponse};
 use std::{io::Error, path};
+use vrb_tools::config_app;
 
 use crate::profiles::{config_prfl, profile_controller};
-use crate::settings::config_app;
 use crate::streams::{config_strm, stream_controller};
 
 const NAME_LOGO: &str = "name_logo";

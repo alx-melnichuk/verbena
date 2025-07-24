@@ -1,4 +1,5 @@
 pub mod api_error;
+pub mod config_app;
 pub mod cdis;
 pub mod crypto;
 pub mod err;

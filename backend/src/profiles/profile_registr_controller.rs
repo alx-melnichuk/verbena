@@ -8,7 +8,7 @@ use vrb_tools::send_email::mailer::impls::MailerApp;
 use vrb_tools::send_email::mailer::tests::MailerApp;
 use vrb_tools::{
     api_error::{code_to_str, ApiError},
-    err, hash_tools,
+    config_app, err, hash_tools,
     send_email::mailer::Mailer,
     token_coding,
     validators::{msg_validation, Validator},
@@ -28,7 +28,6 @@ use crate::profiles::{
     profile_orm::ProfileOrm,
 };
 use crate::sessions::config_jwt;
-use crate::settings::config_app;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::users::user_recovery_orm::impls::UserRecoveryOrmApp;
 #[cfg(all(test, feature = "mockdata"))]

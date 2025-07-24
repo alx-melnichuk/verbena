@@ -9,20 +9,18 @@ use log::{info, log_enabled, Level::Info};
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
-use vrb_tools::ssl_acceptor;
 #[cfg(not(feature = "mockdata"))]
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(feature = "mockdata")]
 use vrb_tools::send_email::mailer::tests::MailerApp;
-use vrb_tools::send_email::config_smtp;
+use vrb_tools::ssl_acceptor;
+use vrb_tools::{config_app, send_email::config_smtp};
 
 use chats::{chat_message_controller, chat_message_orm::cfg::get_chat_message_orm_app, chat_ws_controller};
 use profiles::{
-    config_prfl, profile_auth_controller, profile_controller, profile_orm::cfg::get_profile_orm_app,
-    profile_registr_controller,
+    config_prfl, profile_auth_controller, profile_controller, profile_orm::cfg::get_profile_orm_app, profile_registr_controller,
 };
 use sessions::{config_jwt, session_orm::cfg::get_session_orm_app};
-use settings::config_app;
 use streams::{config_strm, stream_controller, stream_orm::cfg::get_stream_orm_app};
 use users::{user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_orm::cfg::get_user_registr_orm_app};
 use utoipa::OpenApi;
@@ -33,7 +31,6 @@ pub(crate) mod extractors;
 pub mod profiles;
 pub(crate) mod schema;
 pub(crate) mod sessions;
-pub mod settings;
 pub(crate) mod static_controller;
 pub mod streams;
 pub mod swagger_docs;
@@ -75,7 +72,7 @@ pub async fn server_run() -> std::io::Result<()> {
     app_log(&format!("Starting server {}", &app_domain));
 
     let config_app2 = config_app.clone();
-
+    #[rustfmt::skip]
     let mut srv = HttpServer::new(move || {
         let cors = create_cors(config_app2.clone());
         App::new()
@@ -87,6 +84,7 @@ pub async fn server_run() -> std::io::Result<()> {
     if config_app::PROTOCOL_HTTP == app_protocol {
         srv = srv.bind(&app_url)?;
     } else {
+        #[rustfmt::skip]
         let builder =
             ssl_acceptor::create_ssl_acceptor_builder(&config_app.app_certificate, &config_app.app_private_key);
         srv = srv.bind_openssl(&app_url, builder)?;
@@ -111,7 +109,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         dbase::run_migration(&mut pool.get().unwrap());
 
         // Adding various configs.
-        let config_app0 = settings::config_app::ConfigApp::init_by_env();
+        let config_app0 = config_app::ConfigApp::init_by_env();
         let temp_file_config0 = TempFileConfig::default().clone().directory(config_app0.app_dir_tmp.clone());
 
         // used: profile_registr_controller, static_controller
@@ -178,7 +176,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
-pub fn create_cors(config_app: settings::config_app::ConfigApp) -> Cors {
+pub fn create_cors(config_app: config_app::ConfigApp) -> Cors {
     let app_domain = config_app.app_domain;
     // Maximum number of seconds the results can be cached.
     let app_max_age = config_app.app_max_age;

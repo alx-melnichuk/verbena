@@ -93,7 +93,6 @@ impl ConfigApp {
     }
 }
 
-#[cfg(all(test, feature = "mockdata"))]
 pub fn get_test_config() -> ConfigApp {
     let app_host = HOST.to_string();
     let app_protocol = PROTOCOL_HTTP.to_string();
