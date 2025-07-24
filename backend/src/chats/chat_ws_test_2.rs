@@ -21,15 +21,6 @@ mod tests {
     const URL_WS: &str = "/ws";
     const ERROR_PROCESSING_WS_FRAME_TEXT: &str = "Error processing websocket message Frame::Text(Bytes)";
 
-    fn eq_msg_ews(msg_ews1: MsgEWS, msg_ews2: MsgEWS) -> bool {
-        msg_ews1.msg == msg_ews2.msg
-            && msg_ews1.id == msg_ews2.id
-            && msg_ews1.member == msg_ews2.member
-            && msg_ews1.date[0..20] == msg_ews2.date[0..20]
-            && msg_ews1.date_edt == msg_ews2.date_edt
-            && msg_ews1.date_rmv == msg_ews2.date_rmv
-    }
-
     // ** get_ws_chat **
 
     // ** ews_msg **
@@ -145,7 +136,12 @@ mod tests {
         let msg_ews2 = msg_ews.clone();
         if let FrameText(buf) = item {
             let msg_ews_res: MsgEWS = from_slice(&buf).expect(MSG_FAILED_DESER);
-            assert!(eq_msg_ews(msg_ews_res, msg_ews));
+            assert_eq!(msg_ews_res.msg, msg_ews.msg);
+            assert_eq!(msg_ews_res.id, msg_ews.id);
+            assert_eq!(msg_ews_res.member,msg_ews.member);
+            assert_eq!(msg_ews_res.date[0..20], msg_ews.date[0..20]);
+            assert_eq!(msg_ews_res.date_edt.is_none(), msg_ews.date_edt.is_none());
+            assert_eq!(msg_ews_res.date_rmv.is_none(), msg_ews.date_rmv.is_none());
         } else {
             panic!("{}", ERROR_PROCESSING_WS_FRAME_TEXT);
         }
@@ -154,7 +150,12 @@ mod tests {
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         if let FrameText(buf) = item {
             let msg_ews_res: MsgEWS = from_slice(&buf).expect(MSG_FAILED_DESER);
-            assert!(eq_msg_ews(msg_ews_res, msg_ews2));
+            assert_eq!(msg_ews_res.msg, msg_ews2.msg);
+            assert_eq!(msg_ews_res.id, msg_ews2.id);
+            assert_eq!(msg_ews_res.member,msg_ews2.member);
+            assert_eq!(msg_ews_res.date[0..20], msg_ews2.date[0..20]);
+            assert_eq!(msg_ews_res.date_edt.is_none(), msg_ews2.date_edt.is_none());
+            assert_eq!(msg_ews_res.date_rmv.is_none(), msg_ews2.date_rmv.is_none());
         } else {
             panic!("{}", ERROR_PROCESSING_WS_FRAME_TEXT);
         }
@@ -314,7 +315,13 @@ mod tests {
         let msg_ews2 = msg_ews.clone();
         if let FrameText(buf) = item {
             let msg_ews_res: MsgEWS = from_slice(&buf).expect(MSG_FAILED_DESER);
-            assert!(eq_msg_ews(msg_ews_res, msg_ews));
+            assert_eq!(msg_ews_res.msg, msg_ews.msg);
+            assert_eq!(msg_ews_res.id, msg_ews.id);
+            assert_eq!(msg_ews_res.member,msg_ews.member);
+            assert_eq!(msg_ews_res.date[0..20], msg_ews.date[0..20]);
+            assert_eq!(msg_ews_res.date_edt.is_some(), msg_ews.date_edt.is_some());
+            assert_eq!(msg_ews_res.date_edt.unwrap()[0..20], msg_ews.date_edt.unwrap()[0..20]);
+            assert_eq!(msg_ews_res.date_rmv.is_none(), msg_ews.date_rmv.is_none());
         } else {
             panic!("{}", ERROR_PROCESSING_WS_FRAME_TEXT);
         }
@@ -323,7 +330,13 @@ mod tests {
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         if let FrameText(buf) = item {
             let msg_ews_res: MsgEWS = from_slice(&buf).expect(MSG_FAILED_DESER);
-            assert!(eq_msg_ews(msg_ews_res, msg_ews2));
+            assert_eq!(msg_ews_res.msg, msg_ews2.msg);
+            assert_eq!(msg_ews_res.id, msg_ews2.id);
+            assert_eq!(msg_ews_res.member,msg_ews2.member);
+            assert_eq!(msg_ews_res.date[0..20], msg_ews2.date[0..20]);
+            assert_eq!(msg_ews_res.date_edt.is_some(), msg_ews2.date_edt.is_some());
+            assert_eq!(msg_ews_res.date_edt.unwrap()[0..20], msg_ews2.date_edt.unwrap()[0..20]);
+            assert_eq!(msg_ews_res.date_rmv.is_none(), msg_ews2.date_rmv.is_none());
         } else {
             panic!("{}", ERROR_PROCESSING_WS_FRAME_TEXT);
         }
@@ -476,7 +489,13 @@ mod tests {
         let msg_ews2 = msg_ews.clone();
         if let FrameText(buf) = item {
             let msg_ews_res: MsgEWS = from_slice(&buf).expect(MSG_FAILED_DESER);
-            assert!(eq_msg_ews(msg_ews_res, msg_ews));
+            assert_eq!(msg_ews_res.msg, msg_ews.msg);
+            assert_eq!(msg_ews_res.id, msg_ews.id);
+            assert_eq!(msg_ews_res.member,msg_ews.member);
+            assert_eq!(msg_ews_res.date[0..20], msg_ews.date[0..20]);
+            assert_eq!(msg_ews_res.date_edt.is_none(), msg_ews.date_edt.is_none());
+            assert_eq!(msg_ews_res.date_rmv.is_some(), msg_ews.date_rmv.is_some());
+            assert_eq!(msg_ews_res.date_rmv.unwrap()[0..20], msg_ews.date_rmv.unwrap()[0..20]);
         } else {
             panic!("{}", ERROR_PROCESSING_WS_FRAME_TEXT);
         }
@@ -485,7 +504,13 @@ mod tests {
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         if let FrameText(buf) = item {
             let msg_ews_res: MsgEWS = from_slice(&buf).expect(MSG_FAILED_DESER);
-            assert!(eq_msg_ews(msg_ews_res, msg_ews2));
+            assert_eq!(msg_ews_res.msg, msg_ews2.msg);
+            assert_eq!(msg_ews_res.id, msg_ews2.id);
+            assert_eq!(msg_ews_res.member,msg_ews2.member);
+            assert_eq!(msg_ews_res.date[0..20], msg_ews2.date[0..20]);
+            assert_eq!(msg_ews_res.date_edt.is_none(), msg_ews2.date_edt.is_none());
+            assert_eq!(msg_ews_res.date_rmv.is_some(), msg_ews2.date_rmv.is_some());
+            assert_eq!(msg_ews_res.date_rmv.unwrap()[0..20], msg_ews2.date_rmv.unwrap()[0..20]);
         } else {
             panic!("{}", ERROR_PROCESSING_WS_FRAME_TEXT);
         }
