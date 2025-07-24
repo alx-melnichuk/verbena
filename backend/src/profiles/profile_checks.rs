@@ -74,10 +74,11 @@ pub async fn uniqueness_nickname_or_email(
 mod tests {
     use actix_web::http::StatusCode;
     use chrono::{DateTime, Duration, Utc};
+    use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{api_error::code_to_str, err};
 
     use crate::profiles::profile_models::Profile;
-    use crate::users::user_models::{UserRegistr, UserRole};
+    use crate::users::user_models::UserRegistr;
 
     use super::*;
 

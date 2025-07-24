@@ -999,6 +999,7 @@ pub mod tests {
 
     use actix_web::{http::header, web};
     use chrono::{DateTime, Duration, Utc};
+    use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{api_error::ApiError, hash_tools, token_coding, token_data::BEARER};
 
     use crate::profiles::{config_prfl, profile_models::Profile, profile_orm::tests::ProfileOrmApp};
@@ -1006,7 +1007,7 @@ pub mod tests {
     use crate::streams::{
         config_strm, stream_controller::tests::create_stream, stream_models::StreamInfoDto, stream_orm::tests::StreamOrmApp,
     };
-    use crate::users::user_models::{UserRegistr, UserRole};
+    use crate::users::user_models::UserRegistr;
     use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
 
     pub const ADMIN: u8 = 0;

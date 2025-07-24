@@ -624,8 +624,9 @@ pub mod tests {
     use std::cmp::Ordering;
 
     use chrono::{Duration, Timelike};
+    use vrb_dbase::db_enums::StreamState;
 
-    use crate::streams::stream_models::{self, StreamInfoDto, StreamState};
+    use crate::streams::stream_models::{self, StreamInfoDto};
 
     use super::*;
 
@@ -757,8 +758,8 @@ pub mod tests {
                 .filter(|stream| {
                     let check_id = if let Some(id) = opt_id { stream.id == id } else { true };
                     let check_user_id = if let Some(user_id) = opt_user_id { stream.user_id == user_id } else { true };
+                    #[rustfmt::skip]
                     let check_is_logo = if let Some(is_logo) = opt_is_logo {
-                        #[rustfmt::skip]
                         if is_logo { stream.logo.is_some() } else { stream.logo.is_none() }
                     } else {
                         true
@@ -896,7 +897,6 @@ pub mod tests {
             let finish = start + Duration::hours(24);
 
             for stream in self.stream_info_vec.iter() {
-                #[rustfmt::skip]
                 if stream.user_id == search_stream_event.user_id
                     && start <= stream.starttime && stream.starttime < finish {
                     streams_info.push(stream.clone());
@@ -943,7 +943,6 @@ pub mod tests {
             let finish = search_stream_period.finish;
 
             for stream in self.stream_info_vec.iter() {
-                #[rustfmt::skip]
                 if stream.user_id == search_stream_period.user_id
                     && start <= stream.starttime && stream.starttime <= finish {
                     streams_info.push(stream.clone());

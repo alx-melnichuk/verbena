@@ -8,8 +8,10 @@ mod tests {
     };
     use chrono::{DateTime, Duration, Utc};
     use serde_json::json;
+    use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
+        config_app, err,
         send_email::{config_smtp, mailer::tests::MailerApp},
         token_coding,
         token_data::BEARER,
@@ -28,9 +30,8 @@ mod tests {
         },
     };
     use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp};
-    use crate::settings::{config_app, err};
     use crate::users::{
-        user_models::{UserRecovery, UserRegistr, UserRole},
+        user_models::{UserRecovery, UserRegistr},
         user_recovery_orm::tests::UserRecoveryOrmApp,
         user_registr_orm::tests::UserRegistrOrmApp,
     };
