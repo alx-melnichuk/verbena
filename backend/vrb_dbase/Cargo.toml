@@ -1,0 +1,20 @@
+[package]
+name = "vrb-dbase"
+version = "0.1.0"
+edition = "2021"
+description = "Library for the entire database structure of the Verbena project."
+rust-version = "1.87.0"
+keywords = ["dbase", "vrb-dbase"]
+license = "MIT"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+diesel = { version = "2.2.10", features = ["postgres", "r2d2", "chrono"] }
+diesel-derive-enum = { version = "2.1.0", features = ["postgres"] }
+diesel_migrations = "2.2.0"
+r2d2 = "0.8.10"
+
+[profile.dev]
+debug = 1
