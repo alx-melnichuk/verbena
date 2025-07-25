@@ -17,10 +17,6 @@ edition = "2021"
 # Default: 60 (%)
 fn_call_width = 97
 
-ignore = [
-    "vrb_dbase/src/schema.rs"
-]
-
 # Maximum width of each line.
 # Default: 100
 max_width = 140
