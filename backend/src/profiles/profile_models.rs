@@ -4,8 +4,8 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use vrb_dbase::schema;
 use vrb_dbase::db_enums::UserRole;
+use vrb_dbase::schema;
 use vrb_tools::{
     err, serial_datetime,
     validators::{ValidationChecks, ValidationError, Validator},
