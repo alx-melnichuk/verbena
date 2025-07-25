@@ -251,6 +251,16 @@ pub struct ModifyProfile {
     pub locale: Option<String>,         // min_len=2,max_len=32 default "default"
 }
 
+// ** Model: "Session". **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable, Insertable, AsChangeset)]
+#[diesel(table_name = schema::sessions)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct Session {
+    pub user_id: i32,
+    pub num_token: Option<i32>,
+}
+
 // * * * * Section: models for the "profile_get_controller". * * * *
 
 // ** Model Dto: "UniquenessProfileDto". Used: in "profile_get_controller::uniqueness_check()". **

@@ -19,10 +19,10 @@ mod tests {
     use crate::profiles::{
         config_jwt,
         profile_auth_controller::{login, logout, update_token},
-        profile_models::{self, LoginProfileDto, LoginProfileResponseDto, Profile, ProfileDto, ProfileTest, TokenDto},
+        profile_models::{self, LoginProfileDto, LoginProfileResponseDto, Profile, ProfileDto, ProfileTest, Session, TokenDto},
         profile_orm::tests::ProfileOrmApp,
     };
-    use crate::sessions::{session_models::Session, session_orm::tests::SessionOrmApp};
+    use crate::sessions::session_orm::tests::SessionOrmApp;
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 

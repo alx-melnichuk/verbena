@@ -1,15 +1,15 @@
-use crate::profiles::profile_models::{CreateProfile, ModifyProfile, Profile};
+use crate::profiles::profile_models::{CreateProfile, ModifyProfile, Profile, Session};
 
 pub trait ProfileOrm {
     /// Get an entity (profile + user) by ID.
     fn get_profile_user_by_id(&self, user_id: i32, is_password: bool) -> Result<Option<Profile>, String>;
+
     /// Find for an entity (profile) by nickname or email.
+    #[rustfmt::skip]
     fn find_profile_by_nickname_or_email(
-        &self,
-        nickname: Option<&str>,
-        email: Option<&str>,
-        is_password: bool,
+        &self, nickname: Option<&str>, email: Option<&str>, is_password: bool,
     ) -> Result<Option<Profile>, String>;
+
     /// Add a new entry (profile, user).
     fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String>;
 
@@ -18,6 +18,14 @@ pub trait ProfileOrm {
 
     /// Delete an entity (profile).
     fn delete_profile(&self, user_id: i32) -> Result<Option<Profile>, String>;
+
+    /// Get an entity (session) by ID.
+    fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String>;
+
+    /// Modify the entity (session).
+    fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String>;
+
+    // There is no need to delete the entity (session), since it is deleted cascade when deleting an entry in the users table.
 }
 
 pub mod cfg {
@@ -86,6 +94,7 @@ pub mod impls {
             }
             Ok(opt_profile)
         }
+
         /// Find for an entity (profile) by nickname or email.
         fn find_profile_by_nickname_or_email(
             &self,
@@ -122,6 +131,7 @@ pub mod impls {
             }
             Ok(opt_profile)
         }
+
         /// Add a new entry (profile, user).
         fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -152,6 +162,7 @@ pub mod impls {
             }
             Ok(profile_user)
         }
+
         /// Modify an entity (profile, user).
         fn modify_profile(&self, user_id: i32, modify_profile: ModifyProfile) -> Result<Option<Profile>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -191,6 +202,7 @@ pub mod impls {
             }
             Ok(profile_user)
         }
+
         /// Delete an entity (profile).
         fn delete_profile(&self, user_id: i32) -> Result<Option<Profile>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
@@ -211,6 +223,44 @@ pub mod impls {
             }
             Ok(opt_profile)
         }
+
+        /// Get an entity (session) by ID.
+        fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+            // Run query using Diesel to find user by id and return it.
+            let opt_session: Option<Session> = schema::sessions::table
+                .filter(schema::sessions::dsl::user_id.eq(user_id))
+                .first::<Session>(&mut conn)
+                .optional()
+                .map_err(|e| format!("get_session_by_id: {}", e.to_string()))?;
+
+            if let Some(timer) = timer {
+                info!("get_session_by_id() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
+            Ok(opt_session)
+        }
+
+        /// Perform a full or partial change to a session record.
+        fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+            // Run query using Diesel to full or partially modify the session entry.
+            let result = diesel::update(schema::sessions::dsl::sessions.find(user_id))
+                .set(schema::sessions::dsl::num_token.eq(num_token))
+                .returning(Session::as_returning())
+                .get_result(&mut conn)
+                .optional()
+                .map_err(|e| format!("modify_session: {}", e.to_string()))?;
+
+            if let Some(timer) = timer {
+                info!("modify_session() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
+            Ok(result)
+        }
+
     }
 }
 
@@ -227,15 +277,25 @@ pub mod tests {
     #[derive(Debug, Clone)]
     pub struct ProfileOrmApp {
         pub profile_vec: Vec<Profile>,
+        pub session_vec: Vec<Session>,
     }
 
     impl ProfileOrmApp {
         /// Create a new instance.
         pub fn new() -> Self {
-            ProfileOrmApp { profile_vec: Vec::new() }
+            ProfileOrmApp { profile_vec: Vec::new(), session_vec: Vec::new() }
         }
         /// Create a new instance with the specified profile list.
         pub fn create(profile_list: &[Profile]) -> Self {
+            let profile_vec: Vec<Profile> = Self::new_profiles(profile_list);
+            ProfileOrmApp { profile_vec, session_vec: Vec::new() }
+        }
+        /// Create a new instance of the Profile entity.
+        pub fn new_profile(user_id: i32, nickname: &str, email: &str, role: UserRole) -> Profile {
+            Profile::new(user_id, &nickname.to_lowercase(), &email.to_lowercase(), role.clone(), None, None, None, None)
+        }
+        /// Create a new list of Profile entity instances.
+        pub fn new_profiles(profile_list: &[Profile]) -> Vec<Profile> {
             let mut profile_vec: Vec<Profile> = Vec::new();
             for (idx, profile) in profile_list.iter().enumerate() {
                 let delta: i32 = idx.try_into().unwrap();
@@ -254,12 +314,26 @@ pub mod tests {
                 profile2.updated_at = profile.updated_at;
                 profile_vec.push(profile2);
             }
-            ProfileOrmApp { profile_vec }
+            profile_vec
         }
-        /// Create a new entity instance.
-        pub fn new_profile(user_id: i32, nickname: &str, email: &str, role: UserRole) -> Profile {
-            Profile::new(user_id, &nickname.to_lowercase(), &email.to_lowercase(), role.clone(), None, None, None, None)
+        /// Create a new instance of the Session entity.
+        pub fn new_session(user_id: i32, num_token: Option<i32>) -> Session {
+            Session { user_id, num_token }
         }
+        /// Create a new list of Session entity instances.
+        pub fn new_sessions(session_list: &[Session]) -> Vec<Session> {
+            let mut session_vec: Vec<Session> = Vec::new();
+            for session in session_list.iter() {
+                session_vec.push(Self::new_session(session.user_id, session.num_token));
+            }
+            session_vec
+        }
+        pub fn create2sessions(profile_list: &[Profile], session_list: &[Session]) -> Self {
+            let profile_vec: Vec<Profile> = Self::new_profiles(profile_list);
+            let session_vec: Vec<Session> = Self::new_sessions(session_list);
+            ProfileOrmApp { profile_vec, session_vec }
+        }
+
     }
 
     impl ProfileOrm for ProfileOrmApp {
@@ -282,6 +356,7 @@ pub mod tests {
 
             Ok(result)
         }
+
         /// Find for an entity (profile) by nickname or email.
         fn find_profile_by_nickname_or_email(
             &self,
@@ -315,6 +390,7 @@ pub mod tests {
 
             Ok(result)
         }
+
         /// Add a new entry (profile, user).
         fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String> {
             let nickname = create_profile.nickname.to_lowercase();
@@ -341,6 +417,7 @@ pub mod tests {
             );
             Ok(profile_user)
         }
+
         /// Modify an entity (profile, user).
         fn modify_profile(&self, user_id: i32, modify_profile: ModifyProfile) -> Result<Option<Profile>, String> {
             let opt_profile = self.profile_vec.iter().find(|profile| (*profile).user_id == user_id);
@@ -364,11 +441,38 @@ pub mod tests {
             };
             Ok(opt_profile3)
         }
+
         /// Delete an entity (profile).
         fn delete_profile(&self, user_id: i32) -> Result<Option<Profile>, String> {
             let opt_profile = self.profile_vec.iter().find(|profile| profile.user_id == user_id);
 
             Ok(opt_profile.map(|u| u.clone()))
         }
+
+        /// Get an entity (session) by ID.
+        fn get_session_by_id(&self, user_id: i32) -> Result<Option<Session>, String> {
+            let opt_session: Option<Session> = self
+                .session_vec
+                .iter()
+                .find(|session| session.user_id == user_id)
+                .map(|session| session.clone());
+
+            Ok(opt_session)
+        }
+        /// Modify the entity (session).
+        fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
+            let opt_session: Option<Session> = self.get_session_by_id(user_id)?;
+            let mut res_session = match opt_session {
+                Some(v) => v,
+                None => {
+                    return Ok(None);
+                }
+            };
+            let new_session = Self::new_session(user_id, num_token);
+            res_session.num_token = new_session.num_token;
+
+            Ok(Some(res_session))
+        }
+
     }
 }

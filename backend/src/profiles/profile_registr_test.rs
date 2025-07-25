@@ -21,7 +21,7 @@ mod tests {
         config_jwt,
         profile_models::{
             self, ClearForExpiredResponseDto, Profile, ProfileDto, ProfileTest, RecoveryDataDto, RecoveryProfileDto,
-            RecoveryProfileResponseDto, RegistrProfileDto, RegistrProfileResponseDto,
+            RecoveryProfileResponseDto, RegistrProfileDto, RegistrProfileResponseDto, Session,
         },
         profile_orm::tests::ProfileOrmApp,
         profile_registr_controller::{
@@ -29,7 +29,7 @@ mod tests {
             MSG_REGISTR_NOT_FOUND, MSG_USER_NOT_FOUND,
         },
     };
-    use crate::sessions::{session_models::Session, session_orm::tests::SessionOrmApp};
+    use crate::sessions::session_orm::tests::SessionOrmApp;
     use crate::users::{
         user_models::{UserRecovery, UserRegistr},
         user_recovery_orm::tests::UserRecoveryOrmApp,

@@ -1,4 +1,4 @@
-use crate::sessions::session_models::Session;
+use crate::profiles::profile_models::Session;
 
 pub trait SessionOrm {
     /// Get an entity (session) by ID.
