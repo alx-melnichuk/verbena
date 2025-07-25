@@ -1034,17 +1034,6 @@ pub mod tests {
         let profile_orm = ProfileOrmApp::create(&vec![profile]);
         profile_orm.profile_vec.get(0).unwrap().clone()
     }
-    fn create_user_registr() -> UserRegistr {
-        let now = Utc::now();
-        let final_date: DateTime<Utc> = now + Duration::minutes(20);
-
-        let user_registr = UserRegistrOrmApp::new_user_registr(1, "Robert_Brown", "Robert_Brown@gmail.com", "passwdR2B2", final_date);
-        user_registr
-    }
-    fn user_registr_with_id(user_registr: UserRegistr) -> UserRegistr {
-        let user_reg_orm = UserRegistrOrmApp::create(&vec![user_registr]);
-        user_reg_orm.user_registr_vec.get(0).unwrap().clone()
-    }
     pub fn header_auth(token: &str) -> (header::HeaderName, header::HeaderValue) {
         let header_value = header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
         (header::AUTHORIZATION, header_value)
@@ -1066,9 +1055,7 @@ pub mod tests {
         // Create token values.
         let token = token_coding::encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
 
-        let user_registr_vec:Vec<UserRegistr> = if is_registr {
-            vec![user_registr_with_id(create_user_registr())]
-        } else { vec![] };
+        let user_registr_vec:Vec<UserRegistr> = data_registr(is_registr);
 
         let config_prfl = config_prfl::get_test_config();
         let config_strm = config_strm::get_test_config();
@@ -1086,7 +1073,7 @@ pub mod tests {
             let data_config_prfl = web::Data::new(cfg_c.1);
             let data_config_strm = web::Data::new(cfg_c.2);
 
-            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create2sessions(&data_c.0, &data_c.1));
             let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
             let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.2));
             let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.3));
@@ -1101,6 +1088,66 @@ pub mod tests {
                 .app_data(web::Data::clone(&data_stream_orm));
         }
     }
+
+    #[rustfmt::skip]
+    pub fn data_profile(role: u8) -> (
+        (config_jwt::ConfigJwt, config_prfl::ConfigPrfl), // configuration
+        (Vec<Profile>, Vec<Session>) // data vectors
+        , String) {
+        // Create profile values.
+        let profile1: Profile = profile_with_id(create_profile(role, None));
+        let num_token = 1234;
+        let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token));
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = token_coding::encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let config_prfl = config_prfl::get_test_config();
+        
+        let cfg_c = (config_jwt, config_prfl);
+        let data_c = (vec![profile1], vec![session1]);
+
+        (cfg_c, data_c, token)
+    }
+    pub fn config_profile(
+        cfg_c: (config_jwt::ConfigJwt, config_prfl::ConfigPrfl), // configuration
+        data_c: (Vec<Profile>, Vec<Session>),                    // data vectors
+    ) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_config_jwt = web::Data::new(cfg_c.0);
+            let data_config_prfl = web::Data::new(cfg_c.1);
+
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create2sessions(&data_c.0, &data_c.1));
+
+            config
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_config_prfl))
+                .app_data(web::Data::clone(&data_profile_orm));
+        }
+    }
+    
+    fn create_user_registr() -> UserRegistr {
+        let now = Utc::now();
+        let final_date: DateTime<Utc> = now + Duration::minutes(20);
+
+        let user_registr = UserRegistrOrmApp::new_user_registr(1, "Robert_Brown", "Robert_Brown@gmail.com", "passwdR2B2", final_date);
+        user_registr
+    }
+    pub fn data_registr(is_exist: bool) -> Vec<UserRegistr> {
+        let registr_vec = if is_exist { vec![create_user_registr()] } else { vec![] };
+        let user_reg_orm = UserRegistrOrmApp::create(&registr_vec);
+        user_reg_orm.user_registr_vec
+    }
+    pub fn config_registr(registr: Vec<UserRegistr>) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&registr));
+            config
+                .app_data(web::Data::clone(&data_user_registr_orm));
+        }
+    }
+
     pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
         for (idx, msg) in msgs.iter().enumerate() {
