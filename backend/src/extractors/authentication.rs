@@ -17,10 +17,6 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{config_jwt, profile_models::Profile};
-#[cfg(not(all(test, feature = "mockdata")))]
-use crate::sessions::session_orm::impls::SessionOrmApp;
-#[cfg(all(test, feature = "mockdata"))]
-use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::utils::token_verification::check_token_and_get_profile;
 
 // 500 Internal Server Error - Authentication: The entity "user" was not received from the request.
@@ -150,10 +146,9 @@ where
 
         // Handle user extraction and request processing
         async move {
-            let session_orm = req.app_data::<web::Data<SessionOrmApp>>().unwrap().get_ref();
             let profile_orm = req.app_data::<web::Data<ProfileOrmApp>>().unwrap().get_ref();
             // Check the token for correctness and get the user profile.
-            let res_profile = check_token_and_get_profile(user_id, num_token, session_orm, profile_orm).await;
+            let res_profile = check_token_and_get_profile(user_id, num_token, profile_orm).await;
             if let Err(app_error) = res_profile {
                 return Err(app_error.into());
             }

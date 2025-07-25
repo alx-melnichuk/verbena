@@ -20,10 +20,6 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{config_jwt, profile_models::Profile /*profile_orm::ProfileOrm*/};
-#[cfg(not(all(test, feature = "mockdata")))]
-use crate::sessions::session_orm::impls::SessionOrmApp;
-#[cfg(all(test, feature = "mockdata"))]
-use crate::sessions::session_orm::tests::SessionOrmApp;
 use crate::utils::token_verification::check_token_and_get_profile;
 
 #[derive(Debug, Clone)]
@@ -40,7 +36,6 @@ pub struct ChatWsAssistant {
     config_jwt: config_jwt::ConfigJwt,
     chat_message_orm: ChatMessageOrmApp,
     profile_orm: ProfileOrmApp,
-    session_orm: SessionOrmApp,
 }
 
 // ** ChatWsAssistant implementation **
@@ -50,13 +45,11 @@ impl ChatWsAssistant {
         config_jwt: config_jwt::ConfigJwt,
         chat_message_orm: ChatMessageOrmApp,
         profile_orm: ProfileOrmApp,
-        session_orm: SessionOrmApp,
     ) -> Self {
         ChatWsAssistant {
             config_jwt,
             chat_message_orm,
             profile_orm,
-            session_orm,
         }
     }
     /** Decode the token. And unpack the two parameters from the token. */
@@ -67,10 +60,9 @@ impl ChatWsAssistant {
     }
     /** Check the number token for correctness and get the user profile. */
     pub async fn check_num_token_and_get_profile(&self, user_id: i32, num_token: i32) -> Result<Profile, ApiError> {
-        let session_orm: SessionOrmApp = self.session_orm.clone();
         let profile_orm: ProfileOrmApp = self.profile_orm.clone();
         // Check the token for correctness and get the user profile.
-        check_token_and_get_profile(user_id, num_token, &session_orm, &profile_orm).await
+        check_token_and_get_profile(user_id, num_token, &profile_orm).await
     }
     /** Create a new user message in the chat. */
     pub async fn execute_create_chat_message(&self, stream_id: i32, user_id: i32, msg: &str) -> Result<Option<ChatMessage>, ApiError> {

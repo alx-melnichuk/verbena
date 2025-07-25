@@ -12,11 +12,6 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{profile_models::Profile, profile_orm::ProfileOrm};
-#[cfg(not(all(test, feature = "mockdata")))]
-use crate::sessions::session_orm::impls::SessionOrmApp;
-#[cfg(all(test, feature = "mockdata"))]
-use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::sessions::session_orm::SessionOrm;
 
 // 401 Unauthorized - According to "user_id" in the token, the user was not found.
 pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
@@ -25,13 +20,12 @@ pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
 pub async fn check_token_and_get_profile(
     user_id: i32,
     num_token: i32,
-    session_orm: &SessionOrmApp,
     profile_orm: &ProfileOrmApp,
 ) -> Result<Profile, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
     // Find a session for a given user.
-    let opt_session = session_orm.get_session_by_id(user_id).map_err(|e| {
+    let opt_session = profile_orm.get_session_by_id(user_id).map_err(|e| {
         error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
         return ApiError::create(507, err::MSG_DATABASE, &e); // 507
     })?;

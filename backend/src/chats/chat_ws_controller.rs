@@ -12,10 +12,6 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::config_jwt;
-#[cfg(not(all(test, feature = "mockdata")))]
-use crate::sessions::session_orm::impls::SessionOrmApp;
-#[cfg(all(test, feature = "mockdata"))]
-use crate::sessions::session_orm::tests::SessionOrmApp;
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -475,17 +471,15 @@ pub async fn get_ws_chat(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     profile_orm: web::Data<ProfileOrmApp>,
-    session_orm: web::Data<SessionOrmApp>,
     request: actix_web::HttpRequest,
     stream: web::Payload,
 ) -> actix_web::Result<HttpResponse<actix_web::body::BoxBody>, actix_web::Error> {
     let config_jwt = config_jwt.get_ref().clone();
     let chat_message_orm_app = chat_message_orm.get_ref().clone();
     let profile_orm_app = profile_orm.get_ref().clone();
-    let session_orm_app = session_orm.get_ref().clone();
     #[rustfmt::skip]
     let assistant = ChatWsAssistant::new(
-        config_jwt, chat_message_orm_app, profile_orm_app, session_orm_app);
+        config_jwt, chat_message_orm_app, profile_orm_app);
 
     let chat_ws_session = ChatWsSession::new(
         u64::default(),    // id: u64,
