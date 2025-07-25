@@ -17,6 +17,10 @@ edition = "2021"
 # Default: 60 (%)
 fn_call_width = 97
 
+ignore = [
+    "vrb_dbase/src/schema.rs"
+]
+
 # Maximum width of each line.
 # Default: 100
 max_width = 140
@@ -40,3 +44,4 @@ single_line_let_else_max_width = 80
 # Number of spaces per tab.
 # Default: 4
 tab_spaces = 4
+
