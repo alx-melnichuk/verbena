@@ -18,7 +18,6 @@ mod tests {
     };
 
     use crate::profiles::{
-        profile_err as p_err,
         profile_models::{
             self, ClearForExpiredResponseDto, Profile, ProfileDto, ProfileTest, RecoveryDataDto, RecoveryProfileDto,
             RecoveryProfileResponseDto, RegistrProfileDto, RegistrProfileResponseDto,
@@ -577,7 +576,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, code_to_str(StatusCode::UNPROCESSABLE_ENTITY));
-        assert!(app_err.message.starts_with(&format!("{};", p_err::MSG_JSON_WEB_TOKEN_ENCODE)));
+        assert!(app_err.message.starts_with(&format!("{};", err::MSG_JSON_WEB_TOKEN_ENCODE)));
     }
     #[actix_web::test]
     async fn test_registration_new_user() {
@@ -955,7 +954,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, code_to_str(StatusCode::UNPROCESSABLE_ENTITY));
-        assert!(app_err.message.starts_with(&format!("{};", p_err::MSG_JSON_WEB_TOKEN_ENCODE)));
+        assert!(app_err.message.starts_with(&format!("{};", err::MSG_JSON_WEB_TOKEN_ENCODE)));
     }
 
     // ** confirm_recovery **

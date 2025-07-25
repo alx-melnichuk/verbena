@@ -21,7 +21,7 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
-    profile_checks, profile_err as p_err,
+    profile_checks,
     profile_models::{
         self, ClearForExpiredResponseDto, Profile, ProfileDto, RecoveryDataDto, RecoveryProfileDto, RecoveryProfileResponseDto,
         RegistrProfileDto, RegistrProfileResponseDto, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF,
@@ -110,7 +110,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
                 (RegistrProfileDto { nickname: "us".to_string(), email: "us_email".to_string(), password: "pas".to_string() })
                     .validate().err().unwrap()) )),
         (status = 422, description = "Token encoding error.", body = ApiError,
-            example = json!(ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
+            example = json!(ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
         (status = 500, description = "Error while calculating the password hash.", body = ApiError, 
             example = json!(ApiError::create(500, err::MSG_ERROR_HASHING_PASSWORD, "Parameter is empty."))),
         (status = 506, description = "Blocking error.", body = ApiError, 
@@ -206,8 +206,8 @@ pub async fn registration(
     #[rustfmt::skip]
     let registr_token = token_coding::encode_token(user_registr.id, num_token, jwt_secret, app_registr_duration)
     .map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
-        ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
+        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
     // Prepare a letter confirming this registration.
@@ -367,7 +367,7 @@ pub async fn confirm_registration(
             description = "Validation error. `curl -i -X POST http://localhost:8080/api/recovery -d '{\"email\": \"us_email\" }'`",
             example = json!(ApiError::validations((RecoveryProfileDto { email: "us_email".to_string() }).validate().err().unwrap()))),
         (status = 422, description = "Token encoding error.", body = ApiError,
-            example = json!(ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
+            example = json!(ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
         (status = 506, description = "Blocking error.", body = ApiError, 
             example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
@@ -492,8 +492,8 @@ pub async fn recovery(
 
     // Pack two parameters (user_recovery_id, num_token) into a recovery_token.
     let recovery_token = token_coding::encode_token(user_recovery_id, num_token, jwt_secret, app_recovery_duration).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
-        ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
+        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
     // Prepare a letter confirming this recovery.

@@ -15,7 +15,6 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
-    profile_err as p_err,
     profile_models::{self, LoginProfileDto, LoginProfileResponseDto, ProfileTokensDto, TokenDto},
     profile_orm::ProfileOrm,
 };
@@ -73,7 +72,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
         (status = 409, description = "Error when comparing password hashes.", body = ApiError,
             example = json!(ApiError::create(409, err::MSG_INVALID_HASH, "Parameter is empty."))),
         ( status = 422, description = "Token encoding error.", body = ApiError,
-            example = json!(ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
+            example = json!(ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
         (status = 506, description = "Blocking error.", body = ApiError, 
             example = json!(ApiError::new(506, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
@@ -140,14 +139,14 @@ pub async fn login(
 
     // Packing two parameters (user_id, num_token) into access_token.
     let access_token = token_coding::encode_token(profile_pwd.user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
-        ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
+        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
     // Packing two parameters (user_id, num_token) into refresh_token.
     let refresh_token = token_coding::encode_token(profile_pwd.user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
-        ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
+        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
     let opt_session = web::block(move || {
@@ -286,7 +285,7 @@ pub async fn logout(authenticated: Authenticated, session_orm: web::Data<Session
         (status = 406, description = "Error session not found.", body = ApiError,
             example = json!(ApiError::create(406, err::MSG_SESSION_NOT_FOUND, "user_id: 1"))),
         (status = 422, description = "Token encoding error.", body = ApiError,
-            example = json!(ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
+            example = json!(ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, "InvalidKeyFormat"))),
         (status = 506, description = "Blocking error.", body = ApiError, 
             example = json!(ApiError::new(506, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
@@ -352,14 +351,14 @@ pub async fn update_token(
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let access_token = token_coding::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_access).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
-        ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
+        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
     // Pack two parameters (user.id, num_token) into a access_token.
     let refresh_token = token_coding::encode_token(user_id, num_token, jwt_secret, config_jwt.jwt_refresh).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
-        ApiError::create(422, p_err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
+        error!("{}-{}; {}", code_to_str(StatusCode::UNPROCESSABLE_ENTITY), err::MSG_JSON_WEB_TOKEN_ENCODE, &e);
+        ApiError::create(422, err::MSG_JSON_WEB_TOKEN_ENCODE, &e) // 422
     })?;
 
     let opt_session = web::block(move || {

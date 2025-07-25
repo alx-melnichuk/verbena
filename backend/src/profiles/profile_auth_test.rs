@@ -18,7 +18,6 @@ mod tests {
 
     use crate::profiles::{
         profile_auth_controller::{login, logout, update_token},
-        profile_err as p_err,
         profile_models::{self, LoginProfileDto, LoginProfileResponseDto, Profile, ProfileDto, ProfileTest, TokenDto},
         profile_orm::tests::ProfileOrmApp,
     };
@@ -436,7 +435,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, code_to_str(StatusCode::UNPROCESSABLE_ENTITY));
-        assert_eq!(app_err.message, format!("{}; InvalidKeyFormat", p_err::MSG_JSON_WEB_TOKEN_ENCODE));
+        assert_eq!(app_err.message, format!("{}; InvalidKeyFormat", err::MSG_JSON_WEB_TOKEN_ENCODE));
     }
     #[actix_web::test]
     async fn test_login_if_session_not_exist() {

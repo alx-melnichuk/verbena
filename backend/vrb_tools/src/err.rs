@@ -51,6 +51,8 @@ pub const MSG_NICKNAME_ALREADY_USE: &str = "nickname_already_use";
 pub const MSG_THERE_WAS_ALREADY_JOIN_TO_ROOM: &str = "was_already_join_to_room";
 // 409 Conflict - This stream is not active
 pub const MSG_STREAM_NOT_ACTIVE: &str = "stream_not_active";
+// 409 Conflict - Error encoding web token.
+pub const MSG_JSON_WEB_TOKEN_ENCODE: &str = "json_web_token_encode";
 
 // 413 Content too large - File size exceeds max.
 pub const MSG_INVALID_FILE_SIZE: &str = "invalid_file_size";
