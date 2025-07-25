@@ -34,6 +34,9 @@ backend/vrb_tools/Cargo.lock
 backend/vrb_dbase/target/
 backend/vrb_dbase/Cargo.lock
 
+# The result of building the library is "vrb-profiles".
+backend/vrb_profiles/target/
+backend/vrb_profiles/Cargo.lock
 
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
