@@ -1516,8 +1516,8 @@ pub mod tests {
     use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{api_error::ApiError, token_coding, token_data::BEARER};
 
-    use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp};
-    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp};
+    use crate::profiles::{config_jwt, profile_models::Profile, profile_orm::tests::ProfileOrmApp};
+    use crate::sessions::{session_models::Session, session_orm::tests::SessionOrmApp};
     use crate::streams::{
         config_strm,
         stream_models::{Stream, StreamInfoDto},

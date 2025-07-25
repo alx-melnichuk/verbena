@@ -575,8 +575,10 @@ pub mod tests {
         chat_message_models::{BlockedUser, ChatMessage, ChatMessageLog},
         chat_message_orm::tests::{ChatMessageOrmApp, ChatMsgTest, UserMini},
     };
-    use crate::profiles::{profile_models::Profile, profile_orm::tests::ProfileOrmApp, profile_orm::tests::PROFILE_USER_ID as PROFILE_ID};
-    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp};
+    use crate::profiles::{
+        config_jwt, profile_models::Profile, profile_orm::tests::ProfileOrmApp, profile_orm::tests::PROFILE_USER_ID as PROFILE_ID,
+    };
+    use crate::sessions::{session_models::Session, session_orm::tests::SessionOrmApp};
 
     pub const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
     pub const MSG_JSON_MISSING_FIELD: &str = "Json deserialize error: missing field";

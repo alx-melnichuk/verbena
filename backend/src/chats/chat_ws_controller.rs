@@ -11,7 +11,7 @@ use crate::chats::{chat_ws_assistant::ChatWsAssistant, chat_ws_session::ChatWsSe
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
-use crate::sessions::config_jwt;
+use crate::profiles::config_jwt;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(all(test, feature = "mockdata"))]

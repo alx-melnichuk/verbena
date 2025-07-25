@@ -19,8 +19,7 @@ use crate::chats::{
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
-use crate::profiles::{profile_models::Profile /*profile_orm::ProfileOrm*/};
-use crate::sessions::config_jwt;
+use crate::profiles::{config_jwt, profile_models::Profile /*profile_orm::ProfileOrm*/};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(all(test, feature = "mockdata"))]

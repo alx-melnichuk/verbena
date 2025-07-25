@@ -14,7 +14,7 @@ mod tests {
         chat_ws_controller::get_ws_chat,
         chat_ws_session::{get_err400, get_err401, get_err404, get_err406, get_err409},
     };
-    use crate::sessions::config_jwt;
+    use crate::profiles::config_jwt;
 
     const URL_WS: &str = "/ws";
 

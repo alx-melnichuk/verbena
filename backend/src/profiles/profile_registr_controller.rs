@@ -21,6 +21,7 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
+    config_jwt,
     profile_checks,
     profile_models::{
         self, ClearForExpiredResponseDto, Profile, ProfileDto, RecoveryDataDto, RecoveryProfileDto, RecoveryProfileResponseDto,
@@ -28,7 +29,6 @@ use crate::profiles::{
     },
     profile_orm::ProfileOrm,
 };
-use crate::sessions::config_jwt;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::users::user_recovery_orm::impls::UserRecoveryOrmApp;
 #[cfg(all(test, feature = "mockdata"))]

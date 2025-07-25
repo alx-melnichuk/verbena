@@ -12,12 +12,11 @@ use vrb_tools::{
     err, token_coding, token_data,
 };
 
-use crate::profiles::profile_models::Profile;
+use crate::profiles::{config_jwt, profile_models::Profile};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
-use crate::sessions::config_jwt;
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::sessions::session_orm::impls::SessionOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -192,7 +191,8 @@ mod tests {
     use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{api_error::code_to_str, token_coding, token_data};
 
-    use crate::sessions::{config_jwt, session_models::Session, session_orm::tests::SessionOrmApp};
+    use crate::profiles::config_jwt;
+    use crate::sessions::{session_models::Session, session_orm::tests::SessionOrmApp};
     use crate::utils::token_verification::MSG_UNACCEPTABLE_TOKEN_ID;
 
     use super::*;

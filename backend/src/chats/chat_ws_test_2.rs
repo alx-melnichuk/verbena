@@ -16,7 +16,7 @@ mod tests {
         chat_ws_controller::get_ws_chat,
         chat_ws_session::{get_err400, get_err403, get_err404, get_err406},
     };
-    use crate::sessions::config_jwt;
+    use crate::profiles::config_jwt;
 
     const URL_WS: &str = "/ws";
     const ERROR_PROCESSING_WS_FRAME_TEXT: &str = "Error processing websocket message Frame::Text(Bytes)";
