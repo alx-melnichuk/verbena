@@ -164,8 +164,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(uniqueness_check)
                 .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(data_registr(false)))
-            ).await;
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_uniqueness")
             .to_request();
@@ -189,8 +188,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(uniqueness_check)
                 .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(data_registr(false)))
-            ).await;
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_uniqueness?nickname=")
             .to_request();
@@ -214,8 +212,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(uniqueness_check)
                 .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(data_registr(false)))
-            ).await;
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_uniqueness?email=")
             .to_request();
@@ -240,8 +237,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(uniqueness_check)
                 .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(data_registr(false)))
-            ).await;
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_uniqueness?nickname={}", nickname))
             .to_request();
@@ -262,8 +258,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(uniqueness_check)
                 .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(data_registr(false)))
-            ).await;
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_uniqueness?email={}", email))
             .to_request();
@@ -285,8 +280,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(uniqueness_check)
                 .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(registr))
-            ).await;
+                .configure(config_registr(registr))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_uniqueness?nickname={}", nickname))
             .to_request();
@@ -308,8 +302,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(uniqueness_check)
                 .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(registr))
-            ).await;
+                .configure(config_registr(registr))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_uniqueness?email={}", email))
             .to_request();
@@ -330,8 +323,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(uniqueness_check)
                 .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(data_registr(false)))
-            ).await;
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_uniqueness?nickname={}", nickname))
             .to_request();
@@ -352,8 +344,7 @@ mod tests {
         let app = test::init_service(
             App::new().service(uniqueness_check)
                 .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(data_registr(false)))
-            ).await;
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_uniqueness?email={}", email))
             .to_request();
