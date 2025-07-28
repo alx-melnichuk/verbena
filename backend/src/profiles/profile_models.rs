@@ -495,7 +495,6 @@ impl Validator for NewPasswordProfileDto {
     }
 }
 
-
 // ** Model Dto: "NewPasswordProfileDto". Used: in "profile_controller::delete_profile()" **
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
