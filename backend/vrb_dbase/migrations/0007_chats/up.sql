@@ -693,3 +693,44 @@ CALL add_blocked_users_test_data();
 DROP PROCEDURE IF EXISTS add_blocked_users_test_data;
 
 -- **
+
+/* Create a stored function that will filter "stream" entities by the specified parameters. */
+CREATE OR REPLACE FUNCTION filter_streams(
+  IN _id INTEGER,
+  IN _user_id INTEGER,
+  IN _is_logo BOOLEAN,
+  IN _is_live BOOLEAN,
+  OUT id INTEGER,
+  OUT user_id INTEGER,
+  OUT title VARCHAR,
+  OUT descript TEXT,
+  OUT logo VARCHAR,
+  OUT starttime TIMESTAMP WITH TIME ZONE,
+  OUT live BOOLEAN,
+  OUT state stream_state,
+  OUT started TIMESTAMP WITH TIME ZONE,
+  OUT stopped TIMESTAMP WITH TIME ZONE,
+  OUT source VARCHAR,
+  OUT created_at TIMESTAMP WITH TIME ZONE,
+  OUT updated_at TIMESTAMP WITH TIME ZONE
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF _id IS NULL AND _user_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY 
+    SELECT s.id, s.user_id, s.title, s.descript, s.logo, s.starttime, s.live, s.state,
+      s.started, s.stopped, s.source, s.created_at, s.updated_at
+    FROM streams s 
+    WHERE s.id = COALESCE(_id, s.id)
+      AND s.user_id = COALESCE(_user_id, s.user_id)
+      AND CASE WHEN _is_logo = true THEN LENGTH(COALESCE(s.logo, '')) > 0
+          ELSE CASE WHEN _is_logo = false THEN LENGTH(COALESCE(s.logo, '')) = 0 ELSE true END
+          END
+      AND s.live = COALESCE(_is_live, s.live)
+    ORDER BY s.id ASC;
+
+END;
+$$;

@@ -1,5 +1,8 @@
 -- Removing entities: "blocked_users", "chat_messages", chat_message_logs.
 
+/* Remove  stored function that will filter "stream" entities by the specified parameters. */
+DROP FUNCTION IF EXISTS filter_streams;
+
 -- **
 
 -- Removing entities: "blocked_users".
@@ -62,6 +65,7 @@ DROP TABLE IF EXISTS chat_message_logs;
 -- **
 
 /* Remove the indexes on the "chat_messages" table. */
+DROP INDEX IF EXISTS idx_chat_messages_date_created;
 DROP INDEX IF EXISTS idx_chat_messages_user_id;
 DROP INDEX IF EXISTS idx_chat_messages_stream_id;
 
