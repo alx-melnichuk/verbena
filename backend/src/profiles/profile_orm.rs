@@ -276,9 +276,7 @@ pub mod impls {
                 .bind::<sql_types::Nullable<sql_types::Integer>, _>(user_id); // $1
 
             // Run a query using Diesel to find a list of users based on the given parameters.
-            let stream_logos: Vec<StreamLogo> = query
-                .load(&mut conn)
-                .map_err(|e| format!("filter_streams: {}", e.to_string()))?;
+            let stream_logos: Vec<StreamLogo> = query.load(&mut conn).map_err(|e| format!("filter_streams: {}", e.to_string()))?;
 
             let result = stream_logos.into_iter().map(|v| v.logo.clone()).collect();
 
@@ -287,7 +285,6 @@ pub mod impls {
             }
             Ok(result)
         }
-
     }
 }
 
@@ -296,10 +293,56 @@ pub mod tests {
 
     use chrono::Utc;
     use vrb_dbase::db_enums::UserRole;
+    use vrb_tools::consts;
 
     use super::*;
 
     pub const PROFILE_USER_ID: i32 = 1100;
+
+    pub struct ProfileOrmTest {}
+
+    impl ProfileOrmTest {
+        pub fn user_ids() -> Vec<i32> {
+            vec![
+                PROFILE_USER_ID + 0,
+                PROFILE_USER_ID + 1,
+                PROFILE_USER_ID + 2,
+                PROFILE_USER_ID + 3, // Blocked for everyone else.
+            ]
+        }
+        pub fn user_names() -> Vec<String> {
+            vec![
+                "oliver_taylor".to_string(),
+                "robert_brown".to_string(),
+                "mary_williams".to_string(),
+                "ava_wilson".to_string(),
+            ]
+        }
+        pub fn stream_ids() -> Vec<i32> {
+            vec![
+                1, // Owner user idx 0 (live: true)  1100 oliver_taylor
+                2, // Owner user idx 1 (live: true)  1101 robert_brown
+                3, // Owner user idx 2 (live: false) 1102 mary_williams
+                4, // Owner user idx 3  blocked      1103 ava_wilson
+            ]
+        }
+        pub fn stream_logo_alias(user_id: i32) -> Option<String> {
+            let idx = user_id - PROFILE_USER_ID;
+            if -1 < idx && idx < 4 {
+                Some(format!("{}/file_logo_{}.png", consts::ALIAS_LOGO_FILES_DIR, idx))
+            } else {
+                None
+            }
+        }
+        pub fn stream_logo_path(user_id: i32) -> Option<String> {
+            let idx = user_id - PROFILE_USER_ID;
+            if -1 < idx && idx < 4 {
+                Some(format!("{}/file_logo_{}.png", consts::LOGO_FILES_DIR, idx))
+            } else {
+                None
+            }
+        }
+    }
 
     #[derive(Debug, Clone)]
     pub struct ProfileOrmApp {
@@ -310,12 +353,18 @@ pub mod tests {
     impl ProfileOrmApp {
         /// Create a new instance.
         pub fn new() -> Self {
-            ProfileOrmApp { profile_vec: Vec::new(), session_vec: Vec::new() }
+            ProfileOrmApp {
+                profile_vec: Vec::new(),
+                session_vec: Vec::new(),
+            }
         }
         /// Create a new instance with the specified profile list.
         pub fn create(profile_list: &[Profile]) -> Self {
             let profile_vec: Vec<Profile> = Self::new_profiles(profile_list);
-            ProfileOrmApp { profile_vec, session_vec: Vec::new() }
+            ProfileOrmApp {
+                profile_vec,
+                session_vec: Vec::new(),
+            }
         }
         /// Create a new instance of the Profile entity.
         pub fn new_profile(user_id: i32, nickname: &str, email: &str, role: UserRole) -> Profile {
@@ -360,7 +409,6 @@ pub mod tests {
             let session_vec: Vec<Session> = Self::new_sessions(session_list);
             ProfileOrmApp { profile_vec, session_vec }
         }
-
     }
 
     impl ProfileOrm for ProfileOrmApp {
@@ -502,11 +550,13 @@ pub mod tests {
         }
 
         /// Filter for the list of stream logos by user ID.
-        fn filter_stream_logos(&self, _user_id: i32) -> Result<Vec<String>, String> {
-            let result: Vec<String> = vec![];
-
+        fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String> {
+            let mut result: Vec<String> = vec![];
+            let opt_stream_logo = ProfileOrmTest::stream_logo_alias(user_id);
+            if opt_stream_logo.is_some() {
+                result.push(opt_stream_logo.unwrap().clone());
+            }
             Ok(result)
         }
-
     }
 }

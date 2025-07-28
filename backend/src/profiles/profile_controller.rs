@@ -1,4 +1,4 @@
-use std::{borrow::Cow, ops::Deref, path};
+use std::{borrow::Cow, env, ops::Deref, path};
 
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, get, http::StatusCode, put, web, HttpResponse};
@@ -11,7 +11,7 @@ use vrb_dbase::db_enums::UserRole;
 use vrb_tools::{
     api_error::{code_to_str, ApiError},
     cdis::coding,
-    err, hash_tools,
+    consts, err, hash_tools,
     loading::dynamic_image,
     parser,
     validators::{self, msg_validation, ValidationChecks, Validator},
@@ -32,19 +32,12 @@ use crate::profiles::{
     profile_orm::ProfileOrm,
 };
 #[cfg(not(all(test, feature = "mockdata")))]
-use crate::streams::stream_orm::impls::StreamOrmApp;
-#[cfg(all(test, feature = "mockdata"))]
-use crate::streams::stream_orm::tests::StreamOrmApp;
-use crate::streams::{
-    config_strm,
-    stream_extra::{get_stream_logo_files, remove_stream_logo_files},
-};
-#[cfg(not(all(test, feature = "mockdata")))]
 use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
 
-pub const ALIAS_AVATAR_FILES_DIR: &str = "/avatar";
+pub const ALIAS_AVATAR_FILES_DIR: &str = consts::ALIAS_AVATAR_FILES_DIR;
+pub const ALIAS_LOGO_FILES_DIR2: &str = consts::ALIAS_LOGO_FILES_DIR;
 
 pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     |config: &mut web::ServiceConfig| {
@@ -68,6 +61,7 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
     }
 }
 
+/** Delete a file if its path starts with the specified alias. */
 fn remove_image_file(path_file_img: &str, alias_file_img: &str, img_file_dir: &str, err_msg: &str) {
     // If the image file name starts with the specified alias, then delete the file.
     if path_file_img.len() > 0 && (alias_file_img.len() == 0 || path_file_img.starts_with(alias_file_img)) {
@@ -85,6 +79,22 @@ fn remove_file_and_log(file_name: &str, msg: &str) {
 }
 fn get_file_name(user_id: i32, date_time: DateTime<Utc>) -> String {
     format!("{}_{}", user_id, coding::encode(date_time, 1))
+}
+fn get_logo_files_dir() -> String {
+    // Directory for storing logo files.
+    let logo_files_dir = env::var("STRM_LOGO_FILES_DIR").unwrap_or(consts::LOGO_FILES_DIR.to_string());
+    let path_dir: path::PathBuf = path::PathBuf::from(logo_files_dir).iter().collect();
+    path_dir.to_str().unwrap().to_string()
+}
+/** Delete all specified logo files in the given list. */
+fn remove_stream_logo_files(path_file_img_list: Vec<String>, img_file_dir: String) -> usize {
+    let result = path_file_img_list.len();
+    // Remove files from the resulting list of stream logo files.
+    for path_file_img in path_file_img_list {
+        // Delete a file if its path starts with the specified alias.
+        remove_image_file(&path_file_img, ALIAS_LOGO_FILES_DIR2, &img_file_dir, &"remove_stream_logo_files()");
+    }
+    result
 }
 // Convert the file to another mime type.
 #[rustfmt::skip]
@@ -862,9 +872,7 @@ pub async fn put_profile_new_password(
 #[delete("/api/profiles/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::admin_role())")]
 pub async fn delete_profile(
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
-    config_strm: web::Data<config_strm::ConfigStrm>,
     profile_orm: web::Data<ProfileOrmApp>,
-    stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get data from request.
@@ -875,9 +883,22 @@ pub async fn delete_profile(
         ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
 
+    let profile_orm2 = profile_orm.clone();
     // Get a list of logo file names for streams of the user with the specified user_id.
-    let path_file_img_list: Vec<String> = get_stream_logo_files(stream_orm, id).await?;
-
+    let path_file_img_list = web::block(move || {
+        // Filter for the list of stream logos by user ID.
+        profile_orm2.filter_stream_logos(id)
+            .map_err(|e| {
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
+            })
+    })
+    .await
+    .map_err(|e| {
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })??;
+    
     let opt_profile = web::block(move || {
         // Delete an entity (profile).
         let res_profile = profile_orm.delete_profile(id)
@@ -900,7 +921,7 @@ pub async fn delete_profile(
         // If the image file name starts with the specified alias, then delete the file.
         remove_image_file(&path_file_img, ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"delete_profile()");
         // Delete all specified logo files in the given list.
-        let _ = remove_stream_logo_files(path_file_img_list, config_strm.get_ref().clone());
+        let _ = remove_stream_logo_files(path_file_img_list, get_logo_files_dir());
 
         Ok(HttpResponse::Ok().json(ProfileDto::from(profile))) // 200
     } else {
@@ -952,16 +973,27 @@ pub async fn delete_profile(
 pub async fn delete_profile_current(
     authenticated: Authenticated,
     config_prfl: web::Data<config_prfl::ConfigPrfl>,
-    config_strm: web::Data<config_strm::ConfigStrm>,
     profile_orm: web::Data<ProfileOrmApp>,
-    stream_orm: web::Data<StreamOrmApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
     let profile = authenticated.deref();
     let id = profile.user_id;
     
+    let profile_orm2 = profile_orm.clone();
     // Get a list of logo file names for streams of the user with the specified user_id.
-    let path_file_img_list: Vec<String> = get_stream_logo_files(stream_orm, id).await?;
+    let path_file_img_list = web::block(move || {
+        // Filter for the list of stream logos by user ID.
+        profile_orm2.filter_stream_logos(id)
+            .map_err(|e| {
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
+            })
+    })
+    .await
+    .map_err(|e| {
+        error!("{}-{}; {}", code_to_str(StatusCode::VARIANT_ALSO_NEGOTIATES), err::MSG_BLOCKING, &e.to_string());
+        ApiError::create(506, err::MSG_BLOCKING, &e.to_string()) // 506
+    })??;
 
     let opt_profile = web::block(move || {
         // Delete an entity (profile).
@@ -985,7 +1017,7 @@ pub async fn delete_profile_current(
         // If the image file name starts with the specified alias, then delete the file.
         remove_image_file(&path_file_img, ALIAS_AVATAR_FILES_DIR, &config_prfl.prfl_avatar_files_dir, &"delete_profile_current()");
         // Delete all specified logo files in the given list.
-        let _ = remove_stream_logo_files(path_file_img_list, config_strm.get_ref().clone());
+        let _ = remove_stream_logo_files(path_file_img_list, get_logo_files_dir());
 
         Ok(HttpResponse::Ok().json(ProfileDto::from(profile))) // 200
     } else {
@@ -1005,7 +1037,7 @@ pub mod tests {
     use crate::profiles::{
         config_jwt, config_prfl,
         profile_models::{Profile, Session},
-        profile_orm::tests::ProfileOrmApp,
+        profile_orm::tests::{ProfileOrmApp, ProfileOrmTest},
     };
     use crate::sessions::session_orm::tests::SessionOrmApp;
     use crate::streams::{
@@ -1021,9 +1053,10 @@ pub mod tests {
     pub const MSG_CONTENT_TYPE_ERROR: &str = "Could not find Content-Type header";
 
     pub fn create_profile(role: u8, opt_password: Option<&str>) -> Profile {
-        let nickname = "Oliver_Taylor".to_string();
+        let user_names = ProfileOrmTest::user_names();
+        let nickname = user_names.get(0).unwrap(); // "oliver_taylor", id: 1100
         let role = if role == ADMIN { UserRole::Admin } else { UserRole::User };
-        let mut profile = ProfileOrmApp::new_profile(1, &nickname, &format!("{}@gmail.com", &nickname), role);
+        let mut profile = ProfileOrmApp::new_profile(1, nickname, &format!("{}@gmail.com", nickname), role);
         if let Some(password) = opt_password {
             profile.password = hash_tools::encode_hash(password.to_string()).unwrap();
             // hashed
@@ -1127,7 +1160,6 @@ pub mod tests {
                 .app_data(web::Data::clone(&data_profile_orm));
         }
     }
-    
     fn create_user_registr() -> UserRegistr {
         let now = Utc::now();
         let final_date: DateTime<Utc> = now + Duration::minutes(20);
@@ -1143,8 +1175,7 @@ pub mod tests {
     pub fn config_registr(registr: Vec<UserRegistr>) -> impl FnOnce(&mut web::ServiceConfig) {
         move |config: &mut web::ServiceConfig| {
             let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&registr));
-            config
-                .app_data(web::Data::clone(&data_user_registr_orm));
+            config.app_data(web::Data::clone(&data_user_registr_orm));
         }
     }
 
