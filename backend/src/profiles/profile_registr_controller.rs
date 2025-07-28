@@ -2,7 +2,7 @@ use actix_web::{get, http::StatusCode, post, put, web, HttpResponse};
 use chrono::{Duration, Utc};
 use log::error;
 use utoipa;
-use vrb_dbase::db_enums::UserRole; 
+use vrb_dbase::db_enums::UserRole;
 #[cfg(not(all(test, feature = "mockdata")))]
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(all(test, feature = "mockdata"))]
@@ -21,8 +21,7 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
-    config_jwt,
-    profile_checks,
+    config_jwt, profile_checks,
     profile_models::{
         self, ClearForExpiredResponseDto, Profile, ProfileDto, RecoveryDataDto, RecoveryProfileDto, RecoveryProfileResponseDto,
         RegistrProfileDto, RegistrProfileResponseDto, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF,
@@ -37,11 +36,7 @@ use crate::users::user_recovery_orm::tests::UserRecoveryOrmApp;
 use crate::users::user_registr_orm::impls::UserRegistrOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
-use crate::users::{
-    user_models,
-    user_recovery_orm::UserRecoveryOrm,
-    user_registr_orm::UserRegistrOrm,
-};
+use crate::users::{user_models, user_recovery_orm::UserRecoveryOrm, user_registr_orm::UserRegistrOrm};
 
 // 510 Not Extended - Error when sending email.
 pub const MSG_ERROR_SENDING_EMAIL: &str = "error_sending_email";
