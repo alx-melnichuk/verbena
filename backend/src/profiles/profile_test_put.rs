@@ -21,10 +21,10 @@ pub mod tests {
     use crate::profiles::{
         config_prfl,
         profile_controller::{
-            delete_profile, delete_profile_current, put_profile, put_profile_new_password,
+            put_profile, put_profile_new_password,
             tests::{
-                check_app_err, configure_profile, create_profile, get_cfg_data, header_auth, save_empty_file, save_file_png, ADMIN,
-                MSG_CONTENT_TYPE_ERROR, MSG_FAILED_DESER, MSG_MULTIPART_STREAM_INCOMPLETE, USER,
+                check_app_err, config_profile, config_registr, create_profile, data_profile, data_registr, header_auth, save_empty_file,
+                save_file_png, MSG_CONTENT_TYPE_ERROR, MSG_FAILED_DESER, MSG_MULTIPART_STREAM_INCOMPLETE, USER,
             },
             ALIAS_AVATAR_FILES_DIR,
         },
@@ -35,10 +35,12 @@ pub mod tests {
 
     #[actix_web::test]
     async fn test_put_profile_no_form() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -56,10 +58,12 @@ pub mod tests {
     async fn test_put_profile_empty_form() {
         let (header, body) = MultiPartFormDataBuilder::new().build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -83,10 +87,12 @@ pub mod tests {
             .with_file(path_name1_file.clone(), "avatarfile1", "image/png", name1_file)
             .build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -112,10 +118,12 @@ pub mod tests {
     async fn test_put_profile_nickname_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", ProfileTest::nickname_min()).build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -134,10 +142,12 @@ pub mod tests {
     async fn test_put_profile_nickname_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", ProfileTest::nickname_max()).build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -158,10 +168,12 @@ pub mod tests {
             .with_text("nickname", ProfileTest::nickname_wrong())
             .build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -179,10 +191,12 @@ pub mod tests {
     async fn test_put_profile_email_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileTest::email_min()).build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -201,10 +215,12 @@ pub mod tests {
     async fn test_put_profile_email_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileTest::email_max()).build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -223,10 +239,12 @@ pub mod tests {
     async fn test_put_profile_email_wrong() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileTest::email_wrong()).build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -245,10 +263,12 @@ pub mod tests {
     async fn test_put_profile_role_wrong() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("role", ProfileTest::role_wrong()).build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -267,10 +287,12 @@ pub mod tests {
     async fn test_put_profile_descript_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileTest::descript_min()).build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -289,10 +311,12 @@ pub mod tests {
     async fn test_put_profile_descript_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileTest::descript_max()).build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -311,10 +335,12 @@ pub mod tests {
     async fn test_put_profile_theme_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("theme", ProfileTest::theme_min()).build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -333,10 +359,12 @@ pub mod tests {
     async fn test_put_profile_theme_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("theme", ProfileTest::theme_max()).build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -355,10 +383,12 @@ pub mod tests {
     async fn test_put_profile_locale_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("locale", ProfileTest::locale_min()).build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -377,10 +407,12 @@ pub mod tests {
     async fn test_put_profile_locale_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("locale", ProfileTest::locale_max()).build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -398,12 +430,14 @@ pub mod tests {
 
     #[actix_web::test]
     async fn test_put_profile_if_nickname_exists_in_users() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-        let nickname1 = data_c.0.get(0).unwrap().nickname.clone();
+        let (cfg_c, data_v, token) = data_profile(USER);
+        let nickname1 = data_v.0.get(0).unwrap().nickname.clone();
         let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", nickname1).build();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -420,12 +454,14 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_if_email_exists_in_users() {
-        let (cfg_c, data_c, token) = get_cfg_data(true, USER);
-        let email1 = data_c.0.get(0).unwrap().email.clone();
+        let (cfg_c, data_v, token) = data_profile(USER);
+        let email1 = data_v.0.get(0).unwrap().email.clone();
         let (header, body) = MultiPartFormDataBuilder::new().with_text("email", email1).build();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(true)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -442,12 +478,15 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_if_nickname_exists_in_registr() {
-        let (cfg_c, data_c, token) = get_cfg_data(true, USER);
-        let nickname1 = data_c.2.get(0).unwrap().nickname.clone();
+        let (cfg_c, data_v, token) = data_profile(USER);
+        let registr = data_registr(true);
+        let nickname1 = registr.get(0).unwrap().nickname.clone();
         let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", nickname1).build();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(registr))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -464,12 +503,15 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_if_email_exists_in_registr() {
-        let (cfg_c, data_c, token) = get_cfg_data(true, USER);
-        let email1 = data_c.2.get(0).unwrap().email.clone();
+        let (cfg_c, data_v, token) = data_profile(USER);
+        let registr = data_registr(true);
+        let email1 = registr.get(0).unwrap().email.clone();
         let (header, body) = MultiPartFormDataBuilder::new().with_text("email", email1).build();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(registr))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -494,14 +536,16 @@ pub mod tests {
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
 
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (mut cfg_c, data_v, token) = data_profile(USER);
         let mut config_prfl = config_prfl::get_test_config();
         let prfl_avatar_max_size = 160;
         config_prfl.prfl_avatar_max_size = prfl_avatar_max_size;
-        let cfg_c = (cfg_c.0, config_prfl, cfg_c.2);
+        cfg_c.1 = config_prfl;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -529,10 +573,12 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/bmp", name1_file)
             .build();
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -553,9 +599,9 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_valid_data_without_file() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
 
-        let profile = data_c.0.get(0).unwrap().clone();
+        let profile = data_v.0.get(0).unwrap().clone();
         let nickname_s = format!("{}_a", profile.nickname.clone());
         let email_s = format!("{}_a", profile.email.clone());
         let user_role = UserRole::Admin;
@@ -572,7 +618,9 @@ pub mod tests {
 
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -608,12 +656,14 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-        let profile1_id = data_c.0.get(0).unwrap().user_id;
+        let (cfg_c, data_v, token) = data_profile(USER);
+        let profile1_id = data_v.0.get(0).unwrap().user_id;
         let prfl_avatar_files_dir = cfg_c.1.prfl_avatar_files_dir.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -656,19 +706,20 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-        let profile1_id = data_c.0.get(0).unwrap().user_id;
-        let mut config_prfl = cfg_c.1.clone();
+        let (mut cfg_c, data_v, token) = data_profile(USER);
+        let profile1_id = data_v.0.get(0).unwrap().user_id;
         let file_ext = "jpeg".to_string();
+        let mut config_prfl = cfg_c.1;
         config_prfl.prfl_avatar_ext = Some(file_ext.clone());
         config_prfl.prfl_avatar_max_width = 18;
         config_prfl.prfl_avatar_max_height = 18;
         let prfl_avatar_files_dir = config_prfl.prfl_avatar_files_dir.clone();
-
-        let cfg_c = (cfg_c.0, config_prfl, cfg_c.2);
+        cfg_c.1 = config_prfl;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -722,15 +773,15 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-
-        let mut profile1 = data_c.0.get(0).unwrap().clone();
-        let profile1_id = profile1.user_id;
+        let (cfg_c, mut data_v, token) = data_profile(USER);
+        let profile1 = data_v.0.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias.clone());
-        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
+        let profile1_id = profile1.user_id;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -781,13 +832,14 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("descript", "descript1".to_string())
             .build();
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-        let mut profile1 = data_c.0.get(0).unwrap().clone();
+        let (cfg_c, mut data_v, token) = data_profile(USER);
+        let profile1 = data_v.0.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias.clone());
-        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -824,14 +876,14 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-
-        let mut profile1 = data_c.0.get(0).unwrap().clone();
+        let (cfg_c, mut data_v, token) = data_profile(USER);
+        let profile1 = data_v.0.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias.clone());
-        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -859,10 +911,12 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
             .insert_header(header_auth(&token))
@@ -881,10 +935,12 @@ pub mod tests {
 
     #[actix_web::test]
     async fn test_put_profile_new_password_no_data() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile_new_password)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(header_auth(&token))
@@ -901,10 +957,12 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_empty_json_object() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile_new_password)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(header_auth(&token))
@@ -922,10 +980,12 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_empty() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile_new_password)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(header_auth(&token))
@@ -945,10 +1005,12 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_min() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile_new_password)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(header_auth(&token))
@@ -968,10 +1030,12 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_max() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile_new_password)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(header_auth(&token))
@@ -991,10 +1055,12 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_wrong() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
+        let (cfg_c, data_v, token) = data_profile(USER);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile_new_password)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(header_auth(&token))
@@ -1016,12 +1082,14 @@ pub mod tests {
     async fn test_put_profile_new_password_invalid_dto_new_password_empty() {
         let old_password = "passwdP1C1".to_string();
         let mut profile1: Profile = create_profile(USER, Some(&old_password));
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-        profile1.user_id = data_c.0.get(0).unwrap().user_id;
-        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
+        let (cfg_c, mut data_v, token) = data_profile(USER);
+        profile1.user_id = data_v.0.get(0).unwrap().user_id;
+        data_v.0 = vec![profile1];
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile_new_password)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(header_auth(&token))
@@ -1043,12 +1111,14 @@ pub mod tests {
     async fn test_put_profile_new_password_invalid_dto_new_password_min() {
         let old_password = "passwdP1C1".to_string();
         let mut profile1: Profile = create_profile(USER, Some(&old_password));
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-        profile1.user_id = data_c.0.get(0).unwrap().user_id;
-        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
+        let (cfg_c, mut data_v, token) = data_profile(USER);
+        profile1.user_id = data_v.0.get(0).unwrap().user_id;
+        data_v.0 = vec![profile1];
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile_new_password)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(header_auth(&token))
@@ -1070,12 +1140,14 @@ pub mod tests {
     async fn test_put_profile_new_password_invalid_dto_new_password_max() {
         let old_password = "passwdP1C1".to_string();
         let mut profile1: Profile = create_profile(USER, Some(&old_password));
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-        profile1.user_id = data_c.0.get(0).unwrap().user_id;
-        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
+        let (cfg_c, mut data_v, token) = data_profile(USER);
+        profile1.user_id = data_v.0.get(0).unwrap().user_id;
+        data_v.0 = vec![profile1];
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile_new_password)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(header_auth(&token))
@@ -1097,12 +1169,14 @@ pub mod tests {
     async fn test_put_profile_new_password_invalid_dto_new_password_wrong() {
         let old_password = "passwdP1C1".to_string();
         let mut profile1: Profile = create_profile(USER, Some(&old_password));
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-        profile1.user_id = data_c.0.get(0).unwrap().user_id;
-        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
+        let (cfg_c, mut data_v, token) = data_profile(USER);
+        profile1.user_id = data_v.0.get(0).unwrap().user_id;
+        data_v.0 = vec![profile1];
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile_new_password)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(header_auth(&token))
@@ -1124,12 +1198,14 @@ pub mod tests {
     async fn test_put_profile_new_password_invalid_dto_new_password_equal_old_value() {
         let old_password = "passwdP1C1".to_string();
         let mut profile1: Profile = create_profile(USER, Some(&old_password));
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-        profile1.user_id = data_c.0.get(0).unwrap().user_id;
-        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
+        let (cfg_c, mut data_v, token) = data_profile(USER);
+        profile1.user_id = data_v.0.get(0).unwrap().user_id;
+        data_v.0 = vec![profile1];
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile_new_password)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(header_auth(&token))
@@ -1152,13 +1228,14 @@ pub mod tests {
         let old_password = "passwdP1C1".to_string();
         let mut profile1: Profile = create_profile(USER, None);
         profile1.password = "invali_hash_password".to_string();
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-        profile1.user_id = data_c.0.get(0).unwrap().user_id;
-
-        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
+        let (cfg_c, mut data_v, token) = data_profile(USER);
+        profile1.user_id = data_v.0.get(0).unwrap().user_id;
+        data_v.0 = vec![profile1];
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile_new_password)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(header_auth(&token))
@@ -1180,12 +1257,14 @@ pub mod tests {
     async fn test_put_profile_new_password_invalid_password() {
         let old_password = "passwdP1C1".to_string();
         let mut profile1: Profile = create_profile(USER, Some(&old_password));
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-        profile1.user_id = data_c.0.get(0).unwrap().user_id;
-        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
+        let (cfg_c, mut data_v, token) = data_profile(USER);
+        profile1.user_id = data_v.0.get(0).unwrap().user_id;
+        data_v.0 = vec![profile1];
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile_new_password)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(header_auth(&token))
@@ -1207,14 +1286,15 @@ pub mod tests {
     async fn test_put_profile_new_password_valid_data() {
         let old_password = "passwdP1C1".to_string();
         let mut profile1: Profile = create_profile(USER, Some(&old_password));
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-        profile1.user_id = data_c.0.get(0).unwrap().user_id;
+        let (cfg_c, mut data_v, token) = data_profile(USER);
+        profile1.user_id = data_v.0.get(0).unwrap().user_id;
         let profile1_dto = ProfileDto::from(profile1.clone());
-        let data_c = (vec![profile1], data_c.1, data_c.2, data_c.3);
-
+        data_v.0 = vec![profile1];
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_profile_new_password).configure(configure_profile(cfg_c, data_c))).await;
+            App::new().service(put_profile_new_password)
+                .configure(config_profile(cfg_c, data_v))
+                .configure(config_registr(data_registr(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
             .insert_header(header_auth(&token))
@@ -1242,232 +1322,5 @@ pub mod tests {
         assert_eq!(profile_dto_res.descript, profile_dto_ser.descript);
         assert_eq!(profile_dto_res.theme, profile_dto_ser.theme);
         assert_eq!(profile_dto_res.created_at, profile_dto_ser.created_at);
-    }
-
-    // ** delete_profile **
-
-    #[actix_web::test]
-    async fn test_delete_profile_invalid_id() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
-        let profile_id_bad = format!("{}a", data_c.0.get(0).unwrap().user_id);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(delete_profile).configure(configure_profile(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile_id_bad))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(app_err.code, code_to_str(StatusCode::RANGE_NOT_SATISFIABLE));
-        #[rustfmt::skip]
-        let msg = format!("{}; `id` - invalid digit found in string ({})", err::MSG_PARSING_TYPE_NOT_SUPPORTED, profile_id_bad);
-        assert_eq!(app_err.message, msg);
-    }
-    #[actix_web::test]
-    async fn test_delete_profile_non_existent_id() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
-        let profile_id = data_c.0.get(0).unwrap().user_id;
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(delete_profile).configure(configure_profile(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile_id + 1))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
-    }
-    #[actix_web::test]
-    async fn test_delete_profile_existent_id() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, ADMIN);
-        let profile1 = data_c.0.get(0).unwrap().clone();
-        let profile1_id = profile1.user_id;
-        let profile1_dto = ProfileDto::from(profile1);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(delete_profile).configure(configure_profile(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(profile1_dto).to_string();
-        let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-        assert_eq!(profile_dto_res, profile_dto_org);
-    }
-    #[actix_web::test]
-    async fn test_delete_profile_with_img() {
-        let config_prfl = config_prfl::get_test_config();
-        let prfl_avatar_files_dir = config_prfl.prfl_avatar_files_dir;
-
-        let name0_file = "test_delete_profile_with_img.png";
-        let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
-        save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_alias = format!("{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
-
-        let (cfg_c, mut data_c, token) = get_cfg_data(false, ADMIN);
-        let profile1 = data_c.0.get_mut(0).unwrap();
-        profile1.avatar = Some(path_name0_alias);
-        let profile1_id = profile1.user_id;
-        let profile_dto = ProfileDto::from(profile1.clone());
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(delete_profile).configure(configure_profile(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-
-        let is_exists_img_old = path::Path::new(&path_name0_file).exists();
-        let _ = fs::remove_file(&path_name0_file);
-
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-        assert!(!is_exists_img_old);
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(profile_dto).to_string();
-        let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-        assert_eq!(profile_dto_res, profile_dto_org);
-    }
-    #[actix_web::test]
-    async fn test_delete_profile_with_img_not_alias() {
-        let config_prfl = config_prfl::get_test_config();
-        let prfl_avatar_files_dir = config_prfl.prfl_avatar_files_dir;
-
-        let name0_file = "test_delete_profile_with_img_not_alias.png";
-        let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
-        save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_alias = format!("/1{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
-
-        let (cfg_c, mut data_c, token) = get_cfg_data(false, ADMIN);
-        let profile1 = data_c.0.get_mut(0).unwrap();
-        profile1.avatar = Some(path_name0_alias);
-        let profile1_id = profile1.user_id;
-        let profile_dto = ProfileDto::from(profile1.clone());
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(delete_profile).configure(configure_profile(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-
-        let is_exists_img_old = path::Path::new(&path_name0_file).exists();
-        let _ = fs::remove_file(&path_name0_file);
-
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-        assert!(is_exists_img_old);
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(profile_dto).to_string();
-        let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-        assert_eq!(profile_dto_res, profile_dto_org);
-    }
-
-    // ** delete_profile_current **
-    #[actix_web::test]
-    async fn test_delete_profile_current_without_img() {
-        let (cfg_c, data_c, token) = get_cfg_data(false, USER);
-        let profile1 = data_c.0.get(0).unwrap().clone();
-        let profile1_dto = ProfileDto::from(profile1);
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(delete_profile_current).configure(configure_profile(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::delete().uri("/api/profiles_current")
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(profile1_dto).to_string();
-        let profile1_dto_ser: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-        assert_eq!(profile_dto_res, profile1_dto_ser);
-    }
-    #[actix_web::test]
-    async fn test_delete_profile_current_with_img() {
-        let config_prfl = config_prfl::get_test_config();
-        let prfl_avatar_files_dir = config_prfl.prfl_avatar_files_dir;
-
-        let name0_file = "test_delete_profile_current_with_img.png";
-        let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
-        save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_alias = format!("{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
-
-        let (cfg_c, mut data_c, token) = get_cfg_data(false, ADMIN);
-        let profile1 = data_c.0.get_mut(0).unwrap();
-        profile1.avatar = Some(path_name0_alias);
-        let profile_dto = ProfileDto::from(profile1.clone());
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(delete_profile_current).configure(configure_profile(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::delete().uri("/api/profiles_current")
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-
-        let is_exists_img_old = path::Path::new(&path_name0_file).exists();
-        let _ = fs::remove_file(&path_name0_file);
-
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-        assert!(!is_exists_img_old);
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(profile_dto).to_string();
-        let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-        assert_eq!(profile_dto_res, profile_dto_org);
-    }
-    #[actix_web::test]
-    async fn test_delete_profile_current_with_img_not_alias() {
-        let config_prfl = config_prfl::get_test_config();
-        let prfl_avatar_files_dir = config_prfl.prfl_avatar_files_dir;
-
-        let name0_file = "test_delete_profile_current_with_img_not_alias.png";
-        let path_name0_file = format!("{}/{}", &prfl_avatar_files_dir, name0_file);
-        save_file_png(&(path_name0_file.clone()), 1).unwrap();
-        let path_name0_alias = format!("/1{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
-
-        let (cfg_c, mut data_c, token) = get_cfg_data(false, ADMIN);
-        let profile1 = data_c.0.get_mut(0).unwrap();
-        profile1.avatar = Some(path_name0_alias);
-        let profile_dto = ProfileDto::from(profile1.clone());
-        #[rustfmt::skip]
-        let app = test::init_service(
-            App::new().service(delete_profile_current).configure(configure_profile(cfg_c, data_c))).await;
-        #[rustfmt::skip]
-        let req = test::TestRequest::delete().uri("/api/profiles_current")
-            .insert_header(header_auth(&token)).to_request();
-        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-
-        let is_exists_img_old = path::Path::new(&path_name0_file).exists();
-        let _ = fs::remove_file(&path_name0_file);
-
-        assert_eq!(resp.status(), StatusCode::OK); // 200
-        assert!(is_exists_img_old);
-        #[rustfmt::skip]
-        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
-        let body = body::to_bytes(resp.into_body()).await.unwrap();
-        let profile_dto_res: ProfileDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(profile_dto).to_string();
-        let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-        assert_eq!(profile_dto_res, profile_dto_org);
     }
 }
