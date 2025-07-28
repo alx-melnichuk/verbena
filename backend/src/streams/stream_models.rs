@@ -97,7 +97,7 @@ pub fn validate_tag(tags: &[String]) -> Result<(), ValidationError> {
 
 // **  Section: table "streams" receiving data **
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Queryable, Selectable)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName, Queryable, Selectable)]
 #[diesel(table_name = schema::streams)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Stream {

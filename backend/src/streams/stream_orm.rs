@@ -6,12 +6,12 @@ pub trait StreamOrm {
     /// Find an entity (stream) by parameters.
     #[rustfmt::skip]
     fn find_stream_by_params(
-        &self, opt_id: Option<i32>, opt_user_id: Option<i32>, opt_live: Option<bool>, is_tags: bool, exclude_ids: &[i32],
+        &self, opt_id: Option<i32>, opt_user_id: Option<i32>, opt_is_live: Option<bool>, is_tags: bool, exclude_ids: &[i32],
     ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String>;
     /// Filter entities (streams) by specified parameters. Required parameter id or user_id.
     #[rustfmt::skip]
     fn filter_streams_by_params(&self, opt_id: Option<i32>, opt_user_id: Option<i32>, opt_is_logo: Option<bool>,
-        opt_live: Option<bool>, is_tags: bool, exclude_ids: &[i32]
+        opt_is_live: Option<bool>, is_tags: bool,
     ) -> Result<(Vec<Stream>, Vec<StreamTagStreamId>), String>;
     /// Find for an entity (stream) by SearchStreamInfo.
     #[rustfmt::skip]
@@ -130,7 +130,7 @@ pub mod impls {
         /// Find an entity (stream) by parameters.
         #[rustfmt::skip]
         fn find_stream_by_params(
-            &self, opt_id: Option<i32>, opt_user_id: Option<i32>, opt_live: Option<bool>, is_tags: bool, exclude_ids: &[i32],
+            &self, opt_id: Option<i32>, opt_user_id: Option<i32>, opt_is_live: Option<bool>, is_tags: bool, exclude_ids: &[i32],
         ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
@@ -148,7 +148,7 @@ pub mod impls {
                 query_list = query_list.filter(streams_dsl::user_id.eq(user_id));
             }
             // Add search condition for the "live" field.
-            if let Some(live) = opt_live {
+            if let Some(live) = opt_is_live {
                 query_list = query_list.filter(streams_dsl::live.eq(live));
             }
             // Add an exclusion condition for the specified IDs.
@@ -186,9 +186,8 @@ pub mod impls {
             opt_id: Option<i32>,
             opt_user_id: Option<i32>,
             opt_is_logo: Option<bool>,
-            opt_live: Option<bool>,
+            opt_is_live: Option<bool>,
             is_tags: bool,
-            exclude_ids: &[i32],
         ) -> Result<(Vec<Stream>, Vec<StreamTagStreamId>), String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
@@ -197,40 +196,19 @@ pub mod impls {
             }
             // Get a connection from the P2D2 pool.
             let mut conn = self.get_conn()?;
-            let mut query = schema::streams::table.into_boxed();
 
-            // Add search condition for the "id" field.
-            if let Some(id) = opt_id {
-                query = query.filter(streams_dsl::id.eq(id));
-            }
-            // Add search condition for the "user_id" field.
-            if let Some(user_id) = opt_user_id {
-                query = query.filter(streams_dsl::user_id.eq(user_id));
-            }
-            // Add search condition for the "logo" field.
-            if let Some(is_logo) = opt_is_logo {
-                if is_logo {
-                    query = query.filter(streams_dsl::logo.is_not_null());
-                } else {
-                    query = query.filter(streams_dsl::logo.is_null());
-                }
-            }
-            // Add search condition for the "live" field.
-            if let Some(live) = opt_live {
-                query = query.filter(streams_dsl::live.eq(live));
-            }
-            // Add an exclusion condition for the specified IDs.
-            if exclude_ids.len() > 0 {
-                query = query.filter(streams_dsl::user_id.ne_all(exclude_ids));
-            }
-            query = query.order_by(streams_dsl::id.asc());
+            let query = diesel::sql_query("select * from filter_streams($1, $2, $3, $4);")
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(opt_id) // $1
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(opt_user_id) // $2
+                .bind::<sql_types::Nullable<sql_types::Bool>, _>(opt_is_logo) // $3
+                .bind::<sql_types::Nullable<sql_types::Bool>, _>(opt_is_live); // $4
 
             // Run a query using Diesel to find a list of users based on the given parameters.
             let streams: Vec<Stream> = query
                 //.returning(Stream::as_returning())
                 //.get_results::<Stream>(&mut conn)
                 .load(&mut conn)
-                .map_err(|e| format!("filter_streams_by_params: {}", e.to_string()))?;
+                .map_err(|e| format!("filter_streams: {}", e.to_string()))?;
 
             let stream_ids = match is_tags {
                 true => streams.iter().map(|stream| stream.id).collect(),
@@ -712,7 +690,7 @@ pub mod tests {
         /// Find an entity (stream) by parameters.
         #[rustfmt::skip]
         fn find_stream_by_params(
-            &self, opt_id: Option<i32>, opt_user_id: Option<i32>, opt_live: Option<bool>, is_tags: bool, exclude_ids: &[i32],
+            &self, opt_id: Option<i32>, opt_user_id: Option<i32>, opt_is_live: Option<bool>, is_tags: bool, exclude_ids: &[i32],
         ) -> Result<Option<(Stream, Vec<StreamTagStreamId>)>, String> {
             let opt_stream_info = self
                 .stream_info_vec
@@ -720,7 +698,7 @@ pub mod tests {
                 .find(|stream| {
                     let check_id = if let Some(id) = opt_id { stream.id == id } else { true };
                     let check_user_id = if let Some(user_id) = opt_user_id { stream.user_id == user_id } else { true };
-                    let check_live = if let Some(live) = opt_live { stream.live == live } else { true };
+                    let check_live = if let Some(live) = opt_is_live { stream.live == live } else { true };
                     let check_exclude_id = if exclude_ids.len() > 0 { !exclude_ids.contains(&stream.id) } else { true };
 
                     check_id && check_user_id && check_live && check_exclude_id
@@ -744,9 +722,8 @@ pub mod tests {
             opt_id: Option<i32>,
             opt_user_id: Option<i32>,
             opt_is_logo: Option<bool>,
-            opt_live: Option<bool>,
+            opt_is_live: Option<bool>,
             is_tags: bool,
-            exclude_ids: &[i32],
         ) -> Result<(Vec<Stream>, Vec<StreamTagStreamId>), String> {
             if opt_id.is_none() && opt_user_id.is_none() {
                 return Ok((vec![], vec![]));
@@ -764,10 +741,9 @@ pub mod tests {
                     } else {
                         true
                     };
-                    let check_live = if let Some(live) = opt_live { stream.live == live } else { true };
-                    let check_exclude_id = if exclude_ids.len() > 0 { !exclude_ids.contains(&stream.id) } else { true };
+                    let check_live = if let Some(live) = opt_is_live { stream.live == live } else { true };
 
-                    check_id && check_user_id && check_is_logo && check_live && check_exclude_id
+                    check_id && check_user_id && check_is_logo && check_live
                 })
                 .map(|stream| stream.clone())
                 .collect();
