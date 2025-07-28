@@ -25,7 +25,7 @@ pub async fn get_stream_logo_files(stream_orm: web::Data<StreamOrmApp>, user_id:
     let result_data = web::block(move || {
         // Filter entities (streams) by specified parameters.
         let res_data = stream_orm
-            .filter_streams_by_params(opt_id, opt_user_id, opt_is_logo, opt_live, false, &[])
+            .filter_streams_by_params(opt_id, opt_user_id, opt_is_logo, opt_live, false)
             .map_err(|e| {
                 error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
