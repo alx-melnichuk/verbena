@@ -26,6 +26,9 @@ pub trait ProfileOrm {
     fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String>;
 
     // There is no need to delete the entity (session), since it is deleted cascade when deleting an entry in the users table.
+
+    /// Filter for the list of stream logos by user ID.
+    fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String>;
 }
 
 pub mod cfg {
@@ -53,6 +56,8 @@ pub mod impls {
     use diesel::{self, prelude::*, sql_types};
     use log::{info, log_enabled, Level::Info};
     use vrb_dbase::{dbase, schema};
+
+    use crate::profiles::profile_models::StreamLogo;
 
     use super::*;
 
@@ -257,6 +262,28 @@ pub mod impls {
 
             if let Some(timer) = timer {
                 info!("modify_session() time: {}", format!("{:.2?}", timer.elapsed()));
+            }
+            Ok(result)
+        }
+
+        /// Filter for the list of stream logos by user ID.
+        fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String> {
+            let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
+            // Get a connection from the P2D2 pool.
+            let mut conn = self.get_conn()?;
+
+            let query = diesel::sql_query("select logo from filter_streams(null, $1, true, null);")
+                .bind::<sql_types::Nullable<sql_types::Integer>, _>(user_id); // $1
+
+            // Run a query using Diesel to find a list of users based on the given parameters.
+            let stream_logos: Vec<StreamLogo> = query
+                .load(&mut conn)
+                .map_err(|e| format!("filter_streams: {}", e.to_string()))?;
+
+            let result = stream_logos.into_iter().map(|v| v.logo.clone()).collect();
+
+            if let Some(timer) = timer {
+                info!("filter_stream_logos() time: {}", format!("{:.2?}", timer.elapsed()));
             }
             Ok(result)
         }
@@ -472,6 +499,13 @@ pub mod tests {
             res_session.num_token = new_session.num_token;
 
             Ok(Some(res_session))
+        }
+
+        /// Filter for the list of stream logos by user ID.
+        fn filter_stream_logos(&self, _user_id: i32) -> Result<Vec<String>, String> {
+            let result: Vec<String> = vec![];
+
+            Ok(result)
         }
 
     }

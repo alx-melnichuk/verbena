@@ -495,6 +495,16 @@ impl Validator for NewPasswordProfileDto {
     }
 }
 
+
+// ** Model Dto: "NewPasswordProfileDto". Used: in "profile_controller::delete_profile()" **
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, QueryableByName)]
+pub struct StreamLogo {
+    #[diesel(sql_type = diesel::sql_types::Text)]
+    #[diesel(column_name = "logo")]
+    pub logo: String,
+}
+
 // * * * * Section: models for the "profile_auth_controller". * * * *
 
 // ** Model Dto: "LoginProfileDto". Used: in "profile_auth_controller::login()". **
