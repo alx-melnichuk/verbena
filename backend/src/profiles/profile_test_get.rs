@@ -173,7 +173,6 @@ mod tests {
 
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
-        dbg!(&body);
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
         assert_eq!(app_err.message, err::MSG_PARAMS_NOT_SPECIFIED);
