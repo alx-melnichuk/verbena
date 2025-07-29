@@ -16,11 +16,11 @@ mod tests {
     use crate::profiles::{
         profile_controller::{
             get_profile_by_id, get_profile_config, get_profile_current,
-            tests::{config_profile, config_registr, data_profile, data_registr, header_auth, ADMIN, MSG_FAILED_DESER, USER},
+            tests::{config_registr, data_registr, MSG_FAILED_DESER},
             uniqueness_check,
         },
         profile_models::{ProfileConfigDto, ProfileDto},
-        profile_orm::tests::ProfileOrmApp,
+        profile_orm::tests::{config_profile, data_profile, header_auth, ProfileOrmApp, ADMIN, USER},
     };
 
     // ** get_profile_by_id **
