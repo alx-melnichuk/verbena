@@ -15,7 +15,9 @@ pub mod tests {
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
         cdis::coding,
-        err, validators,
+        err,
+        testing::check_app_err,
+        validators,
     };
 
     use crate::profiles::{
@@ -23,12 +25,13 @@ pub mod tests {
         profile_controller::{
             put_profile, put_profile_new_password,
             tests::{
-                check_app_err, config_profile, config_registr, create_profile, data_profile, data_registr, header_auth, save_empty_file,
-                save_file_png, MSG_CONTENT_TYPE_ERROR, MSG_FAILED_DESER, MSG_MULTIPART_STREAM_INCOMPLETE, USER,
+                config_registr, data_registr, save_empty_file, save_file_png, MSG_CONTENT_TYPE_ERROR, MSG_FAILED_DESER,
+                MSG_MULTIPART_STREAM_INCOMPLETE,
             },
             ALIAS_AVATAR_FILES_DIR,
         },
         profile_models::{self, ModifyProfileDto, NewPasswordProfileDto, Profile, ProfileDto, ProfileTest},
+        profile_orm::tests::{config_profile, create_profile, data_profile, header_auth, USER},
     };
 
     // ** put_profile **
