@@ -1029,15 +1029,15 @@ pub async fn delete_profile_current(
 pub mod tests {
     use std::{fs, io::Write};
 
-    use actix_web::{http::header, web};
+    use actix_web::web;
     use chrono::{DateTime, Duration, Utc};
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::{api_error::ApiError, hash_tools, token_coding, token_data::BEARER};
+    use vrb_tools::{hash_tools, token_coding};
 
     use crate::profiles::{
         config_jwt, config_prfl,
         profile_models::{Profile, Session},
-        profile_orm::tests::{ProfileOrmApp, ProfileOrmTest},
+        profile_orm::tests::{ProfileOrmApp, ProfileOrmTest, ADMIN},
     };
     use crate::sessions::session_orm::tests::SessionOrmApp;
     use crate::streams::{
@@ -1046,13 +1046,11 @@ pub mod tests {
     use crate::users::user_models::UserRegistr;
     use crate::users::user_registr_orm::tests::UserRegistrOrmApp;
 
-    pub const ADMIN: u8 = 0;
-    pub const USER: u8 = 1;
     pub const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
     pub const MSG_MULTIPART_STREAM_INCOMPLETE: &str = "Multipart stream is incomplete";
     pub const MSG_CONTENT_TYPE_ERROR: &str = "Could not find Content-Type header";
 
-    pub fn create_profile(role: u8, opt_password: Option<&str>) -> Profile {
+    fn create_profile1(role: u8, opt_password: Option<&str>) -> Profile {
         let user_names = ProfileOrmTest::user_names();
         let nickname = user_names.get(0).unwrap(); // "oliver_taylor", id: 1100
         let role = if role == ADMIN { UserRole::Admin } else { UserRole::User };
@@ -1063,13 +1061,9 @@ pub mod tests {
         }
         profile
     }
-    fn profile_with_id(profile: Profile) -> Profile {
+    fn profile_with_id1(profile: Profile) -> Profile {
         let profile_orm = ProfileOrmApp::create(&vec![profile]);
         profile_orm.profile_vec.get(0).unwrap().clone()
-    }
-    pub fn header_auth(token: &str) -> (header::HeaderName, header::HeaderValue) {
-        let header_value = header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
-        (header::AUTHORIZATION, header_value)
     }
     #[rustfmt::skip]
     pub fn get_cfg_data(is_registr: bool, role: u8) -> (
@@ -1077,7 +1071,7 @@ pub mod tests {
         (Vec<Profile>, Vec<Session>, Vec<UserRegistr>, Vec<StreamInfoDto>) // data vectors
         , String) {
         // Create profile values.
-        let profile1: Profile = profile_with_id(create_profile(role, None));
+        let profile1: Profile = profile_with_id1(create_profile1(role, None));
         let num_token = 1234;
         let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token));
 
@@ -1122,44 +1116,6 @@ pub mod tests {
         }
     }
 
-    #[rustfmt::skip]
-    pub fn data_profile(role: u8) -> (
-        (config_jwt::ConfigJwt, config_prfl::ConfigPrfl), // configuration
-        (Vec<Profile>, Vec<Session>) // data vectors
-        , String) {
-        // Create profile values.
-        let profile1: Profile = profile_with_id(create_profile(role, None));
-        let num_token = 1234;
-        let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token));
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = token_coding::encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let config_prfl = config_prfl::get_test_config();
-        
-        let cfg_c = (config_jwt, config_prfl);
-        let data_c = (vec![profile1], vec![session1]);
-
-        (cfg_c, data_c, token)
-    }
-    pub fn config_profile(
-        cfg_c: (config_jwt::ConfigJwt, config_prfl::ConfigPrfl), // configuration
-        data_c: (Vec<Profile>, Vec<Session>),                    // data vectors
-    ) -> impl FnOnce(&mut web::ServiceConfig) {
-        move |config: &mut web::ServiceConfig| {
-            let data_config_jwt = web::Data::new(cfg_c.0);
-            let data_config_prfl = web::Data::new(cfg_c.1);
-
-            let data_profile_orm = web::Data::new(ProfileOrmApp::create2sessions(&data_c.0, &data_c.1));
-
-            config
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_config_prfl))
-                .app_data(web::Data::clone(&data_profile_orm));
-        }
-    }
     fn create_user_registr() -> UserRegistr {
         let now = Utc::now();
         let final_date: DateTime<Utc> = now + Duration::minutes(20);
@@ -1179,14 +1135,6 @@ pub mod tests {
         }
     }
 
-    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
-        assert_eq!(app_err_vec.len(), msgs.len());
-        for (idx, msg) in msgs.iter().enumerate() {
-            let app_err = app_err_vec.get(idx).unwrap();
-            assert_eq!(app_err.code, code);
-            assert_eq!(app_err.message, msg.to_string());
-        }
-    }
     pub fn save_empty_file(path_file: &str) -> Result<String, String> {
         let _ = fs::File::create(path_file).map_err(|e| e.to_string())?;
         Ok(path_file.to_string())
