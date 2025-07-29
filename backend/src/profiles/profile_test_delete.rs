@@ -17,14 +17,12 @@ pub mod tests {
     use crate::profiles::{
         config_prfl,
         profile_controller::{
-            delete_profile, delete_profile_current, 
-            tests::{
-                config_profile, config_registr, data_profile, data_registr, header_auth, save_file_png, ADMIN, MSG_FAILED_DESER, USER,
-            },
+            delete_profile, delete_profile_current,
+            tests::{config_registr, data_registr, save_file_png, MSG_FAILED_DESER},
             ALIAS_AVATAR_FILES_DIR,
         },
         profile_models::ProfileDto,
-        profile_orm::tests::ProfileOrmTest,
+        profile_orm::tests::{config_profile, data_profile, header_auth, ProfileOrmTest, ADMIN, USER},
     };
 
     // ** delete_profile **
@@ -192,7 +190,7 @@ pub mod tests {
         let _ = fs::remove_file(&path_logo0_file);
 
         assert_eq!(resp.status(), StatusCode::OK); // 200
-                                                   
+
         // After deleting a user, the stream logo file should be deleted.
         assert!(!is_exists_img_old);
         #[rustfmt::skip]
@@ -327,7 +325,7 @@ pub mod tests {
         let _ = fs::remove_file(&path_logo0_file);
 
         assert_eq!(resp.status(), StatusCode::OK); // 200
-                                                   
+
         // After deleting a user, the stream logo file should be deleted.
         assert!(!is_exists_img_old);
         #[rustfmt::skip]
@@ -338,5 +336,4 @@ pub mod tests {
         let profile_dto_org: ProfileDto = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(profile_dto_res, profile_dto_org);
     }
-
 }
