@@ -19,11 +19,6 @@ use crate::profiles::{
     profile_models::{self, LoginProfileDto, LoginProfileResponseDto, ProfileTokensDto, TokenDto},
     profile_orm::ProfileOrm,
 };
-#[cfg(not(all(test, feature = "mockdata")))]
-use crate::sessions::session_orm::impls::SessionOrmApp;
-#[cfg(all(test, feature = "mockdata"))]
-use crate::sessions::session_orm::tests::SessionOrmApp;
-use crate::sessions::session_orm::SessionOrm;
 
 pub const TOKEN_NAME: &str = "token";
 
@@ -84,7 +79,6 @@ pub fn configure() -> impl FnOnce(&mut web::ServiceConfig) {
 pub async fn login(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
     profile_orm: web::Data<ProfileOrmApp>,
-    session_orm: web::Data<SessionOrmApp>,
     json_body: web::Json<LoginProfileDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     #[rustfmt::skip]
@@ -101,10 +95,11 @@ pub async fn login(
     let nickname = login_profile_dto.nickname.clone();
     let email = login_profile_dto.nickname.clone();
     let password = login_profile_dto.password.clone();
+    let profile_orm2 = profile_orm.get_ref().clone();
 
     let opt_profile_pwd = web::block(move || {
         // Find user's profile by nickname or email.
-        let existing_profile = profile_orm
+        let existing_profile = profile_orm2
             .find_profile_by_nickname_or_email(Some(&nickname), Some(&email), true)
             .map_err(|e| {
                 error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
@@ -152,7 +147,7 @@ pub async fn login(
 
     let opt_session = web::block(move || {
         // Modify the entity (session) with new data. Result <Option<Session>>.
-        let res_session = session_orm.modify_session(profile_pwd.user_id, Some(num_token)).map_err(|e| {
+        let res_session = profile_orm.modify_session(profile_pwd.user_id, Some(num_token)).map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
@@ -223,14 +218,14 @@ pub async fn login(
     security(("bearer_auth" = []))
 )]
 #[post("/api/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
-pub async fn logout(authenticated: Authenticated, session_orm: web::Data<SessionOrmApp>) -> actix_web::Result<HttpResponse, ApiError> {
+pub async fn logout(authenticated: Authenticated, profile_orm: web::Data<ProfileOrmApp>) -> actix_web::Result<HttpResponse, ApiError> {
     // Get user ID.
     let profile_user = authenticated.deref().clone();
 
     // Clear "num_token" value.
     let opt_session = web::block(move || {
         // Modify the entity (session) with new data. Result <Option<Session>>.
-        let res_session = session_orm.modify_session(profile_user.user_id, None).map_err(|e| {
+        let res_session = profile_orm.modify_session(profile_user.user_id, None).map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
@@ -296,7 +291,7 @@ pub async fn logout(authenticated: Authenticated, session_orm: web::Data<Session
 #[post("/api/token")]
 pub async fn update_token(
     config_jwt: web::Data<config_jwt::ConfigJwt>,
-    session_orm: web::Data<SessionOrmApp>,
+    profile_orm: web::Data<ProfileOrmApp>,
     json_token_user_dto: web::Json<TokenDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     #[rustfmt::skip]
@@ -313,11 +308,11 @@ pub async fn update_token(
         ApiError::create(401, err::MSG_INVALID_OR_EXPIRED_TOKEN, &e) // 401
     })?;
 
-    let session_orm1 = session_orm.clone();
+    let profile_orm2 = profile_orm.get_ref().clone();
 
     let opt_session = web::block(move || {
         // Find a session for a given user.
-        let existing_session = session_orm1.get_session_by_id(user_id).map_err(|e| {
+        let existing_session = profile_orm2.get_session_by_id(user_id).map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
@@ -364,7 +359,9 @@ pub async fn update_token(
 
     let opt_session = web::block(move || {
         // Find a session for a given user.
-        let existing_session = session_orm.modify_session(user_id, Some(num_token)).map_err(|e| {
+        #[rustfmt::skip]
+        let existing_session = profile_orm.modify_session(user_id, Some(num_token))
+        .map_err(|e| {
             error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
             ApiError::create(507, err::MSG_DATABASE, &e) // 507
         });
