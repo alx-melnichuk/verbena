@@ -291,13 +291,19 @@ pub mod impls {
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
 
+    use actix_web::{http::header, web};
     use chrono::Utc;
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::consts;
+    use vrb_tools::{consts, hash_tools, token_coding, token_data::BEARER};
+
+    use crate::profiles::{config_jwt, config_prfl,};
 
     use super::*;
 
+    pub const ADMIN: u8 = 0;
+    pub const USER: u8 = 1;
     pub const PROFILE_USER_ID: i32 = 1100;
+    pub const PROFILE_USER_ID_NO_SESSION: i32 = 1199;
 
     pub struct ProfileOrmTest {}
 
@@ -307,7 +313,7 @@ pub mod tests {
                 PROFILE_USER_ID + 0,
                 PROFILE_USER_ID + 1,
                 PROFILE_USER_ID + 2,
-                PROFILE_USER_ID + 3, // Blocked for everyone else.
+                PROFILE_USER_ID + 3,
             ]
         }
         pub fn user_names() -> Vec<String> {
@@ -359,24 +365,26 @@ pub mod tests {
             }
         }
         /// Create a new instance with the specified profile list.
-        pub fn create(profile_list: &[Profile]) -> Self {
-            let profile_vec: Vec<Profile> = Self::new_profiles(profile_list);
-            ProfileOrmApp {
-                profile_vec,
-                session_vec: Vec::new(),
-            }
+        pub fn create(profiles: &[Profile]) -> Self {
+            Self::create2sessions(profiles, &[])
         }
         /// Create a new instance of the Profile entity.
         pub fn new_profile(user_id: i32, nickname: &str, email: &str, role: UserRole) -> Profile {
             Profile::new(user_id, &nickname.to_lowercase(), &email.to_lowercase(), role.clone(), None, None, None, None)
         }
-        /// Create a new list of Profile entity instances.
-        pub fn new_profiles(profile_list: &[Profile]) -> Vec<Profile> {
+        /// Create a new instance of the Session entity.
+        pub fn new_session(user_id: i32, num_token: Option<i32>) -> Session {
+            Session { user_id, num_token }
+        }
+        pub fn create2sessions(profiles: &[Profile], sessions: &[Session]) -> Self {
             let mut profile_vec: Vec<Profile> = Vec::new();
-            for (idx, profile) in profile_list.iter().enumerate() {
+            let mut session_vec: Vec<Session> = Vec::new();
+            for (idx, profile) in profiles.iter().enumerate() {
+                let is_no_session = profile.user_id == PROFILE_USER_ID_NO_SESSION;
                 let delta: i32 = idx.try_into().unwrap();
+                let user_id = if is_no_session { profile.user_id } else { PROFILE_USER_ID + delta };
                 let mut profile2 = Profile::new(
-                    PROFILE_USER_ID + delta,
+                    user_id,
                     &profile.nickname.to_lowercase(),
                     &profile.email.to_lowercase(),
                     profile.role.clone(),
@@ -389,24 +397,14 @@ pub mod tests {
                 profile2.created_at = profile.created_at;
                 profile2.updated_at = profile.updated_at;
                 profile_vec.push(profile2);
+
+                let opt_session = sessions.iter().find(|v| (*v).user_id == profile.user_id);
+                if let Some(session) = opt_session {
+                    session_vec.push(Self::new_session(user_id, session.num_token));    
+                } else if !is_no_session {
+                    session_vec.push(Self::new_session(user_id, None));    
+                }
             }
-            profile_vec
-        }
-        /// Create a new instance of the Session entity.
-        pub fn new_session(user_id: i32, num_token: Option<i32>) -> Session {
-            Session { user_id, num_token }
-        }
-        /// Create a new list of Session entity instances.
-        pub fn new_sessions(session_list: &[Session]) -> Vec<Session> {
-            let mut session_vec: Vec<Session> = Vec::new();
-            for session in session_list.iter() {
-                session_vec.push(Self::new_session(session.user_id, session.num_token));
-            }
-            session_vec
-        }
-        pub fn create2sessions(profile_list: &[Profile], session_list: &[Session]) -> Self {
-            let profile_vec: Vec<Profile> = Self::new_profiles(profile_list);
-            let session_vec: Vec<Session> = Self::new_sessions(session_list);
             ProfileOrmApp { profile_vec, session_vec }
         }
     }
@@ -559,4 +557,64 @@ pub mod tests {
             Ok(result)
         }
     }
+
+
+    pub fn create_profile(role: u8, opt_password: Option<&str>) -> Profile {
+        let user_names = ProfileOrmTest::user_names();
+        let nickname = user_names.get(0).unwrap(); // "oliver_taylor", id: 1100
+        let role = if role == ADMIN { UserRole::Admin } else { UserRole::User };
+        let mut profile = ProfileOrmApp::new_profile(1, nickname, &format!("{}@gmail.com", nickname), role);
+        if let Some(password) = opt_password {
+            profile.password = hash_tools::encode_hash(password.to_string()).unwrap(); // hashed
+        }
+        profile
+    }
+    pub fn header_auth(token: &str) -> (header::HeaderName, header::HeaderValue) {
+        let header_value = header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (header::AUTHORIZATION, header_value)
+    }
+    
+    #[rustfmt::skip]
+    pub fn data_profile(role: u8) -> (
+        (config_jwt::ConfigJwt, config_prfl::ConfigPrfl), // configuration
+        (Vec<Profile>, Vec<Session>) // data vectors
+        , String
+    ) {
+        // Create profile values.
+        let profile_orm = ProfileOrmApp::create(&vec![create_profile(role, None)]);
+        let profile1: Profile = profile_orm.profile_vec.get(0).unwrap().clone();
+
+        let num_token = 1234;
+        let session1 = Session { user_id: profile1.user_id, num_token: Some(num_token) };
+
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        // Create token values.
+        let token = token_coding::encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+
+        let config_prfl = config_prfl::get_test_config();
+        
+        let cfg_c = (config_jwt, config_prfl);
+        let data_c = (vec![profile1], vec![session1]);
+
+        (cfg_c, data_c, token)
+    }
+
+    pub fn config_profile(
+        cfg_c: (config_jwt::ConfigJwt, config_prfl::ConfigPrfl), // configuration
+        data_v: (Vec<Profile>, Vec<Session>),                    // data vectors
+    ) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_config_jwt = web::Data::new(cfg_c.0);
+            let data_config_prfl = web::Data::new(cfg_c.1);
+
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create2sessions(&data_v.0, &data_v.1));
+
+            config
+                .app_data(web::Data::clone(&data_config_jwt))
+                .app_data(web::Data::clone(&data_config_prfl))
+                .app_data(web::Data::clone(&data_profile_orm));
+        }
+    }
+
 }
