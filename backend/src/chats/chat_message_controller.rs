@@ -581,7 +581,6 @@ pub mod tests {
         profile_orm::tests::ProfileOrmApp,
         profile_orm::tests::PROFILE_USER_ID as PROFILE_ID,
     };
-    use crate::sessions::session_orm::tests::SessionOrmApp;
 
     pub const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
     pub const MSG_JSON_MISSING_FIELD: &str = "Json deserialize error: missing field";
@@ -640,7 +639,7 @@ pub mod tests {
 
         for profile in profile_vec.iter() {
             #[rustfmt::skip]
-            session_vec.push(SessionOrmApp::new_session(profile.user_id, Some(get_num_token(profile.user_id))));
+            session_vec.push(Session { user_id: profile.user_id, num_token: Some(get_num_token(profile.user_id)) });
         }
         (profile_vec, session_vec)
     }
@@ -731,12 +730,10 @@ pub mod tests {
             let user_mini_vec: Vec<UserMini> = data_c.0.iter().map(|v| UserMini { id: v.user_id, name: v.nickname.clone() }).collect();
             let data_config_jwt = web::Data::new(cfg_c);
             let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
-            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
             let data_chat_message_orm = web::Data::new(ChatMessageOrmApp::create(&data_c.2, &data_c.3, &data_c.4, &user_mini_vec.clone()));
             config
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_profile_orm))
-                .app_data(web::Data::clone(&data_session_orm))
                 .app_data(web::Data::clone(&data_chat_message_orm));
         }
     }
