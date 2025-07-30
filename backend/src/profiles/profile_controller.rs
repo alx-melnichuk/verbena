@@ -1039,7 +1039,6 @@ pub mod tests {
         profile_models::{Profile, Session},
         profile_orm::tests::{ProfileOrmApp, ProfileOrmTest, ADMIN},
     };
-    use crate::sessions::session_orm::tests::SessionOrmApp;
     use crate::streams::{
         config_strm, stream_controller::tests::create_stream, stream_models::StreamInfoDto, stream_orm::tests::StreamOrmApp,
     };
@@ -1073,7 +1072,7 @@ pub mod tests {
         // Create profile values.
         let profile1: Profile = profile_with_id1(create_profile1(role, None));
         let num_token = 1234;
-        let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token));
+        let session1 = Session { user_id: profile1.user_id, num_token: Some(num_token) };
 
         let stream1 = create_stream(0, profile1.user_id, "title0", "tag01,tag02", Utc::now());
 
@@ -1101,7 +1100,6 @@ pub mod tests {
             let data_config_strm = web::Data::new(cfg_c.2);
 
             let data_profile_orm = web::Data::new(ProfileOrmApp::create2sessions(&data_c.0, &data_c.1));
-            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
             let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.2));
             let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.3));
 
@@ -1110,7 +1108,6 @@ pub mod tests {
                 .app_data(web::Data::clone(&data_config_prfl))
                 .app_data(web::Data::clone(&data_config_strm))
                 .app_data(web::Data::clone(&data_profile_orm))
-                .app_data(web::Data::clone(&data_session_orm))
                 .app_data(web::Data::clone(&data_user_registr_orm))
                 .app_data(web::Data::clone(&data_stream_orm));
         }
