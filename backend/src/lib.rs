@@ -21,7 +21,6 @@ use chats::{chat_message_controller, chat_message_orm::cfg::get_chat_message_orm
 use profiles::{
     config_jwt, config_prfl, profile_auth_controller, profile_controller, profile_orm::cfg::get_profile_orm_app, profile_registr_controller,
 };
-use sessions::{session_orm::cfg::get_session_orm_app};
 use streams::{config_strm, stream_controller, stream_orm::cfg::get_stream_orm_app};
 use users::{user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_orm::cfg::get_user_registr_orm_app};
 use utoipa::OpenApi;
@@ -133,8 +132,6 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         let user_registr_orm = web::Data::new(get_user_registr_orm_app(pool.clone()));
         // used: profile_registr_controller
         let user_recovery_orm = web::Data::new(get_user_recovery_orm_app(pool.clone()));
-        // used: profile_auth_controller, profile_registr_controller
-        let session_orm = web::Data::new(get_session_orm_app(pool.clone()));
         // used: stream_controller, profile_controller
         let stream_orm = web::Data::new(get_stream_orm_app(pool.clone()));
         // used: profile_controller
@@ -154,7 +151,6 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             .app_data(web::Data::clone(&config_prfl))
             .app_data(web::Data::clone(&mailer))
             .app_data(web::Data::clone(&user_registr_orm))
-            .app_data(web::Data::clone(&session_orm))
             .app_data(web::Data::clone(&user_recovery_orm))
             .app_data(web::Data::clone(&stream_orm))
             .app_data(web::Data::clone(&profile_orm))
