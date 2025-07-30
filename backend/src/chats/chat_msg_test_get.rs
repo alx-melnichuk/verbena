@@ -12,11 +12,13 @@ mod tests {
     use crate::chats::{
         chat_message_controller::{
             get_chat_message,
-            tests::{configure_chat_message, get_cfg_data, header_auth, MSG_FAILED_DESER},
+            tests::{configure_chat_message, get_cfg_data, header_auth},
         },
         chat_message_models::ChatMessageDto,
         chat_message_orm::tests::ChatMsgTest,
     };
+
+    const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 
     // ** get_chat_message **
 

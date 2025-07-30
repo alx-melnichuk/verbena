@@ -17,14 +17,16 @@ mod tests {
     use crate::chats::{
         chat_message_controller::{
             delete_chat_message, post_chat_message, put_chat_message,
-            tests::{
-                configure_chat_message, get_cfg_data, header_auth, MSG_CASTING_TO_TYPE, MSG_CONTENT_TYPE_ERROR, MSG_FAILED_DESER,
-                MSG_JSON_MISSING_FIELD,
-            },
+            tests::{configure_chat_message, get_cfg_data, header_auth},
         },
         chat_message_models::{self, ChatMessageDto, CreateChatMessageDto, ModifyChatMessageDto},
         chat_message_orm::tests::ChatMsgTest,
     };
+
+    const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
+    const MSG_JSON_MISSING_FIELD: &str = "Json deserialize error: missing field";
+    const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
+    const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
 
     fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());

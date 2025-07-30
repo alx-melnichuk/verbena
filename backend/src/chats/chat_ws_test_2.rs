@@ -10,7 +10,7 @@ mod tests {
     use crate::chats::{
         chat_event_ws::{JoinEWS, MsgEWS},
         chat_message_controller::tests::{
-            configure_chat_message, get_cfg_data, get_chat_messages, get_profiles, get_token, MSG_FAILED_DESER,
+            configure_chat_message, get_cfg_data, get_chat_messages, get_profiles, get_token
         },
         chat_message_orm::tests::ChatMsgTest,
         chat_ws_controller::get_ws_chat,
@@ -20,7 +20,8 @@ mod tests {
 
     const URL_WS: &str = "/ws";
     const ERROR_PROCESSING_WS_FRAME_TEXT: &str = "Error processing websocket message Frame::Text(Bytes)";
-
+    const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
+    
     // ** get_ws_chat **
 
     // ** ews_msg **

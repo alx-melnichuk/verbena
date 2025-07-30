@@ -16,14 +16,15 @@ mod tests {
     use crate::chats::{
         chat_message_controller::{
             delete_blocked_user, get_blocked_users, post_blocked_user,
-            tests::{
-                configure_chat_message, get_cfg_data, header_auth, MSG_CASTING_TO_TYPE, MSG_CONTENT_TYPE_ERROR,
-                MSG_FAILED_DESER,
-            },
+            tests::{configure_chat_message, get_cfg_data, header_auth},
         },
         chat_message_models::{self, BlockedUserDto, ChatMessageModelsTest, CreateBlockedUserDto, DeleteBlockedUserDto},
         chat_message_orm::tests::ChatMsgTest,
     };
+
+    const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
+    const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
+    const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
 
     // ** get_blocked_users **
 
