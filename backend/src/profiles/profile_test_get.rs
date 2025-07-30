@@ -11,28 +11,30 @@ mod tests {
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
         err,
+        token_data::header_auth,
     };
 
+
     use crate::profiles::{
-        profile_controller::{
-            get_profile_by_id, get_profile_config, get_profile_current,
-            tests::{config_registr, data_registr, MSG_FAILED_DESER},
-            uniqueness_check,
-        },
+        profile_controller::{get_profile_by_id, get_profile_config, get_profile_current, uniqueness_check},
         profile_models::{ProfileConfigDto, ProfileDto},
-        profile_orm::tests::{config_profile, data_profile, header_auth, ProfileOrmApp, ADMIN, USER},
+        profile_orm::tests::{ProfileOrmApp, ProfileOrmTest as PrfTest, ADMIN, USER},
     };
+    use crate::users::user_registr_orm::tests::UserRegistrOrmTest as RegTest;
+
+    const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 
     // ** get_profile_by_id **
 
     #[actix_web::test]
     async fn test_get_profile_by_id_invalid_id() {
-        let (cfg_c, data_v, token) = data_profile(ADMIN);
-        let user_id = data_v.0.get(0).unwrap().user_id;
+        let token = PrfTest::token1();
+        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[ADMIN]));
+        let user_id = data_p.0.get(0).unwrap().user_id;
         let user_id_bad = format!("{}a", user_id);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_profile_by_id).configure(config_profile(cfg_c, data_v))).await;
+            App::new().service(get_profile_by_id).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", user_id_bad))
             .insert_header(header_auth(&token)).to_request();
@@ -50,18 +52,19 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_profile_by_id_valid_id() {
-        let (cfg_c, data_v, token) = data_profile(ADMIN);
-        let profile1 = data_v.0.get(0).unwrap().clone();
+        let token = PrfTest::token1();
+        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[ADMIN]));
+        let profile1 = data_p.0.get(0).unwrap().clone();
         let profile2 = ProfileOrmApp::new_profile(2, "Logan_Lewis", "Logan_Lewis@gmail.com", UserRole::User);
 
-        let profile_vec = ProfileOrmApp::create(&vec![profile1, profile2]).profile_vec;
+        let profile_vec = ProfileOrmApp::create(&vec![profile1, profile2], &[]).profile_vec;
         let profile2_dto = ProfileDto::from(profile_vec.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
 
-        let data_v = (profile_vec, data_v.1);
+        let data_p = (profile_vec, data_p.1);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_profile_by_id).configure(config_profile(cfg_c, data_v))).await;
+            App::new().service(get_profile_by_id).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", &profile2_id))
             .insert_header(header_auth(&token)).to_request();
@@ -78,18 +81,19 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_profile_by_id_non_existent_id() {
-        let (cfg_c, data_v, token) = data_profile(ADMIN);
-        let profile1 = data_v.0.get(0).unwrap().clone();
+        let token = PrfTest::token1();
+        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[ADMIN]));
+        let profile1 = data_p.0.get(0).unwrap().clone();
         let profile2 = ProfileOrmApp::new_profile(2, "Logan_Lewis", "Logan_Lewis@gmail.com", UserRole::User);
 
-        let profile_vec = ProfileOrmApp::create(&vec![profile1, profile2]).profile_vec;
+        let profile_vec = ProfileOrmApp::create(&vec![profile1, profile2], &[]).profile_vec;
         let profile2_dto = ProfileDto::from(profile_vec.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
 
-        let data_v = (profile_vec, data_v.1);
+        let data_p = (profile_vec, data_p.1);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_profile_by_id).configure(config_profile(cfg_c, data_v))).await;
+            App::new().service(get_profile_by_id).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", profile2_id + 1))
             .insert_header(header_auth(&token)).to_request();
@@ -101,8 +105,9 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_profile_config_data() {
-        let (cfg_c, data_v, token) = data_profile(USER);
-        let cfg_prfl = cfg_c.1.clone();
+        let token = PrfTest::token1();
+        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let cfg_prfl = cfg_p.1.clone();
         #[rustfmt::skip]
         let profile_config_dto = ProfileConfigDto::new(
             if cfg_prfl.prfl_avatar_max_size > 0 { Some(cfg_prfl.prfl_avatar_max_size) } else { None },
@@ -113,7 +118,7 @@ mod tests {
         );
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_profile_config).configure(config_profile(cfg_c, data_v))).await;
+            App::new().service(get_profile_config).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_config")
             .insert_header(header_auth(&token)).to_request();
@@ -132,12 +137,13 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_profile_current_valid_token() {
-        let (cfg_c, data_v, token) = data_profile(USER);
-        let profile1 = data_v.0.get(0).unwrap().clone();
+        let token = PrfTest::token1();
+        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let profile1 = data_p.0.get(0).unwrap().clone();
         let profile1_dto = ProfileDto::from(profile1);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_profile_current).configure(config_profile(cfg_c, data_v))).await;
+            App::new().service(get_profile_current).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_current")
             .insert_header(header_auth(&token)).to_request();
@@ -159,12 +165,12 @@ mod tests {
 
     #[actix_web::test]
     async fn test_uniqueness_check_by_non_params() {
-        let (cfg_c, data_v, _token) = data_profile(USER);
+        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check)
-                .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(data_registr(false)))).await;
+                .configure(PrfTest::config(cfg_p, data_p))
+                .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_uniqueness")
             .to_request();
@@ -182,12 +188,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_uniqueness_check_by_nickname_empty() {
-        let (cfg_c, data_v, _token) = data_profile(USER);
+        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check)
-                .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(data_registr(false)))).await;
+                .configure(PrfTest::config(cfg_p, data_p))
+                .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_uniqueness?nickname=")
             .to_request();
@@ -206,12 +212,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_uniqueness_check_by_email_empty() {
-        let (cfg_c, data_v, _token) = data_profile(USER);
+        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check)
-                .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(data_registr(false)))).await;
+                .configure(PrfTest::config(cfg_p, data_p))
+                .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_uniqueness?email=")
             .to_request();
@@ -230,13 +236,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_uniqueness_check_by_nickname_profile() {
-        let (cfg_c, data_v, _token) = data_profile(USER);
-        let nickname = data_v.0.get(0).unwrap().nickname.clone();
+        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let nickname = data_p.0.get(0).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check)
-                .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(data_registr(false)))).await;
+                .configure(PrfTest::config(cfg_p, data_p))
+                .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_uniqueness?nickname={}", nickname))
             .to_request();
@@ -251,13 +257,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_uniqueness_check_by_email_profile() {
-        let (cfg_c, data_v, _token) = data_profile(USER);
-        let email = data_v.0.get(0).unwrap().email.clone();
+        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let email = data_p.0.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check)
-                .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(data_registr(false)))).await;
+                .configure(PrfTest::config(cfg_p, data_p))
+                .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_uniqueness?email={}", email))
             .to_request();
@@ -272,14 +278,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_uniqueness_check_by_nickname_registr() {
-        let (cfg_c, data_v, _token) = data_profile(USER);
-        let registr = data_registr(true);
+        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let registr = RegTest::registrs(true);
         let nickname = registr.get(0).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check)
-                .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(registr))).await;
+                .configure(PrfTest::config(cfg_p, data_p))
+                .configure(RegTest::config(registr))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_uniqueness?nickname={}", nickname))
             .to_request();
@@ -294,14 +300,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_uniqueness_check_by_email_registr() {
-        let (cfg_c, data_v, _token) = data_profile(USER);
-        let registr = data_registr(true);
+        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let registr = RegTest::registrs(true);
         let email = registr.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check)
-                .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(registr))).await;
+                .configure(PrfTest::config(cfg_p, data_p))
+                .configure(RegTest::config(registr))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_uniqueness?email={}", email))
             .to_request();
@@ -316,13 +322,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_uniqueness_check_by_new_nickname() {
-        let (cfg_c, data_v, _token) = data_profile(USER);
-        let nickname = format!("a{}", data_v.0.get(0).unwrap().nickname.clone());
+        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let nickname = format!("a{}", data_p.0.get(0).unwrap().nickname.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check)
-                .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(data_registr(false)))).await;
+                .configure(PrfTest::config(cfg_p, data_p))
+                .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_uniqueness?nickname={}", nickname))
             .to_request();
@@ -337,13 +343,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_uniqueness_check_by_new_email() {
-        let (cfg_c, data_v, _token) = data_profile(USER);
-        let email = format!("a{}", data_v.0.get(0).unwrap().email.clone());
+        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let email = format!("a{}", data_p.0.get(0).unwrap().email.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(uniqueness_check)
-                .configure(config_profile(cfg_c, data_v))
-                .configure(config_registr(data_registr(false)))).await;
+                .configure(PrfTest::config(cfg_p, data_p))
+                .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles_uniqueness?email={}", email))
             .to_request();
