@@ -212,6 +212,7 @@ pub mod impls {
 
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
+    use actix_web::{web};
     use chrono::{DateTime, Duration, Utc};
 
     use super::*;
@@ -344,6 +345,29 @@ pub mod tests {
                 .count();
 
             Ok(result)
+        }
+    }
+
+    pub struct UserRegistrOrmTest {}
+
+    impl UserRegistrOrmTest {
+
+        pub fn registrs(is_exist: bool) -> Vec<UserRegistr> {
+            let id: i32 = USER_REGISTR_ID;
+            let nickname = "robert_brown";
+            let email = format!("{}@gmail.com", nickname);
+            let final_date: DateTime<Utc> = Utc::now() + Duration::minutes(20);
+            let user_registr = UserRegistrOrmApp::new_user_registr(id, nickname, &email, "passwdR2B2", final_date);
+
+            let registr_vec = if is_exist { vec![user_registr] } else { vec![] };
+            let user_reg_orm = UserRegistrOrmApp::create(&registr_vec);
+            user_reg_orm.user_registr_vec
+        }
+        pub fn config(registr: Vec<UserRegistr>) -> impl FnOnce(&mut web::ServiceConfig) {
+            move |config: &mut web::ServiceConfig| {
+                let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&registr));
+                config.app_data(web::Data::clone(&data_user_registr_orm));
+            }
         }
     }
 }
