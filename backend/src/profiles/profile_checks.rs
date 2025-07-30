@@ -99,7 +99,7 @@ mod tests {
     }
 
     fn get_orm(data: (Vec<Profile>, Vec<UserRegistr>)) -> (ProfileOrmApp, UserRegistrOrmApp) {
-        let profile_orm = ProfileOrmApp::create(&data.0);
+        let profile_orm = ProfileOrmApp::create(&data.0, &[]);
         let user_registr_orm = UserRegistrOrmApp::create(&data.1);
 
         (profile_orm, user_registr_orm)
