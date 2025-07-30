@@ -1,16 +1,5 @@
 use std::{fs, io::Write};
 
-use crate::api_error::ApiError;
-
-pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
-    assert_eq!(app_err_vec.len(), msgs.len());
-    for (idx, msg) in msgs.iter().enumerate() {
-        let app_err = app_err_vec.get(idx).unwrap();
-        assert_eq!(app_err.code, code);
-        assert_eq!(app_err.message, msg.to_string());
-    }
-}
-
 pub fn save_empty_file(path_file: &str) -> Result<String, String> {
     let _ = fs::File::create(path_file).map_err(|e| e.to_string())?;
     Ok(path_file.to_string())
