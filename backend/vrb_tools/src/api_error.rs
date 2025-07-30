@@ -308,7 +308,7 @@ mod tests {
 
     use super::*;
 
-    pub const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
+    const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 
     // ** ApiError::new() **
 
