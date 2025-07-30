@@ -10,9 +10,8 @@ mod tests {
     };
     use serde_json::json;
     use vrb_tools::{
-        api_error::{code_to_str, ApiError},
+        api_error::{code_to_str, ApiError, check_app_err},
         err, hash_tools,
-        testing::check_app_err,
         token_coding,
         token_data::TOKEN_NAME,
     };

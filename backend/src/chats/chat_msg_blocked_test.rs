@@ -9,7 +9,7 @@ mod tests {
     use chrono::{SecondsFormat, Utc};
     use serde_json::{self, json};
     use vrb_tools::{
-        api_error::{code_to_str, ApiError},
+        api_error::{code_to_str, ApiError, check_app_err},
         err, validators,
     };
 
@@ -17,7 +17,7 @@ mod tests {
         chat_message_controller::{
             delete_blocked_user, get_blocked_users, post_blocked_user,
             tests::{
-                check_app_err, configure_chat_message, get_cfg_data, header_auth, MSG_CASTING_TO_TYPE, MSG_CONTENT_TYPE_ERROR,
+                configure_chat_message, get_cfg_data, header_auth, MSG_CASTING_TO_TYPE, MSG_CONTENT_TYPE_ERROR,
                 MSG_FAILED_DESER,
             },
         },
