@@ -1521,7 +1521,6 @@ pub mod tests {
         profile_models::{Profile, Session},
         profile_orm::tests::ProfileOrmApp,
     };
-    use crate::sessions::session_orm::tests::SessionOrmApp;
     use crate::streams::{
         config_strm,
         stream_models::{Stream, StreamInfoDto},
@@ -1559,7 +1558,7 @@ pub mod tests {
         // Create profile values.
         let profile1: Profile = profile_with_id(create_profile());
         let num_token = 1234;
-        let session1 = SessionOrmApp::new_session(profile1.user_id, Some(num_token));
+        let session1 = Session { user_id: profile1.user_id, num_token: Some(num_token) };
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
@@ -1585,14 +1584,12 @@ pub mod tests {
             let data_config_jwt = web::Data::new(cfg_c.0);
             let data_config_strm = web::Data::new(cfg_c.1);
             let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
-            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
             let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.2));
 
             config
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_config_strm))
                 .app_data(web::Data::clone(&data_profile_orm))
-                .app_data(web::Data::clone(&data_session_orm))
                 .app_data(web::Data::clone(&data_stream_orm));
         }
     }
