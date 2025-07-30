@@ -12,19 +12,23 @@ mod tests {
     use vrb_tools::{
         api_error::{code_to_str, ApiError},
         err,
+        token_data::header_auth,
     };
 
     use crate::profiles::profile_orm::tests::ProfileOrmApp;
     use crate::streams::{
         stream_controller::{
             get_stream_by_id, get_stream_config, get_streams, get_streams_events, get_streams_period,
-            tests::{configure_stream, create_stream, get_cfg_data, header_auth, MSG_CASTING_TO_TYPE, MSG_FAILED_DESER},
+            tests::{configure_stream, create_stream, get_cfg_data},
             MSG_FINISH_EXCEEDS_LIMIT, MSG_FINISH_LESS_START, MSG_GET_LIST_OTHER_USER_STREAMS, MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS,
             MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, PERIOD_MAX_NUMBER_DAYS,
         },
         stream_models::{self, StreamConfigDto, StreamEventDto, StreamEventPageDto, StreamInfoDto, StreamInfoPageDto},
         stream_orm::tests::StreamOrmApp,
     };
+
+    const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
+    const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
 
     // ** get_stream_by_id **
 

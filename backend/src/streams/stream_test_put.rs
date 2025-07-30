@@ -13,9 +13,11 @@ mod tests {
     use serde_json;
     use vrb_dbase::{db_enums::{UserRole, StreamState}};
     use vrb_tools::{
-        api_error::{code_to_str, ApiError},
+        api_error::{code_to_str, ApiError, check_app_err},
         cdis::coding,
         err, validators,
+        png_files,
+        token_data::header_auth,
     };
 
     use crate::profiles::profile_orm::tests::ProfileOrmApp;
@@ -23,15 +25,17 @@ mod tests {
         config_strm,
         stream_controller::{
             put_stream, put_toggle_state,
-            tests::{
-                check_app_err, configure_stream, create_stream, get_cfg_data, header_auth, save_empty_file, save_file_png,
-                MSG_CASTING_TO_TYPE, MSG_CONTENT_TYPE_NOT_FOUND, MSG_FAILED_DESER, MSG_MULTIPART_STREAM_INCOMPLETE,
-            },
+            tests::{configure_stream, create_stream, get_cfg_data},
             ALIAS_LOGO_FILES_DIR, MSG_EXIST_IS_ACTIVE_STREAM, MSG_INVALID_FIELD_TAG, MSG_INVALID_STREAM_STATE,
         },
         stream_models::{self, ModifyStreamInfoDto, StreamInfoDto, StreamModelsTest, ToggleStreamStateDto},
         stream_orm::tests::StreamOrmApp,
     };
+
+    const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
+    const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
+    const MSG_MULTIPART_STREAM_INCOMPLETE: &str = "Multipart stream is incomplete";
+    const MSG_CONTENT_TYPE_NOT_FOUND: &str = "Could not find Content-Type header";
 
     // ** put_stream **
 
@@ -79,7 +83,7 @@ mod tests {
     async fn test_put_stream_invalid_name() {
         let name1_file = "test_put_stream_invalid_name.png";
         let path_name1_file = format!("./{}", &name1_file);
-        save_file_png(&path_name1_file, 2).unwrap();
+        png_files::save_file_png(&path_name1_file, 2).unwrap();
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "logofile1", "image/png", name1_file)
@@ -445,7 +449,7 @@ mod tests {
     async fn test_put_stream_invalid_file_size() {
         let name1_file = "test_put_stream_invalid_file_size.png";
         let path_name1_file = format!("./{}", &name1_file);
-        let (size, _name) = save_file_png(&path_name1_file, 2).unwrap();
+        let (size, _name) = png_files::save_file_png(&path_name1_file, 2).unwrap();
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
@@ -481,7 +485,7 @@ mod tests {
     async fn test_put_stream_invalid_file_type() {
         let name1_file = "test_put_stream_invalid_file_type.png";
         let path_name1_file = format!("./{}", &name1_file);
-        save_file_png(&path_name1_file, 1).unwrap();
+        png_files::save_file_png(&path_name1_file, 1).unwrap();
         #[rustfmt::skip]
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "logofile", "image/bmp", name1_file)
@@ -663,7 +667,7 @@ mod tests {
     async fn test_put_stream_a_with_old0_new1() {
         let name1_file = "test_put_stream_a_with_old0_new1.png";
         let path_name1_file = format!("./{}", name1_file);
-        save_file_png(&path_name1_file, 1).unwrap();
+        png_files::save_file_png(&path_name1_file, 1).unwrap();
 
         #[rustfmt::skip]
             let (header, body) = MultiPartFormDataBuilder::new()
@@ -717,7 +721,7 @@ mod tests {
     async fn test_put_stream_b_with_old0_new1_convert() {
         let name1_file = "test_put_stream_b_with_old0_new1_convert.png";
         let path_name1_file = format!("./{}", name1_file);
-        save_file_png(&path_name1_file, 3).unwrap();
+        png_files::save_file_png(&path_name1_file, 3).unwrap();
 
         #[rustfmt::skip]
             let (header, body) = MultiPartFormDataBuilder::new()
@@ -784,12 +788,12 @@ mod tests {
 
         let name0_file = "test_put_stream_c_with_old1_new1.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
-        save_file_png(&(path_name0_file.clone()), 1).unwrap();
+        png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
         let name1_file = "test_put_stream_c_with_old1_new1_new.png";
         let path_name1_file = format!("./{}", name1_file);
-        save_file_png(&path_name1_file, 1).unwrap();
+        png_files::save_file_png(&path_name1_file, 1).unwrap();
 
         #[rustfmt::skip]
             let (header, body) = MultiPartFormDataBuilder::new()
@@ -848,7 +852,7 @@ mod tests {
 
         let name0_file = "test_put_stream_d_with_old1_new0.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
-        save_file_png(&path_name0_file, 1).unwrap();
+        png_files::save_file_png(&path_name0_file, 1).unwrap();
         let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
         #[rustfmt::skip]
@@ -891,12 +895,12 @@ mod tests {
 
         let name0_file = "test_put_stream_e_with_old1_new_size0.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
-        save_file_png(&(path_name0_file.clone()), 1).unwrap();
+        png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
         let name1_file = "test_put_stream_e_with_old1_new_size0_new.png";
         let path_name1_file = format!("./{}", name1_file);
-        save_empty_file(&path_name1_file).unwrap();
+        png_files::save_empty_file(&path_name1_file).unwrap();
 
         #[rustfmt::skip]
             let (header, body) = MultiPartFormDataBuilder::new()
@@ -935,7 +939,7 @@ mod tests {
     async fn test_put_stream_f_with_old0_new_size0() {
         let name1_file = "test_put_stream_f_with_old0_new_size0.png";
         let path_name1_file = format!("./{}", name1_file);
-        save_empty_file(&path_name1_file).unwrap();
+        png_files::save_empty_file(&path_name1_file).unwrap();
 
         #[rustfmt::skip]
             let (header, body) = MultiPartFormDataBuilder::new()

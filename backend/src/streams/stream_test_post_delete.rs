@@ -12,23 +12,27 @@ mod tests {
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json;
     use vrb_tools::{
-        api_error::{code_to_str, ApiError},
+        api_error::{code_to_str, ApiError, check_app_err},
         cdis::coding,
         err,
+        png_files,
+        token_data::header_auth,
     };
 
     use crate::streams::{
         config_strm,
         stream_controller::{
             delete_stream, post_stream,
-            tests::{
-                check_app_err, configure_stream, get_cfg_data, header_auth, save_empty_file, save_file_png, MSG_CASTING_TO_TYPE,
-                MSG_CONTENT_TYPE_NOT_FOUND, MSG_FAILED_DESER, MSG_MULTIPART_STREAM_INCOMPLETE,
-            },
+            tests::{configure_stream, get_cfg_data},
             ALIAS_LOGO_FILES_DIR, MSG_INVALID_FIELD_TAG,
         },
         stream_models::{self, StreamInfoDto, StreamModelsTest},
     };
+
+    const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
+    const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
+    const MSG_MULTIPART_STREAM_INCOMPLETE: &str = "Multipart stream is incomplete";
+    const MSG_CONTENT_TYPE_NOT_FOUND: &str = "Could not find Content-Type header";
 
     // ** post_stream **
 
@@ -407,7 +411,7 @@ mod tests {
     async fn test_post_stream_invalid_file_size() {
         let name1_file = "test_post_stream_invalid_file_size.png";
         let path_name1_file = format!("./{}", &name1_file);
-        let (size, _name) = save_file_png(&path_name1_file, 2).unwrap();
+        let (size, _name) = png_files::save_file_png(&path_name1_file, 2).unwrap();
         let tags: Vec<String> = StreamModelsTest::tag_names_enough();
 
         let (header, body) = MultiPartFormDataBuilder::new()
@@ -444,7 +448,7 @@ mod tests {
     async fn test_post_stream_invalid_file_type() {
         let name1_file = "post_ellipse5x5.png";
         let path_name1_file = format!("./{}", &name1_file);
-        save_file_png(&path_name1_file, 1).unwrap();
+        png_files::save_file_png(&path_name1_file, 1).unwrap();
         let tags: Vec<String> = StreamModelsTest::tag_names_enough();
 
         let (header, body) = MultiPartFormDataBuilder::new()
@@ -525,7 +529,7 @@ mod tests {
     async fn test_post_stream_with_new_file() {
         let name1_file = "test_post_stream_with_new_file.png";
         let path_name1_file = format!("./{}", &name1_file);
-        save_file_png(&path_name1_file, 1).unwrap();
+        png_files::save_file_png(&path_name1_file, 1).unwrap();
 
         let title_s = StreamModelsTest::title_enough();
         let tags: Vec<String> = StreamModelsTest::tag_names_enough();
@@ -589,7 +593,7 @@ mod tests {
     async fn test_post_stream_valid_data_with_empty_file() {
         let name1_file = "post_circle_empty.png";
         let path_name1_file = format!("./{}", name1_file);
-        save_empty_file(&path_name1_file).unwrap();
+        png_files::save_empty_file(&path_name1_file).unwrap();
 
         let title_s = StreamModelsTest::title_enough();
         let tags: Vec<String> = StreamModelsTest::tag_names_enough();
@@ -631,7 +635,7 @@ mod tests {
     async fn test_post_stream_valid_data_with_logo_convert_file_new() {
         let name1_file = "post_triangle_23x19.png";
         let path_name1_file = format!("./{}", &name1_file);
-        save_file_png(&path_name1_file, 3).unwrap();
+        png_files::save_file_png(&path_name1_file, 3).unwrap();
 
         let title_s = StreamModelsTest::title_enough();
         let tags: Vec<String> = StreamModelsTest::tag_names_enough();
@@ -760,7 +764,7 @@ mod tests {
 
         let name0_file = "test_delete_stream_with_img.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
-        save_file_png(&(path_name0_file.clone()), 1).unwrap();
+        png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
         let (cfg_c, mut data_c, token) = get_cfg_data();
@@ -795,7 +799,7 @@ mod tests {
 
         let name0_file = "test_delete_stream_with_img_not_alias.png";
         let path_name0_file = format!("{}/{}", &strm_logo_files_dir, name0_file);
-        save_file_png(&(path_name0_file.clone()), 1).unwrap();
+        png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_logo = format!("/1{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
         let (cfg_c, mut data_c, token) = get_cfg_data();
