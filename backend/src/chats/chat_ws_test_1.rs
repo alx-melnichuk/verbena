@@ -14,7 +14,7 @@ mod tests {
         chat_ws_controller::get_ws_chat,
         chat_ws_session::{get_err400, get_err401, get_err404, get_err406, get_err409},
     };
-    use crate::profiles::config_jwt;
+    use crate::profiles::{config_jwt, profile_orm::tests::PROFILE_USER_ID_NO_SESSION};
 
     const URL_WS: &str = "/ws";
 
@@ -68,7 +68,9 @@ mod tests {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
             let (cfg_c, mut data_c, _token) = get_cfg_data(1);
-            let (profile_vec, _session_vec) = get_profiles(4);
+            let (mut profile_vec, _session_vec) = get_profiles(4);
+            let profile = profile_vec.get_mut(2).unwrap();
+            profile.user_id = PROFILE_USER_ID_NO_SESSION;
             data_c.0 = profile_vec;
             App::new().service(get_ws_chat).configure(configure_chat_message(cfg_c, data_c))
         });
