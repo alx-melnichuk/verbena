@@ -23,7 +23,7 @@ pub mod tests {
 
     use crate::profiles::{
         config_prfl,
-        profile_controller::{put_profile, put_profile_new_password},
+        profile_controller::{put_profile, put_profile_new_password, ALIAS_AVATAR_FILES_DIR},
         profile_models::{self, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileTest},
         profile_orm::tests::{ProfileOrmTest as PrfTest, USER},
     };
@@ -32,7 +32,6 @@ pub mod tests {
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
     const MSG_MULTIPART_STREAM_INCOMPLETE: &str = "Multipart stream is incomplete";
     const MSG_CONTENT_TYPE_ERROR: &str = "Could not find Content-Type header";
-    const ALIAS_AVATAR_FILES_DIR: &str = "/avatar";
 
     // ** put_profile **
 

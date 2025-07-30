@@ -17,14 +17,13 @@ pub mod tests {
 
     use crate::profiles::{
         config_prfl,
-        profile_controller::{delete_profile, delete_profile_current},
+        profile_controller::{delete_profile, delete_profile_current, ALIAS_AVATAR_FILES_DIR},
         profile_models::ProfileDto,
         profile_orm::tests::{ProfileOrmTest as PrfTest, ADMIN, USER},
     };
     use crate::users::user_registr_orm::tests::UserRegistrOrmTest as RegTest;
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
-    const ALIAS_AVATAR_FILES_DIR: &str = "/avatar";
 
     // ** delete_profile **
 
