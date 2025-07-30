@@ -29,7 +29,6 @@ mod tests {
             MSG_REGISTR_NOT_FOUND, MSG_USER_NOT_FOUND,
         },
     };
-    use crate::sessions::session_orm::tests::SessionOrmApp;
     use crate::users::{
         user_models::{UserRecovery, UserRegistr},
         user_recovery_orm::tests::UserRecoveryOrmApp,
@@ -79,7 +78,7 @@ mod tests {
         let profile1: Profile = profile_with_id(create_profile());
         let user_id = profile1.user_id;
         let num_token = 1234;
-        let session1 = SessionOrmApp::new_session(user_id, Some(num_token));
+        let session1 = Session { user_id: user_id, num_token: Some(num_token) };
 
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
@@ -112,7 +111,6 @@ mod tests {
             let data_mailer = web::Data::new(MailerApp::new(config_smtp::get_test_config()));
 
             let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
-            let data_session_orm = web::Data::new(SessionOrmApp::create(&data_c.1));
             let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.2));
             let data_user_recovery_orm = web::Data::new(UserRecoveryOrmApp::create(&data_c.3));
 
@@ -121,7 +119,6 @@ mod tests {
                 .app_data(web::Data::clone(&data_config_jwt))
                 .app_data(web::Data::clone(&data_mailer))
                 .app_data(web::Data::clone(&data_profile_orm))
-                .app_data(web::Data::clone(&data_session_orm))
                 .app_data(web::Data::clone(&data_user_registr_orm))
                 .app_data(web::Data::clone(&data_user_recovery_orm));
         }
