@@ -43,7 +43,7 @@ mod tests {
         ProfileOrmApp::new_profile(1, &nickname, &format!("{}@gmail.com", &nickname), role)
     }
     fn profile_with_id(profile: Profile) -> Profile {
-        let profile_orm = ProfileOrmApp::create(&vec![profile]);
+        let profile_orm = ProfileOrmApp::create(&vec![profile], &[]);
         profile_orm.profile_vec.get(0).unwrap().clone()
     }
     fn create_user_registr() -> UserRegistr {
@@ -110,7 +110,7 @@ mod tests {
             let data_config_jwt = web::Data::new(cfg_c.1);
             let data_mailer = web::Data::new(MailerApp::new(config_smtp::get_test_config()));
 
-            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0, &data_c.1));
             let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.2));
             let data_user_recovery_orm = web::Data::new(UserRecoveryOrmApp::create(&data_c.3));
 

@@ -540,7 +540,7 @@ mod tests {
         let mut profile_vec = data_c.0;
         #[rustfmt::skip]
         profile_vec.push(ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User));
-        let profile2 = ProfileOrmApp::create(&profile_vec).profile_vec.get(1).unwrap().clone();
+        let profile2 = ProfileOrmApp::create(&profile_vec, &[]).profile_vec.get(1).unwrap().clone();
 
         let stream2 = create_stream(1, profile2.user_id, "title2", "tag01,tag02", Utc::now());
         let mut stream_vec = data_c.2;
@@ -573,7 +573,7 @@ mod tests {
         profile1.role = UserRole::Admin;
         #[rustfmt::skip]
         profile_vec.push(ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User));
-        let profile2 = ProfileOrmApp::create(&profile_vec).profile_vec.get(1).unwrap().clone();
+        let profile2 = ProfileOrmApp::create(&profile_vec, &[]).profile_vec.get(1).unwrap().clone();
 
         let stream2 = create_stream(1, profile2.user_id, "title2", "tag01,tag02", Utc::now());
         let mut stream_vec = data_c.2;

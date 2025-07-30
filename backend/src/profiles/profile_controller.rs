@@ -1061,7 +1061,7 @@ pub mod tests {
         profile
     }
     fn profile_with_id1(profile: Profile) -> Profile {
-        let profile_orm = ProfileOrmApp::create(&vec![profile]);
+        let profile_orm = ProfileOrmApp::create(&vec![profile], &[]);
         profile_orm.profile_vec.get(0).unwrap().clone()
     }
     #[rustfmt::skip]
@@ -1099,7 +1099,7 @@ pub mod tests {
             let data_config_prfl = web::Data::new(cfg_c.1);
             let data_config_strm = web::Data::new(cfg_c.2);
 
-            let data_profile_orm = web::Data::new(ProfileOrmApp::create2sessions(&data_c.0, &data_c.1));
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0, &data_c.1));
             let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.2));
             let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.3));
 

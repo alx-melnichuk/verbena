@@ -213,7 +213,7 @@ mod tests {
         profile
     }
     fn profile_with_id(profile: Profile) -> Profile {
-        let profile_orm = ProfileOrmApp::create(&vec![profile]);
+        let profile_orm = ProfileOrmApp::create(&vec![profile], &[]);
         profile_orm.profile_vec.get(0).unwrap().clone()
     }
     fn cfg_jwt() -> config_jwt::ConfigJwt {
@@ -244,7 +244,7 @@ mod tests {
     ) -> impl FnOnce(&mut web::ServiceConfig) {
         move |config: &mut web::ServiceConfig| {
             let data_config_jwt = web::Data::new(config_jwt);
-            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0, &[]));
 
             config
                 .app_data(web::Data::clone(&data_config_jwt))

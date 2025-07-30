@@ -93,7 +93,7 @@ mod tests {
         let profile_vec = ProfileOrmApp::create(&vec![
             data_c.0.get(0).unwrap().clone(),
             ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
-        ])
+        ], &[])
         .profile_vec;
         let profile2_id = profile_vec.get(1).unwrap().user_id;
 
@@ -134,7 +134,7 @@ mod tests {
         let profile_vec = ProfileOrmApp::create(&vec![
             profile1,
             ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
-        ])
+        ], &[])
         .profile_vec;
         let profile2_id = profile_vec.get(1).unwrap().user_id;
 
@@ -301,7 +301,7 @@ mod tests {
         let profile_vec = ProfileOrmApp::create(&vec![
             profile1,
             ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
-        ])
+        ], &[])
         .profile_vec;
         let profile2_id = profile_vec.get(1).unwrap().user_id;
 
@@ -340,7 +340,7 @@ mod tests {
         let profile_vec = ProfileOrmApp::create(&vec![
             profile1,
             ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
-        ])
+        ], &[])
         .profile_vec;
         let profile2_id = profile_vec.get(1).unwrap().user_id;
 
@@ -719,7 +719,7 @@ mod tests {
         let profile_vec = ProfileOrmApp::create(&vec![
             profile1,
             ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
-        ])
+        ], &[])
         .profile_vec;
         let profile2_id = profile_vec.get(1).unwrap().user_id;
 
@@ -779,7 +779,7 @@ mod tests {
         let profile_vec = ProfileOrmApp::create(&vec![
             profile1,
             ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
-        ])
+        ], &[])
         .profile_vec;
         let profile2_id = profile_vec.get(1).unwrap().user_id;
 
@@ -879,7 +879,7 @@ mod tests {
         let profile_vec = ProfileOrmApp::create(&vec![
             profile1,
             ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
-        ])
+        ], &[])
         .profile_vec;
         let profile2_id = profile_vec.get(1).unwrap().user_id;
 
@@ -929,7 +929,7 @@ mod tests {
         let profile_vec = ProfileOrmApp::create(&vec![
             profile1,
             ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
-        ])
+        ], &[])
         .profile_vec;
         let profile2_id = profile_vec.get(1).unwrap().user_id;
 
@@ -1120,7 +1120,7 @@ mod tests {
         let profile_vec = ProfileOrmApp::create(&vec![
             profile1,
             ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
-        ])
+        ], &[])
         .profile_vec;
         let profile2_id = profile_vec.get(1).unwrap().user_id;
 
@@ -1155,7 +1155,7 @@ mod tests {
         let profile_vec = ProfileOrmApp::create(&vec![
             profile1,
             ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
-        ])
+        ], &[])
         .profile_vec;
         let profile2_id = profile_vec.get(1).unwrap().user_id;
 

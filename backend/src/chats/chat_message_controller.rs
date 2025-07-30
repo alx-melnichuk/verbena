@@ -635,7 +635,7 @@ pub mod tests {
         for idx in 0..cnt {
             profile_list.push(create_profile(PROFILE_ID + i32::from(idx)));
         }
-        let profile_vec = ProfileOrmApp::create(&profile_list).profile_vec;
+        let profile_vec = ProfileOrmApp::create(&profile_list, &[]).profile_vec;
 
         for profile in profile_vec.iter() {
             #[rustfmt::skip]
@@ -729,7 +729,7 @@ pub mod tests {
             #[rustfmt::skip]
             let user_mini_vec: Vec<UserMini> = data_c.0.iter().map(|v| UserMini { id: v.user_id, name: v.nickname.clone() }).collect();
             let data_config_jwt = web::Data::new(cfg_c);
-            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0, &data_c.1));
             let data_chat_message_orm = web::Data::new(ChatMessageOrmApp::create(&data_c.2, &data_c.3, &data_c.4, &user_mini_vec.clone()));
             config
                 .app_data(web::Data::clone(&data_config_jwt))

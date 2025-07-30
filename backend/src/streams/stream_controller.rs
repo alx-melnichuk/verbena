@@ -1541,7 +1541,7 @@ pub mod tests {
         profile
     }
     fn profile_with_id(profile: Profile) -> Profile {
-        let profile_orm = ProfileOrmApp::create(&vec![profile]);
+        let profile_orm = ProfileOrmApp::create(&vec![profile], &[]);
         profile_orm.profile_vec.get(0).unwrap().clone()
     }
     pub fn create_stream(idx: i32, user_id: i32, title: &str, tags: &str, starttime: DateTime<Utc>) -> StreamInfoDto {
@@ -1583,7 +1583,7 @@ pub mod tests {
         move |config: &mut web::ServiceConfig| {
             let data_config_jwt = web::Data::new(cfg_c.0);
             let data_config_strm = web::Data::new(cfg_c.1);
-            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0));
+            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0, &data_c.1));
             let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.2));
 
             config

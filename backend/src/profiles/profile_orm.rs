@@ -291,64 +291,20 @@ pub mod impls {
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
 
-    use actix_web::{http::header, web};
+    use actix_web::web;
     use chrono::Utc;
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::{consts, hash_tools, token_coding, token_data::BEARER};
+    use vrb_tools::{consts, token_coding};
 
-    use crate::profiles::{config_jwt, config_prfl,};
+    use crate::profiles::{config_jwt, config_prfl};
 
     use super::*;
 
     pub const ADMIN: u8 = 0;
     pub const USER: u8 = 1;
     pub const PROFILE_USER_ID: i32 = 1100;
+    pub const NUM_TOKEN_USER1: i32 = 1234;
     pub const PROFILE_USER_ID_NO_SESSION: i32 = 1199;
-
-    pub struct ProfileOrmTest {}
-
-    impl ProfileOrmTest {
-        pub fn user_ids() -> Vec<i32> {
-            vec![
-                PROFILE_USER_ID + 0,
-                PROFILE_USER_ID + 1,
-                PROFILE_USER_ID + 2,
-                PROFILE_USER_ID + 3,
-            ]
-        }
-        pub fn user_names() -> Vec<String> {
-            vec![
-                "oliver_taylor".to_string(),
-                "robert_brown".to_string(),
-                "mary_williams".to_string(),
-                "ava_wilson".to_string(),
-            ]
-        }
-        pub fn stream_ids() -> Vec<i32> {
-            vec![
-                1, // Owner user idx 0 (live: true)  1100 oliver_taylor
-                2, // Owner user idx 1 (live: true)  1101 robert_brown
-                3, // Owner user idx 2 (live: false) 1102 mary_williams
-                4, // Owner user idx 3  blocked      1103 ava_wilson
-            ]
-        }
-        pub fn stream_logo_alias(user_id: i32) -> Option<String> {
-            let idx = user_id - PROFILE_USER_ID;
-            if -1 < idx && idx < 4 {
-                Some(format!("{}/file_logo_{}.png", consts::ALIAS_LOGO_FILES_DIR, idx))
-            } else {
-                None
-            }
-        }
-        pub fn stream_logo_path(user_id: i32) -> Option<String> {
-            let idx = user_id - PROFILE_USER_ID;
-            if -1 < idx && idx < 4 {
-                Some(format!("{}/file_logo_{}.png", consts::LOGO_FILES_DIR, idx))
-            } else {
-                None
-            }
-        }
-    }
 
     #[derive(Debug, Clone)]
     pub struct ProfileOrmApp {
@@ -365,18 +321,7 @@ pub mod tests {
             }
         }
         /// Create a new instance with the specified profile list.
-        pub fn create(profiles: &[Profile]) -> Self {
-            Self::create2sessions(profiles, &[])
-        }
-        /// Create a new instance of the Profile entity.
-        pub fn new_profile(user_id: i32, nickname: &str, email: &str, role: UserRole) -> Profile {
-            Profile::new(user_id, &nickname.to_lowercase(), &email.to_lowercase(), role.clone(), None, None, None, None)
-        }
-        /// Create a new instance of the Session entity.
-        pub fn new_session(user_id: i32, num_token: Option<i32>) -> Session {
-            Session { user_id, num_token }
-        }
-        pub fn create2sessions(profiles: &[Profile], sessions: &[Session]) -> Self {
+        pub fn create(profiles: &[Profile], sessions: &[Session]) -> Self {
             let mut profile_vec: Vec<Profile> = Vec::new();
             let mut session_vec: Vec<Session> = Vec::new();
             for (idx, profile) in profiles.iter().enumerate() {
@@ -400,12 +345,21 @@ pub mod tests {
 
                 let opt_session = sessions.iter().find(|v| (*v).user_id == profile.user_id);
                 if let Some(session) = opt_session {
-                    session_vec.push(Self::new_session(user_id, session.num_token));    
+                    #[rustfmt::skip]
+                    session_vec.push(Session { user_id, num_token: session.num_token });
                 } else if !is_no_session {
-                    session_vec.push(Self::new_session(user_id, None));    
+                    session_vec.push(Session { user_id, num_token: None });
                 }
             }
             ProfileOrmApp { profile_vec, session_vec }
+        }
+        /// Create a new instance of the Profile entity.
+        pub fn new_profile(user_id: i32, nickname: &str, email: &str, role: UserRole) -> Profile {
+            Profile::new(user_id, &nickname.to_lowercase(), &email.to_lowercase(), role.clone(), None, None, None, None)
+        }
+        /// Create a new instance of the Session entity.
+        pub fn new_session(user_id: i32, num_token: Option<i32>) -> Session {
+            Session { user_id, num_token }
         }
     }
 
@@ -535,13 +489,11 @@ pub mod tests {
         /// Modify the entity (session).
         fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
             let opt_session: Option<Session> = self.get_session_by_id(user_id)?;
-            let mut res_session = match opt_session {
-                Some(v) => v,
-                None => {
-                    return Ok(None);
-                }
-            };
-            let new_session = Self::new_session(user_id, num_token);
+            if opt_session.is_none() {
+                return Ok(None);
+            }
+            let mut res_session = opt_session.unwrap();
+            let new_session = Session { user_id, num_token };
             res_session.num_token = new_session.num_token;
 
             Ok(Some(res_session))
@@ -558,63 +510,86 @@ pub mod tests {
         }
     }
 
+    pub struct ProfileOrmTest {}
 
-    pub fn create_profile(role: u8, opt_password: Option<&str>) -> Profile {
-        let user_names = ProfileOrmTest::user_names();
-        let nickname = user_names.get(0).unwrap(); // "oliver_taylor", id: 1100
-        let role = if role == ADMIN { UserRole::Admin } else { UserRole::User };
-        let mut profile = ProfileOrmApp::new_profile(1, nickname, &format!("{}@gmail.com", nickname), role);
-        if let Some(password) = opt_password {
-            profile.password = hash_tools::encode_hash(password.to_string()).unwrap(); // hashed
+    impl ProfileOrmTest {
+        pub fn user_ids() -> Vec<i32> {
+            vec![PROFILE_USER_ID + 0, PROFILE_USER_ID + 1, PROFILE_USER_ID + 2, PROFILE_USER_ID + 3]
         }
-        profile
-    }
-    pub fn header_auth(token: &str) -> (header::HeaderName, header::HeaderValue) {
-        let header_value = header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
-        (header::AUTHORIZATION, header_value)
-    }
-    
-    #[rustfmt::skip]
-    pub fn data_profile(role: u8) -> (
-        (config_jwt::ConfigJwt, config_prfl::ConfigPrfl), // configuration
-        (Vec<Profile>, Vec<Session>) // data vectors
-        , String
-    ) {
-        // Create profile values.
-        let profile_orm = ProfileOrmApp::create(&vec![create_profile(role, None)]);
-        let profile1: Profile = profile_orm.profile_vec.get(0).unwrap().clone();
+        pub fn user_names() -> Vec<String> {
+            vec![
+                "oliver_taylor".to_string(),
+                "robert_brown".to_string(),
+                "mary_williams".to_string(),
+                "ava_wilson".to_string(),
+            ]
+        }
+        pub fn stream_ids() -> Vec<i32> {
+            vec![
+                1, // Owner user idx 0 (live: true)  1100 oliver_taylor
+                2, // Owner user idx 1 (live: true)  1101 robert_brown
+                3, // Owner user idx 2 (live: false) 1102 mary_williams
+                4, // Owner user idx 3  blocked      1103 ava_wilson
+            ]
+        }
+        #[rustfmt::skip]
+        pub fn stream_logo_alias(user_id: i32) -> Option<String> {
+            let idx = user_id - PROFILE_USER_ID;
+            if -1 < idx && idx < 4 { Some(format!("{}/file_logo_{}.png", consts::ALIAS_LOGO_FILES_DIR, idx)) } else { None }
+        }
+        #[rustfmt::skip]
+        pub fn stream_logo_path(user_id: i32) -> Option<String> {
+            let idx = user_id - PROFILE_USER_ID;
+            if -1 < idx && idx < 4 { Some(format!("{}/file_logo_{}.png", consts::LOGO_FILES_DIR, idx)) } else { None }
+        }
 
-        let num_token = 1234;
-        let session1 = Session { user_id: profile1.user_id, num_token: Some(num_token) };
+        pub fn profiles(roles: &[u8]) -> (Vec<Profile>, Vec<Session>) {
+            let mut profile_vec: Vec<Profile> = Vec::new();
+            let mut session_vec: Vec<Session> = Vec::new();
+            let user_ids = ProfileOrmTest::user_ids();
+            let user_names = ProfileOrmTest::user_names();
+            let len = if roles.len() > user_ids.len() { user_ids.len() } else { roles.len() };
+            for index in 0..len {
+                let user_id = user_ids.get(index).unwrap().clone();
+                let nickname = user_names.get(index).unwrap().clone().to_lowercase();
+                let email = format!("{}@gmail.com", nickname);
+                #[rustfmt::skip]
+                let role = if roles.get(index).unwrap().clone() == ADMIN { UserRole::Admin } else { UserRole::User };
 
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = token_coding::encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
+                let profile = Profile::new(user_id, &nickname, &email, role, None, None, None, None);
+                profile_vec.push(profile);
+                let num_token = if user_id == PROFILE_USER_ID { Some(NUM_TOKEN_USER1) } else { None };
+                session_vec.push(Session { user_id, num_token });
+            }
+            let profile_orm_app = ProfileOrmApp { profile_vec, session_vec };
 
-        let config_prfl = config_prfl::get_test_config();
-        
-        let cfg_c = (config_jwt, config_prfl);
-        let data_c = (vec![profile1], vec![session1]);
+            (profile_orm_app.profile_vec, profile_orm_app.session_vec)
+        }
+        pub fn cfg() -> (config_jwt::ConfigJwt, config_prfl::ConfigPrfl) {
+            let config_jwt = config_jwt::get_test_config();
+            let config_prfl = config_prfl::get_test_config();
+            (config_jwt, config_prfl)
+        }
+        pub fn token1() -> String {
+            let config_jwt = config_jwt::get_test_config();
+            let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+            token_coding::encode_token(PROFILE_USER_ID, NUM_TOKEN_USER1, &jwt_secret, config_jwt.jwt_access).unwrap()
+        }
+        pub fn config(
+            cfg_p: (config_jwt::ConfigJwt, config_prfl::ConfigPrfl), // configuration
+            data_p: (Vec<Profile>, Vec<Session>),                    // data vectors
+        ) -> impl FnOnce(&mut web::ServiceConfig) {
+            move |config: &mut web::ServiceConfig| {
+                let data_config_jwt = web::Data::new(cfg_p.0);
+                let data_config_prfl = web::Data::new(cfg_p.1);
 
-        (cfg_c, data_c, token)
-    }
+                let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_p.0, &data_p.1));
 
-    pub fn config_profile(
-        cfg_c: (config_jwt::ConfigJwt, config_prfl::ConfigPrfl), // configuration
-        data_v: (Vec<Profile>, Vec<Session>),                    // data vectors
-    ) -> impl FnOnce(&mut web::ServiceConfig) {
-        move |config: &mut web::ServiceConfig| {
-            let data_config_jwt = web::Data::new(cfg_c.0);
-            let data_config_prfl = web::Data::new(cfg_c.1);
-
-            let data_profile_orm = web::Data::new(ProfileOrmApp::create2sessions(&data_v.0, &data_v.1));
-
-            config
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_config_prfl))
-                .app_data(web::Data::clone(&data_profile_orm));
+                config
+                    .app_data(web::Data::clone(&data_config_jwt))
+                    .app_data(web::Data::clone(&data_config_prfl))
+                    .app_data(web::Data::clone(&data_profile_orm));
+            }
         }
     }
-
 }
