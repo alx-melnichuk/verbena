@@ -13,11 +13,7 @@ use vrb_common::{
     validators::{self, msg_validation, ValidationChecks, Validator},
 };
 use vrb_dbase::db_enums::UserRole;
-use vrb_tools::{
-    cdis::coding,
-    consts, err, hash_tools,
-    loading::dynamic_image,
-};
+use vrb_tools::{cdis::coding, consts, err, hash_tools, loading::dynamic_image};
 
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -263,16 +259,10 @@ pub async fn get_profile_config(config_prfl: web::Data<ConfigPrfl>) -> actix_web
     let max_size = if cfg_prfl.prfl_avatar_max_size > 0 { Some(cfg_prfl.prfl_avatar_max_size) } else { None };
     let valid_types = cfg_prfl.prfl_avatar_valid_types.clone();
     let ext = cfg_prfl.prfl_avatar_ext.clone();
-    let max_width = if cfg_prfl.prfl_avatar_max_width > 0 {
-        Some(cfg_prfl.prfl_avatar_max_width)
-    } else {
-        None
-    };
-    let max_height = if cfg_prfl.prfl_avatar_max_height > 0 {
-        Some(cfg_prfl.prfl_avatar_max_height)
-    } else {
-        None
-    };
+    #[rustfmt::skip]
+    let max_width = if cfg_prfl.prfl_avatar_max_width > 0 { Some(cfg_prfl.prfl_avatar_max_width) } else { None };
+    #[rustfmt::skip]
+    let max_height = if cfg_prfl.prfl_avatar_max_height > 0 { Some(cfg_prfl.prfl_avatar_max_height) } else { None };
     // Get configuration data.
     let profile_config_dto = ProfileConfigDto::new(max_size, valid_types, ext, max_width, max_height);
 
@@ -1024,5 +1014,24 @@ pub async fn delete_profile_current(
         Ok(HttpResponse::Ok().json(ProfileDto::from(profile))) // 200
     } else {
         Ok(HttpResponse::NoContent().finish()) // 204
+    }
+}
+
+#[cfg(all(test, feature = "mockdata"))]
+pub mod tests {
+
+    use actix_web::{http, web};
+    use vrb_tools::{config_app, token_data::BEARER};
+
+    pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
+        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (http::header::AUTHORIZATION, header_value)
+    }
+
+    pub fn cfg_config_app(config_app: config_app::ConfigApp) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_config_app = web::Data::new(config_app);
+            config.app_data(web::Data::clone(&data_config_app));
+        }
     }
 }
