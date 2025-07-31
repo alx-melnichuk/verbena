@@ -486,6 +486,7 @@ pub mod tests {
 
             Ok(opt_session)
         }
+        
         /// Modify the entity (session).
         fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
             let opt_session: Option<Session> = self.get_session_by_id(user_id)?;
@@ -524,6 +525,7 @@ pub mod tests {
                 "ava_wilson".to_string(),
             ]
         }
+        // =v ?
         pub fn stream_ids() -> Vec<i32> {
             vec![
                 1, // Owner user idx 0 (live: true)  1100 oliver_taylor
@@ -532,11 +534,13 @@ pub mod tests {
                 4, // Owner user idx 3  blocked      1103 ava_wilson
             ]
         }
+        // =v ?
         #[rustfmt::skip]
         pub fn stream_logo_alias(user_id: i32) -> Option<String> {
             let idx = user_id - PROFILE_USER_ID;
             if -1 < idx && idx < 4 { Some(format!("{}/file_logo_{}.png", consts::ALIAS_LOGO_FILES_DIR, idx)) } else { None }
         }
+        // =v ?
         #[rustfmt::skip]
         pub fn stream_logo_path(user_id: i32) -> Option<String> {
             let idx = user_id - PROFILE_USER_ID;
@@ -579,6 +583,30 @@ pub mod tests {
             let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
             token_coding::encode_token(PROFILE_USER_ID, NUM_TOKEN_USER1, &jwt_secret, config_jwt.jwt_access).unwrap()
         }
+
+        pub fn cfg_config_jwt(config_jwt: config_jwt::ConfigJwt) -> impl FnOnce(&mut web::ServiceConfig) {
+            move |config: &mut web::ServiceConfig| {
+                let data_config_jwt = web::Data::new(config_jwt);
+                config
+                .app_data(web::Data::clone(&data_config_jwt));
+            }
+        }
+        pub fn cfg_config_prfl(config_prfl: config_prfl::ConfigPrfl) -> impl FnOnce(&mut web::ServiceConfig) {
+            move |config: &mut web::ServiceConfig| {
+                let data_config_prfl = web::Data::new(config_prfl);
+                config
+                .app_data(web::Data::clone(&data_config_prfl));
+            }
+        }
+        pub fn cfg_profile_orm(data_p: (Vec<Profile>, Vec<Session>)) -> impl FnOnce(&mut web::ServiceConfig) {
+            move |config: &mut web::ServiceConfig| {
+                let data_profile_orm = web::Data::new(
+                    ProfileOrmApp::create(&data_p.0, &data_p.1));
+
+                config.app_data(web::Data::clone(&data_profile_orm));
+            }
+        }
+        // =v ?
         pub fn config(
             cfg_p: (config_jwt::ConfigJwt, config_prfl::ConfigPrfl), // configuration
             data_p: (Vec<Profile>, Vec<Session>),                    // data vectors
