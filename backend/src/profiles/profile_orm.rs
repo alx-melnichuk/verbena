@@ -291,10 +291,10 @@ pub mod impls {
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
 
-    use actix_web::web;
+    use actix_web::{http, web};
     use chrono::Utc;
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::{consts, token_coding};
+    use vrb_tools::{consts, token_coding, token_data::BEARER};
 
     use crate::profiles::{config_jwt, config_prfl};
 
@@ -542,7 +542,11 @@ pub mod tests {
             let idx = user_id - PROFILE_USER_ID;
             if -1 < idx && idx < 4 { Some(format!("{}/file_logo_{}.png", consts::LOGO_FILES_DIR, idx)) } else { None }
         }
-
+        pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
+            let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+            (http::header::AUTHORIZATION, header_value)
+        }
+        
         pub fn profiles(roles: &[u8]) -> (Vec<Profile>, Vec<Session>) {
             let mut profile_vec: Vec<Profile> = Vec::new();
             let mut session_vec: Vec<Session> = Vec::new();

@@ -1,6 +1,6 @@
 use std::env;
 
-use crate::parser;
+use vrb_common::parser;
 
 pub const NOT_SEND_LETTER: &str = "false";
 pub const SAVE_LETTER: &str = "false";

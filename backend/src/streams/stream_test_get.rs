@@ -8,12 +8,9 @@ mod tests {
     };
     use chrono::{DateTime, Datelike, Duration, Local, SecondsFormat, TimeZone, Timelike, Utc};
     use serde_json;
+    use vrb_common::api_error::{code_to_str, ApiError};
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::{
-        api_error::{code_to_str, ApiError},
-        err,
-        token_data::header_auth,
-    };
+    use vrb_tools::err;
 
     use crate::profiles::profile_orm::tests::ProfileOrmApp;
     use crate::streams::{
@@ -24,7 +21,7 @@ mod tests {
             MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, PERIOD_MAX_NUMBER_DAYS,
         },
         stream_models::{self, StreamConfigDto, StreamEventDto, StreamEventPageDto, StreamInfoDto, StreamInfoPageDto},
-        stream_orm::tests::StreamOrmApp,
+        stream_orm::tests::{StreamOrmApp, header_auth},
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";

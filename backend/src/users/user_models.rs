@@ -2,11 +2,11 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use vrb_dbase::{db_enums::UserRole, schema};
-use vrb_tools::{
+use vrb_common::{
     serial_datetime,
     validators::{ValidationError, Validator},
 };
+use vrb_dbase::{db_enums::UserRole, schema};
 
 use crate::profiles::profile_models;
 

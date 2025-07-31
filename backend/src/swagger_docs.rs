@@ -2,8 +2,8 @@ use utoipa::{
     openapi::security::{/*ApiKey, ApiKeyValue,*/ HttpAuthScheme, HttpBuilder, SecurityScheme},
     Modify, OpenApi,
 };
+use vrb_common::api_error;
 use vrb_dbase::db_enums;
-use vrb_tools::api_error;
 
 use crate::chats::{chat_message_controller, chat_message_models, chat_ws_controller};
 use crate::profiles::{profile_auth_controller, profile_controller, profile_models, profile_registr_controller};

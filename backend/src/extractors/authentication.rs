@@ -6,11 +6,9 @@ use futures_util::{
     FutureExt,
 };
 use log::{debug, error, log_enabled, Level::Debug};
+use vrb_common::api_error::{code_to_str, ApiError};
 use vrb_dbase::db_enums::UserRole;
-use vrb_tools::{
-    api_error::{code_to_str, ApiError},
-    err, token_coding, token_data,
-};
+use vrb_tools::{err, token_coding, token_data};
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
@@ -183,8 +181,9 @@ mod tests {
         http::{header, StatusCode},
         test, web, App, HttpResponse,
     };
+    use vrb_common::api_error::code_to_str;
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::{api_error::code_to_str, token_coding, token_data};
+    use vrb_tools::{token_coding, token_data};
 
     use crate::profiles::{config_jwt, profile_models::Session};
     use crate::utils::token_verification::MSG_UNACCEPTABLE_TOKEN_ID;

@@ -7,13 +7,9 @@ mod tests {
         test, App,
     };
     use serde_json;
+    use vrb_common::api_error::{code_to_str, ApiError};
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::{
-        api_error::{code_to_str, ApiError},
-        err,
-        token_data::header_auth,
-    };
-
+    use vrb_tools::err;
 
     use crate::profiles::{
         profile_controller::{get_profile_by_id, get_profile_config, get_profile_current, uniqueness_check},
@@ -37,7 +33,7 @@ mod tests {
             App::new().service(get_profile_by_id).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", user_id_bad))
-            .insert_header(header_auth(&token)).to_request();
+            .insert_header(PrfTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
 
@@ -67,7 +63,7 @@ mod tests {
             App::new().service(get_profile_by_id).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", &profile2_id))
-            .insert_header(header_auth(&token)).to_request();
+            .insert_header(PrfTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -96,7 +92,7 @@ mod tests {
             App::new().service(get_profile_by_id).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", profile2_id + 1))
-            .insert_header(header_auth(&token)).to_request();
+            .insert_header(PrfTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
@@ -121,7 +117,7 @@ mod tests {
             App::new().service(get_profile_config).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_config")
-            .insert_header(header_auth(&token)).to_request();
+            .insert_header(PrfTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -146,7 +142,7 @@ mod tests {
             App::new().service(get_profile_current).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_current")
-            .insert_header(header_auth(&token)).to_request();
+            .insert_header(PrfTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 

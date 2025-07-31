@@ -10,12 +10,13 @@ use actix_web::{
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use log::{error, info, log_enabled, Level::Info};
 use utoipa;
-use vrb_dbase::db_enums::UserRole;
-use vrb_tools::{
+use vrb_common::{
     api_error::{code_to_str, ApiError},
-    err, parser,
+    parser,
     validators::{msg_validation, Validator},
 };
+use vrb_dbase::db_enums::UserRole;
+use vrb_tools::err;
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
@@ -568,8 +569,9 @@ pub mod tests {
 
     use actix_web::{http, web};
     use chrono::{DateTime, Duration, Utc};
+    use vrb_common::api_error::ApiError;
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::{api_error::ApiError, token_coding, token_data::BEARER};
+    use vrb_tools::{token_coding, token_data::BEARER};
 
     use crate::chats::{
         chat_message_models::{BlockedUser, ChatMessage, ChatMessageLog},

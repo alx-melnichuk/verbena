@@ -59,8 +59,8 @@ pub mod impls {
 
     use diesel::{self, prelude::*, sql_types};
     use log::{info, log_enabled, Level::Info};
+    use vrb_common::validators::Validator;
     use vrb_dbase::dbase;
-    use vrb_tools::validators::Validator;
 
     use crate::chats::{
         chat_message_models::{
@@ -357,7 +357,7 @@ pub mod tests {
     use std::{cell::RefCell, cmp::Ordering, collections::HashMap};
 
     use chrono::{DateTime, SubsecRound, Timelike, Utc};
-    use vrb_tools::validators::Validator;
+    use vrb_common::validators::Validator;
 
     use crate::chats::{
         chat_message_models::{

@@ -3,11 +3,6 @@ use actix_web::{http, HttpRequest};
 pub const BEARER: &str = "Bearer ";
 pub const TOKEN_NAME: &str = "token";
 
-pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
-    let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
-    (http::header::AUTHORIZATION, header_value)
-}
-
 /** Get the token value from the cookie of the http-request. */
 pub fn get_token_from_cookie(request: &HttpRequest) -> Option<String> {
     // Attempt to extract token from cookie.

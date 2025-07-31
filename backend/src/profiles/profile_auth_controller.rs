@@ -3,11 +3,11 @@ use std::ops::Deref;
 use actix_web::{cookie::time::Duration as ActixWebDuration, cookie::Cookie, http::StatusCode, post, web, HttpResponse};
 use log::{debug, error, log_enabled, Level::Debug};
 use utoipa;
-use vrb_tools::{
+use vrb_common::{
     api_error::{code_to_str, ApiError},
-    err, hash_tools, token_coding,
     validators::{msg_validation, Validator},
 };
+use vrb_tools::{err, hash_tools, token_coding};
 
 use crate::extractors::authentication::{Authenticated, RequireAuth};
 #[cfg(not(all(test, feature = "mockdata")))]

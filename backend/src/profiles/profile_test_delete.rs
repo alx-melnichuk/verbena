@@ -9,11 +9,8 @@ pub mod tests {
         test, App,
     };
     use serde_json;
-    use vrb_tools::{
-        api_error::{code_to_str, ApiError},
-        err, png_files,
-        token_data::header_auth,
-    };
+    use vrb_common::api_error::{code_to_str, ApiError};
+    use vrb_tools::{err, png_files};
 
     use crate::profiles::{
         config_prfl,
@@ -39,7 +36,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile_id_bad))
-            .insert_header(header_auth(&token)).to_request();
+            .insert_header(PrfTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
 
@@ -64,7 +61,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile_id + 1))
-            .insert_header(header_auth(&token)).to_request();
+            .insert_header(PrfTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
@@ -82,7 +79,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
-            .insert_header(header_auth(&token)).to_request();
+            .insert_header(PrfTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -117,7 +114,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
-            .insert_header(header_auth(&token)).to_request();
+            .insert_header(PrfTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
@@ -156,7 +153,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
-            .insert_header(header_auth(&token)).to_request();
+            .insert_header(PrfTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
@@ -189,7 +186,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
-            .insert_header(header_auth(&token)).to_request();
+            .insert_header(PrfTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_logo0_file).exists();
@@ -223,7 +220,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")
-            .insert_header(header_auth(&token)).to_request();
+            .insert_header(PrfTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -257,7 +254,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")
-            .insert_header(header_auth(&token)).to_request();
+            .insert_header(PrfTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
@@ -295,7 +292,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")
-            .insert_header(header_auth(&token)).to_request();
+            .insert_header(PrfTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
@@ -328,7 +325,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")
-            .insert_header(header_auth(&token)).to_request();
+            .insert_header(PrfTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_logo0_file).exists();

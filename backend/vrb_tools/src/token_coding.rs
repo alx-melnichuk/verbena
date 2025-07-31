@@ -6,7 +6,7 @@ use log::error;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
-use crate::{crypto, parser};
+use vrb_common::{crypto, parser};
 
 pub const CD_NUM_TOKEN_MIN: usize = 1;
 pub const CD_NUM_TOKEN_MAX: usize = 10000;

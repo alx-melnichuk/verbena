@@ -5,7 +5,8 @@ use actix_broker::BrokerIssue;
 use actix_web::http::StatusCode;
 use actix_web_actors::ws;
 use serde_json::to_string;
-use vrb_tools::{api_error::code_to_str, err};
+use vrb_common::api_error::code_to_str;
+use vrb_tools::err;
 
 use crate::chats::{
     chat_event_ws::{BlockEWS, CountEWS, EWSType, EchoEWS, ErrEWS, EventWS, JoinEWS, MsgEWS, MsgRmvEWS, NameEWS, UnblockEWS},

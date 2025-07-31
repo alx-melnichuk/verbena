@@ -11,15 +11,12 @@ pub mod tests {
     };
     use chrono::{SecondsFormat, Utc};
     use serde_json;
-    use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::{
+    use vrb_common::{
         api_error::{check_app_err, code_to_str, ApiError},
-        cdis::coding,
-        err, hash_tools,
-        png_files,
-        token_data::header_auth,
         validators,
     };
+    use vrb_dbase::db_enums::UserRole;
+    use vrb_tools::{cdis::coding, err, hash_tools, png_files};
 
     use crate::profiles::{
         config_prfl,
@@ -46,7 +43,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -69,7 +66,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -97,7 +94,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -128,7 +125,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -152,7 +149,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -178,7 +175,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -201,7 +198,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -225,7 +222,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -249,7 +246,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -273,7 +270,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -297,7 +294,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -321,7 +318,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -345,7 +342,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -369,7 +366,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -393,7 +390,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -417,7 +414,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -443,7 +440,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -468,7 +465,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(true)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -494,7 +491,7 @@ pub mod tests {
                 .configure(RegTest::config(registr))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -520,7 +517,7 @@ pub mod tests {
                 .configure(RegTest::config(registr))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -553,7 +550,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -587,7 +584,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -630,7 +627,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -674,7 +671,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -731,7 +728,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -793,7 +790,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -849,7 +846,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -893,7 +890,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -926,7 +923,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .insert_header(header).set_payload(body).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(&path_name1_file);
@@ -951,7 +948,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
@@ -974,7 +971,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(serde_json::json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -998,7 +995,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(NewPasswordProfileDto {
                 password: "".to_string(), new_password: "passwdJ3S9".to_string()
             })
@@ -1024,7 +1021,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(NewPasswordProfileDto {
                 password: ProfileTest::password_min(), new_password: "passwdJ3S9".to_string()
             })
@@ -1050,7 +1047,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(NewPasswordProfileDto {
                 password: ProfileTest::password_max(), new_password: "passwdJ3S9".to_string()
             })
@@ -1076,7 +1073,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(NewPasswordProfileDto {
                 password: ProfileTest::password_wrong(), new_password: "passwdJ3S9".to_string()
             })
@@ -1105,7 +1102,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(NewPasswordProfileDto {
                 password: old_password, new_password: "".to_string()
             })
@@ -1134,7 +1131,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(NewPasswordProfileDto {
                 password: old_password, new_password: ProfileTest::password_min()
             })
@@ -1163,7 +1160,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(NewPasswordProfileDto {
                 password: old_password, new_password: ProfileTest::password_max()
             })
@@ -1192,7 +1189,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(NewPasswordProfileDto {
                 password: old_password, new_password: ProfileTest::password_wrong()
             })
@@ -1221,7 +1218,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(NewPasswordProfileDto {
                 password: old_password.clone(), new_password: old_password
             })
@@ -1250,7 +1247,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(NewPasswordProfileDto {
                 password: old_password.to_string(), new_password: "passwdJ3S9".to_string()
             })
@@ -1279,7 +1276,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(NewPasswordProfileDto {
                 password: format!("{}a", old_password), new_password: "passwdJ3S9".to_string()
             })
@@ -1309,7 +1306,7 @@ pub mod tests {
                 .configure(RegTest::config(RegTest::registrs(false)))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(NewPasswordProfileDto {
                 password: old_password.to_string(), new_password: "passwdJ3S9".to_string()
             })

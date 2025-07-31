@@ -11,13 +11,8 @@ mod tests {
     };
     use chrono::{Duration, SecondsFormat, Utc};
     use serde_json;
-    use vrb_tools::{
-        api_error::{code_to_str, ApiError, check_app_err},
-        cdis::coding,
-        err,
-        png_files,
-        token_data::header_auth,
-    };
+    use vrb_common::api_error::{code_to_str, ApiError, check_app_err};
+    use vrb_tools::{cdis::coding, err, png_files};
 
     use crate::streams::{
         config_strm,
@@ -27,6 +22,7 @@ mod tests {
             ALIAS_LOGO_FILES_DIR, MSG_INVALID_FIELD_TAG,
         },
         stream_models::{self, StreamInfoDto, StreamModelsTest},
+        stream_orm::tests::header_auth,
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";

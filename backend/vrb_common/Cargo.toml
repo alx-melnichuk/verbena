@@ -1,0 +1,25 @@
+[package]
+name = "vrb-common"
+version = "0.1.0"
+edition = "2021"
+description = "A library for commonly used elements."
+rust-version = "1.87.0"
+keywords = ["common", "vrb-common"]
+license = "MIT"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+actix-web = { version = "4.11.0", features = ["openssl"] }
+chrono = { version = "0.4.41", features = ["serde"] }
+email_address = "0.2.9"
+mime = "0.3.17"
+openssl = "0.10.72"
+regex = "1.11.1"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+utoipa = { version = "5.3.1", features = ["chrono", "actix_extras"] }
+
+[profile.dev]
+debug = 1

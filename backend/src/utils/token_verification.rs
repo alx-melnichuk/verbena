@@ -2,10 +2,8 @@ use std::time::Instant as tm;
 
 use actix_web::http::StatusCode;
 use log::{error, info, log_enabled, Level::Info};
-use vrb_tools::{
-    api_error::{code_to_str, ApiError},
-    err,
-};
+use vrb_common::api_error::{code_to_str, ApiError};
+use vrb_tools::err;
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;

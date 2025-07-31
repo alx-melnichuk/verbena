@@ -601,8 +601,10 @@ pub mod impls {
 pub mod tests {
     use std::cmp::Ordering;
 
+    use actix_web::http;
     use chrono::{Duration, Timelike};
     use vrb_dbase::db_enums::StreamState;
+    use vrb_tools::token_data::BEARER;
 
     use crate::streams::stream_models::{self, StreamInfoDto};
 
@@ -1022,5 +1024,10 @@ pub mod tests {
                 None => Ok(None),
             }
         }
+    }
+
+    pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
+        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (http::header::AUTHORIZATION, header_value)
     }
 }

@@ -2,11 +2,11 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use vrb_dbase::schema;
-use vrb_tools::{
+use vrb_common::{
     serial_datetime, serial_datetime_option,
     validators::{ValidationChecks, ValidationError, Validator},
 };
+use vrb_dbase::schema;
 
 // ** Models: "CreateChatMessage", "ModifyChatMessage". **
 

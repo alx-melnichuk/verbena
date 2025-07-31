@@ -1,7 +1,8 @@
 use std::borrow::Cow;
 
 use actix_web::web;
-use vrb_tools::{api_error::ApiError, err};
+use vrb_common::api_error::ApiError;
+use vrb_tools::err;
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::profiles::profile_orm::impls::ProfileOrmApp;
@@ -74,8 +75,9 @@ pub async fn uniqueness_nickname_or_email(
 mod tests {
     use actix_web::http::StatusCode;
     use chrono::{DateTime, Duration, Utc};
+    use vrb_common::api_error::code_to_str;
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::{api_error::code_to_str, err};
+    use vrb_tools::err;
 
     use crate::profiles::profile_models::Profile;
     use crate::users::user_models::UserRegistr;

@@ -4,7 +4,8 @@ mod tests {
     use actix_web_actors::ws::{Frame::Text as FrameText, Message::Text as MessageText};
     use futures_util::{SinkExt, StreamExt}; // this is needed for send method in Framed
     use serde_json::to_string;
-    use vrb_tools::{crypto::CRT_WRONG_STRING_BASE64URL, err};
+    use vrb_common::crypto::CRT_WRONG_STRING_BASE64URL;
+    use vrb_tools::err;
 
     use crate::chats::chat_event_ws::LeaveEWS;
     use crate::chats::{

@@ -8,10 +8,11 @@ mod tests {
     };
     use chrono::{SecondsFormat, Utc};
     use serde_json::{self, json};
-    use vrb_tools::{
+    use vrb_common::{
         api_error::{code_to_str, ApiError, check_app_err},
-        err, validators,
+        validators,
     };
+    use vrb_tools::err;
 
     use crate::chats::{
         chat_message_controller::{

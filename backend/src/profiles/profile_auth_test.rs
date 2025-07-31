@@ -9,11 +9,11 @@ mod tests {
         test, App,
     };
     use serde_json::json;
+    use vrb_common::api_error::{code_to_str, ApiError, check_app_err};
     use vrb_tools::{
-        api_error::{code_to_str, ApiError, check_app_err},
         err, hash_tools,
         token_coding,
-        token_data::{header_auth, TOKEN_NAME},
+        token_data::TOKEN_NAME,
     };
 
     use crate::profiles::{
@@ -459,7 +459,7 @@ mod tests {
             App::new().service(logout).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/logout")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -490,7 +490,7 @@ mod tests {
             App::new().service(update_token).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
@@ -510,7 +510,7 @@ mod tests {
             App::new().service(update_token).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -531,7 +531,7 @@ mod tests {
             App::new().service(update_token).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(TokenDto { token: "".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -552,7 +552,7 @@ mod tests {
             App::new().service(update_token).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(TokenDto { token: "invalid_token".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -578,7 +578,7 @@ mod tests {
             App::new().service(update_token).configure(PrfTest::config(cfg_p, data_p))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(TokenDto { token: token_bad })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -603,7 +603,7 @@ mod tests {
             App::new().service(update_token).configure(PrfTest::config(cfg_p, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(TokenDto { token: token_bad })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -629,7 +629,7 @@ mod tests {
             App::new().service(update_token).configure(PrfTest::config(cfg_p, data_c))).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(header_auth(&token))
+            .insert_header(PrfTest::header_auth(&token))
             .set_json(TokenDto { token: token_refresh })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
