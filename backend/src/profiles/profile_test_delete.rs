@@ -13,12 +13,8 @@ pub mod tests {
     use vrb_tools::{err, png_files};
 
     use crate::profiles::{
-        config_prfl,
-        profile_controller::{delete_profile, delete_profile_current, ALIAS_AVATAR_FILES_DIR},
-        profile_models::ProfileDto,
-        profile_orm::tests::{ProfileOrmTest as PrfTest, ADMIN, USER},
+        config_jwt, config_prfl, profile_controller::{delete_profile, delete_profile_current, tests as RrfCtTest, ALIAS_AVATAR_FILES_DIR}, profile_models::ProfileDto, profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER}
     };
-    use crate::users::user_registr_orm::tests::UserRegistrOrmTest as RegTest;
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 
@@ -26,17 +22,19 @@ pub mod tests {
 
     #[actix_web::test]
     async fn test_delete_profile_invalid_id() {
-        let token = PrfTest::token1();
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[ADMIN]));
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[ADMIN]);
         let profile_id_bad = format!("{}a", data_p.0.get(0).unwrap().user_id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(PrfTest::config(cfg_p, data_p))
-                .configure(RegTest::config(RegTest::registrs(false)))).await;
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile_id_bad))
-            .insert_header(PrfTest::header_auth(&token)).to_request();
+            .insert_header(RrfCtTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
 
@@ -51,35 +49,39 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_delete_profile_non_existent_id() {
-        let token = PrfTest::token1();
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[ADMIN]));
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[ADMIN]);
         let profile_id = data_p.0.get(0).unwrap().user_id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(PrfTest::config(cfg_p, data_p))
-                .configure(RegTest::config(RegTest::registrs(false)))).await;
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile_id + 1))
-            .insert_header(PrfTest::header_auth(&token)).to_request();
+            .insert_header(RrfCtTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
     #[actix_web::test]
     async fn test_delete_profile_existent_id() {
-        let token = PrfTest::token1();
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[ADMIN]));
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[ADMIN]);
         let profile1 = data_p.0.get(0).unwrap().clone();
         let profile1_id = profile1.user_id;
         let profile1_dto = ProfileDto::from(profile1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(PrfTest::config(cfg_p, data_p))
-                .configure(RegTest::config(RegTest::registrs(false)))).await;
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
-            .insert_header(PrfTest::header_auth(&token)).to_request();
+            .insert_header(RrfCtTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -101,8 +103,8 @@ pub mod tests {
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_alias = format!("{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
 
-        let token = PrfTest::token1();
-        let (cfg_p, mut data_p) = (PrfTest::cfg(), PrfTest::profiles(&[ADMIN]));
+        let token = ProflTest::token1();
+        let mut data_p = ProflTest::profiles(&[ADMIN]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile1_id = profile1.user_id;
@@ -110,11 +112,13 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(PrfTest::config(cfg_p, data_p))
-                .configure(RegTest::config(RegTest::registrs(false)))).await;
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
-            .insert_header(PrfTest::header_auth(&token)).to_request();
+            .insert_header(RrfCtTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
@@ -140,8 +144,8 @@ pub mod tests {
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_alias = format!("/1{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
 
-        let token = PrfTest::token1();
-        let (cfg_p, mut data_p) = (PrfTest::cfg(), PrfTest::profiles(&[ADMIN]));
+        let token = ProflTest::token1();
+        let mut data_p = ProflTest::profiles(&[ADMIN]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile1_id = profile1.user_id;
@@ -149,11 +153,13 @@ pub mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(PrfTest::config(cfg_p, data_p))
-                .configure(RegTest::config(RegTest::registrs(false)))).await;
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
-            .insert_header(PrfTest::header_auth(&token)).to_request();
+            .insert_header(RrfCtTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
@@ -171,22 +177,24 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_delete_profile_with_stream_img() {
-        let token = PrfTest::token1();
-        let (cfg_p, mut data_p) = (PrfTest::cfg(), PrfTest::profiles(&[ADMIN]));
+        let token = ProflTest::token1();
+        let mut data_p = ProflTest::profiles(&[ADMIN]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         let profile1_id = profile1.user_id;
         let profile_dto = ProfileDto::from(profile1.clone());
-        let path_logo0_file = PrfTest::stream_logo_path(profile1_id).unwrap();
+        let path_logo0_file = ProflTest::stream_logo_path(profile1_id).unwrap();
         // Create a logo file for this user's stream.
         png_files::save_file_png(&(path_logo0_file.clone()), 1).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile)
-                .configure(PrfTest::config(cfg_p, data_p))
-                .configure(RegTest::config(RegTest::registrs(false)))).await;
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/profiles/{}", profile1_id))
-            .insert_header(PrfTest::header_auth(&token)).to_request();
+            .insert_header(RrfCtTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_logo0_file).exists();
@@ -209,18 +217,20 @@ pub mod tests {
 
     #[actix_web::test]
     async fn test_delete_profile_current_without_img() {
-        let token = PrfTest::token1();
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
         let profile1 = data_p.0.get(0).unwrap().clone();
         let profile1_dto = ProfileDto::from(profile1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
-                .configure(PrfTest::config(cfg_p, data_p))
-                .configure(RegTest::config(RegTest::registrs(false)))).await;
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")
-            .insert_header(PrfTest::header_auth(&token)).to_request();
+            .insert_header(RrfCtTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -242,19 +252,21 @@ pub mod tests {
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_alias = format!("{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
 
-        let token = PrfTest::token1();
-        let (cfg_p, mut data_p) = (PrfTest::cfg(), PrfTest::profiles(&[ADMIN]));
+        let token = ProflTest::token1();
+        let mut data_p = ProflTest::profiles(&[ADMIN]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile_dto = ProfileDto::from(profile1.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
-                .configure(PrfTest::config(cfg_p, data_p))
-                .configure(RegTest::config(RegTest::registrs(false)))).await;
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")
-            .insert_header(PrfTest::header_auth(&token)).to_request();
+            .insert_header(RrfCtTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
@@ -280,19 +292,21 @@ pub mod tests {
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_alias = format!("/1{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
 
-        let token = PrfTest::token1();
-        let (cfg_p, mut data_p) = (PrfTest::cfg(), PrfTest::profiles(&[ADMIN]));
+        let token = ProflTest::token1();
+        let mut data_p = ProflTest::profiles(&[ADMIN]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias);
         let profile_dto = ProfileDto::from(profile1.clone());
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
-                .configure(PrfTest::config(cfg_p, data_p))
-                .configure(RegTest::config(RegTest::registrs(false)))).await;
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")
-            .insert_header(PrfTest::header_auth(&token)).to_request();
+            .insert_header(RrfCtTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
@@ -310,22 +324,24 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_delete_profile_current_with_stream_img() {
-        let token = PrfTest::token1();
-        let (cfg_p, mut data_p) = (PrfTest::cfg(), PrfTest::profiles(&[ADMIN]));
+        let token = ProflTest::token1();
+        let mut data_p = ProflTest::profiles(&[ADMIN]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         let profile1_id = profile1.user_id;
         let profile_dto = ProfileDto::from(profile1.clone());
-        let path_logo0_file = PrfTest::stream_logo_path(profile1_id).unwrap();
+        let path_logo0_file = ProflTest::stream_logo_path(profile1_id).unwrap();
         // Create a logo file for this user's stream.
         png_files::save_file_png(&(path_logo0_file.clone()), 1).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_profile_current)
-                .configure(PrfTest::config(cfg_p, data_p))
-                .configure(RegTest::config(RegTest::registrs(false)))).await;
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ProflTest::cfg_config_prfl(config_prfl::get_test_config()))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/profiles_current")
-            .insert_header(PrfTest::header_auth(&token)).to_request();
+            .insert_header(RrfCtTest::header_auth(&token)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_logo0_file).exists();
