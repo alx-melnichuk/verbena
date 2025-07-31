@@ -1,144 +1,49 @@
 #[cfg(all(test, feature = "mockdata"))]
 mod tests {
     use actix_web::{
-        body, dev, http,
+        body, dev,
         http::header::{HeaderValue, CONTENT_TYPE},
         http::StatusCode,
-        test, web, App,
+        test, App,
     };
-    use chrono::{DateTime, Duration, Utc};
+    use chrono::{Duration, Utc};
     use serde_json::json;
     use vrb_common::api_error::{code_to_str, ApiError};
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::{
-        config_app, err,
-        send_email::{config_smtp, mailer::tests::MailerApp},
-        token_coding,
-        token_data::BEARER,
-    };
+    use vrb_tools::{config_app, err, send_email::config_smtp, token_coding};
 
     use crate::profiles::{
         config_jwt,
         profile_models::{
-            self, ClearForExpiredResponseDto, Profile, ProfileDto, ProfileTest, RecoveryDataDto, RecoveryProfileDto,
-            RecoveryProfileResponseDto, RegistrProfileDto, RegistrProfileResponseDto, Session,
+            self, ClearForExpiredResponseDto, ProfileDto, ProfileTest, RecoveryDataDto, RecoveryProfileDto, RecoveryProfileResponseDto,
+            RegistrProfileDto, RegistrProfileResponseDto,
         },
-        profile_orm::tests::ProfileOrmApp,
+        profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, NUM_TOKEN_USER1, USER},
         profile_registr_controller::{
-            clear_for_expired, confirm_recovery, confirm_registration, recovery, registration, MSG_RECOVERY_NOT_FOUND,
+            clear_for_expired, confirm_recovery, confirm_registration, recovery, registration, tests as RegCtTest, MSG_RECOVERY_NOT_FOUND,
             MSG_REGISTR_NOT_FOUND, MSG_USER_NOT_FOUND,
         },
     };
     use crate::users::{
-        user_models::{UserRecovery, UserRegistr},
-        user_recovery_orm::tests::UserRecoveryOrmApp,
-        user_registr_orm::tests::UserRegistrOrmApp,
+        user_recovery_orm::tests::UserRecoveryOrmTest as RecovTest, user_registr_orm::tests::UserRegistrOrmTest as RegisTest,
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 
-    fn create_profile() -> Profile {
-        let nickname = "Oliver_Taylor".to_string();
-        let role = UserRole::User;
-        ProfileOrmApp::new_profile(1, &nickname, &format!("{}@gmail.com", &nickname), role)
-    }
-    fn profile_with_id(profile: Profile) -> Profile {
-        let profile_orm = ProfileOrmApp::create(&vec![profile], &[]);
-        profile_orm.profile_vec.get(0).unwrap().clone()
-    }
-    fn create_user_registr() -> UserRegistr {
-        let now = Utc::now();
-        let final_date: DateTime<Utc> = now + Duration::minutes(20);
-
-        let user_registr = UserRegistrOrmApp::new_user_registr(1, "Robert_Brown", "Robert_Brown@gmail.com", "passwdR2B2", final_date);
-        user_registr
-    }
-    fn user_registr_with_id(user_registr: UserRegistr) -> UserRegistr {
-        let user_reg_orm = UserRegistrOrmApp::create(&vec![user_registr]);
-        user_reg_orm.user_registr_vec.get(0).unwrap().clone()
-    }
-    fn create_user_recovery(id: i32, user_id: i32, final_date: DateTime<Utc>) -> UserRecovery {
-        UserRecoveryOrmApp::new_user_recovery(id, user_id, final_date)
-    }
-    fn create_user_recovery_with_id(user_recovery: UserRecovery) -> UserRecovery {
-        let user_recovery_orm = UserRecoveryOrmApp::create(&vec![user_recovery]);
-        user_recovery_orm.user_recovery_vec.get(0).unwrap().clone()
-    }
-    fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
-        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
-        (http::header::AUTHORIZATION, header_value)
-    }
-    #[rustfmt::skip]
-    fn get_cfg_data(is_registr: bool, opt_recovery_duration: Option<i64>) -> (
-        (config_app::ConfigApp, config_jwt::ConfigJwt), 
-        (Vec<Profile>, Vec<Session>, Vec<UserRegistr>, Vec<UserRecovery>),
-        String
-    ) {
-        // Create profile values.
-        let profile1: Profile = profile_with_id(create_profile());
-        let user_id = profile1.user_id;
-        let num_token = 1234;
-        let session1 = Session { user_id: user_id, num_token: Some(num_token) };
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = token_coding::encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        let user_registr_vec:Vec<UserRegistr> = if is_registr {
-            vec![user_registr_with_id(create_user_registr())]
-        } else { vec![] };
-
-        let user_recovery_vec:Vec<UserRecovery> = if let Some(recovery_duration) = opt_recovery_duration {
-            let final_date_utc = Utc::now() + Duration::seconds(recovery_duration);
-            let user_recovery = UserRecoveryOrmApp::new_user_recovery(1, user_id, final_date_utc);
-            UserRecoveryOrmApp::create(&vec![user_recovery]).user_recovery_vec
-        } else { vec![] };
-
-        let config_app = config_app::get_test_config();
-        let cfg_c = (config_app, config_jwt);
-        let data_c = (vec![profile1], vec![session1], user_registr_vec,  user_recovery_vec);
-
-        (cfg_c, data_c, token)
-    }
-    fn configure_reg(
-        cfg_c: (config_app::ConfigApp, config_jwt::ConfigJwt), // cortege of configurations
-        data_c: (Vec<Profile>, Vec<Session>, Vec<UserRegistr>, Vec<UserRecovery>), // cortege of data vectors
-    ) -> impl FnOnce(&mut web::ServiceConfig) {
-        move |config: &mut web::ServiceConfig| {
-            let data_config_app = web::Data::new(cfg_c.0);
-            let data_config_jwt = web::Data::new(cfg_c.1);
-            let data_mailer = web::Data::new(MailerApp::new(config_smtp::get_test_config()));
-
-            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0, &data_c.1));
-            let data_user_registr_orm = web::Data::new(UserRegistrOrmApp::create(&data_c.2));
-            let data_user_recovery_orm = web::Data::new(UserRecoveryOrmApp::create(&data_c.3));
-
-            config
-                .app_data(web::Data::clone(&data_config_app))
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_mailer))
-                .app_data(web::Data::clone(&data_profile_orm))
-                .app_data(web::Data::clone(&data_user_registr_orm))
-                .app_data(web::Data::clone(&data_user_recovery_orm));
-        }
-    }
-    fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
-        assert_eq!(app_err_vec.len(), msgs.len());
-        for (idx, msg) in msgs.iter().enumerate() {
-            let app_err = app_err_vec.get(idx).unwrap();
-            assert_eq!(app_err.code, code);
-            assert_eq!(app_err.message, msg.to_string());
-        }
-    }
-
     // ** registration **
+
     #[actix_web::test]
     async fn test_registration_no_data() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration").to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -151,10 +56,16 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_empty_json_object() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration").set_json(json!({}))
             .to_request();
@@ -168,10 +79,16 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_empty() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -188,14 +105,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_NICKNAME_REQUIRED]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_NICKNAME_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_min() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -212,14 +135,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_NICKNAME_MIN_LENGTH]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_NICKNAME_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_max() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -236,14 +165,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_NICKNAME_MAX_LENGTH]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_NICKNAME_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_nickname_wrong() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -260,14 +195,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_NICKNAME_REGEX]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_NICKNAME_REGEX]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_empty() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -284,14 +225,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_REQUIRED]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_min() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -308,14 +255,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_MIN_LENGTH]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_max() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -332,14 +285,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_MAX_LENGTH]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_email_wrong() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -356,14 +315,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_EMAIL_TYPE]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_EMAIL_TYPE]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_empty() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -380,14 +345,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_REQUIRED]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_min() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -404,14 +375,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_MIN_LENGTH]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_max() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -428,14 +405,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_MAX_LENGTH]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_registration_invalid_dto_password_wrong() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -452,16 +435,22 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_REGEX]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_REGEX]);
     }
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_users() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
-        let nickname1 = data_c.0.get(0).unwrap().nickname.clone();
-        let email1 = data_c.0.get(0).unwrap().email.clone();
+        let data_p = ProflTest::profiles(&[USER]);
+        let nickname1 = data_p.0.get(0).unwrap().nickname.clone();
+        let email1 = data_p.0.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -480,12 +469,18 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_users() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
-        let nickname1 = data_c.0.get(0).unwrap().nickname.clone();
-        let email1 = data_c.0.get(0).unwrap().email.clone();
+        let data_p = ProflTest::profiles(&[USER]);
+        let nickname1 = data_p.0.get(0).unwrap().nickname.clone();
+        let email1 = data_p.0.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -504,12 +499,19 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_if_nickname_exists_in_registr() {
-        let (cfg_c, data_c, _token) = get_cfg_data(true, None);
-        let nickname1 = data_c.2.get(0).unwrap().nickname.clone();
-        let email1 = data_c.2.get(0).unwrap().email.clone();
+        let data_p = ProflTest::profiles(&[USER]);
+        let registrs = RegisTest::registrs(true);
+        let nickname1 = registrs.get(0).unwrap().nickname.clone();
+        let email1 = registrs.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(registrs))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -528,12 +530,19 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_if_email_exists_in_registr() {
-        let (cfg_c, data_c, _token) = get_cfg_data(true, None);
-        let nickname1 = data_c.2.get(0).unwrap().nickname.clone();
-        let email1 = data_c.2.get(0).unwrap().email.clone();
+        let data_p = ProflTest::profiles(&[USER]);
+        let registrs = RegisTest::registrs(true);
+        let nickname1 = registrs.get(0).unwrap().nickname.clone();
+        let email1 = registrs.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(registrs))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -552,14 +561,19 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_err_jsonwebtoken_encode() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
-        let mut config_jwt = cfg_c.1;
+        let data_p = ProflTest::profiles(&[USER]);
+        let mut config_jwt = config_jwt::get_test_config();
         config_jwt.jwt_secret = "".to_string();
-        let cfg_c = (cfg_c.0, config_jwt);
         let nickname = "Mary_Williams".to_string();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -578,11 +592,18 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_registration_new_user() {
-        let user_registr1 = user_registr_with_id(create_user_registr());
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let registrs = RegisTest::registrs(true);
+        let user_registr1 = registrs.get(0).unwrap().clone();
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(registration)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/registration")
             .set_json(RegistrProfileDto {
@@ -611,10 +632,14 @@ mod tests {
     // ** confirm_registration **
     #[actix_web::test]
     async fn test_confirm_registration_invalid_registr_token() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(confirm_registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(confirm_registration)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegisTest::cfg_registr_orm(RegisTest::registrs(false)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/registration/{}", "invalid_registr_token"))
             .to_request();
@@ -630,11 +655,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_registration_final_date_has_expired() {
-        let (cfg_c, data_c, _token) = get_cfg_data(true, None);
-        let user_reg1 = data_c.2.get(0).unwrap().clone();
+        let data_p = ProflTest::profiles(&[USER]);
+        let registrs = RegisTest::registrs(true);
+        let user_reg1 = registrs.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
-        let num_token = data_c.1.get(0).unwrap().clone().num_token.unwrap();
+        let num_token = data_p.1.get(0).unwrap().clone().num_token.unwrap();
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
@@ -644,7 +670,11 @@ mod tests {
 
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(confirm_registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(confirm_registration)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegisTest::cfg_registr_orm(registrs))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token))
             .to_request();
@@ -661,11 +691,12 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_registration_no_exists_in_user_regist() {
-        let (cfg_c, data_c, _token) = get_cfg_data(true, None);
-        let user_reg1 = data_c.2.get(0).unwrap().clone();
+        let data_p = ProflTest::profiles(&[USER]);
+        let registrs = RegisTest::registrs(true);
+        let user_reg1 = registrs.get(0).unwrap().clone();
         let user_reg1_id = user_reg1.id;
 
-        let num_token = data_c.1.get(0).unwrap().clone().num_token.unwrap();
+        let num_token = data_p.1.get(0).unwrap().clone().num_token.unwrap();
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
@@ -676,7 +707,11 @@ mod tests {
 
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(confirm_registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(confirm_registration)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegisTest::cfg_registr_orm(registrs))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token))
             .to_request();
@@ -693,13 +728,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_registration_exists_in_user_regist() {
-        let (cfg_c, data_c, _token) = get_cfg_data(true, None);
-        let last_user_id = data_c.0.last().unwrap().user_id;
-        let user_reg1 = data_c.2.get(0).unwrap().clone();
+        let data_p = ProflTest::profiles(&[USER]);
+        let registrs = RegisTest::registrs(true);
+        let user_reg1 = registrs.get(0).unwrap().clone();
         let nickname = user_reg1.nickname.to_string();
         let email = user_reg1.email.to_string();
+        let last_user_id = data_p.0.last().unwrap().user_id;
 
-        let num_token = data_c.1.get(0).unwrap().clone().num_token.unwrap();
+        let num_token = data_p.1.get(0).unwrap().clone().num_token.unwrap();
         let config_app = config_app::get_test_config();
         let reg_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
 
@@ -709,7 +745,11 @@ mod tests {
 
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(confirm_registration).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(confirm_registration)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegisTest::cfg_registr_orm(registrs))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/registration/{}", registr_token))
             .to_request();
@@ -728,12 +768,19 @@ mod tests {
     }
 
     // ** recovery **
+
     #[actix_web::test]
     async fn test_recovery_no_data() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(recovery)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
             .to_request();
@@ -749,10 +796,16 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_empty_json_object() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(recovery)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery").set_json(json!({}))
             .to_request();
@@ -767,10 +820,16 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_empty() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(recovery)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
             .set_json(RecoveryProfileDto { email: "".to_string() })
@@ -783,14 +842,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_REQUIRED]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_min() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(recovery)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
             .set_json(RecoveryProfileDto { email: ProfileTest::email_min() })
@@ -803,14 +868,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_MIN_LENGTH]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_max() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(recovery)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
             .set_json(RecoveryProfileDto { email: ProfileTest::email_max() })
@@ -823,14 +894,20 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_MAX_LENGTH]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_recovery_invalid_dto_email_wrong() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(recovery)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
             .set_json(RecoveryProfileDto { email: ProfileTest::email_wrong() })
@@ -843,15 +920,21 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_EMAIL_TYPE]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_EMAIL_EMAIL_TYPE]);
     }
     #[actix_web::test]
     async fn test_recovery_if_user_with_email_not_exist() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
-        let email = format!("A{}", data_c.0.get(0).unwrap().email.clone());
+        let data_p = ProflTest::profiles(&[USER]);
+        let email = format!("A{}", data_p.0.get(0).unwrap().email.clone());
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(recovery)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
             .set_json(RecoveryProfileDto { email: email.to_string() })
@@ -868,15 +951,20 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_if_user_recovery_not_exist() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
-        let user1_id = data_c.0.get(0).unwrap().user_id;
-        let user1_email = data_c.0.get(0).unwrap().email.clone();
-        let final_date_utc = Utc::now() + Duration::seconds(600);
-        let user_recovery1 = create_user_recovery_with_id(create_user_recovery(0, user1_id, final_date_utc));
-        let user_recovery1_id = user_recovery1.id;
+        let data_p = ProflTest::profiles(&[USER]);
+        let user1_id = data_p.0.get(0).unwrap().user_id;
+        let user1_email = data_p.0.get(0).unwrap().email.clone();
+        let recoveries = RecovTest::recoveries(Some(user1_id));
+        let user_recovery1_id = recoveries.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(recovery)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RecovTest::cfg_recovery_orm(recoveries))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
             .set_json(RecoveryProfileDto { email: user1_email.to_string() })
@@ -901,13 +989,20 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_if_user_recovery_already_exists() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
-        let user1_email = data_c.0.get(0).unwrap().email.clone();
-        let user_recovery1 = data_c.3.get(0).unwrap().clone();
-        let user_recovery1_id = user_recovery1.id;
+        let data_p = ProflTest::profiles(&[USER]);
+        let user1_id = data_p.0.get(0).unwrap().user_id;
+        let user1_email = data_p.0.get(0).unwrap().email.clone();
+        let recoveries = RecovTest::recoveries(Some(user1_id));
+        let user_recovery1_id = recoveries.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(recovery)
+                .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+                .configure(RecovTest::cfg_recovery_orm(recoveries))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
             .set_json(RecoveryProfileDto { email: user1_email.to_string() })
@@ -932,14 +1027,19 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_recovery_err_jsonwebtoken_encode() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
-        let user1_email = data_c.0.get(0).unwrap().email.clone();
-        let mut config_jwt = cfg_c.1;
+        let data_p = ProflTest::profiles(&[USER]);
+        let user1_email = data_p.0.get(0).unwrap().email.clone();
+        let mut config_jwt = config_jwt::get_test_config();
         config_jwt.jwt_secret = "".to_string();
-        let cfg_c = (cfg_c.0, config_jwt);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(recovery)
+            .configure(RegCtTest::cfg_config_app(config_app::get_test_config()))
+            .configure(ProflTest::cfg_config_jwt(config_jwt))
+            .configure(ProflTest::cfg_profile_orm(data_p))
+            .configure(RegCtTest::cfg_mailer(config_smtp::get_test_config()))
+            .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/recovery")
             .set_json(RecoveryProfileDto { email: user1_email.to_string() })
@@ -956,12 +1056,17 @@ mod tests {
     }
 
     // ** confirm_recovery **
+
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_empty() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(confirm_recovery)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
             .set_json(RecoveryDataDto { password: "".to_string() })
@@ -974,14 +1079,18 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_REQUIRED]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_REQUIRED]);
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_min() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(confirm_recovery)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
             .set_json(RecoveryDataDto { password: ProfileTest::password_min() })
@@ -994,14 +1103,18 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_MIN_LENGTH]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_max() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(confirm_recovery)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
             .set_json(RecoveryDataDto { password: ProfileTest::password_max() })
@@ -1014,14 +1127,18 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_MAX_LENGTH]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_dto_password_wrong() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(confirm_recovery)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "recovery_token"))
             .set_json(RecoveryDataDto { password: ProfileTest::password_wrong() })
@@ -1034,14 +1151,18 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_REGEX]);
+        RegCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[profile_models::MSG_PASSWORD_REGEX]);
     }
     #[actix_web::test]
     async fn test_confirm_recovery_invalid_recovery_token() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(confirm_recovery)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RecovTest::cfg_recovery_orm(RecovTest::recoveries(None)))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", "invalid_recovery_token"))
             .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
@@ -1058,17 +1179,25 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_final_date_has_expired() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
-        let user_recovery1 = data_c.3.get(0).unwrap().clone();
+        let data_p = ProflTest::profiles(&[USER]);
+        let user1_id = data_p.0.get(0).unwrap().user_id;
+        let recoveries = RecovTest::recoveries(Some(user1_id));
+        let recovery1_id = recoveries.get(0).unwrap().id.clone();
 
-        let num_token = data_c.1.get(0).unwrap().clone().num_token.unwrap();
-        let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
-        let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
-        let recovery_token = token_coding::encode_token(user_recovery1.id, num_token, jwt_secret, -recovery_duration).unwrap();
+        let num_token = NUM_TOKEN_USER1;
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
+        let config_app = config_app::get_test_config();
+        let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
+        let recovery_token = token_coding::encode_token(recovery1_id, num_token, jwt_secret, -recovery_duration).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(confirm_recovery)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RecovTest::cfg_recovery_orm(recoveries))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
             .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
@@ -1086,16 +1215,25 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_confirm_recovery_no_exists_in_user_recovery() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
-        let user_recovery1 = data_c.3.get(0).unwrap().clone();
-        let user_recovery_id = user_recovery1.id + 1;
-        let num_token = data_c.1.get(0).unwrap().clone().num_token.unwrap();
-        let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
-        let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
-        let recovery_token = token_coding::encode_token(user_recovery_id, num_token, jwt_secret, recovery_duration).unwrap();
+        let data_p = ProflTest::profiles(&[USER]);
+        let user1_id = data_p.0.get(0).unwrap().user_id;
+        let recoveries = RecovTest::recoveries(Some(user1_id));
+        let recovery1_id = recoveries.get(0).unwrap().id.clone() + 1;
+
+        let num_token = NUM_TOKEN_USER1;
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+
+        let config_app = config_app::get_test_config();
+        let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
+        let recovery_token = token_coding::encode_token(recovery1_id, num_token, jwt_secret, recovery_duration).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(confirm_recovery)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RecovTest::cfg_recovery_orm(recoveries))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
             .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
@@ -1109,24 +1247,31 @@ mod tests {
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, code_to_str(StatusCode::NOT_FOUND));
         #[rustfmt::skip]
-        assert_eq!(app_err.message, format!("{}; user_recovery_id: {}", MSG_RECOVERY_NOT_FOUND, user_recovery_id));
+        assert_eq!(app_err.message, format!("{}; user_recovery_id: {}", MSG_RECOVERY_NOT_FOUND, recovery1_id));
     }
     #[actix_web::test]
     async fn test_confirm_recovery_no_exists_in_user() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, None);
-        let user_id = data_c.0.get(0).unwrap().user_id + 1;
+        let data_p = ProflTest::profiles(&[USER]);
+        let user1_id = data_p.0.get(0).unwrap().user_id + 1;
+        let mut recoveries = RecovTest::recoveries(Some(user1_id));
+        let recovery1 = recoveries.get_mut(0).unwrap();
 
-        let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
+        let config_app = config_app::get_test_config();
+        let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
         let final_date_utc = Utc::now() + Duration::seconds(recovery_duration);
-        let user_recovery1 = create_user_recovery_with_id(create_user_recovery(0, user_id, final_date_utc));
-        let num_token = 1234;
-        let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
-        let recovery_token = token_coding::encode_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
+        recovery1.final_date = final_date_utc;
 
-        let data_c = (data_c.0, data_c.1, data_c.2, vec![user_recovery1]);
+        let num_token = NUM_TOKEN_USER1;
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let recovery_token = token_coding::encode_token(recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(confirm_recovery)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RecovTest::cfg_recovery_orm(recoveries))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
             .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
@@ -1139,21 +1284,31 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, code_to_str(StatusCode::NOT_FOUND));
-        assert_eq!(app_err.message, format!("{}; user_id: {}", MSG_USER_NOT_FOUND, user_id));
+        assert_eq!(app_err.message, format!("{}; user_id: {}", MSG_USER_NOT_FOUND, user1_id));
     }
     #[actix_web::test]
     async fn test_confirm_recovery_success() {
-        let (cfg_c, data_c, _token) = get_cfg_data(false, Some(600));
-        let profile1_dto = ProfileDto::from(data_c.0.get(0).unwrap().clone());
-        let user_recovery1 = data_c.3.get(0).unwrap().clone();
-        let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
+        let data_p = ProflTest::profiles(&[USER]);
+        let profile1 = data_p.0.get(0).unwrap().clone();
+        let profile1_id = profile1.user_id;
+        let profile1_dto = ProfileDto::from(profile1);
 
-        let num_token = 1234;
-        let jwt_secret: &[u8] = cfg_c.1.jwt_secret.as_bytes();
-        let recovery_token = token_coding::encode_token(user_recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
+        let recoveries = RecovTest::recoveries(Some(profile1_id));
+        let recovery1_id = recoveries.get(0).unwrap().id.clone();
+        let config_app = config_app::get_test_config();
+        let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
+
+        let num_token = NUM_TOKEN_USER1;
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let recovery_token = token_coding::encode_token(recovery1_id, num_token, jwt_secret, recovery_duration).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(confirm_recovery).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(confirm_recovery)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RecovTest::cfg_recovery_orm(recoveries))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/recovery/{}", recovery_token))
             .set_json(RecoveryDataDto { password: "passwordQ2V2".to_string() })
@@ -1182,28 +1337,34 @@ mod tests {
     // ** clear_for_expired **
     #[actix_web::test]
     async fn test_clear_for_expired_user_recovery() {
-        let (cfg_c, data_c, token) = get_cfg_data(true, Some(600));
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[ADMIN]);
 
-        let mut profile1 = data_c.0.get(0).unwrap().clone();
-        profile1.role = UserRole::Admin;
+        let profile1 = data_p.0.get(0).unwrap().clone();
+        let profile1_id = profile1.user_id;
 
-        let registr_duration: i64 = cfg_c.0.app_registr_duration.try_into().unwrap();
-        let final_date_registr = Utc::now() - Duration::seconds(registr_duration);
-        let mut user_registr1 = data_c.2.get(0).unwrap().clone();
-        user_registr1.final_date = final_date_registr;
+        let config_app = config_app::get_test_config();
 
-        let recovery_duration: i64 = cfg_c.0.app_recovery_duration.try_into().unwrap();
-        let final_date_recovery = Utc::now() - Duration::seconds(recovery_duration);
-        let mut user_recovery1 = data_c.3.get(0).unwrap().clone();
-        user_recovery1.final_date = final_date_recovery;
-        #[rustfmt::skip]
-        let data_c = (vec![profile1], data_c.1, vec![user_registr1], vec![user_recovery1]);
+        let registr_duration: i64 = config_app.app_registr_duration.try_into().unwrap();
+        let mut registrs = RegisTest::registrs(true);
+        let registr1 = registrs.get_mut(0).unwrap();
+        registr1.final_date = Utc::now() - Duration::seconds(registr_duration);
+
+        let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
+        let mut recoveries = RecovTest::recoveries(Some(profile1_id));
+        let recovery1 = recoveries.get_mut(0).unwrap();
+        recovery1.final_date = Utc::now() - Duration::seconds(recovery_duration);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(clear_for_expired).configure(configure_reg(cfg_c, data_c))).await;
+            App::new().service(clear_for_expired)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(RegisTest::cfg_registr_orm(registrs))
+                .configure(RecovTest::cfg_recovery_orm(recoveries))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&"/api/clear_for_expired")
-            .insert_header(header_auth(&token))
+            .insert_header(RegCtTest::header_auth(&token))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200

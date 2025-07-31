@@ -769,6 +769,7 @@ pub async fn clear_for_expired(
 pub mod tests {
 
     use actix_web::{http, web};
+    use vrb_common::api_error::ApiError;
     use vrb_tools::{
         config_app,
         send_email::{config_smtp, mailer::tests::MailerApp},
@@ -791,6 +792,15 @@ pub mod tests {
         move |config: &mut web::ServiceConfig| {
             let data_mailer = web::Data::new(MailerApp::new(config_smtp));
             config.app_data(web::Data::clone(&data_mailer));
+        }
+    }
+
+    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
+        assert_eq!(app_err_vec.len(), msgs.len());
+        for (idx, msg) in msgs.iter().enumerate() {
+            let app_err = app_err_vec.get(idx).unwrap();
+            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.message, msg.to_string());
         }
     }
 }
