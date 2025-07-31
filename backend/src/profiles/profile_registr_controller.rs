@@ -11,11 +11,7 @@ use vrb_dbase::db_enums::UserRole;
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(all(test, feature = "mockdata"))]
 use vrb_tools::send_email::mailer::tests::MailerApp;
-use vrb_tools::{
-    config_app, err, hash_tools,
-    send_email::mailer::Mailer,
-    token_coding,
-};
+use vrb_tools::{config_app, err, hash_tools, send_email::mailer::Mailer, token_coding};
 
 use crate::extractors::authentication::RequireAuth;
 #[cfg(not(all(test, feature = "mockdata")))]
@@ -767,4 +763,34 @@ pub async fn clear_for_expired(
     };
     
     Ok(HttpResponse::Ok().json(clear_for_expired_response_dto)) // 200
+}
+
+#[cfg(all(test, feature = "mockdata"))]
+pub mod tests {
+
+    use actix_web::{http, web};
+    use vrb_tools::{
+        config_app,
+        send_email::{config_smtp, mailer::tests::MailerApp},
+        token_data::BEARER,
+    };
+
+    pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
+        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (http::header::AUTHORIZATION, header_value)
+    }
+
+    pub fn cfg_config_app(config_app: config_app::ConfigApp) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_config_app = web::Data::new(config_app);
+            config.app_data(web::Data::clone(&data_config_app));
+        }
+    }
+
+    pub fn cfg_mailer(config_smtp: config_smtp::ConfigSmtp) -> impl FnOnce(&mut web::ServiceConfig) {
+        move |config: &mut web::ServiceConfig| {
+            let data_mailer = web::Data::new(MailerApp::new(config_smtp));
+            config.app_data(web::Data::clone(&data_mailer));
+        }
+    }
 }
