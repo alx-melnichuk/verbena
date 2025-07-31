@@ -189,6 +189,7 @@ pub mod impls {
 
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
+    use actix_web::web;
     use chrono::{DateTime, Duration, Utc};
 
     use crate::users::user_models::{CreateUserRecovery, UserRecovery};
@@ -305,4 +306,28 @@ pub mod tests {
             Ok(result)
         }
     }
+
+    pub struct UserRecoveryOrmTest {}
+
+    impl UserRecoveryOrmTest {
+
+        pub fn recoveries(opt_user_id: Option<i32>) -> Vec<UserRecovery> {
+            let user_recovery_vec:Vec<UserRecovery> = match opt_user_id {
+                Some(user_id) => {
+                    let final_date_utc = Utc::now() + Duration::seconds(600);
+                    let user_recovery = UserRecoveryOrmApp::new_user_recovery(1, user_id, final_date_utc);
+                    UserRecoveryOrmApp::create(&vec![user_recovery]).user_recovery_vec
+                },
+                None => vec![]
+            };
+            user_recovery_vec
+        }
+        pub fn cfg_recovery_orm(recovery: Vec<UserRecovery>) -> impl FnOnce(&mut web::ServiceConfig) {
+            move |config: &mut web::ServiceConfig| {
+                let data_user_recovery_orm = web::Data::new(UserRecoveryOrmApp::create(&recovery));
+                config.app_data(web::Data::clone(&data_user_recovery_orm));
+            }
+        }
+    }
+
 }
