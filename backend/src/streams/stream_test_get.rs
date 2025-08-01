@@ -12,7 +12,9 @@ mod tests {
     use vrb_dbase::db_enums::UserRole;
     use vrb_tools::err;
 
-    use crate::profiles::profile_orm::tests::ProfileOrmApp;
+    use crate::profiles::{config_jwt, 
+        profile_orm::tests::{ProfileOrmApp, ProfileOrmTest as ProflTest, ADMIN, USER},
+    };
     use crate::streams::{
         stream_controller::{
             get_stream_by_id, get_stream_config, get_streams, get_streams_events, get_streams_period,
@@ -21,7 +23,7 @@ mod tests {
             MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, PERIOD_MAX_NUMBER_DAYS,
         },
         stream_models::{self, StreamConfigDto, StreamEventDto, StreamEventPageDto, StreamInfoDto, StreamInfoPageDto},
-        stream_orm::tests::{StreamOrmApp, header_auth},
+        stream_orm::tests::{StreamOrmApp, header_auth, StreamOrmTest as Strm_Test},
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -31,12 +33,18 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_stream_by_id_invalid_id() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        let stream_id = data_c.2.get(0).unwrap().id;
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let streams = Strm_Test::streams(&[0]);
+        let stream_id = streams.get(0).unwrap().id.clone();
         let stream_id_bad = format!("{}a", stream_id);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_stream_by_id).configure(configure_stream(cfg_c, data_c))).await;
+            App::new().service(get_stream_by_id)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(Strm_Test::cfg_stream_orm(streams))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream_id_bad))
             .insert_header(header_auth(&token)).to_request();
@@ -54,11 +62,17 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_stream_by_id_valid_id() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        let stream_dto = data_c.2.get(0).unwrap().clone();
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let streams = Strm_Test::streams(&[0]);
+        let stream_dto = streams.get(0).unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_stream_by_id).configure(configure_stream(cfg_c, data_c))).await;
+            App::new().service(get_stream_by_id)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(Strm_Test::cfg_stream_orm(streams))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream_dto.id))
             .insert_header(header_auth(&token)).to_request();
@@ -76,11 +90,17 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_stream_by_id_non_existent_id() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        let stream_id = data_c.2.get(0).unwrap().id;
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let streams = Strm_Test::streams(&[0]);
+        let stream_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_stream_by_id).configure(configure_stream(cfg_c, data_c))).await;
+            App::new().service(get_stream_by_id)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(Strm_Test::cfg_stream_orm(streams))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream_id + 1))
             .insert_header(header_auth(&token)).to_request();
@@ -89,26 +109,18 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_stream_by_id_another_user() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-
-        let profile_vec = ProfileOrmApp::create(&vec![
-            data_c.0.get(0).unwrap().clone(),
-            ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
-        ], &[])
-        .profile_vec;
-        let profile2_id = profile_vec.get(1).unwrap().user_id;
-
-        let stream_vec = StreamOrmApp::create(&[
-            data_c.2.get(0).unwrap().clone(),
-            create_stream(2, profile2_id, "title_2", "tag0,tag2", Utc::now()),
-        ])
-        .stream_info_vec;
-        let stream2 = stream_vec.get(1).unwrap().clone();
-
-        let data_c = (profile_vec, data_c.1, stream_vec);
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER, USER]);
+        let streams = Strm_Test::streams(&[0, 1]);
+        let mut stream2 = streams.get(1).unwrap().clone();
+        stream2.is_my_stream = false;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_stream_by_id).configure(configure_stream(cfg_c, data_c))).await;
+            App::new().service(get_stream_by_id)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(Strm_Test::cfg_stream_orm(streams))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream2.id))
             .insert_header(header_auth(&token)).to_request();
@@ -120,36 +132,24 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        let mut stream2b = stream2.clone();
-        stream2b.is_my_stream = false;
-        let json_stream = serde_json::json!(stream2b).to_string();
+        let json_stream = serde_json::json!(stream2).to_string();
         let stream_dto_ser: StreamInfoDto = serde_json::from_slice(json_stream.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(stream_dto_res, stream_dto_ser);
     }
     #[actix_web::test]
     async fn test_get_stream_by_id_another_user_by_admin() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-
-        let mut profile1 = data_c.0.get(0).unwrap().clone();
-        profile1.role = UserRole::Admin;
-        let profile_vec = ProfileOrmApp::create(&vec![
-            profile1,
-            ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
-        ], &[])
-        .profile_vec;
-        let profile2_id = profile_vec.get(1).unwrap().user_id;
-
-        let stream_vec = StreamOrmApp::create(&[
-            data_c.2.get(0).unwrap().clone(),
-            create_stream(2, profile2_id, "title_2", "tag0,tag2", Utc::now()),
-        ])
-        .stream_info_vec;
-        let stream2 = stream_vec.get(1).unwrap().clone();
-
-        let data_c = (profile_vec, data_c.1, stream_vec);
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[ADMIN, USER]);
+        let streams = Strm_Test::streams(&[0, 1]);
+        let mut stream2 = streams.get(1).unwrap().clone();
+        stream2.is_my_stream = false;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_stream_by_id).configure(configure_stream(cfg_c, data_c))).await;
+            App::new().service(get_stream_by_id)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(Strm_Test::cfg_stream_orm(streams))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/streams/{}", stream2.id))
             .insert_header(header_auth(&token)).to_request();
@@ -161,9 +161,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let stream_dto_res: StreamInfoDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        let mut stream2b = stream2.clone();
-        stream2b.is_my_stream = false;
-        let json_stream = serde_json::json!(stream2b).to_string();
+        let json_stream = serde_json::json!(stream2).to_string();
         let stream_dto_ser: StreamInfoDto = serde_json::from_slice(json_stream.as_bytes()).expect(MSG_FAILED_DESER);
         assert_eq!(stream_dto_res, stream_dto_ser);
     }
@@ -172,24 +170,22 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        let profile1_id = data_c.0.get(0).unwrap().user_id;
-        let stream_orm = StreamOrmApp::create(&[
-            create_stream(0, profile1_id, "demo11", "tag11,tag12", Utc::now()),
-            create_stream(1, profile1_id, "demo12", "tag14,tag15", Utc::now()),
-            create_stream(2, profile1_id + 1, "demo21", "tag21,tag22", Utc::now()),
-            create_stream(3, profile1_id + 1, "demo22", "tag24,tag25", Utc::now()),
-            create_stream(4, profile1_id + 1, "demo32", "tag36,tag37", Utc::now()),
-        ]);
-        let stream_vec = stream_orm.stream_info_vec.clone();
-        let stream1b_vec = &stream_vec[0..2];
-
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER, USER]);
+        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        // Create streams for user1 and user2.
+        let streams = Strm_Test::streams(&[0, 0, 1, 1, 1]);
+        // Select streams with indices: 0,1.
+        let streams1b = &streams.clone()[0..2];
         let limit = 2;
         let page = 1;
-        let data_c = (data_c.0, data_c.1, stream_vec.clone());
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams).configure(configure_stream(cfg_c, data_c))).await;
+            App::new().service(get_streams)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(Strm_Test::cfg_stream_orm(streams))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/streams?userId={}&page={}&limit={}", profile1_id, page, limit))
@@ -201,9 +197,9 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        let json = serde_json::json!(stream1b_vec).to_string();
-        let stream1b_vec_ser: Vec<StreamInfoDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
-        assert_eq!(response.list, stream1b_vec_ser);
+        let json = serde_json::json!(streams1b).to_string();
+        let streams1b_ser: Vec<StreamInfoDto> = serde_json::from_slice(json.as_bytes()).expect(MSG_FAILED_DESER);
+        assert_eq!(response.list, streams1b_ser);
         assert_eq!(response.list.len(), limit as usize);
         assert_eq!(response.limit, limit);
         assert_eq!(response.count, 2);
@@ -212,23 +208,21 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_page_limit_without_user_id() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        let profile1_id = data_c.0.get(0).unwrap().user_id;
-        let stream_orm = StreamOrmApp::create(&[
-            create_stream(0, profile1_id, "demo11", "tag11,tag12", Utc::now()),
-            create_stream(1, profile1_id, "demo12", "tag14,tag15", Utc::now()),
-            create_stream(2, profile1_id + 1, "demo21", "tag21,tag22", Utc::now()),
-            create_stream(3, profile1_id + 1, "demo22", "tag24,tag25", Utc::now()),
-            create_stream(4, profile1_id + 1, "demo32", "tag36,tag37", Utc::now()),
-        ]);
-        let stream_vec = stream_orm.stream_info_vec.clone();
-        let stream1b_vec = &stream_vec[0..2];
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER, USER]);
+        // Create streams for user1 and user2.
+        let streams = Strm_Test::streams(&[0, 0, 1, 1, 1]);
+        // Select streams with indices: 0,1.
+        let streams1b = &streams.clone()[0..2];
         let limit = 2;
         let page = 1;
-        let data_c = (data_c.0, data_c.1, stream_vec.clone());
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams).configure(configure_stream(cfg_c, data_c))).await;
+            App::new().service(get_streams)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(Strm_Test::cfg_stream_orm(streams))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/streams?page={}&limit={}", page, limit))
@@ -241,10 +235,10 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
-        let stream1b_vec_ser: Vec<StreamInfoDto> = serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
+        let json_streams1b = serde_json::json!(streams1b).to_string();
+        let streams1b_ser: Vec<StreamInfoDto> = serde_json::from_slice(json_streams1b.as_bytes()).expect(MSG_FAILED_DESER);
 
-        assert_eq!(response.list, stream1b_vec_ser);
+        assert_eq!(response.list, streams1b_ser);
         assert_eq!(response.list.len(), limit as usize);
         assert_eq!(response.limit, limit);
         assert_eq!(response.count, 2);
@@ -253,24 +247,22 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id_page2() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-        let profile1_id = data_c.0.get(0).unwrap().user_id;
-        let stream_orm = StreamOrmApp::create(&[
-            create_stream(0, profile1_id, "demo11", "tag11,tag12", Utc::now()),
-            create_stream(1, profile1_id, "demo12", "tag14,tag15", Utc::now()),
-            create_stream(2, profile1_id + 1, "demo21", "tag21,tag22", Utc::now()),
-            create_stream(3, profile1_id + 1, "demo22", "tag24,tag25", Utc::now()),
-            create_stream(4, profile1_id, "demo31", "tag31,tag32", Utc::now()),
-            create_stream(5, profile1_id, "demo32", "tag34,tag35", Utc::now()),
-        ]);
-        let stream_vec = stream_orm.stream_info_vec.clone();
-        let stream1b_vec = &stream_vec[4..6];
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER, USER]);
+        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        // Create streams for user1 and user2.
+        let streams = Strm_Test::streams(&[0, 0, 1, 1, 0, 0]);
+        // Select streams with indices: 4,5.
+        let streams1b = &streams.clone()[4..6];
         let limit = 2;
         let page = 2;
-        let data_c = (data_c.0, data_c.1, stream_vec.clone());
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams).configure(configure_stream(cfg_c, data_c))).await;
+            App::new().service(get_streams)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(Strm_Test::cfg_stream_orm(streams))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/streams?userId={}&page={}&limit={}", profile1_id, page, limit))
@@ -283,10 +275,10 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let response: StreamInfoPageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
 
-        let json_stream1b_vec = serde_json::json!(stream1b_vec).to_string();
-        let stream1b_vec_ser: Vec<StreamInfoDto> = serde_json::from_slice(json_stream1b_vec.as_bytes()).expect(MSG_FAILED_DESER);
+        let json_streams1b = serde_json::json!(streams1b).to_string();
+        let streams1b_ser: Vec<StreamInfoDto> = serde_json::from_slice(json_streams1b.as_bytes()).expect(MSG_FAILED_DESER);
 
-        assert_eq!(response.list, stream1b_vec_ser);
+        assert_eq!(response.list, streams1b_ser);
         assert_eq!(response.list.len(), limit as usize);
         assert_eq!(response.limit, limit);
         assert_eq!(response.count, 4);
@@ -295,26 +287,19 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_another_user_id_with_role_user() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-
-        let profile1 = data_c.0.get(0).unwrap().clone();
-        let profile1_id = profile1.user_id;
-        let profile_vec = ProfileOrmApp::create(&vec![
-            profile1,
-            ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
-        ], &[])
-        .profile_vec;
-        let profile2_id = profile_vec.get(1).unwrap().user_id;
-
-        let stream_orm = StreamOrmApp::create(&[
-            create_stream(0, profile2_id, "demo11", "tag11,tag12", Utc::now()),
-            create_stream(1, profile2_id, "demo12", "tag14,tag15", Utc::now()),
-        ]);
-        let stream_vec = stream_orm.stream_info_vec.clone();
-        let data_c = (profile_vec, data_c.1, stream_vec);
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER, USER]);
+        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        let profile2_id = data_p.0.get(1).unwrap().user_id;
+        // Create streams for user2.
+        let streams = Strm_Test::streams(&[1, 1]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams).configure(configure_stream(cfg_c, data_c))).await;
+            App::new().service(get_streams)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(Strm_Test::cfg_stream_orm(streams))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/streams?userId={}&page=1&limit=2", profile2_id))
@@ -334,33 +319,25 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_another_user_id_with_role_admin() {
-        let (cfg_c, data_c, token) = get_cfg_data();
-
-        let mut profile1 = data_c.0.get(0).unwrap().clone();
-        profile1.role = UserRole::Admin;
-        let profile_vec = ProfileOrmApp::create(&vec![
-            profile1,
-            ProfileOrmApp::new_profile(2, "Liam_Smith", "Liam_Smith@gmail.com", UserRole::User),
-        ], &[])
-        .profile_vec;
-        let profile2_id = profile_vec.get(1).unwrap().user_id;
-
-        let stream_orm = StreamOrmApp::create(&[
-            create_stream(0, profile2_id, "demo11", "tag11,tag12", Utc::now()),
-            create_stream(1, profile2_id, "demo12", "tag14,tag15", Utc::now()),
-        ]);
-        let mut stream1 = stream_orm.stream_info_vec.get(0).unwrap().clone();
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[ADMIN, USER]);
+        let profile2_id = data_p.0.get(1).unwrap().user_id;
+        // Create streams for user2.
+        let streams = Strm_Test::streams(&[1, 1]);
+        let mut stream1 = streams.get(0).unwrap().clone();
         stream1.is_my_stream = false;
-        let mut stream2 = stream_orm.stream_info_vec.get(1).unwrap().clone();
+        let mut stream2 = streams.get(1).unwrap().clone();
         stream2.is_my_stream = false;
         let stream_vec = vec![stream1, stream2];
-
-        let data_c = (profile_vec, data_c.1, stream_orm.stream_info_vec);
         let limit = 2;
         let page = 1;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(get_streams).configure(configure_stream(cfg_c, data_c))).await;
+            App::new().service(get_streams)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(Strm_Test::cfg_stream_orm(streams))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/streams?userId={}&page={}&limit={}", profile2_id, page, limit))
