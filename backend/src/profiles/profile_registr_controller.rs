@@ -19,7 +19,7 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
-    config_jwt, profile_checks,
+    config_jwt, profile_check,
     profile_models::{
         self, ClearForExpiredResponseDto, Profile, ProfileDto, RecoveryDataDto, RecoveryProfileDto, RecoveryProfileResponseDto,
         RegistrProfileDto, RegistrProfileResponseDto, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF,
@@ -146,7 +146,7 @@ pub async fn registration(
     let profile_orm2 = profile_orm.get_ref().clone();
     let registr_orm2 = user_registr_orm.get_ref().clone();
 
-    let res_search = profile_checks::uniqueness_nickname_or_email(Some(nickname), Some(email), profile_orm2, registr_orm2)
+    let res_search = profile_check::uniqueness_nickname_or_email(Some(nickname), Some(email), profile_orm2, registr_orm2)
         .await
         .map_err(|err| {
             #[rustfmt::skip]

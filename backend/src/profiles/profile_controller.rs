@@ -22,7 +22,7 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{
     config_prfl::{self, ConfigPrfl},
-    profile_checks,
+    profile_check,
     profile_models::{
         ModifyProfile, ModifyProfileDto, NewPasswordProfileDto, Profile, ProfileConfigDto, ProfileDto, UniquenessProfileDto,
         UniquenessProfileResponseDto, PROFILE_LOCALE_DEF, PROFILE_THEME_DARK, PROFILE_THEME_LIGHT_DEF,
@@ -370,7 +370,7 @@ pub async fn uniqueness_check(
     let profile_orm = profile_orm.get_ref().clone();
     let registr_orm = user_registr_orm.get_ref().clone();
 
-    let res_search = profile_checks::uniqueness_nickname_or_email(opt_nickname, opt_email, profile_orm, registr_orm)
+    let res_search = profile_check::uniqueness_nickname_or_email(opt_nickname, opt_email, profile_orm, registr_orm)
         .await
         .map_err(|err| {
             #[rustfmt::skip]
@@ -544,7 +544,7 @@ pub async fn put_profile(
         let profile_orm2 = profile_orm.get_ref().clone();
         let registr_orm2 = user_registr_orm.get_ref().clone();
 
-        let res_search = profile_checks::uniqueness_nickname_or_email(opt_nickname, opt_email, profile_orm2, registr_orm2)
+        let res_search = profile_check::uniqueness_nickname_or_email(opt_nickname, opt_email, profile_orm2, registr_orm2)
             .await
             .map_err(|err| {
                 #[rustfmt::skip]
