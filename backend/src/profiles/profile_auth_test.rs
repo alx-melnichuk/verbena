@@ -10,27 +10,28 @@ mod tests {
     };
     use serde_json::json;
     use vrb_common::api_error::{code_to_str, ApiError};
-    use vrb_tools::{
-        err, hash_tools,
-        token_coding,
-        token_data::TOKEN_NAME,
-    };
+    use vrb_tools::{err, hash_tools, token_coding, token_data::TOKEN_NAME};
 
     use crate::profiles::{
-        profile_auth_controller::{login, logout, update_token, tests as AthCtTest,},
+        config_jwt,
+        profile_auth_controller::{login, logout, tests as AthCtTest, update_token},
         profile_models::{self, LoginProfileDto, LoginProfileResponseDto, ProfileDto, ProfileTest, TokenDto},
-        profile_orm::tests::{ProfileOrmTest as PrfTest, PROFILE_USER_ID_NO_SESSION, USER},
+        profile_orm::tests::{ProfileOrmTest as ProflTest, PROFILE_USER_ID_NO_SESSION, USER},
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
 
     // ** login **
+
     #[actix_web::test]
     async fn test_login_no_data() {
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         let req = test::TestRequest::post().uri("/api/login").to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
@@ -43,10 +44,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_empty_json_object() {
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         let req = test::TestRequest::post().uri("/api/login").set_json(json!({})).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
@@ -59,10 +63,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_nickname_empty() {
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: "".to_string(), password: "passwordD1T1".to_string() })
@@ -78,10 +85,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_nickname_min() {
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: ProfileTest::nickname_min(), password: "passwordD1T1".to_string() })
@@ -97,10 +107,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_nickname_max() {
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: ProfileTest::nickname_max(), password: "passwordD1T1".to_string() })
@@ -116,10 +129,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_nickname_wrong() {
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: ProfileTest::nickname_wrong(), password: "passwordD1T1".to_string() })
@@ -135,10 +151,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_email_min() {
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: ProfileTest::email_min(), password: "passwordD1T1".to_string() })
@@ -154,10 +173,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_email_max() {
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: ProfileTest::email_max(), password: "passwordD1T1".to_string() })
@@ -173,10 +195,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_email_wrong() {
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: ProfileTest::email_wrong(), password: "passwordD1T1".to_string() })
@@ -192,10 +217,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_password_empty() {
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: "James_Smith".to_string(), password: "".to_string() })
@@ -211,10 +239,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_password_min() {
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: "James_Smith".to_string(), password: ProfileTest::password_min() })
@@ -230,10 +261,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_password_max() {
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: "James_Smith".to_string(), password: ProfileTest::password_max() })
@@ -249,10 +283,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_invalid_dto_password_wrong() {
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: "James_Smith".to_string(), password: ProfileTest::password_wrong() })
@@ -268,11 +305,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_if_nickname_not_exist() {
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let data_p = ProflTest::profiles(&[USER]);
         let nickname = data_p.0.get(0).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: format!("a{}", nickname), password: "passwordD1T1".to_string() })
@@ -288,11 +328,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_if_email_not_exist() {
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let data_p = ProflTest::profiles(&[USER]);
         let email = data_p.0.get(0).unwrap().email.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: format!("a{}", email), password: "passwordD1T1".to_string() })
@@ -308,14 +351,17 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_if_password_invalid_hash() {
-        let (cfg_p, mut data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let mut data_p = ProflTest::profiles(&[USER]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         let password = "hash_password_R2B2";
         profile1.password = password.to_string();
         let nickname = profile1.nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: nickname.to_string(), password: password.to_string() })
@@ -331,7 +377,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_if_password_incorrect() {
-        let (cfg_p, mut data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let mut data_p = ProflTest::profiles(&[USER]);
         let nickname = "Robert_Brown".to_string();
         let password = "passwdR2B2";
         let profile1 = data_p.0.get_mut(0).unwrap();
@@ -339,7 +385,10 @@ mod tests {
         profile1.password = hash_tools::encode_hash(password).unwrap(); // hashed
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: nickname.to_string(), password: format!("{}b", password) })
@@ -355,16 +404,20 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_err_jsonwebtoken_encode() {
-        let (mut cfg_p, mut data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let mut data_p = ProflTest::profiles(&[USER]);
         let nickname = "Robert_Brown".to_string();
         let password = "passwdR2B2";
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.nickname = nickname.clone().to_lowercase();
         profile1.password = hash_tools::encode_hash(password).unwrap(); // hashed
-        cfg_p.0.jwt_secret = "".to_string();
+        let mut config_jwt = config_jwt::get_test_config();
+        config_jwt.jwt_secret = "".to_string();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: nickname.to_string(), password: password.to_string() })
@@ -380,7 +433,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_if_session_not_exist() {
-        let (cfg_p, mut data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let mut data_p = ProflTest::profiles(&[USER]);
         let profile1 = data_p.0.last_mut().unwrap();
         // Change ID, reset connection with session.
         let nickname = profile1.nickname.clone();
@@ -390,7 +443,10 @@ mod tests {
         profile1.password = hash_tools::encode_hash(password).unwrap(); // hashed
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: nickname.to_string(), password: password.to_string() })
@@ -406,16 +462,19 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_login_valid_credentials() {
-        let (cfg_p, mut data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let mut data_p = ProflTest::profiles(&[USER]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         let nickname = profile1.nickname.clone();
         let password = "passwdR2B2";
         profile1.password = hash_tools::encode_hash(password).unwrap(); // hashed
         let profile1_dto = ProfileDto::from(profile1.clone());
-        let jwt_access = cfg_p.0.jwt_access;
+        let jwt_access = config_jwt::get_test_config().jwt_access;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(login).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(login)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/login")
             .set_json(LoginProfileDto { nickname: nickname.to_string(), password: password.to_string() })
@@ -450,16 +509,20 @@ mod tests {
     }
 
     // ** logout **
+
     #[actix_web::test]
     async fn test_logout_valid_token() {
-        let token = PrfTest::token1();
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(logout).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(logout)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/logout")
-            .insert_header(PrfTest::header_auth(&token))
+            .insert_header(ProflTest::header_auth(&token))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -483,14 +546,17 @@ mod tests {
     // ** update_token **
     #[actix_web::test]
     async fn test_update_token_no_data() {
-        let token = PrfTest::token1();
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(update_token).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(update_token)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(PrfTest::header_auth(&token))
+            .insert_header(ProflTest::header_auth(&token))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
@@ -503,14 +569,17 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_empty_json_object() {
-        let token = PrfTest::token1();
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(update_token).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(update_token)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(PrfTest::header_auth(&token))
+            .insert_header(ProflTest::header_auth(&token))
             .set_json(json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -524,14 +593,17 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_invalid_dto_token_empty() {
-        let token = PrfTest::token1();
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(update_token).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(update_token)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(PrfTest::header_auth(&token))
+            .insert_header(ProflTest::header_auth(&token))
             .set_json(TokenDto { token: "".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -545,14 +617,17 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_invalid_dto_token_invalid() {
-        let token = PrfTest::token1();
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(update_token).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(update_token)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(PrfTest::header_auth(&token))
+            .insert_header(ProflTest::header_auth(&token))
             .set_json(TokenDto { token: "invalid_token".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -566,19 +641,23 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_unacceptable_token_id() {
-        let token = PrfTest::token1();
-        let (cfg_p, data_p) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
         let profile1_id = data_p.0.get(0).unwrap().user_id;
-        let jwt_secret = cfg_p.0.jwt_secret.as_bytes();
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret = config_jwt.jwt_secret.as_bytes();
         let profile_id_bad = profile1_id + 1;
         let num_token = data_p.1.get(0).unwrap().num_token.unwrap();
-        let token_bad = token_coding::encode_token(profile_id_bad, num_token, &jwt_secret, cfg_p.0.jwt_access).unwrap();
+        let token_bad = token_coding::encode_token(profile_id_bad, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(update_token).configure(PrfTest::config(cfg_p, data_p))).await;
+            App::new().service(update_token)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(PrfTest::header_auth(&token))
+            .insert_header(ProflTest::header_auth(&token))
             .set_json(TokenDto { token: token_bad })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -592,18 +671,22 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_unacceptable_token_num() {
-        let token = PrfTest::token1();
-        let (cfg_p, data_c) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
-        let profile1_id = data_c.0.get(0).unwrap().user_id;
-        let jwt_secret = cfg_p.0.jwt_secret.as_bytes();
-        let num_token = data_c.1.get(0).unwrap().num_token.unwrap();
-        let token_bad = token_coding::encode_token(profile1_id, num_token + 1, &jwt_secret, cfg_p.0.jwt_access).unwrap();
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret = config_jwt.jwt_secret.as_bytes();
+        let num_token = data_p.1.get(0).unwrap().num_token.unwrap();
+        let token_bad = token_coding::encode_token(profile1_id, num_token + 1, &jwt_secret, config_jwt.jwt_access).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(update_token).configure(PrfTest::config(cfg_p, data_c))).await;
+            App::new().service(update_token)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(PrfTest::header_auth(&token))
+            .insert_header(ProflTest::header_auth(&token))
             .set_json(TokenDto { token: token_bad })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -617,19 +700,23 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_valid_dto_token() {
-        let token = PrfTest::token1();
-        let (cfg_p, data_c) = (PrfTest::cfg(), PrfTest::profiles(&[USER]));
-        let profile1_id = data_c.0.get(0).unwrap().user_id;
-        let jwt_access = cfg_p.0.jwt_access;
-        let jwt_secret = cfg_p.0.jwt_secret.as_bytes();
-        let num_token = data_c.1.get(0).unwrap().num_token.unwrap();
-        let token_refresh = token_coding::encode_token(profile1_id, num_token, &jwt_secret, cfg_p.0.jwt_refresh).unwrap();
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_access = config_jwt.jwt_access;
+        let jwt_secret = config_jwt.jwt_secret.as_bytes();
+        let num_token = data_p.1.get(0).unwrap().num_token.unwrap();
+        let token_refresh = token_coding::encode_token(profile1_id, num_token, &jwt_secret, config_jwt.jwt_refresh).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(update_token).configure(PrfTest::config(cfg_p, data_c))).await;
+            App::new().service(update_token)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(PrfTest::header_auth(&token))
+            .insert_header(ProflTest::header_auth(&token))
             .set_json(TokenDto { token: token_refresh })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
