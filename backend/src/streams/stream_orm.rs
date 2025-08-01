@@ -601,12 +601,14 @@ pub mod impls {
 pub mod tests {
     use std::cmp::Ordering;
 
-    use actix_web::http;
+    use actix_web::{http, web};
     use chrono::{Duration, Timelike};
     use vrb_dbase::db_enums::StreamState;
     use vrb_tools::token_data::BEARER;
 
-    use crate::streams::stream_models::{self, StreamInfoDto};
+    use crate::{profiles::profile_orm::tests::ProfileOrmTest, streams::{
+        config_strm, stream_models::{self, StreamInfoDto}
+    }};
 
     use super::*;
 
@@ -1022,6 +1024,61 @@ pub mod tests {
             match opt_stream_info {
                 Some(stream_info) => Ok(Some((Self::to_stream(stream_info), self.get_tags(stream_info)))),
                 None => Ok(None),
+            }
+        }
+    }
+
+    pub struct StreamOrmTest {}
+
+    impl StreamOrmTest {
+        pub fn stream_ids() -> Vec<i32> {
+            vec![
+                1, // Owner user idx 0 (live: true)  1100 oliver_taylor
+                2, // Owner user idx 1 (live: true)  1101 robert_brown
+                3, // Owner user idx 2 (live: false) 1102 mary_williams
+                4, // Owner user idx 3  blocked      1103 ava_wilson
+            ]
+        }
+        /*pub fn stream_logo_alias(user_id: i32) -> Option<String> {
+            let idx = user_id - PROFILE_USER_ID;
+            if -1 < idx && idx < 4 { Some(format!("{}/file_logo_{}.png", consts::ALIAS_LOGO_FILES_DIR, idx)) } else { None }
+        }
+        pub fn stream_logo_path(user_id: i32) -> Option<String> {
+            let idx = user_id - PROFILE_USER_ID;
+            if -1 < idx && idx < 4 { Some(format!("{}/file_logo_{}.png", consts::LOGO_FILES_DIR, idx)) } else { None }
+        }*/
+        pub fn create_stream(idx: u8, user_id: i32, title: &str, tags: &str, starttime: DateTime<Utc>) -> StreamInfoDto {
+            let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
+            let stream = Stream::new(STREAM_ID + i32::from(idx), user_id, title, starttime);
+            StreamInfoDto::convert(stream, user_id, &tags1)
+        }
+    
+        pub fn streams(user_idxs: &[u8]) -> Vec<StreamInfoDto> {
+            let mut stream_info_vec: Vec<StreamInfoDto> = Vec::new();
+            let user_ids = ProfileOrmTest::user_ids();
+            for (index, user_idx) in user_idxs.iter().enumerate() {
+                let user_index: usize = usize::from(*user_idx);
+                if let Some(user_id) = user_ids.get(user_index) {
+                    let title = format!("title_{}_{}", index, user_index);
+                    let tags = format!("tag_{}_{}_1,tag_{}_{}_2", index, user_index, index, user_index);
+                    let idx = u8::try_from(index).unwrap();
+                    let stream_info = Self::create_stream(idx, *user_id, &title, &tags, Utc::now());
+                    stream_info_vec.push(stream_info);
+                }
+            }
+            stream_info_vec
+        }
+
+        pub fn cfg_config_strm(config_strm: config_strm::ConfigStrm) -> impl FnOnce(&mut web::ServiceConfig) {
+            move |config: &mut web::ServiceConfig| {
+                let data_config_strm = web::Data::new(config_strm);
+                config.app_data(web::Data::clone(&data_config_strm));
+            }
+        }
+        pub fn cfg_stream_orm(data_s: Vec<StreamInfoDto>) -> impl FnOnce(&mut web::ServiceConfig) {
+            move |config: &mut web::ServiceConfig| {
+                let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_s));
+                config.app_data(web::Data::clone(&data_stream_orm));
             }
         }
     }
