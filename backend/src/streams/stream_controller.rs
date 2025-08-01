@@ -1509,6 +1509,7 @@ pub async fn delete_stream(
 pub mod tests {
 
     use chrono::{DateTime, Utc};
+    use vrb_common::api_error::ApiError;
     use vrb_dbase::db_enums::UserRole;
     use vrb_tools::token_coding;
 
@@ -1578,6 +1579,15 @@ pub mod tests {
                 .app_data(web::Data::clone(&data_config_strm))
                 .app_data(web::Data::clone(&data_profile_orm))
                 .app_data(web::Data::clone(&data_stream_orm));
+        }
+    }
+
+    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
+        assert_eq!(app_err_vec.len(), msgs.len());
+        for (idx, msg) in msgs.iter().enumerate() {
+            let app_err = app_err_vec.get(idx).unwrap();
+            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.message, msg.to_string());
         }
     }
 }

@@ -9,14 +9,14 @@ mod tests {
     use chrono::{SecondsFormat, Utc};
     use serde_json::{self, json};
     use vrb_common::{
-        api_error::{code_to_str, ApiError, check_app_err},
+        api_error::{code_to_str, ApiError},
         validators,
     };
     use vrb_tools::err;
 
     use crate::chats::{
         chat_message_controller::{
-            delete_blocked_user, get_blocked_users, post_blocked_user,
+            delete_blocked_user, get_blocked_users, post_blocked_user, tests as ChtCtTest,
             tests::{configure_chat_message, get_cfg_data, header_auth},
         },
         chat_message_models::{self, BlockedUserDto, ChatMessageModelsTest, CreateBlockedUserDto, DeleteBlockedUserDto},
@@ -163,7 +163,8 @@ mod tests {
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let app_err = app_err_vec.get(0).unwrap().clone();
         let status_code417 = code_to_str(StatusCode::EXPECTATION_FAILED);
-        check_app_err(app_err_vec, &status_code417, &[chat_message_models::MSG_BLOCKED_ONE_OPTIONAL_MUST_PRESENT]);
+        #[rustfmt::skip]
+        ChtCtTest::check_app_err(app_err_vec, &status_code417, &[chat_message_models::MSG_BLOCKED_ONE_OPTIONAL_MUST_PRESENT]);
         #[rustfmt::skip]
         let json = serde_json::json!({ "optionalFields": "blocked_id, blocked_nickname" });
         #[rustfmt::skip]
@@ -191,7 +192,7 @@ mod tests {
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let app_err = app_err_vec.get(0).unwrap().clone();
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_BLOCKED_NICKNAME_MIN_LENGTH]);
+        ChtCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_BLOCKED_NICKNAME_MIN_LENGTH]);
         #[rustfmt::skip]
         let json = serde_json::json!({ "actualLength": len1, "requiredLength": chat_message_models::BLOCKED_NICKNAME_MIN });
         assert_eq!(*app_err.params.get("minlength").unwrap(), json);
@@ -218,7 +219,7 @@ mod tests {
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let app_err = app_err_vec.get(0).unwrap().clone();
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_BLOCKED_NICKNAME_MAX_LENGTH]);
+        ChtCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_BLOCKED_NICKNAME_MAX_LENGTH]);
         #[rustfmt::skip]
         let json = serde_json::json!({ "actualLength": len1, "requiredLength": chat_message_models::BLOCKED_NICKNAME_MAX });
         assert_eq!(*app_err.params.get("maxlength").unwrap(), json);
@@ -408,7 +409,7 @@ mod tests {
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let app_err = app_err_vec.get(0).unwrap().clone();
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_BLOCKED_ONE_OPTIONAL_MUST_PRESENT]);
+        ChtCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_BLOCKED_ONE_OPTIONAL_MUST_PRESENT]);
         #[rustfmt::skip]
         let json = serde_json::json!({ "optionalFields": "blocked_id, blocked_nickname" });
         #[rustfmt::skip]
@@ -436,7 +437,7 @@ mod tests {
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let app_err = app_err_vec.get(0).unwrap().clone();
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_BLOCKED_NICKNAME_MIN_LENGTH]);
+        ChtCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_BLOCKED_NICKNAME_MIN_LENGTH]);
         #[rustfmt::skip]
         let json = serde_json::json!({ "actualLength": len1, "requiredLength": chat_message_models::BLOCKED_NICKNAME_MIN });
         assert_eq!(*app_err.params.get("minlength").unwrap(), json);
@@ -463,7 +464,7 @@ mod tests {
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         let app_err = app_err_vec.get(0).unwrap().clone();
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_BLOCKED_NICKNAME_MAX_LENGTH]);
+        ChtCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_BLOCKED_NICKNAME_MAX_LENGTH]);
         #[rustfmt::skip]
         let json = serde_json::json!({ "actualLength": len1, "requiredLength": chat_message_models::BLOCKED_NICKNAME_MAX });
         assert_eq!(*app_err.params.get("maxlength").unwrap(), json);

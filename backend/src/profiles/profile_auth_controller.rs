@@ -219,6 +219,8 @@ pub async fn login(
 )]
 #[post("/api/logout", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn logout(authenticated: Authenticated, profile_orm: web::Data<ProfileOrmApp>) -> actix_web::Result<HttpResponse, ApiError> {
+    #[rustfmt::skip]
+    let opt_timer0 = if log_enabled!(Debug) { Some(std::time::Instant::now()) } else { None };
     // Get user ID.
     let profile_user = authenticated.deref().clone();
 
@@ -249,6 +251,9 @@ pub async fn logout(authenticated: Authenticated, profile_orm: web::Data<Profile
         .max_age(ActixWebDuration::new(-1, 0))
         .http_only(true)
         .finish();
+    if let Some(timer0) = opt_timer0 {
+        debug!("timer0: {}, \"logout\" successful", format!("{:.2?}", timer0.elapsed()));
+    }
     Ok(HttpResponse::Ok().cookie(cookie).body(()))
 }
 
@@ -396,4 +401,28 @@ pub async fn update_token(
     }
 
     Ok(HttpResponse::Ok().cookie(cookie).json(profile_tokens_dto)) // 200
+}
+
+#[cfg(all(test, feature = "mockdata"))]
+pub mod tests {
+
+    use actix_web::http;
+    use vrb_common::api_error::ApiError;
+    use vrb_tools::{
+        token_data::BEARER,
+    };
+
+    pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
+        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (http::header::AUTHORIZATION, header_value)
+    }
+
+    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
+        assert_eq!(app_err_vec.len(), msgs.len());
+        for (idx, msg) in msgs.iter().enumerate() {
+            let app_err = app_err_vec.get(idx).unwrap();
+            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.message, msg.to_string());
+        }
+    }
 }

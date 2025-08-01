@@ -14,7 +14,7 @@ mod tests {
     
     use crate::chats::{
         chat_message_controller::{
-            delete_chat_message, post_chat_message, put_chat_message,
+            delete_chat_message, post_chat_message, put_chat_message, tests as ChtCtTest,
             tests::{configure_chat_message, get_cfg_data, header_auth},
         },
         chat_message_models::{self, ChatMessageDto, CreateChatMessageDto, ModifyChatMessageDto},
@@ -25,15 +25,6 @@ mod tests {
     const MSG_JSON_MISSING_FIELD: &str = "Json deserialize error: missing field";
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
     const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
-
-    fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
-        assert_eq!(app_err_vec.len(), msgs.len());
-        for (idx, msg) in msgs.iter().enumerate() {
-            let app_err = app_err_vec.get(idx).unwrap();
-            assert_eq!(app_err.code, code);
-            assert_eq!(app_err.message, msg.to_string());
-        }
-    }
 
     // ** post_chat_message **
 
@@ -96,7 +87,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_MESSAGE_MIN_LENGTH]);
+        ChtCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_MESSAGE_MIN_LENGTH]);
     }
     #[actix_web::test]
     async fn test_post_chat_message_msg_max() {
@@ -117,7 +108,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_MESSAGE_MAX_LENGTH]);
+        ChtCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_MESSAGE_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_post_chat_message_stream_id_wrong() {
@@ -270,7 +261,7 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err_vec: Vec<ApiError> = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         #[rustfmt::skip]
-        check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_MESSAGE_MAX_LENGTH]);
+        ChtCtTest::check_app_err(app_err_vec, &code_to_str(StatusCode::EXPECTATION_FAILED), &[chat_message_models::MSG_MESSAGE_MAX_LENGTH]);
     }
     #[actix_web::test]
     async fn test_put_chat_message_non_existent_id() {

@@ -1021,6 +1021,7 @@ pub async fn delete_profile_current(
 pub mod tests {
 
     use actix_web::{http, web};
+    use vrb_common::api_error::ApiError;
     use vrb_tools::{config_app, token_data::BEARER};
 
     pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
@@ -1032,6 +1033,15 @@ pub mod tests {
         move |config: &mut web::ServiceConfig| {
             let data_config_app = web::Data::new(config_app);
             config.app_data(web::Data::clone(&data_config_app));
+        }
+    }
+    
+    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
+        assert_eq!(app_err_vec.len(), msgs.len());
+        for (idx, msg) in msgs.iter().enumerate() {
+            let app_err = app_err_vec.get(idx).unwrap();
+            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.message, msg.to_string());
         }
     }
 }
