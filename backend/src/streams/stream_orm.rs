@@ -1039,28 +1039,20 @@ pub mod tests {
                 4, // Owner user idx 3  blocked      1103 ava_wilson
             ]
         }
-        /*pub fn stream_logo_alias(user_id: i32) -> Option<String> {
-            let idx = user_id - PROFILE_USER_ID;
-            if -1 < idx && idx < 4 { Some(format!("{}/file_logo_{}.png", consts::ALIAS_LOGO_FILES_DIR, idx)) } else { None }
-        }
-        pub fn stream_logo_path(user_id: i32) -> Option<String> {
-            let idx = user_id - PROFILE_USER_ID;
-            if -1 < idx && idx < 4 { Some(format!("{}/file_logo_{}.png", consts::LOGO_FILES_DIR, idx)) } else { None }
-        }*/
+
         pub fn create_stream(idx: u8, user_id: i32, title: &str, tags: &str, starttime: DateTime<Utc>) -> StreamInfoDto {
             let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
             let stream = Stream::new(STREAM_ID + i32::from(idx), user_id, title, starttime);
             StreamInfoDto::convert(stream, user_id, &tags1)
         }
     
-        pub fn streams(user_idxs: &[u8]) -> Vec<StreamInfoDto> {
+        pub fn streams(user_idxs: &[usize]) -> Vec<StreamInfoDto> {
             let mut stream_info_vec: Vec<StreamInfoDto> = Vec::new();
             let user_ids = ProfileOrmTest::user_ids();
             for (index, user_idx) in user_idxs.iter().enumerate() {
-                let user_index: usize = usize::from(*user_idx);
-                if let Some(user_id) = user_ids.get(user_index) {
-                    let title = format!("title_{}_{}", index, user_index);
-                    let tags = format!("tag_{}_{}_1,tag_{}_{}_2", index, user_index, index, user_index);
+                if let Some(user_id) = user_ids.get(*user_idx) {
+                    let title = format!("title_{}_{}", index, *user_idx);
+                    let tags = format!("tag_{}_{}_1,tag_{}_{}_2", index, *user_idx, index, *user_idx);
                     let idx = u8::try_from(index).unwrap();
                     let stream_info = Self::create_stream(idx, *user_id, &title, &tags, Utc::now());
                     stream_info_vec.push(stream_info);
