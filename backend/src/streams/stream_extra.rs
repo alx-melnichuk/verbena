@@ -70,12 +70,14 @@ pub mod tests {
     use std::{fs, path};
 
     use actix_web::web;
-    use chrono::Utc;
 
+    use crate::profiles::{
+        profile_orm::tests::{ProfileOrmTest as ProflTest, USER, USER1},
+    };
     use crate::streams::{
         config_strm,
-        stream_controller::{tests::create_stream, ALIAS_LOGO_FILES_DIR},
-        stream_orm::tests::StreamOrmApp,
+        stream_controller::ALIAS_LOGO_FILES_DIR,
+        stream_orm::tests::{StreamOrmApp, StreamOrmTest as Strm_Test},
     };
 
     use super::{get_stream_logo_files, remove_stream_logo_files};
@@ -90,11 +92,14 @@ pub mod tests {
     #[actix_web::test]
     async fn test_get_stream_logo_files_another_user() {
         let name0_file = "test_get_stream_logo_files_another_user.png";
-        let profile0_id = 0;
-        let mut stream = create_stream(0, profile0_id, "title0", "tag01,tag02", Utc::now());
+        let data_p = ProflTest::profiles(&[USER]);
+        let profile0_id = data_p.0.get(0).unwrap().user_id.clone();
+
+        let mut streams = Strm_Test::streams(&[USER1]);
+        let stream = streams.get_mut(0).unwrap();
         stream.logo = Some(format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file));
 
-        let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&[stream]));
+        let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&streams));
         let result = get_stream_logo_files(data_stream_orm, profile0_id + 1).await;
 
         assert!(result.is_ok());
@@ -103,10 +108,11 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_get_stream_logo_files_without_files() {
-        let profile0_id = 0;
-        let stream = create_stream(0, profile0_id, "title0", "tag01,tag02", Utc::now());
+        let data_p = ProflTest::profiles(&[USER]);
+        let profile0_id = data_p.0.get(0).unwrap().user_id.clone();
+        let streams = Strm_Test::streams(&[USER1]);
 
-        let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&[stream]));
+        let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&streams));
         let result = get_stream_logo_files(data_stream_orm, profile0_id).await;
 
         assert!(result.is_ok());
@@ -118,12 +124,14 @@ pub mod tests {
         let name0_file = "test_get_stream_logo_files_with_files.png";
         let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
-        let profile0_id = 0;
+        let data_p = ProflTest::profiles(&[USER]);
+        let profile0_id = data_p.0.get(0).unwrap().user_id.clone();
 
-        let mut stream = create_stream(0, profile0_id, "title0", "tag01,tag02", Utc::now());
+        let mut streams = Strm_Test::streams(&[USER1]);
+        let stream = streams.get_mut(0).unwrap();
         stream.logo = Some(path_name0_alias.clone());
 
-        let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&[stream]));
+        let data_stream_orm: web::Data<StreamOrmApp> = web::Data::new(StreamOrmApp::create(&streams));
         let result = get_stream_logo_files(data_stream_orm, profile0_id).await;
 
         assert!(result.is_ok());

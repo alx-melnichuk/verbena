@@ -1508,80 +1508,14 @@ pub async fn delete_stream(
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
 
-    use chrono::{DateTime, Utc};
+    use actix_web::http;
     use vrb_common::api_error::ApiError;
-    use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::token_coding;
+    use vrb_tools::token_data::BEARER;
 
-    use crate::profiles::{
-        config_jwt,
-        profile_models::{Profile, Session},
-        profile_orm::tests::ProfileOrmApp,
-    };
-    use crate::streams::{
-        config_strm,
-        stream_models::{Stream, StreamInfoDto},
-        stream_orm::tests::{StreamOrmApp, STREAM_ID},
-    };
-
-    use super::*;
-
-    fn create_profile() -> Profile {
-        let nickname = "Oliver_Taylor".to_string();
-        let role = UserRole::User;
-        let profile = ProfileOrmApp::new_profile(1, &nickname, &format!("{}@gmail.com", &nickname), role);
-        profile
+    pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
+        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (http::header::AUTHORIZATION, header_value)
     }
-    fn profile_with_id(profile: Profile) -> Profile {
-        let profile_orm = ProfileOrmApp::create(&vec![profile], &[]);
-        profile_orm.profile_vec.get(0).unwrap().clone()
-    }
-    pub fn create_stream(idx: i32, user_id: i32, title: &str, tags: &str, starttime: DateTime<Utc>) -> StreamInfoDto {
-        let tags1: Vec<String> = tags.split(',').map(|val| val.to_string()).collect();
-        let stream = Stream::new(STREAM_ID + idx, user_id, title, starttime);
-        StreamInfoDto::convert(stream, user_id, &tags1)
-    }
-    #[rustfmt::skip]
-    pub fn get_cfg_data() -> ((config_jwt::ConfigJwt, config_strm::ConfigStrm), (Vec<Profile>, Vec<Session>, Vec<StreamInfoDto>), String) {
-        // Create profile values.
-        let profile1: Profile = profile_with_id(create_profile());
-        let num_token = 1234;
-        let session1 = Session { user_id: profile1.user_id, num_token: Some(num_token) };
-
-        let config_jwt = config_jwt::get_test_config();
-        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Create token values.
-        let token = token_coding::encode_token(profile1.user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap();
-
-        // The "stream" value will be required for the "put_stream" method.
-        let stream = create_stream(0, profile1.user_id, "title0", "tag01,tag02", Utc::now());
-
-        let stream_orm = StreamOrmApp::create(&[stream.clone()]);
-        let stream_dto = stream_orm.stream_info_vec.get(0).unwrap().clone();
-
-        let config_strm = config_strm::get_test_config();
-        let cfg_c = (config_jwt, config_strm);
-        let data_c = (vec![profile1], vec![session1], vec![stream_dto]);
-        (cfg_c, data_c, token)
-    }
-    pub fn configure_stream(
-        cfg_c: (config_jwt::ConfigJwt, config_strm::ConfigStrm),
-        data_c: (Vec<Profile>, Vec<Session>, Vec<StreamInfoDto>),
-    ) -> impl FnOnce(&mut web::ServiceConfig) {
-        move |config: &mut web::ServiceConfig| {
-            let data_config_jwt = web::Data::new(cfg_c.0);
-            let data_config_strm = web::Data::new(cfg_c.1);
-            let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_c.0, &data_c.1));
-            let data_stream_orm = web::Data::new(StreamOrmApp::create(&data_c.2));
-
-            config
-                .app_data(web::Data::clone(&data_config_jwt))
-                .app_data(web::Data::clone(&data_config_strm))
-                .app_data(web::Data::clone(&data_profile_orm))
-                .app_data(web::Data::clone(&data_stream_orm));
-        }
-    }
-
     pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
         for (idx, msg) in msgs.iter().enumerate() {
