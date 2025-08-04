@@ -302,6 +302,10 @@ pub mod tests {
 
     pub const ADMIN: u8 = 0;
     pub const USER: u8 = 1;
+    pub const USER1: usize = 0;
+    pub const USER2: usize = 1;
+    pub const USER3: usize = 2;
+    pub const USER4: usize = 3;
     pub const PROFILE_USER_ID: i32 = 1100;
     pub const NUM_TOKEN_USER1: i32 = 1234;
     pub const PROFILE_USER_ID_NO_SESSION: i32 = 1199;
