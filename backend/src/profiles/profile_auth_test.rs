@@ -522,7 +522,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/logout")
-            .insert_header(ProflTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -556,7 +556,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(ProflTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
@@ -579,7 +579,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(ProflTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token))
             .set_json(json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -603,7 +603,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(ProflTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token))
             .set_json(TokenDto { token: "".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -627,7 +627,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(ProflTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token))
             .set_json(TokenDto { token: "invalid_token".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -657,7 +657,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(ProflTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token))
             .set_json(TokenDto { token: token_bad })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -686,7 +686,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(ProflTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token))
             .set_json(TokenDto { token: token_bad })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -716,7 +716,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(ProflTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token))
             .set_json(TokenDto { token: token_refresh })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
