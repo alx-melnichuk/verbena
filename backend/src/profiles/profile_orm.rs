@@ -302,10 +302,22 @@ pub mod tests {
 
     pub const ADMIN: u8 = 0;
     pub const USER: u8 = 1;
+
     pub const USER1: usize = 0;
     pub const USER2: usize = 1;
     pub const USER3: usize = 2;
     pub const USER4: usize = 3;
+    
+    pub const USER1_ID: i32 = 1100;
+    pub const USER2_ID: i32 = 1101;
+    pub const USER3_ID: i32 = 1102;
+    pub const USER4_ID: i32 = 1103;
+
+    pub const USER1_NAME: &str = "oliver_taylor";
+    pub const USER2_NAME: &str = "robert_brown";
+    pub const USER3_NAME: &str = "mary_williams";
+    pub const USER4_NAME: &str = "ava_wilson";
+
     pub const PROFILE_USER_ID: i32 = 1100;
     pub const NUM_TOKEN_USER1: i32 = 1234;
     pub const PROFILE_USER_ID_NO_SESSION: i32 = 1199;
