@@ -1035,7 +1035,7 @@ pub mod tests {
             config.app_data(web::Data::clone(&data_config_app));
         }
     }
-    
+
     pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
         assert_eq!(app_err_vec.len(), msgs.len());
         for (idx, msg) in msgs.iter().enumerate() {
