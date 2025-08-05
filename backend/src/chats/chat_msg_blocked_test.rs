@@ -19,7 +19,7 @@ mod tests {
             delete_blocked_user, get_blocked_users, post_blocked_user, tests as ChtCtTest,
             tests::{configure_chat_message, get_cfg_data, header_auth},
         },
-        chat_message_models::{self, BlockedUserDto, ChatMessageModelsTest, CreateBlockedUserDto, DeleteBlockedUserDto},
+        chat_message_models::{self, BlockedUserDto, ChatMessageTest, CreateBlockedUserDto, DeleteBlockedUserDto},
         chat_message_orm::tests::ChatMsgTest,
     };
 
@@ -173,7 +173,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_min_blocked_nickname() {
         let (cfg_c, data_c, token) = get_cfg_data(4);
-        let blocked_nickname = ChatMessageModelsTest::blocked_nickname_min();
+        let blocked_nickname = ChatMessageTest::blocked_nickname_min();
         let len1 = blocked_nickname.len();
         let blocked_nickname = Some(blocked_nickname);
         #[rustfmt::skip]
@@ -200,7 +200,7 @@ mod tests {
     #[actix_web::test]
     async fn test_post_blocked_user_max_blocked_nickname() {
         let (cfg_c, data_c, token) = get_cfg_data(4);
-        let blocked_nickname = ChatMessageModelsTest::blocked_nickname_max();
+        let blocked_nickname = ChatMessageTest::blocked_nickname_max();
         let len1 = blocked_nickname.len();
         let blocked_nickname = Some(blocked_nickname);
         #[rustfmt::skip]
@@ -418,7 +418,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_min_blocked_nickname() {
         let (cfg_c, data_c, token) = get_cfg_data(4);
-        let blocked_nickname = ChatMessageModelsTest::blocked_nickname_min();
+        let blocked_nickname = ChatMessageTest::blocked_nickname_min();
         let len1 = blocked_nickname.len();
         let blocked_nickname = Some(blocked_nickname);
         #[rustfmt::skip]
@@ -445,7 +445,7 @@ mod tests {
     #[actix_web::test]
     async fn test_delete_blocked_user_max_blocked_nickname() {
         let (cfg_c, data_c, token) = get_cfg_data(4);
-        let blocked_nickname = ChatMessageModelsTest::blocked_nickname_max();
+        let blocked_nickname = ChatMessageTest::blocked_nickname_max();
         let len1 = blocked_nickname.len();
         let blocked_nickname = Some(blocked_nickname);
         #[rustfmt::skip]
