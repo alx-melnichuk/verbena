@@ -9,6 +9,7 @@ use actix_web::{
 };
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use log::{error, info, log_enabled, Level::Info};
+use serde_json::json;
 use utoipa;
 use vrb_common::{
     api_error::{code_to_str, ApiError},
@@ -24,7 +25,7 @@ use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
 use crate::chats::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::chats::{
     chat_message_models::{
-        BlockedUserDto, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage, CreateChatMessageDto,
+        BlockedUserDto, ChatMessage, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage, CreateChatMessageDto, 
         DeleteBlockedUser, DeleteBlockedUserDto, ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage, SearchChatMessageDto,
     },
     chat_message_orm::ChatMessageOrm,
@@ -210,6 +211,74 @@ pub async fn get_chat_message(
     Ok(HttpResponse::Ok().json(chat_message_dto_list)) // 200
 }
 
+/// post_chat_message
+/// Create a new message in the chat.
+/// 
+/// Request structure:
+/// ```text
+/// {
+///   streamId: Number,   // required
+///   msg: String,        // required
+/// }
+/// ```
+/// Where:
+/// "streamId" - stream identifier;
+/// "msg" - text of the new message;
+/// 
+/// The minimum length of a new message is 1 character. 
+/// The maximum length of a new message is 255 characters.
+/// 
+/// One could call with following curl.
+/// ```text
+/// curl -i -X POST http://localhost:8080/api/chat_messages \
+/// -d '{"streamId": 123, "msg": "mesage1"}' \
+/// -H 'Content-Type: application/json'
+/// ```
+/// Returns the new message entity (`ChatMessageDto`) with status 200.
+/// The new message is received by all active users of the chat in real time.
+/// 
+/// The structure is returned:
+/// ```text
+/// {
+///   id: Number,               // required
+///   date: DateTime<Utc>,      // required
+///   member: String,           // required
+///   msg: String,              // required
+///   date_edt?: DateTime<Utc>, // optional
+///   date_rmv?: DateTime<Utc>, // optional
+/// }
+/// ```
+/// Where:
+/// "id" - chat message ID;
+/// "date" - date of the chat message;
+/// "member" - nickname of the chat message user;
+/// "msg" - chat message text;
+/// "date_edt" - the date the chat message text was last edited;
+/// "date_rmv" - date the chat message was deleted;
+/// 
+/// Date and time are transmitted in ISO8601 format ("2020-01-20T20:10:57.000Z").
+///
+#[utoipa::path(
+    responses(
+        (status = 201, description = "The result of the request is a new chat message.", body = ChatMessageDto,
+            example = json!(ChatMessageDto::from(
+            ChatMessage::new(123, 98, 37, "emma_johnson".to_string(), Some("message1".to_string()), Utc::now(), None, None) )) ),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
+        (status = 406, description = "Error session not found.", body = ApiError,
+            example = json!(ApiError::create(406, err::MSG_PARAMETER_UNACCEPTABLE, "stream_id: 123, msg: \"message2\"")
+                .add_param(Cow::Borrowed("invalidParams"), &json!({ "stream_id": 123, "msg": "message2" })) )),
+        (status = 417, body = [ApiError], description =
+            "Validation error. `curl -i -X POST http://localhost:8080/api/chat_messages -d '{ \"stream_id\": 123, \"msg\": \"\" }'`",
+            example = json!(ApiError::validations(
+                (CreateChatMessageDto { stream_id: 123, msg: "".to_string() }).validate().err().unwrap()) )),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
 #[rustfmt::skip]
 #[post("/api/chat_messages", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn post_chat_message(
@@ -567,11 +636,14 @@ pub async fn delete_blocked_user(
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
 
-    use actix_web::{http, web};
-    use chrono::{DateTime, Duration, Utc};
+    use actix_web::http;
     use vrb_common::api_error::ApiError;
+    use vrb_tools::token_data::BEARER;
+
+    use actix_web::{web};
+    use chrono::{DateTime, Duration, Utc};
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::{token_coding, token_data::BEARER};
+    use vrb_tools::token_coding;
 
     use crate::chats::{
         chat_message_models::{BlockedUser, ChatMessage, ChatMessageLog},
@@ -588,6 +660,21 @@ pub mod tests {
     pub const MSG_JSON_MISSING_FIELD: &str = "Json deserialize error: missing field";
     pub const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
     pub const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
+
+    pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
+        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
+        (http::header::AUTHORIZATION, header_value)
+    }
+    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
+        assert_eq!(app_err_vec.len(), msgs.len());
+        for (idx, msg) in msgs.iter().enumerate() {
+            let app_err = app_err_vec.get(idx).unwrap();
+            assert_eq!(app_err.code, code);
+            assert_eq!(app_err.message, msg.to_string());
+        }
+    }
+
+    // = v OLD 
 
     /** 1-"Oliver_Taylor", 2-"Robert_Brown", 3-"Mary_Williams", 4-"Ava_Wilson" */
     fn create_profile(user_id: i32) -> Profile {
@@ -612,10 +699,6 @@ pub mod tests {
         let user_name = ChatMsgTest::user_names().get(idx_user_id).unwrap().clone();
         let msg = Some(msg.to_string());
         ChatMessage::new(id, stream_id, user_id, user_name, msg, date_created, None, None)
-    }
-    pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
-        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
-        (http::header::AUTHORIZATION, header_value)
     }
     // get_num_token(profile1.user_id)
     pub fn get_num_token(user_id: i32) -> i32 {
@@ -690,6 +773,7 @@ pub mod tests {
 
         (chat_message_vec, chat_message_log_vec, blocked_user_vec)
     }
+    // =v
     #[rustfmt::skip]
     pub fn get_cfg_data(mode: i32) -> (config_jwt::ConfigJwt
     , (Vec<Profile>, Vec<Session>, Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>), String) {
@@ -722,7 +806,8 @@ pub mod tests {
         let cfg_c = config_jwt;
         let data_c = (profile_vec, session_vec, chat_message_vec, chat_message_log_vec, blocked_user_vec);
         (cfg_c, data_c, token)
-    }
+    } // =^
+    // =v
     pub fn configure_chat_message(
         cfg_c: config_jwt::ConfigJwt,
         data_c: (Vec<Profile>, Vec<Session>, Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>),
@@ -739,12 +824,5 @@ pub mod tests {
                 .app_data(web::Data::clone(&data_chat_message_orm));
         }
     }
-    pub fn check_app_err(app_err_vec: Vec<ApiError>, code: &str, msgs: &[&str]) {
-        assert_eq!(app_err_vec.len(), msgs.len());
-        for (idx, msg) in msgs.iter().enumerate() {
-            let app_err = app_err_vec.get(idx).unwrap();
-            assert_eq!(app_err.code, code);
-            assert_eq!(app_err.message, msg.to_string());
-        }
-    }
+    // =^
 }
