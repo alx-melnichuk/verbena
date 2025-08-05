@@ -71,9 +71,7 @@ pub mod tests {
 
     use actix_web::web;
 
-    use crate::profiles::{
-        profile_orm::tests::{ProfileOrmTest as ProflTest, USER, USER1},
-    };
+    use crate::profiles::profile_orm::tests::{ProfileOrmTest as ProflTest, USER, USER1};
     use crate::streams::{
         config_strm,
         stream_controller::ALIAS_LOGO_FILES_DIR,
