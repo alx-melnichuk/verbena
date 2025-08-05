@@ -314,7 +314,6 @@ pub mod impls {
         }
 
         /// Delete an entity (blocked_user).
-        #[rustfmt::skip]
         fn delete_blocked_user(&self, delete_blocked_user: DeleteBlockedUser) -> Result<Option<BlockedUser>, String> {
             let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
             let user_id = delete_blocked_user.user_id;
@@ -356,7 +355,8 @@ pub mod tests {
 
     use std::{cell::RefCell, cmp::Ordering, collections::HashMap};
 
-    use chrono::{DateTime, SubsecRound, Timelike, Utc};
+    use actix_web::web;
+    use chrono::{DateTime, Duration, SubsecRound, Timelike, Utc};
     use vrb_common::validators::Validator;
 
     use crate::chats::{
@@ -366,8 +366,9 @@ pub mod tests {
         },
         chat_message_orm::ChatMessageOrm,
     };
-    use crate::profiles::profile_orm::tests::PROFILE_USER_ID;
+    use crate::profiles::profile_orm::tests::{PROFILE_USER_ID, USER1_ID,USER2_ID,USER3_ID,USER4_ID, USER1_NAME, USER2_NAME, USER3_NAME, USER4_NAME};
 
+    pub const CH_MSG_STREAM_ID: i32 = 1;
     pub const CHAT_MESSAGE_ID: i32 = 1500;
     pub const CHAT_MESSAGE_LOG_ID: i32 = 1600;
     pub const BLOCKED_USER_ID: i32 = 1700;
@@ -381,15 +382,6 @@ pub mod tests {
     pub struct ChatMsgTest {}
 
     impl ChatMsgTest {
-        pub fn message_min() -> String {
-            (0..(MESSAGE_MIN - 1)).map(|_| 'a').collect()
-        }
-        pub fn message_norm() -> String {
-            (0..(MESSAGE_MIN + 1)).map(|_| 'a').collect()
-        }
-        pub fn message_max() -> String {
-            (0..(MESSAGE_MAX + 1)).map(|_| 'a').collect()
-        }
         pub fn stream_ids() -> Vec<i32> {
             vec![
                 1, // Owner user idx 0 (live: true)  1100 oliver_taylor
@@ -832,5 +824,152 @@ pub mod tests {
             }
             Ok(result)
         }
+    }
+
+
+    pub struct ChatMessageOrmTest {}
+
+    impl ChatMessageOrmTest {
+    
+        pub fn user_ids() -> Vec<i32> {
+            vec![USER1_ID, USER2_ID, USER3_ID, USER4_ID]
+        }
+
+        pub fn stream_ids() -> Vec<i32> {
+            vec![
+                1, // Owner user idx 0 (live: true)  1100 oliver_taylor
+                2, // Owner user idx 1 (live: true)  1101 robert_brown
+                3, // Owner user idx 2 (live: false) 1102 mary_williams
+                4, // Owner user idx 3  blocked      1103 ava_wilson
+            ]
+        }
+
+        /*pub fn chat_messages_(mode: u8) -> (Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>) {
+            let mut ch_msg_vec: Vec<ChatMessage> = Vec::new();
+            let mut ch_msg_log_vec: Vec<ChatMessageLog> = Vec::new();
+            let mut blocked_user_vec:Vec<BlockedUser> = Vec::new();
+    
+            if mode > 2 {
+                let count_msg = if mode == 3 { 2 } else { 6 };
+                let res_data = get_chat_messages(count_msg);
+                chat_message_vec = res_data.0;
+                chat_message_log_vec = res_data.1;
+                blocked_user_vec = res_data.2;
+            }
+    
+            (ch_msg_vec, ch_msg_log_vec, blocked_user_vec)
+            / * 
+            let mut profile_vec: Vec<Profile> = Vec::new();
+            let mut session_vec: Vec<Session> = Vec::new();
+            let user_ids = ProfileOrmTest::user_ids();
+            let user_names = ProfileOrmTest::user_names();
+            let len = if roles.len() > user_ids.len() { user_ids.len() } else { roles.len() };
+            for index in 0..len {
+                let user_id = user_ids.get(index).unwrap().clone();
+                let nickname = user_names.get(index).unwrap().clone().to_lowercase();
+                let email = format!("{}@gmail.com", nickname);
+                #[rustfmt::skip]
+                let role = if roles.get(index).unwrap().clone() == ADMIN { UserRole::Admin } else { UserRole::User };
+    
+                let profile = Profile::new(user_id, &nickname, &email, role, None, None, None, None);
+                profile_vec.push(profile);
+                let num_token = if user_id == PROFILE_USER_ID { Some(NUM_TOKEN_USER1) } else { None };
+                session_vec.push(Session { user_id, num_token });
+            }
+            let profile_orm_app = ProfileOrmApp { profile_vec, session_vec };
+    
+            (profile_orm_app.profile_vec, profile_orm_app.session_vec)* /
+        }*/
+        fn get_user_name(user_id: i32) -> String {
+            match user_id {
+                USER1_ID => USER1_NAME,
+                USER2_ID => USER2_NAME,
+                USER3_ID => USER3_NAME,
+                USER4_ID => USER4_NAME,
+                _ => ""
+            }.to_string()
+        }
+
+        fn create_chat_message(id: i32, stream_id: i32, user_id: i32, msg: &str, date_created: DateTime<Utc>) -> ChatMessage {
+            // let stream_id = if stream_id > 0 { stream_id } else { ChatMsgTest::stream_ids().get(0).unwrap().clone() };
+            let stream_id = if stream_id > 0 { stream_id } else { CH_MSG_STREAM_ID };
+            // let user_ids = ChatMsgTest::user_ids().clone();
+            // let user_id1 = if user_id > 0 { user_id } else { user_ids.get(0).unwrap().clone() };
+            // let user_id1 = if user_id > 0 { user_id } else { PROFILE_USER_ID };
+    
+            // let idx_user_id = user_ids.iter().position(|&u| u == user_id1).unwrap();
+            // let user_id = user_ids.get(idx_user_id).unwrap().clone();
+            // let user_name = ChatMsgTest::user_names().get(idx_user_id).unwrap().clone();
+            let user_id = if Self::get_user_name(user_id).len() > 0 { user_id } else { USER1_ID };
+            let user_name = Self::get_user_name(user_id);
+    
+            let msg = Some(msg.to_string());
+            ChatMessage::new(id, stream_id, user_id, user_name, msg, date_created, None, None)
+        }
+        fn get_blocked_user_vec() -> Vec<BlockedUser> {
+            let mut result: Vec<BlockedUser> = Vec::new();
+            let user_ids = Self::user_ids();
+            // let user_names = Self::user_names();
+            let blocked_id = user_ids.last().unwrap().clone();
+            // let blocked_idx = user_ids.iter().position(|v| *v == blocked_id).unwrap();
+            // let blocked_name = user_names.get(blocked_idx).unwrap().clone();
+            for (idx, user_id) in user_ids.iter().enumerate() {
+                if *user_id == blocked_id {
+                    continue;
+                }
+                let id = BLOCKED_USER_ID + i32::try_from(idx).unwrap();
+                let blocked_nickname = Self::get_user_name(*user_id);
+                // let blocked_nickname = blocked_name.clone();
+                result.push(BlockedUser::new(id, *user_id, blocked_id, blocked_nickname, None));
+            }
+            result
+        }
+        fn get_user_mini() -> Vec<UserMini> {
+            Self::user_ids().iter().map(|v| UserMini { id: *v, name: Self::get_user_name(*v) }).collect()
+        }
+        pub fn chat_messages(count_msg: i32) -> (Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>, Vec<UserMini>) {
+            let mut chat_message_list: Vec<ChatMessage> = Vec::new();
+            let chat_message_log_list: Vec<ChatMessageLog> = Vec::new();
+    
+            let mut date_created: DateTime<Utc> = Utc::now() - Duration::minutes(i64::try_from(count_msg + 2).unwrap());
+            let stream_id = CH_MSG_STREAM_ID;
+            let mut user_id = USER1_ID;
+            for idx in 1..=count_msg {
+                let msg = Some(format!("msg1{}{}", (if idx < 10 { "0" } else { "" }), idx + 1));
+                let user_name = Self::get_user_name(user_id);
+
+                let ch_msg = ChatMessage::new(idx, stream_id, user_id, user_name, msg, date_created, None, None);
+                // eprintln!("ch_msg: {:#?}", ch_msg.clone());
+                chat_message_list.push(ch_msg);
+                date_created = date_created + Duration::minutes(1);
+                user_id = if user_id == USER4_ID { USER1_ID } else { user_id + 1 };
+            }
+
+            let blocked_user_list: Vec<BlockedUser> = Self::get_blocked_user_vec();
+            let user_mini_vec: Vec<UserMini> = Self::get_user_mini();
+
+            let chat_message_orm = ChatMessageOrmApp::create(&chat_message_list, &chat_message_log_list, &blocked_user_list, &(user_mini_vec.clone()));
+
+            let mut chat_message_log_vec: Vec<ChatMessageLog> = Vec::new();
+                for (_key, value_vec) in chat_message_orm.chat_message_log_map.iter() {
+                for chat_message_log in value_vec {
+                    chat_message_log_vec.push(chat_message_log.clone());
+                }
+            }
+            let blocked_user_vec = (*chat_message_orm.blocked_user_vec).borrow().clone();
+            let chat_message_vec = chat_message_orm.chat_message_vec.clone();
+
+            (chat_message_vec, chat_message_log_vec, blocked_user_vec, user_mini_vec)
+        }
+        pub fn cfg_chat_message_orm(data_cm: (Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>, Vec<UserMini>)) -> impl FnOnce(&mut web::ServiceConfig) {
+            move |config: &mut web::ServiceConfig| {
+                let data_chat_message_orm = web::Data::new(
+                    ChatMessageOrmApp::create(&data_cm.0, &data_cm.1, &data_cm.2, &data_cm.3)
+                );
+                config.app_data(web::Data::clone(&data_chat_message_orm));
+            }
+        }
+
+    
     }
 }
