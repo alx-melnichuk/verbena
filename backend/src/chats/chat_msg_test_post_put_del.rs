@@ -17,8 +17,13 @@ mod tests {
             delete_chat_message, post_chat_message, put_chat_message, tests as ChtCtTest,
             tests::{configure_chat_message, get_cfg_data, header_auth},
         },
-        chat_message_models::{self, ChatMessageDto, CreateChatMessageDto, ModifyChatMessageDto},
+        chat_message_models::{self, ChatMessageDto, CreateChatMessageDto, ModifyChatMessageDto, ChatMessageTest as MessgTest},
         chat_message_orm::tests::ChatMsgTest,
+        chat_message_orm::tests::ChatMessageOrmTest as ChMesTest,
+    };
+    use crate::profiles::{
+        config_jwt,
+        profile_orm::tests::{ProfileOrmTest as ProflTest, USER},
     };
 
     const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
@@ -30,10 +35,18 @@ mod tests {
 
     #[actix_web::test]
     async fn test_post_chat_message_no_form() {
-        let (cfg_c, data_c, token) = get_cfg_data(1);
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let data_cm = ChMesTest::chat_messages(2);
+        // let (cfg_c, data_c, token) = get_cfg_data(1);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(post_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+            App::new().service(post_chat_message)
+                // .configure(configure_chat_message(cfg_c, data_c))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
             .insert_header(header_auth(&token))
@@ -49,10 +62,17 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_chat_message_empty_json() {
-        let (cfg_c, data_c, token) = get_cfg_data(1);
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let data_cm = ChMesTest::chat_messages(2);
+        // let (cfg_c, data_c, token) = get_cfg_data(1);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(post_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+            App::new().service(post_chat_message)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
             .insert_header(header_auth(&token))
@@ -69,15 +89,23 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_chat_message_msg_min() {
-        let (cfg_c, data_c, token) = get_cfg_data(1);
-        let stream_id = ChatMsgTest::stream_ids().get(0).unwrap().clone();
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let data_cm = ChMesTest::chat_messages(2);
+        let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
+        // let (cfg_c, data_c, token) = get_cfg_data(1);
+        // let stream_id = ChatMsgTest::stream_ids().get(0).unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(post_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+            App::new().service(post_chat_message)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
             .insert_header(header_auth(&token))
-            .set_json(CreateChatMessageDto { stream_id, msg: ChatMsgTest::message_min() })
+            .set_json(CreateChatMessageDto { stream_id, msg: MessgTest::message_min() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
@@ -91,14 +119,22 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_chat_message_msg_max() {
-        let (cfg_c, data_c, token) = get_cfg_data(1);
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let data_cm = ChMesTest::chat_messages(2);
+        let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
+        // let (cfg_c, data_c, token) = get_cfg_data(1);
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(post_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+            App::new().service(post_chat_message)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
             .insert_header(header_auth(&token))
-            .set_json(CreateChatMessageDto { stream_id: 1, msg: ChatMsgTest::message_max() })
+            .set_json(CreateChatMessageDto { stream_id, msg: MessgTest::message_max() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
@@ -112,12 +148,20 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_chat_message_stream_id_wrong() {
-        let (cfg_c, data_c, token) = get_cfg_data(1);
-        let stream_id_wrong = ChatMsgTest::stream_ids().get(0).unwrap().clone() - 1;
-        let msg = ChatMsgTest::message_norm();
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let data_cm = ChMesTest::chat_messages(2);
+        let stream_id_wrong = data_cm.0.get(0).unwrap().stream_id.clone() - 1;
+        // let (cfg_c, data_c, token) = get_cfg_data(1);
+        // let stream_id_wrong = ChatMsgTest::stream_ids().get(0).unwrap().clone() - 1;
+        let msg = MessgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(post_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+            App::new().service(post_chat_message)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
             .insert_header(header_auth(&token))
@@ -140,14 +184,24 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_chat_message_valid_data() {
-        let (cfg_c, data_c, token) = get_cfg_data(3);
-        let user1_name = data_c.0.get(0).unwrap().nickname.clone();
-        let last_ch_msg = data_c.2.last().unwrap().clone();
-        let stream_id = ChatMsgTest::stream_ids().get(0).unwrap().clone();
-        let msg = ChatMsgTest::message_norm();
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let data_cm = ChMesTest::chat_messages(2);
+        let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
+        let last_msg_id = data_cm.0.last().unwrap().id.clone();
+        let user1_name = data_p.0.get(0).unwrap().nickname.clone();
+        // let (cfg_c, data_c, token) = get_cfg_data(3);
+        // let user1_name = data_c.0.get(0).unwrap().nickname.clone();
+        // let last_ch_msg = data_c.2.last().unwrap().clone();
+        // let stream_id = ChatMsgTest::stream_ids().get(0).unwrap().clone();
+        let msg = MessgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(post_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+            App::new().service(post_chat_message)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
             .insert_header(header_auth(&token))
@@ -160,7 +214,7 @@ mod tests {
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let chat_message_dto_res: ChatMessageDto = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
-        assert_eq!(chat_message_dto_res.id, last_ch_msg.id + 1);
+        assert_eq!(chat_message_dto_res.id, last_msg_id + 1);
         // DateTime.to_rfc3339_opts(SecondsFormat::Secs, true) => "2018-01-26T18:30:09Z"
         let date_s = Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
         #[rustfmt::skip]
@@ -175,13 +229,21 @@ mod tests {
 
     #[actix_web::test]
     async fn test_put_chat_message_no_form() {
-        let (cfg_c, data_c, token) = get_cfg_data(3);
-        let last_ch_msg = data_c.2.last().unwrap().clone();
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let data_cm = ChMesTest::chat_messages(2);
+        let last_msg_id = data_cm.0.last().unwrap().id.clone();
+        // let (cfg_c, data_c, token) = get_cfg_data(3);
+        // let last_ch_msg = data_c.2.last().unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+            App::new().service(put_chat_message)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+        ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_ch_msg.id))
+        let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_msg_id))
             .insert_header(header_auth(&token))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -195,13 +257,22 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_invald_id() {
-        let (cfg_c, data_c, token) = get_cfg_data(3);
-        let last_ch_msg = data_c.2.last().unwrap().clone();
-        let ch_msg_id_bad = format!("{}a", last_ch_msg.id);
-        let msg = ChatMsgTest::message_norm();
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let data_cm = ChMesTest::chat_messages(2);
+        // let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
+        let last_msg_id = data_cm.0.last().unwrap().id.clone();
+        // let (cfg_c, data_c, token) = get_cfg_data(3);
+        // let last_ch_msg = data_c.2.last().unwrap().clone();
+        let ch_msg_id_bad = format!("{}a", last_msg_id);
+        let msg = MessgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+            App::new().service(put_chat_message)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", ch_msg_id_bad))
             .insert_header(header_auth(&token))
@@ -221,13 +292,21 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_empty_json() {
-        let (cfg_c, data_c, token) = get_cfg_data(3);
-        let last_ch_msg = data_c.2.last().unwrap().clone();
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let data_cm = ChMesTest::chat_messages(2);
+        let last_msg_id = data_cm.0.last().unwrap().id.clone();
+        // let (cfg_c, data_c, token) = get_cfg_data(3);
+        // let last_ch_msg = data_c.2.last().unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+            App::new().service(put_chat_message)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+        ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_ch_msg.id))
+        let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_msg_id))
             .insert_header(header_auth(&token))
             .set_json(json!({}))
             .to_request();
@@ -242,14 +321,22 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_msg_max() {
-        let (cfg_c, data_c, token) = get_cfg_data(3);
-        let last_ch_msg = data_c.2.last().unwrap().clone();
-        let msg = ChatMsgTest::message_max();
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let data_cm = ChMesTest::chat_messages(2);
+        let last_msg_id = data_cm.0.last().unwrap().id.clone();
+        // let (cfg_c, data_c, token) = get_cfg_data(3);
+        // let last_ch_msg = data_c.2.last().unwrap().clone();
+        let msg = MessgTest::message_max();
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+            App::new().service(put_chat_message)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+        ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_ch_msg.id))
+        let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_msg_id))
             .insert_header(header_auth(&token))
             .set_json(ModifyChatMessageDto { msg })
             .to_request();
@@ -265,14 +352,23 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_non_existent_id() {
-        let (cfg_c, data_c, token) = get_cfg_data(3);
-        let user_id1 = data_c.0.get(0).unwrap().user_id;
-        let last_ch_msg = data_c.2.last().unwrap().clone();
-        let msg = ChatMsgTest::message_norm();
-        let id_wrong = last_ch_msg.id + 1;
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[USER]);
+        let data_cm = ChMesTest::chat_messages(2);
+        let last_msg_id = data_cm.0.last().unwrap().id.clone();
+        // let (cfg_c, data_c, token) = get_cfg_data(3);
+        // let user_id1 = data_c.0.get(0).unwrap().user_id;
+        let user_id1 = data_p.0.get(0).unwrap().user_id.clone();
+        // let last_ch_msg = data_c.2.last().unwrap().clone();
+        let msg = MessgTest::message_norm();
+        let id_wrong = last_msg_id + 1;
         #[rustfmt::skip]
         let app = test::init_service(
-            App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
+            App::new().service(put_chat_message)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+        ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", id_wrong))
             .insert_header(header_auth(&token))
@@ -299,7 +395,7 @@ mod tests {
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         #[rustfmt::skip]
         let ch_msg = data_c.2.iter().find(|v| v.user_id != user_id1).unwrap().clone();
-        let msg = ChatMsgTest::message_norm();
+        let msg = MessgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -327,7 +423,7 @@ mod tests {
     async fn test_put_chat_message_valid_data() {
         let (cfg_c, data_c, token) = get_cfg_data(3);
         let ch_msg = data_c.2.get(0).unwrap().clone();
-        let msg = ChatMsgTest::message_norm();
+        let msg = MessgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -364,7 +460,7 @@ mod tests {
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         #[rustfmt::skip]
         let ch_msg = data_c.2.iter().find(|v| v.user_id != user_id1).unwrap().clone();
-        let msg = ChatMsgTest::message_norm();
+        let msg = MessgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -392,7 +488,7 @@ mod tests {
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         #[rustfmt::skip]
         let ch_msg = data_c.2.iter().find(|v| v.user_id != user_id1).unwrap().clone();
-        let msg = ChatMsgTest::message_norm();
+        let msg = MessgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -429,7 +525,7 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data(3);
         let last_ch_msg = data_c.2.last().unwrap().clone();
         let ch_msg_id_bad = format!("{}a", last_ch_msg.id);
-        let msg = ChatMsgTest::message_norm();
+        let msg = MessgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -455,7 +551,7 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data(3);
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         let last_ch_msg = data_c.2.last().unwrap().clone();
-        let msg = ChatMsgTest::message_norm();
+        let msg = MessgTest::message_norm();
         let id_wrong = last_ch_msg.id + 1;
         #[rustfmt::skip]
         let app = test::init_service(
@@ -486,7 +582,7 @@ mod tests {
         let user_id1 = data_c.0.get(0).unwrap().user_id;
         #[rustfmt::skip]
         let ch_msg = data_c.2.iter().find(|v| v.user_id != user_id1).unwrap().clone();
-        let msg = ChatMsgTest::message_norm();
+        let msg = MessgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
@@ -515,7 +611,7 @@ mod tests {
         let (cfg_c, data_c, token) = get_cfg_data(3);
         #[rustfmt::skip]
         let ch_msg = data_c.2.get(0).unwrap().clone();
-        let msg = ChatMsgTest::message_norm();
+        let msg = MessgTest::message_norm();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_chat_message).configure(configure_chat_message(cfg_c, data_c))).await;
