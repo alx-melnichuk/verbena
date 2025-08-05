@@ -13,7 +13,10 @@ pub mod tests {
     use vrb_tools::{err, png_files};
 
     use crate::profiles::{
-        config_jwt, config_prfl, profile_controller::{delete_profile, delete_profile_current, tests as RrfCtTest, ALIAS_AVATAR_FILES_DIR}, profile_models::ProfileDto, profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER}
+        config_jwt, config_prfl,
+        profile_controller::{delete_profile, delete_profile_current, tests as RrfCtTest, ALIAS_AVATAR_FILES_DIR},
+        profile_models::ProfileDto,
+        profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER},
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
