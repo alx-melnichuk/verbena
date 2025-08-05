@@ -522,10 +522,19 @@ impl Validator for DeleteBlockedUserDto {
 // * * * *    * * * *
 
 #[cfg(all(test, feature = "mockdata"))]
-pub struct ChatMessageModelsTest {}
+pub struct ChatMessageTest {}
 
 #[cfg(all(test, feature = "mockdata"))]
-impl ChatMessageModelsTest {
+impl ChatMessageTest {
+    pub fn message_min() -> String {
+        (0..(MESSAGE_MIN - 1)).map(|_| 'a').collect()
+    }
+    pub fn message_norm() -> String {
+        (0..(MESSAGE_MIN + 1)).map(|_| 'a').collect()
+    }
+    pub fn message_max() -> String {
+        (0..(MESSAGE_MAX + 1)).map(|_| 'a').collect()
+    }
     pub fn blocked_nickname_min() -> String {
         (0..(BLOCKED_NICKNAME_MIN - 1)).map(|_| 'a').collect()
     }
