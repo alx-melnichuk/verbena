@@ -7,13 +7,8 @@ pub mod tests {
     use vrb_dbase::db_enums::UserRole;
     use vrb_tools::err;
 
-    use crate::profiles::{
-        profile_check::uniqueness_nickname_or_email, profile_models::Profile, profile_orm::tests::ProfileOrmApp
-    };
-    use crate::users::{
-        user_models::UserRegistr,
-        user_registr_orm::tests::UserRegistrOrmApp,
-    };
+    use crate::profiles::{profile_check::uniqueness_nickname_or_email, profile_models::Profile, profile_orm::tests::ProfileOrmApp};
+    use crate::users::{user_models::UserRegistr, user_registr_orm::tests::UserRegistrOrmApp};
 
     fn get_data() -> (Vec<Profile>, Vec<UserRegistr>) {
         let nickname = "Oliver_Taylor";
