@@ -490,7 +490,7 @@ pub mod tests {
 
             Ok(opt_session)
         }
-        
+
         /// Modify the entity (session).
         fn modify_session(&self, user_id: i32, num_token: Option<i32>) -> Result<Option<Session>, String> {
             let opt_session: Option<Session> = self.get_session_by_id(user_id)?;
@@ -554,7 +554,7 @@ pub mod tests {
             let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
             (http::header::AUTHORIZATION, header_value)
         }
-        
+
         pub fn profiles(roles: &[u8]) -> (Vec<Profile>, Vec<Session>) {
             let mut profile_vec: Vec<Profile> = Vec::new();
             let mut session_vec: Vec<Session> = Vec::new();
@@ -591,21 +591,18 @@ pub mod tests {
         pub fn cfg_config_jwt(config_jwt: config_jwt::ConfigJwt) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
                 let data_config_jwt = web::Data::new(config_jwt);
-                config
-                .app_data(web::Data::clone(&data_config_jwt));
+                config.app_data(web::Data::clone(&data_config_jwt));
             }
         }
         pub fn cfg_config_prfl(config_prfl: config_prfl::ConfigPrfl) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
                 let data_config_prfl = web::Data::new(config_prfl);
-                config
-                .app_data(web::Data::clone(&data_config_prfl));
+                config.app_data(web::Data::clone(&data_config_prfl));
             }
         }
         pub fn cfg_profile_orm(data_p: (Vec<Profile>, Vec<Session>)) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
-                let data_profile_orm = web::Data::new(
-                    ProfileOrmApp::create(&data_p.0, &data_p.1));
+                let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_p.0, &data_p.1));
 
                 config.app_data(web::Data::clone(&data_profile_orm));
             }
