@@ -408,9 +408,7 @@ pub mod tests {
 
     use actix_web::http;
     use vrb_common::api_error::ApiError;
-    use vrb_tools::{
-        token_data::BEARER,
-    };
+    use vrb_tools::token_data::BEARER;
 
     pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
         let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
