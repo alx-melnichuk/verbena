@@ -64,7 +64,7 @@ pub mod impls {
     use diesel::{self, prelude::*, sql_types};
     use log::{info, log_enabled, Level::Info};
     use vrb_dbase::dbase;
-    use vrb_dbase:: schema::{self, streams::dsl as streams_dsl};
+    use vrb_dbase::schema::{self, streams::dsl as streams_dsl};
 
     use crate::streams::stream_models::{self, CreateStream, SearchStreamPeriod};
 
@@ -606,9 +606,13 @@ pub mod tests {
     use vrb_dbase::db_enums::StreamState;
     use vrb_tools::token_data::BEARER;
 
-    use crate::{profiles::profile_orm::tests::ProfileOrmTest, streams::{
-        config_strm, stream_models::{self, StreamInfoDto}
-    }};
+    use crate::{
+        profiles::profile_orm::tests::ProfileOrmTest,
+        streams::{
+            config_strm,
+            stream_models::{self, StreamInfoDto},
+        },
+    };
 
     use super::*;
 
@@ -877,8 +881,7 @@ pub mod tests {
             let finish = start + Duration::hours(24);
 
             for stream in self.stream_info_vec.iter() {
-                if stream.user_id == search_stream_event.user_id
-                    && start <= stream.starttime && stream.starttime < finish {
+                if stream.user_id == search_stream_event.user_id && start <= stream.starttime && stream.starttime < finish {
                     streams_info.push(stream.clone());
                 }
             }
@@ -923,8 +926,7 @@ pub mod tests {
             let finish = search_stream_period.finish;
 
             for stream in self.stream_info_vec.iter() {
-                if stream.user_id == search_stream_period.user_id
-                    && start <= stream.starttime && stream.starttime <= finish {
+                if stream.user_id == search_stream_period.user_id && start <= stream.starttime && stream.starttime <= finish {
                     streams_info.push(stream.clone());
                 }
             }
@@ -1045,7 +1047,7 @@ pub mod tests {
             let stream = Stream::new(STREAM_ID + i32::from(idx), user_id, title, starttime);
             StreamInfoDto::convert(stream, user_id, &tags1)
         }
-    
+
         pub fn streams(user_idxs: &[usize]) -> Vec<StreamInfoDto> {
             let mut stream_info_vec: Vec<StreamInfoDto> = Vec::new();
             let user_ids = ProfileOrmTest::user_ids();
