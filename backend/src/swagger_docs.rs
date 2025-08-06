@@ -13,6 +13,9 @@ use crate::streams::{stream_controller, stream_models};
 #[openapi(
     paths(
         chat_message_controller::get_chat_message,
+        chat_message_controller::post_chat_message,
+        chat_message_controller::put_chat_message,
+        chat_message_controller::delete_chat_message,
         chat_ws_controller::get_ws_chat,
         profile_controller::uniqueness_check,
         profile_controller::get_profile_by_id,
