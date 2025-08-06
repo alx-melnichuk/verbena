@@ -25,8 +25,9 @@ use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
 use crate::chats::chat_message_orm::tests::ChatMessageOrmApp;
 use crate::chats::{
     chat_message_models::{
-        BlockedUserDto, ChatMessage, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage, CreateChatMessageDto, 
-        DeleteBlockedUser, DeleteBlockedUserDto, ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage, SearchChatMessageDto,
+        BlockedUser, BlockedUserDto, ChatMessage, ChatMessageDto, CreateBlockedUser, CreateBlockedUserDto, CreateChatMessage,
+        CreateChatMessageDto, DeleteBlockedUser, DeleteBlockedUserDto, ModifyChatMessage, ModifyChatMessageDto, SearchChatMessage,
+        SearchChatMessageDto, MESSAGE_MAX,
     },
     chat_message_orm::ChatMessageOrm,
 };
@@ -88,7 +89,7 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
     result
 }
 
-// ** Section: ChatMessage Get **
+// ** Section: ChatMessage **
 
 /// get_chat_message
 ///
@@ -97,21 +98,17 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
 /// Request structure:
 /// ```text
 /// {
-///   streamId: number,         // required
-///   isSortDes?: boolean,      // optional
-///   minDate?: DateTime<Utc>,  // optional
-///   maxDate?: DateTime<Utc>,  // optional
-///   limit?: number,           // optional
+///   streamId: number,         // required - chat ID (Stream ID);
+///   isSortDes?: boolean,      // optional - descending sorting flag (default false);
+///   minDate?: DateTime<Utc>,  // optional - minimum end date for chat message selection; 
+///   maxDate?: DateTime<Utc>,  // optional - maximum end date of selection of chat messages;
+///   limit?: number,           // optional - number of records on the page (20 by default);
 /// }
-/// Where:
-/// "streamId" - Chat ID (Stream ID).;
-/// "isSortDes" - descending sorting flag (default false, i.e. default sorting is "ascending");
-/// "minDate" - Minimum end date for chat message selection 
-///             (result is strictly greater than the specified date);
-/// "maxDate" - Maximum end date of selection of chat messages 
-///             (result is strictly less than the specified date);
-/// "limit" - number of records on the page (20 by default);
 /// ```
+/// 
+/// For "minDate" the result is strictly greater than the specified date.
+/// For "maxDate" the result is strictly less than the specified date.
+/// 
 /// It is recommended to enter the date and time in ISO8601 format.
 /// ```text
 /// var d1 = new Date();
@@ -121,7 +118,6 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
 /// ```text
 /// { "minDate": "2020-01-20T22:10:57+02:00" }
 /// ```
-///
 ///
 /// One could call with following curl.
 /// ```text
@@ -139,26 +135,48 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
 /// ```
 /// Returns the found list of chat messages (Vec<`ChatMessageDto`>) with status 200.
 ///
+/// The structure is returned:
+/// ```text
+/// [
+///   {
+///     id: Number,               // required - chat message ID;
+///     date: DateTime<Utc>,      // required - date of the chat message;
+///     member: String,           // required - nickname of the chat message user;
+///     msg: String,              // required - chat message text;
+///     dateEdt?: DateTime<Utc>,  // optional - the date the chat message text was last edited;
+///     dateRmv?: DateTime<Utc>,  // optional - date the chat message was deleted;
+///   }
+/// ]
+/// ```
+/// 
+/// Date and time are transmitted in ISO8601 format ("2020-01-20T20:10:57.000Z").
+/// 
 #[utoipa::path(
     responses(
         (status = 200, description = "The result is an array of chat messages.", body = Vec<ChatMessageDto>,
         examples(
-            ("sort_ascending_part1" = (description = "Chat messages are sorted in ascending order, number of entries 4. `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&limit=4`",
+            ("sort_ascending_part1" = (description = "Chat messages are sorted in ascending order, number of entries 4. 
+            `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&limit=4`",
                 summary = "sort ascending part1", value = json!(get_ch_msgs(0, 3))
             )),
-            ("sort_ascending_part2" = (description = "Chat messages are sorted in ascending order, number of entries 4, starting with ID > 203 (part 2). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&maxDate=2020-07-01T10:45:00.000Z&limit=4`",
+            ("sort_ascending_part2" = (description = "Chat messages are sorted in ascending order, number of entries 4, starting with ID > 203 (part 2). 
+            `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&maxDate=2020-07-01T10:45:00.000Z&limit=4`",
                 summary = "sort ascending part2", value = json!(get_ch_msgs(4, 7))
             )),
-            ("sort_ascending_part3" = (description = "Chat messages are sorted in ascending order, number of entries 4, starting with ID > 207 (part 3). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&maxDate=2020-07-01T11:05:00.000Z&limit=4`",
+            ("sort_ascending_part3" = (description = "Chat messages are sorted in ascending order, number of entries 4, starting with ID > 207 (part 3). 
+            `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=false&maxDate=2020-07-01T11:05:00.000Z&limit=4`",
                 summary = "sort ascending part3", value = json!(get_ch_msgs(8, 11))
             )),
-            ("sort_descending_part1" = (description = "Chat messages are sorted in descending order. `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&limit=4`",
+            ("sort_descending_part1" = (description = "Chat messages are sorted in descending order. 
+            `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&limit=4`",
                 summary = "sort descending part1", value = json!(get_ch_msgs(11, 8))
             )),
-            ("sort_descending_part2" = (description = "Chat messages are sorted in descending order, number of entries 4, starting with ID 203 (part 2). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&minDate=2020-07-01T11:10:00.000Z&limit=4`",
+            ("sort_descending_part2" = (description = "Chat messages are sorted in descending order, number of entries 4, starting with ID 203 (part 2). 
+            `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&minDate=2020-07-01T11:10:00.000Z&limit=4`",
                 summary = "sort descending part2", value = json!(get_ch_msgs(7, 4))
             )),
-            ("sort_descending_part3" = (description = "Chat messages are sorted in descending order, number of entries 4, starting with ID 203 (part 3). `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&minDate=2020-07-01T10:50:00.000Z&limit=4`",
+            ("sort_descending_part3" = (description = "Chat messages are sorted in descending order, number of entries 4, starting with ID 203 (part 3). 
+            `curl -i -X GET http://localhost:8080/api/chat_messages?streamId=1&isSortDes=true&minDate=2020-07-01T10:50:00.000Z&limit=4`",
                 summary = "sort descending part3", value = json!(get_ch_msgs(3, 0))
             )),
         ),
@@ -212,18 +230,16 @@ pub async fn get_chat_message(
 }
 
 /// post_chat_message
+/// 
 /// Create a new message in the chat.
 /// 
 /// Request structure:
 /// ```text
 /// {
-///   streamId: Number,   // required
-///   msg: String,        // required
+///   streamId: Number,   // required - stream identifier;
+///   msg: String,        // required - text of the new message;
 /// }
 /// ```
-/// Where:
-/// "streamId" - stream identifier;
-/// "msg" - text of the new message;
 /// 
 /// The minimum length of a new message is 1 character. 
 /// The maximum length of a new message is 255 characters.
@@ -240,21 +256,14 @@ pub async fn get_chat_message(
 /// The structure is returned:
 /// ```text
 /// {
-///   id: Number,               // required
-///   date: DateTime<Utc>,      // required
-///   member: String,           // required
-///   msg: String,              // required
-///   date_edt?: DateTime<Utc>, // optional
-///   date_rmv?: DateTime<Utc>, // optional
+///   id: Number,               // required - chat message ID;
+///   date: DateTime<Utc>,      // required - date of the chat message;
+///   member: String,           // required - nickname of the chat message user;
+///   msg: String,              // required - chat message text;
+///   dateEdt?: DateTime<Utc>,  // optional - the date the chat message text was last edited;
+///   dateRmv?: DateTime<Utc>,  // optional - date the chat message was deleted;
 /// }
 /// ```
-/// Where:
-/// "id" - chat message ID;
-/// "date" - date of the chat message;
-/// "member" - nickname of the chat message user;
-/// "msg" - chat message text;
-/// "date_edt" - the date the chat message text was last edited;
-/// "date_rmv" - date the chat message was deleted;
 /// 
 /// Date and time are transmitted in ISO8601 format ("2020-01-20T20:10:57.000Z").
 ///
@@ -266,10 +275,11 @@ pub async fn get_chat_message(
         (status = 401, description = "An authorization token is required.", body = ApiError,
             example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
         (status = 406, description = "Error session not found.", body = ApiError,
-            example = json!(ApiError::create(406, err::MSG_PARAMETER_UNACCEPTABLE, "stream_id: 123, msg: \"message2\"")
-                .add_param(Cow::Borrowed("invalidParams"), &json!({ "stream_id": 123, "msg": "message2" })) )),
+            example = json!(ApiError::create(406, err::MSG_PARAMETER_UNACCEPTABLE, "streamId: 123, msg: \"message2\"")
+                .add_param(Cow::Borrowed("invalidParams"), &json!({ "streamId": 123, "msg": "message2" })) )),
         (status = 417, body = [ApiError], description =
-            "Validation error. `curl -i -X POST http://localhost:8080/api/chat_messages -d '{ \"stream_id\": 123, \"msg\": \"\" }'`",
+            "Validation error. `curl -i -X POST http://localhost:8080/api/chat_messages 
+            -d '{ \"streamId\": 123, \"msg\": \"\" }' -H 'Content-Type: application/json'`",
             example = json!(ApiError::validations(
                 (CreateChatMessageDto { stream_id: 123, msg: "".to_string() }).validate().err().unwrap()) )),
         (status = 506, description = "Blocking error.", body = ApiError, 
@@ -336,7 +346,104 @@ pub async fn post_chat_message(
     }
 }
 
-// PUT /api/chat_messages/{id}
+fn message_max() -> String {
+    (0..(MESSAGE_MAX + 1)).map(|_| 'a').collect()
+}
+/// put_chat_message
+///
+/// Update a chat message.
+///
+/// Request structure:
+/// ```text
+/// {
+///   msg: String,              // required - chat message text;
+/// }
+/// ```
+/// The minimum length of a new message is 1 character. 
+/// The maximum length of a new message is 255 characters.
+/// 
+/// One could call with following curl.
+/// ```text
+/// curl -i -X PUT http://localhost:8080/api/chat_messages/123 \
+/// -d '{"msg": "mesage2"}' \
+/// -H 'Content-Type: application/json'
+/// ```
+/// Returns an entity with the corrected message (`ChatMessageDto`) with status 200.
+/// The corrected message is received by all active users of the chat in real time.
+/// 
+/// The structure is returned:
+/// ```text
+/// {
+///   id: Number,               // required - chat message ID;
+///   date: DateTime<Utc>,      // required - date of the chat message;
+///   member: String,           // required - nickname of the chat message user;
+///   msg: String,              // required - chat message text;
+///   dateEdt?: DateTime<Utc>,  // optional - the date the chat message text was last edited;
+///   dateRmv?: DateTime<Utc>,  // optional - date the chat message was deleted;
+/// }
+/// ```
+/// 
+/// Date and time are transmitted in ISO8601 format ("2020-01-20T20:10:57.000Z").
+///
+/// A user with administrator rights can edit messages of other chat users.
+/// 
+/// One could call with following curl.
+/// ```text
+/// curl -i -X PUT http://localhost:8080/api/chat_messages/123?userId=3 \
+/// -d '{"msg": "mesage2"}' \
+/// -H 'Content-Type: application/json'
+/// ```
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Update the current user profile with new data.", body = ChatMessageDto,
+            examples(
+            ("msg_current_user" = (summary = "Message of the current user.",
+                description = "Update the current user's message. `curl -i -X PUT http://localhost:8080/api/chat_messages/123 
+                -d '{\"msg\": \"mesage2\"} -H 'Content-Type: application/json'`",
+                value = json!(ChatMessageDto::from(ChatMessage::new(123, 98, 37, "emma_johnson".to_string()
+                    , Some("message2".to_string()), Utc::now() + Duration::minutes(-10), Some(Utc::now()), None) ) )
+            )),
+            ("msg_some_other_user" = (summary = "Message of some other user. (Admin)",
+                description = "Update another user's message. `curl -i -X PUT http://localhost:8080/api/chat_messages/123?userId=30 
+                -d '{\"msg\": \"mesage2\"} -H 'Content-Type: application/json'`",
+                value = json!(ChatMessageDto::from(ChatMessage::new(123, 98, 30, "robert_brown".to_string()
+                    , Some("message2".to_string()), Utc::now() + Duration::minutes(-10), Some(Utc::now()), None) ) )
+            )) ),
+        ),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
+        (status = 406, description = "Error session not found.", body = ApiError,
+            example = json!(ApiError::create(406, err::MSG_PARAMETER_UNACCEPTABLE, "id: 123, user_id: 30, msg: \"message2\"")
+                .add_param(Cow::Borrowed("invalidParams"), &json!({ "id": 123, "user_id": 30,"msg": "message2" })) )),
+        (status = 416, description = "Error parsing input parameter.", body = ApiError,
+            examples(
+            ("msg_current_user" = (summary = "Message of the current user.",
+                description = "Error parsing input parameter. `curl -i -X PUT http://localhost:8080/api/chat_messages/123a 
+                    -d '{\"msg\": \"mesage2\"} -H 'Content-Type: application/json'`",
+                value = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
+                    , "`id` - invalid digit found in string (123a)"))    
+            )),
+            ("msg_some_other_user" = (summary = "Message of some other user. (Admin)", 
+                description = "Error parsing input parameter. `curl -i -X PUT http://localhost:8080/api/chat_messages/123?userId=30a 
+                    -d '{\"msg\": \"mesage2\"} -H 'Content-Type: application/json'`",
+                value = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
+                    , "`userId` - invalid digit found in string (30a)"))
+            )) ),
+        ),
+        (status = 417, body = [ApiError], description = format!("Validation error. 
+            `curl -i -X PUT http://localhost:8080/api/chat_messages/123 
+            -d '{{\"msg\": \"{}\"}}' -H 'Content-Type: application/json'`", message_max()),
+            example = json!(ApiError::validations( (ModifyChatMessageDto { msg: message_max() }).validate().err().unwrap() ) )
+        ),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
+    ),
+    params(("id", description = "Unique chat message ID.")),
+    security(("bearer_auth" = [])),
+)]
 #[rustfmt::skip]
 #[put("/api/chat_messages/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn put_chat_message(
@@ -386,7 +493,7 @@ pub async fn put_chat_message(
     let res_chat_message = web::block(move || {
         // Add a new entity (stream).
         let res_chat_message1 = chat_message_orm2
-            .modify_chat_message(id, user_id, modify_chat_message)
+            .modify_chat_message(id, user_id.clone(), modify_chat_message)
             .map_err(|e| {
                 error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e)
@@ -407,16 +514,90 @@ pub async fn put_chat_message(
     if let Some(chat_message_dto) = opt_chat_message_dto {
         Ok(HttpResponse::Ok().json(chat_message_dto)) // 200
     } else {
-        let json = serde_json::json!({ "id": id, "user_id": profile.user_id, "msg": msg });
+        let json = serde_json::json!({ "id": id, "user_id": user_id, "msg": msg });
         #[rustfmt::skip]
-        let msg = format!("id: {}, user_id: {}, msg: \"{}\"", id, profile.user_id, msg);
+        let msg = format!("id: {}, user_id: {}, msg: \"{}\"", id, user_id, msg);
         error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_PARAMETER_UNACCEPTABLE, &msg);
         Err(ApiError::create(406, err::MSG_PARAMETER_UNACCEPTABLE, &msg) // 406
             .add_param(Cow::Borrowed("invalidParams"), &json))
     }
 }
 
-// DELETE /api/chat_messages/{id}
+/// delete_chat_message
+///
+/// Delete a message from a user with the specified ID.
+///
+/// One could call with following curl.
+/// ```text
+/// curl -i -X DELETE http://localhost:8080/api/chat_messages/123
+/// ```
+///
+/// Return the user message (`ChatMessageDto`) with status 200 or 406 if the user message is not found.
+/// All active chat users receive information about the message deletion in real time.
+///
+/// The structure is returned:
+/// ```text
+/// {
+///   id: Number,               // required - chat message ID;
+///   date: DateTime<Utc>,      // required - date of the chat message;
+///   member: String,           // required - nickname of the chat message user;
+///   msg: String,              // required - chat message text;
+///   dateEdt?: DateTime<Utc>,  // optional - the date the chat message text was last edited;
+///   dateRmv?: DateTime<Utc>,  // optional - date the chat message was deleted;
+/// }
+/// ```
+/// 
+/// Date and time are transmitted in ISO8601 format ("2020-01-20T20:10:57.000Z").
+/// 
+/// A user with administrator rights can delete messages from other chat users.
+/// 
+/// One could call with following curl.
+/// ```text
+/// curl -i -X DELETE http://localhost:8080/api/chat_messages/123?userId=3
+/// ```
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Delete a message from a user with the specified ID.", body = ChatMessageDto,
+            examples(
+            ("msg_current_user" = (summary = "Message of the current user.",
+                description = "Delete the current user's message. `curl -i -X DELETE http://localhost:8080/api/chat_messages/123`",
+                value = json!(ChatMessageDto::from(ChatMessage::new(123, 98, 37, "emma_johnson".to_string()
+                    , None, Utc::now() + Duration::minutes(-10), None, Some(Utc::now())) ) )
+            )),
+            ("msg_some_other_user" = (summary = "Message of some other user. (Admin)",
+                description = "Delete another user's message. `curl -i -X DELETE http://localhost:8080/api/chat_messages/123?userId=30`",
+                value = json!(ChatMessageDto::from(ChatMessage::new(123, 98, 30, "robert_brown".to_string()
+                    , None, Utc::now() + Duration::minutes(-10), None, Some(Utc::now())) ) )
+            )) ),
+        ),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
+        
+        (status = 406, description = "Error session not found.", body = ApiError,
+            example = json!(ApiError::create(406, err::MSG_PARAMETER_UNACCEPTABLE, "id: 123, user_id: 30, msg: \"message2\"")
+                .add_param(Cow::Borrowed("invalidParams"), &json!({ "id": 123, "user_id": 30,"msg": "message2" })) )),
+        (status = 416, description = "Error parsing input parameter.", body = ApiError,
+            examples(
+            ("msg_current_user" = (summary = "Message of the current user.",
+                description = "Error parsing input parameter. `curl -i -X DELETE http://localhost:8080/api/chat_messages/123a`",
+                value = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
+                    , "`id` - invalid digit found in string (123a)"))    
+            )),
+            ("msg_some_other_user" = (summary = "Message of some other user. (Admin)", 
+                description = "Error parsing input parameter. `curl -i -X DELETE http://localhost:8080/api/chat_messages/123?userId=30a`",
+                value = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
+                    , "`userId` - invalid digit found in string (30a)"))
+            )) ),
+        ),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
+    ),
+    params(("id", description = "Unique chat message ID.")),
+    security(("bearer_auth" = [])),
+)]
 #[rustfmt::skip]
 #[delete("/api/chat_messages/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_chat_message(
@@ -474,15 +655,70 @@ pub async fn delete_chat_message(
     if let Some(chat_message_dto) = opt_chat_message_dto {
         Ok(HttpResponse::Ok().json(chat_message_dto)) // 200
     } else {
-        let json = serde_json::json!({ "id": id, "user_id": profile.user_id });
+        let json = serde_json::json!({ "id": id, "user_id": user_id });
         #[rustfmt::skip]
-        let message = format!("id: {}, user_id: {}", id, profile.user_id);
+        let message = format!("id: {}, user_id: {}", id, user_id);
         error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_PARAMETER_UNACCEPTABLE, &message);
         Err(ApiError::create(406, err::MSG_PARAMETER_UNACCEPTABLE, &message) // 406
             .add_param(Cow::Borrowed("invalidParams"), &json))
     }
 }
 
+// ** Section: BlockedUsers **
+
+/// get_blocked_users
+///
+/// Get a list of blocked users for the specified stream.
+/// This method is called by the stream owner to get a list of blocked users.
+/// 
+/// One could call with following curl.
+/// ```text
+/// curl -i -X GET http://localhost:8080/api/blocked_users/204
+/// ```
+/// 
+/// Returns the found list of blocked users (Vec<`BlockedUserDto`>) with status 200.
+///
+/// The structure is returned:
+/// ```text
+/// [
+///   {
+///     id: Number,                // required - record ID;
+///     userId: Number,            // required - user ID, stream owner;
+///     blockedId: Number,         // required - blocked user ID;
+///     blockedNickname: String,   // required - nickname of the blocked user;
+///     blockDate: DateTime<Utc>,  // required - date and time the user was blocked;
+///   }
+/// ]
+/// ```
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Get a list of blocked users for the specified stream.", body = Vec<BlockedUserDto>,
+            examples(
+            ("1_blocked_users_present" = (summary = "blocked users are present", description = "There are blocked users.",
+                value = json!(vec![
+                    BlockedUserDto::from(BlockedUser::new(1, 12, 42, "mary_williams".to_string()
+                        , Some(Utc::now() + Duration::minutes(-30)))),
+                    BlockedUserDto::from(BlockedUser::new(1, 12, 48, "ava_wilson".to_string()
+                        , Some(Utc::now() + Duration::minutes(-145)))), ])
+            )),
+            ("2_blocked_users_absent" = (summary = "blocked users are absent", description = "There are no blocked users.",
+                value = json!([])
+            ))),
+        ),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_MISSING_TOKEN))),
+        (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/blocked_users/204a`", 
+        body = ApiError, example = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
+            , "`stream_id` - invalid digit found in string (204a)"))),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
+    ),
+    params(("stream_id", description = "Unique stream ID.")),
+    security(("bearer_auth" = [])),
+)]
 #[rustfmt::skip]
 #[get("/api/blocked_users/{stream_id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_blocked_users(
@@ -529,6 +765,84 @@ pub async fn get_blocked_users(
     Ok(HttpResponse::Ok().json(blocked_user_dto_vec)) // 200
 }
 
+/// post_blocked_user
+/// 
+/// Add user to blocked list.
+/// 
+/// Request structure:
+/// ```text
+/// {
+///   blockedId?: Number,        // optional - user id to block;
+///   blockedNickname?: String,  // optional - "nickname" of the user to block;
+/// }
+/// ```
+/// 
+/// One of the parameters "blockedId", "blockedNickname" must be present.
+/// 
+/// Returns the blocked user record (`BlockedUserDto`) with status 200 or 204 (no content) if the user is not found.
+/// 
+/// The structure is returned:
+/// ```text
+/// {
+///   id: Number,                // required - record ID;
+///   userId: Number,            // required - user ID, stream owner;
+///   blockedId: Number,         // required - blocked user ID;
+///   blockedNickname: String,   // required - nickname of the blocked user;
+///   blockDate: DateTime<Utc>,  // required - date and time the user was blocked;
+/// }
+/// ```
+/// 
+/// One could call with following curl.
+/// ```text
+/// curl -i -X POST http://localhost:8080/api/blocked_users/ \
+/// -d '{"blockedId": 42}' \
+/// -H 'Content-Type: application/json'
+/// ```
+/// Add user to blocked list by user ID.
+/// 
+/// One could call with following curl.
+/// ```text
+/// curl -i -X POST http://localhost:8080/api/blocked_users/ \
+/// -d '{"blockedNickname": "mary_williams"}' \
+/// -H 'Content-Type: application/json'
+/// ```
+/// Add user to the blocked list by user "nickname".
+/// 
+#[utoipa::path(
+    responses(
+        (status = 201, description = "Add user to blocked list.", body = BlockedUserDto,
+            examples(
+            ("1_add_by_user_id" = (summary = "Add user by user ID", 
+                description = "Add user to blocked list by user ID. 
+                `curl -i -X POST http://localhost:8080/api/blocked_users 
+                -d '{\"blockedId\": 42} -H 'Content-Type: application/json'`",
+                value = json!(BlockedUserDto::from(BlockedUser::new(1, 12, 42, "mary_williams".to_string()
+                    , Some(Utc::now() + Duration::minutes(-30))))
+            ))),
+            ("2_add_by_nickname" = (summary = "Add user by user \"nickname\"", 
+                description = "Add user to the blocked list by user \"nickname\".
+                `curl -i -X POST http://localhost:8080/api/blocked_users 
+                -d '{\"blockedNickname\": \"mary_williams\"} -H 'Content-Type: application/json'`",
+                value = json!(BlockedUserDto::from(BlockedUser::new(1, 12, 42, "mary_williams".to_string()
+                , Some(Utc::now() + Duration::minutes(-30))))
+            )))),
+        ),
+        (status = 204, description = "The user with the specified ID was not found."),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(403, err::MSG_MISSING_TOKEN))),
+        (status = 417, body = [ApiError],
+            description = "Validation error. `curl -i -X POST http://localhost:8080/api/blocked_users 
+            -d '{} -H 'Content-Type: application/json'`",
+            example = json!(ApiError::validations(
+                (CreateBlockedUserDto { blocked_id: None, blocked_nickname: None }).validate().err().unwrap() ) )
+        ),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
 #[rustfmt::skip]
 #[post("/api/blocked_users", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn post_blocked_user(
@@ -581,6 +895,83 @@ pub async fn post_blocked_user(
     }
 }
 
+/// delete_blocked_user
+///
+/// Remove user from blocked list.
+///
+/// Request structure:
+/// ```text
+/// {
+///   blockedId?: Number,        // optional - user id to block;
+///   blockedNickname?: String,  // optional - "nickname" of the user to block
+/// }
+/// ```
+/// 
+/// One of the parameters "blockedId", "blockedNickname" must be present.
+/// 
+/// Returns the blocked user record (`BlockedUserDto`) with status 200 or 204 (no content) if the user is not found.
+/// 
+/// The structure is returned:
+/// ```text
+/// {
+///   id: Number,                // required - record ID;
+///   userId: Number,            // required - user ID, stream owner;
+///   blockedId: Number,         // required - blocked user ID;
+///   blockedNickname: String,   // required - nickname of the blocked user;
+///   blockDate: DateTime<Utc>,  // required - date and time the user was blocked;
+/// }
+/// ```
+/// One could call with following curl.
+/// ```text
+/// curl -i -X DELETE http://localhost:8080/api/blocked_users/ \
+/// -d '{"blockedId": 42}' \
+/// -H 'Content-Type: application/json'
+/// ```
+/// Remove user from blocked list by user ID.
+/// 
+/// One could call with following curl.
+/// ```text
+/// curl -i -X DELETE http://localhost:8080/api/blocked_users/ \
+/// -d '{"blockedNickname": "mary_williams"}' \
+/// -H 'Content-Type: application/json'
+/// ```
+/// Remove user from blocked list by user "nickname".
+/// 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "Remove user from blocked list.", body = ChatMessageDto,
+            examples(
+            ("1_remove_by_user_id" = (summary = "Remove user by user ID", 
+                description = "Remove user from blocked list by user ID. 
+                `curl -i -X DELETE http://localhost:8080/api/blocked_users 
+                -d '{\"blockedId\": 42} -H 'Content-Type: application/json'`",
+                value = json!(BlockedUserDto::from(BlockedUser::new(1, 12, 42, "mary_williams".to_string()
+                    , Some(Utc::now() + Duration::minutes(-30))))
+            ))),
+            ("2_remove_by_nickname" = (summary = "Remove user by user \"nickname\"", 
+                description = "Remove user from the blocked list by user \"nickname\".
+                `curl -i -X DELETE http://localhost:8080/api/blocked_users 
+                -d '{\"blockedNickname\": \"mary_williams\"} -H 'Content-Type: application/json'`",
+                value = json!(BlockedUserDto::from(BlockedUser::new(1, 12, 42, "mary_williams".to_string()
+                , Some(Utc::now() + Duration::minutes(-30))))
+            )))),
+        ),
+        (status = 204, description = "The user with the specified ID was not found."),
+        (status = 401, description = "An authorization token is required.", body = ApiError,
+            example = json!(ApiError::new(401, err::MSG_MISSING_TOKEN))),
+        (status = 417, body = [ApiError],
+            description = "Validation error. `curl -i -X POST http://localhost:8080/api/blocked_users 
+            -d '{} -H 'Content-Type: application/json'`",
+            example = json!(ApiError::validations(
+                (DeleteBlockedUserDto { blocked_id: None, blocked_nickname: None }).validate().err().unwrap() ) )
+        ),
+        (status = 506, description = "Blocking error.", body = ApiError, 
+            example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
+        (status = 507, description = "Database error.", body = ApiError, 
+            example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
+    ),
+    security(("bearer_auth" = [])),
+)]
 #[rustfmt::skip]
 #[delete("/api/blocked_users", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn delete_blocked_user(
@@ -640,7 +1031,7 @@ pub mod tests {
     use vrb_common::api_error::ApiError;
     use vrb_tools::token_data::BEARER;
 
-    use actix_web::{web};
+    use actix_web::web;
     use chrono::{DateTime, Duration, Utc};
     use vrb_dbase::db_enums::UserRole;
     use vrb_tools::token_coding;
@@ -674,7 +1065,7 @@ pub mod tests {
         }
     }
 
-    // = v OLD 
+    // = v OLD
 
     /** 1-"Oliver_Taylor", 2-"Robert_Brown", 3-"Mary_Williams", 4-"Ava_Wilson" */
     fn create_profile(user_id: i32) -> Profile {
@@ -807,7 +1198,7 @@ pub mod tests {
         let data_c = (profile_vec, session_vec, chat_message_vec, chat_message_log_vec, blocked_user_vec);
         (cfg_c, data_c, token)
     } // =^
-    // =v
+      // =v
     pub fn configure_chat_message(
         cfg_c: config_jwt::ConfigJwt,
         data_c: (Vec<Profile>, Vec<Session>, Vec<ChatMessage>, Vec<ChatMessageLog>, Vec<BlockedUser>),

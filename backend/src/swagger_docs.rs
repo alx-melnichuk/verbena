@@ -16,6 +16,9 @@ use crate::streams::{stream_controller, stream_models};
         chat_message_controller::post_chat_message,
         chat_message_controller::put_chat_message,
         chat_message_controller::delete_chat_message,
+        chat_message_controller::get_blocked_users,
+        chat_message_controller::post_blocked_user,
+        chat_message_controller::delete_blocked_user,
         chat_ws_controller::get_ws_chat,
         profile_controller::uniqueness_check,
         profile_controller::get_profile_by_id,
@@ -45,8 +48,14 @@ use crate::streams::{stream_controller, stream_models};
     ),
     components(
         schemas(
-            //chat_message_controller
+            // chat_message_controller
+            chat_message_models::SearchChatMessageDto, // ::get_chat_message
             chat_message_models::ChatMessageDto, // ::get_chat_message
+            chat_message_models::CreateChatMessageDto, // ::post_chat_message
+            chat_message_models::ModifyChatMessageDto, // ::put_chat_message
+            chat_message_models::BlockedUserDto, // ::get_blocked_users
+            chat_message_models::CreateBlockedUserDto, // ::post_blocked_user
+            chat_message_models::DeleteBlockedUserDto, // ::delete_blocked_user
             api_error::ApiError,
             // user model
             db_enums::UserRole,

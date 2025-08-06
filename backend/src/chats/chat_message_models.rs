@@ -376,6 +376,7 @@ pub struct BlockedUserDto {
     pub user_id: i32,
     pub blocked_id: i32,
     pub blocked_nickname: String,
+    #[serde(with = "serial_datetime")]
     pub block_date: DateTime<Utc>,
 }
 
