@@ -361,7 +361,7 @@ mod tests {
         assert_eq!(*app_err.params.get("invalidParams").unwrap(), json);
     }
     #[actix_web::test]
-    async fn test_put_chat_message_msg_another_user() {
+    async fn test_put_chat_message_msg_another_user_existent_id() {
         let token = ProflTest::token1();
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
@@ -468,7 +468,43 @@ mod tests {
         assert!(app_err.message.starts_with(&msg));
     }
     #[actix_web::test]
-    async fn test_put_chat_message_admin_msg_another_user() {
+    async fn test_put_chat_message_admin_msg_another_user_non_existent_id() {
+        let token = ProflTest::token1();
+        let data_p = ProflTest::profiles(&[ADMIN, USER]);
+        let data_cm = ChMesTest::chat_messages(2);
+        let user_id2 = data_p.0.get(1).unwrap().user_id.clone();
+        let last_msg_id = data_cm.0.last().unwrap().id.clone();
+        let id_wrong = last_msg_id + 1;
+        let msg = MessgTest::message_norm();
+        #[rustfmt::skip]
+        let app = test::init_service(
+            App::new().service(put_chat_message)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
+        ).await;
+        #[rustfmt::skip]
+        let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}?userId={}", id_wrong, user_id2))
+            .insert_header(ChtCtTest::header_auth(&token))
+            .set_json(ModifyChatMessageDto { msg: msg.clone() })
+            .to_request();
+        let resp: dev::ServiceResponse = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
+
+        #[rustfmt::skip]
+        assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
+        let body = body::to_bytes(resp.into_body()).await.unwrap();
+        let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
+        assert_eq!(app_err.code, code_to_str(StatusCode::NOT_ACCEPTABLE));
+        #[rustfmt::skip]
+        let message = format!("{}; id: {}, user_id: {}, msg: \"{}\"", err::MSG_PARAMETER_UNACCEPTABLE, id_wrong, user_id2, msg);
+        assert_eq!(app_err.message, message);
+        #[rustfmt::skip]
+        let json = serde_json::json!({ "id": id_wrong, "user_id": user_id2, "msg": &msg });
+        assert_eq!(*app_err.params.get("invalidParams").unwrap(), json);
+    }
+    #[actix_web::test]
+    async fn test_put_chat_message_admin_msg_another_user_valid_data() {
         let token = ProflTest::token1();
         let data_p = ProflTest::profiles(&[ADMIN]);
         let data_cm = ChMesTest::chat_messages(2);
