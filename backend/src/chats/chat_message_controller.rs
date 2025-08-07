@@ -673,7 +673,7 @@ pub async fn delete_chat_message(
 /// 
 /// One could call with following curl.
 /// ```text
-/// curl -i -X GET http://localhost:8080/api/blocked_users/204
+/// curl -i -X GET http://localhost:8080/api/blocked_users
 /// ```
 /// 
 /// Returns the found list of blocked users (Vec<`BlockedUserDto`>) with status 200.
@@ -708,42 +708,29 @@ pub async fn delete_chat_message(
         ),
         (status = 401, description = "An authorization token is required.", body = ApiError,
             example = json!(ApiError::new(403, err::MSG_MISSING_TOKEN))),
-        (status = 416, description = "Error parsing input parameter. `curl -i -X GET http://localhost:8080/api/blocked_users/204a`", 
-        body = ApiError, example = json!(ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED
-            , "`stream_id` - invalid digit found in string (204a)"))),
         (status = 506, description = "Blocking error.", body = ApiError, 
             example = json!(ApiError::create(506, err::MSG_BLOCKING, "Error while blocking process."))),
         (status = 507, description = "Database error.", body = ApiError, 
             example = json!(ApiError::create(507, err::MSG_DATABASE, "Error while querying the database."))),
     ),
-    params(("stream_id", description = "Unique stream ID.")),
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[get("/api/blocked_users/{stream_id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[get("/api/blocked_users", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
 pub async fn get_blocked_users(
     authenticated: Authenticated,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
-    request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
     let profile = authenticated.deref();
     let user_id = profile.user_id;
 
-    // Get data from request.
-    let stream_id_str = request.match_info().query("stream_id").to_string();
-    let stream_id = parser::parse_i32(&stream_id_str).map_err(|e| {
-        let msg = &format!("`stream_id` - {}", &e);
-        error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
-        ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
-    })?;
-
     let chat_message_orm2 = chat_message_orm.get_ref().clone();
     let res_blocked_users = web::block(move || {
         // Get a list of blocked users.
         let res_chat_message1 = chat_message_orm2
-            .get_blocked_users(user_id, stream_id)
+            .get_blocked_users(user_id)
             .map_err(|e| {
                 error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
                 ApiError::create(507, err::MSG_DATABASE, &e) // 507
