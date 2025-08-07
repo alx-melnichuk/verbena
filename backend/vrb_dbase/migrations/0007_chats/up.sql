@@ -415,7 +415,6 @@ $$;
 /* Create a stored function that will get the list of "blocked_user" by the specified parameter. */
 CREATE OR REPLACE FUNCTION get_blocked_users(
   IN _user_id INTEGER,
-  IN _stream_id INTEGER,
   OUT id INTEGER,
   OUT user_id INTEGER,
   OUT blocked_id INTEGER,
@@ -424,21 +423,21 @@ CREATE OR REPLACE FUNCTION get_blocked_users(
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
 DECLARE
-  stream_id2 INTEGER;
+  user_id2 INTEGER;
   rec1 RECORD;
   bl_id INTEGER;
   bl_nickname VARCHAR;
 BEGIN
-  IF (_user_id IS NULL OR _stream_id IS NULL) THEN
+  IF (_user_id IS NULL) THEN
     RETURN;
   END IF;
 
-  SELECT s.id
-  FROM streams s
-  WHERE s.id = _stream_id AND s.user_id = _user_id
-  INTO stream_id2;
+  SELECT u.id
+  FROM users u
+  WHERE u.id = _user_id
+  INTO user_id2;
 
-  IF (stream_id2 IS NULL) THEN
+  IF (user_id2 IS NULL) THEN
     -- If the user is not the owner of the stream, the result is an empty array.
     RETURN;
   END IF;
@@ -453,7 +452,7 @@ BEGIN
     FROM
       blocked_users bu, users u
     WHERE
-      bu.user_id = _user_id
+      bu.user_id = user_id2
       AND bu.blocked_id = u.id
     ORDER BY
       u.nickname ASC;
