@@ -74,10 +74,10 @@ export class PgConceptViewComponent implements OnInit, OnDestroy {
         // this.showTimerBeforeStart = 120; // minutes
         this.profileDto = this.route.snapshot.data['profileDto'];
         this.profileTokensDto = this.route.snapshot.data['profileTokensDto'];
-        this.streamDto = this.route.snapshot.data['streamDto'];
         this.chatPastMsgs = this.route.snapshot.data['chatMsgList'];
-        const blockedUsers = this.route.snapshot.data['blockedUsers'];
-
+        const conceptResponse = this.route.snapshot.data['conceptResponse'];
+        this.streamDto = conceptResponse.streamDto;
+        const blockedUsers = conceptResponse.blockedUsersDto;
         for (let idx = 0; idx < blockedUsers.length; idx++) {
             if (!!blockedUsers[idx].blockedNickname) {
                 this.chatBlockedUsers.push(blockedUsers[idx].blockedNickname);

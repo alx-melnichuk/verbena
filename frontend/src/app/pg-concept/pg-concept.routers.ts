@@ -2,7 +2,6 @@ import { Routes } from '@angular/router';
 
 import { E_CONCEPT_LIST, E_CONCEPT_VIEW, P_CONCEPT_ID } from '../common/routes';
 
-import { pgChatBlockedUsersResolver } from './pg-chat-blocked-users.resolver';
 import { pgChatMessagesResolver } from './pg-chat-messages.resolver';
 import { PgConceptComponent } from './pg-concept.component';
 import { pgConceptResolver } from './pg-concept.resolver';
@@ -26,9 +25,8 @@ export const PG_CONCEPT_ROUTES: Routes = [
                 resolve: {
                     profileDto: pgProfileResolver,
                     profileTokensDto: pgProfileTokensResolver,
-                    streamDto: pgConceptResolver,
                     chatMsgList: pgChatMessagesResolver,
-                    blockedUsers: pgChatBlockedUsersResolver,
+                    conceptResponse: pgConceptResolver,
                 }
             },
         ]

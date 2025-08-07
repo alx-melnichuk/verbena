@@ -19,11 +19,8 @@ export class ChatMessageApiService {
         return lastValueFrom(this.http.get<ChatMessageDto[] | HttpErrorResponse>(url, { params }));
     }
 
-    public getBlockedUsers(stream_id: number): Promise<BlockedUserDto[] | HttpErrorResponse | undefined> {
-        if (!stream_id) {
-            Promise.resolve([]);
-        }
-        const url = Uri.appUri(`appApi://blocked_users/${stream_id}`);
+    public getBlockedUsers(): Promise<BlockedUserDto[] | HttpErrorResponse | undefined> {
+        const url = Uri.appUri(`appApi://blocked_users`);
         return lastValueFrom(this.http.get<BlockedUserDto[] | HttpErrorResponse>(url));
     }
 }
