@@ -11,11 +11,16 @@ mod tests {
     use crate::chats::{
         chat_event_ws::{CountEWS, JoinEWS},
         chat_message_controller::tests::{configure_chat_message, get_cfg_data, get_profiles, get_token},
+        chat_message_controller::{tests as ChtCtTest},
         chat_message_orm::tests::ChatMsgTest,
+        chat_message_orm::tests::ChatMessageOrmTest as ChMesTest,
         chat_ws_controller::get_ws_chat,
         chat_ws_session::{get_err400, get_err401, get_err404, get_err406, get_err409},
     };
-    use crate::profiles::{config_jwt, profile_orm::tests::PROFILE_USER_ID_NO_SESSION};
+    use crate::profiles::{
+        config_jwt,
+        profile_orm::tests::{PROFILE_USER_ID_NO_SESSION, ProfileOrmTest as ProflTest, ADMIN, USER},
+    };
 
     const URL_WS: &str = "/ws";
 
@@ -27,8 +32,14 @@ mod tests {
     async fn test_get_ws_chat_ews_echo_ews_name() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(|| {
-            let (cfg_c, data_c, _token) = get_cfg_data(0);
-            App::new().service(get_ws_chat).configure(configure_chat_message(cfg_c, data_c))
+            let data_p = ProflTest::profiles(&[]);
+            let data_cm = ChMesTest::chat_messages(0);
+            // #let (cfg_c, data_c, _token) = get_cfg_data(0);
+            App::new().service(get_ws_chat)
+                // #.configure(configure_chat_message(cfg_c, data_c))
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
         let mut framed = srv.ws_at(URL_WS).await.unwrap();
