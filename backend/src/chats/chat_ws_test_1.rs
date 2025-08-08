@@ -2,7 +2,7 @@
 mod tests {
     use actix_web::{web::Bytes, App};
     use actix_web_actors::ws::{Frame::Text as FrameText, Message::Text as MessageText};
-    use futures_util::{SinkExt, StreamExt}; // this is needed for send method in Framed
+    use futures_util::{SinkExt, StreamExt}; // this is needed for "send" method in Framed.
     use serde_json::to_string;
     use vrb_common::crypto::CRT_WRONG_STRING_BASE64URL;
     use vrb_tools::err;
@@ -10,16 +10,13 @@ mod tests {
     use crate::chats::chat_event_ws::LeaveEWS;
     use crate::chats::{
         chat_event_ws::{CountEWS, JoinEWS},
-        chat_message_controller::tests::{configure_chat_message, get_cfg_data, get_profiles, get_token},
-        chat_message_controller::{tests as ChtCtTest},
-        chat_message_orm::tests::ChatMsgTest,
         chat_message_orm::tests::ChatMessageOrmTest as ChMesTest,
         chat_ws_controller::get_ws_chat,
         chat_ws_session::{get_err400, get_err401, get_err404, get_err406, get_err409},
     };
     use crate::profiles::{
         config_jwt,
-        profile_orm::tests::{PROFILE_USER_ID_NO_SESSION, ProfileOrmTest as ProflTest, ADMIN, USER},
+        profile_orm::tests::{ProfileOrmTest as ProflTest, USER, USER100_ID_NO_SESSION},
     };
 
     const URL_WS: &str = "/ws";
@@ -34,9 +31,8 @@ mod tests {
         let mut srv = actix_test::start(|| {
             let data_p = ProflTest::profiles(&[]);
             let data_cm = ChMesTest::chat_messages(0);
-            // #let (cfg_c, data_c, _token) = get_cfg_data(0);
-            App::new().service(get_ws_chat)
-                // #.configure(configure_chat_message(cfg_c, data_c))
+            App::new()
+                .service(get_ws_chat)
                 .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
                 .configure(ProflTest::cfg_profile_orm(data_p))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
@@ -44,28 +40,28 @@ mod tests {
         // Open a websocket connection to the test server.
         let mut framed = srv.ws_at(URL_WS).await.unwrap();
 
-        // -- Test: "'echo' parameter not defined" --
+        // -- Test: 1. "'echo' parameter not defined" --
         let msg_text = MessageText("{ \"echo\": \"\" }".into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "echo"));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
-        // -- Test: "'echo' - ok" --
+        // -- Test: 2. "'echo' - ok" --
         let msg_text = MessageText("{ \"echo\": \"text echo\" }".into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
         assert_eq!(item, FrameText(Bytes::from_static(b"{\"echo\":\"text echo\"}")));
 
-        // -- Test: "'name' parameter not defined" --
+        // -- Test: 3. "'name' parameter not defined" --
         let msg_text = MessageText("{ \"name\": \"\" }".into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "name"));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
-        // -- Test: "'name' - ok" --
+        // -- Test: 4. "'name' - ok" --
         let msg_text = MessageText("{ \"name\": \"nickname\" }".into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -79,27 +75,36 @@ mod tests {
     async fn test_get_ws_chat_ews_join_ews_leave_err() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let (cfg_c, mut data_c, _token) = get_cfg_data(1);
-            let (mut profile_vec, _session_vec) = get_profiles(4);
-            let profile = profile_vec.get_mut(2).unwrap();
-            profile.user_id = PROFILE_USER_ID_NO_SESSION;
-            data_c.0 = profile_vec;
-            App::new().service(get_ws_chat).configure(configure_chat_message(cfg_c, data_c))
+            let mut data_p = ProflTest::profiles(&[USER, USER]);
+            let profile2 = data_p.0.get_mut(1).unwrap();
+            profile2.user_id = USER100_ID_NO_SESSION;
+            let data_cm = ChMesTest::chat_messages(0);
+            App::new()
+                .service(get_ws_chat)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
+
         // Open a websocket connection to the test server.
         let mut framed = srv.ws_at(URL_WS).await.unwrap();
 
-        let (profile_vec, _session_vec) = get_profiles(4);
+        let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
+        let (mut profile_vec, _session_vec) = ProflTest::profiles(&[USER, USER]);
+        let profile2 = profile_vec.get_mut(1).unwrap();
+        profile2.user_id = USER100_ID_NO_SESSION;
+        let user1_id = profile_vec.get(0).unwrap().user_id;
+        let token1 = ProflTest::get_token(user1_id);
 
-        // -- Test: "'join' parameter not defined" --
+        // -- Test: 1. "'join' parameter not defined" --
         let msg_text = MessageText(format!("{{ \"join\": {} }}", i32::default()).into()); // 0
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "join"));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
 
-        // -- Test: "Stream with the specified id not found." (unauthorized) --
-        let stream_id_wrong = ChatMsgTest::stream_ids().last().unwrap().clone() + 1;
+        // -- Test: 2. "Stream with the specified id not found." (unauthorized) --
+        let stream_id_wrong = ChMesTest::stream_ids().last().unwrap().clone() + 1;
         let msg_text = MessageText(format!("{{ \"join\": {} }}", stream_id_wrong).into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -107,60 +112,52 @@ mod tests {
         let err404 = get_err404(&format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, stream_id_wrong));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
 
-        // -- Test: "Stream with the specified id not found." (authorized) --
-        let user_id1 = profile_vec.get(0).unwrap().user_id;
-        let token1 = get_token(config_jwt::get_test_config(), user_id1);
-        let stream_id_wrong = ChatMsgTest::stream_ids().last().unwrap().clone() + 1;
-        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream_id_wrong, token1).into());
+        // -- Test: 3. "Stream with the specified id not found." (authorized) --
+        let stream_id_wrong = ChMesTest::stream_ids().last().unwrap().clone() + 1;
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream_id_wrong, token1.clone()).into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
         let err404 = get_err404(&format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, stream_id_wrong));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
 
-        // -- Test: "This stream is not active." (unauthorized) --
-        let stream_id = ChatMsgTest::stream_ids().get(2).unwrap().clone(); // live: false
-        let msg_text = MessageText(format!("{{ \"join\":{} }}", stream_id).into());
+        // -- Test: 4. "This stream is not active." (unauthorized) --
+        let stream3_id = ChMesTest::stream_ids().get(2).unwrap().clone(); // live: false
+        let msg_text = MessageText(format!("{{ \"join\":{} }}", stream3_id).into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err409 = get_err409(err::MSG_STREAM_NOT_ACTIVE);
         assert_eq!(item, FrameText(Bytes::from(to_string(&err409).unwrap()))); // 409:Conflict
 
-        // -- Test: "This stream is not active." (authorized) --
-        let user_id1 = profile_vec.get(0).unwrap().user_id;
-        let token1 = get_token(config_jwt::get_test_config(), user_id1);
-        let stream_id = ChatMsgTest::stream_ids().get(2).unwrap().clone(); // live: false
-        let msg_text = MessageText(format!("{{ \"join\":{}, \"access\": \"{}\"  }}", stream_id, token1).into());
+        // -- Test: 5. "This stream is not active." (authorized) --
+        let stream3_id = ChMesTest::stream_ids().get(2).unwrap().clone(); // live: false
+        let msg_text = MessageText(format!("{{ \"join\":{}, \"access\": \"{}\"  }}", stream3_id, token1.clone()).into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err409 = get_err409(err::MSG_STREAM_NOT_ACTIVE);
         assert_eq!(item, FrameText(Bytes::from(to_string(&err409).unwrap()))); // 409:Conflict
 
-        // -- Test: "Invalid token" --
-        let user_id1 = profile_vec.get(0).unwrap().user_id;
-        let token1 = get_token(config_jwt::get_test_config(), user_id1);
-        let stream_id1 = ChatMsgTest::stream_ids().get(0).unwrap().clone();
+        // -- Test: 6. "Invalid token" --
         #[rustfmt::skip]
-        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}a\" }}", stream_id1, token1).into());
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}a\" }}", stream1_id, token1.clone()).into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
         let err401 = get_err401(&format!("{}; {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, CRT_WRONG_STRING_BASE64URL));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err401).unwrap()))); // 401:Unauthorized
 
-        // -- Test: "session_not_found" --
-        let user_id3 = profile_vec.get(2).unwrap().user_id;
-        let token3 = get_token(config_jwt::get_test_config(), user_id3);
-        let stream_id1 = ChatMsgTest::stream_ids().get(0).unwrap().clone();
+        // -- Test: 7. "session_not_found" --
+        let user2_id = profile_vec.get(1).unwrap().user_id;
+        let token2 = ProflTest::get_token(user2_id);
         #[rustfmt::skip]
-        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream_id1, token3).into());
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token2).into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let err406 = get_err406(&format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user_id3));
+        let err406 = get_err406(&format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user2_id));
         assert_eq!(item, FrameText(Bytes::from(to_string(&err406).unwrap()))); // 406:NotAcceptable
 
-        // -- Test: "There was no 'join' command." --
+        // -- Test: 8. "There was no 'join' command." --
         let msg_text = MessageText(format!("{{ \"leave\": 0 }}").into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -171,31 +168,42 @@ mod tests {
     async fn test_get_ws_chat_ews_join_ews_leave_ok() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let (cfg_c, data_c, _token) = get_cfg_data(2);
-            App::new().service(get_ws_chat).configure(configure_chat_message(cfg_c, data_c))
+            let mut data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+            let user2_id = data_p.0.get(1).unwrap().user_id;
+            // Add session (num_token) for user2.
+            data_p.1.get_mut(1).unwrap().num_token = Some(ProflTest::get_num_token(user2_id));
+            let user4_id = data_p.0.get(3).unwrap().user_id;
+            // Add session (num_token) for user4.
+            data_p.1.get_mut(3).unwrap().num_token = Some(ProflTest::get_num_token(user4_id));
+            let data_cm = ChMesTest::chat_messages(0);
+            App::new()
+                .service(get_ws_chat)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
-        let (profile_vec, _session_vec) = get_profiles(4);
-        let stream_id1 = ChatMsgTest::stream_ids().get(0).unwrap().clone();
+        let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
+        let (profile_vec, _session_vec) = ProflTest::profiles(&[USER, USER, USER, USER]);
 
-        // -- Test: Join user1 as owner. --
-        let user_id1 = profile_vec.get(0).unwrap().user_id;
+        // -- Test: 1. "Join user1 as owner."" --
+        let user1_id = profile_vec.get(0).unwrap().user_id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
-        let token1 = get_token(config_jwt::get_test_config(), user_id1);
+        let token1 = ProflTest::get_token(user1_id);
         #[rustfmt::skip]
-        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream_id1, token1).into());
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token1).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
         let value = to_string(&JoinEWS {
-            join: stream_id1, member: member1.clone(), count: 1, is_owner: Some(true), is_blocked: Some(false) }).unwrap();
+            join: stream1_id, member: member1.clone(), count: 1, is_owner: Some(true), is_blocked: Some(false) }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
 
-        // -- Test: "There was already a 'join' to the room.". Trying to connect again. --
+        // -- Test: 2. "There was already a 'join' to the room.". Trying to connect again. --
         #[rustfmt::skip]
-        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream_id1, token1).into());
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token1).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err409 = get_err409(err::MSG_THERE_WAS_ALREADY_JOIN_TO_ROOM);
@@ -204,19 +212,19 @@ mod tests {
         // Open a websocket connection to the test server.
         let mut framed2 = srv.ws_at(URL_WS).await.unwrap();
 
-        // -- Test: Join user2 unauthorized. --
-        let msg_text = MessageText(format!("{{ \"join\": {} }}", stream_id1).into());
+        // -- Test: 3. "Join user2 unauthorized."" --
+        let msg_text = MessageText(format!("{{ \"join\": {} }}", stream1_id).into());
         framed2.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
         let value = to_string(&JoinEWS {
-            join: stream_id1, member: "".into(), count: 2, is_owner: Some(false), is_blocked: Some(true) }).unwrap();
+            join: stream1_id, member: "".into(), count: 2, is_owner: Some(false), is_blocked: Some(true) }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
         // Message to user1 about user2 joining.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
         let value = to_string(&JoinEWS {
-            join: stream_id1, member: "".into(), count: 2, is_owner: None, is_blocked: None }).unwrap();
+            join: stream1_id, member: "".into(), count: 2, is_owner: None, is_blocked: None }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
 
         // Leave user2. (Test: Leave unauthorized.)
@@ -224,32 +232,33 @@ mod tests {
         framed2.send(MessageText("{ \"leave\": 0 }".into())).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&LeaveEWS {leave: stream_id1, member: "".into(), count: 1 }).unwrap();
+        let value = to_string(&LeaveEWS {leave: stream1_id, member: "".into(), count: 1 }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
 
         // Message to user1 about user2 leaving.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&LeaveEWS {leave: stream_id1, member: "".into(), count: 1 }).unwrap();
+        let value = to_string(&LeaveEWS {leave: stream1_id, member: "".into(), count: 1 }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
 
-        // -- Test: Join user2 authorized. --
-        let user_id2 = profile_vec.get(1).unwrap().user_id;
+        // -- Test: 4. "Join user2 authorized."" --
+        let user2_id = profile_vec.get(1).unwrap().user_id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
-        let token2 = get_token(config_jwt::get_test_config(), user_id2);
+        let token2 = ProflTest::get_token(user2_id);
+        // Join user2.
         #[rustfmt::skip]
-        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream_id1, token2).into());
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token2).into());
         framed2.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
         let value = to_string(&JoinEWS {
-            join: stream_id1, member: member2.clone(), count: 2, is_owner: Some(false), is_blocked: Some(false) }).unwrap();
+            join: stream1_id, member: member2.clone(), count: 2, is_owner: Some(false), is_blocked: Some(false) }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
         // Message to user1 about user2 joining.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
         let value = to_string(&JoinEWS {
-            join: stream_id1, member: member2.clone(), count: 2, is_owner: None, is_blocked: None }).unwrap();
+            join: stream1_id, member: member2.clone(), count: 2, is_owner: None, is_blocked: None }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
 
         // Leave user2. (Test: Leave authorized.)
@@ -257,36 +266,37 @@ mod tests {
         framed2.send(MessageText("{ \"leave\": 0 }".into())).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&LeaveEWS {leave: stream_id1, member: member2.clone(), count: 1 }).unwrap();
+        let value = to_string(&LeaveEWS {leave: stream1_id, member: member2.clone(), count: 1 }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value.clone())));
         // Message to user1 about user2 leaving.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         assert_eq!(item, FrameText(Bytes::from(value)));
 
-        // -- Test: Join user4 is blocked. --
-        let user_id4 = profile_vec.get(3).unwrap().user_id;
+        // -- Test: 5. "Join user4 is blocked."" --
+        let user4_id = profile_vec.get(3).unwrap().user_id;
         let member4 = profile_vec.get(3).unwrap().nickname.clone();
-        let token4 = get_token(config_jwt::get_test_config(), user_id4);
+        let token4 = ProflTest::get_token(user4_id);
+        // Join user4.
         #[rustfmt::skip]
-        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream_id1, token4).into());
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token4).into());
         framed2.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
         let value = to_string(&JoinEWS {
-            join: stream_id1, member: member4.clone(), count: 2, is_owner: Some(false), is_blocked: Some(true) }).unwrap();
+            join: stream1_id, member: member4.clone(), count: 2, is_owner: Some(false), is_blocked: Some(true) }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
         // Message to user1 about user2 joining.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
         let value = to_string(&JoinEWS {
-            join: stream_id1, member: member4.clone(), count: 2, is_owner: None, is_blocked: None }).unwrap();
+            join: stream1_id, member: member4.clone(), count: 2, is_owner: None, is_blocked: None }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
         // Leave user2.
         #[rustfmt::skip]
         framed2.send(MessageText("{ \"leave\": 0 }".into())).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&LeaveEWS {leave: stream_id1, member: member4.clone(), count: 1 }).unwrap();
+        let value = to_string(&LeaveEWS {leave: stream1_id, member: member4.clone(), count: 1 }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value.clone())));
         // Message to user1 about user2 leaving.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -297,7 +307,7 @@ mod tests {
         framed1.send(MessageText("{ \"leave\": 0 }".into())).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&LeaveEWS {leave: stream_id1, member: member1.clone(), count: 0 }).unwrap();
+        let value = to_string(&LeaveEWS {leave: stream1_id, member: member1.clone(), count: 0 }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
     }
 
@@ -307,37 +317,44 @@ mod tests {
     async fn test_get_ws_chat_ews_count() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let (cfg_c, data_c, _token) = get_cfg_data(1);
-            App::new().service(get_ws_chat).configure(configure_chat_message(cfg_c, data_c))
+            let mut data_p = ProflTest::profiles(&[USER, USER]);
+            let user2_id = data_p.0.get(1).unwrap().user_id;
+            // Add session (num_token) for user2.
+            data_p.1.get_mut(1).unwrap().num_token = Some(ProflTest::get_num_token(user2_id));
+            let data_cm = ChMesTest::chat_messages(0);
+            App::new()
+                .service(get_ws_chat)
+                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
-        // -- Test: "There was no 'join' command." --
+        // -- Test: 1. "There was no 'join' command." --
         let msg_text = MessageText(format!("{{ \"count\": 0 }}").into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         let err406 = get_err406(err::MSG_THERE_WAS_NO_JOIN);
         assert_eq!(item, FrameText(Bytes::from(to_string(&err406).unwrap()))); // 406:NotAcceptable
 
-        let (profile_vec, _session_vec) = get_profiles(2);
+        let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
+        let (profile_vec, _session_vec) = ProflTest::profiles(&[USER, USER]);
 
-        let user_id1 = profile_vec.get(0).unwrap().user_id;
+        let user1_id = profile_vec.get(0).unwrap().user_id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
-        let token1 = get_token(config_jwt::get_test_config(), user_id1);
-        let stream_id1 = ChatMsgTest::stream_ids().get(0).unwrap().clone();
-
+        let token1 = ProflTest::get_token(user1_id);
         // Join user1.
         #[rustfmt::skip]
-        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream_id1, token1).into());
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token1).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
         let value = to_string(&JoinEWS {
-            join: stream_id1, member: member1.clone(), count: 1, is_owner: Some(true), is_blocked: Some(false) }).unwrap();
+            join: stream1_id, member: member1.clone(), count: 1, is_owner: Some(true), is_blocked: Some(false) }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
 
-        // -- Test: Number of connected users. --
+        // -- Test: 2. "Number of connected users."" --
         let msg_text = MessageText(format!("{{ \"count\": 0 }}").into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -347,26 +364,26 @@ mod tests {
         // Open a websocket connection to the test server.
         let mut framed2 = srv.ws_at(URL_WS).await.unwrap();
 
-        // Join user2.
-        let user_id2 = profile_vec.get(1).unwrap().user_id;
+        let user2_id = profile_vec.get(1).unwrap().user_id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
-        let token2 = get_token(config_jwt::get_test_config(), user_id2);
+        let token2 = ProflTest::get_token(user2_id);
+        // Join user2.
         #[rustfmt::skip]
-        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream_id1, token2).into());
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token2).into());
         framed2.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
         let value = to_string(&JoinEWS {
-            join: stream_id1, member: member2.clone(), count: 2, is_owner: Some(false), is_blocked: Some(false) }).unwrap();
+            join: stream1_id, member: member2.clone(), count: 2, is_owner: Some(false), is_blocked: Some(false) }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
         // Message to user1 about user2 joining.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
         let value = to_string(&JoinEWS {
-            join: stream_id1, member: member2.clone(), count: 2, is_owner: None, is_blocked: None }).unwrap();
+            join: stream1_id, member: member2.clone(), count: 2, is_owner: None, is_blocked: None }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
 
-        // -- Test: Number of connected users. --
+        // -- Test: 3. "Number of connected users."" --
         let msg_text = MessageText(format!("{{ \"count\": 0 }}").into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -378,7 +395,7 @@ mod tests {
         framed2.send(MessageText("{ \"leave\": 0 }".into())).await.unwrap(); // Send a message to a websocket.
         let item = framed2.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&LeaveEWS {leave: stream_id1, member: member2.clone(), count: 1 }).unwrap();
+        let value = to_string(&LeaveEWS {leave: stream1_id, member: member2.clone(), count: 1 }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value.clone())));
         // Message to user1 about user2 leaving.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
@@ -389,7 +406,7 @@ mod tests {
         framed1.send(MessageText("{ \"leave\": 0 }".into())).await.unwrap(); // Send a message to a websocket.
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         #[rustfmt::skip]
-        let value = to_string(&LeaveEWS {leave: stream_id1, member: member1.clone(), count: 0 }).unwrap();
+        let value = to_string(&LeaveEWS {leave: stream1_id, member: member1.clone(), count: 0 }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
     }
 }
