@@ -366,6 +366,12 @@ pub mod tests {
     pub const CHAT_MESSAGE_LOG_ID: i32 = 1600;
     pub const BLOCKED_USER_ID: i32 = 1700;
 
+    pub const STREAM1_ID: i32 = 1; // Owner user idx 0 (live: true)  1100 oliver_taylor
+    pub const STREAM2_ID: i32 = 2; // Owner user idx 1 (live: true)  1101 robert_brown
+    pub const STREAM3_ID: i32 = 3; // Owner user idx 2 (live: false) 1102 mary_williams
+    pub const STREAM4_ID: i32 = 4; // Owner user idx 3  blocked      1103 ava_wilson
+
+
     #[derive(Debug, Clone)]
     pub struct UserMini {
         pub id: i32,
@@ -377,10 +383,10 @@ pub mod tests {
     impl ChatMsgTest {
         pub fn stream_ids() -> Vec<i32> {
             vec![
-                1, // Owner user idx 0 (live: true)  1100 oliver_taylor
-                2, // Owner user idx 1 (live: true)  1101 robert_brown
-                3, // Owner user idx 2 (live: false) 1102 mary_williams
-                4, // Owner user idx 3  blocked      1103 ava_wilson
+                STREAM1_ID, // Owner user idx 0 (live: true)  1100 oliver_taylor
+                STREAM2_ID, // Owner user idx 1 (live: true)  1101 robert_brown
+                STREAM3_ID, // Owner user idx 2 (live: false) 1102 mary_williams
+                STREAM4_ID, // Owner user idx 3  blocked      1103 ava_wilson
             ]
         }
         pub fn user_ids() -> Vec<i32> {
