@@ -48,9 +48,9 @@ pub async fn check_token_and_get_profile(
     })?;
 
     let profile = result.ok_or_else(|| {
-        let message = format!("user_id: {}", user_id);
-        error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), MSG_UNACCEPTABLE_TOKEN_ID, &message);
-        ApiError::create(401, MSG_UNACCEPTABLE_TOKEN_ID, &message) // 401+
+        let msg = format!("user_id: {}", user_id);
+        error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), MSG_UNACCEPTABLE_TOKEN_ID, &msg);
+        ApiError::create(401, MSG_UNACCEPTABLE_TOKEN_ID, &msg) // 401+
     })?;
 
     if let Some(timer) = timer {
