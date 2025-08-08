@@ -18,7 +18,7 @@ mod tests {
             self, ClearForExpiredResponseDto, ProfileDto, ProfileTest, RecoveryDataDto, RecoveryProfileDto, RecoveryProfileResponseDto,
             RegistrProfileDto, RegistrProfileResponseDto,
         },
-        profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, NUM_TOKEN_USER1, USER},
+        profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER},
         profile_registr_controller::{
             clear_for_expired, confirm_recovery, confirm_registration, recovery, registration, tests as RegCtTest, MSG_RECOVERY_NOT_FOUND,
             MSG_REGISTR_NOT_FOUND, MSG_USER_NOT_FOUND,
@@ -1184,13 +1184,13 @@ mod tests {
         let recoveries = RecovTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone();
 
-        let num_token = NUM_TOKEN_USER1;
+        let num_token1 = data_p.1.get(0).unwrap().num_token.unwrap();
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let recovery_token = token_coding::encode_token(recovery1_id, num_token, jwt_secret, -recovery_duration).unwrap();
+        let recovery_token = token_coding::encode_token(recovery1_id, num_token1, jwt_secret, -recovery_duration).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
@@ -1220,13 +1220,13 @@ mod tests {
         let recoveries = RecovTest::recoveries(Some(user1_id));
         let recovery1_id = recoveries.get(0).unwrap().id.clone() + 1;
 
-        let num_token = NUM_TOKEN_USER1;
+        let num_token1 = data_p.1.get(0).unwrap().num_token.unwrap();
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
 
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
-        let recovery_token = token_coding::encode_token(recovery1_id, num_token, jwt_secret, recovery_duration).unwrap();
+        let recovery_token = token_coding::encode_token(recovery1_id, num_token1, jwt_secret, recovery_duration).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
@@ -1261,10 +1261,10 @@ mod tests {
         let final_date_utc = Utc::now() + Duration::seconds(recovery_duration);
         recovery1.final_date = final_date_utc;
 
-        let num_token = NUM_TOKEN_USER1;
+        let num_token1 = data_p.1.get(0).unwrap().num_token.unwrap();
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let recovery_token = token_coding::encode_token(recovery1.id, num_token, jwt_secret, recovery_duration).unwrap();
+        let recovery_token = token_coding::encode_token(recovery1.id, num_token1, jwt_secret, recovery_duration).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
@@ -1298,10 +1298,10 @@ mod tests {
         let config_app = config_app::get_test_config();
         let recovery_duration: i64 = config_app.app_recovery_duration.try_into().unwrap();
 
-        let num_token = NUM_TOKEN_USER1;
+        let num_token1 = data_p.1.get(0).unwrap().num_token.unwrap();
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let recovery_token = token_coding::encode_token(recovery1_id, num_token, jwt_secret, recovery_duration).unwrap();
+        let recovery_token = token_coding::encode_token(recovery1_id, num_token1, jwt_secret, recovery_duration).unwrap();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(confirm_recovery)
