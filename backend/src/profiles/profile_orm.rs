@@ -312,6 +312,7 @@ pub mod tests {
     pub const USER2_ID: i32 = 1101;
     pub const USER3_ID: i32 = 1102;
     pub const USER4_ID: i32 = 1103;
+    pub const USER100_ID_NO_SESSION: i32 = 1199; // No session
 
     pub const USER1_NAME: &str = "oliver_taylor";
     pub const USER2_NAME: &str = "robert_brown";
@@ -319,7 +320,7 @@ pub mod tests {
     pub const USER4_NAME: &str = "ava_wilson";
 
     pub const PROFILE_USER_ID: i32 = 1100;
-    pub const NUM_TOKEN_USER1: i32 = 1234;
+    pub const USER1_NUM_TOKEN: i32 = 20000 + USER1_ID; //  1234;
     pub const PROFILE_USER_ID_NO_SESSION: i32 = 1199;
 
     #[derive(Debug, Clone)]
@@ -566,7 +567,15 @@ pub mod tests {
             let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
             (http::header::AUTHORIZATION, header_value)
         }
-
+        pub fn get_num_token(user_id: i32) -> i32 {
+            40000 + user_id
+        }
+        pub fn get_token(user_id: i32) -> String {
+            let config_jwt = config_jwt::get_test_config();
+            let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+            let num_token = Self::get_num_token(user_id);
+            token_coding::encode_token(user_id, num_token, &jwt_secret, config_jwt.jwt_access).unwrap()
+        }
         pub fn profiles(roles: &[u8]) -> (Vec<Profile>, Vec<Session>) {
             let mut profile_vec: Vec<Profile> = Vec::new();
             let mut session_vec: Vec<Session> = Vec::new();
@@ -582,7 +591,7 @@ pub mod tests {
 
                 let profile = Profile::new(user_id, &nickname, &email, role, None, None, None, None);
                 profile_vec.push(profile);
-                let num_token = if user_id == PROFILE_USER_ID { Some(NUM_TOKEN_USER1) } else { None };
+                let num_token = if user_id == PROFILE_USER_ID { Some(Self::get_num_token(user_id)) } else { None };
                 session_vec.push(Session { user_id, num_token });
             }
             let profile_orm_app = ProfileOrmApp { profile_vec, session_vec };
@@ -594,10 +603,13 @@ pub mod tests {
             let config_prfl = config_prfl::get_test_config();
             (config_jwt, config_prfl)
         }
+        // TODO replace ProflTest::get_token(USER1_ID);
         pub fn token1() -> String {
             let config_jwt = config_jwt::get_test_config();
             let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-            token_coding::encode_token(PROFILE_USER_ID, NUM_TOKEN_USER1, &jwt_secret, config_jwt.jwt_access).unwrap()
+            let num_token1 = Self::get_num_token(PROFILE_USER_ID);
+            // token_coding::encode_token(PROFILE_USER_ID, USER1_NUM_TOKEN, &jwt_secret, config_jwt.jwt_access).unwrap()
+            token_coding::encode_token(PROFILE_USER_ID, num_token1, &jwt_secret, config_jwt.jwt_access).unwrap()
         }
 
         pub fn cfg_config_jwt(config_jwt: config_jwt::ConfigJwt) -> impl FnOnce(&mut web::ServiceConfig) {
