@@ -17,7 +17,7 @@ mod tests {
     };
     use crate::profiles::{
         config_jwt,
-        profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER},
+        profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER, USER1_ID},
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -27,7 +27,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_delete_chat_message_invald_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let last_ch_msg_id = data_cm.0.last().unwrap().id.clone();
@@ -42,7 +42,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}", ch_msg_id_bad))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -59,7 +59,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_non_existent_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_p.0.get(0).unwrap().user_id.clone();
@@ -75,7 +75,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}", id_wrong))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -95,7 +95,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_msg_another_user_existent_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_p.0.get(0).unwrap().user_id.clone();
@@ -110,7 +110,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}", ch_msg.id))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -130,7 +130,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_valid_data() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let ch_msg = data_cm.0.get(0).unwrap().clone();
@@ -144,7 +144,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}", ch_msg.id))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -166,7 +166,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_admin_msg_another_invald_user_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[ADMIN]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_p.0.get(0).unwrap().user_id.clone();
@@ -180,7 +180,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}?userId={}a", ch_msg.id, ch_msg.user_id))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
@@ -196,7 +196,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_admin_msg_another_user_non_existent_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[ADMIN, USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id2 = data_p.0.get(1).unwrap().user_id.clone();
@@ -212,7 +212,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}?userId={}", id_wrong, user_id2))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -232,7 +232,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_chat_message_admin_msg_another_user_valid_data() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[ADMIN]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_p.0.get(0).unwrap().user_id.clone();
@@ -246,7 +246,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/chat_messages/{}?userId={}", ch_msg.id, ch_msg.user_id))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
