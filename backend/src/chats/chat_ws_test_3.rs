@@ -131,7 +131,7 @@ mod tests {
         let data_cm = ChMesTest::chat_messages(2);
         let ch_msg_id = data_cm.0.first().unwrap().id;
 
-        // -- Test: 1. "Delete message user1."  -- 
+        // -- Test: 1. "Delete message user1."  --
         let user1_id = profile_vec.get(0).unwrap().user_id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
         let token1 = ProflTest::get_token(user1_id);
@@ -246,7 +246,7 @@ mod tests {
         let value = to_string(&JoinEWS { 
             join: stream1_id, member: member2.clone(), count: 1, is_owner: Some(false), is_blocked: Some(false) }).unwrap();
         assert_eq!(item, FrameText(Bytes::from(value)));
-        
+
         // Block user3.
         let member3 = profile_vec.get(2).unwrap().nickname.clone();
         #[rustfmt::skip]
