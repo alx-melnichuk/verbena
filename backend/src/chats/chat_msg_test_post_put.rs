@@ -18,7 +18,7 @@ mod tests {
     };
     use crate::profiles::{
         config_jwt,
-        profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER},
+        profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER, USER1_ID},
     };
 
     const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
@@ -30,7 +30,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_post_chat_message_no_form() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         #[rustfmt::skip]
@@ -42,7 +42,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
@@ -55,7 +55,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_chat_message_empty_json() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         #[rustfmt::skip]
@@ -67,7 +67,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -81,7 +81,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_chat_message_msg_min() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
@@ -94,7 +94,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(CreateChatMessageDto { stream_id, msg: MessgTest::message_min() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -109,7 +109,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_chat_message_msg_max() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
@@ -122,7 +122,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(CreateChatMessageDto { stream_id, msg: MessgTest::message_max() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -137,7 +137,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_chat_message_stream_id_wrong() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let stream_id_wrong = data_cm.0.get(0).unwrap().stream_id.clone() - 1;
@@ -151,7 +151,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(CreateChatMessageDto { stream_id: stream_id_wrong, msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -171,7 +171,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_chat_message_valid_data() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
@@ -187,7 +187,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/chat_messages")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(CreateChatMessageDto { stream_id, msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -212,7 +212,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_put_chat_message_no_form() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
@@ -225,7 +225,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_msg_id))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
@@ -238,7 +238,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_invald_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
@@ -253,7 +253,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", ch_msg_id_bad))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -270,7 +270,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_empty_json() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
@@ -283,7 +283,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_msg_id))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -297,7 +297,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_msg_max() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
@@ -311,7 +311,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", last_msg_id))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -326,7 +326,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_non_existent_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let last_msg_id = data_cm.0.last().unwrap().id.clone();
@@ -342,7 +342,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", id_wrong))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -362,7 +362,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_msg_another_user_existent_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_p.0.get(0).unwrap().user_id.clone();
@@ -377,7 +377,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", ch_msg_id))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -397,7 +397,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_valid_data() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let ch_msg = data_cm.0.get(0).unwrap().clone();
@@ -411,7 +411,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}", ch_msg.id))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -437,7 +437,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_admin_msg_another_invald_user_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[ADMIN]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_p.0.get(0).unwrap().user_id.clone();
@@ -452,7 +452,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}?userId={}a", ch_msg.id, ch_msg.user_id))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -469,7 +469,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_admin_msg_another_user_non_existent_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[ADMIN, USER]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id2 = data_p.0.get(1).unwrap().user_id.clone();
@@ -485,7 +485,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}?userId={}", id_wrong, user_id2))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -505,7 +505,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_chat_message_admin_msg_another_user_valid_data() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[ADMIN]);
         let data_cm = ChMesTest::chat_messages(2);
         let user_id1 = data_p.0.get(0).unwrap().user_id.clone();
@@ -520,7 +520,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri(&format!("/api/chat_messages/{}?userId={}", ch_msg.id, ch_msg.user_id))
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(ModifyChatMessageDto { msg: msg.clone() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
