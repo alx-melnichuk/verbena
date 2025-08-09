@@ -22,7 +22,7 @@ mod tests {
     };
     use crate::profiles::{
         config_jwt,
-        profile_orm::tests::{ProfileOrmTest as ProflTest, USER},
+        profile_orm::tests::{ProfileOrmTest as ProflTest, USER, USER1_ID},
     };
 
     const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
@@ -32,7 +32,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_blocked_users_exist_blocked_users() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let user1_id = data_p.0.get(0).unwrap().user_id.clone();
         let data_cm = ChMesTest::chat_messages(1);
@@ -50,7 +50,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token)).to_request();
+            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -71,7 +71,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_blocked_users_not_exist_blocked_users() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let user1_id = data_p.0.get(0).unwrap().user_id.clone();
         let mut data_cm = ChMesTest::chat_messages(1);
@@ -88,7 +88,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token)).to_request();
+            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -102,7 +102,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_post_blocked_user_no_form() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
@@ -114,7 +114,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token)).to_request();
+            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
 
@@ -126,7 +126,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_empty_json() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
@@ -138,7 +138,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -158,7 +158,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_min_blocked_nickname() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = MdMesTest::blocked_nickname_min();
@@ -173,7 +173,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: None, blocked_nickname })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -191,7 +191,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_max_blocked_nickname() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = MdMesTest::blocked_nickname_max();
@@ -206,7 +206,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: None, blocked_nickname })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -224,7 +224,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_invalid_blocked_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_p.0.last().unwrap().user_id + 1;
@@ -237,7 +237,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: Some(user_id), blocked_nickname: None })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -245,7 +245,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_invalid_blocked_nickname() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let nickname = format!("{}a", data_p.0.last().unwrap().nickname);
@@ -258,7 +258,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: None, blocked_nickname: Some(nickname) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -266,7 +266,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_new_blocked_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_p.0.get(0).unwrap().user_id;
@@ -281,7 +281,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: Some(blocked_id), blocked_nickname: None })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -300,7 +300,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_new_blocked_nickname() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_p.0.get(0).unwrap().user_id;
@@ -315,7 +315,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: None, blocked_nickname: Some(blocked_nickname.clone()) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -334,7 +334,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_old_blocked_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_p.0.get(0).unwrap().user_id;
@@ -351,7 +351,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: Some(blocked_id), blocked_nickname: None })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -370,7 +370,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_old_blocked_nickname() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_p.0.get(0).unwrap().user_id;
@@ -387,7 +387,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(CreateBlockedUserDto { blocked_id: None, blocked_nickname: Some(blocked_nickname.clone()) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -409,7 +409,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_delete_blocked_user_no_form() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
@@ -421,7 +421,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token)).to_request();
+            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
 
@@ -432,7 +432,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_empty_json() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
@@ -444,7 +444,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -463,7 +463,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_min_blocked_nickname() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = MdMesTest::blocked_nickname_min();
@@ -478,7 +478,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: None, blocked_nickname })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -496,7 +496,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_max_blocked_nickname() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = MdMesTest::blocked_nickname_max();
@@ -511,7 +511,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: None, blocked_nickname })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -529,7 +529,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_invalid_blocked_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_p.0.last().unwrap().user_id + 1;
@@ -542,7 +542,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: Some(user_id), blocked_nickname: None })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -550,7 +550,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_invalid_blocked_nickname() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let nickname = format!("{}a", data_p.0.last().unwrap().nickname);
@@ -563,7 +563,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: None, blocked_nickname: Some(nickname) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -571,7 +571,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_unblocked_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_p.0.get(1).unwrap().user_id;
@@ -584,7 +584,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: Some(user_id), blocked_nickname: None })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -592,7 +592,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_unblocked_nickname() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let nickname = data_p.0.get(1).unwrap().nickname.clone();
@@ -605,7 +605,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: None, blocked_nickname: Some(nickname) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -613,7 +613,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_old_blocked_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_p.0.get(0).unwrap().user_id;
@@ -630,7 +630,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: Some(blocked_id), blocked_nickname: None })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -649,7 +649,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_old_blocked_nickname() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let user_id = data_p.0.get(0).unwrap().user_id;
@@ -666,7 +666,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri("/api/blocked_users")
-            .insert_header(ChtCtTest::header_auth(&token))
+            .insert_header(ChtCtTest::header_auth(&token1))
             .set_json(DeleteBlockedUserDto { blocked_id: None, blocked_nickname: Some(blocked_nickname.clone()) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
