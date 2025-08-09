@@ -14,7 +14,7 @@ mod tests {
         config_jwt, config_prfl,
         profile_controller::{get_profile_by_id, get_profile_config, get_profile_current, tests as RrfCtTest, uniqueness_check},
         profile_models::{ProfileConfigDto, ProfileDto},
-        profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER},
+        profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER, USER1_ID},
     };
     use crate::users::user_registr_orm::tests::UserRegistrOrmTest as RegisTest;
 
@@ -24,7 +24,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_profile_by_id_invalid_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[ADMIN]);
         let user_id = data_p.0.get(0).unwrap().user_id;
         let user_id_bad = format!("{}a", user_id);
@@ -36,7 +36,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", user_id_bad))
-            .insert_header(RrfCtTest::header_auth(&token)).to_request();
+            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
 
@@ -51,7 +51,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_profile_by_id_valid_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[ADMIN, USER]);
         let profile2_dto = ProfileDto::from(data_p.0.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
@@ -63,7 +63,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", &profile2_id))
-            .insert_header(RrfCtTest::header_auth(&token)).to_request();
+            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -77,7 +77,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_profile_by_id_non_existent_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[ADMIN, USER]);
         let profile2_dto = ProfileDto::from(data_p.0.get(1).unwrap().clone());
         let profile2_id = profile2_dto.id;
@@ -89,7 +89,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&format!("/api/profiles/{}", profile2_id + 1))
-            .insert_header(RrfCtTest::header_auth(&token)).to_request();
+            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
@@ -98,7 +98,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_profile_config_data() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let cfg_prfl = config_prfl::get_test_config();
         #[rustfmt::skip]
@@ -118,7 +118,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_config")
-            .insert_header(RrfCtTest::header_auth(&token)).to_request();
+            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -134,7 +134,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_profile_current_valid_token() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let profile1_dto = ProfileDto::from(data_p.0.get(0).unwrap().clone());
         #[rustfmt::skip]
@@ -145,7 +145,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri("/api/profiles_current")
-            .insert_header(RrfCtTest::header_auth(&token)).to_request();
+            .insert_header(RrfCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
