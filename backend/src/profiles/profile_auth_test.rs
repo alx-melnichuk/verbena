@@ -16,7 +16,7 @@ mod tests {
         config_jwt,
         profile_auth_controller::{login, logout, tests as AthCtTest, update_token},
         profile_models::{self, LoginProfileDto, LoginProfileResponseDto, ProfileDto, ProfileTest, TokenDto},
-        profile_orm::tests::{ProfileOrmTest as ProflTest, PROFILE_USER_ID_NO_SESSION, USER, USER1_ID},
+        profile_orm::tests::{ProfileOrmTest as ProflTest, USER100_ID_NO_SESSION, USER, USER1_ID},
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -438,7 +438,7 @@ mod tests {
         // Change ID, reset connection with session.
         let nickname = profile1.nickname.clone();
         let password = "passwdR2B2";
-        let profile1_id = PROFILE_USER_ID_NO_SESSION;
+        let profile1_id = USER100_ID_NO_SESSION;
         profile1.user_id = profile1_id;
         profile1.password = hash_tools::encode_hash(password).unwrap(); // hashed
         #[rustfmt::skip]
