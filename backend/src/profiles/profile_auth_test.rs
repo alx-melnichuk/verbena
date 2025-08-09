@@ -16,7 +16,7 @@ mod tests {
         config_jwt,
         profile_auth_controller::{login, logout, tests as AthCtTest, update_token},
         profile_models::{self, LoginProfileDto, LoginProfileResponseDto, ProfileDto, ProfileTest, TokenDto},
-        profile_orm::tests::{ProfileOrmTest as ProflTest, PROFILE_USER_ID_NO_SESSION, USER},
+        profile_orm::tests::{ProfileOrmTest as ProflTest, PROFILE_USER_ID_NO_SESSION, USER, USER1_ID},
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -512,7 +512,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_logout_valid_token() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -522,7 +522,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/logout")
-            .insert_header(AthCtTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token1))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -546,7 +546,7 @@ mod tests {
     // ** update_token **
     #[actix_web::test]
     async fn test_update_token_no_data() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -556,7 +556,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(AthCtTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token1))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
@@ -569,7 +569,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_empty_json_object() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -579,7 +579,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(AthCtTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token1))
             .set_json(json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -593,7 +593,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_invalid_dto_token_empty() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -603,7 +603,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(AthCtTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token1))
             .set_json(TokenDto { token: "".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -617,7 +617,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_invalid_dto_token_invalid() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -627,7 +627,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(AthCtTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token1))
             .set_json(TokenDto { token: "invalid_token".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -641,7 +641,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_unacceptable_token_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let profile1_id = data_p.0.get(0).unwrap().user_id;
         let config_jwt = config_jwt::get_test_config();
@@ -657,7 +657,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(AthCtTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token1))
             .set_json(TokenDto { token: token_bad })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -671,7 +671,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_unacceptable_token_num() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let profile1_id = data_p.0.get(0).unwrap().user_id;
         let config_jwt = config_jwt::get_test_config();
@@ -686,7 +686,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(AthCtTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token1))
             .set_json(TokenDto { token: token_bad })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -700,7 +700,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_update_token_valid_dto_token() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let profile1_id = data_p.0.get(0).unwrap().user_id;
         let config_jwt = config_jwt::get_test_config();
@@ -716,7 +716,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/token")
-            .insert_header(AthCtTest::header_auth(&token))
+            .insert_header(AthCtTest::header_auth(&token1))
             .set_json(TokenDto { token: token_refresh })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
