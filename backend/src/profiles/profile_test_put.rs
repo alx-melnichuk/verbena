@@ -22,7 +22,7 @@ pub mod tests {
         config_jwt, config_prfl,
         profile_controller::{put_profile, put_profile_new_password, tests as RrfCtTest, ALIAS_AVATAR_FILES_DIR},
         profile_models::{self, ModifyProfileDto, NewPasswordProfileDto, ProfileDto, ProfileTest},
-        profile_orm::tests::{ProfileOrmTest as ProflTest, USER},
+        profile_orm::tests::{ProfileOrmTest as ProflTest, USER, USER1_ID},
     };
     use crate::users::user_registr_orm::tests::UserRegistrOrmTest as RegisTest;
 
@@ -34,7 +34,7 @@ pub mod tests {
 
     #[actix_web::test]
     async fn test_put_profile_no_form() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -46,7 +46,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -60,7 +60,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_empty_form() {
         let (header, body) = MultiPartFormDataBuilder::new().build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -72,7 +72,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -91,7 +91,7 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile1", "image/png", name1_file)
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -103,7 +103,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -125,7 +125,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_nickname_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", ProfileTest::nickname_min()).build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -137,7 +137,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -152,7 +152,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_nickname_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", ProfileTest::nickname_max()).build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -164,7 +164,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -181,7 +181,7 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("nickname", ProfileTest::nickname_wrong())
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -193,7 +193,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -207,7 +207,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_email_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileTest::email_min()).build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -219,7 +219,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -234,7 +234,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_email_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileTest::email_max()).build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -246,7 +246,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -261,7 +261,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_email_wrong() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("email", ProfileTest::email_wrong()).build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -273,7 +273,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -288,7 +288,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_role_wrong() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("role", ProfileTest::role_wrong()).build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -300,7 +300,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -315,7 +315,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_descript_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileTest::descript_min()).build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -327,7 +327,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -342,7 +342,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_descript_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", ProfileTest::descript_max()).build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -354,7 +354,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -369,7 +369,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_theme_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("theme", ProfileTest::theme_min()).build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -381,7 +381,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -396,7 +396,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_theme_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("theme", ProfileTest::theme_max()).build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -408,7 +408,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -423,7 +423,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_locale_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("locale", ProfileTest::locale_min()).build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -435,7 +435,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -450,7 +450,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_locale_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("locale", ProfileTest::locale_max()).build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -462,7 +462,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -477,7 +477,7 @@ pub mod tests {
 
     #[actix_web::test]
     async fn test_put_profile_if_nickname_exists_in_users() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let nickname1 = data_p.0.get(0).unwrap().nickname.clone();
         let (header, body) = MultiPartFormDataBuilder::new().with_text("nickname", nickname1).build();
@@ -491,7 +491,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -505,7 +505,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_if_email_exists_in_users() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let email1 = data_p.0.get(0).unwrap().email.clone();
         let (header, body) = MultiPartFormDataBuilder::new().with_text("email", email1).build();
@@ -519,7 +519,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -533,7 +533,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_if_nickname_exists_in_registr() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let registr = RegisTest::registrs(true);
         let nickname1 = registr.get(0).unwrap().nickname.clone();
@@ -548,7 +548,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -562,7 +562,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_if_email_exists_in_registr() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let registr = RegisTest::registrs(true);
         let email1 = registr.get(0).unwrap().email.clone();
@@ -577,7 +577,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -597,7 +597,7 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let mut config_prfl = config_prfl::get_test_config();
         let prfl_avatar_max_size = 160;
@@ -612,7 +612,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -637,7 +637,7 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/bmp", name1_file)
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -649,7 +649,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -667,7 +667,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_valid_data_without_file() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
 
         let profile = data_p.0.get(0).unwrap().clone();
@@ -695,7 +695,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -728,7 +728,7 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let profile1_id = data_p.0.get(0).unwrap().user_id;
         let prfl_avatar_files_dir = config_prfl::get_test_config().prfl_avatar_files_dir.clone();
@@ -742,7 +742,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -782,7 +782,7 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
 
         let data_p = ProflTest::profiles(&[USER]);
         let profile1_id = data_p.0.get(0).unwrap().user_id;
@@ -802,7 +802,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -852,7 +852,7 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let mut data_p = ProflTest::profiles(&[USER]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias.clone());
@@ -867,7 +867,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -912,7 +912,7 @@ pub mod tests {
         let path_name0_alias = format!("{}/{}", ALIAS_AVATAR_FILES_DIR, name0_file);
 
         let (header, body) = MultiPartFormDataBuilder::new().with_text("descript", "descript1".to_string()).build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let mut data_p = ProflTest::profiles(&[USER]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias.clone());
@@ -926,7 +926,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -959,7 +959,7 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let mut data_p = ProflTest::profiles(&[USER]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.avatar = Some(path_name0_alias.clone());
@@ -973,7 +973,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -997,7 +997,7 @@ pub mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "avatarfile", "image/png", name1_file)
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -1009,7 +1009,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         let _ = fs::remove_file(&path_name1_file);
@@ -1025,7 +1025,7 @@ pub mod tests {
 
     #[actix_web::test]
     async fn test_put_profile_new_password_no_data() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -1035,7 +1035,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST); // 400
@@ -1049,7 +1049,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_empty_json_object() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -1059,7 +1059,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .set_json(serde_json::json!({}))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -1074,7 +1074,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_empty() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -1084,7 +1084,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: "".to_string(), new_password: "passwdJ3S9".to_string()
             })
@@ -1101,7 +1101,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_min() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -1111,7 +1111,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: ProfileTest::password_min(), new_password: "passwdJ3S9".to_string()
             })
@@ -1128,7 +1128,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_max() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -1138,7 +1138,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: ProfileTest::password_max(), new_password: "passwdJ3S9".to_string()
             })
@@ -1155,7 +1155,7 @@ pub mod tests {
     }
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_password_wrong() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -1165,7 +1165,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: ProfileTest::password_wrong(), new_password: "passwdJ3S9".to_string()
             })
@@ -1183,7 +1183,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_empty() {
         let old_password = "passwdP1C1".to_string();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let mut data_p = ProflTest::profiles(&[USER]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
@@ -1195,7 +1195,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: old_password, new_password: "".to_string()
             })
@@ -1213,7 +1213,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_min() {
         let old_password = "passwdP1C1".to_string();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let mut data_p = ProflTest::profiles(&[USER]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
@@ -1225,7 +1225,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: old_password, new_password: ProfileTest::password_min()
             })
@@ -1243,7 +1243,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_max() {
         let old_password = "passwdP1C1".to_string();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let mut data_p = ProflTest::profiles(&[USER]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
@@ -1255,7 +1255,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: old_password, new_password: ProfileTest::password_max()
             })
@@ -1273,7 +1273,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_wrong() {
         let old_password = "passwdP1C1".to_string();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let mut data_p = ProflTest::profiles(&[USER]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
@@ -1285,7 +1285,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: old_password, new_password: ProfileTest::password_wrong()
             })
@@ -1303,7 +1303,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_dto_new_password_equal_old_value() {
         let old_password = "passwdP1C1".to_string();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let mut data_p = ProflTest::profiles(&[USER]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
@@ -1315,7 +1315,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: old_password.clone(), new_password: old_password
             })
@@ -1333,7 +1333,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_hash_password() {
         let old_password = "passwdP1C1".to_string();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let mut data_p = ProflTest::profiles(&[USER]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.password = "invali_hash_password".to_string();
@@ -1345,7 +1345,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: old_password.to_string(), new_password: "passwdJ3S9".to_string()
             })
@@ -1363,7 +1363,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_invalid_password() {
         let old_password = "passwdP1C1".to_string();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let mut data_p = ProflTest::profiles(&[USER]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
@@ -1375,7 +1375,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: format!("{}a", old_password), new_password: "passwdJ3S9".to_string()
             })
@@ -1393,7 +1393,7 @@ pub mod tests {
     #[actix_web::test]
     async fn test_put_profile_new_password_valid_data() {
         let old_password = "passwdP1C1".to_string();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let mut data_p = ProflTest::profiles(&[USER]);
         let profile1 = data_p.0.get_mut(0).unwrap();
         profile1.password = hash_tools::encode_hash(old_password.clone()).unwrap(); // hashed
@@ -1406,7 +1406,7 @@ pub mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::put().uri("/api/profiles_new_password")
-            .insert_header(RrfCtTest::header_auth(&token))
+            .insert_header(RrfCtTest::header_auth(&token1))
             .set_json(NewPasswordProfileDto {
                 password: old_password.to_string(), new_password: "passwdJ3S9".to_string()
             })
