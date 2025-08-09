@@ -1076,9 +1076,4 @@ pub mod tests {
             }
         }
     }
-
-    pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
-        let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
-        (http::header::AUTHORIZATION, header_value)
-    }
 }
