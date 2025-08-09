@@ -18,7 +18,7 @@ mod tests {
             self, ClearForExpiredResponseDto, ProfileDto, ProfileTest, RecoveryDataDto, RecoveryProfileDto, RecoveryProfileResponseDto,
             RegistrProfileDto, RegistrProfileResponseDto,
         },
-        profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER},
+        profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER, USER1_ID},
         profile_registr_controller::{
             clear_for_expired, confirm_recovery, confirm_registration, recovery, registration, tests as RegCtTest, MSG_RECOVERY_NOT_FOUND,
             MSG_REGISTR_NOT_FOUND, MSG_USER_NOT_FOUND,
@@ -1337,7 +1337,7 @@ mod tests {
     // ** clear_for_expired **
     #[actix_web::test]
     async fn test_clear_for_expired_user_recovery() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[ADMIN]);
 
         let profile1 = data_p.0.get(0).unwrap().clone();
@@ -1364,7 +1364,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get().uri(&"/api/clear_for_expired")
-            .insert_header(RegCtTest::header_auth(&token))
+            .insert_header(RegCtTest::header_auth(&token1))
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
