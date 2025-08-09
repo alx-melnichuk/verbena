@@ -601,10 +601,9 @@ pub mod impls {
 pub mod tests {
     use std::cmp::Ordering;
 
-    use actix_web::{http, web};
+    use actix_web::web;
     use chrono::{Duration, Timelike};
     use vrb_dbase::db_enums::StreamState;
-    use vrb_tools::token_data::BEARER;
 
     use crate::{
         profiles::profile_orm::tests::ProfileOrmTest,
