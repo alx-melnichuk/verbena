@@ -16,7 +16,7 @@ mod tests {
 
     use crate::profiles::{
         config_jwt,
-        profile_orm::tests::{ProfileOrmTest as ProflTest, USER, USER1},
+        profile_orm::tests::{ProfileOrmTest as ProflTest, USER, USER1, USER1_ID},
     };
     use crate::streams::{
         config_strm,
@@ -34,7 +34,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_post_stream_no_form() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -46,7 +46,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -62,7 +62,7 @@ mod tests {
         let form_builder = MultiPartFormDataBuilder::new();
         let (header, body) = form_builder.build();
 
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -74,7 +74,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -92,7 +92,7 @@ mod tests {
             .with_text("title", "")
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -104,7 +104,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -123,7 +123,7 @@ mod tests {
             .with_text("title", StreamModelsTest::title_min())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -135,7 +135,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -154,7 +154,7 @@ mod tests {
             .with_text("title", StreamModelsTest::title_max())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -166,7 +166,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -186,7 +186,7 @@ mod tests {
             .with_text("descript", StreamModelsTest::descript_min())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -198,7 +198,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -218,7 +218,7 @@ mod tests {
             .with_text("descript", StreamModelsTest::descript_max())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -230,7 +230,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -251,7 +251,7 @@ mod tests {
             .with_text("starttime", starttime_s)
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -263,7 +263,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -283,7 +283,7 @@ mod tests {
             .with_text("source", StreamModelsTest::source_min())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -295,7 +295,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::EXPECTATION_FAILED); // 417
@@ -314,7 +314,7 @@ mod tests {
             .with_text("source", StreamModelsTest::source_max())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -326,7 +326,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -346,7 +346,7 @@ mod tests {
             .with_text("title", StreamModelsTest::title_enough())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -357,7 +357,7 @@ mod tests {
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
         #[rustfmt::skip]
-        let req = test::TestRequest::post().uri("/api/streams").insert_header(StrCtTest::header_auth(&token))
+        let req = test::TestRequest::post().uri("/api/streams").insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -377,7 +377,7 @@ mod tests {
             .with_text("title", StreamModelsTest::title_enough())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -389,7 +389,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -409,7 +409,7 @@ mod tests {
             .with_text("title", StreamModelsTest::title_enough())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -421,7 +421,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -441,7 +441,7 @@ mod tests {
             .with_text("title", StreamModelsTest::title_enough())
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -453,7 +453,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -471,7 +471,7 @@ mod tests {
             .with_text("title", StreamModelsTest::title_enough())
             .with_text("tags", "aaa")
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -483,7 +483,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -508,7 +508,7 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let strm_logo_max_size = 160;
         let mut config_strm = config_strm::get_test_config();
@@ -523,7 +523,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -550,7 +550,7 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .with_file(path_name1_file.clone(), "logofile", "image/bmp", name1_file)
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
@@ -562,7 +562,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -595,7 +595,7 @@ mod tests {
             .with_text("source", &source_s)
             .with_text("tags", &tags_s)
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let profile1_id = data_p.0.get(0).unwrap().user_id.clone();
@@ -610,7 +610,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -647,7 +647,7 @@ mod tests {
             .with_text("tags", &tags_s)
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let profile1_id = data_p.0.get(0).unwrap().user_id.clone();
@@ -662,7 +662,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -718,7 +718,7 @@ mod tests {
             .with_text("tags", &tags_s)
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let profile1_id = data_p.0.get(0).unwrap().user_id.clone();
@@ -733,7 +733,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -767,7 +767,7 @@ mod tests {
             .with_text("tags", &tags_s)
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let profile1_id = data_p.0.get(0).unwrap().user_id.clone();
@@ -788,7 +788,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::post().uri("/api/streams")
-            .insert_header(StrCtTest::header_auth(&token))
+            .insert_header(StrCtTest::header_auth(&token1))
             .insert_header(header).set_payload(body).to_request();
 
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
@@ -829,7 +829,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_delete_stream_invalid_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id_bad = format!("{}a", streams.get(0).unwrap().id);
@@ -843,7 +843,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream_id_bad))
-            .insert_header(StrCtTest::header_auth(&token)).to_request();
+            .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::RANGE_NOT_SATISFIABLE); // 416
 
@@ -858,7 +858,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_stream_non_existent_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream1_id = streams.get(0).unwrap().id.clone();
@@ -872,13 +872,13 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream1_id + 1))
-            .insert_header(StrCtTest::header_auth(&token)).to_request();
+            .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NO_CONTENT); // 204
     }
     #[actix_web::test]
     async fn test_delete_stream_existent_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream1 = streams.get(0).unwrap().clone();
@@ -892,7 +892,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream1.id))
-            .insert_header(StrCtTest::header_auth(&token)).to_request();
+            .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -914,7 +914,7 @@ mod tests {
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_alias = format!("{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let mut streams = Strm_Test::streams(&[USER1]);
         let stream1 = streams.get_mut(0).unwrap();
@@ -930,7 +930,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream2.id))
-            .insert_header(StrCtTest::header_auth(&token)).to_request();
+            .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
@@ -956,7 +956,7 @@ mod tests {
         png_files::save_file_png(&(path_name0_file.clone()), 1).unwrap();
         let path_name0_logo = format!("/1{}/{}", ALIAS_LOGO_FILES_DIR, name0_file);
 
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let mut streams = Strm_Test::streams(&[USER1]);
         let stream1 = streams.get_mut(0).unwrap();
@@ -972,7 +972,7 @@ mod tests {
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::delete().uri(&format!("/api/streams/{}", stream2.id))
-            .insert_header(StrCtTest::header_auth(&token)).to_request();
+            .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
 
         let is_exists_img_old = path::Path::new(&path_name0_file).exists();
