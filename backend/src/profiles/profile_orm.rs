@@ -291,14 +291,12 @@ pub mod impls {
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
 
-    use actix_web::{http, web};
+    use actix_web::{web};
     use chrono::Utc;
     use vrb_dbase::db_enums::UserRole;
-    use vrb_tools::{consts, token_coding, token_data::BEARER};
+    use vrb_tools::{consts, token_coding};
 
-    use crate::profiles::{config_jwt, config_prfl};
-
-    use super::*;
+    use crate::profiles::{config_jwt, config_prfl, profile_models::{self, Profile, Session}, profile_orm::ProfileOrm};
 
     pub const ADMIN: u8 = 0;
     pub const USER: u8 = 1;
@@ -378,6 +376,11 @@ pub mod tests {
         pub fn new_session(user_id: i32, num_token: Option<i32>) -> Session {
             Session { user_id, num_token }
         }
+        #[rustfmt::skip]
+        pub fn stream_logo_alias(user_id: i32) -> Option<String> {
+            let idx = user_id - PROFILE_USER_ID;
+            if -1 < idx && idx < 4 { Some(format!("{}/file_logo_{}.png", consts::ALIAS_LOGO_FILES_DIR, idx)) } else { None }
+        }
     }
 
     impl ProfileOrm for ProfileOrmApp {
@@ -436,7 +439,7 @@ pub mod tests {
         }
 
         /// Add a new entry (profile, user).
-        fn create_profile_user(&self, create_profile: CreateProfile) -> Result<Profile, String> {
+        fn create_profile_user(&self, create_profile: profile_models::CreateProfile) -> Result<Profile, String> {
             let nickname = create_profile.nickname.to_lowercase();
             let email = create_profile.email.to_lowercase();
 
@@ -463,7 +466,7 @@ pub mod tests {
         }
 
         /// Modify an entity (profile, user).
-        fn modify_profile(&self, user_id: i32, modify_profile: ModifyProfile) -> Result<Option<Profile>, String> {
+        fn modify_profile(&self, user_id: i32, modify_profile: profile_models::ModifyProfile) -> Result<Option<Profile>, String> {
             let opt_profile = self.profile_vec.iter().find(|profile| (*profile).user_id == user_id);
             let opt_profile3: Option<Profile> = if let Some(profile) = opt_profile {
                 let profile2 = Profile {
@@ -520,7 +523,7 @@ pub mod tests {
         /// Filter for the list of stream logos by user ID.
         fn filter_stream_logos(&self, user_id: i32) -> Result<Vec<String>, String> {
             let mut result: Vec<String> = vec![];
-            let opt_stream_logo = ProfileOrmTest::stream_logo_alias(user_id);
+            let opt_stream_logo = Self::stream_logo_alias(user_id);
             if opt_stream_logo.is_some() {
                 result.push(opt_stream_logo.unwrap().clone());
             }
@@ -532,40 +535,17 @@ pub mod tests {
 
     impl ProfileOrmTest {
         pub fn user_ids() -> Vec<i32> {
-            vec![PROFILE_USER_ID + 0, PROFILE_USER_ID + 1, PROFILE_USER_ID + 2, PROFILE_USER_ID + 3]
+            vec![USER1_ID, USER2_ID, USER3_ID, USER4_ID]
         }
-        pub fn user_names() -> Vec<String> {
-            vec![
-                "oliver_taylor".to_string(),
-                "robert_brown".to_string(),
-                "mary_williams".to_string(),
-                "ava_wilson".to_string(),
-            ]
-        }
-        // =v ?
-        pub fn stream_ids() -> Vec<i32> {
-            vec![
-                1, // Owner user idx 0 (live: true)  1100 oliver_taylor
-                2, // Owner user idx 1 (live: true)  1101 robert_brown
-                3, // Owner user idx 2 (live: false) 1102 mary_williams
-                4, // Owner user idx 3  blocked      1103 ava_wilson
-            ]
-        }
-        // =v ?
-        #[rustfmt::skip]
-        pub fn stream_logo_alias(user_id: i32) -> Option<String> {
-            let idx = user_id - PROFILE_USER_ID;
-            if -1 < idx && idx < 4 { Some(format!("{}/file_logo_{}.png", consts::ALIAS_LOGO_FILES_DIR, idx)) } else { None }
-        }
-        // =v ?
-        #[rustfmt::skip]
-        pub fn stream_logo_path(user_id: i32) -> Option<String> {
-            let idx = user_id - PROFILE_USER_ID;
-            if -1 < idx && idx < 4 { Some(format!("{}/file_logo_{}.png", consts::LOGO_FILES_DIR, idx)) } else { None }
-        }
-        pub fn header_auth(token: &str) -> (http::header::HeaderName, http::header::HeaderValue) {
-            let header_value = http::header::HeaderValue::from_str(&format!("{}{}", BEARER, token)).unwrap();
-            (http::header::AUTHORIZATION, header_value)
+        pub fn get_user_name(user_id: i32) -> String {
+            match user_id {
+                USER1_ID => USER1_NAME,
+                USER2_ID => USER2_NAME,
+                USER3_ID => USER3_NAME,
+                USER4_ID => USER4_NAME,
+                _ => "",
+            }
+            .to_string()
         }
         pub fn get_num_token(user_id: i32) -> i32 {
             40000 + user_id
@@ -580,11 +560,10 @@ pub mod tests {
             let mut profile_vec: Vec<Profile> = Vec::new();
             let mut session_vec: Vec<Session> = Vec::new();
             let user_ids = ProfileOrmTest::user_ids();
-            let user_names = ProfileOrmTest::user_names();
             let len = if roles.len() > user_ids.len() { user_ids.len() } else { roles.len() };
             for index in 0..len {
                 let user_id = user_ids.get(index).unwrap().clone();
-                let nickname = user_names.get(index).unwrap().clone().to_lowercase();
+                let nickname = Self::get_user_name(user_id).clone().to_lowercase();
                 let email = format!("{}@gmail.com", nickname);
                 #[rustfmt::skip]
                 let role = if roles.get(index).unwrap().clone() == ADMIN { UserRole::Admin } else { UserRole::User };
@@ -598,20 +577,6 @@ pub mod tests {
 
             (profile_orm_app.profile_vec, profile_orm_app.session_vec)
         }
-        pub fn cfg() -> (config_jwt::ConfigJwt, config_prfl::ConfigPrfl) {
-            let config_jwt = config_jwt::get_test_config();
-            let config_prfl = config_prfl::get_test_config();
-            (config_jwt, config_prfl)
-        }
-        // TODO replace ProflTest::get_token(USER1_ID);
-        pub fn token1() -> String {
-            let config_jwt = config_jwt::get_test_config();
-            let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-            let num_token1 = Self::get_num_token(PROFILE_USER_ID);
-            // token_coding::encode_token(PROFILE_USER_ID, USER1_NUM_TOKEN, &jwt_secret, config_jwt.jwt_access).unwrap()
-            token_coding::encode_token(PROFILE_USER_ID, num_token1, &jwt_secret, config_jwt.jwt_access).unwrap()
-        }
-
         pub fn cfg_config_jwt(config_jwt: config_jwt::ConfigJwt) -> impl FnOnce(&mut web::ServiceConfig) {
             move |config: &mut web::ServiceConfig| {
                 let data_config_jwt = web::Data::new(config_jwt);
@@ -629,23 +594,6 @@ pub mod tests {
                 let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_p.0, &data_p.1));
 
                 config.app_data(web::Data::clone(&data_profile_orm));
-            }
-        }
-        // =v ?
-        pub fn config(
-            cfg_p: (config_jwt::ConfigJwt, config_prfl::ConfigPrfl), // configuration
-            data_p: (Vec<Profile>, Vec<Session>),                    // data vectors
-        ) -> impl FnOnce(&mut web::ServiceConfig) {
-            move |config: &mut web::ServiceConfig| {
-                let data_config_jwt = web::Data::new(cfg_p.0);
-                let data_config_prfl = web::Data::new(cfg_p.1);
-
-                let data_profile_orm = web::Data::new(ProfileOrmApp::create(&data_p.0, &data_p.1));
-
-                config
-                    .app_data(web::Data::clone(&data_config_jwt))
-                    .app_data(web::Data::clone(&data_config_prfl))
-                    .app_data(web::Data::clone(&data_profile_orm));
             }
         }
     }
