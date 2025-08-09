@@ -10,7 +10,7 @@ pub mod tests {
     };
     use serde_json;
     use vrb_common::api_error::{code_to_str, ApiError};
-    use vrb_tools::{err, png_files};
+    use vrb_tools::{consts, err, png_files};
 
     use crate::profiles::{
         config_jwt, config_prfl,
@@ -20,6 +20,12 @@ pub mod tests {
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
+
+    #[rustfmt::skip]
+    fn stream_logo_path(user_id: i32) -> Option<String> {
+        let idx = user_id - USER1_ID;
+        if -1 < idx && idx < 4 { Some(format!("{}/file_logo_{}.png", consts::LOGO_FILES_DIR, idx)) } else { None }
+    }
 
     // ** delete_profile **
 
@@ -185,7 +191,7 @@ pub mod tests {
         let profile1 = data_p.0.get_mut(0).unwrap();
         let profile1_id = profile1.user_id;
         let profile_dto = ProfileDto::from(profile1.clone());
-        let path_logo0_file = ProflTest::stream_logo_path(profile1_id).unwrap();
+        let path_logo0_file = stream_logo_path(profile1_id).unwrap();
         // Create a logo file for this user's stream.
         png_files::save_file_png(&(path_logo0_file.clone()), 1).unwrap();
         #[rustfmt::skip]
@@ -332,7 +338,7 @@ pub mod tests {
         let profile1 = data_p.0.get_mut(0).unwrap();
         let profile1_id = profile1.user_id;
         let profile_dto = ProfileDto::from(profile1.clone());
-        let path_logo0_file = ProflTest::stream_logo_path(profile1_id).unwrap();
+        let path_logo0_file = stream_logo_path(profile1_id).unwrap();
         // Create a logo file for this user's stream.
         png_files::save_file_png(&(path_logo0_file.clone()), 1).unwrap();
         #[rustfmt::skip]
