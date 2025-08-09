@@ -16,7 +16,7 @@ mod tests {
     };
     use crate::profiles::{
         config_jwt,
-        profile_orm::tests::{ProfileOrmTest as ProflTest, USER},
+        profile_orm::tests::{ProfileOrmTest as ProflTest, USER, USER1_ID},
     };
 
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
@@ -25,7 +25,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
@@ -42,7 +42,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/chat_messages?streamId={}", stream_id))
-            .insert_header(ChtCtTest::header_auth(&token)).to_request();
+            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -57,7 +57,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_sort_des() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
@@ -74,7 +74,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/chat_messages?streamId={}&isSortDes=true", stream_id))
-            .insert_header(ChtCtTest::header_auth(&token)).to_request();
+            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -90,7 +90,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_part1() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
@@ -109,7 +109,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/chat_messages?streamId={}&limit={}", stream_id, limit))
-            .insert_header(ChtCtTest::header_auth(&token)).to_request();
+            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -125,7 +125,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_part2() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
@@ -146,7 +146,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/chat_messages?streamId={}&minDate={}&limit={}", stream_id, min_date_str, limit))
-            .insert_header(ChtCtTest::header_auth(&token)).to_request();
+            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -162,7 +162,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_sort_des_part1() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
@@ -181,7 +181,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/chat_messages?streamId={}&isSortDes=true&limit={}", stream_id, limit))
-            .insert_header(ChtCtTest::header_auth(&token)).to_request();
+            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
@@ -197,7 +197,7 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_chat_message_search_by_str_id_sort_des_part2() {
-        let token = ProflTest::token1();
+        let token1 = ProflTest::get_token(USER1_ID);
         let data_p = ProflTest::profiles(&[USER]);
         let data_cm = ChMesTest::chat_messages(6);
         let stream_id = data_cm.0.get(0).unwrap().stream_id.clone();
@@ -218,7 +218,7 @@ mod tests {
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/chat_messages?streamId={}&isSortDes=true&maxDate={}&limit={}", stream_id, max_date_str, limit))
-            .insert_header(ChtCtTest::header_auth(&token)).to_request();
+            .insert_header(ChtCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
 
