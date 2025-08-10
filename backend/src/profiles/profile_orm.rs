@@ -291,12 +291,16 @@ pub mod impls {
 #[cfg(all(test, feature = "mockdata"))]
 pub mod tests {
 
-    use actix_web::{web};
+    use actix_web::web;
     use chrono::Utc;
     use vrb_dbase::db_enums::UserRole;
     use vrb_tools::{consts, token_coding};
 
-    use crate::profiles::{config_jwt, config_prfl, profile_models::{self, Profile, Session}, profile_orm::ProfileOrm};
+    use crate::profiles::{
+        config_jwt, config_prfl,
+        profile_models::{self, Profile, Session},
+        profile_orm::ProfileOrm,
+    };
 
     pub const ADMIN: u8 = 0;
     pub const USER: u8 = 1;
@@ -305,7 +309,7 @@ pub mod tests {
     pub const USER2: usize = 1;
     pub const USER3: usize = 2;
     pub const USER4: usize = 3;
-    
+
     pub const USER1_ID: i32 = 1100;
     pub const USER2_ID: i32 = 1101;
     pub const USER3_ID: i32 = 1102;
@@ -317,9 +321,7 @@ pub mod tests {
     pub const USER3_NAME: &str = "mary_williams";
     pub const USER4_NAME: &str = "ava_wilson";
 
-    pub const PROFILE_USER_ID: i32 = 1100;
     pub const USER1_NUM_TOKEN: i32 = 20000 + USER1_ID; //  1234;
-    pub const PROFILE_USER_ID_NO_SESSION: i32 = 1199;
 
     #[derive(Debug, Clone)]
     pub struct ProfileOrmApp {
@@ -335,14 +337,16 @@ pub mod tests {
                 session_vec: Vec::new(),
             }
         }
-        /// Create a new instance with the specified profile list.
+        /// Create a new instance with the specified profile list. 
+        /// Sessions are taken from "sessions", if it is empty, they are created automatically.
         pub fn create(profiles: &[Profile], sessions: &[Session]) -> Self {
             let mut profile_vec: Vec<Profile> = Vec::new();
             let mut session_vec: Vec<Session> = Vec::new();
+            let mut sessions2: Vec<Session> = sessions.to_vec();
             for (idx, profile) in profiles.iter().enumerate() {
-                let is_no_session = profile.user_id == PROFILE_USER_ID_NO_SESSION;
+                let is_no_session = profile.user_id == USER100_ID_NO_SESSION;
                 let delta: i32 = idx.try_into().unwrap();
-                let user_id = if is_no_session { profile.user_id } else { PROFILE_USER_ID + delta };
+                let user_id = if is_no_session { profile.user_id } else { USER1_ID + delta };
                 let mut profile2 = Profile::new(
                     user_id,
                     &profile.nickname.to_lowercase(),
@@ -358,14 +362,22 @@ pub mod tests {
                 profile2.updated_at = profile.updated_at;
                 profile_vec.push(profile2);
 
-                let opt_session = sessions.iter().find(|v| (*v).user_id == profile.user_id);
-                if let Some(session) = opt_session {
-                    #[rustfmt::skip]
-                    session_vec.push(Session { user_id, num_token: session.num_token });
-                } else if !is_no_session {
-                    session_vec.push(Session { user_id, num_token: None });
+                if sessions2.len() > 0 {
+                    let opt_session = sessions2.iter_mut().find(|v| (*v).user_id == profile.user_id);
+                    if let Some(session) = opt_session {
+                        session_vec.push(Session::new(user_id, session.num_token));
+                        session.user_id = 0;
+                    }
+                } else {
+                    session_vec.push(Session::new(user_id, None));
                 }
             }
+            for session in sessions2.iter() {
+                if USER1_ID <= session.user_id && session.user_id != USER100_ID_NO_SESSION {
+                    session_vec.push(Session::new(session.user_id, session.num_token));
+                }
+            }
+
             ProfileOrmApp { profile_vec, session_vec }
         }
         /// Create a new instance of the Profile entity.
@@ -378,7 +390,7 @@ pub mod tests {
         }
         #[rustfmt::skip]
         pub fn stream_logo_alias(user_id: i32) -> Option<String> {
-            let idx = user_id - PROFILE_USER_ID;
+            let idx = user_id - USER1_ID;
             if -1 < idx && idx < 4 { Some(format!("{}/file_logo_{}.png", consts::ALIAS_LOGO_FILES_DIR, idx)) } else { None }
         }
     }
@@ -450,7 +462,7 @@ pub mod tests {
             }
 
             let idx: i32 = self.profile_vec.len().try_into().unwrap();
-            let user_id: i32 = PROFILE_USER_ID + idx;
+            let user_id: i32 = USER1_ID + idx;
 
             let profile_user = Profile::new(
                 user_id,
@@ -570,7 +582,7 @@ pub mod tests {
 
                 let profile = Profile::new(user_id, &nickname, &email, role, None, None, None, None);
                 profile_vec.push(profile);
-                let num_token = if user_id == PROFILE_USER_ID { Some(Self::get_num_token(user_id)) } else { None };
+                let num_token = if user_id == USER1_ID { Some(Self::get_num_token(user_id)) } else { None };
                 session_vec.push(Session { user_id, num_token });
             }
             let profile_orm_app = ProfileOrmApp { profile_vec, session_vec };
