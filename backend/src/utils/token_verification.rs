@@ -39,7 +39,7 @@ pub async fn check_token_and_get_profile(
     if session_num_token != num_token {
         // If they do not match, then this is an error.
         let msg = format!("user_id: {}", user_id);
-        error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg); // 401
+        error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg); // 401c
         return Err(ApiError::create(401, err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg));
     }
     let result = profile_orm.get_profile_user_by_id(user_id, false).map_err(|e| {
@@ -50,7 +50,7 @@ pub async fn check_token_and_get_profile(
     let profile = result.ok_or_else(|| {
         let msg = format!("user_id: {}", user_id);
         error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), MSG_UNACCEPTABLE_TOKEN_ID, &msg);
-        ApiError::create(401, MSG_UNACCEPTABLE_TOKEN_ID, &msg) // 401+
+        ApiError::create(401, MSG_UNACCEPTABLE_TOKEN_ID, &msg) // 401d
     })?;
 
     if let Some(timer) = timer {
