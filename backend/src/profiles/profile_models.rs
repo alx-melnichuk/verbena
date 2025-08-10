@@ -261,6 +261,11 @@ pub struct Session {
     pub num_token: Option<i32>,
 }
 
+impl Session {
+    pub fn new(user_id: i32, num_token: Option<i32>) -> Self {
+        Session { user_id, num_token }
+    }
+}
 // * * * * Section: models for the "profile_get_controller". * * * *
 
 // ** Model Dto: "UniquenessProfileDto". Used: in "profile_get_controller::uniqueness_check()". **
