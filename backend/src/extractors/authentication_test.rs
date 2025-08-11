@@ -16,8 +16,6 @@ mod tests {
         profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER, USER1_ID},
     };
 
-    use crate::utils::token_verification::MSG_UNACCEPTABLE_TOKEN_ID;
-
     const MSG_ERROR_WAS_EXPECTED: &str = "Service call succeeded, but an error was expected.";
     const MSG_FAILED_TO_DESER: &str = "Failed to deserialize JSON string";
 
@@ -93,7 +91,7 @@ mod tests {
         let err = result.expect(MSG_ERROR_WAS_EXPECTED);
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401a
+        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401(a)
 
         let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
         assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
@@ -138,14 +136,14 @@ mod tests {
         let err = result.expect(MSG_ERROR_WAS_EXPECTED);
 
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401b
+        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401(b)
 
         let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
         assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
         assert_eq!(api_err.message, format!("{}: ExpiredSignature", err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
     #[actix_web::test]
-    async fn test_authentication_middelware_valid_token_session_non_exist() {
+    async fn test_authentication_middelware_valid_token_session_non_exist() { // !
         let data_p = ProflTest::profiles(&[USER]);
         let user2_id = USER1_ID + 1;
         let token2 = ProflTest::get_token(user2_id);
@@ -181,11 +179,11 @@ mod tests {
         let result = test::try_call_service(&app, req).await.err();
         let err = result.expect(MSG_ERROR_WAS_EXPECTED);
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401d
+        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401(d)
 
         let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
         assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
-        assert_eq!(api_err.message, format!("{}; user_id: {}", MSG_UNACCEPTABLE_TOKEN_ID, user2_id));
+        assert_eq!(api_err.message, format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_ID, user2_id));
     }
     #[actix_web::test]
     async fn test_authentication_middelware_valid_token_non_existent_num() {
@@ -203,7 +201,7 @@ mod tests {
         let result = test::try_call_service(&app, req).await.err();
         let err = result.expect(MSG_ERROR_WAS_EXPECTED);
         let actual_status = err.as_response_error().status_code();
-        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401c
+        assert_eq!(actual_status, StatusCode::UNAUTHORIZED); // 401(c)
 
         let api_err: ApiError = serde_json::from_str(&err.to_string()).expect(MSG_FAILED_TO_DESER);
         assert_eq!(api_err.code, code_to_str(StatusCode::UNAUTHORIZED));
