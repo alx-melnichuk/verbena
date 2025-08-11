@@ -69,7 +69,7 @@ impl fmt::Display for EWSType {
 
 // ** Parse the type and data for a web socket event. **
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct EventWS {
     et: EWSType,
     params: HashMap<String, serde_json::Value>,
@@ -159,24 +159,24 @@ fn parse_json_to_i32(json_value: &serde_json::Value) -> Result<i32, &'static str
 // ** **
 
 // ** Block clients in a room by name. **
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct BlockEWS {
     pub block: String,
     pub is_in_chat: bool, // The user is in chat now.
 }
 
 // ** Count of clients in the room. **
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct CountEWS {
     pub count: usize,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct EchoEWS {
     pub echo: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ErrEWS {
     pub err: u16,
     pub code: String,
@@ -197,7 +197,7 @@ impl ErrEWS {
 }
 
 // ** Join the client to the chat room. **
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct JoinEWS {
     pub join: i32,
     pub member: String,
@@ -209,7 +209,7 @@ pub struct JoinEWS {
 }
 
 // ** Leave the client from the chat room. **
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct LeaveEWS {
     pub leave: i32,
     pub member: String,
@@ -217,7 +217,7 @@ pub struct LeaveEWS {
 }
 
 // ** Send a text message to all clients in the room. **
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct MsgEWS {
     pub msg: String,
@@ -242,7 +242,7 @@ impl From<ChatMessage> for MsgEWS {
 }
 
 // ** Send a message about deleting text to all chat members. **
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct MsgCutEWS {
     pub msg_cut: String,
@@ -250,7 +250,7 @@ pub struct MsgCutEWS {
 }
 
 // ** Send a correction to the message to everyone in the chat. **
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct MsgPutEWS {
     pub msg_put: String,
@@ -258,19 +258,19 @@ pub struct MsgPutEWS {
 }
 
 /** Send a permanent deletion message to all chat members. */
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct MsgRmvEWS {
     pub msg_rmv: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct NameEWS {
     pub name: String, // user_name
 }
 
 // ** Unblock clients in a room by name. **
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct UnblockEWS {
     pub unblock: String,
     pub is_in_chat: bool, // The user is in chat now.
