@@ -5,7 +5,7 @@ use futures_util::{
     future::{ready, LocalBoxFuture, Ready},
     FutureExt,
 };
-use log::{debug, error, log_enabled, Level::{Debug, Info}};
+use log::{debug, error, log_enabled, Level::Info};
 use vrb_common::api_error::{code_to_str, ApiError};
 use vrb_dbase::db_enums::UserRole;
 use vrb_tools::{err, token_coding, token_data};
@@ -120,11 +120,8 @@ where
         // If token is missing, return unauthorized error
         if token.is_none() {
             error!("{}: {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_MISSING_TOKEN);
-            if log_enabled!(Debug) { 
-                eprintln!("\n401a {}: {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_MISSING_TOKEN);
-            }
             let json_error = ApiError::new(401, err::MSG_MISSING_TOKEN);
-            return Box::pin(ready(Err(error::ErrorUnauthorized(json_error)))); // 401a
+            return Box::pin(ready(Err(error::ErrorUnauthorized(json_error)))); // 401(a)
         }
         let token = token.unwrap().clone();
 
@@ -136,11 +133,8 @@ where
         if let Err(e) = token_res {
             let message = format!("{}: {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, &e);
             error!("{}: {}", code_to_str(StatusCode::UNAUTHORIZED), &message);
-            if log_enabled!(Debug) {
-                eprintln!("\n401b {}: {} err: {}", code_to_str(StatusCode::UNAUTHORIZED), &message, &e);
-            }
             let json_error = ApiError::new(401, &message);
-            return Box::pin(ready(Err(error::ErrorUnauthorized(json_error)))); // 401b
+            return Box::pin(ready(Err(error::ErrorUnauthorized(json_error)))); // 401(b)
         }
 
         let (user_id, num_token) = token_res.unwrap();
@@ -154,9 +148,6 @@ where
             // Check the token for correctness and get the user profile.
             let res_profile = check_token_and_get_profile(user_id, num_token, profile_orm).await;
             if let Err(app_error) = res_profile {
-                if log_enabled!(Debug) {
-                    eprintln!("\napp_error: {:?}", &app_error);
-                }
                 return Err(app_error.into());
             }
             let profile = res_profile.unwrap();
