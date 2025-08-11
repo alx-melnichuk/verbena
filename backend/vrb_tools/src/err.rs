@@ -5,16 +5,18 @@
 // 400 Bad Request - The parameter value is not defined.
 pub const MSG_PARAMETER_NOT_DEFINED: &str = "parameter_not_defined";
 
-// 401 Unauthorized - Authorization token is missing. (authentication, profile_auth_controller, user_controller)
-pub const MSG_MISSING_TOKEN: &str = "token_missing";
-// 401 Unauthorized - Error when decoding token or expired token (authentication, profile_auth_controller, user_registr_controller)
-pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token";
-// 401 Unauthorized - User's "num" does not match "num" from token. (authentication, profile_auth_controller)
-pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num";
 // 401 Unauthorized
 pub const MSG_WRONG_NICKNAME_EMAIL: &str = "nickname_or_email_incorrect";
 // 401 Unauthorized
 pub const MSG_PASSWORD_INCORRECT: &str = "password_incorrect";
+// 401(a) Unauthorized - Authorization token is missing. (authentication, profile_auth_controller, user_controller)
+pub const MSG_MISSING_TOKEN: &str = "token_missing";
+// 401(b) Unauthorized - Error when decoding token or expired token (authentication, profile_auth_controller, user_registr_controller)
+pub const MSG_INVALID_OR_EXPIRED_TOKEN: &str = "invalid_or_expired_token";
+// 401(c) Unauthorized - User's "num" does not match "num" from token. (authentication, profile_auth_controller)
+pub const MSG_UNACCEPTABLE_TOKEN_NUM: &str = "unacceptable_token_num";
+// 401(d) Unauthorized - According to "user_id" in the token, the user was not found.
+pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
 
 // 403 Forbidden - Access denied - insufficient rights (authentication)
 pub const MSG_ACCESS_DENIED: &str = "access_denied";
