@@ -94,7 +94,6 @@ mod tests {
 
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
 
-        let (profile_vec, _session_vec) = ProflTest::profiles(&[USER]);
         let user1_id = USER1_ID;
         let token1 = ProflTest::get_token(user1_id);
         // -- Test: 1. "There was no 'join' command." --
