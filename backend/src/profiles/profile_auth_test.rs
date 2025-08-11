@@ -318,7 +318,7 @@ mod tests {
             .set_json(LoginProfileDto { nickname: format!("a{}", nickname), password: "passwordD1T1".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401 (A)
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401(f)
 
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
@@ -341,7 +341,7 @@ mod tests {
             .set_json(LoginProfileDto { nickname: format!("a{}", email), password: "passwordD1T1".to_string() })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401 (A)
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401(f)
 
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
@@ -394,7 +394,7 @@ mod tests {
             .set_json(LoginProfileDto { nickname: nickname.to_string(), password: format!("{}b", password) })
             .to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
-        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401 (B)
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED); // 401(g)
 
         assert_eq!(resp.headers().get(CONTENT_TYPE).unwrap(), HeaderValue::from_static("application/json"));
         let body = body::to_bytes(resp.into_body()).await.unwrap();
@@ -441,6 +441,8 @@ mod tests {
         let profile1_id = USER100_ID_NO_SESSION;
         profile1.user_id = profile1_id;
         profile1.password = hash_tools::encode_hash(password).unwrap(); // hashed
+        let session1 = data_p.1.get_mut(0).unwrap();
+        session1.user_id = session1.user_id + 1;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(login)
