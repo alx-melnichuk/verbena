@@ -115,7 +115,7 @@ pub async fn login(
 
     let profile_pwd = opt_profile_pwd.ok_or_else(|| {
         error!("{}-{}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_WRONG_NICKNAME_EMAIL);
-        ApiError::new(401, err::MSG_WRONG_NICKNAME_EMAIL) // 401 (A)
+        ApiError::new(401, err::MSG_WRONG_NICKNAME_EMAIL) // 401(f)
     })?;
 
     let profile_password = profile_pwd.password.to_string();
@@ -126,7 +126,7 @@ pub async fn login(
 
     if !password_matches {
         error!("{}-{}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_PASSWORD_INCORRECT);
-        return Err(ApiError::new(401, err::MSG_PASSWORD_INCORRECT)); // 401 (B)
+        return Err(ApiError::new(401, err::MSG_PASSWORD_INCORRECT)); // 401(g)
     }
 
     let num_token = token_coding::generate_num_token();
