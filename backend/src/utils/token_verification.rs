@@ -11,9 +11,6 @@ use crate::profiles::profile_orm::impls::ProfileOrmApp;
 use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{profile_models::Profile, profile_orm::ProfileOrm};
 
-// 401 Unauthorized - According to "user_id" in the token, the user was not found.
-pub const MSG_UNACCEPTABLE_TOKEN_ID: &str = "unacceptable_token_id";
-
 /** Check the token for correctness and get the user profile. */
 pub async fn check_token_and_get_profile(
     user_id: i32,
@@ -39,7 +36,7 @@ pub async fn check_token_and_get_profile(
     if session_num_token != num_token {
         // If they do not match, then this is an error.
         let msg = format!("user_id: {}", user_id);
-        error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg); // 401c
+        error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg); // 401(c)
         return Err(ApiError::create(401, err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg));
     }
     let result = profile_orm.get_profile_user_by_id(user_id, false).map_err(|e| {
@@ -49,8 +46,8 @@ pub async fn check_token_and_get_profile(
 
     let profile = result.ok_or_else(|| {
         let msg = format!("user_id: {}", user_id);
-        error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), MSG_UNACCEPTABLE_TOKEN_ID, &msg);
-        ApiError::create(401, MSG_UNACCEPTABLE_TOKEN_ID, &msg) // 401d
+        error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_UNACCEPTABLE_TOKEN_ID, &msg);
+        ApiError::create(401, err::MSG_UNACCEPTABLE_TOKEN_ID, &msg) // 401(d)
     })?;
 
     if let Some(timer) = timer {
