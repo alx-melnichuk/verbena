@@ -158,7 +158,7 @@ mod tests {
             let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
             #[rustfmt::skip]
             let err401b = get_err401(&format!("{}; {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, CRT_WRONG_STRING_BASE64URL));
-            assert_eq!(item, FrameText(Bytes::from(to_string(&err401b).unwrap()))); // 401b:Unauthorized
+            assert_eq!(item, FrameText(Bytes::from(to_string(&err401b).unwrap()))); // 401(b):Unauthorized
         }
         // -- Test: 8. "expired_token" --
         {
@@ -173,7 +173,7 @@ mod tests {
             let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
             #[rustfmt::skip]
             let err401b = get_err401(&format!("{}; ExpiredSignature", err::MSG_INVALID_OR_EXPIRED_TOKEN));
-            assert_eq!(item, FrameText(Bytes::from(to_string(&err401b).unwrap()))); // 401b:Unauthorized
+            assert_eq!(item, FrameText(Bytes::from(to_string(&err401b).unwrap()))); // 401(b):Unauthorized
         }
         // -- Test: 9. "session_not_found" (session_non_exist) --
         {
