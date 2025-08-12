@@ -94,126 +94,113 @@ mod tests {
 
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
 
-        let user1_id = USER1_ID;
-        let token1 = ProflTest::get_token(user1_id);
+        let token1 = ProflTest::get_token(USER1_ID);
+
         // -- Test: 1. "There was no 'join' command." --
-        {
-            let msg_text = MessageText(format!("{{ \"leave\": 0 }}").into());
-            framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
-            let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-            let err406 = get_err406(err::MSG_THERE_WAS_NO_JOIN);
-            assert_eq!(item, FrameText(Bytes::from(to_string(&err406).unwrap()))); // 406:NotAcceptable
-        }
+        let msg_text = MessageText(format!("{{ \"leave\": 0 }}").into());
+        framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        let err406 = get_err406(err::MSG_THERE_WAS_NO_JOIN);
+        assert_eq!(item, FrameText(Bytes::from(to_string(&err406).unwrap()))); // 406:NotAcceptable
+
         // -- Test: 2. "'join' parameter not defined" --
-        {
-            let msg_text = MessageText(format!("{{ \"join\": {} }}", i32::default()).into()); // 0
-            framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
-            let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-            let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "join"));
-            assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
-        }
+        let msg_text = MessageText(format!("{{ \"join\": {} }}", i32::default()).into()); // 0
+        framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        let err400 = get_err400(&format!("{}; name: '{}'", err::MSG_PARAMETER_NOT_DEFINED, "join"));
+        assert_eq!(item, FrameText(Bytes::from(to_string(&err400).unwrap()))); // 400:BadRequest
+
         // -- Test: 3. "Stream with the specified id not found." (unauthorized) --
-        {
-            let stream_id_wrong = ChMesTest::stream_ids().last().unwrap().clone() + 1;
-            let msg_text = MessageText(format!("{{ \"join\": {} }}", stream_id_wrong).into());
-            framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
-            let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-            #[rustfmt::skip]
-            let err404 = get_err404(&format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, stream_id_wrong));
-            assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
-        }
+        let stream_id_wrong = ChMesTest::stream_ids().last().unwrap().clone() + 1;
+        let msg_text = MessageText(format!("{{ \"join\": {} }}", stream_id_wrong).into());
+        framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
+        let err404 = get_err404(&format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, stream_id_wrong));
+        assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
+
         // -- Test: 4. "Stream with the specified id not found." (authorized) --
-        {
-            let stream_id_wrong = ChMesTest::stream_ids().last().unwrap().clone() + 1;
-            let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream_id_wrong, token1.clone()).into());
-            framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
-            let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-            #[rustfmt::skip]
-            let err404 = get_err404(&format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, stream_id_wrong));
-            assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
-        }
+        let stream_id_wrong2 = ChMesTest::stream_ids().last().unwrap().clone() + 1;
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream_id_wrong2, token1.clone()).into());
+        framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
+        let err404 = get_err404(&format!("{}; stream_id: {}", err::MSG_STREAM_NOT_FOUND, stream_id_wrong2));
+        assert_eq!(item, FrameText(Bytes::from(to_string(&err404).unwrap()))); // 404:NotFound
+
         // -- Test: 5. "This stream is not active." (unauthorized) --
-        {
-            let stream3_id = ChMesTest::stream_ids().get(2).unwrap().clone(); // live: false
-            let msg_text = MessageText(format!("{{ \"join\":{} }}", stream3_id).into());
-            framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
-            let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-            let err409 = get_err409(err::MSG_STREAM_NOT_ACTIVE);
-            assert_eq!(item, FrameText(Bytes::from(to_string(&err409).unwrap()))); // 409:Conflict
-        }
+        let stream3a_id = ChMesTest::stream_ids().get(2).unwrap().clone(); // live: false
+        let msg_text = MessageText(format!("{{ \"join\":{} }}", stream3a_id).into());
+        framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        let err409 = get_err409(err::MSG_STREAM_NOT_ACTIVE);
+        assert_eq!(item, FrameText(Bytes::from(to_string(&err409).unwrap()))); // 409:Conflict
+
         // -- Test: 6. "This stream is not active." (authorized) --
-        {
-            let stream3_id = ChMesTest::stream_ids().get(2).unwrap().clone(); // live: false
-            let msg_text = MessageText(format!("{{ \"join\":{}, \"access\": \"{}\"  }}", stream3_id, token1.clone()).into());
-            framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
-            let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-            let err409 = get_err409(err::MSG_STREAM_NOT_ACTIVE);
-            assert_eq!(item, FrameText(Bytes::from(to_string(&err409).unwrap()))); // 409:Conflict
-        }
+        let stream3b_id = ChMesTest::stream_ids().get(2).unwrap().clone(); // live: false
+        let msg_text = MessageText(format!("{{ \"join\":{}, \"access\": \"{}\"  }}", stream3b_id, token1.clone()).into());
+        framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        let err409 = get_err409(err::MSG_STREAM_NOT_ACTIVE);
+        assert_eq!(item, FrameText(Bytes::from(to_string(&err409).unwrap()))); // 409:Conflict
+
         // -- Test: 7. "Invalid token" --
-        {
-            #[rustfmt::skip]
-            let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}a\" }}", stream1_id, token1.clone()).into());
-            framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
-            let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-            #[rustfmt::skip]
-            let err401b = get_err401(&format!("{}; {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, CRT_WRONG_STRING_BASE64URL));
-            assert_eq!(item, FrameText(Bytes::from(to_string(&err401b).unwrap()))); // 401(b):Unauthorized
-        }
+        #[rustfmt::skip]
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}a\" }}", stream1_id, token1.clone()).into());
+        framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
+        let err401b = get_err401(&format!("{}; {}", err::MSG_INVALID_OR_EXPIRED_TOKEN, CRT_WRONG_STRING_BASE64URL));
+        assert_eq!(item, FrameText(Bytes::from(to_string(&err401b).unwrap()))); // 401(b):Unauthorized
+
         // -- Test: 8. "expired_token" --
-        {
-            let config_jwt = config_jwt::get_test_config();
-            let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-            let user1_id = USER1_ID;
-            let num_token1 = ProflTest::get_num_token(user1_id);
-            let token1b = token_coding::encode_token(user1_id, num_token1, &jwt_secret, -config_jwt.jwt_access).unwrap();
-            #[rustfmt::skip]
-            let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token1b).into());
-            framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
-            let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-            #[rustfmt::skip]
-            let err401b = get_err401(&format!("{}; ExpiredSignature", err::MSG_INVALID_OR_EXPIRED_TOKEN));
-            assert_eq!(item, FrameText(Bytes::from(to_string(&err401b).unwrap()))); // 401(b):Unauthorized
-        }
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let num_token1b = ProflTest::get_num_token(USER1_ID);
+        let token1b = token_coding::encode_token(USER1_ID, num_token1b, &jwt_secret, -config_jwt.jwt_access).unwrap();
+        #[rustfmt::skip]
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token1b).into());
+        framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
+        let err401b = get_err401(&format!("{}; ExpiredSignature", err::MSG_INVALID_OR_EXPIRED_TOKEN));
+        assert_eq!(item, FrameText(Bytes::from(to_string(&err401b).unwrap()))); // 401(b):Unauthorized
+
         // -- Test: 9. "session_not_found" (session_non_exist) --
-        {
-            let user2_id = USER1_ID + 1;
-            let token2 = ProflTest::get_token(user2_id);
-            #[rustfmt::skip]
-            let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token2).into());
-            framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
-            let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-            #[rustfmt::skip]
-            let err406 = get_err406(&format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user2_id));
-            assert_eq!(item, FrameText(Bytes::from(to_string(&err406).unwrap()))); // 406:NotAcceptable
-        }
+        let user2a_id = USER1_ID + 1;
+        let token2a = ProflTest::get_token(user2a_id);
+        #[rustfmt::skip]
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token2a).into());
+        framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
+        let err406 = get_err406(&format!("{}; user_id: {}", err::MSG_SESSION_NOT_FOUND, user2a_id));
+        assert_eq!(item, FrameText(Bytes::from(to_string(&err406).unwrap()))); // 406:NotAcceptable
+
         // -- Test: 10. "unacceptable_token_num" (session found, but 'num_token' does not match) --
-        {
-            let user3_id = USER1_ID + 2;
-            let token3 = ProflTest::get_token(user3_id);
-            #[rustfmt::skip]
-            let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token3).into());
-            framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
-            let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-            #[rustfmt::skip]
-            let err401c = get_err401(&format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user3_id));
-            assert_eq!(item, FrameText(Bytes::from(to_string(&err401c).unwrap()))); // 401(c):Unauthorized
-        }
+        let user3a_id = USER1_ID + 2;
+        let token3a = ProflTest::get_token(user3a_id);
+        #[rustfmt::skip]
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token3a).into());
+        framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
+        let err401c = get_err401(&format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_NUM, user3a_id));
+        assert_eq!(item, FrameText(Bytes::from(to_string(&err401c).unwrap()))); // 401(c):Unauthorized
+
         // -- Test: 11. "unacceptable_token_id" (session found, and 'num_token' does match, but user exist) --
-        {
-            let config_jwt = config_jwt::get_test_config();
-            let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-            let user3_id = USER1_ID + 2;
-            let num_token3b = ProflTest::get_num_token(user3_id + 1);
-            let token3b = token_coding::encode_token(user3_id, num_token3b, &jwt_secret, config_jwt.jwt_access).unwrap();
-            #[rustfmt::skip]
-            let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token3b).into());
-            framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
-            let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
-            #[rustfmt::skip]
-            let err401d = get_err401(&format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_ID, user3_id));
-            assert_eq!(item, FrameText(Bytes::from(to_string(&err401d).unwrap()))); // 401(d):Unauthorized
-        }
+        let config_jwt = config_jwt::get_test_config();
+        let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
+        let user3b_id = USER1_ID + 2;
+        let num_token3b = ProflTest::get_num_token(user3b_id + 1);
+        let token3b = token_coding::encode_token(user3b_id, num_token3b, &jwt_secret, config_jwt.jwt_access).unwrap();
+        #[rustfmt::skip]
+        let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token3b).into());
+        framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
+        let item = framed.next().await.unwrap().unwrap(); // Receive a message from a websocket.
+        #[rustfmt::skip]
+        let err401d = get_err401(&format!("{}; user_id: {}", err::MSG_UNACCEPTABLE_TOKEN_ID, user3b_id));
+        assert_eq!(item, FrameText(Bytes::from(to_string(&err401d).unwrap()))); // 401(d):Unauthorized
     }
     #[actix_web::test]
     async fn test_get_ws_chat_ews_join_ews_leave_ok() {
