@@ -1,6 +1,10 @@
+
+/* Remove stored function to search data from user tables by ID. */
+DROP FUNCTION IF EXISTS find_user_by_id;
+
 -- Removing entities: "blocked_users", "chat_messages", chat_message_logs.
 
-/* Remove  stored function that will filter "stream" entities by the specified parameters. */
+/* Remove stored function that will filter "stream" entities by the specified parameters. */
 DROP FUNCTION IF EXISTS filter_streams;
 
 -- **

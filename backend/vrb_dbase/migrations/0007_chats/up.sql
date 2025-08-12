@@ -499,7 +499,7 @@ CREATE OR REPLACE FUNCTION get_chat_access(
   OUT is_blocked BOOLEAN
 ) RETURNS SETOF record LANGUAGE plpgsql
 AS $$
-DECLARE 
+DECLARE
   rec1 RECORD;
   blocked_id INTEGER;
 BEGIN
@@ -719,7 +719,7 @@ BEGIN
     RETURN;
   END IF;
 
-  RETURN QUERY 
+  RETURN QUERY
     SELECT s.id, s.user_id, s.title, s.descript, s.logo, s.starttime, s.live, s.state,
       s.started, s.stopped, s.source, s.created_at, s.updated_at
     FROM streams s 
@@ -733,3 +733,43 @@ BEGIN
 
 END;
 $$;
+
+-- **
+
+/* Create a stored function to search data from user tables by ID. */
+CREATE OR REPLACE FUNCTION find_user_by_id(
+  IN _id INTEGER,
+  IN _is_password BOOLEAN, 
+  OUT id INTEGER,
+  OUT nickname VARCHAR,
+  OUT email VARCHAR,
+  OUT "password" VARCHAR,
+  OUT created_at TIMESTAMP WITH TIME ZONE,
+  OUT updated_at TIMESTAMP WITH TIME ZONE,
+  OUT "role" user_role
+) RETURNS SETOF record LANGUAGE plpgsql
+AS $$
+DECLARE
+  rec1 RECORD;
+  sql_text TEXT;
+BEGIN
+  IF _id IS NULL THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY
+    SELECT
+      u.id,
+      u.nickname,
+      u.email,
+      CASE WHEN _is_password THEN u."password" ELSE ''::VARCHAR END AS "password",
+      u.created_at,
+      u.updated_at,
+      u."role"
+    FROM users u
+    WHERE u.id = _id
+    LIMIT 1;
+END;
+$$;
+
+-- **
