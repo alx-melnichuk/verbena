@@ -9,12 +9,12 @@ mod tests {
     use chrono::{DateTime, Datelike, Duration, Local, SecondsFormat, TimeZone, Timelike, Utc};
     use serde_json;
     use vrb_common::api_error::{code_to_str, ApiError};
+    use vrb_dbase::{
+        config_jwt,
+        user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1, USER1_ID, USER2},
+    };
     use vrb_tools::err;
 
-    use crate::profiles::{
-        config_jwt,
-        profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER, USER1, USER1_ID, USER2},
-    };
     use crate::streams::{
         config_strm,
         stream_controller::{
@@ -29,20 +29,24 @@ mod tests {
     const MSG_FAILED_DESER: &str = "Failed to deserialize response from JSON.";
     const MSG_CASTING_TO_TYPE: &str = "invalid digit found in string";
 
+    fn to_utc(value: DateTime<Local>) -> DateTime<Utc> {
+        DateTime::from(value)
+    }
+
     // ** get_stream_by_id **
 
     #[actix_web::test]
     async fn test_get_stream_by_id_invalid_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         let stream_id_bad = format!("{}a", stream_id);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -62,15 +66,15 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_stream_by_id_valid_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_dto = streams.get(0).unwrap().clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -90,15 +94,15 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_stream_by_id_non_existent_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -109,16 +113,16 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_stream_by_id_another_user() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER]);
         let streams = Strm_Test::streams(&[0, 1]);
         let mut stream2 = streams.get(1).unwrap().clone();
         stream2.is_my_stream = false;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -138,16 +142,16 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_stream_by_id_another_user_by_admin() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[ADMIN, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[ADMIN, USER]);
         let streams = Strm_Test::streams(&[USER1, USER2]);
         let mut stream2 = streams.get(1).unwrap().clone();
         stream2.is_my_stream = false;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_by_id)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -170,9 +174,9 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER]);
-        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
         // Create streams for user1 and user2.
         let streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2, USER2]);
         // Select streams with indices: 0,1.
@@ -182,13 +186,13 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams?userId={}&page={}&limit={}", profile1_id, page, limit))
+            .uri(&format!("/api/streams?userId={}&page={}&limit={}", user1_id, page, limit))
             .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -208,8 +212,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_page_limit_without_user_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER]);
         // Create streams for user1 and user2.
         let streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2, USER2]);
         // Select streams with indices: 0,1.
@@ -219,8 +223,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -247,9 +251,9 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id_page2() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER]);
-        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
         // Create streams for user1 and user2.
         let streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2, USER1, USER1]);
         // Select streams with indices: 4,5.
@@ -259,13 +263,13 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams?userId={}&page={}&limit={}", profile1_id, page, limit))
+            .uri(&format!("/api/streams?userId={}&page={}&limit={}", user1_id, page, limit))
             .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -287,22 +291,22 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_another_user_id_with_role_user() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER]);
-        let profile1_id = data_p.0.get(0).unwrap().user_id;
-        let profile2_id = data_p.0.get(1).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
+        let user2_id = data_u.0.get(1).unwrap().id;
         // Create streams for user2.
         let streams = Strm_Test::streams(&[USER2, USER2]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams?userId={}&page=1&limit=2", profile2_id))
+            .uri(&format!("/api/streams?userId={}&page=1&limit=2", user2_id))
             .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::FORBIDDEN); // 403
@@ -312,16 +316,16 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, code_to_str(StatusCode::FORBIDDEN));
-        let text = format!("curr_user_id: {}, user_id: {}", profile1_id, profile2_id);
+        let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
         #[rustfmt::skip]
         let message = format!("{}; {}; {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS, &text);
         assert_eq!(app_err.message, message);
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_another_user_id_with_role_admin() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[ADMIN, USER]);
-        let profile2_id = data_p.0.get(1).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[ADMIN, USER]);
+        let user2_id = data_u.0.get(1).unwrap().id;
         // Create streams for user2.
         let mut streams = Strm_Test::streams(&[USER2, USER2]);
         streams.get_mut(0).unwrap().is_my_stream = false;
@@ -333,13 +337,13 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams?userId={}&page={}&limit={}", profile2_id, page, limit))
+            .uri(&format!("/api/streams?userId={}&page={}&limit={}", user2_id, page, limit))
             .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -359,8 +363,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_live() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER]);
         let live = true;
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1]);
@@ -375,8 +379,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -403,8 +407,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_is_future() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1, USER1]);
         let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
@@ -425,8 +429,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -452,8 +456,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_is_not_future() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1, USER1]);
         let now = Utc::now().with_second(0).unwrap().with_nanosecond(0).unwrap();
@@ -474,8 +478,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -501,8 +505,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id_and_order_starttime_asc() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1]);
         let now = Utc::now();
@@ -521,8 +525,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -549,8 +553,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_search_by_user_id_and_order_starttime_desc() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1]);
         let now = Utc::now();
@@ -569,8 +573,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -597,10 +601,11 @@ mod tests {
     }
 
     // ** get_stream_config **
+
     #[actix_web::test]
     async fn test_get_stream_config_data() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let config_strm = config_strm::get_test_config();
         #[rustfmt::skip]
         let stream_config_dto = StreamConfigDto::new(
@@ -613,8 +618,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_stream_config)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm))
         ).await;
         #[rustfmt::skip]
@@ -633,14 +638,11 @@ mod tests {
 
     // ** get_streams_events **
 
-    fn to_utc(value: DateTime<Local>) -> DateTime<Utc> {
-        DateTime::from(value)
-    }
     #[actix_web::test]
     async fn test_get_streams_events_search_by_user_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
-        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1]);
         let dt = Local::now();
@@ -658,14 +660,14 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_events)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
             .uri(&format!("/api/streams_events?userId={}&starttime={}&page={}&limit={}",
-                profile1_id, starttime, page, limit))
+                user1_id, starttime, page, limit))
             .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -687,8 +689,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_events_search_by_without_user_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2, USER1]);
         let dt = Local::now();
@@ -708,8 +710,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_events)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -736,8 +738,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_events_search_by_page2() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2, USER1, USER1]);
         let dt = Local::now();
@@ -756,8 +758,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_events)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -783,8 +785,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_events_search_by_bad_starttime() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER1, USER1]);
         let dt = Local::now();
@@ -801,8 +803,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_events)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -825,10 +827,10 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_events_search_by_another_user_id_with_role_user() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER]);
-        let profile1_id = data_p.0.get(0).unwrap().user_id;
-        let profile2_id = data_p.0.get(1).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
+        let user2_id = data_u.0.get(1).unwrap().id;
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2]);
         let dt = Local::now();
@@ -843,13 +845,13 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_events)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_events?userId={}&starttime={}&page={}&limit={}", profile2_id, starttime, page, limit))
+            .uri(&format!("/api/streams_events?userId={}&starttime={}&page={}&limit={}", user2_id, starttime, page, limit))
             .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::FORBIDDEN); // 403
@@ -859,16 +861,16 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, code_to_str(StatusCode::FORBIDDEN));
-        let text = format!("curr_user_id: {}, user_id: {}", profile1_id, profile2_id);
+        let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
         #[rustfmt::skip]
         let message = format!("{}; {}; {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_EVENTS, &text);
         assert_eq!(app_err.message, message);
     }
     #[actix_web::test]
     async fn test_get_streams_events_search_by_another_user_id_with_role_admin() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[ADMIN, USER]);
-        let profile2_id = data_p.0.get(1).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[ADMIN, USER]);
+        let user2_id = data_u.0.get(1).unwrap().id;
         // Create streams for user1.
         let mut streams = Strm_Test::streams(&[USER1, USER1, USER2, USER2]);
         let dt = Local::now();
@@ -885,13 +887,13 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_events)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_events?userId={}&starttime={}&page={}&limit={}", profile2_id, starttime, page, limit))
+            .uri(&format!("/api/streams_events?userId={}&starttime={}&page={}&limit={}", user2_id, starttime, page, limit))
             .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -916,9 +918,9 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_streams_period_by_finish_less_start() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
-        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
         let dt = Local::now();
         let start = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
         let finish = start - Duration::seconds(1);
@@ -927,13 +929,13 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_period)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", profile1_id, start_s, finish_s))
+            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user1_id, start_s, finish_s))
             .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE); // 406
@@ -949,9 +951,9 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_period_by_finish_more_on_2_month() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
-        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
         let dt = Local::now();
         let start = Local.with_ymd_and_hms(dt.year(), dt.month(), 1, 0, 0, 0).unwrap();
         let finish = start + Duration::days(PERIOD_MAX_NUMBER_DAYS.into());
@@ -962,13 +964,13 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_period)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", profile1_id, start_s, finish_s))
+            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user1_id, start_s, finish_s))
             .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE); // 413
@@ -1000,20 +1002,20 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_period_by_user_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
-        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
         let (streams, start, finish, period) = get_streams2(USER1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_period)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", profile1_id, start, finish))
+            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user1_id, start, finish))
             .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
@@ -1028,14 +1030,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_period_by_without_user_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let (streams, start, finish, period) = get_streams2(USER1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_period)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
@@ -1056,21 +1058,21 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_streams_period_by_another_user_id_with_role_user() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER]);
-        let profile1_id = data_p.0.get(0).unwrap().user_id;
-        let profile2_id = data_p.0.get(1).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
+        let user2_id = data_u.0.get(1).unwrap().id;
         let (streams, start, finish, _period) = get_streams2(USER2);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_period)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", profile2_id, start, finish))
+            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user2_id, start, finish))
             .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::FORBIDDEN); // 403
@@ -1080,27 +1082,27 @@ mod tests {
         let body = body::to_bytes(resp.into_body()).await.unwrap();
         let app_err: ApiError = serde_json::from_slice(&body).expect(MSG_FAILED_DESER);
         assert_eq!(app_err.code, code_to_str(StatusCode::FORBIDDEN));
-        let text = format!("curr_user_id: {}, user_id: {}", profile1_id, profile2_id);
+        let text = format!("curr_user_id: {}, user_id: {}", user1_id, user2_id);
         #[rustfmt::skip]
         let message = format!("{}; {}; {}", err::MSG_ACCESS_DENIED, MSG_GET_LIST_OTHER_USER_STREAMS_PERIOD, &text);
         assert_eq!(app_err.message, message);
     }
     #[actix_web::test]
     async fn test_get_streams_period_by_another_user_id_with_role_admin_99() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[ADMIN, USER]);
-        let profile2_id = data_p.0.get(1).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[ADMIN, USER]);
+        let user2_id = data_u.0.get(1).unwrap().id;
         let (streams, start, finish, period) = get_streams2(USER2);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_streams_period)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
         #[rustfmt::skip]
         let req = test::TestRequest::get()
-            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", profile2_id, start, finish))
+            .uri(&format!("/api/streams_period?userId={}&start={}&finish={}", user2_id, start, finish))
             .insert_header(StrCtTest::header_auth(&token1)).to_request();
         let resp: dev::ServiceResponse = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK); // 200
