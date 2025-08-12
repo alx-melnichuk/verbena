@@ -314,7 +314,6 @@ pub mod tests {
     pub const USER2_ID: i32 = 1101;
     pub const USER3_ID: i32 = 1102;
     pub const USER4_ID: i32 = 1103;
-    pub const USER100_ID_NO_SESSION: i32 = 1199; // No session
 
     pub const USER1_NAME: &str = "oliver_taylor";
     pub const USER2_NAME: &str = "robert_brown";
@@ -344,9 +343,8 @@ pub mod tests {
             let mut session_vec: Vec<Session> = Vec::new();
             let mut sessions2: Vec<Session> = sessions.to_vec();
             for (idx, profile) in profiles.iter().enumerate() {
-                let is_no_session = profile.user_id == USER100_ID_NO_SESSION;
                 let delta: i32 = idx.try_into().unwrap();
-                let user_id = if is_no_session { profile.user_id } else { USER1_ID + delta };
+                let user_id = USER1_ID + delta;
                 let mut profile2 = Profile::new(
                     user_id,
                     &profile.nickname.to_lowercase(),
@@ -373,7 +371,7 @@ pub mod tests {
                 }
             }
             for session in sessions2.iter() {
-                if USER1_ID <= session.user_id && session.user_id != USER100_ID_NO_SESSION {
+                if USER1_ID <= session.user_id {
                     session_vec.push(Session::new(session.user_id, session.num_token));
                 }
             }
