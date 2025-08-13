@@ -9,7 +9,11 @@ use log::{info, log_enabled, Level::Info};
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
-use vrb_dbase::dbase;
+#[cfg(not(all(test, feature = "mockdata")))]
+use vrb_dbase::user_auth::user_auth_orm::impls::UserAuthOrmApp;
+#[cfg(all(test, feature = "mockdata"))]
+use vrb_dbase::user_auth::user_auth_orm::tests::UserAuthOrmApp;
+use vrb_dbase::{dbase, user_auth::config_jwt};
 #[cfg(not(feature = "mockdata"))]
 use vrb_tools::send_email::mailer::impls::MailerApp;
 #[cfg(feature = "mockdata")]
@@ -19,7 +23,7 @@ use vrb_tools::{config_app, send_email::config_smtp};
 
 use chats::{chat_message_controller, chat_message_orm::cfg::get_chat_message_orm_app, chat_ws_controller};
 use profiles::{
-    config_jwt, config_prfl, profile_auth_controller, profile_controller, profile_orm::cfg::get_profile_orm_app, profile_registr_controller,
+    config_prfl, profile_auth_controller, profile_controller, profile_orm::cfg::get_profile_orm_app, profile_registr_controller,
 };
 use streams::{config_strm, stream_controller, stream_orm::cfg::get_stream_orm_app};
 use users::{user_recovery_orm::cfg::get_user_recovery_orm_app, user_registr_orm::cfg::get_user_registr_orm_app};
@@ -127,6 +131,12 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
         // Adding various entities.
         // used: profile_registr_controller
         let mailer = web::Data::new(MailerApp::new(config_smtp0));
+        #[cfg(not(all(test, feature = "mockdata")))]
+        let user_auth_orm0 = UserAuthOrmApp::new(pool.clone());
+        #[cfg(all(test, feature = "mockdata"))]
+        let user_auth_orm0 = UserAuthOrmApp::new();
+        let user_auth_orm = web::Data::new(user_auth_orm0);
+
         // used: profile_registr_controller
         let user_registr_orm = web::Data::new(get_user_registr_orm_app(pool.clone()));
         // used: profile_registr_controller
@@ -149,6 +159,7 @@ pub fn configure_server() -> impl FnOnce(&mut web::ServiceConfig) {
             .app_data(web::Data::clone(&config_smtp))
             .app_data(web::Data::clone(&config_prfl))
             .app_data(web::Data::clone(&mailer))
+            .app_data(web::Data::clone(&user_auth_orm))
             .app_data(web::Data::clone(&user_registr_orm))
             .app_data(web::Data::clone(&user_recovery_orm))
             .app_data(web::Data::clone(&stream_orm))
