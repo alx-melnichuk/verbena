@@ -31,7 +31,7 @@ use crate::chats::{
     },
     chat_message_orm::ChatMessageOrm,
 };
-use crate::extractors::authentication::{Authenticated, RequireAuth};
+use crate::extractors::authentication2::{Authenticated2, RequireAuth2};
 
 // 403 Access denied - insufficient user rights.
 pub const MSG_MODIFY_ANOTHER_USERS_CHAT_MESSAGE: &str = "modify_another_users_chat_message";
@@ -191,7 +191,7 @@ fn get_ch_msgs(start: u16, finish: u16) -> Vec<ChatMessageDto> {
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[get("/api/chat_messages", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[get("/api/chat_messages", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn get_chat_message(
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     query_params: web::Query<SearchChatMessageDto>,
@@ -290,16 +290,15 @@ pub async fn get_chat_message(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[post("/api/chat_messages", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[post("/api/chat_messages", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn post_chat_message(
-    authenticated: Authenticated,
+    authenticated: Authenticated2,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     json_body: web::Json<CreateChatMessageDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
-    let profile = authenticated.deref();
-    let user_id = profile.user_id;
+    let user = authenticated.deref();
 
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
@@ -313,7 +312,7 @@ pub async fn post_chat_message(
     let stream_id = create_chat_message_dto.stream_id;
     let msg = create_chat_message_dto.msg.clone();
     
-    let create_chat_message = CreateChatMessage::new(stream_id, user_id, &msg);
+    let create_chat_message = CreateChatMessage::new(stream_id, user.id, &msg);
 
     let chat_message_orm2 = chat_message_orm.get_ref().clone();
     let res_chat_message = web::block(move || {
@@ -445,17 +444,17 @@ fn message_max() -> String {
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[put("/api/chat_messages/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[put("/api/chat_messages/{id}", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn put_chat_message(
-    authenticated: Authenticated,
+    authenticated: Authenticated2,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     request: actix_web::HttpRequest,
     json_body: web::Json<ModifyChatMessageDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
-    let profile = authenticated.deref();
-    let mut user_id = profile.user_id;
+    let user = authenticated.deref();
+    let mut user_id = user.id;
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -477,11 +476,11 @@ pub async fn put_chat_message(
    
     let modify_chat_message = ModifyChatMessage::new(msg.clone());
 
-    if profile.role == UserRole::Admin {
+    if user.role == UserRole::Admin {
         let query_params = Query::<HashMap<String, String>>::from_query(request.query_string()).unwrap();
-        let user_id1 = query_params.get("userId").map(|v| v.clone()).unwrap_or("".to_string());
-        if user_id1.len() > 0 {
-            user_id = parser::parse_i32(&user_id1).map_err(|e| {
+        let user_id_str = query_params.get("userId").map(|v| v.clone()).unwrap_or("".to_string());
+        if user_id_str.len() > 0 {
+            user_id = parser::parse_i32(&user_id_str).map_err(|e| {
                 let msg = &format!("`userId` - {}", &e);
                 error!("{}-{}; {}", code_to_str(StatusCode::RANGE_NOT_SATISFIABLE), err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg);
                 ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
@@ -599,16 +598,16 @@ pub async fn put_chat_message(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[delete("/api/chat_messages/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[delete("/api/chat_messages/{id}", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn delete_chat_message(
-    authenticated: Authenticated,
+    authenticated: Authenticated2,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
-    let profile = authenticated.deref();
-    let mut user_id = profile.user_id;
+    let user = authenticated.deref();
+    let mut user_id = user.id;
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -618,7 +617,7 @@ pub async fn delete_chat_message(
         ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
     
-    if profile.role == UserRole::Admin {
+    if user.role == UserRole::Admin {
         let query_params = Query::<HashMap<String, String>>::from_query(request.query_string()).unwrap();
         let user_id1 = query_params.get("userId").map(|v| v.clone()).unwrap_or("".to_string());
         if user_id1.len() > 0 {
@@ -716,15 +715,15 @@ pub async fn delete_chat_message(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[get("/api/blocked_users", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[get("/api/blocked_users", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn get_blocked_users(
-    authenticated: Authenticated,
+    authenticated: Authenticated2,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
-    let profile = authenticated.deref();
-    let user_id = profile.user_id;
+    let user = authenticated.deref();
+    let user_id = user.id;
 
     let chat_message_orm2 = chat_message_orm.get_ref().clone();
     let res_blocked_users = web::block(move || {
@@ -831,16 +830,16 @@ pub async fn get_blocked_users(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[post("/api/blocked_users", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[post("/api/blocked_users", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn post_blocked_user(
-    authenticated: Authenticated,
+    authenticated: Authenticated2,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     json_body: web::Json<CreateBlockedUserDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
-    let profile = authenticated.deref();
-    let user_id = profile.user_id;
+    let user = authenticated.deref();
+    let user_id = user.id;
 
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
@@ -960,16 +959,16 @@ pub async fn post_blocked_user(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[delete("/api/blocked_users", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[delete("/api/blocked_users", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn delete_blocked_user(
-    authenticated: Authenticated,
+    authenticated: Authenticated2,
     chat_message_orm: web::Data<ChatMessageOrmApp>,
     json_body: web::Json<DeleteBlockedUserDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
     // Get current user details.
-    let profile = authenticated.deref();
-    let user_id = profile.user_id;
+    let user = authenticated.deref();
+    let user_id = user.id;
 
     // Checking the validity of the data model.
     let validation_res = json_body.validate();
