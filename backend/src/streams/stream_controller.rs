@@ -803,16 +803,16 @@ impl CreateStreamForm {
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[post("/api/streams", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[post("/api/streams", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn post_stream(
-    authenticated: Authenticated,
+    authenticated: Authenticated2,
     config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
     MultipartForm(create_stream_form): MultipartForm<CreateStreamForm>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
-    let profile = authenticated.deref();
-    let curr_user_id = profile.user_id;
+    let user = authenticated.deref();
+    let curr_user_id = user.id;
 
     // Get data from MultipartForm.
     let (create_stream_info_dto, logo_file) = CreateStreamForm::convert(create_stream_form)
@@ -1048,17 +1048,16 @@ impl ModifyStreamForm {
 )]
 // PUT /api/streams/{id}
 #[rustfmt::skip]
-#[put("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[put("/api/streams/{id}", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn put_stream(
-    authenticated: Authenticated,
+    authenticated: Authenticated2,
     config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
     MultipartForm(modify_stream_form): MultipartForm<ModifyStreamForm>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
-    let profile = authenticated.deref();
-    let curr_user_id = profile.user_id;
+    let user = authenticated.deref();
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -1129,7 +1128,7 @@ pub async fn put_stream(
 
         // Get the file stem and extension for the new file.
         #[rustfmt::skip]
-        let name = format!("{}.{}", get_file_name(curr_user_id, Utc::now()), file_mime_type.replace(&format!("{}/", IMAGE), ""));
+        let name = format!("{}.{}", get_file_name(user.id, Utc::now()), file_mime_type.replace(&format!("{}/", IMAGE), ""));
         // Add 'file path' + 'file name'.'file extension'.
         let path: path::PathBuf = [&config_strm.strm_logo_files_dir, &name].iter().collect();
         let full_path_file = path.to_str().unwrap().to_string();
@@ -1161,7 +1160,7 @@ pub async fn put_stream(
     let tags = modify_stream_info_dto.tags.clone();
     let mut modify_stream: ModifyStream = modify_stream_info_dto.into();
     modify_stream.logo = logo;
-    let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
+    let opt_user_id: Option<i32> = if user.role == UserRole::Admin { None } else { Some(user.id) };
 
     let (path_old_logo_file, res_data_stream) = web::block(move || {
         let mut old_logo_file = "".to_string();
@@ -1201,7 +1200,7 @@ pub async fn put_stream(
 
     if let Some((stream, stream_tags)) = opt_data_stream {
         // Merge a "stream" and a corresponding list of "tags".
-        let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
+        let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, user.id);
         let stream_info_dto: StreamInfoDto = list[0].clone();
         // If the image file name starts with the specified alias, then delete the file.
         remove_image_file(&path_old_logo_file, ALIAS_LOGO_FILES_DIR, &config_strm.strm_logo_files_dir, &"put_stream()");
@@ -1286,15 +1285,15 @@ pub async fn put_stream(
 )]
 // PUT /api/streams/toggle/{id}
 #[rustfmt::skip]
-#[put("/api/streams/toggle/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[put("/api/streams/toggle/{id}", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn put_toggle_state(
-    authenticated: Authenticated,
+    authenticated: Authenticated2,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
     json_body: web::Json<ToggleStreamStateDto>,
 ) -> actix_web::Result<HttpResponse, ApiError> {
-    let profile = authenticated.deref();
-    let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
+    let user = authenticated.deref();
+    let opt_user_id: Option<i32> = if user.role == UserRole::Admin { None } else { Some(user.id) };
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -1419,7 +1418,7 @@ pub async fn put_toggle_state(
     let (stream, tags) = opt_stream_tags.unwrap();
 
     // Merge a "stream" and a corresponding list of "tags".
-    let list = StreamInfoDto::merge_streams_and_tags(&[stream], &tags, profile.user_id);
+    let list = StreamInfoDto::merge_streams_and_tags(&[stream], &tags, user.id);
     let stream_info_dto: StreamInfoDto = list[0].clone();
     Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
 }
@@ -1453,16 +1452,15 @@ pub async fn put_toggle_state(
     security(("bearer_auth" = [])),
 )]
 #[rustfmt::skip]
-#[delete("/api/streams/{id}", wrap = "RequireAuth::allowed_roles(RequireAuth::all_roles())")]
+#[delete("/api/streams/{id}", wrap = "RequireAuth2::allowed_roles(RequireAuth2::all_roles())")]
 pub async fn delete_stream(
-    authenticated: Authenticated,
+    authenticated: Authenticated2,
     config_strm: web::Data<config_strm::ConfigStrm>,
     stream_orm: web::Data<StreamOrmApp>,
     request: actix_web::HttpRequest,
 ) -> actix_web::Result<HttpResponse, ApiError> {
     // Get current user details.
-    let profile = authenticated.deref();
-    let curr_user_id = profile.user_id;
+    let user = authenticated.deref();
 
     // Get data from request.
     let id_str = request.match_info().query("id").to_string();
@@ -1472,7 +1470,7 @@ pub async fn delete_stream(
         ApiError::create(416, err::MSG_PARSING_TYPE_NOT_SUPPORTED, &msg) // 416
     })?;
 
-    let opt_user_id: Option<i32> = if profile.role == UserRole::Admin { None } else { Some(profile.user_id) };
+    let opt_user_id: Option<i32> = if user.role == UserRole::Admin { None } else { Some(user.id) };
     let res_stream = web::block(move || {
         // Add a new entity (stream).
         let res_data = stream_orm.delete_stream(id, opt_user_id).map_err(|e| {
@@ -1498,7 +1496,7 @@ pub async fn delete_stream(
         remove_image_file(&path_file_img, ALIAS_LOGO_FILES_DIR, &config_strm.strm_logo_files_dir, &"delete_stream()");
 
         // Merge a "stream" and a corresponding list of "tags".
-        let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, curr_user_id);
+        let list = StreamInfoDto::merge_streams_and_tags(&[stream], &stream_tags, user.id);
         let stream_info_dto = list[0].clone();
         Ok(HttpResponse::Ok().json(stream_info_dto)) // 200
     } else {
