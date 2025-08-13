@@ -1,4 +1,4 @@
-use crate::user_auth_models::{Session, User};
+use crate::user_auth::user_auth_models::{Session, User};
 
 pub trait UserAuthOrm {
     /// Get an entity (user) by ID.
@@ -14,9 +14,12 @@ pub mod impls {
     use diesel::{self, prelude::*, sql_types};
     use log::{info, log_enabled, Level::Info};
 
-    use crate::user_auth_models::{Session, User};
-    use crate::user_auth_orm::UserAuthOrm;
-    use crate::{dbase, schema};
+    use crate::dbase;
+    use crate::schema;
+    use crate::user_auth::{
+        user_auth_models::{Session, User},
+        user_auth_orm::UserAuthOrm,
+    };
 
     pub const CONN_POOL: &str = "ConnectionPool";
 
@@ -86,10 +89,12 @@ pub mod tests {
     use actix_web::web;
     use vrb_tools::token_coding;
 
-    use crate::config_jwt;
     use crate::db_enums::UserRole;
-    use crate::user_auth_models::{Session, User};
-    use crate::user_auth_orm::UserAuthOrm;
+    use crate::user_auth::{
+        config_jwt,
+        user_auth_models::{Session, User},
+        user_auth_orm::UserAuthOrm,
+    };
 
     pub const ADMIN: u8 = 0;
     pub const USER: u8 = 1;
