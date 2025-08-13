@@ -5,10 +5,8 @@ use vrb_common::api_error::{code_to_str, ApiError};
 use vrb_dbase::user_auth::user_auth_orm::impls::UserAuthOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
 use vrb_dbase::user_auth::user_auth_orm::tests::UserAuthOrmApp;
-use vrb_dbase::{
-    user_auth::{config_jwt, user_auth_models::User, user_auth_orm::UserAuthOrm},
-};
-use vrb_tools::{err, token_coding}; 
+use vrb_dbase::user_auth::{config_jwt, user_auth_models::User, user_auth_orm::UserAuthOrm};
+use vrb_tools::{err, token_coding};
 
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::chats::chat_message_orm::impls::ChatMessageOrmApp;
@@ -20,8 +18,7 @@ use crate::chats::{
     },
     chat_message_orm::ChatMessageOrm,
 };
-use crate::extractors::authentication2::{is_session_not_found, is_unacceptable_token_num, is_unacceptable_token_id};
-
+use crate::extractors::authentication2::{is_session_not_found, is_unacceptable_token_id, is_unacceptable_token_num};
 
 #[derive(Debug, Clone)]
 pub struct ChatStream {
@@ -42,11 +39,7 @@ pub struct ChatWsAssistant {
 // ** ChatWsAssistant implementation **
 
 impl ChatWsAssistant {
-    pub fn new(
-        config_jwt: config_jwt::ConfigJwt,
-        chat_message_orm: ChatMessageOrmApp,
-        user_auth_orm: UserAuthOrmApp,
-    ) -> Self {
+    pub fn new(config_jwt: config_jwt::ConfigJwt, chat_message_orm: ChatMessageOrmApp, user_auth_orm: UserAuthOrmApp) -> Self {
         ChatWsAssistant {
             config_jwt,
             chat_message_orm,
