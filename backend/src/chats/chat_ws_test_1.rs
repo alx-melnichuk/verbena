@@ -5,6 +5,11 @@ mod tests {
     use futures_util::{SinkExt, StreamExt}; // this is needed for "send" method in Framed.
     use serde_json::to_string;
     use vrb_common::crypto::CRT_WRONG_STRING_BASE64URL;
+    use vrb_dbase::user_auth::{
+        config_jwt,
+        user_auth_models::Session,
+        user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1_ID},
+    };
     use vrb_tools::{err, token_coding};
 
     use crate::chats::chat_event_ws::LeaveEWS;
@@ -13,11 +18,6 @@ mod tests {
         chat_message_orm::tests::ChatMessageOrmTest as ChMesTest,
         chat_ws_controller::get_ws_chat,
         chat_ws_session::{get_err400, get_err401, get_err404, get_err406, get_err409},
-    };
-    use crate::profiles::{
-        config_jwt,
-        profile_models::{Session},
-        profile_orm::tests::{ProfileOrmTest as ProflTest, USER, USER1_ID},
     };
 
     const URL_WS: &str = "/ws";
@@ -30,12 +30,12 @@ mod tests {
     async fn test_get_ws_chat_ews_echo_ews_name() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(|| {
-            let data_p = ProflTest::profiles(&[]);
+            let data_u = User_Test::users(&[]);
             let data_cm = ChMesTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
@@ -76,16 +76,16 @@ mod tests {
     async fn test_get_ws_chat_ews_join_ews_leave_err() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_p = ProflTest::profiles(&[USER, USER]);
-            let session1 = data_p.1.get(0).unwrap().clone();
+            let mut data_u = User_Test::users(&[USER, USER]);
+            let session1 = data_u.1.get(0).unwrap().clone();
             let user3_id = USER1_ID + 2;
-            let session3 = Session::new(user3_id, Some(ProflTest::get_num_token(user3_id + 1)));
-            data_p.1 = vec![session1, session3];
+            let session3 = Session::new(user3_id, Some(User_Test::get_num_token(user3_id + 1)));
+            data_u.1 = vec![session1, session3];
             let data_cm = ChMesTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
 
@@ -94,7 +94,7 @@ mod tests {
 
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
 
-        let token1 = ProflTest::get_token(USER1_ID);
+        let token1 = User_Test::get_token(USER1_ID);
 
         // -- Test: 1. "There was no 'join' command." --
         let msg_text = MessageText(format!("{{ \"leave\": 0 }}").into());
@@ -156,7 +156,7 @@ mod tests {
         // -- Test: 8. "expired_token" --
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        let num_token1b = ProflTest::get_num_token(USER1_ID);
+        let num_token1b = User_Test::get_num_token(USER1_ID);
         let token1b = token_coding::encode_token(USER1_ID, num_token1b, &jwt_secret, -config_jwt.jwt_access).unwrap();
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token1b).into());
@@ -168,7 +168,7 @@ mod tests {
 
         // -- Test: 9. "session_not_found" (session_non_exist) --
         let user2a_id = USER1_ID + 1;
-        let token2a = ProflTest::get_token(user2a_id);
+        let token2a = User_Test::get_token(user2a_id);
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token2a).into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
@@ -179,7 +179,7 @@ mod tests {
 
         // -- Test: 10. "unacceptable_token_num" (session found, but 'num_token' does not match) --
         let user3a_id = USER1_ID + 2;
-        let token3a = ProflTest::get_token(user3a_id);
+        let token3a = User_Test::get_token(user3a_id);
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token3a).into());
         framed.send(msg_text).await.unwrap(); // Send a message to a websocket.
@@ -192,7 +192,7 @@ mod tests {
         let config_jwt = config_jwt::get_test_config();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
         let user3b_id = USER1_ID + 2;
-        let num_token3b = ProflTest::get_num_token(user3b_id + 1);
+        let num_token3b = User_Test::get_num_token(user3b_id + 1);
         let token3b = token_coding::encode_token(user3b_id, num_token3b, &jwt_secret, config_jwt.jwt_access).unwrap();
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token3b).into());
@@ -206,30 +206,30 @@ mod tests {
     async fn test_get_ws_chat_ews_join_ews_leave_ok() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
-            let user2_id = data_p.0.get(1).unwrap().user_id;
+            let mut data_u = User_Test::users(&[USER, USER, USER, USER]);
+            let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
-            data_p.1.get_mut(1).unwrap().num_token = Some(ProflTest::get_num_token(user2_id));
-            let user4_id = data_p.0.get(3).unwrap().user_id;
+            data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
+            let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user4.
-            data_p.1.get_mut(3).unwrap().num_token = Some(ProflTest::get_num_token(user4_id));
+            data_u.1.get_mut(3).unwrap().num_token = Some(User_Test::get_num_token(user4_id));
             let data_cm = ChMesTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
-        let (profile_vec, _session_vec) = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let (profile_vec, _session_vec) = User_Test::users(&[USER, USER, USER, USER]);
 
         // -- Test: 1. "Join user1 as owner."" --
-        let user1_id = profile_vec.get(0).unwrap().user_id;
+        let user1_id = profile_vec.get(0).unwrap().id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
-        let token1 = ProflTest::get_token(user1_id);
+        let token1 = User_Test::get_token(user1_id);
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token1).into());
         framed1.send(msg_text).await.unwrap(); // Send a message to a websocket.
@@ -280,9 +280,9 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(value)));
 
         // -- Test: 4. "Join user2 authorized."" --
-        let user2_id = profile_vec.get(1).unwrap().user_id;
+        let user2_id = profile_vec.get(1).unwrap().id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
-        let token2 = ProflTest::get_token(user2_id);
+        let token2 = User_Test::get_token(user2_id);
         // Join user2.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token2).into());
@@ -311,9 +311,9 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(value)));
 
         // -- Test: 5. "Join user4 is blocked."" --
-        let user4_id = profile_vec.get(3).unwrap().user_id;
+        let user4_id = profile_vec.get(3).unwrap().id;
         let member4 = profile_vec.get(3).unwrap().nickname.clone();
-        let token4 = ProflTest::get_token(user4_id);
+        let token4 = User_Test::get_token(user4_id);
         // Join user4.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token4).into());
@@ -355,15 +355,15 @@ mod tests {
     async fn test_get_ws_chat_ews_count() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_p = ProflTest::profiles(&[USER, USER]);
-            let user2_id = data_p.0.get(1).unwrap().user_id;
+            let mut data_u = User_Test::users(&[USER, USER]);
+            let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
-            data_p.1.get_mut(1).unwrap().num_token = Some(ProflTest::get_num_token(user2_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
             let data_cm = ChMesTest::chat_messages(0);
             App::new()
                 .service(get_ws_chat)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
@@ -377,11 +377,11 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(to_string(&err406).unwrap()))); // 406:NotAcceptable
 
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
-        let (profile_vec, _session_vec) = ProflTest::profiles(&[USER, USER]);
+        let (profile_vec, _session_vec) = User_Test::users(&[USER, USER]);
 
-        let user1_id = profile_vec.get(0).unwrap().user_id;
+        let user1_id = profile_vec.get(0).unwrap().id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
-        let token1 = ProflTest::get_token(user1_id);
+        let token1 = User_Test::get_token(user1_id);
         // Join user1.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token1).into());
@@ -402,9 +402,9 @@ mod tests {
         // Open a websocket connection to the test server.
         let mut framed2 = srv.ws_at(URL_WS).await.unwrap();
 
-        let user2_id = profile_vec.get(1).unwrap().user_id;
+        let user2_id = profile_vec.get(1).unwrap().id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
-        let token2 = ProflTest::get_token(user2_id);
+        let token2 = User_Test::get_token(user2_id);
         // Join user2.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token2).into());
