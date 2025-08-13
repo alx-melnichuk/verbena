@@ -310,15 +310,14 @@ pub mod tests {
     pub struct UserRecoveryOrmTest {}
 
     impl UserRecoveryOrmTest {
-
         pub fn recoveries(opt_user_id: Option<i32>) -> Vec<UserRecovery> {
-            let user_recovery_vec:Vec<UserRecovery> = match opt_user_id {
+            let user_recovery_vec: Vec<UserRecovery> = match opt_user_id {
                 Some(user_id) => {
                     let final_date_utc = Utc::now() + Duration::seconds(600);
                     let user_recovery = UserRecoveryOrmApp::new_user_recovery(1, user_id, final_date_utc);
                     UserRecoveryOrmApp::create(&vec![user_recovery]).user_recovery_vec
-                },
-                None => vec![]
+                }
+                None => vec![],
             };
             user_recovery_vec
         }
@@ -329,5 +328,4 @@ pub mod tests {
             }
         }
     }
-
 }
