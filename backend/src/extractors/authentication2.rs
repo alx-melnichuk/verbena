@@ -1,12 +1,11 @@
 use std::rc::Rc;
-use std::time::Instant as tm;
 
 use actix_web::{dev, error, http::StatusCode, web, FromRequest, HttpMessage};
 use futures_util::{
     future::{ready, LocalBoxFuture, Ready},
     FutureExt,
 };
-use log::{debug, error, info, log_enabled, Level::Info};
+use log::{debug, error, log_enabled, Level::Info};
 use vrb_common::api_error::{code_to_str, ApiError};
 #[cfg(not(all(test, feature = "mockdata")))]
 use vrb_dbase::user_auth::user_auth_orm::impls::UserAuthOrmApp;
@@ -14,10 +13,13 @@ use vrb_dbase::user_auth::user_auth_orm::impls::UserAuthOrmApp;
 use vrb_dbase::user_auth::user_auth_orm::tests::UserAuthOrmApp;
 use vrb_dbase::{
     db_enums::UserRole,
-    user_auth::{config_jwt, user_auth_models::User, user_auth_orm::UserAuthOrm},
+    user_auth::{
+        config_jwt,
+        user_auth_models::{Session, User},
+        user_auth_orm::UserAuthOrm,
+    },
 };
 use vrb_tools::{err, token_coding, token_data};
-
 
 // 500 Internal Server Error - Authentication: The entity "user" was not received from the request.
 pub const MSG_USER_NOT_RECEIVED_FROM_REQUEST: &str = "user_not_received_from_request";
@@ -116,10 +118,10 @@ where
     fn call(&self, req: dev::ServiceRequest) -> Self::Future {
         let opt_timer0 = if log_enabled!(Info) { Some(std::time::Instant::now()) } else { None };
 
-        // Attempt to extract token from cookie or authorization header
+        // Extract the token from the cookie or authorization header.
         let token = token_data::get_token_from_cookie_or_header(req.request());
 
-        // If token is missing, return unauthorized error
+        // If the token is missing, then an error (code: "Unauthorized", message: "token_missing").
         if token.is_none() {
             error!("{}: {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_MISSING_TOKEN);
             let json_error = ApiError::new(401, err::MSG_MISSING_TOKEN);
@@ -129,7 +131,7 @@ where
 
         let config_jwt = req.app_data::<web::Data<config_jwt::ConfigJwt>>().unwrap();
         let jwt_secret: &[u8] = config_jwt.jwt_secret.as_bytes();
-        // Decode the token.
+        // Decode token (check token lifetime validity).
         let token_res = token_coding::decode_token(&token, jwt_secret);
 
         if let Err(e) = token_res {
@@ -147,12 +149,24 @@ where
         // Handle user extraction and request processing
         async move {
             let user_auth_orm = req.app_data::<web::Data<UserAuthOrmApp>>().unwrap().get_ref();
-            // Check the token for correctness and get the user.
-            let res_user = check_token_and_get_user(user_id, num_token, user_auth_orm).await;
-            if let Err(app_error) = res_user {
-                return Err(app_error.into());
-            }
-            let user = res_user.unwrap();
+
+            // Find user session by "id" from token.
+            let opt_session = user_auth_orm.get_session_by_id(user_id).map_err(|e| {
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                return ApiError::create(507, err::MSG_DATABASE, &e); // 507
+            })?;
+            // If the session is missing, then return an error406("NotAcceptable", "session_not_found; user_id: {}").
+            let session = is_session_not_found(opt_session, user_id)?;
+            // Each session contains an additional numeric value "num_token".
+            // If "num_token" is not equal to "session.num_token", return error401(c)("Unauthorized","unacceptable_token_num; user_id: {}").
+            let _ = is_unacceptable_token_num(&session, num_token, user_id)?;
+            // Find user by "id" from token.
+            let opt_user = user_auth_orm.get_user_by_id(user_id, false).map_err(|e| {
+                error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
+                ApiError::create(507, err::MSG_DATABASE, &e) // 507
+            })?;
+            // If the user is missing, then return an error401(d)("Unauthorized", "unacceptable_token_id; user_id: {}").
+            let user = is_unacceptable_token_id(opt_user, user_id)?;
 
             if let Some(timer0) = opt_timer0 {
                 debug!("timer0: {}, user.role: {:?}", format!("{:.2?}", timer0.elapsed()), &user.role);
@@ -175,45 +189,33 @@ where
     }
 }
 
-/** Check the token for correctness and get the user. */
-pub async fn check_token_and_get_user(user_id: i32, num_token: i32, user_auth_orm: &UserAuthOrmApp) -> Result<User, ApiError> {
-    let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
-
-    // Find a session for a given user.
-    let opt_session = user_auth_orm.get_session_by_id(user_id).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
-        return ApiError::create(507, err::MSG_DATABASE, &e); // 507
-    })?;
+/// If the session is missing, then return an error406("NotAcceptable", "session_not_found; user_id: {}").
+pub fn is_session_not_found(opt_session: Option<Session>, user_id: i32) -> Result<Session, ApiError> {
     let session = opt_session.ok_or_else(|| {
         // There is no session for this user.
         let msg = format!("user_id: {}", user_id);
         error!("{}-{}; {}", code_to_str(StatusCode::NOT_ACCEPTABLE), err::MSG_SESSION_NOT_FOUND, &msg);
         ApiError::create(406, err::MSG_SESSION_NOT_FOUND, &msg) // 406
     })?;
+    Ok(session)
+}
+pub fn is_unacceptable_token_num(session: &Session, num_token: i32, user_id: i32) -> Result<(), ApiError> {
     // Each session contains an additional numeric value.
-    let session_num_token = session.num_token.unwrap_or(0);
     // Compare an additional numeric value from the session and from the token.
-    if session_num_token != num_token {
+    if session.num_token.is_none() || session.num_token.unwrap() != num_token {
         // If they do not match, then this is an error.
         let msg = format!("user_id: {}", user_id);
         error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg); // 401(c)
         return Err(ApiError::create(401, err::MSG_UNACCEPTABLE_TOKEN_NUM, &msg));
     }
-    let result = user_auth_orm.get_user_by_id(user_id, false).map_err(|e| {
-        error!("{}-{}; {}", code_to_str(StatusCode::INSUFFICIENT_STORAGE), err::MSG_DATABASE, &e);
-        ApiError::create(507, err::MSG_DATABASE, &e) // 507
-    })?;
-
-    let user = result.ok_or_else(|| {
+    Ok(())
+}
+/// If the user is missing, then return an error401(d)("Unauthorized", "unacceptable_token_id; user_id: {}").
+pub fn is_unacceptable_token_id(opt_user: Option<User>, user_id: i32) -> Result<User, ApiError> {
+    let user = opt_user.ok_or_else(|| {
         let msg = format!("user_id: {}", user_id);
         error!("{}-{}; {}", code_to_str(StatusCode::UNAUTHORIZED), err::MSG_UNACCEPTABLE_TOKEN_ID, &msg);
         ApiError::create(401, err::MSG_UNACCEPTABLE_TOKEN_ID, &msg) // 401(d)
     })?;
-
-    if let Some(timer) = timer {
-        let s1 = format!("{:.2?}", timer.elapsed());
-        #[rustfmt::skip]
-        info!("check_token_and_get_user() time: {}, id: {}, nickname: {}", s1, user.id, &user.nickname);
-    }
     Ok(user)
 }
