@@ -15,13 +15,15 @@ mod tests {
         api_error::{code_to_str, ApiError},
         validators,
     };
-    use vrb_dbase::db_enums::StreamState;
+    use vrb_dbase::{
+        db_enums::StreamState,
+        user_auth::{
+            config_jwt,
+            user_auth_orm::tests::{UserAuthOrmTest as User_Test, ADMIN, USER, USER1, USER1_ID, USER2},
+        },
+    };
     use vrb_tools::{cdis::coding, err, png_files};
 
-    use crate::profiles::{
-        config_jwt,
-        profile_orm::tests::{ProfileOrmTest as ProflTest, ADMIN, USER, USER1, USER1_ID, USER2},
-    };
     use crate::streams::{
         config_strm,
         stream_controller::{
@@ -41,13 +43,13 @@ mod tests {
 
     #[actix_web::test]
     async fn test_put_stream_no_form() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -68,13 +70,13 @@ mod tests {
     async fn test_put_stream_empty_form() {
         let (header, body) = MultiPartFormDataBuilder::new().build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -101,13 +103,13 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile1", "image/png", name1_file)
             .build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -139,13 +141,13 @@ mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("title", "".to_string()).build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -168,13 +170,13 @@ mod tests {
     async fn test_put_stream_title_min() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("title", StreamModelsTest::title_min()).build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -195,13 +197,13 @@ mod tests {
     async fn test_put_stream_title_max() {
         let (header, body) = MultiPartFormDataBuilder::new().with_text("title", StreamModelsTest::title_max()).build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -224,13 +226,13 @@ mod tests {
             .with_text("descript", StreamModelsTest::descript_min())
             .build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -253,13 +255,13 @@ mod tests {
             .with_text("descript", StreamModelsTest::descript_max())
             .build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -283,13 +285,13 @@ mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("starttime", starttime_s).build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -312,13 +314,13 @@ mod tests {
             .with_text("source", StreamModelsTest::source_min())
             .build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -341,13 +343,13 @@ mod tests {
             .with_text("source", StreamModelsTest::source_max())
             .build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -374,13 +376,13 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -404,13 +406,13 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -434,13 +436,13 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -464,13 +466,13 @@ mod tests {
             .with_text("tags", serde_json::to_string(&tags).unwrap())
             .build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -493,13 +495,13 @@ mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("tags", "aaa").build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -524,13 +526,13 @@ mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("tags", "[\"tag\"").build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -559,16 +561,16 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let mut config_strm = config_strm::get_test_config();
         config_strm.strm_logo_max_size = 160;
         let strm_logo_max_size = config_strm.strm_logo_max_size;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -600,15 +602,15 @@ mod tests {
             .with_file(path_name1_file.clone(), "logofile", "image/bmp", name1_file)
             .build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let config_strm = config_strm::get_test_config();
         let valid_file_types: Vec<String> = config_strm.strm_logo_valid_types.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[])))
         ).await;
@@ -636,15 +638,15 @@ mod tests {
             .with_text("title", format!("{}a", StreamModelsTest::title_min()))
             .build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -663,15 +665,15 @@ mod tests {
             .with_text("title", format!("{}a", StreamModelsTest::title_min()))
             .build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER]);
         let streams = Strm_Test::streams(&[USER1, USER2]);
         let stream2_id = streams.get(1).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -691,15 +693,15 @@ mod tests {
             .with_text("title", &new_title)
             .build();
 
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[ADMIN, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[ADMIN, USER]);
         let streams = Strm_Test::streams(&[USER1, USER2]);
         let stream2 = streams.get(1).unwrap().clone();
         let app = test::init_service(
             App::new()
                 .service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams)),
         )
@@ -722,8 +724,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_stream_valid_data_without_file() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream = streams.get(0).unwrap().clone();
 
@@ -748,8 +750,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -797,9 +799,9 @@ mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
-        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         let config_strm = config_strm::get_test_config();
@@ -807,8 +809,8 @@ mod tests {
         #[rustfmt::skip]
             let app = test::init_service(
                 App::new().service(put_stream)
-                    .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                    .configure(ProflTest::cfg_profile_orm(data_p))
+                    .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                    .configure(User_Test::cfg_user_auth_orm(data_u))
                     .configure(Strm_Test::cfg_config_strm(config_strm))
                     .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -838,7 +840,7 @@ mod tests {
         let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
-        assert_eq!(file_stem_part1, profile1_id.to_string());
+        assert_eq!(file_stem_part1, user1_id.to_string());
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
         let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
@@ -855,9 +857,9 @@ mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
-        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
 
@@ -870,8 +872,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -904,7 +906,7 @@ mod tests {
         let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
-        assert_eq!(file_stem_part1, profile1_id.to_string());
+        assert_eq!(file_stem_part1, user1_id.to_string());
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
         let date_time2_s = date_time2.format(date_format).to_string(); // : 2024-02-06 09:55:41
@@ -928,9 +930,9 @@ mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
-        let profile1_id = data_p.0.get(0).unwrap().user_id;
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
         let mut streams = Strm_Test::streams(&[USER1]);
         let stream = streams.get_mut(0).unwrap();
         stream.logo = Some(path_name0_alias);
@@ -938,8 +940,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -972,7 +974,7 @@ mod tests {
         let file_stem_parts: Vec<&str> = file_stem.split('_').collect();
         let file_stem_part1 = file_stem_parts.get(0).unwrap_or(&"").to_string(); // file_stem_part1: "1100"
         let file_stem_part2 = file_stem_parts.get(1).unwrap_or(&"").to_string(); // file_stem_part2: "3226061294TF"
-        assert_eq!(file_stem_part1, profile1_id.to_string());
+        assert_eq!(file_stem_part1, user1_id.to_string());
 
         let date_time2 = coding::decode(&file_stem_part2, 1).unwrap();
         let date_format = "%Y-%m-%d %H:%M:%S"; // "%Y-%m-%d %H:%M:%S%.9f %z"
@@ -993,8 +995,8 @@ mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_text("title", "title1".to_string())
             .build();
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let mut streams = Strm_Test::streams(&[USER1]);
         let stream = streams.get_mut(0).unwrap();
         stream.logo = Some(path_name0_alias.clone());
@@ -1002,8 +1004,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1043,8 +1045,8 @@ mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let mut streams = Strm_Test::streams(&[USER1]);
         let stream = streams.get_mut(0).unwrap();
         stream.logo = Some(path_name0_alias);
@@ -1052,8 +1054,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1084,15 +1086,15 @@ mod tests {
         let (header, body) = MultiPartFormDataBuilder::new()
             .with_file(path_name1_file.clone(), "logofile", "image/png", name1_file)
             .build();
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_stream)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1114,13 +1116,13 @@ mod tests {
 
     #[actix_web::test]
     async fn test_put_toggle_state_no_data() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_toggle_state)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[USER1])))
         ).await;
@@ -1138,13 +1140,13 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_toggle_state_empty_json_object() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_toggle_state)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(Strm_Test::streams(&[USER1])))
         ).await;
@@ -1163,8 +1165,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_toggle_state_invalid_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         let stream_id_bad = format!("{}a", stream_id);
@@ -1172,8 +1174,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_toggle_state)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1195,16 +1197,16 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_toggle_state_non_existent_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id2 = streams.get(0).unwrap().id.clone() + 1;
         let new_state = streams.get(0).unwrap().state.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_toggle_state)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1218,8 +1220,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_put_toggle_state_invalid_state() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let streams = Strm_Test::streams(&[USER1]);
         let stream_id = streams.get(0).unwrap().id.clone();
         let new_state = streams.get(0).unwrap().state.clone();
@@ -1227,8 +1229,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_toggle_state)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1266,8 +1268,8 @@ mod tests {
             (StreamState::Waiting, StreamState::Stopped),
         ];
         for (old_state, new_state) in buff {
-            let token1 = ProflTest::get_token(USER1_ID);
-            let data_p = ProflTest::profiles(&[USER]);
+            let token1 = User_Test::get_token(USER1_ID);
+            let data_u = User_Test::users(&[USER]);
             let mut streams = Strm_Test::streams(&[USER1]);
 
             let stream = streams.get_mut(0).unwrap();
@@ -1276,8 +1278,8 @@ mod tests {
             #[rustfmt::skip]
             let app = test::init_service(
                 App::new().service(put_toggle_state)
-                    .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                    .configure(ProflTest::cfg_profile_orm(data_p))
+                    .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                    .configure(User_Test::cfg_user_auth_orm(data_u))
                     .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                     .configure(Strm_Test::cfg_stream_orm(streams))
             ).await;
@@ -1303,8 +1305,8 @@ mod tests {
     async fn test_put_toggle_state_conflict() {
         let old_state = StreamState::Waiting;
         let new_state = StreamState::Preparing;
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER]);
         let mut streams = Strm_Test::streams(&[USER1, USER1]);
         let stream1 = streams.get_mut(0).unwrap();
 
@@ -1319,8 +1321,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(put_toggle_state)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                 .configure(Strm_Test::cfg_stream_orm(streams))
         ).await;
@@ -1351,8 +1353,8 @@ mod tests {
             (StreamState::Paused, StreamState::Stopped),
         ];
         for (old_state, new_state) in buff {
-            let token1 = ProflTest::get_token(USER1_ID);
-            let data_p = ProflTest::profiles(&[USER]);
+            let token1 = User_Test::get_token(USER1_ID);
+            let data_u = User_Test::users(&[USER]);
             let mut streams = Strm_Test::streams(&[USER1]);
             let stream = streams.get_mut(0).unwrap();
             stream.state = old_state;
@@ -1362,8 +1364,8 @@ mod tests {
             #[rustfmt::skip]
             let app = test::init_service(
                 App::new().service(put_toggle_state)
-                    .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                    .configure(ProflTest::cfg_profile_orm(data_p))
+                    .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                    .configure(User_Test::cfg_user_auth_orm(data_u))
                     .configure(Strm_Test::cfg_config_strm(config_strm::get_test_config()))
                     .configure(Strm_Test::cfg_stream_orm(streams))
             ).await;
