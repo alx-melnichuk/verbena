@@ -143,7 +143,7 @@ mod tests {
         assert_eq!(api_err.message, format!("{}: ExpiredSignature", err::MSG_INVALID_OR_EXPIRED_TOKEN));
     }
     #[actix_web::test]
-    async fn test_authentication_middelware_valid_token_session_non_exist() { // !
+    async fn test_authentication_middelware_valid_token_session_non_exist() {
         let data_p = ProflTest::profiles(&[USER]);
         let user2_id = USER1_ID + 1;
         let token2 = ProflTest::get_token(user2_id);
