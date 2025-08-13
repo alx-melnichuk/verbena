@@ -20,9 +20,9 @@ mod tests {
         },
         chat_message_orm::tests::ChatMessageOrmTest as ChMesTest,
     };
-    use crate::profiles::{
+    use vrb_dbase::user_auth::{
         config_jwt,
-        profile_orm::tests::{ProfileOrmTest as ProflTest, USER, USER1_ID},
+        user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1_ID},
     };
 
     const MSG_CONTENT_TYPE_ERROR: &str = "Content type error";
@@ -32,9 +32,9 @@ mod tests {
 
     #[actix_web::test]
     async fn test_get_blocked_users_exist_blocked_users() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
-        let user1_id = data_p.0.get(0).unwrap().user_id.clone();
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
         let blocked_users_vec: Vec<BlockedUserDto> = data_cm.2.iter()
@@ -44,8 +44,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_blocked_users)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -71,9 +71,9 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_get_blocked_users_not_exist_blocked_users() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
-        let user1_id = data_p.0.get(0).unwrap().user_id.clone();
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
+        let user1_id = data_u.0.get(0).unwrap().id;
         let mut data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
         let blocked_users: Vec<BlockedUser> = data_cm.2.iter()
@@ -82,8 +82,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(get_blocked_users)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -102,14 +102,14 @@ mod tests {
 
     #[actix_web::test]
     async fn test_post_blocked_user_no_form() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -126,14 +126,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_empty_json() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -158,8 +158,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_min_blocked_nickname() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = MdMesTest::blocked_nickname_min();
         let len1 = blocked_nickname.len();
@@ -167,8 +167,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -191,8 +191,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_max_blocked_nickname() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = MdMesTest::blocked_nickname_max();
         let len1 = blocked_nickname.len();
@@ -200,8 +200,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -224,15 +224,15 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_invalid_blocked_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let user_id = data_p.0.last().unwrap().user_id + 1;
+        let user_id = data_u.0.last().unwrap().id + 1;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -245,15 +245,15 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_invalid_blocked_nickname() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let nickname = format!("{}a", data_p.0.last().unwrap().nickname);
+        let nickname = format!("{}a", data_u.0.last().unwrap().nickname);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -266,17 +266,17 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_new_blocked_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let user_id = data_p.0.get(0).unwrap().user_id;
-        let blocked_id = data_p.0.get(1).unwrap().user_id;
-        let blocked_nickname = data_p.0.get(1).unwrap().nickname.clone();
+        let user_id = data_u.0.get(0).unwrap().id;
+        let blocked_id = data_u.0.get(1).unwrap().id;
+        let blocked_nickname = data_u.0.get(1).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -300,17 +300,17 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_new_blocked_nickname() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let user_id = data_p.0.get(0).unwrap().user_id;
-        let blocked_id = data_p.0.get(1).unwrap().user_id;
-        let blocked_nickname = data_p.0.get(1).unwrap().nickname.clone();
+        let user_id = data_u.0.get(0).unwrap().id;
+        let blocked_id = data_u.0.get(1).unwrap().id;
+        let blocked_nickname = data_u.0.get(1).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -334,10 +334,10 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_old_blocked_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let user_id = data_p.0.get(0).unwrap().user_id;
+        let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
         let blocked = data_cm.2.iter().find(|v| v.user_id == user_id).map(|v| v.clone()).unwrap();
         let blocked_id = blocked.blocked_id;
@@ -345,8 +345,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -370,10 +370,10 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_post_blocked_user_by_old_blocked_nickname() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let user_id = data_p.0.get(0).unwrap().user_id;
+        let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
         let blocked = data_cm.2.iter().find(|v| v.user_id == user_id).map(|v| v.clone()).unwrap();
         let blocked_id = blocked.blocked_id;
@@ -381,8 +381,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(post_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -409,14 +409,14 @@ mod tests {
 
     #[actix_web::test]
     async fn test_delete_blocked_user_no_form() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -432,14 +432,14 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_empty_json() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -463,8 +463,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_min_blocked_nickname() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = MdMesTest::blocked_nickname_min();
         let len1 = blocked_nickname.len();
@@ -472,8 +472,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -496,8 +496,8 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_max_blocked_nickname() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
         let blocked_nickname = MdMesTest::blocked_nickname_max();
         let len1 = blocked_nickname.len();
@@ -505,8 +505,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -529,15 +529,15 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_invalid_blocked_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let user_id = data_p.0.last().unwrap().user_id + 1;
+        let user_id = data_u.0.last().unwrap().id + 1;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -550,15 +550,15 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_invalid_blocked_nickname() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let nickname = format!("{}a", data_p.0.last().unwrap().nickname);
+        let nickname = format!("{}a", data_u.0.last().unwrap().nickname);
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -571,15 +571,15 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_unblocked_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let user_id = data_p.0.get(1).unwrap().user_id;
+        let user_id = data_u.0.get(1).unwrap().id;
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -592,15 +592,15 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_unblocked_nickname() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let nickname = data_p.0.get(1).unwrap().nickname.clone();
+        let nickname = data_u.0.get(1).unwrap().nickname.clone();
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -613,10 +613,10 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_old_blocked_id() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let user_id = data_p.0.get(0).unwrap().user_id;
+        let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
         let blocked = data_cm.2.iter().find(|v| v.user_id == user_id).map(|v| v.clone()).unwrap();
         let blocked_id = blocked.blocked_id;
@@ -624,8 +624,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
@@ -649,10 +649,10 @@ mod tests {
     }
     #[actix_web::test]
     async fn test_delete_blocked_user_by_old_blocked_nickname() {
-        let token1 = ProflTest::get_token(USER1_ID);
-        let data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let token1 = User_Test::get_token(USER1_ID);
+        let data_u = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(1);
-        let user_id = data_p.0.get(0).unwrap().user_id;
+        let user_id = data_u.0.get(0).unwrap().id;
         #[rustfmt::skip] // Find a user who is already blocked for user1.
         let blocked = data_cm.2.iter().find(|v| v.user_id == user_id).map(|v| v.clone()).unwrap();
         let blocked_id = blocked.blocked_id;
@@ -660,8 +660,8 @@ mod tests {
         #[rustfmt::skip]
         let app = test::init_service(
             App::new().service(delete_blocked_user)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         ).await;
         #[rustfmt::skip]
