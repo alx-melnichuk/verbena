@@ -336,7 +336,7 @@ pub mod tests {
                 session_vec: Vec::new(),
             }
         }
-        /// Create a new instance with the specified profile list. 
+        /// Create a new instance with the specified profile list.
         /// Sessions are taken from "sessions", if it is empty, they are created automatically.
         pub fn create(profiles: &[Profile], sessions: &[Session]) -> Self {
             let mut profile_vec: Vec<Profile> = Vec::new();
