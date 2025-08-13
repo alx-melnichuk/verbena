@@ -4,6 +4,10 @@ mod tests {
     use actix_web_actors::ws::{Frame::Text as FrameText, Message::Text as MessageText};
     use futures_util::{SinkExt, StreamExt}; // this is needed for "send" method in Framed
     use serde_json::to_string;
+    use vrb_dbase::user_auth::{
+        config_jwt,
+        user_auth_orm::tests::{UserAuthOrmTest as User_Test, USER, USER1_ID},
+    };
     use vrb_tools::err;
 
     use crate::chats::{
@@ -11,10 +15,6 @@ mod tests {
         chat_message_orm::tests::ChatMessageOrmTest as ChMesTest,
         chat_ws_controller::get_ws_chat,
         chat_ws_session::{get_err400, get_err403, get_err404, get_err406},
-    };
-    use crate::profiles::{
-        config_jwt,
-        profile_orm::tests::{ProfileOrmTest as ProflTest, USER},
     };
 
     const URL_WS: &str = "/ws";
@@ -27,22 +27,22 @@ mod tests {
     async fn test_get_ws_chat_ews_msg_rmv_err() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
-            let user4_id = data_p.0.get(3).unwrap().user_id;
+            let mut data_u = User_Test::users(&[USER, USER, USER, USER]);
+            let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user4.
-            data_p.1.get_mut(3).unwrap().num_token = Some(ProflTest::get_num_token(user4_id));
+            data_u.1.get_mut(3).unwrap().num_token = Some(User_Test::get_num_token(user4_id));
             let data_cm = ChMesTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
-        let (profile_vec, _session_vec) = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let (profile_vec, _session_vec) = User_Test::users(&[USER, USER, USER, USER]);
         let data_cm = ChMesTest::chat_messages(2);
 
         // -- Test: 1. "'msgRmv' parameter not defined" --
@@ -60,9 +60,9 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(to_string(&err406).unwrap()))); // 406:NotAcceptable
 
         // -- Test: 3. "There is a block on sending messages." --
-        let user4_id = profile_vec.get(3).unwrap().user_id;
+        let user4_id = profile_vec.get(3).unwrap().id;
         let member4 = profile_vec.get(3).unwrap().nickname.clone();
-        let token4 = ProflTest::get_token(user4_id);
+        let token4 = User_Test::get_token(user4_id);
         // Join user4.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token4).into());
@@ -80,9 +80,9 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(to_string(&err403).unwrap()))); // 403:Forbidden
 
         // -- Test: 4. Removing another user's message. --
-        let user1_id = profile_vec.get(0).unwrap().user_id;
+        let user1_id = profile_vec.get(0).unwrap().id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
-        let token1 = ProflTest::get_token(user1_id);
+        let token1 = User_Test::get_token(user1_id);
         let ch_msg_id = data_cm.0.get(1).unwrap().id; // Message user2.
 
         // Open a websocket connection to the test server.
@@ -111,30 +111,30 @@ mod tests {
     async fn test_get_ws_chat_ews_msg_rmv_ok() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_p = ProflTest::profiles(&[USER, USER]);
-            let user2_id = data_p.0.get(1).unwrap().user_id;
+            let mut data_u = User_Test::users(&[USER, USER]);
+            let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2.
-            data_p.1.get_mut(1).unwrap().num_token = Some(ProflTest::get_num_token(user2_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
             let data_cm = ChMesTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
 
         // Open a websocket connection to the test server.
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
-        let (profile_vec, _session_vec) = ProflTest::profiles(&[USER, USER]);
+        let (profile_vec, _session_vec) = User_Test::users(&[USER, USER]);
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
         let data_cm = ChMesTest::chat_messages(2);
         let ch_msg_id = data_cm.0.first().unwrap().id;
 
         // -- Test: 1. "Delete message user1."  --
-        let user1_id = profile_vec.get(0).unwrap().user_id;
+        let user1_id = profile_vec.get(0).unwrap().id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
-        let token1 = ProflTest::get_token(user1_id);
+        let token1 = User_Test::get_token(user1_id);
         // Join user1.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token1).into());
@@ -148,9 +148,9 @@ mod tests {
         // Open a websocket connection to the test server.
         let mut framed2 = srv.ws_at(URL_WS).await.unwrap();
 
-        let user2_id = profile_vec.get(1).unwrap().user_id;
+        let user2_id = profile_vec.get(1).unwrap().id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
-        let token2 = ProflTest::get_token(user2_id);
+        let token2 = User_Test::get_token(user2_id);
         // Join user2.
         #[rustfmt::skip]
         let msg_text = MessageText(format!("{{ \"join\": {}, \"access\": \"{}\" }}", stream1_id, token2).into());
@@ -189,22 +189,22 @@ mod tests {
     async fn test_get_ws_chat_ews_block_ews_unblock_err() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_p = ProflTest::profiles(&[USER, USER, USER]);
-            let user2_id = data_p.0.get(1).unwrap().user_id;
+            let mut data_u = User_Test::users(&[USER, USER, USER]);
+            let user2_id = data_u.0.get(1).unwrap().id;
             // Add session (num_token) for user2, user4.
-            data_p.1.get_mut(1).unwrap().num_token = Some(ProflTest::get_num_token(user2_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
             let data_cm = ChMesTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
-        let (profile_vec, _session_vec) = ProflTest::profiles(&[USER, USER, USER]);
+        let (profile_vec, _session_vec) = User_Test::users(&[USER, USER, USER]);
 
         // -- Test: 1. "'id' parameter not defined" --
         let msg_text = MessageText("{ \"block\": \"\" }".into());
@@ -233,9 +233,9 @@ mod tests {
         assert_eq!(item, FrameText(Bytes::from(to_string(&err406).unwrap()))); // 406:NotAcceptable
 
         // -- Test: 3. "stream_owner_rights_missing" --
-        let user2_id = profile_vec.get(1).unwrap().user_id;
+        let user2_id = profile_vec.get(1).unwrap().id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
-        let token2 = ProflTest::get_token(user2_id);
+        let token2 = User_Test::get_token(user2_id);
 
         // Join user2.
         #[rustfmt::skip]
@@ -268,28 +268,28 @@ mod tests {
     async fn test_get_ws_chat_ews_block_ews_unblock_ok() {
         // Create a test server without listening on a port.
         let mut srv = actix_test::start(move || {
-            let mut data_p = ProflTest::profiles(&[USER, USER, USER, USER]);
-            let user2_id = data_p.0.get(1).unwrap().user_id;
-            let user4_id = data_p.0.get(3).unwrap().user_id;
+            let mut data_u = User_Test::users(&[USER, USER, USER, USER]);
+            let user2_id = data_u.0.get(1).unwrap().id;
+            let user4_id = data_u.0.get(3).unwrap().id;
             // Add session (num_token) for user2, user4.
-            data_p.1.get_mut(1).unwrap().num_token = Some(ProflTest::get_num_token(user2_id));
-            data_p.1.get_mut(3).unwrap().num_token = Some(ProflTest::get_num_token(user4_id));
+            data_u.1.get_mut(1).unwrap().num_token = Some(User_Test::get_num_token(user2_id));
+            data_u.1.get_mut(3).unwrap().num_token = Some(User_Test::get_num_token(user4_id));
             let data_cm = ChMesTest::chat_messages(2);
             App::new()
                 .service(get_ws_chat)
-                .configure(ProflTest::cfg_config_jwt(config_jwt::get_test_config()))
-                .configure(ProflTest::cfg_profile_orm(data_p))
+                .configure(User_Test::cfg_config_jwt(config_jwt::get_test_config()))
+                .configure(User_Test::cfg_user_auth_orm(data_u))
                 .configure(ChMesTest::cfg_chat_message_orm(data_cm))
         });
         // Open a websocket connection to the test server.
         let mut framed1 = srv.ws_at(URL_WS).await.unwrap();
 
-        let (profile_vec, _session_vec) = ProflTest::profiles(&[USER, USER, USER, USER]);
+        let (profile_vec, _session_vec) = User_Test::users(&[USER, USER, USER, USER]);
         let stream1_id = ChMesTest::stream_ids().get(0).unwrap().clone(); // live: true
 
-        let user1_id = profile_vec.get(0).unwrap().user_id;
+        let user1_id = profile_vec.get(0).unwrap().id;
         let member1 = profile_vec.get(0).unwrap().nickname.clone();
-        let token1 = ProflTest::get_token(user1_id);
+        let token1 = User_Test::get_token(user1_id);
 
         // Join user1.
         #[rustfmt::skip]
@@ -350,9 +350,9 @@ mod tests {
         // Open a websocket connection to the test server.
         let mut framed2 = srv.ws_at(URL_WS).await.unwrap();
 
-        let user2_id = profile_vec.get(1).unwrap().user_id;
+        let user2_id = profile_vec.get(1).unwrap().id;
         let member2 = profile_vec.get(1).unwrap().nickname.clone();
-        let token2 = ProflTest::get_token(user2_id);
+        let token2 = User_Test::get_token(user2_id);
 
         // Join user2.
         #[rustfmt::skip]
@@ -406,9 +406,9 @@ mod tests {
         let item = framed1.next().await.unwrap().unwrap(); // Receive a message from a websocket.
         assert_eq!(item, FrameText(Bytes::from(value)));
 
-        let user4_id = profile_vec.get(3).unwrap().user_id;
+        let user4_id = profile_vec.get(3).unwrap().id;
         let member4 = profile_vec.get(3).unwrap().nickname.clone();
-        let token4 = ProflTest::get_token(user4_id);
+        let token4 = User_Test::get_token(user4_id);
 
         // Join user4.
         #[rustfmt::skip]
