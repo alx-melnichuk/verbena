@@ -12,11 +12,7 @@ use crate::profiles::profile_orm::tests::ProfileOrmApp;
 use crate::profiles::{profile_models::Profile, profile_orm::ProfileOrm};
 
 /** Check the token for correctness and get the user profile. */
-pub async fn check_token_and_get_profile(
-    user_id: i32,
-    num_token: i32,
-    profile_orm: &ProfileOrmApp,
-) -> Result<Profile, ApiError> {
+pub async fn check_token_and_get_profile(user_id: i32, num_token: i32, profile_orm: &ProfileOrmApp) -> Result<Profile, ApiError> {
     let timer = if log_enabled!(Info) { Some(tm::now()) } else { None };
 
     // Find a session for a given user.
