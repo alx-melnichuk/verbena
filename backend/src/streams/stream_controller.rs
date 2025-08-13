@@ -15,7 +15,6 @@ use vrb_common::{
 use vrb_dbase::db_enums::{StreamState, UserRole};
 use vrb_tools::{cdis::coding, err, loading::dynamic_image};
 
-use crate::extractors::authentication::{Authenticated, RequireAuth};
 use crate::extractors::authentication2::{Authenticated2, RequireAuth2};
 #[cfg(not(all(test, feature = "mockdata")))]
 use crate::streams::stream_orm::impls::StreamOrmApp;
