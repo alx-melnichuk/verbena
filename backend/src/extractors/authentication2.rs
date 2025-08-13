@@ -9,10 +9,13 @@ use futures_util::{
 use log::{debug, error, info, log_enabled, Level::Info};
 use vrb_common::api_error::{code_to_str, ApiError};
 #[cfg(not(all(test, feature = "mockdata")))]
-use vrb_dbase::user_auth_orm::impls::UserAuthOrmApp;
+use vrb_dbase::user_auth::user_auth_orm::impls::UserAuthOrmApp;
 #[cfg(all(test, feature = "mockdata"))]
-use vrb_dbase::user_auth_orm::tests::UserAuthOrmApp;
-use vrb_dbase::{config_jwt, db_enums::UserRole, user_auth_models::User, user_auth_orm::UserAuthOrm};
+use vrb_dbase::user_auth::user_auth_orm::tests::UserAuthOrmApp;
+use vrb_dbase::{
+    db_enums::UserRole,
+    user_auth::{config_jwt, user_auth_models::User, user_auth_orm::UserAuthOrm},
+};
 use vrb_tools::{err, token_coding, token_data};
 
 
